@@ -28,6 +28,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.NotificationHistory.getHistoryStub;
 import static com.redhat.cloud.notifications.models.NotificationStatus.FAILED_INTERNAL;
 import static com.redhat.cloud.notifications.models.NotificationStatus.PROCESSING;
@@ -110,7 +111,9 @@ public class ConnectorSender {
         try {
             Message<JsonObject> message = buildMessage(payload, history.getId(), connector);
 
-            if (this.engineConfig.isOutgoingKafkaHighVolumeTopicEnabled() && this.isEventFromHighVolumeApplication(event)) {
+            if (this.engineConfig.isOutgoingKafkaHighVolumeTopicEnabled()
+                && this.isEventFromHighVolumeApplication(event)
+                && this.isConnectorCompatibleWithHighVolumeTopic(connector)) {
                 this.highVolumeEmitter.send(message);
                 Log.debugf("[event_id: %s] Event sent through high volume Kafka topic", event.getId());
             } else {
@@ -176,6 +179,10 @@ public class ConnectorSender {
      */
     private boolean isEventFromHighVolumeApplication(final Event event) {
         return HIGH_VOLUME_APPLICATION.equals(event.getEventType().getApplication().getName());
+    }
+
+    private boolean isConnectorCompatibleWithHighVolumeTopic(final String connectorName) {
+        return EMAIL_SUBSCRIPTION.name().toLowerCase().equals(connectorName);
     }
 
     private void recordMetrics(Event event, String connector, int payloadSize) {

@@ -70,7 +70,7 @@ public class ConnectorSenderTest {
         final Application application = this.resourceHelpers.createApp(bundle.getId(), ConnectorSender.HIGH_VOLUME_APPLICATION);
         final EventType eventType = this.resourceHelpers.createEventType(application.getId(), "event-test-high-volume");
         final Event event = this.resourceHelpers.createEvent(eventType);
-        final Endpoint endpoint = this.resourceHelpers.createEndpoint(EndpointType.WEBHOOK, null, true, 0);
+        final Endpoint endpoint = this.resourceHelpers.createEndpoint(EndpointType.EMAIL_SUBSCRIPTION, null, true, 0);
 
         final JsonObject payload = new JsonObject();
         payload.put("Red Hat", "Red Hat Enterprise Linux");
