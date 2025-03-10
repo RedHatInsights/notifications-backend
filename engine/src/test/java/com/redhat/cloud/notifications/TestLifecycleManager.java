@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
+import static com.redhat.cloud.notifications.TestConstants.POSTGRES_MAJOR_VERSION;
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.EGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.FROMCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
@@ -73,7 +74,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     }
 
     void setupPostgres(Map<String, String> props) throws SQLException {
-        postgreSQLContainer = new PostgreSQLContainer<>("postgres:15");
+        postgreSQLContainer = new PostgreSQLContainer<>("postgres:" + POSTGRES_MAJOR_VERSION);
         postgreSQLContainer.start();
         // Now that postgres is started, we need to get its URL and tell Quarkus
         String jdbcUrl = postgreSQLContainer.getJdbcUrl();
