@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.Template;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -344,34 +345,28 @@ public class TemplateRepository {
         return template;
     }
 
-    public boolean isEmailSubscriptionSupported(String bundleName, String appName, UUID eventTypeId, SubscriptionType subscriptionType) {
-        switch (subscriptionType) {
-            case INSTANT:
-                if (backendConfig.isDefaultTemplateEnabled()) {
-                    return true;
-                }
-
-                String hql = "SELECT COUNT(*) FROM InstantEmailTemplate " +
-                    "WHERE eventType.id =: eventTypeId";
-                return entityManager.createQuery(hql, Long.class)
-                    .setParameter("eventTypeId", eventTypeId)
-                    .getSingleResult() > 0;
-            case DAILY:
-                return isEmailAggregationSupported(bundleName, appName, List.of(subscriptionType));
-            case DRAWER:
-                return backendConfig.isDrawerEnabled();
-            default:
-                return false;
+    public boolean isSubscriptionTypeSupported(final UUID eventTypeId, final SubscriptionType subscriptionType) {
+        try {
+            switch (subscriptionType) {
+                case DAILY:
+                    checkIfExistAggregationEmailTemplatesByEventType(eventTypeId);
+                    break;
+                case INSTANT:
+                    if (!backendConfig.isDefaultTemplateEnabled()) {
+                        checkIfExistInstantEmailTemplateByEventType(eventTypeId);
+                    }
+                    break;
+                case DRAWER:
+                    checkIfExistDrawerTemplateByEventType(eventTypeId);
+                    return backendConfig.isDrawerEnabled();
+                default:
+                    Log.infof("Subscription type %s not checked", subscriptionType);
+                    break;
+            }
+        } catch (NotFoundException nfe) {
+            Log.debugf("%s template not find for Event type %s", subscriptionType, eventTypeId);
+            return false;
         }
-    }
-
-    private boolean isEmailAggregationSupported(String bundleName, String appName, List<SubscriptionType> subscriptionTypes) {
-        String hql = "SELECT COUNT(*) FROM AggregationEmailTemplate WHERE application.bundle.name = :bundleName " +
-            "AND application.name = :appName AND subscriptionType IN (:subscriptionTypes)";
-        return entityManager.createQuery(hql, Long.class)
-            .setParameter("bundleName", bundleName)
-            .setParameter("appName", appName)
-            .setParameter("subscriptionTypes", subscriptionTypes)
-            .getSingleResult() > 0;
+        return true;
     }
 }
