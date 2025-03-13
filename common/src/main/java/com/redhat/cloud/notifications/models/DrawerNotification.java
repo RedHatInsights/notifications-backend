@@ -25,7 +25,9 @@ public class DrawerNotification extends CreationTimestamped {
         "application", "dn.event.applicationDisplayName",
         "event", "dn.event.eventTypeDisplayName",
         "created", "dn.created",
-        "read", "dn.read"
+        "read", "dn.read",
+        "inventory_url", "dn.inventoryUrl",
+        "application_url", "dn.applicationUrl"
     );
 
     @EmbeddedId
@@ -39,14 +41,26 @@ public class DrawerNotification extends CreationTimestamped {
     @NotNull
     private boolean read;
 
+    @NotNull
+    private String inventoryUrl;
+
+    @NotNull
+    private String applicationUrl;
+
     public DrawerNotification() {
     }
 
     public DrawerNotification(String orgId, String userId, Event event) {
+        this(orgId, userId, event, "", "");
+    }
+
+    public DrawerNotification(String orgId, String userId, Event event, String inventoryUrl, String applicationUrl) {
         id = new DrawerNotificationId();
         id.setUserId(userId);
         id.setOrgId(orgId);
         setEvent(event);
+        this.inventoryUrl = inventoryUrl;
+        this.applicationUrl = applicationUrl;
     }
 
     public String getUserId() {
@@ -81,4 +95,19 @@ public class DrawerNotification extends CreationTimestamped {
         this.read = read;
     }
 
+    public String getInventoryUrl() {
+        return inventoryUrl;
+    }
+
+    public void setInventoryUrl(String inventoryUrl) {
+        this.inventoryUrl = inventoryUrl;
+    }
+
+    public String getApplicationUrl() {
+        return applicationUrl;
+    }
+
+    public void setApplicationUrl(String applicationUrl) {
+        this.applicationUrl = applicationUrl;
+    }
 }
