@@ -154,13 +154,20 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     }
 
     public void manageConnectorDrawerReturnsIfNeeded(Map<String, Object> decodedPayload, UUID historyId) {
+        String inventoryUrl = "", applicationUrl = "";
+        Map<String, Object> drawerPayload = (HashMap<String, Object>) decodedPayload.get("payload");
+        if (drawerPayload != null) {
+            inventoryUrl = (String) drawerPayload.getOrDefault("inventoryUrl", "");
+            applicationUrl = (String) drawerPayload.getOrDefault("applicationUrl", "");
+        }
+
         Map<String, Object> details = (HashMap<String, Object>) decodedPayload.get("details");
         if (null != details && "com.redhat.console.notification.toCamel.drawer".equals(details.get("type"))) {
             com.redhat.cloud.notifications.models.Event event = notificationHistoryRepository.getEventIdFromHistoryId(historyId);
             List<String> recipients = (List<String>) details.get("resolved_recipient_list");
             if (null != recipients && recipients.size() > 0) {
                 String drawerNotificationIds = String.join(",", recipients);
-                drawerNotificationRepository.create(event, drawerNotificationIds);
+                drawerNotificationRepository.create(event, drawerNotificationIds, inventoryUrl, applicationUrl);
                 details.remove("resolved_recipient_list");
                 details.put("new_drawer_entry_counter", recipients.size());
             }

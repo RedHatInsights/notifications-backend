@@ -15,11 +15,14 @@ public class DrawerNotificationRepository {
     EntityManager entityManager;
 
     @Transactional
-    public void create(Event event, String userIds) {
-        entityManager.createNativeQuery("CALL insert_drawer_notifications(:userIds, :orgId, :eventId, :created)")
+    public void create(Event event, String userIds, String inventoryUrl, String applicationUrl) {
+        entityManager.createNativeQuery("CALL insert_drawer_notifications(:userIds, :orgId, :eventId, :created, :inventoryUrl, :applicationUrl)")
             .setParameter("userIds", userIds)
             .setParameter("orgId", event.getOrgId())
             .setParameter("eventId", event.getId())
-            .setParameter("created", Timestamp.valueOf(event.getCreated())).executeUpdate();
+            .setParameter("created", Timestamp.valueOf(event.getCreated()))
+            .setParameter("inventoryUrl", inventoryUrl)
+            .setParameter("applicationUrl", applicationUrl)
+            .executeUpdate();
     }
 }
