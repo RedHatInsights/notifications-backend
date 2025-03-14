@@ -116,7 +116,7 @@ public class BehaviorGroupRepository {
         // The organization ID might be null if a system behavior group is being
         // created, that is why the check is only forced for actual tenants.
         if (orgId != null && !orgId.isBlank() && !this.isAllowedToCreateMoreBehaviorGroups(orgId)) {
-            throw new BadRequestException("behavior group creation limit reached. Please consider deleting unused behavior groups before creating more.");
+            throw new BadRequestException("Behavior group creation limit reached (" + MAXIMUM_NUMBER_BEHAVIOR_GROUPS + "). Please consider deleting unused behavior groups before creating more.");
         }
 
         checkBehaviorGroupDisplayNameDuplicate(orgId, behaviorGroup, isDefaultBehaviorGroup);
