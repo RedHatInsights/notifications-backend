@@ -446,7 +446,7 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
             )
         );
 
-        Assertions.assertEquals("behavior group creation limit reached. Please consider deleting unused behavior groups before creating more.", ex.getMessage());
+        Assertions.assertEquals("Behavior group creation limit reached (64). Please consider deleting unused behavior groups before creating more.", ex.getMessage());
     }
 
     /**
