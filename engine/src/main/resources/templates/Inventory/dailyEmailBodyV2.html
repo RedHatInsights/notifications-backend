@@ -1,5 +1,5 @@
 {@boolean renderSection1=action.context.inventory.errors.size}
-{@boolean renderSection2=action.context.inventory.new_systems.size}
+{@boolean renderSection2=(action.context.inventory.new_systems.orEmpty.size || action.context.inventory.stale_systems.orEmpty.size || action.context.inventory.deleted_systems.orEmpty.size)}
 {@boolean renderSection3=true}
 {@boolean renderButtonSection3=true}
 {@boolean renderCustomLinks=true}
@@ -14,7 +14,7 @@
     {/if}
     {#if action.context.inventory.stale_systems.size() > 0}
         <!-- next section -->
-        <a href="#inventory-section2-2">Stale system</a><span class="pf-c-badge">{action.context.inventory.stale_systems.size()}</span>
+        <a href="#inventory-section2-2">Stale systems</a><span class="pf-c-badge">{action.context.inventory.stale_systems.size()}</span>
     {/if}
     {#if action.context.inventory.deleted_systems.size() > 0}
         <!-- next section -->
