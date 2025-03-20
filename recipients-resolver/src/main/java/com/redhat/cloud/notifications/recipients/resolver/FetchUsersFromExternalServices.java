@@ -46,6 +46,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.lang.Boolean.TRUE;
 
@@ -150,6 +151,14 @@ public class FetchUsersFromExternalServices {
             this.incrementFailuresCounter();
 
             throw e;
+        }
+
+        if (Log.isDebugEnabled()) {
+            Log.debugf("%d users found in external user directory", users.size());
+            Log.debugf("[%s]", users.stream()
+                .map(user -> String.format("{%s (%s) is admin: %b}", user.getUsername(), user.getId(), user.isAdmin()))
+                .collect(Collectors.joining(", "))
+            );
         }
 
         // Micrometer doesn't like when tags are null and throws a NPE.
