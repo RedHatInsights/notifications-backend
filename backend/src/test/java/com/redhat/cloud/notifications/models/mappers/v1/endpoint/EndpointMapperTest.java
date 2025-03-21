@@ -243,7 +243,7 @@ public class EndpointMapperTest {
         final WebhookPropertiesDTO webhookPropertiesDTO = (WebhookPropertiesDTO) dto.getProperties();
 
         Assertions.assertTrue(webhookPropertiesDTO.getDisableSslVerification(), "the \"disable SSL verification\" flag was not properly deserialized");
-        Assertions.assertEquals(HttpType.POST, webhookPropertiesDTO.getMethod(), "the method property was not properly deserialized");
+        Assertions.assertEquals(HttpType.POST.name(), webhookPropertiesDTO.getMethod(), "the method property was not properly deserialized");
         Assertions.assertEquals("https://redhat.com", webhookPropertiesDTO.getUrl(), "the url was not properly deserialized");
 
         final BasicAuthenticationDTO basicAuthenticationDTO = webhookPropertiesDTO.getBasicAuthentication();
@@ -270,7 +270,7 @@ public class EndpointMapperTest {
         final WebhookProperties webhookProperties = (WebhookProperties) entity.getProperties();
 
         Assertions.assertTrue(webhookProperties.getDisableSslVerification(), "the \"disable SSL verification\" flag was not properly mapped");
-        Assertions.assertEquals(HttpType.POST, webhookPropertiesDTO.getMethod(), "the method property was not properly mapped");
+        Assertions.assertEquals(HttpType.POST.name(), webhookPropertiesDTO.getMethod(), "the method property was not properly mapped");
         Assertions.assertEquals("https://redhat.com", webhookProperties.getUrl(), "the url was not properly mapped");
 
         final BasicAuthentication basicAuthentication = webhookProperties.getBasicAuthentication();

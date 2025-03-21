@@ -26,7 +26,6 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.models.PagerDutySeverity;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
@@ -62,6 +61,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
+import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.UriBuilder;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
@@ -419,7 +419,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Add new endpoints
         WebhookPropertiesDTO properties = new WebhookPropertiesDTO();
-        properties.setMethod(POST);
+        properties.setMethod(POST.name());
         properties.setDisableSslVerification(false);
         properties.setSecretToken("my-super-secret-token");
         properties.setUrl(getMockServerUrl());
@@ -2860,7 +2860,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Create the endpoint that we will attempt to modify.
         final WebhookProperties properties = new WebhookProperties();
         properties.setDisableSslVerification(false);
-        properties.setMethod(HttpType.GET);
+        properties.setMethod(POST);
         properties.setUrl(getMockServerUrl());
 
         final Endpoint endpoint = new Endpoint();
@@ -2966,7 +2966,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final WebhookProperties properties = new WebhookProperties();
         properties.setDisableSslVerification(false);
         properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
-        properties.setMethod(HttpType.GET);
+        properties.setMethod(POST);
         properties.setSecretToken("my-super-secret-token");
         properties.setUrl(getMockServerUrl());
 
@@ -3075,7 +3075,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final WebhookProperties properties = new WebhookProperties();
         properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
         properties.setDisableSslVerification(false);
-        properties.setMethod(HttpType.GET);
+        properties.setMethod(POST);
         properties.setSecretToken("my-super-secret-token ");
         properties.setUrl(getMockServerUrl());
 
@@ -3650,7 +3650,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         for (int i = 0; i < count; i++) {
             // Add new endpoints
             WebhookPropertiesDTO properties = new WebhookPropertiesDTO();
-            properties.setMethod(POST);
+            properties.setMethod(POST.name());
             properties.setDisableSslVerification(false);
             properties.setSecretToken("my-super-secret-token");
             properties.setUrl(getMockServerUrl() + "/" + i);
@@ -4825,6 +4825,67 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Since the Sources' secrets' deletion failed, we should have
         // recreated the integration in Kessel's Inventory.
         Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).CreateNotificationsIntegration(Mockito.any(CreateNotificationsIntegrationRequest.class));
+    }
+
+    /**
+     * Tests that when creating webhook endpoints, only the {@code POST} method
+     * can be specified in the endpoint's properties. It's a regression test of
+     * <a href="https://issues.redhat.com/browse/RHCLOUD-32168">RHCLOUD-32168</a>.
+     */
+    @Test
+    void testWebhookEndpointOnlyAllowsPostMethod() {
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Build a list with the methods that we want to set in the webhook's
+        // properties.
+        final List<String> methodsUnderTest = List.of(
+            HttpMethod.GET,
+            HttpMethod.HEAD,
+            HttpMethod.OPTIONS,
+            HttpMethod.PATCH,
+            HttpMethod.POST, // Only this one should go through!
+            HttpMethod.PUT
+        );
+
+        for (final String method : methodsUnderTest) {
+            final WebhookPropertiesDTO properties = new WebhookPropertiesDTO();
+            properties.setMethod(method);
+            properties.setUrl(getMockServerUrl());
+
+            final EndpointDTO requestBody = new EndpointDTO();
+            requestBody.setType(EndpointTypeDTO.WEBHOOK);
+            requestBody.setName("Webhook integration");
+            requestBody.setDescription("A webhook integration");
+            requestBody.setEnabled(true);
+            requestBody.setProperties(properties);
+            requestBody.setServerErrors(0);
+
+            if (HttpMethod.POST.equals(method)) {
+                given()
+                    .header(TestHelpers.createRHIdentityHeader(identityHeaderValue))
+                    .when()
+                    .contentType(JSON)
+                    .body(Json.encode(requestBody))
+                    .post("/endpoints")
+                    .then()
+                    .statusCode(HttpStatus.SC_OK)
+                    .contentType(JSON)
+                    .body("properties.method", Matchers.is(HttpMethod.POST));
+            } else {
+                given()
+                    .header(TestHelpers.createRHIdentityHeader(identityHeaderValue))
+                    .when()
+                    .contentType(JSON)
+                    .body(Json.encode(requestBody))
+                    .post("/endpoints")
+                    .then()
+                    .statusCode(HttpStatus.SC_BAD_REQUEST)
+                    .contentType(JSON)
+                    .body("violations.size()", Matchers.is(1))
+                    .body("violations[0].message", Matchers.is("Only \"POST\" methods are allowed for the properties of a webhook"));
+            }
+        }
     }
 
     /**
