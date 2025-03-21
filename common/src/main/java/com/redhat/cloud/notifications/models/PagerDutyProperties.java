@@ -25,7 +25,6 @@ public class PagerDutyProperties extends EndpointProperties implements SourcesSe
     @Enumerated(EnumType.STRING)
     private PagerDutySeverity severity;
 
-    @NotNull
     @Size(max = 32)
     @Transient
     private String secretToken;
