@@ -102,7 +102,7 @@ objects:
           value: ${QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE}
         - name: QUARKUS_LOG_CLOUDWATCH_SERVICE_ENVIRONMENT
           value: ${ENV_NAME}
-        - name: QUARKUS_LOG_SENTRY
+        - name: QUARKUS_LOG_SENTRY_ENABLED
           value: ${SENTRY_ENABLED}
         - name: QUARKUS_LOG_SENTRY_DSN
           value: ${SENTRY_DSN}${ENV_NAME}

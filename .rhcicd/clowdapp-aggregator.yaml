@@ -56,7 +56,7 @@ objects:
           value: ${NOTIFICATIONS_LOG_LEVEL}
         - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
           value: ${CLOUDWATCH_ENABLED}
-        - name: QUARKUS_LOG_SENTRY
+        - name: QUARKUS_LOG_SENTRY_ENABLED
           value: ${SENTRY_ENABLED}
         - name: QUARKUS_LOG_SENTRY_DSN
           value: ${SENTRY_DSN}${ENV_NAME}
