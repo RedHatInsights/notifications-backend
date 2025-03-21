@@ -42,7 +42,8 @@ public class DrawerNotificationRepository {
         query.setDefaultSortBy("created:DESC");
         Optional<Query.Sort> sort = query.getSort();
         String hql = "SELECT dn.id.eventId, dn.read, " +
-            "dn.event.bundleDisplayName, dn.event.applicationDisplayName, dn.event.eventTypeDisplayName, dn.created, dn.event.renderedDrawerNotification, bundle.name "
+            "dn.event.bundleDisplayName, dn.event.applicationDisplayName, dn.event.eventTypeDisplayName, dn.created, " +
+            "dn.event.renderedDrawerNotification, bundle.name, dn.inventoryUrl, dn.applicationUrl"
             + "FROM DrawerNotification dn join Bundle bundle on dn.event.bundleId = bundle.id where dn.id.orgId = :orgId and dn.id.userId = :userid";
 
         hql = addHqlConditions(hql, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
