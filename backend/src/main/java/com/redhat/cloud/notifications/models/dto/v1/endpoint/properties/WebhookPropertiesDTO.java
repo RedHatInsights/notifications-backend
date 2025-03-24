@@ -1,9 +1,11 @@
 package com.redhat.cloud.notifications.models.dto.v1.endpoint.properties;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.secrets.BasicAuthenticationDTO;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -12,7 +14,7 @@ public final class WebhookPropertiesDTO extends EndpointPropertiesDTO {
     private Boolean disableSslVerification = Boolean.FALSE;
 
     @NotNull
-    private HttpType method;
+    private String method;
 
     @NotNull
     @ValidNonPrivateUrl
@@ -26,6 +28,12 @@ public final class WebhookPropertiesDTO extends EndpointPropertiesDTO {
     @Size(max = 255)
     private String secretToken;
 
+    @JsonIgnore
+    @AssertTrue(message = "Only \"POST\" methods are allowed for the properties of a webhook")
+    private boolean isHttpMethodAllowed() {
+        return HttpType.POST.name().equals(this.method);
+    }
+
     public Boolean getDisableSslVerification() {
         return disableSslVerification;
     }
@@ -34,11 +42,11 @@ public final class WebhookPropertiesDTO extends EndpointPropertiesDTO {
         this.disableSslVerification = disableSslVerification;
     }
 
-    public HttpType getMethod() {
+    public String getMethod() {
         return method;
     }
 
-    public void setMethod(final HttpType method) {
+    public void setMethod(final String method) {
         this.method = method;
     }
 
