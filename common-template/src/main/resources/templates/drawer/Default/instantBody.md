@@ -1,0 +1,1 @@
+{#if data.context.display_name??}{data.context.display_name} triggered {data.events.size()} event{#if data.events.size() > 1}s{/if}{#else}{data.events.size()} event{#if data.events.size() > 1}s{/if} triggered{/if}
