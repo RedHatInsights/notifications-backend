@@ -221,6 +221,12 @@ public class ApplicationRepository {
     @Transactional
     public int updateEventType(UUID id, EventType eventType) {
         String eventTypeQuery = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description, fullyQualifiedName = :fullyQualifiedName, subscribedByDefault = :subscribedByDefault, subscriptionLocked = :subscriptionLocked, visible = :visible, restrictToRecipientsIntegrations = :restrictToRecipientsIntegrations WHERE id = :id";
+        EventType eventTypeFromDatabase = entityManager.find(EventType.class, id);
+        if (eventTypeFromDatabase == null) {
+            return 0;
+        }
+        boolean eventTypeDisplayNameChanged = !eventTypeFromDatabase.getDisplayName().equals(eventType.getDisplayName());
+
         int rowCount = entityManager.createQuery(eventTypeQuery)
                 .setParameter("name", eventType.getName())
                 .setParameter("fullyQualifiedName", eventType.getFullyQualifiedName())
@@ -232,11 +238,15 @@ public class ApplicationRepository {
                 .setParameter("restrictToRecipientsIntegrations", eventType.isRestrictToRecipientsIntegrations())
                 .setParameter("id", id)
                 .executeUpdate();
-        String eventQuery = "UPDATE Event SET eventTypeDisplayName = :displayName WHERE eventType.id = :eventTypeId";
-        entityManager.createQuery(eventQuery)
+
+        // update Event table only when relevant
+        if (eventTypeDisplayNameChanged) {
+            String eventQuery = "UPDATE Event SET eventTypeDisplayName = :displayName WHERE eventType.id = :eventTypeId";
+            entityManager.createQuery(eventQuery)
                 .setParameter("displayName", eventType.getDisplayName())
                 .setParameter("eventTypeId", id)
                 .executeUpdate();
+        }
         return rowCount;
     }
 
