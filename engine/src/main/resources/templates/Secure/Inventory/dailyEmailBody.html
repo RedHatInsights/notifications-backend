@@ -8,10 +8,10 @@
     Host{#if action.context.inventory.errors.size() > 1}s{/if} with validation error
 {/content-title-section1}
 {#content-title-right-part-section1}
-    <a target="_blank" href="{environment.url}/insights/inventory/{query_params}">{action.context.inventory.errors.size()}</a>
+    <a target="_blank" href="{environment.url}/insights/inventory/?{query_params}">{action.context.inventory.errors.size()}</a>
 {/content-title-right-part-section1}
 {#content-button-section1}
-    <a target="_blank" href="{environment.url}/insights/inventory/{query_params}">Open Inventory in Insights</a>
+    <a target="_blank" href="{environment.url}/insights/inventory/?{query_params}">Open Inventory in Insights</a>
 {/content-button-section1}
 {#content-body-section1}
     <p>

@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.redhat.cloud.notifications.processors.email.EmailAggregationProcessor.DAILY_DIGEST_QUERY_PARAM_TYPE;
+import static com.redhat.cloud.notifications.processors.email.EmailProcessor.INSTANT_EMAIL_QUERY_PARAM_TYPE;
+
 @ApplicationScoped
 public class InsightsUrlsBuilder {
 
@@ -129,6 +132,11 @@ public class InsightsUrlsBuilder {
     public String buildQueryParams(List<String> params, String integration_type) {
         List<String> all_params = new ArrayList<>(List.copyOf(params));
         all_params.add("from=notification_" + integration_type.toLowerCase());
+
+        // Don't include leading question mark
+        if (integration_type.equals(INSTANT_EMAIL_QUERY_PARAM_TYPE) || integration_type.equals(DAILY_DIGEST_QUERY_PARAM_TYPE)) {
+            return String.join("&", all_params);
+        }
 
         return "?" + String.join("&", all_params);
     }

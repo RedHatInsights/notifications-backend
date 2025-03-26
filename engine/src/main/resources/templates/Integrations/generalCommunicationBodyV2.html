@@ -37,6 +37,6 @@
     <p>Red Hat Hybrid Cloud Console.</p>
 {/content-body-section1}
 {#content-button-section1}
-    <a target="_blank" href="{environment.url}/settings/integrations{#if query_params??}{query_params}&category={action.context.integration_category}{#else}?category={action.context.integration_category}{/if}">Open Integrations</a>
+    <a target="_blank" href="{environment.url}/settings/integrations?category={action.context.integration_category}&{query_params}">Open Integrations</a>
 {/content-button-section1}
 {/include}
