@@ -32,6 +32,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.resteasy.reactive.RestQuery;
+import org.project_kessel.api.inventory.v1beta1.authz.ObjectType;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -76,7 +77,6 @@ public class EventResource {
                                          @RestQuery Set<EventLogEntryActionStatus> status,
                                          @BeanParam @Valid Query query,
                                          @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
-                    ResourceType.WORKSPACE, workspaceId.toString());
         Set<EndpointType> basicTypes = Collections.emptySet();
         Set<CompositeEndpointType> compositeTypes = Collections.emptySet();
         Set<NotificationStatus> notificationStatusSet = status == null ? Set.of() : toNotificationStatus(status);
@@ -110,7 +110,21 @@ public class EventResource {
             for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
                 int criterionHashCode = eventAuthorizationCriterion.authorizationCriterion().hashCode();
                 if (!criterionResultCache.containsKey(criterionHashCode)) {
-                    criterionResultCache.put(criterionHashCode, kesselAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
+                    String permissionString = eventAuthorizationCriterion.authorizationCriterion().getRelation();
+                    // TODO: this is a guess that we're always talking about WorkspacePermission.EVENT_LOG_VIEW here
+                    ResourceType resourceType;
+                    WorkspacePermission permission;
+                    if(WorkspacePermission.EVENT_LOG_VIEW.getKesselPermissionName().equals(permissionString)) {
+                        resourceType = ResourceType.WORKSPACE;
+                        permission = WorkspacePermission.EVENT_LOG_VIEW;
+                    } else {
+                        throw new RuntimeException("Unexpected permission: " + permissionString);
+                    }
+                    String resourceTypeName = eventAuthorizationCriterion.authorizationCriterion().getType().getName();
+                    String resourceTypeNamespace = eventAuthorizationCriterion.authorizationCriterion().getType().getNamespace();
+
+                    String resourceId = eventAuthorizationCriterion.authorizationCriterion().getId();
+                    criterionResultCache.put(criterionHashCode, kesselAuthorization.hasPermissionOnResource(securityContext, resourceId, resourceType, permission));
                 }
                 if (!criterionResultCache.get(criterionHashCode)) {
                     Log.infof("%s is not visible for current user", eventAuthorizationCriterion.id());
