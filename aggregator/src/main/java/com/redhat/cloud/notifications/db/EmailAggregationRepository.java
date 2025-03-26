@@ -24,6 +24,7 @@ public class EmailAggregationRepository {
     EntityManager entityManager;
 
     public List<AggregationCommand> getApplicationsWithPendingAggregationAccordinfOrgPref(LocalDateTime now) {
+        LocalDateTime currentTimeTwoDaysAgo = now.minusDays(2);
         // Must takes every EmailAggregation supposed to be processed on last 15 min
         // it covers cases when aggregation job may be run with few minutes late (ie: 05:01, 07,32)
         String query = "SELECT DISTINCT ea.orgId, ea.bundleName, ea.applicationName, acp.lastRun FROM EmailAggregation ea, AggregationOrgConfig acp WHERE " +
@@ -38,7 +39,7 @@ public class EmailAggregationRepository {
         return records.stream()
                 .map(emailAggregationRecord -> new AggregationCommand<>(
                     new EmailAggregationKey((String) emailAggregationRecord[0], (String) emailAggregationRecord[1], (String) emailAggregationRecord[2]),
-                    (LocalDateTime) emailAggregationRecord[3],
+                    ((LocalDateTime) emailAggregationRecord[3]).isBefore(currentTimeTwoDaysAgo) ? currentTimeTwoDaysAgo : ((LocalDateTime) emailAggregationRecord[3]),
                     now,
                     DAILY
                 ))
