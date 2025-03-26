@@ -11,10 +11,10 @@
     {action.context.policies.size()} {#if action.context.policies.size() == 1}policy{#else}policies{/if} triggered on your {action.context.unique_system_count} {#if action.context.unique_system_count == 1}system{#else}systems{/if}
 {/content-subtitle-section1}
 {#content-title-right-part-section1}
-    <a target="_blank" href="{environment.url}/insights/policies{query_params}">{action.context.policies.size()}</a>
+    <a target="_blank" href="{environment.url}/insights/policies?{query_params}">{action.context.policies.size()}</a>
 {/content-title-right-part-section1}
 {#content-button-section1}
-    <a target="_blank" href="{environment.url}/insights/policies{query_params}">Open Policies in Insights</a>
+    <a target="_blank" href="{environment.url}/insights/policies?{query_params}">Open Policies in Insights</a>
 {/content-button-section1}
 {#content-body-section1}
     <p>Review the {action.context.policies.size()} {#if action.context.policies.size() == 1}policy{#else}policies{/if} that triggered {action.context.unique_system_count} {#if action.context.unique_system_count == 1}system{#else}unique systems{/if}</p>
