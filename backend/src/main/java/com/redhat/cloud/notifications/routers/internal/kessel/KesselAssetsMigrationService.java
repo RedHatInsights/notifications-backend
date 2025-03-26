@@ -256,7 +256,7 @@ public class KesselAssetsMigrationService {
         return Relationship.newBuilder()
             .setResource(
                 ObjectReference.newBuilder()
-                    .setType(ResourceType.INTEGRATION.getKesselObjectType())
+                    .setType(inventoryObjectTypeToRelations(ResourceType.INTEGRATION.getKesselObjectType()))
                     .setId(endpoint.getId().toString())
                     .build()
             ).setRelation(RELATION)
@@ -269,5 +269,18 @@ public class KesselAssetsMigrationService {
                             .build()
                     ).build()
             ).build();
+    }
+
+    /**
+     * Relations-api is deprecated
+     * @param objectType
+     * @return
+     */
+    @Deprecated
+    protected org.project_kessel.api.relations.v1beta1.ObjectType inventoryObjectTypeToRelations(org.project_kessel.api.inventory.v1beta1.authz.ObjectType objectType) {
+        return org.project_kessel.api.relations.v1beta1.ObjectType.newBuilder()
+                .setName(objectType.getName())
+                .setNamespace(objectType.getNamespace())
+                .build();
     }
 }

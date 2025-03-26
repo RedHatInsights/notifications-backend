@@ -1,8 +1,10 @@
 package com.redhat.cloud.notifications.auth.annotation;
 
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
+import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceType;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
@@ -12,6 +14,7 @@ import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.SecurityContext;
+import org.project_kessel.api.inventory.v1beta1.authz.ObjectType;
 
 import java.lang.reflect.Parameter;
 import java.util.UUID;
@@ -105,7 +108,7 @@ public class AuthorizationInterceptor {
         for (final WorkspacePermission workspacePermission : workspacePermissions) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(SecurityContextUtil.getOrgId(securityContext));
 
-            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, workspacePermission, workspaceId);
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, workspaceId.toString(), ResourceType.WORKSPACE, workspacePermission);
         }
 
         // If no integration permissions are specified we can simply skip any
@@ -124,7 +127,7 @@ public class AuthorizationInterceptor {
         final UUID integrationId = (UUID) interceptedParameters[parameterIndexes.getIntegrationIdIndex().get()];
         // ... and check the principal's permission.
         for (final IntegrationPermission integrationPermission : integrationPermissions) {
-            this.kesselAuthorization.hasPermissionOnIntegration(securityContext, integrationPermission, integrationId);
+            this.kesselAuthorization.hasPermissionOnResource(securityContext, integrationId.toString(), ResourceType.INTEGRATION, integrationPermission);
         }
 
         return ctx.proceed();

@@ -69,41 +69,43 @@ public class WorkspaceUtils {
      */
     @CacheResult(cacheName = "kessel-rbac-workspace-id")
     public UUID getDefaultWorkspaceId(final String orgId) {
-        // Call RBAC.
-        final Page<RbacWorkspace> workspacePage = this.rbacServer.getWorkspaces(
-            this.notificationsPsk,
-            APPLICATION_KEY,
-            orgId,
-            WorkspaceType.DEFAULT.toString().toLowerCase(),
-            REQUEST_DEFAULT_OFFSET,
-            REQUEST_DEFAULT_LIMIT
-        );
+        return UUID.fromString("3c3ef849-d8ca-11ef-ad01-083a885cd988");
 
-        // We have been told we are only going to have one workspace per
-        // organization.
-        final Long receivedWorkspaceCount = workspacePage.getMeta().getCount();
-        if (receivedWorkspaceCount == null) {
-            Log.errorf("[org_id: %s] Unable to get the workspace count from the response", orgId);
-            throw new UnauthorizedException();
-        } else if (receivedWorkspaceCount == 0) {
-            Log.errorf("[org_id: %s] No workspace was received in the response", orgId);
-            throw new UnauthorizedException();
-        } else if (receivedWorkspaceCount > 1) {
-            Log.errorf("[org_id: %s][received_workspace_count: %s] More than one workspace received for the organization: %s", orgId, receivedWorkspaceCount, workspacePage.getData());
-            throw new UnauthorizedException();
-        }
-
-        final RbacWorkspace rbacWorkspace = workspacePage.getData().getFirst();
-
-        // Double check that the fetched workspace is the default one.
-        if (!rbacWorkspace.workspaceType().equals(WorkspaceType.DEFAULT)) {
-            Log.errorf("[org_id: %s][workspace_id: %s][workspace_type: %s] The fetched workspace is not a default workspace", orgId, rbacWorkspace.id(), rbacWorkspace.workspaceType());
-
-            throw new UnauthorizedException();
-        }
-
-        Log.debugf("[org_id: %s][workspace_id: %s] Fetched default workspace from RBAC", orgId, rbacWorkspace.id());
-
-        return rbacWorkspace.id();
+//        // Call RBAC.
+//        final Page<RbacWorkspace> workspacePage = this.rbacServer.getWorkspaces(
+//            this.notificationsPsk,
+//            APPLICATION_KEY,
+//            orgId,
+//            WorkspaceType.DEFAULT.toString().toLowerCase(),
+//            REQUEST_DEFAULT_OFFSET,
+//            REQUEST_DEFAULT_LIMIT
+//        );
+//
+//        // We have been told we are only going to have one workspace per
+//        // organization.
+//        final Long receivedWorkspaceCount = workspacePage.getMeta().getCount();
+//        if (receivedWorkspaceCount == null) {
+//            Log.errorf("[org_id: %s] Unable to get the workspace count from the response", orgId);
+//            throw new UnauthorizedException();
+//        } else if (receivedWorkspaceCount == 0) {
+//            Log.errorf("[org_id: %s] No workspace was received in the response", orgId);
+//            throw new UnauthorizedException();
+//        } else if (receivedWorkspaceCount > 1) {
+//            Log.errorf("[org_id: %s][received_workspace_count: %s] More than one workspace received for the organization: %s", orgId, receivedWorkspaceCount, workspacePage.getData());
+//            throw new UnauthorizedException();
+//        }
+//
+//        final RbacWorkspace rbacWorkspace = workspacePage.getData().getFirst();
+//
+//        // Double check that the fetched workspace is the default one.
+//        if (!rbacWorkspace.workspaceType().equals(WorkspaceType.DEFAULT)) {
+//            Log.errorf("[org_id: %s][workspace_id: %s][workspace_type: %s] The fetched workspace is not a default workspace", orgId, rbacWorkspace.id(), rbacWorkspace.workspaceType());
+//
+//            throw new UnauthorizedException();
+//        }
+//
+//        Log.debugf("[org_id: %s][workspace_id: %s] Fetched default workspace from RBAC", orgId, rbacWorkspace.id());
+//
+//        return rbacWorkspace.id();
     }
 }

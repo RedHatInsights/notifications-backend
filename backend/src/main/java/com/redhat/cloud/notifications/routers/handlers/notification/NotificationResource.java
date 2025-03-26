@@ -3,8 +3,10 @@ package com.redhat.cloud.notifications.routers.handlers.notification;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
+import com.redhat.cloud.notifications.auth.kessel.KesselAssets;
 import com.redhat.cloud.notifications.auth.annotation.IntegrationId;
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
@@ -33,6 +35,7 @@ import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehavio
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.UpdateBehaviorGroupRequest;
 import io.quarkus.logging.Log;
+import io.smallrye.mutiny.Multi;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -64,6 +67,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.RestPath;
+import org.project_kessel.api.inventory.v1beta1.resources.ListNotificationsIntegrationsResponse;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -112,6 +116,8 @@ public class NotificationResource {
 
     @Inject
     EventTypeRepository eventTypeRepository;
+    @Inject
+    KesselAssets kesselAssets;
 
     @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
     public static class V1 extends NotificationResource {
@@ -525,10 +531,19 @@ public class NotificationResource {
     public Page<EndpointDTO> getLinkedEndpoints(@Context final SecurityContext sec, @RestPath("eventTypeId") final UUID eventTypeId, @BeanParam @Valid final Query query, @Context final UriInfo uriInfo) {
         if (backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
+            this.kesselAuthorization.hasViewPermissionOnResource(sec, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, workspaceId.toString());
+
+            // add permission as argument -- rather than assuming it underneath
+            final Multi<ListNotificationsIntegrationsResponse> responseMulti = this.kesselAssets.listIntegrations(sec, workspaceId.toString());
+            Set<UUID> authorizedIds = responseMulti.map(ListNotificationsIntegrationsResponse::getIntegrations)
+                    .map(i -> i.getReporterData().getLocalResourceId())
+                    .map(UUID::fromString)
+                    .collect()
+                    .asSet()
+                    .await().indefinitely();
 
             // Fetch the set of integration IDs the user is authorized to view.
-            final Set<UUID> authorizedIds = kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
+            //final Set<UUID> authorizedIds = kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
             if (authorizedIds.isEmpty()) {
                 Log.infof("[org_id: %s][username: %s] Kessel did not return any integration IDs for the request", getOrgId(sec), getUsername(sec));
                 return Page.EMPTY_PAGE;
@@ -581,7 +596,7 @@ public class NotificationResource {
         // edit access to all the integrations.
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
             for (final UUID endpointId : endpointsIds) {
-                kesselAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpointId);
+		kesselAuthorization.hasUpdatePermissionOnResource(securityContext, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId.toString());	
             }
         }
 
