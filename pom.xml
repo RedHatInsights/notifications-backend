@@ -43,7 +43,7 @@
 
     <properties>
         <mapstruct.version>1.6.3</mapstruct.version>
-        <kessel.inventory-client.version>0.7</kessel.inventory-client.version>
+        <kessel.inventory-client.version>0.8</kessel.inventory-client.version>
         <kessel.oauth-client.version>11.23.1</kessel.oauth-client.version>
         <kessel.relationships-client.version>0.12</kessel.relationships-client.version>
 
