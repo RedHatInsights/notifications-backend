@@ -83,8 +83,8 @@ public class EventingProcessor extends EndpointTypeProcessor {
         }
 
         final JsonObject payload = baseTransformer.toJsonObject(event);
-        insightsUrlsBuilder.buildInventoryUrl(payload, endpoint.getType().name()).ifPresent(url -> payload.put("inventory_url", url));
-        payload.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payload, endpoint.getType().name()));
+        insightsUrlsBuilder.buildInventoryUrl(payload, endpoint.getSubType()).ifPresent(url -> payload.put("inventory_url", url));
+        payload.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payload, endpoint.getSubType()));
         payload.put(NOTIF_METADATA_KEY, metaData);
 
         return payload;
