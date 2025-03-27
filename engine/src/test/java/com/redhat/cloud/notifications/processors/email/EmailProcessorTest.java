@@ -312,7 +312,7 @@ public class EmailProcessorTest {
         final Template bodyTemplate = new Template();
         bodyTemplate.setData(bodyData);
 
-        final String insightsQueryParams = "?from=notification_instant_email";
+        final String insightsQueryParams = "from=notification_instant_email";
 
         final InstantEmailTemplate instantEmailTemplate = new InstantEmailTemplate();
         instantEmailTemplate.setSubjectTemplate(subjectTemplate);

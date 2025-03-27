@@ -38,6 +38,9 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
     private static final String EMAIL_SUBJECT_SYSTEM_BECAME_STALE = "Instant notification - System became stale - Inventory - Red Hat Enterprise Linux";
     private static final String EMAIL_SUBJECT_SYSTEM_DELETED = "Instant notification - System deleted - Inventory - Red Hat Enterprise Linux";
 
+    private static final String INSTANT_EMAIL_QUERY_PARAMS = "from=notification_instant_email";
+    private static final String DAILY_DIGEST_QUERY_PARAMS = "from=notification_daily_digest";
+
     @Override
     protected String getApp() {
         return "inventory";
@@ -124,12 +127,13 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
             }
         }
 
-        String result = generateAggregatedEmailBody(aggregator.getContext());
+        String result = generateAggregatedEmailBody(aggregator.getContext(), DAILY_DIGEST_QUERY_PARAMS);
         JsonObject context = new JsonObject(aggregator.getContext());
         assertTrue(context.getJsonObject("inventory").getJsonArray("errors").size() < 10);
         assertTrue(result.contains("Host Name"), "Body should contain 'Host Name' header");
         assertTrue(result.contains("Error"), "Body should contain 'Error' header");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertOpenInventoryInsightsButtonPresent(result, false);
 
         // Make sure that the section headline is present.
         assertTrue(result.contains("Inventory"), "the \"Inventory\" header was not found as the section title");
@@ -173,12 +177,12 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
         final UUID inventoryId = UUID.randomUUID();
 
         final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", EVENT_TYPE_NEW_SYSTEM_REGISTERED, inventoryId, hostDisplayName);
-        final String result = this.generateEmailBody(EVENT_TYPE_NEW_SYSTEM_REGISTERED, action);
+        final String result = this.generateEmailBody(EVENT_TYPE_NEW_SYSTEM_REGISTERED, action, INSTANT_EMAIL_QUERY_PARAMS);
 
         Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
         Assertions.assertTrue(result.contains("was registered in Inventory."), "the message body should indicate that the system was registered");
 
-        this.assertOpenInventoryInsightsButtonPresent(result);
+        this.assertOpenInventoryInsightsButtonPresent(result, true);
     }
 
     /**
@@ -206,7 +210,7 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
         final UUID inventoryId = UUID.randomUUID();
 
         final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", EVENT_TYPE_SYSTEM_BECAME_STALE, inventoryId, hostDisplayName);
-        final String result = this.generateEmailBody(EVENT_TYPE_SYSTEM_BECAME_STALE, action);
+        final String result = this.generateEmailBody(EVENT_TYPE_SYSTEM_BECAME_STALE, action, INSTANT_EMAIL_QUERY_PARAMS);
 
         Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
 
@@ -218,7 +222,7 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
             "the message body should indicate that the system was registered"
         );
 
-        this.assertOpenInventoryInsightsButtonPresent(result);
+        this.assertOpenInventoryInsightsButtonPresent(result, true);
     }
 
     /**
@@ -246,25 +250,27 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
         final UUID inventoryId = UUID.randomUUID();
 
         final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", "new-system-registered", inventoryId, hostDisplayName);
-        final String result = this.generateEmailBody(EVENT_TYPE_SYSTEM_DELETED, action);
+        final String result = this.generateEmailBody(EVENT_TYPE_SYSTEM_DELETED, action, INSTANT_EMAIL_QUERY_PARAMS);
 
         Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
         Assertions.assertTrue(result.contains("was deleted from Inventory."), "the message body should indicate that the system was deleted");
 
-        this.assertOpenInventoryInsightsButtonPresent(result);
+        this.assertOpenInventoryInsightsButtonPresent(result, true);
     }
 
     /**
-     * Asserts that the "Open Inventory in Insights" button is present.
+     * Asserts that the "Open Inventory in Insights" button is present, with the correct Notifications query parameter.
      * @param result the resulting HTML in which we need to perform the
      *               assertion.
+     * @param instant_email specifies query parameter for instant or aggregation email
      */
-    private void assertOpenInventoryInsightsButtonPresent(final String result) {
+    private void assertOpenInventoryInsightsButtonPresent(final String result, final boolean instant_email) {
         Assertions.assertTrue(
             result.contains(
                 String.format(
-                    "<a target=\"_blank\" href=\"%s/insights/inventory/\">Open Inventory in Insights</a>",
-                    this.environment.url()
+                    "<a target=\"_blank\" href=\"%s/insights/inventory/%s\">Open Inventory in Insights</a>",
+                    this.environment.url(),
+                    instant_email ? "?from=notification_instant_email" : "?from=notification_daily_digest"
                 )
             )
         );
