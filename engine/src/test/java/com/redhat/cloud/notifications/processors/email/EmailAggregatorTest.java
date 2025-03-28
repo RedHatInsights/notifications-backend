@@ -178,6 +178,21 @@ class EmailAggregatorTest {
             JsonObject payload = TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)).getPayload();
             // the base transformer adds a "source" element which should not be present in an original event payload
             payload.remove(BaseTransformer.SOURCE);
+
+            // some tenants send their events/payload and events/context as string instead of Json
+            // at least one test event must cover this case
+            if (i == 0) {
+                String contextAsString = payload.getString("context");
+
+                JsonObject event = payload.getJsonArray("events").getJsonObject(0);
+                String payloadAsString = event.getString("payload");
+                JsonObject jso2 = event.copy()
+                    .put("payload", payloadAsString);
+
+                payload.getJsonArray("events").clear();
+                payload.getJsonArray("events").add(jso2);
+                payload.put("context", contextAsString);
+            }
             resourceHelpers.addEventEmailAggregation("org-1", "rhel", "policies", payload, false);
         }
         JsonObject payload = TestHelpers.createEmailAggregation("org-2", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)).getPayload();

@@ -27,6 +27,7 @@ import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
 import com.redhat.cloud.notifications.recipients.request.ActionRecipientSettings;
 import com.redhat.cloud.notifications.recipients.request.EndpointRecipientSettings;
+import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import com.redhat.cloud.notifications.utils.ActionParsingException;
 import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
@@ -74,6 +75,9 @@ public class EmailAggregator {
 
     @Inject
     EngineConfig engineConfig;
+
+    @Inject
+    BaseTransformer baseTransformer;
 
     ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
@@ -235,7 +239,7 @@ public class EmailAggregator {
                     AbstractEmailPayloadAggregator aggregator = aggregated
                         .computeIfAbsent(recipient, ignored -> EmailPayloadAggregatorFactory.by(eventAggregationCriteria, start, end));
                     // It's aggregation time!
-                    EmailAggregation eventDataToAggregate = new EmailAggregation(aggregation.getOrgId(), eventAggregationCriteria.getBundle(), eventAggregationCriteria.getApplication(), new JsonObject(aggregation.getPayload()));
+                    EmailAggregation eventDataToAggregate = new EmailAggregation(aggregation.getOrgId(), eventAggregationCriteria.getBundle(), eventAggregationCriteria.getApplication(), baseTransformer.toJsonObject(aggregation));
                     aggregator.aggregate(eventDataToAggregate);
                 });
             }
