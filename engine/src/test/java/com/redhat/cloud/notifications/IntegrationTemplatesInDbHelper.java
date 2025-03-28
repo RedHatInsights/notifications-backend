@@ -5,12 +5,10 @@ import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.IntegrationTemplate;
-import com.redhat.cloud.notifications.templates.DrawerTemplateMigrationService;
-import com.redhat.cloud.notifications.templates.TemplateService;
-import io.quarkus.qute.TemplateInstance;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
+import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import jakarta.persistence.NoResultException;
@@ -27,24 +25,17 @@ public abstract class IntegrationTemplatesInDbHelper {
     protected static final String BUNDLE_RHEL = "rhel";
 
     @Inject
-    Environment environment;
-
-    @Inject
     protected ResourceHelpers resourceHelpers;
 
     @InjectSpy
     protected TemplateRepository templateRepository;
 
-    @Inject
-    protected TemplateService templateService;
-
-
-    @Inject
-    DrawerTemplateMigrationService drawerTemplateMigrationService;
-
     protected final Map<String, UUID> eventTypes = new HashMap<>();
 
     Application application;
+
+    @Inject
+    TemplateService commonTemplateService;
 
     @BeforeEach
     void initData() {
@@ -69,7 +60,6 @@ public abstract class IntegrationTemplatesInDbHelper {
             }
             eventTypes.put(eventTypeToCreate, eventType.getId());
         }
-        drawerTemplateMigrationService.migrate();
     }
 
     @AfterEach
@@ -78,22 +68,8 @@ public abstract class IntegrationTemplatesInDbHelper {
     }
 
     protected String generateDrawerTemplate(String eventTypeStr, Action action) {
-        return generateIntegrationTemplate(getIntegrationType(), eventTypeStr, action);
-    }
-
-    protected String generateIntegrationTemplate(String integrationType, String eventTypeStr, Action action) {
-        IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(application.getId(), eventTypes.get(eventTypeStr), null, IntegrationTemplate.TemplateKind.ALL, integrationType).get();
-        TemplateInstance templateInstance = templateService.compileTemplate(integrationTemplate.getTheTemplate().getData(), integrationTemplate.getTheTemplate().getName());
-        return renderTemplate(templateInstance, action);
-    }
-
-    protected String renderTemplate(TemplateInstance template, Action action) {
-        String result = template
-            .data("data", action)
-            .data("environment", environment)
-            .render();
-
-        return result.trim();
+        TemplateDefinition config = new TemplateDefinition(IntegrationType.DRAWER, getBundle(), getApp(), eventTypeStr);
+        return commonTemplateService.renderTemplate(config, action);
     }
 
     protected String getBundle() {
@@ -104,9 +80,5 @@ public abstract class IntegrationTemplatesInDbHelper {
 
     protected List<String> getUsedEventTypeNames() {
         return List.of();
-    }
-
-    protected String getIntegrationType() {
-        return "drawer";
     }
 }

@@ -6,21 +6,21 @@ import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
+import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
-import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.IntegrationTemplate;
+import com.redhat.cloud.notifications.models.dto.BundleApplicationEventTypeDTO;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
-import com.redhat.cloud.notifications.templates.TemplateService;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
+import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
-import io.quarkus.cache.CacheResult;
-import io.quarkus.qute.TemplateInstance;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -30,17 +30,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.models.IntegrationTemplate.TemplateKind.ALL;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
 
 @ApplicationScoped
 public class DrawerProcessor extends SystemEndpointTypeProcessor {
-
-    @Inject
-    TemplateRepository templateRepository;
-
-    @Inject
-    TemplateService templateService;
 
     @Inject
     BaseTransformer baseTransformer;
@@ -72,6 +65,12 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     @Inject
     RecipientsAuthorizationCriterionExtractor recipientsAuthorizationCriterionExtractor;
 
+    @Inject
+    TemplateService templateService;
+
+    @Inject
+    EventTypeRepository eventTypeRepository;
+
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
         if (!engineConfig.isDrawerEnabled()) {
@@ -82,7 +81,8 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         }
 
         // build event thought qute template
-        String renderedData = buildNotificationMessage(event);
+        BundleApplicationEventTypeDTO baet = eventTypeRepository.getEventTypeBaet(event.getEventType().getId());
+        String renderedData = buildNotificationMessage(event, baet);
 
         // store it on event table
         event.setRenderedDrawerNotification(renderedData);
@@ -118,29 +118,18 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         return drawerEntryPayload;
     }
 
-    public String buildNotificationMessage(Event event) {
+    public String buildNotificationMessage(Event event, BundleApplicationEventTypeDTO baet) {
         JsonObject data = baseTransformer.toJsonObject(event);
 
-        Map<Object, Object> dataAsMap;
+        Map<String, Object> dataAsMap;
         try {
             dataAsMap = objectMapper.readValue(data.encode(), Map.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Drawer notification data transformation failed", e);
         }
 
-        String message = getTemplate(event.getApplicationId(), event.getEventType().getId(), event.getOrgId())
-            .data("data", dataAsMap)
-            .render().trim();
-
-        return message;
-    }
-
-    @CacheResult(cacheName = "drawer-template")
-    TemplateInstance getTemplate(UUID applicationId, UUID eventTypeId, String orgId) {
-        IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(applicationId, eventTypeId, orgId, ALL, "drawer")
-            .orElseThrow(() -> new IllegalStateException("No default template defined for drawer"));
-        String template = integrationTemplate.getTheTemplate().getData();
-        return templateService.compileTemplate(template, integrationTemplate.getTheTemplate().getName());
+        TemplateDefinition config = new TemplateDefinition(IntegrationType.DRAWER, baet.bundleName, baet.applicationName, baet.eventTypeName);
+        return templateService.renderTemplate(config, dataAsMap);
     }
 
     public void manageConnectorDrawerReturnsIfNeeded(Map<String, Object> decodedPayload, UUID historyId) {
