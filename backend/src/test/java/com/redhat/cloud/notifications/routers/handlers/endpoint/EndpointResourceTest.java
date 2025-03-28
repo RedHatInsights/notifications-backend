@@ -4719,6 +4719,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Create the integration we are going to attempt to delete.
         final Endpoint integration = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
 
+        // mock workspace id
+        Mockito.when(this.workspaceUtils.getDefaultWorkspaceId(anyString())).thenReturn(UUID.randomUUID());
+
         // Simulate that the Kessel Inventory throws an exception.
         Mockito.when(this.notificationsIntegrationClient.DeleteNotificationsIntegration(Mockito.any())).thenThrow(new StatusRuntimeException(Status.NOT_FOUND));
 
