@@ -273,7 +273,7 @@ public class BackendConfig {
      * this limit on a very specific organization from time to time if we want
      * to perform some kind of tests, but it is going to be an exception.
      * @deprecated for removal because once behavior groups go away this
-     * configuration check will not make any sense anymore.
+     * configuration check will not make any sense anymore
      */
     @Deprecated(forRemoval = true)
     public boolean isBehaviorGroupCreationLimitDisabledForOrgId(final String orgId) {
