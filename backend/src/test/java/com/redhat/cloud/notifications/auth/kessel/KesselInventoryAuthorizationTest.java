@@ -45,9 +45,10 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization.COUNTER_TAG_FAILURES;
 import static com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization.COUNTER_TAG_REQUEST_RESULT;
 import static com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization.COUNTER_TAG_SUCCESSES;
+import static com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE;
 import static com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization.KESSEL_METRICS_LIST_INTEGRATIONS_COUNTER_NAME;
 import static com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization.KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 
@@ -445,7 +446,7 @@ public class KesselInventoryAuthorizationTest {
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), checkRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
 
             final SubjectReference subjectReference = checkRequest.getSubject();
-            Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
+            Assertions.assertEquals(KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
             Assertions.assertEquals(backendConfig.getKesselDomain() + "/" + tc.identity().getUserId(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
         }
     }
@@ -530,7 +531,7 @@ public class KesselInventoryAuthorizationTest {
 
             // Make sure the request was built appropriately.
             final SubjectReference subjectReference = lookupResourcesRequest.getSubject();
-            Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
+            Assertions.assertEquals(KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
             Assertions.assertEquals(backendConfig.getKesselDomain() + "/" + tc.identity().getUserId(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
 
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), lookupResourcesRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
