@@ -133,7 +133,12 @@ public class EndpointResourceV2 extends EndpointResource {
         Set<UUID> authorizedIds = null;
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             // Fetch the set of integration IDs the user is authorized to view.
-            authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
+            if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(getOrgId(sec))) {
+                final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
+                authorizedIds = this.kesselInventoryAuthorization.lookupAuthorizedIntegrations(sec, workspaceId, IntegrationPermission.VIEW);
+            } else {
+                authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
+            }
             if (authorizedIds.isEmpty()) {
                 Log.infof("[org_id: %s][username: %s] Kessel did not return any integration IDs for the request", getOrgId(sec), getUsername(sec));
 

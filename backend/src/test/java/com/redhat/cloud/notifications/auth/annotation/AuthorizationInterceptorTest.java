@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.auth.annotation;
 
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
 import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
@@ -37,6 +38,9 @@ public class AuthorizationInterceptorTest {
 
     @Inject
     KesselAuthorization kesselAuthorization;
+
+    @Inject
+    KesselInventoryAuthorization kesselInventoryAuthorization;
 
     @InjectMock
     BackendConfig backendConfig;
@@ -95,7 +99,7 @@ public class AuthorizationInterceptorTest {
      */
     @BeforeEach
     public void setUp() {
-        this.authorizationInterceptor = new AuthorizationInterceptor(this.backendConfig, this.kesselAuthorization, this.workspaceUtils);
+        this.authorizationInterceptor = new AuthorizationInterceptor(this.backendConfig, this.kesselAuthorization, this.workspaceUtils, this.kesselInventoryAuthorization);
     }
 
     /**

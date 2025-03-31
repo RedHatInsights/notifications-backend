@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.auth.annotation;
 
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
@@ -30,22 +31,26 @@ public class AuthorizationInterceptor {
     private final BackendConfig backendConfig;
     private final KesselAuthorization kesselAuthorization;
     private final WorkspaceUtils workspaceUtils;
+    private final KesselInventoryAuthorization kesselInventoryAuthorization;
 
     /**
      * Constructor for the interceptor. Helps with testing, as otherwise the
      * interceptor cannot get its dependencies injected.
      * @param backendConfig the back end's configuration bean.
      * @param kesselAuthorization the Kessel's authorization bean.
+     * @param kesselInventoryAuthorization the Kessel's inventory authorization bean.
      * @param workspaceUtils the workspace utils' bean.
      */
     public AuthorizationInterceptor(
         final BackendConfig backendConfig,
         final KesselAuthorization kesselAuthorization,
-        final WorkspaceUtils workspaceUtils
+        final WorkspaceUtils workspaceUtils,
+        final KesselInventoryAuthorization kesselInventoryAuthorization
     ) {
         this.backendConfig = backendConfig;
         this.kesselAuthorization = kesselAuthorization;
         this.workspaceUtils = workspaceUtils;
+        this.kesselInventoryAuthorization = kesselInventoryAuthorization;
     }
 
     @AroundInvoke
@@ -102,10 +107,15 @@ public class AuthorizationInterceptor {
         }
 
         // Check the workspace permissions first since they are more generic.
-        for (final WorkspacePermission workspacePermission : workspacePermissions) {
-            final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(SecurityContextUtil.getOrgId(securityContext));
-
-            this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, workspacePermission, workspaceId);
+        final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(SecurityContextUtil.getOrgId(securityContext));
+        if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(SecurityContextUtil.getOrgId(securityContext))) {
+            for (final WorkspacePermission workspacePermission : workspacePermissions) {
+                this.kesselInventoryAuthorization.hasPermissionOnWorkspace(securityContext, workspacePermission, workspaceId);
+            }
+        } else {
+            for (final WorkspacePermission workspacePermission : workspacePermissions) {
+                this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, workspacePermission, workspaceId);
+            }
         }
 
         // If no integration permissions are specified we can simply skip any
@@ -123,8 +133,14 @@ public class AuthorizationInterceptor {
         // Now it is safe to grab the intercepted integration id...
         final UUID integrationId = (UUID) interceptedParameters[parameterIndexes.getIntegrationIdIndex().get()];
         // ... and check the principal's permission.
-        for (final IntegrationPermission integrationPermission : integrationPermissions) {
-            this.kesselAuthorization.hasPermissionOnIntegration(securityContext, integrationPermission, integrationId);
+        if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(SecurityContextUtil.getOrgId(securityContext))) {
+            for (final IntegrationPermission integrationPermission : integrationPermissions) {
+                this.kesselInventoryAuthorization.hasPermissionOnIntegration(securityContext, integrationPermission, integrationId);
+            }
+        } else {
+            for (final IntegrationPermission integrationPermission : integrationPermissions) {
+                this.kesselAuthorization.hasPermissionOnIntegration(securityContext, integrationPermission, integrationId);
+            }
         }
 
         return ctx.proceed();
