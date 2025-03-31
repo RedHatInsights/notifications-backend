@@ -47,8 +47,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
+import org.project_kessel.inventory.client.KesselCheckClient;
+import org.project_kessel.inventory.client.NotificationsIntegrationClient;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
@@ -114,11 +117,25 @@ public class NotificationResourceTest extends DbIsolatedTest {
     CheckClient checkClient;
 
     /**
+     * Mocked Kessel's check client so that the {@link KesselTestHelper} can
+     * be used.
+     */
+    @InjectMock
+    KesselCheckClient KesselCheckClient;
+
+    /**
      * Mocked Kessel's lookup client so that the {@link KesselTestHelper} can
      * be used.
      */
     @InjectMock
     LookupClient lookupClient;
+
+    /**
+     * Mocked Kessel's lookup client so that the {@link KesselTestHelper} can
+     * be used.
+     */
+    @InjectMock
+    NotificationsIntegrationClient notificationsIntegrationClient;
 
     /**
      * Mocked RBAC's workspace utilities so that the {@link KesselTestHelper}
@@ -162,9 +179,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testEventTypeFetching(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testEventTypeFetching(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         helpers.createTestAppAndEventTypes();
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, RbacAccess.FULL_ACCESS);
@@ -241,9 +258,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testEventTypeFetchingByApplication(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testEventTypeFetchingByApplication(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
@@ -276,9 +293,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testEventTypeFetchingByBundle(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testEventTypeFetchingByBundle(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
@@ -311,9 +328,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testEventTypeFetchingByBundleAndApplicationId(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testEventTypeFetchingByBundleAndApplicationId(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
@@ -350,9 +367,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testEventTypeFetchingByEventTypeName(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testEventTypeFetchingByEventTypeName(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         helpers.createTestAppAndEventTypes();
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, RbacAccess.FULL_ACCESS);
@@ -383,9 +400,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testEventTypeFetchingByBundleApplicationAndEventTypeName(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testEventTypeFetchingByBundleApplicationAndEventTypeName(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
@@ -424,9 +441,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testEventTypeFetchingAndExcludeMutedTypes(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testEventTypeFetchingAndExcludeMutedTypes(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         UUID bundleId = helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
@@ -502,9 +519,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testEventTypeFetchingByBundleApplicationEventTypeNameAndExcludeMutedTypes(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testEventTypeFetchingByBundleApplicationEventTypeNameAndExcludeMutedTypes(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         UUID bundleId = helpers.createTestAppAndEventTypes();
         List<Application> apps = applicationRepository.getApplications(TEST_BUNDLE_NAME);
@@ -643,9 +660,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testGetEventTypesAffectedByEndpoint(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testGetEventTypesAffectedByEndpoint(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
         UUID bundleId = helpers.createTestAppAndEventTypes();
@@ -799,9 +816,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testCreateFullBehaviorGroup(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testCreateFullBehaviorGroup(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
@@ -872,9 +889,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testUpdateFullBehaviorGroup(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testUpdateFullBehaviorGroup(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
@@ -957,9 +974,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testBundleApplicationEventTypeByName(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testBundleApplicationEventTypeByName(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
         helpers.createTestAppAndEventTypes();
@@ -1077,9 +1094,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testInsufficientPrivileges(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testInsufficientPrivileges(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         Header noAccessIdentityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER + "no-access", NO_ACCESS);
         Header readAccessIdentityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER + "read-access", READ_ACCESS);
@@ -1249,9 +1266,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testUpdateUnknownBehaviorGroupId(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testUpdateUnknownBehaviorGroupId(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
@@ -1274,9 +1291,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testDeleteUnknownBehaviorGroupId(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testDeleteUnknownBehaviorGroupId(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
@@ -1293,9 +1310,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testFindBehaviorGroupsByUnknownBundleId(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testFindBehaviorGroupsByUnknownBundleId(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
@@ -1313,9 +1330,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testFindEventTypesAffectedByRemovalOfUnknownBehaviorGroupId(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testFindEventTypesAffectedByRemovalOfUnknownBehaviorGroupId(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
@@ -1333,9 +1350,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testFindBehaviorGroupsByUnknownEventTypeId(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testFindBehaviorGroupsByUnknownEventTypeId(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
@@ -1353,9 +1370,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testBehaviorGroupsAffectedByRemovalOfUnknownEndpointId(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testBehaviorGroupsAffectedByRemovalOfUnknownEndpointId(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
@@ -1375,9 +1392,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testBehaviorGroupSameName(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testBehaviorGroupSameName(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final String BEHAVIOR_GROUP_1_NAME = "BehaviorGroup1";
         final String BEHAVIOR_GROUP_2_NAME = "BehaviorGroup2";
@@ -1454,9 +1471,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * a behavior group without specifying a bundle ID or its name.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testBadRequestBehaviorGroupInvalidBundle(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testBadRequestBehaviorGroupInvalidBundle(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
         createBehaviorGroupRequest.displayName = "behavior-group-display-name";
@@ -1496,9 +1513,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * database.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testNotFoundBehaviorGroupNotExists(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testNotFoundBehaviorGroupNotExists(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
@@ -1550,9 +1567,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * the maximum value for the display name does not exist.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testBehaviorGroupDisplayNameTooLong(final boolean isKesselRelationsApiEnabled) throws NoSuchFieldException {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testBehaviorGroupDisplayNameTooLong(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) throws NoSuchFieldException {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final Bundle bundle = this.helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
 
@@ -1602,9 +1619,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * the maximum value for the display name does not exist.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testUpdateBehaviorGroupDisplayNameTooLong(final boolean isKesselRelationsApiEnabled) throws NoSuchFieldException {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testUpdateBehaviorGroupDisplayNameTooLong(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) throws NoSuchFieldException {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         // Create the fixtures in the database.
         final Bundle bundle = this.helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
@@ -1653,9 +1670,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * is blank, a bad request response is returned.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testUpdateBehaviorGroupDisplayNameBlank(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testUpdateBehaviorGroupDisplayNameBlank(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         // Create the fixtures in the database.
         final Bundle bundle = this.helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
@@ -1701,9 +1718,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * Tests that a behavior group can be successfully appended to an event type.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testAppendBehaviorEventType(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testAppendBehaviorEventType(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final Bundle bundle = this.helpers.createBundle();
         final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
@@ -1731,9 +1748,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * not exist.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testAppendBehaviorEventBehaviorGroupNotFound(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testAppendBehaviorEventBehaviorGroupNotFound(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
@@ -1760,9 +1777,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * one.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testAppendBehaviorEventBehaviorGroupWrongTenantNotFound(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testAppendBehaviorEventBehaviorGroupWrongTenantNotFound(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final Bundle bundle = this.helpers.createBundle();
         final BehaviorGroup behaviorGroup = this.helpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "display-name", bundle.getId());
@@ -1794,9 +1811,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * the behavior group are of incompatible types.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testAppendBehaviorEventBehaviorGroupIncompatibleEventTypeBehaviorGroup(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testAppendBehaviorEventBehaviorGroupIncompatibleEventTypeBehaviorGroup(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         // Create a bundle and a set of fixtures...
         final Bundle bundle = this.helpers.createBundle();
@@ -1830,9 +1847,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * Test that deleting an existing behavior group from an event type works as expected.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testDeleteBehaviorEventType(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testDeleteBehaviorEventType(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         // Create the fixtures.
         final Bundle bundle = this.helpers.createBundle();
@@ -1874,9 +1891,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
      * exist.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testDeleteBehaviorEventTypeError(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testDeleteBehaviorEventTypeError(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         // Create the fixtures.
         final Bundle bundle = this.helpers.createBundle();
@@ -1993,9 +2010,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testGetEndpointsLinkedToAnEventType(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testGetEndpointsLinkedToAnEventType(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final Bundle bundle = helpers.createBundle();
 
@@ -2041,9 +2058,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testEndpointEventTypeLinksUpdatesFromBehaviorGroupActions(final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    @MethodSource("kesselFlags")
+    void testEndpointEventTypeLinksUpdatesFromBehaviorGroupActions(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
@@ -2434,5 +2451,13 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(1, behaviorGroupList.size());
         assertEquals("behavior-group-ep-2", behaviorGroupList.get(0).getDisplayName());
         assertEquals(0, behaviorGroupList.get(0).getActions().size());
+    }
+
+    private static Stream<Arguments> kesselFlags() {
+        return Stream.of(
+            Arguments.of(false, false), // Should use RBAC
+            Arguments.of(true, false), // Should use Kessel relations
+            Arguments.of(true, true) // Should use Kessel inventory
+        );
     }
 }

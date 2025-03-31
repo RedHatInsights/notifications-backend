@@ -25,6 +25,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
+import org.project_kessel.inventory.client.KesselCheckClient;
+import org.project_kessel.inventory.client.NotificationsIntegrationClient;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
@@ -62,12 +64,18 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
     @InjectMock
     CheckClient checkClient;
 
+    @InjectMock
+    KesselCheckClient kesselCheckClient;
+
     /**
      * Mocked RBAC's workspace utilities so that the {@link KesselTestHelper}
      * can be used.
      */
     @InjectMock
     LookupClient lookupClient;
+
+    @InjectMock
+    NotificationsIntegrationClient notificationsIntegrationClient;
 
     /**
      * Mocked RBAC's workspace utilities so that the {@link KesselTestHelper}
@@ -90,15 +98,19 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
      */
     private static Stream<Arguments> argumentsProvider() {
         return Stream.of(
-            Arguments.of(Constants.API_INTEGRATIONS_V_1_0, false),
-            Arguments.of(Constants.API_INTEGRATIONS_V_2_0, true)
+            Arguments.of(Constants.API_INTEGRATIONS_V_1_0, false, false),
+            Arguments.of(Constants.API_INTEGRATIONS_V_1_0, true, false),
+            Arguments.of(Constants.API_INTEGRATIONS_V_1_0, true, true),
+            Arguments.of(Constants.API_INTEGRATIONS_V_2_0, false, false),
+            Arguments.of(Constants.API_INTEGRATIONS_V_2_0, true, false),
+            Arguments.of(Constants.API_INTEGRATIONS_V_2_0, true, true)
         );
     }
 
     @MethodSource("argumentsProvider")
     @ParameterizedTest
-    void testCreateUnsupportedEndpointType(final String apiPath, final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    void testCreateUnsupportedEndpointType(final String apiPath, final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         when(backendConfig.isEmailsOnlyModeEnabled()).thenReturn(true);
 
@@ -128,8 +140,8 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
 
     @MethodSource("argumentsProvider")
     @ParameterizedTest
-    void testUpdateUnsupportedEndpointType(final String apiPath, final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    void testUpdateUnsupportedEndpointType(final String apiPath, final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         when(backendConfig.isEmailsOnlyModeEnabled()).thenReturn(true);
 
@@ -162,8 +174,8 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
 
     @MethodSource("argumentsProvider")
     @ParameterizedTest
-    void testDeleteUnsupportedEndpointType(final String apiPath, final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    void testDeleteUnsupportedEndpointType(final String apiPath, final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         when(backendConfig.isEmailsOnlyModeEnabled()).thenReturn(true);
 
@@ -191,8 +203,8 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
 
     @MethodSource("argumentsProvider")
     @ParameterizedTest
-    void testEnableUnsupportedEndpointType(final String apiPath, final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    void testEnableUnsupportedEndpointType(final String apiPath, final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         when(backendConfig.isEmailsOnlyModeEnabled()).thenReturn(true);
 
@@ -220,8 +232,8 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
 
     @MethodSource("argumentsProvider")
     @ParameterizedTest
-    void testDisableUnsupportedEndpointType(final String apiPath, final boolean isKesselRelationsApiEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled);
+    void testDisableUnsupportedEndpointType(final String apiPath, final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         when(backendConfig.isEmailsOnlyModeEnabled()).thenReturn(true);
 
