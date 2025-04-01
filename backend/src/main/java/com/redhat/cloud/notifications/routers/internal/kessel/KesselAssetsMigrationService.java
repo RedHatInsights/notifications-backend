@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers.internal.kessel;
 
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -20,6 +21,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import org.project_kessel.api.relations.v1beta1.CreateTuplesRequest;
 import org.project_kessel.api.relations.v1beta1.CreateTuplesResponse;
@@ -68,6 +70,9 @@ public class KesselAssetsMigrationService {
 
     @Inject
     KesselAuthorization kesselAuthorizationService;
+
+    @Inject
+    KesselInventoryAuthorization kesselInventoryAuthorizationService;
 
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/kessel/migrate-assets")
@@ -133,7 +138,7 @@ public class KesselAssetsMigrationService {
     @Path("/kessel/check-migrated-assets")
     @GET
     @RunOnVirtualThread
-    public void checkMigratedAssets() {
+    public void checkMigratedAssets(@QueryParam("use_inventory") Boolean useInventory) {
         Log.info("Kessel assets' migration check");
 
         List<String> orgs = endpointRepository.getOrgIdWithEndpoints();
@@ -148,7 +153,12 @@ public class KesselAssetsMigrationService {
             totalEndpoints += endpointsUuidsFromDb.size();
             try {
                 UUID workspaceId = workspaceUtils.getDefaultWorkspaceId(org);
-                Set<UUID> endpointsUuidsFromKessel = kesselAuthorizationService.listWorkspaceIntegrations(workspaceId);
+                Set<UUID> endpointsUuidsFromKessel;
+                if (Boolean.TRUE.equals(useInventory)) {
+                    endpointsUuidsFromKessel = kesselInventoryAuthorizationService.listWorkspaceIntegrations(workspaceId);
+                } else {
+                    endpointsUuidsFromKessel = kesselAuthorizationService.listWorkspaceIntegrations(workspaceId);
+                }
                 if (endpointsUuidsFromDb.containsAll(endpointsUuidsFromKessel) && endpointsUuidsFromKessel.containsAll(endpointsUuidsFromDb)) {
                     Log.tracef("Kessel assets' are sync for org %s", org);
                     syncEndpoints += endpointsUuidsFromDb.size();

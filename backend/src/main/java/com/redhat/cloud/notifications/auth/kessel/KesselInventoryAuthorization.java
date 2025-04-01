@@ -332,6 +332,56 @@ public class KesselInventoryAuthorization {
             .build();
     }
 
+    // used by migration consistency check service only
+    public Set<UUID> listWorkspaceIntegrations(final UUID workspaceId) {
+        // Build the request for Kessel's inventory.
+        final ListNotificationsIntegrationsRequest request = this.buildListIntegrationOfWorkspaceRequest(workspaceId);
+
+        // Measure the time it takes to perform the operation with Kessel.
+        final Timer.Sample listIntegrationTimer = Timer.start(this.meterRegistry);
+
+        Set<UUID> authorizedIds;
+        try {
+            // Send the request to the inventory.
+            final Multi<ListNotificationsIntegrationsResponse> responses = this.notificationsIntegrationClient.listNotificationsIntegrations(request);
+
+            authorizedIds = responses.map(ListNotificationsIntegrationsResponse::getIntegrations)
+                .map(i -> i.getReporterData().getLocalResourceId())
+                .map(UUID::fromString)
+                .collect()
+                .asSet()
+                .await()
+                .atMost(Duration.ofSeconds(30));
+
+        } catch (final Exception e) {
+            meterRegistry.counter(KESSEL_METRICS_LIST_INTEGRATIONS_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
+
+            throw e;
+        } finally {
+            // Stop the timer.
+            listIntegrationTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_LIST_INTEGRATIONS_TIMER_NAME, Tags.of(Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
+        }
+
+        return authorizedIds;
+    }
+
+    protected ListNotificationsIntegrationsRequest buildListIntegrationOfWorkspaceRequest(final UUID workspaceId) {
+        return ListNotificationsIntegrationsRequest.newBuilder()
+            .setResourceType(KesselInventoryResourceType.INTEGRATION.getKesselObjectType())
+            .setParent(org.project_kessel.api.inventory.v1beta1.authz.ObjectReference.newBuilder()
+                .setType(KesselInventoryResourceType.WORKSPACE.getKesselObjectType())
+                .setId(workspaceId.toString())
+                .build())
+            .setSubject(org.project_kessel.api.inventory.v1beta1.authz.SubjectReference.newBuilder()
+                .setSubject(org.project_kessel.api.inventory.v1beta1.authz.ObjectReference.newBuilder()
+                    .setType(KesselInventoryResourceType.WORKSPACE.getKesselObjectType())
+                    .setId(workspaceId.toString())
+                    .build())
+                .build())
+            .setRelation("workspace")
+            .build();
+    }
+
     /**
      * Checks whether the provided principal has the specified permission on
      * the given integration, and throws a {@link NotFoundException} if they
