@@ -107,14 +107,16 @@ public class AuthorizationInterceptor {
         }
 
         // Check the workspace permissions first since they are more generic.
-        final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(SecurityContextUtil.getOrgId(securityContext));
-        if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(SecurityContextUtil.getOrgId(securityContext))) {
-            for (final WorkspacePermission workspacePermission : workspacePermissions) {
-                this.kesselInventoryAuthorization.hasPermissionOnWorkspace(securityContext, workspacePermission, workspaceId);
-            }
-        } else {
-            for (final WorkspacePermission workspacePermission : workspacePermissions) {
-                this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, workspacePermission, workspaceId);
+        if (workspacePermissions.length > 0) {
+            UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(SecurityContextUtil.getOrgId(securityContext));
+            if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(SecurityContextUtil.getOrgId(securityContext))) {
+                for (final WorkspacePermission workspacePermission : workspacePermissions) {
+                    this.kesselInventoryAuthorization.hasPermissionOnWorkspace(securityContext, workspacePermission, workspaceId);
+                }
+            } else {
+                for (final WorkspacePermission workspacePermission : workspacePermissions) {
+                    this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, workspacePermission, workspaceId);
+                }
             }
         }
 
