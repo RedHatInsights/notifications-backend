@@ -483,8 +483,7 @@ public class KesselInventoryAuthorization {
                 case DELETE, DISABLE, EDIT, ENABLE, TEST -> CheckOperation.UPDATE;
             };
         } else {
-            Log.errorf("Resource/permission pair unsupported for Kessel check: %s/%s", resourceType, permission);
-            return CheckOperation.UPDATE;
+            throw new IllegalArgumentException(String.format("Resource/permission pair unsupported for Kessel check: %s/%s", resourceType, permission));
         }
     }
 }
