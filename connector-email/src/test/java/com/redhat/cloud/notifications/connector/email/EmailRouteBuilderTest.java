@@ -8,12 +8,14 @@ import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSe
 import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.AdviceWithRouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -41,12 +43,14 @@ import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
-    @Inject
+    @InjectSpy
     EmailConnectorConfig emailConnectorConfig;
 
     @Inject
@@ -113,6 +117,11 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             initCamelRoutes();
             camelRoutesInitialised = true;
         }
+    }
+
+    @BeforeEach
+    void beforeEach() {
+        when(emailConnectorConfig.useSimplifiedEmailRoute(anyString())).thenReturn(false);
     }
 
     @Test
