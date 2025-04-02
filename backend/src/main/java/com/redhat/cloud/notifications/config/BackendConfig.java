@@ -129,6 +129,7 @@ public class BackendConfig {
         maintenanceModeToggle = toggleRegistry.register("notifications-maintenance-mode", true);
         bypassBehaviorGroupMaxCreationLimitToggle = toggleRegistry.register("bypass-behavior-group-max-creation-limit", true);
         ignoreSourcesErrorOnEndpointDeleteToggle = toggleRegistry.register("ignore-sources-error-on-endpoint-delete", true);
+        KesselInventoryUseForPermissionsChecksToggle = toggleRegistry.register("kessel-inventory-permissions-checks", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
