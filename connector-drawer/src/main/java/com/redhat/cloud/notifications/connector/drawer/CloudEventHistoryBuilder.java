@@ -14,6 +14,8 @@ import org.apache.camel.Message;
 @Priority(0) // The value doesn't matter.
 public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
 
+    public static final String TOTAL_RECIPIENTS_KEY = "total_recipients";
+
     @Override
     public void process(Exchange exchange) throws Exception {
         super.process(exchange);

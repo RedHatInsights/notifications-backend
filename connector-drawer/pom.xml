@@ -76,6 +76,17 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Retries -->
+        <dependency>
+            <groupId>dev.failsafe</groupId>
+            <artifactId>failsafe</artifactId>
+            <version>${failsafe.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-messaging-kafka</artifactId>
+        </dependency>
+
         <!-- MockServer -->
         <dependency>
             <groupId>org.mock-server</groupId>
