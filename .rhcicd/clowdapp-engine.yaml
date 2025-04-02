@@ -199,6 +199,10 @@ objects:
         maxReplicaCount: 6
         externalHPA: true
         triggers:
+          - type: memory
+            metricType: Utilization
+            metadata:
+              value: '40'
           - metadata:
               serverAddress: http://prometheus-app-sre.openshift-customer-monitoring.svc.cluster.local:9090
               query: kafka_consumergroup_group_topic_sum_lag{topic=~".*platform.notifications.ingress"}
