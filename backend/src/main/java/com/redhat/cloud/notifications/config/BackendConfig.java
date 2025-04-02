@@ -45,7 +45,7 @@ public class BackendConfig {
     private String drawerToggle;
     private String kesselInventoryToggle;
     private String kesselRelationsToggle;
-    private String KesselInventoryUseForPermissionsChecksToggle;
+    private String kesselInventoryUseForPermissionsChecksToggle;
     private String kesselChecksOnEventLogToggle;
     private String maintenanceModeToggle;
     private String bypassBehaviorGroupMaxCreationLimitToggle;
@@ -129,7 +129,7 @@ public class BackendConfig {
         maintenanceModeToggle = toggleRegistry.register("notifications-maintenance-mode", true);
         bypassBehaviorGroupMaxCreationLimitToggle = toggleRegistry.register("bypass-behavior-group-max-creation-limit", true);
         ignoreSourcesErrorOnEndpointDeleteToggle = toggleRegistry.register("ignore-sources-error-on-endpoint-delete", true);
-        KesselInventoryUseForPermissionsChecksToggle = toggleRegistry.register("kessel-inventory-permissions-checks", true);
+        kesselInventoryUseForPermissionsChecksToggle = toggleRegistry.register("kessel-inventory-permissions-checks", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -235,7 +235,7 @@ public class BackendConfig {
     public boolean isKesselInventoryUseForPermissionsChecksEnabled(String orgId) {
         if (unleashEnabled) {
             UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(KesselInventoryUseForPermissionsChecksToggle, unleashContext, false);
+            return unleash.isEnabled(kesselInventoryUseForPermissionsChecksToggle, unleashContext, false);
         } else {
             return kesselInventoryUseForPermissionsChecksEnabled;
         }
