@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.annotation.IntegrationId;
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
@@ -103,6 +104,9 @@ public class NotificationResource {
 
     @Inject
     KesselAuthorization kesselAuthorization;
+
+    @Inject
+    KesselInventoryAuthorization kesselInventoryAuthorization;
 
     @Inject
     BackendConfig backendConfig;
@@ -525,10 +529,18 @@ public class NotificationResource {
     public Page<EndpointDTO> getLinkedEndpoints(@Context final SecurityContext sec, @RestPath("eventTypeId") final UUID eventTypeId, @BeanParam @Valid final Query query, @Context final UriInfo uriInfo) {
         if (backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-            this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
+            Set<UUID> authorizedIds;
+            if (backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(getOrgId(sec))) {
+                this.kesselInventoryAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
+                // Fetch the set of integration IDs the user is authorized to view.
+                authorizedIds = kesselInventoryAuthorization.lookupAuthorizedIntegrations(sec, workspaceId, IntegrationPermission.VIEW);
+            } else {
+                this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
+                // Fetch the set of integration IDs the user is authorized to view.
+                authorizedIds = kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
+            }
 
             // Fetch the set of integration IDs the user is authorized to view.
-            final Set<UUID> authorizedIds = kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
             if (authorizedIds.isEmpty()) {
                 Log.infof("[org_id: %s][username: %s] Kessel did not return any integration IDs for the request", getOrgId(sec), getUsername(sec));
                 return Page.EMPTY_PAGE;
@@ -580,8 +592,14 @@ public class NotificationResource {
         // When Kessel is enabled we need to make sure that the principal has
         // edit access to all the integrations.
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
-            for (final UUID endpointId : endpointsIds) {
-                kesselAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpointId);
+            if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(getOrgId(securityContext))) {
+                for (final UUID endpointId : endpointsIds) {
+                    kesselInventoryAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpointId);
+                }
+            } else {
+                for (final UUID endpointId : endpointsIds) {
+                    kesselAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpointId);
+                }
             }
         }
 

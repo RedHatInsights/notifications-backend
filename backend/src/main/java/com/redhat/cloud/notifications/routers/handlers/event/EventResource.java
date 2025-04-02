@@ -3,8 +3,8 @@ package com.redhat.cloud.notifications.routers.handlers.event;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
-import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
@@ -61,7 +61,7 @@ public class EventResource {
     KesselAuthorization kesselAuthorization;
 
     @Inject
-    WorkspaceUtils workspaceUtils;
+    KesselInventoryAuthorization kesselInventoryAuthorization;
 
     @GET
     @Produces(APPLICATION_JSON)
@@ -108,7 +108,11 @@ public class EventResource {
             for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
                 int criterionHashCode = eventAuthorizationCriterion.authorizationCriterion().hashCode();
                 if (!criterionResultCache.containsKey(criterionHashCode)) {
-                    criterionResultCache.put(criterionHashCode, kesselAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
+                    if (backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(orgId)) {
+                        criterionResultCache.put(criterionHashCode, kesselInventoryAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
+                    } else {
+                        criterionResultCache.put(criterionHashCode, kesselAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
+                    }
                 }
                 if (!criterionResultCache.get(criterionHashCode)) {
                     Log.infof("%s is not visible for current user", eventAuthorizationCriterion.id());

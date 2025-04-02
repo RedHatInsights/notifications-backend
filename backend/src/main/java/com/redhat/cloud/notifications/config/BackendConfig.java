@@ -30,6 +30,7 @@ public class BackendConfig {
     private static final String KESSEL_INVENTORY_ENABLED = "notifications.kessel-inventory.enabled";
     private static final String KESSEL_MIGRATION_BATCH_SIZE = "notifications.kessel.migration.batch.size";
     private static final String KESSEL_RELATIONS_ENABLED = "notifications.kessel-relations.enabled";
+    private static final String KESSEL_INVENTORY_FOR_PERMISSIONS_CHECKS_ENABLED = "notifications.kessel-inventory.permissions-checks.enabled";
     private static final String KESSEL_RELATIONS_LOOKUP_RESOURCES_LIMIT = "notifications.kessel-relations.lookup-resources.limit";
     private static final String KESSEL_RELATIONS_URL = "relations-api.target-url";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
@@ -44,6 +45,7 @@ public class BackendConfig {
     private String drawerToggle;
     private String kesselInventoryToggle;
     private String kesselRelationsToggle;
+    private String KesselInventoryUseForPermissionsChecksToggle;
     private String kesselChecksOnEventLogToggle;
     private String maintenanceModeToggle;
     private String bypassBehaviorGroupMaxCreationLimitToggle;
@@ -84,6 +86,9 @@ public class BackendConfig {
 
     @ConfigProperty(name = KESSEL_RELATIONS_ENABLED, defaultValue = "false")
     boolean kesselRelationsEnabled;
+
+    @ConfigProperty(name = KESSEL_INVENTORY_FOR_PERMISSIONS_CHECKS_ENABLED, defaultValue = "false")
+    boolean kesselInventoryUseForPermissionsChecksEnabled;
 
     @ConfigProperty(name = KESSEL_RELATIONS_LOOKUP_RESOURCES_LIMIT, defaultValue = "1000")
     int kesselRelationsLookupResourceLimit;
@@ -223,6 +228,15 @@ public class BackendConfig {
             return unleash.isEnabled(kesselRelationsToggle, unleashContext, false);
         } else {
             return kesselRelationsEnabled;
+        }
+    }
+
+    public boolean isKesselInventoryUseForPermissionsChecksEnabled(String orgId) {
+        if (unleashEnabled) {
+            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+            return unleash.isEnabled(KesselInventoryUseForPermissionsChecksToggle, unleashContext, false);
+        } else {
+            return kesselInventoryUseForPermissionsChecksEnabled;
         }
     }
 

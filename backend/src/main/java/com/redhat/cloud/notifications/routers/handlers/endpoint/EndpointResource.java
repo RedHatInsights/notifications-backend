@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.annotation.IntegrationId;
 import com.redhat.cloud.notifications.auth.kessel.KesselAssets;
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
@@ -135,6 +136,9 @@ public class EndpointResource {
     KesselAuthorization kesselAuthorization;
 
     @Inject
+    KesselInventoryAuthorization kesselInventoryAuthorization;
+
+    @Inject
     NotificationRepository notificationRepository;
 
     @Inject
@@ -226,7 +230,12 @@ public class EndpointResource {
         Set<UUID> authorizedIds = null;
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
             // Fetch the set of integration IDs the user is authorized to view.
-            authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
+            if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(getOrgId(sec))) {
+                final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
+                authorizedIds = this.kesselInventoryAuthorization.lookupAuthorizedIntegrations(sec, workspaceId, IntegrationPermission.VIEW);
+            } else {
+                authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
+            }
             if (authorizedIds.isEmpty()) {
                 Log.infof("[org_id: %s][username: %s] Kessel did not return any integration IDs for the request", getOrgId(sec), getUsername(sec));
 
@@ -761,7 +770,11 @@ public class EndpointResource {
         boolean shouldRedactSecrets;
         if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
             try {
-                this.kesselAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpoint.getId());
+                if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(getOrgId(securityContext))) {
+                    this.kesselInventoryAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpoint.getId());
+                } else {
+                    this.kesselAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpoint.getId());
+                }
                 shouldRedactSecrets = false;
             } catch (final ForbiddenException | NotFoundException e) {
                 shouldRedactSecrets = true;
