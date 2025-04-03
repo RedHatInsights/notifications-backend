@@ -21,10 +21,6 @@ class TestComplianceTemplate {
     @Inject
     TemplateService templateService;
 
-    protected String getApp() {
-        return "compliance";
-    }
-
     @Test
     void testRenderedTemplateBelowThreshold() {
         String result = renderTemplate(COMPLIANCE_BELOW_THRESHOLD, ACTION);

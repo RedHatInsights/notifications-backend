@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.templates.drawer;
 import com.redhat.cloud.notifications.IntegrationTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.utils.TimeAgoFormatter;
+import com.redhat.cloud.notifications.qute.templates.extensions.TimeAgoFormatter;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;

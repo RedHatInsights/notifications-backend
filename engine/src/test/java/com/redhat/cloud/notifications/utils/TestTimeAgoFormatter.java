@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.utils;
 
+import com.redhat.cloud.notifications.qute.templates.extensions.TimeAgoFormatter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

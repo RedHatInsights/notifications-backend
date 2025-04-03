@@ -18,14 +18,6 @@ class TestSourcesTemplate {
     static final String AVAILABILITY_STATUS = "availability-status";
     private static final Action ACTION = TestHelpers.createSourcesAction();
 
-    protected String getBundle() {
-        return "console";
-    }
-
-    protected String getApp() {
-        return "sources";
-    }
-
     @Inject
     TemplateService templateService;
 

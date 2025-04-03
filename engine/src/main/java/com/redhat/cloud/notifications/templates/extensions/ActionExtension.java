@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Parser;
-import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import io.quarkus.qute.TemplateExtension;
 
@@ -19,24 +17,9 @@ public class ActionExtension {
     // Add Jdk8Module on cloudEvent parser library since jackson dependency bumped to 2.16.1
     private static final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser(ConsoleCloudEventParser.buildObjectMapper().registerModules(new Jdk8Module()));
 
-    @TemplateExtension(matchName = TemplateExtension.ANY)
-    public static Object getFromContext(Context context, String key) {
-        return context.getAdditionalProperties().get(key);
-    }
-
-    @TemplateExtension
-    public static boolean isCloudEvent(Action action) {
-        return false;
-    }
-
     @TemplateExtension
     public static boolean isCloudEvent(NotificationsConsoleCloudEvent event) {
         return true;
-    }
-
-    @TemplateExtension(matchName = TemplateExtension.ANY)
-    public static Object getFromPayload(Payload payload, String key) {
-        return payload.getAdditionalProperties().get(key);
     }
 
     @TemplateExtension
