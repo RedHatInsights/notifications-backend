@@ -14,9 +14,9 @@
         <module>backend</module>
         <module>checkstyle</module>
         <module>common</module>
+        <module>common-template</module>
         <module>common-unleash</module>
         <module>connector-common</module>
-        <module>common-template</module>
         <module>connector-common-authentication</module>
         <module>connector-common-http</module>
         <module>connector-drawer</module>
