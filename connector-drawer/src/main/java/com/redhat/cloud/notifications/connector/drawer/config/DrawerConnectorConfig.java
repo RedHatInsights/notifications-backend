@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.connector.drawer.config;
 
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
+import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.util.Map;
@@ -17,11 +19,19 @@ public class DrawerConnectorConfig extends HttpConnectorConfig {
     @ConfigProperty(name = DRAWER_TOPIC)
     String outgoingDrawerTopic;
 
+    private String toggleUseSimplifiedRoute;
+
+    @PostConstruct
+    void emailConnectorPostConstruct() {
+        toggleUseSimplifiedRoute = toggleRegistry.register("use-simplified-route", true);
+    }
+
     @Override
     protected Map<String, Object> getLoggedConfiguration() {
         Map<String, Object> config = super.getLoggedConfiguration();
         config.put(DRAWER_TOPIC, outgoingDrawerTopic);
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
+        config.put(toggleUseSimplifiedRoute, useSimplifiedRoute(null));
         return config;
     }
 
@@ -31,5 +41,13 @@ public class DrawerConnectorConfig extends HttpConnectorConfig {
 
     public String getRecipientsResolverServiceURL() {
         return recipientsResolverServiceURL;
+    }
+
+    public boolean useSimplifiedRoute(String orgId) {
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleUseSimplifiedRoute, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+        } else {
+            return false;
+        }
     }
 }
