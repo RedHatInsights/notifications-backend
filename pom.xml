@@ -14,6 +14,7 @@
         <module>backend</module>
         <module>checkstyle</module>
         <module>common</module>
+        <module>common-template</module>
         <module>common-unleash</module>
         <module>connector-common</module>
         <module>connector-common-authentication</module>
