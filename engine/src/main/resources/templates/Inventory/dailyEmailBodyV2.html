@@ -28,7 +28,7 @@
     Host{#if action.context.inventory.errors.size() > 1}s{/if} with validation error
 {/content-title-section1}
 {#content-title-right-part-section1}
-    <a target="_blank" href="{environment.url}/insights/inventory/">{action.context.inventory.errors.size()}</a>
+    <a target="_blank" href="{environment.url}/insights/inventory/?{query_params}">{action.context.inventory.errors.size()}</a>
 {/content-title-right-part-section1}
 {#content-body-section1}
     <p>
@@ -67,7 +67,7 @@
     {/let}
 {/content-subtitle-section2}
 {#content-title-right-part-section2}
-    <a target="_blank" href="{environment.url}/insights/inventory/">{action.context.inventory.new_systems.size() + action.context.inventory.stale_systems.size() + action.context.inventory.deleted_systems.size()}</a>
+    <a target="_blank" href="{environment.url}/insights/inventory/?{query_params}">{action.context.inventory.new_systems.size() + action.context.inventory.stale_systems.size() + action.context.inventory.deleted_systems.size()}</a>
 {/content-title-right-part-section2}
 {#content-body-section2}
 {#if action.context.inventory.new_systems.size() > 0}
@@ -134,6 +134,6 @@
     </p>
 {/content-body-section3}
 {#content-button-section3}
-    <a target="_blank" href="{environment.url}/insights/inventory/">Open Inventory in Insights</a>
+    <a target="_blank" href="{environment.url}/insights/inventory/?{query_params}">Open Inventory in Insights</a>
 {/content-button-section3}
 {/include}

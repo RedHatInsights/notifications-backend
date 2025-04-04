@@ -124,6 +124,7 @@ public class WebhookTest {
         assertEquals(testUrl, payload.getJsonObject("endpoint_properties").getString("url"));
 
         final JsonObject payloadToSent = transformer.toJsonObject(event);
+        payloadToSent.put("application_url", "https://localhost/insights/WebhookTest?from=notification_webhook");
         assertEquals(payloadToSent, payload.getJsonObject("payload"));
 
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_WEBHOOK_COUNTER, 1);
