@@ -19,6 +19,7 @@ import com.redhat.cloud.notifications.connector.drawer.model.DrawerUser;
 import com.redhat.cloud.notifications.connector.drawer.model.RecipientSettings;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
