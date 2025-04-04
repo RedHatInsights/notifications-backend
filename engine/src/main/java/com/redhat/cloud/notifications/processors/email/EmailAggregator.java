@@ -215,7 +215,6 @@ public class EmailAggregator {
                 aggregation.setEventWrapper(getEventWrapper(aggregation.getPayload()));
                 RecipientsAuthorizationCriterion externalAuthorizationCriterion = recipientsAuthorizationCriterionExtractor.extract(aggregation);
 
-                Log.info("Start calling external resolver service ");
                 Set<User> recipients = externalRecipientsResolver.recipientUsers(
                     aggregation.getOrgId(),
                     Stream.concat(
