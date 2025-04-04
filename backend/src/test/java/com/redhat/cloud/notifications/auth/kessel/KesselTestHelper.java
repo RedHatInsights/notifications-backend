@@ -1,19 +1,23 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
-import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.KesselPermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
+import io.smallrye.mutiny.Multi;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
+import org.project_kessel.api.inventory.v1beta1.resources.ListNotificationsIntegrationsResponse;
+import org.project_kessel.api.inventory.v1beta1.resources.NotificationsIntegration;
+import org.project_kessel.api.inventory.v1beta1.resources.ReporterData;
 import org.project_kessel.api.relations.v1beta1.CheckRequest;
 import org.project_kessel.api.relations.v1beta1.CheckResponse;
 import org.project_kessel.api.relations.v1beta1.LookupResourcesResponse;
 import org.project_kessel.api.relations.v1beta1.ObjectReference;
 import org.project_kessel.api.relations.v1beta1.ObjectType;
 import org.project_kessel.api.relations.v1beta1.SubjectReference;
+import org.project_kessel.inventory.client.KesselCheckClient;
+import org.project_kessel.inventory.client.NotificationsIntegrationClient;
 import org.project_kessel.relations.client.CheckClient;
 import org.project_kessel.relations.client.LookupClient;
 
@@ -22,8 +26,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE;
-import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.KESSEL_RBAC_NAMESPACE;
 import static org.mockito.ArgumentMatchers.anyString;
 
 /**
@@ -39,7 +41,13 @@ public class KesselTestHelper {
     CheckClient checkClient;
 
     @Inject
+    KesselCheckClient kesselCheckClient;
+
+    @Inject
     LookupClient lookupClient;
+
+    @Inject
+    NotificationsIntegrationClient notificationsIntegrationClient;
 
     @Inject
     WorkspaceUtils workspaceUtils;
@@ -106,6 +114,23 @@ public class KesselTestHelper {
             this.lookupClient.lookupResources(Mockito.any())
         ).thenReturn(
             lookupResourcesResponses.iterator()
+        );
+
+        Set<ListNotificationsIntegrationsResponse> setList = new HashSet<>();
+        for (UUID uuid : authorizedIntegrationsIds) {
+            setList.add(
+                ListNotificationsIntegrationsResponse.newBuilder().setIntegrations(
+                    NotificationsIntegration.newBuilder().setReporterData(
+                        ReporterData.newBuilder().setLocalResourceId(uuid.toString()).build()
+                    ).build()
+                ).build()
+            );
+        }
+
+        Mockito.when(
+            this.notificationsIntegrationClient.listNotificationsIntegrations(Mockito.any())
+        ).thenReturn(
+            Multi.createFrom().items(setList.stream())
         );
     }
 
@@ -187,6 +212,63 @@ public class KesselTestHelper {
                 .setAllowed(allowedResponse)
                 .build()
         );
+
+        KesselInventoryResourceType krs = (resourceType == ResourceType.WORKSPACE) ? KesselInventoryResourceType.WORKSPACE : KesselInventoryResourceType.INTEGRATION;
+        org.project_kessel.api.inventory.v1beta1.authz.CheckResponse.Allowed kInventoryAllowedResponse = (allowedResponse == CheckResponse.Allowed.ALLOWED_TRUE) ? org.project_kessel.api.inventory.v1beta1.authz.CheckResponse.Allowed.ALLOWED_TRUE : org.project_kessel.api.inventory.v1beta1.authz.CheckResponse.Allowed.ALLOWED_FALSE;
+        Mockito.when(
+            this.kesselCheckClient.Check(
+                org.project_kessel.api.inventory.v1beta1.authz.CheckRequest.newBuilder()
+                    .setParent(
+                        org.project_kessel.api.inventory.v1beta1.authz.ObjectReference.newBuilder()
+                            .setType(krs.getKesselObjectType())
+                            .setId(resourceId)
+                            .build()
+                    )
+                    .setRelation(permission.getKesselPermissionName())
+                    .setSubject(
+                        org.project_kessel.api.inventory.v1beta1.authz.SubjectReference.newBuilder()
+                            .setSubject(
+                                org.project_kessel.api.inventory.v1beta1.authz.ObjectReference.newBuilder()
+                                    .setType(org.project_kessel.api.inventory.v1beta1.authz.ObjectType.newBuilder().setName(KesselInventoryAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE).setNamespace(KesselInventoryAuthorization.KESSEL_RBAC_NAMESPACE).build())
+                                    .setId(backendConfig.getKesselDomain() + "/" + subjectUsername)
+                                    .build()
+                            ).build()
+                    ).build()
+            )
+        ).thenReturn(
+            org.project_kessel.api.inventory.v1beta1.authz.CheckResponse
+                .newBuilder()
+                .setAllowed(kInventoryAllowedResponse)
+                .build()
+        );
+
+        org.project_kessel.api.inventory.v1beta1.authz.CheckForUpdateResponse.Allowed checkForUpdateInventoryAllowedResponse = (allowedResponse == CheckResponse.Allowed.ALLOWED_TRUE) ? org.project_kessel.api.inventory.v1beta1.authz.CheckForUpdateResponse.Allowed.ALLOWED_TRUE : org.project_kessel.api.inventory.v1beta1.authz.CheckForUpdateResponse.Allowed.ALLOWED_FALSE;
+        Mockito.when(
+            this.kesselCheckClient.CheckForUpdate(
+                org.project_kessel.api.inventory.v1beta1.authz.CheckForUpdateRequest.newBuilder()
+                    .setParent(
+                        org.project_kessel.api.inventory.v1beta1.authz.ObjectReference.newBuilder()
+                            .setType(krs.getKesselObjectType())
+                            .setId(resourceId)
+                            .build()
+                    )
+                    .setRelation(permission.getKesselPermissionName())
+                    .setSubject(
+                        org.project_kessel.api.inventory.v1beta1.authz.SubjectReference.newBuilder()
+                            .setSubject(
+                                org.project_kessel.api.inventory.v1beta1.authz.ObjectReference.newBuilder()
+                                    .setType(org.project_kessel.api.inventory.v1beta1.authz.ObjectType.newBuilder().setName(KesselInventoryAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE).setNamespace(KesselInventoryAuthorization.KESSEL_RBAC_NAMESPACE).build())
+                                    .setId(backendConfig.getKesselDomain() + "/" + subjectUsername)
+                                    .build()
+                            ).build()
+                    ).build()
+            )
+        ).thenReturn(
+            org.project_kessel.api.inventory.v1beta1.authz.CheckForUpdateResponse
+                .newBuilder()
+                .setAllowed(checkForUpdateInventoryAllowedResponse)
+                .build()
+        );
     }
 
     /**
@@ -195,11 +277,17 @@ public class KesselTestHelper {
      * return an "allowed" response when the flag is {@code true}.
      * @param isKesselRelationsEnabled is the Kessel relations enabled for the
      *                                 test?
+     * @param isKesselInventoryUseForPermissionsChecksEnabled is the Kessel inventory
+     *                                 enabled for the test?     *
      */
-    public void mockKesselRelations(final boolean isKesselRelationsEnabled) {
+    public void mockKesselRelations(final boolean isKesselRelationsEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
         Mockito
             .when(this.backendConfig.isKesselRelationsEnabled(anyString()))
             .thenReturn(isKesselRelationsEnabled);
+
+        Mockito
+            .when(this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(anyString()))
+            .thenReturn(isKesselInventoryUseForPermissionsChecksEnabled);
 
         if (!this.backendConfig.isKesselRelationsEnabled(anyString())) {
             return;
@@ -218,76 +306,21 @@ public class KesselTestHelper {
                 .setAllowed(CheckResponse.Allowed.ALLOWED_FALSE)
                 .build()
             );
-    }
 
-    /**
-     * Mocks the {@link IntegrationPermission#VIEW} permission for the given
-     * subject and all the integrations. Useful for requests that want to
-     * apply a "post-filtering" strategy on the returned integrations.
-     * @param subjectUsername the username associated with the integrations.
-     */
-    public void mockIntegrationViewPermissionOnAllIntegrations(final String subjectUsername) {
         Mockito
-            .when(this.checkClient.check(Mockito.argThat(this.isCheckRequestForIntegrationViewPermission(subjectUsername, Set.of()))))
-            .thenReturn(CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build());
-    }
+            .when(this.kesselCheckClient.Check(Mockito.any()))
+            .thenReturn(org.project_kessel.api.inventory.v1beta1.authz.CheckResponse
+                .newBuilder()
+                .setAllowed(org.project_kessel.api.inventory.v1beta1.authz.CheckResponse.Allowed.ALLOWED_FALSE)
+                .build()
+            );
 
-    /**
-     * Mocks the {@link IntegrationPermission#VIEW} permission for the given
-     * subject and the given integrations. Useful for requests that want to
-     *      * apply a "post-filtering" strategy on the returned integrations.
-     * @param subjectUsername the username associated with the integrations.
-     * @param endpointIds the integration IDs to mock.
-     */
-    public void mockIntegrationViewPermissionOnIntegrations(final String subjectUsername, final Set<UUID> endpointIds) {
         Mockito
-            .when(this.checkClient.check(Mockito.argThat(this.isCheckRequestForIntegrationViewPermission(subjectUsername, endpointIds))))
-            .thenReturn(CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build());
-    }
-
-    /**
-     * Returns a custom argument matcher to easily match arguments in mocked
-     * {@link CheckClient}s which
-     * @param userId the given user ID to look for in the {@link CheckRequest}.
-     * @param expectedIntegrationIds the expected integration IDs to find in
-     *                               the {@link CheckRequest}.
-     * @return {@code true} when the following conditions are met: <ul>
-     *     <li>The given "userId" appears as part of the subject in the request.</li>
-     *     <li>If a non-empty set of expected integration IDs are passed, the
-     *     {@link CheckRequest}'s "localResourceId" has to be in the given
-     *     set.</li>
-     *     <li>The {@link CheckRequest}'s resource type is {@link ResourceType#INTEGRATION}.</li>
-     *     <li>The {@link CheckRequest}'s checked permission is {@link IntegrationPermission#VIEW}.</li>
-     *     <li>The {@link CheckRequest}'s subject's name is {@link KesselAuthorization#KESSEL_IDENTITY_SUBJECT_TYPE}.</li>
-     *     <li>The {@link CheckRequest}'s subject's namespace is {@link KesselAuthorization#KESSEL_RBAC_NAMESPACE}.</li>
-     * </ul>
-     */
-    private ArgumentMatcher<CheckRequest> isCheckRequestForIntegrationViewPermission(final String userId, final Set<UUID> expectedIntegrationIds) {
-        return checkRequest -> {
-            if (checkRequest == null) {
-                return false;
-            }
-
-            final UUID requestIntegrationId;
-            try {
-                requestIntegrationId = UUID.fromString(checkRequest.getResource().getId());
-            } catch (final IllegalArgumentException ignored) {
-                return false;
-            }
-
-            // When no expected integration IDs are specified, it is assumed
-            // that all the integrations are to be marked as "authorized".
-            boolean integrationIdMatch = true;
-            if (!expectedIntegrationIds.isEmpty()) {
-                integrationIdMatch = expectedIntegrationIds.contains(requestIntegrationId);
-            }
-
-            return checkRequest.getResource().getType().equals(ResourceType.INTEGRATION.getKesselObjectType())
-                && integrationIdMatch
-                && checkRequest.getRelation().equals(IntegrationPermission.VIEW.getKesselPermissionName())
-                && checkRequest.getSubject().getSubject().getType().getName().equals(KESSEL_IDENTITY_SUBJECT_TYPE)
-                && checkRequest.getSubject().getSubject().getType().getNamespace().equals(KESSEL_RBAC_NAMESPACE)
-                && checkRequest.getSubject().getSubject().getId().equals(backendConfig.getKesselDomain() + "/" + userId);
-        };
+            .when(this.kesselCheckClient.CheckForUpdate(Mockito.any()))
+            .thenReturn(org.project_kessel.api.inventory.v1beta1.authz.CheckForUpdateResponse
+                .newBuilder()
+                .setAllowed(org.project_kessel.api.inventory.v1beta1.authz.CheckForUpdateResponse.Allowed.ALLOWED_FALSE)
+                .build()
+            );
     }
 }

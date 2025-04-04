@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.project_kessel.api.relations.v1beta1.CheckResponse;
+import org.project_kessel.inventory.client.KesselCheckClient;
 import org.project_kessel.relations.client.CheckClient;
 
 import java.lang.reflect.Method;
@@ -50,6 +51,12 @@ public class AuthorizationInterceptorTest {
      */
     @InjectMock
     CheckClient checkClient;
+
+    /**
+     * Required for the {@link KesselTestHelper}.
+     */
+    @InjectMock
+    KesselCheckClient kesselCheckClient;
 
     @InjectMock
     WorkspaceUtils workspaceUtils;
@@ -176,7 +183,7 @@ public class AuthorizationInterceptorTest {
         Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
 
         // Make sure that Kessel relations is disabled for this test.
-        this.kesselTestHelper.mockKesselRelations(false);
+        this.kesselTestHelper.mockKesselRelations(false, false);
 
         // Mock the returned parameters by the context, to be able to provide
         // whichever security context we want to the interceptor.
@@ -208,7 +215,7 @@ public class AuthorizationInterceptorTest {
         Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
 
         // Make sure that Kessel relations is enabled for this test.
-        this.kesselTestHelper.mockKesselRelations(true);
+        this.kesselTestHelper.mockKesselRelations(true, false);
 
         // Mock the returned parameters by the context, to be able to provide
         // whichever security context we want to the interceptor.
@@ -249,7 +256,7 @@ public class AuthorizationInterceptorTest {
         Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
 
         // Make sure that Kessel relations is enabled for this test.
-        this.kesselTestHelper.mockKesselRelations(true);
+        this.kesselTestHelper.mockKesselRelations(true, false);
 
         // Mock the returned parameters by the context, to be able to provide
         // whichever security context we want to the interceptor.
@@ -286,7 +293,7 @@ public class AuthorizationInterceptorTest {
         Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
 
         // Make sure that Kessel relations is enabled for this test.
-        this.kesselTestHelper.mockKesselRelations(true);
+        this.kesselTestHelper.mockKesselRelations(true, false);
 
         // Mock the returned parameters by the context, to be able to provide
         // whichever security context we want to the interceptor.
@@ -326,7 +333,7 @@ public class AuthorizationInterceptorTest {
         Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
 
         // Make sure that Kessel relations is enabled for this test.
-        this.kesselTestHelper.mockKesselRelations(true);
+        this.kesselTestHelper.mockKesselRelations(true, false);
 
         // Mock the returned parameters by the context, to be able to provide
         // whichever security context and integration ID we want to the
@@ -382,7 +389,7 @@ public class AuthorizationInterceptorTest {
         Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
 
         // Make sure that Kessel relations is enabled for this test.
-        this.kesselTestHelper.mockKesselRelations(true);
+        this.kesselTestHelper.mockKesselRelations(true, false);
 
         // Mock the returned parameters by the context, to be able to provide
         // whichever security context and integration ID we want to the
@@ -429,7 +436,7 @@ public class AuthorizationInterceptorTest {
         Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
 
         // Make sure that Kessel relations is enabled for this test.
-        this.kesselTestHelper.mockKesselRelations(true);
+        this.kesselTestHelper.mockKesselRelations(true, false);
 
         // Mock the returned parameters by the context, to be able to provide
         // whichever security context and integration ID we want to the
