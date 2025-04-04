@@ -31,15 +31,14 @@ public class TemplateService {
         return engine.parse(template, null, name).instance();
     }
 
-    public String renderTemplate(Object event, TemplateInstance templateInstance, String queryParams) {
-        return renderEmailBodyTemplate(event, templateInstance, null, false, queryParams);
+    public String renderTemplate(Object event, TemplateInstance templateInstance) {
+        return renderEmailBodyTemplate(event, templateInstance, null, false);
     }
 
-    public String renderEmailBodyTemplate(Object event, TemplateInstance templateInstance, EmailPendo pendoMessage, boolean ignoreUserPreferences, String queryParams) {
+    public String renderEmailBodyTemplate(Object event, TemplateInstance templateInstance, EmailPendo pendoMessage, boolean ignoreUserPreferences) {
         return templateInstance
             .data("action", event)
             .data("event", event)
-            .data("query_params", queryParams)
             .data("environment", environment)
             .data("pendo_message", pendoMessage)
             .data("ignore_user_preferences", ignoreUserPreferences)

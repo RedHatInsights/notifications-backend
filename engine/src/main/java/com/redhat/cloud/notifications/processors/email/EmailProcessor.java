@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
-import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
@@ -29,8 +28,6 @@ import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 
 @ApplicationScoped
 public class EmailProcessor extends SystemEndpointTypeProcessor {
-    public static final String INSTANT_EMAIL_QUERY_PARAM_TYPE = "instant_email";
-
     @Inject
     ConnectorSender connectorSender;
 
@@ -51,9 +48,6 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     TemplateService templateService;
-
-    @Inject
-    InsightsUrlsBuilder insightsUrlsBuilder;
 
     @Inject
     SubscriptionRepository subscriptionRepository;
@@ -106,8 +100,6 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         final boolean ignoreUserPreferences = recipientSettings.stream().filter(RecipientSettings::isIgnoreUserPreferences).count() > 0;
 
-        final String insightsQueryParams = insightsUrlsBuilder.buildQueryParams(List.of(), INSTANT_EMAIL_QUERY_PARAM_TYPE);
-
         // Render the subject and the body of the email.
         final InstantEmailTemplate instantEmailTemplate = instantEmailTemplateMaybe.get();
 
@@ -117,9 +109,9 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final TemplateInstance subjectTemplate = this.templateService.compileTemplate(subjectData, "subject");
         final TemplateInstance bodyTemplate = this.templateService.compileTemplate(bodyData, "body");
 
-        final String subject = templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate, null);
+        final String subject = templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
         // we don't want to include outage pendo message this time
-        final String body = templateService.renderEmailBodyTemplate(event.getEventWrapper().getEvent(), bodyTemplate, emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, false), ignoreUserPreferences, insightsQueryParams);
+        final String body = templateService.renderEmailBodyTemplate(event.getEventWrapper().getEvent(), bodyTemplate, emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, false), ignoreUserPreferences);
 
         // Prepare all the data to be sent to the connector.
         final EmailNotification emailNotification = new EmailNotification(

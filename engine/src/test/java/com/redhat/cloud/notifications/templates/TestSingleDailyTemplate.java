@@ -164,6 +164,9 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
         assertTrue(templateResult.contains("\"policies-section1\""));
         assertTrue(templateResult.contains("\"resource-optimization-section1\""));
         assertTrue(templateResult.contains("\"vulnerability-section1\""));
+
+        // Query parameters in URLs
+        assertTrue(templateResult.contains("/insights/patch/advisories/advisory_3?from=notification_daily_digest\">advisory_3</a>"));
     }
 
     private void addItem(Map<String, DailyDigestSection> dataMap, String applicationName, String payload) {

@@ -22,7 +22,6 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
-import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
@@ -76,8 +75,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
     protected static final String TAG_KEY_APPLICATION = "application";
     protected static final String TAG_KEY_ORG_ID = "orgid";
 
-    public static final String DAILY_DIGEST_QUERY_PARAM_TYPE = "daily_digest";
-
     @Inject
     EmailAggregationRepository emailAggregationRepository;
 
@@ -107,9 +104,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     ActionParser actionParser;
-
-    @Inject
-    InsightsUrlsBuilder insightsUrlsBuilder;
 
     @Inject
     EndpointRepository endpointRepository;
@@ -345,10 +339,9 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
                 Map<String, Object> action = Map.of("context", Map.of("title", emailTitle, "items", result),
                     "bundle", bundle);
-                String insightsQueryParams = insightsUrlsBuilder.buildQueryParams(List.of(), DAILY_DIGEST_QUERY_PARAM_TYPE);
 
                 // build final body
-                String bodyStr = templateService.renderTemplate(action, SingleBodyTemplate, insightsQueryParams);
+                String bodyStr = templateService.renderTemplate(action, SingleBodyTemplate);
 
                 // Format data to send to the connector.
                 Set<String> recipientsUsernames = listApplicationWithUserCollection.getValue().stream().map(User::getUsername).collect(Collectors.toSet());
@@ -391,9 +384,8 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         String emailBody = emailTemplate.getBodyTemplate().getData().replace("Common/insightsEmailBody", "Common/insightsEmailBodyLight");
         TemplateInstance templateInstance = templateService.compileTemplate(emailBody, emailTemplate.getBodyTemplate().getName());
         Map<String, Object> action =  Map.of("context", context, "bundle", bundle);
-        String insightsQueryParams = insightsUrlsBuilder.buildQueryParams(List.of(), DAILY_DIGEST_QUERY_PARAM_TYPE);
 
-        String result = templateService.renderTemplate(action, templateInstance, insightsQueryParams);
+        String result = templateService.renderTemplate(action, templateInstance);
 
         return addItem(result);
     }
