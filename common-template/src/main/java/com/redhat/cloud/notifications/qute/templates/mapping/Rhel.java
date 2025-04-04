@@ -15,9 +15,6 @@ public class Rhel {
     static final String COMPLIANCE_APP_NAME = "compliance";
     static final String COMPLIANCE_FOLDER_NAME = "Compliance";
 
-    static final String DRIFT_APP_NAME = "drift";
-    static final String DRIFT_FOLDER_NAME = "Drift";
-
     static final String EDGE_APP_NAME = "edge-management";
     static final String EDGE_FOLDER_NAME = "EdgeManagement";
 
@@ -46,9 +43,6 @@ public class Rhel {
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COMPLIANCE_APP_NAME, "compliance-below-threshold"), COMPLIANCE_FOLDER_NAME + "/belowThresholdBody.md"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COMPLIANCE_APP_NAME, "report-upload-failed"), COMPLIANCE_FOLDER_NAME + "/reportUploadFailedBody.md"),
 
-        // Drift
-        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, DRIFT_APP_NAME, "drift-baseline-detected"), DRIFT_FOLDER_NAME + "/newBaselineDriftBody.md"),
-
         // Edge management
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, EDGE_APP_NAME, "image-creation"), EDGE_FOLDER_NAME + "/imageCreationBody.md"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, EDGE_APP_NAME, "update-devices"), EDGE_FOLDER_NAME + "/updateDeviceBody.md"),
@@ -63,7 +57,7 @@ public class Rhel {
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, PATCH_APP_NAME, "new-advisory"), PATCH_FOLDER_NAME + "/newAdvisoriesBody.md"),
 
         // Policies
-        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, POLICY_APP_NAME, "policy-triggered"), POLICY_FOLDER_NAME + "/instantBody.md"),
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, POLICY_APP_NAME, "policy-triggered"), POLICY_FOLDER_NAME + "/policyTriggeredBody.md"),
 
         // Vulnerability
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, "any-cve-known-exploit"), VULNERABILITY_FOLDER_NAME + "/anyCveKnownExploitBody.md"),

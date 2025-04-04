@@ -20,7 +20,7 @@ class TestPoliciesTemplate {
     TemplateService templateService;
 
     @Test
-    void testRenderedTemplateNewAdvisory() {
+    void testRenderedTemplate() {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
         String result = renderTemplate(EVENT_TYPE_NAME, action);
         assertEquals("**FooMachine** triggered 2 policies.", result);

@@ -4,12 +4,10 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeKey;
 import com.redhat.cloud.notifications.models.EventTypeKeyBundleAppEventTriplet;
 import com.redhat.cloud.notifications.models.EventTypeKeyFqn;
-import com.redhat.cloud.notifications.models.dto.BundleApplicationEventTypeDTO;
 import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import java.util.UUID;
 
 @ApplicationScoped
 public class EventTypeRepository {
@@ -46,14 +44,5 @@ public class EventTypeRepository {
         return entityManager.createQuery(query, EventType.class)
                 .setParameter("fullyQualifiedName", fullyQualifiedName)
                 .getSingleResult();
-    }
-
-    public BundleApplicationEventTypeDTO getEventTypeBaet(UUID id) {
-        String query = "SELECT new com.redhat.cloud.notifications.models.dto.BundleApplicationEventTypeDTO(b.name, a.name, e.name) " +
-            "FROM EventType e, Application a, Bundle b " +
-            "WHERE e.id = :eventTypeId and e.application.id = a.id and a.bundle.id = b.id";
-        return entityManager.createQuery(query, BundleApplicationEventTypeDTO.class)
-            .setParameter("eventTypeId", id)
-            .getSingleResult();
     }
 }

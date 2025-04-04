@@ -10,6 +10,6 @@ public class DefaultTemplates {
 
     public static final Map<TemplateDefinition, String> templatesMap = Map.ofEntries(
         // Default Drawer template
-        entry(new TemplateDefinition(DRAWER, null, null, null), "Default/instantBody.md")
+        entry(new TemplateDefinition(DRAWER, null, null, null), "Default/defaultBody.md")
     );
 }

@@ -12,7 +12,6 @@ import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.dto.BundleApplicationEventTypeDTO;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
@@ -81,8 +80,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         }
 
         // build event thought qute template
-        BundleApplicationEventTypeDTO baet = eventTypeRepository.getEventTypeBaet(event.getEventType().getId());
-        String renderedData = buildNotificationMessage(event, baet);
+        String renderedData = buildNotificationMessage(event);
 
         // store it on event table
         event.setRenderedDrawerNotification(renderedData);
@@ -118,7 +116,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         return drawerEntryPayload;
     }
 
-    public String buildNotificationMessage(Event event, BundleApplicationEventTypeDTO baet) {
+    public String buildNotificationMessage(Event event) {
         JsonObject data = baseTransformer.toJsonObject(event);
 
         Map<String, Object> dataAsMap;
@@ -128,8 +126,12 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
             throw new RuntimeException("Drawer notification data transformation failed", e);
         }
 
-        TemplateDefinition config = new TemplateDefinition(IntegrationType.DRAWER, baet.bundleName, baet.applicationName, baet.eventTypeName);
-        return templateService.renderTemplate(config, dataAsMap);
+        TemplateDefinition templateDefinition = new TemplateDefinition(
+            IntegrationType.DRAWER,
+            event.getEventType().getApplication().getBundle().getName(),
+            event.getEventType().getApplication().getName(),
+            event.getEventType().getName());
+        return templateService.renderTemplate(templateDefinition, dataAsMap);
     }
 
     public void manageConnectorDrawerReturnsIfNeeded(Map<String, Object> decodedPayload, UUID historyId) {

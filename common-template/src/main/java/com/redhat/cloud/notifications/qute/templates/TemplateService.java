@@ -5,14 +5,17 @@ import com.redhat.cloud.notifications.qute.templates.mapping.Console;
 import com.redhat.cloud.notifications.qute.templates.mapping.DefaultTemplates;
 import com.redhat.cloud.notifications.qute.templates.mapping.OpenShift;
 import com.redhat.cloud.notifications.qute.templates.mapping.Rhel;
+import io.quarkus.logging.Log;
 import io.quarkus.qute.Engine;
 import io.quarkus.qute.TemplateInstance;
+import io.quarkus.runtime.Startup;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
+@Startup
 @ApplicationScoped
 public class TemplateService {
 
@@ -27,29 +30,53 @@ public class TemplateService {
         templatesConfigMap.putAll(Console.templatesMap);
         templatesConfigMap.putAll(Rhel.templatesMap);
         templatesConfigMap.putAll(OpenShift.templatesMap);
+        checkTemplatesConsistency();
     }
 
-    public TemplateInstance compileTemplate(final TemplateDefinition config) {
+    /**
+     * Check if declared template files exists and could be load by Qute
+     */
+    private void checkTemplatesConsistency() {
+        ClassLoader classLoader = getClass().getClassLoader();
+        for (TemplateDefinition templateDefinition : templatesConfigMap.keySet()) {
+            String filePath = "templates/" + templateDefinition.integrationType().name().toLowerCase() + "/" + templatesConfigMap.get(templateDefinition);
+            if (null == classLoader.getResource(filePath)) {
+                Log.info("Template file " + filePath + " not found");
+                throw new TemplateNotFoundException(templateDefinition);
+            }
+            engine.getTemplate(templateDefinition.integrationType().name().toLowerCase() + "/" + templatesConfigMap.get(templateDefinition)).instance();
+        }
+    }
 
+    /**
+     * This method will load the Qute Template Instance according Template Definition parameters.
+     * If the template for the selected event type can't be found,
+     * it will look for a generic template defined for the selected application,
+     * it can't be found, it will look for a generic/system template defined for the selected integration type
+     * @param config the template definition
+     * @return the template instance
+     *
+     * @throws TemplateNotFoundException
+     */
+    private TemplateInstance compileTemplate(final TemplateDefinition config) throws TemplateNotFoundException {
+
+        // try to find template path with full config parameters
         String path = templatesConfigMap.get(config);
+
+        // if not found try to find if a default template for the app exists
         if (path == null) {
             path = templatesConfigMap.get(new TemplateDefinition(config.integrationType(), config.bundle(), config.application(), null));
-        }
-        if (path == null) {
-            path = templatesConfigMap.get(new TemplateDefinition(config.integrationType(), null, null, null));
+            // if not found try to find if a default/system template for the integration type exists
+            if (path == null) {
+                path = templatesConfigMap.get(new TemplateDefinition(config.integrationType(), null, null, null));
+                if (path == null) {
+                    throw new TemplateNotFoundException(config);
+                }
+            }
         }
 
-        if (null != path) {
-            return engine.getTemplate(config.integrationType().name().toLowerCase() + "/" + path).instance();
-        }
-
-        String notFoundErrorMessage = String.format(
-            "No template definition found for %s-%s-%s-%s",
-            config.integrationType().name().toLowerCase(),
-            config.bundle(),
-            config.application(),
-            config.eventType());
-        throw new RuntimeException(notFoundErrorMessage);
+        // ask Qute to load the template instance from its file path, such as drawer/Policies/policyTriggeredBody.md
+        return engine.getTemplate(config.integrationType().name().toLowerCase() + "/" + path).instance();
     }
 
     public String renderTemplate(final TemplateDefinition config, final Action action) {
