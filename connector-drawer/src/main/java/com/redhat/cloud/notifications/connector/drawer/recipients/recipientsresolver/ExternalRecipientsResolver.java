@@ -57,9 +57,8 @@ public class ExternalRecipientsResolver {
         return Failsafe.with(retryPolicy).get(usersServiceCall);
     }
 
-    public Set<DrawerUser> recipientUsers(String orgId, Set<RecipientSettings> recipientSettings, Set<String> subscribers, Set<String> unsubscribers, boolean subscribedByDefault, JsonObject recipientsAuthorizationCriterion) {
+    public Set<DrawerUser> recipientUsers(String orgId, Set<RecipientSettings> recipientSettings, Set<String> unsubscribers, boolean subscribedByDefault, JsonObject recipientsAuthorizationCriterion) {
         RecipientsQuery recipientsQuery = new RecipientsQuery();
-        recipientsQuery.subscribers = Set.copyOf(subscribers);
         recipientsQuery.unsubscribers = Set.copyOf(unsubscribers);
         recipientsQuery.orgId = orgId;
         Set<RecipientSettings> recipientSettingsSet = Set.copyOf(recipientSettings);

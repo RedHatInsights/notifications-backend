@@ -11,4 +11,6 @@ public class ExchangeProperty {
     public static final String DRAWER_ENTRY_PAYLOAD = "drawer_entry_payload";
     public static final String AUTHORIZATION_CRITERIA = "authorization_criteria";
     public static final String USE_SIMPLIFIED_ROUTE = "use_simplified_route";
+    public static final String ADDITIONAL_ERROR_DETAILS = "additionalErrorDetails";
+
 }
