@@ -71,7 +71,6 @@ public class DrawerProcessor implements Processor {
         Set<String> recipientsList = externalRecipientsResolver.recipientUsers(
                 orgId,
                 Set.copyOf(recipientSettings),
-                null,
                 unsubscribers,
                 subscribedByDefault,
                 null)
