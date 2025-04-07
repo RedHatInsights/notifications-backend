@@ -73,7 +73,7 @@ public class DrawerProcessor implements Processor {
                 Set.copyOf(recipientSettings),
                 unsubscribers,
                 subscribedByDefault,
-                null)
+                authorizationCriterion)
             .stream().map(DrawerUser::getUsername).filter(username -> username != null && !username.isBlank()).collect(toSet());
         recipientsResolverResponseTimeMetric.stop(meterRegistry.timer(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC));
 

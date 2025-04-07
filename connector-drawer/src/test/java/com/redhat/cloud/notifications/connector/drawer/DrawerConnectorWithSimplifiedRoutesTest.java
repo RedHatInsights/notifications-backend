@@ -41,6 +41,7 @@ import static com.redhat.cloud.notifications.connector.ConnectorRoutesTest.KAFKA
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
+import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.KAFKA_REINJECTION;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.OUTCOME;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventFilter.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_DATA;
@@ -64,7 +65,7 @@ class DrawerConnectorWithSimplifiedRoutesTest extends CamelQuarkusTestSupport {
 
     static MockEndpoint kafkaConnectorToEngine;
     static MockEndpoint kafkaEngineToConnector;
-    static MockEndpoint kafkaConnectorToDrawer;
+    static MockEndpoint kafkaReinjection;
 
     @Inject
     protected MicrometerAssertionHelper micrometerAssertionHelper;
@@ -93,15 +94,13 @@ class DrawerConnectorWithSimplifiedRoutesTest extends CamelQuarkusTestSupport {
     }
 
     void initCamelRoutes() throws Exception {
-        adviceWith(drawerConnectorConfig.getConnectorName(), context(), new AdviceWithRouteBuilder() {
+        /*adviceWith(drawerConnectorConfig.getConnectorName(), context(), new AdviceWithRouteBuilder() {
             @Override
             public void configure() throws Exception {
-                mockEndpoints(
-                    "direct:" + CONNECTOR_TO_ENGINE
-                );
-                mockEndpointsAndSkip("kafka:" + drawerConnectorConfig.getOutgoingKafkaTopic());
+                mockEndpoints("direct:" + CONNECTOR_TO_ENGINE);
+                //mockEndpoints("kafka:" + drawerConnectorConfig.getOutgoingKafkaTopic());
             }
-        });
+        });*/
 
         adviceWith(CONNECTOR_TO_ENGINE, context(), new AdviceWithRouteBuilder() {
             @Override
@@ -112,13 +111,22 @@ class DrawerConnectorWithSimplifiedRoutesTest extends CamelQuarkusTestSupport {
 
         adviceWith(ENGINE_TO_CONNECTOR, context(), new AdviceWithRouteBuilder() {
             @Override
-            public void configure() {
+            public void configure() throws Exception {
                 replaceFromWith(KAFKA_SOURCE_MOCK);
             }
         });
 
+        // Mock the "to" Kafka endpoint in the reinjection route.
+        /*adviceWith(KAFKA_REINJECTION, context(), new AdviceWithRouteBuilder() {
+            @Override
+            public void configure() throws Exception {
+                mockEndpointsAndSkip("kafka:" + drawerConnectorConfig.getIncomingKafkaTopic());
+            }
+        });*/
+
         kafkaConnectorToEngine = getMockEndpoint("mock:kafka:" + drawerConnectorConfig.getOutgoingKafkaTopic());
         kafkaEngineToConnector = getMockEndpoint("mock:" + KAFKA_SOURCE_MOCK);
+        kafkaReinjection = getMockEndpoint("mock:kafka:" + KAFKA_REINJECTION);
     }
 
     static final DrawerNotificationToConnector notification = buildTestDrawerNotificationToConnector();
@@ -288,7 +296,7 @@ class DrawerConnectorWithSimplifiedRoutesTest extends CamelQuarkusTestSupport {
     protected static JsonObject assertKafkaSinkIsSatisfied(String cloudEventId, MockEndpoint kafkaSinkMockEndpoint, boolean expectedSuccessful) throws InterruptedException {
 
         // We need a timeout here because SEDA processes the exchange from a different thread and a race condition may happen.
-        kafkaSinkMockEndpoint.assertIsSatisfied(5000L);
+        kafkaSinkMockEndpoint.assertIsSatisfied();
 
         Exchange exchange = kafkaSinkMockEndpoint.getReceivedExchanges().get(0);
         JsonObject payload = new JsonObject(exchange.getIn().getBody(String.class));
