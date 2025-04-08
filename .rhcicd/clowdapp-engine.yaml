@@ -131,8 +131,6 @@ objects:
           value: ${KAFKA_CONSUMED_TOTAL_CHECKER_PERIOD}
         - name: NOTIFICATIONS_KAFKA_OUTGOING_HIGH_VOLUME_TOPIC_ENABLED
           value: ${NOTIFICATIONS_KAFKA_OUTGOING_HIGH_VOLUME_TOPIC_ENABLED}
-        - name: QUARKUS_CACHE_TYPE
-          value: ${QUARKUS_CACHE_TYPE}
         - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
           value: ${QUARKUS_HIBERNATE_ORM_LOG_SQL}
         - name: QUARKUS_HTTP_PORT
@@ -332,9 +330,6 @@ parameters:
 - name: EXPORT_EVENT_LISTENER_LOG_LEVEL
   description: The log level for the export service's event listener.
   value: "INFO"
-- name: QUARKUS_CACHE_TYPE
-  description: Quarkus cache backend. Defaults to 'caffeine'.
-  value: "caffeine"
 - name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
   description: When set to 'request-response', rest-client will log the request and response contents
   value: ""
