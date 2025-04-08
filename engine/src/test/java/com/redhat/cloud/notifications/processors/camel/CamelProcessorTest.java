@@ -1,20 +1,18 @@
 package com.redhat.cloud.notifications.processors.camel;
 
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
-import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.templates.models.EnvironmentTest;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.InjectMock;
@@ -33,7 +31,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -49,15 +46,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public abstract class CamelProcessorTest {
 
     private static final String WEBHOOK_URL = "https://foo.bar";
     protected static final String CONTEXT_HOST_URL = EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/my-custom-host-url";
-
-    @InjectMock
-    TemplateRepository templateRepository;
 
     @InjectMock
     NotificationHistoryRepository notificationHistoryRepository;
@@ -82,8 +75,6 @@ public abstract class CamelProcessorTest {
         inMemorySink.clear();
     }
 
-    protected abstract String getQuteTemplate();
-
     protected abstract String getExpectedMessage(boolean withHostUrl);
 
     protected abstract String getSubType();
@@ -105,12 +96,10 @@ public abstract class CamelProcessorTest {
     }
 
     private void testProcessInternal(boolean withHostUrl) {
-        mockTemplate();
         Event event = buildEvent(withHostUrl);
         Endpoint endpoint = buildEndpoint();
         getCamelProcessor().process(event, List.of(endpoint));
 
-        verify(templateRepository, times(1)).findIntegrationTemplate(any(), any(), any(), any(), any());
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(any(NotificationHistory.class));
         verifyKafkaMessage(withHostUrl);
     }
@@ -139,17 +128,6 @@ public abstract class CamelProcessorTest {
                 .getHeaders().headers(X_RH_NOTIFICATIONS_CONNECTOR_HEADER)
                 .iterator().next().value();
         assertEquals(getExpectedConnectorHeader(), new String(actualConnectorHeader, UTF_8));
-    }
-
-    protected void mockTemplate() {
-        Template template = new Template();
-        template.setName("Test template");
-        template.setData(getQuteTemplate());
-
-        IntegrationTemplate integrationTemplate = new IntegrationTemplate();
-        integrationTemplate.setTheTemplate(template);
-
-        when(templateRepository.findIntegrationTemplate(any(), any(), any(), any(), any())).thenReturn(Optional.of(integrationTemplate));
     }
 
     protected static Event buildEvent(boolean withHostUrl) {
@@ -184,7 +162,9 @@ public abstract class CamelProcessorTest {
         event.setEventWrapper(new EventWrapperAction(action));
         event.setBundleDisplayName("Red Hat Enterprise Linux");
         event.setApplicationDisplayName("Policies");
+        Bundle bundle = new Bundle("rhel", "Red Hat Enterprise Linux");
         Application application = new Application();
+        application.setBundle(bundle);
         application.setName("policies");
         EventType eventType = new EventType();
         eventType.setApplication(application);
