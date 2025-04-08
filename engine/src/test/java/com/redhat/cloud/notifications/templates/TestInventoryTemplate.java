@@ -268,7 +268,7 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
                 String.format(
                     "<a target=\"_blank\" href=\"%s/insights/inventory/%s\">Open Inventory in Insights</a>",
                     this.environment.url(),
-                    instant_email ? "?from=notification_instant_email" : "?from=notification_daily_digest"
+                    instant_email ? "?from=notifications&integration=instant_email" : "?from=notifications&integration=daily_digest"
                 )
             )
         );

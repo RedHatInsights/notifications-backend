@@ -34,10 +34,10 @@ public class SlackProcessorTest extends CamelProcessorTest {
             "{#else}{data.events.size()} event{#if data.events.size() > 1}s{/if} triggered{/if} " +
             "from {data.source.application.display_name} - {data.source.bundle.display_name}. " +
             "<{data.application_url}|Open {data.source.application.display_name}>";
-    private static final String SLACK_EXPECTED_MSG = "<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f?from=notification_slack|my-computer> " +
-            "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies?from=notification_slack|Open Policies>";
-    private static final String SLACK_EXPECTED_MSG_WITH_HOST_URL = "<" + CONTEXT_HOST_URL + "?from=notification_slack|my-computer> " +
-            "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies?from=notification_slack|Open Policies>";
+    private static final String SLACK_EXPECTED_MSG = "<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f?from=notifications&integration=slack|my-computer> " +
+            "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies?from=notifications&integration=slack|Open Policies>";
+    private static final String SLACK_EXPECTED_MSG_WITH_HOST_URL = "<" + CONTEXT_HOST_URL + "?from=notifications&integration=slack|my-computer> " +
+            "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies?from=notifications&integration=slack|Open Policies>";
 
     @Inject
     SlackProcessor slackProcessor;

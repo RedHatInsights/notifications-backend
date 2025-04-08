@@ -123,12 +123,13 @@ public class InsightsUrlsBuilder {
      * directly if the URL will be assembled by the endpoint application.
      *
      * @param params Any non default parameters to be used
-     * @param integration_type a string used to construct the source query param (ex. {@code from=notification_instant_email})
+     * @param integration_type a string used to construct the source query param (ex. {@code integration=instant_email})
      * @return formatted query parameters
      */
     public String buildQueryParams(List<String> params, String integration_type) {
         List<String> all_params = new ArrayList<>(List.copyOf(params));
-        all_params.add("from=notification_" + integration_type.toLowerCase());
+        all_params.add("from=notifications");
+        all_params.add("integration=" + integration_type.toLowerCase());
 
         return "?" + String.join("&", all_params);
     }

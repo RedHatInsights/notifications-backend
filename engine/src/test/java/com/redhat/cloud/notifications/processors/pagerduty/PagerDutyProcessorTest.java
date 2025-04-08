@@ -120,7 +120,7 @@ public class PagerDutyProcessorTest {
         JsonObject payload = message.getPayload();
 
         final JsonObject payloadToSend = transformer.toJsonObject(event);
-        payloadToSend.put("application_url", "https://localhost/insights/PagerDutyTest?from=notification_pagerduty");
+        payloadToSend.put("application_url", "https://localhost/insights/PagerDutyTest?from=notifications&integration=pagerduty");
         payloadToSend.put("severity", PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
@@ -180,8 +180,8 @@ public class PagerDutyProcessorTest {
         JsonObject payload = message.getPayload();
 
         final JsonObject payloadToSend = transformer.toJsonObject(event);
-        payloadToSend.put("inventory_url", "https://localhost/insights/inventory/85094ed1-1c52-4bc5-8e3e-4ea3869a17ce?from=notification_pagerduty");
-        payloadToSend.put("application_url", "https://localhost/insights/inventory?from=notification_pagerduty");
+        payloadToSend.put("inventory_url", "https://localhost/insights/inventory/85094ed1-1c52-4bc5-8e3e-4ea3869a17ce?from=notifications&integration=pagerduty");
+        payloadToSend.put("application_url", "https://localhost/insights/inventory?from=notifications&integration=pagerduty");
         payloadToSend.put("severity", PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
