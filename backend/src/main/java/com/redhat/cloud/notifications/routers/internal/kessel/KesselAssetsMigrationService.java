@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.routers.internal.kessel;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.KesselInventoryResourceType;
 import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -11,8 +12,6 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import io.grpc.stub.StreamObserver;
 import io.quarkus.logging.Log;
 import io.smallrye.common.annotation.RunOnVirtualThread;
-import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.Uni;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -23,14 +22,18 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import org.project_kessel.api.inventory.v1beta1.resources.CreateNotificationsIntegrationRequest;
+import org.project_kessel.api.inventory.v1beta1.resources.CreateNotificationsIntegrationResponse;
+import org.project_kessel.api.inventory.v1beta1.resources.Metadata;
+import org.project_kessel.api.inventory.v1beta1.resources.NotificationsIntegration;
+import org.project_kessel.api.inventory.v1beta1.resources.ReporterData;
 import org.project_kessel.api.relations.v1beta1.CreateTuplesRequest;
 import org.project_kessel.api.relations.v1beta1.CreateTuplesResponse;
-import org.project_kessel.api.relations.v1beta1.ImportBulkTuplesRequest;
-import org.project_kessel.api.relations.v1beta1.ImportBulkTuplesResponse;
 import org.project_kessel.api.relations.v1beta1.ObjectReference;
 import org.project_kessel.api.relations.v1beta1.ObjectType;
 import org.project_kessel.api.relations.v1beta1.Relationship;
 import org.project_kessel.api.relations.v1beta1.SubjectReference;
+import org.project_kessel.inventory.client.NotificationsIntegrationClient;
 import org.project_kessel.relations.client.RelationTuplesClient;
 
 import java.util.ArrayList;
@@ -39,8 +42,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
@@ -73,6 +74,9 @@ public class KesselAssetsMigrationService {
 
     @Inject
     KesselInventoryAuthorization kesselInventoryAuthorizationService;
+
+    @Inject
+    NotificationsIntegrationClient notificationsIntegrationClient;
 
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("/kessel/migrate-assets")
@@ -124,6 +128,63 @@ public class KesselAssetsMigrationService {
                     Log.infof("[offset: %s][first_integration: %s][last_integration: %s] Sent batch of %s integrations to Kessel", finalOffset, fetchedEndpoints.getFirst().getId(), fetchedEndpoints.getLast().getId(), fetchedEndpoints.size());
                 }
             });
+
+            fetchedEndpointsSize = fetchedEndpoints.size();
+            offset += fetchedEndpoints.size();
+            traceLoops += 1;
+
+            Log.debugf("[fetchedEndpointsSize: %s][kesselMigrationBatchSize: %s][offset: %s] do-while loop condition", fetchedEndpointsSize, offset, this.backendConfig.getKesselMigrationBatchSize());
+        } while (fetchedEndpointsSize == this.backendConfig.getKesselMigrationBatchSize());
+
+        Log.info("Finished migrating integrations to the Kessel inventory");
+    }
+
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("/kessel/migrate-assets-inventory")
+    @POST
+    @RunOnVirtualThread
+    public void migrateAssetsInventory(@Nullable final KesselAssetsMigrationRequest kamRequest) {
+        Log.info("Kessel assets' migration begins");
+
+        // Grab the organization ID specified in the request.
+        final Optional<String> orgId = (kamRequest == null) ? Optional.empty() : Optional.of(kamRequest.orgId());
+
+        int fetchedEndpointsSize = 0;
+        int offset = 0;
+        int traceLoops = 0;
+        do {
+            Log.debugf("[loops: %s] Loops", traceLoops);
+
+            final List<Endpoint> fetchedEndpoints = this.endpointRepository.getNonSystemEndpointsByOrgIdWithLimitAndOffset(orgId, this.backendConfig.getKesselMigrationBatchSize(), offset);
+            Log.debugf("[offset: %s][first_integration: %s][last_integration: %s] Fetched batch of %s integrations", offset, (fetchedEndpoints.isEmpty()) ? "none" : fetchedEndpoints.getFirst().getId(), (fetchedEndpoints.isEmpty()) ? "none" : fetchedEndpoints.getLast().getId(), fetchedEndpoints.size());
+
+            // If for some reason we have fetched full pages from the database
+            // all the time, the last one might be empty, so there is no need
+            // to attempt calling Kessel.
+            if (fetchedEndpoints.isEmpty()) {
+                Log.debug("Breaking the do-while loop because the size of the fetched integrations is zero");
+                break;
+            }
+
+            for (Endpoint endpoint : fetchedEndpoints) {
+                final CreateNotificationsIntegrationRequest request = this.buildCreateIntegrationRequest(endpoint);
+                Log.tracef("Generated a \"CreateNotificationsIntegrationRequest\": %s", request);
+
+                this.notificationsIntegrationClient.CreateNotificationsIntegration(request);
+                // Send the request to the inventory.
+                final CreateNotificationsIntegrationResponse response;
+
+                try {
+                    response = this.notificationsIntegrationClient.CreateNotificationsIntegration(request);
+                    Log.tracef(" Received payload for the integration creation: %s", response);
+                } catch (final Exception e) {
+                    Log.errorf(
+                        e,
+                        "Unable to create integration in Kessel's inventory from request: %s",
+                        request
+                    );
+                }
+            }
 
             fetchedEndpointsSize = fetchedEndpoints.size();
             offset += fetchedEndpoints.size();
@@ -187,50 +248,21 @@ public class KesselAssetsMigrationService {
         Log.info("Finished migrating integrations check");
     }
 
-
-    @Deprecated
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("/kessel/migrate-assets/async")
-    @POST
-    public void migrateAssetsAsyncUsingBulkImport(@Nullable final KesselAssetsMigrationRequest kamRequest) {
-        Log.info("Kessel assets' migration begins");
-
-        // Grab the organization ID specified in the request.
-        final Optional<String> orgId = (kamRequest == null) ? Optional.empty() : Optional.of(kamRequest.orgId());
-
-        final int limit = this.backendConfig.getKesselMigrationBatchSize();
-
-        final AtomicInteger offsetContainer = new AtomicInteger(0);
-        final Multi<List<Endpoint>> integrationBatch = Multi
-            .createBy()
-            .repeating()
-            .supplier(
-                () -> offsetContainer.addAndGet(limit),
-                offset -> {
-                    final List<Endpoint> endpoints = this.endpointRepository.getNonSystemEndpointsByOrgIdWithLimitAndOffset(orgId, limit, offset);
-                    Log.infof("[limit: %s][offset: %s] Fetched endpoint batch from the database", limit, offset);
-
-                    return endpoints;
-                }
-            ).whilst(endpoints -> endpoints.size() == limit);
-
-        final Multi<ImportBulkTuplesRequest> importBulkTuplesRequestMulti = integrationBatch
-            .map(endpoints -> endpoints.stream().map(this::mapEndpointToRelationship).toList())
-            .map(relationships -> ImportBulkTuplesRequest.newBuilder().addAllTuples(relationships).build());
-
-        final Uni<ImportBulkTuplesResponse> importBulkTuplesResponseUni = this.relationTuplesClient.importBulkTuplesUni(importBulkTuplesRequestMulti);
-
-        final AtomicReference<Throwable> failure = new AtomicReference<>();
-        final ImportBulkTuplesResponse response = importBulkTuplesResponseUni
-            .onFailure().invoke(failure::set)
-            .onFailure().recoverWithNull()
-            .await().indefinitely();
-
-        if (response == null) {
-            Log.errorf(failure.get(), "Unable to import integrations into Kessel");
-        } else {
-            Log.infof("%s endpoints imported into Kessel", response.getNumImported());
-        }
+    protected CreateNotificationsIntegrationRequest buildCreateIntegrationRequest(final Endpoint endpoint) {
+        return CreateNotificationsIntegrationRequest.newBuilder()
+            .setIntegration(
+                NotificationsIntegration.newBuilder()
+                    .setMetadata(Metadata.newBuilder()
+                        .setResourceType(KesselInventoryResourceType.INTEGRATION.getKesselRepresentation())
+                        .setWorkspaceId(this.workspaceUtils.getDefaultWorkspaceId(endpoint.getOrgId()).toString())
+                        .build()
+                    ).setReporterData(ReporterData.newBuilder()
+                        .setLocalResourceId(endpoint.getId().toString())
+                        .setReporterInstanceId(this.backendConfig.getKesselInventoryReporterInstanceId())
+                        .setReporterType(ReporterData.ReporterType.NOTIFICATIONS)
+                        .build()
+                    ).build()
+            ).build();
     }
 
     /**
