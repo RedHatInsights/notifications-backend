@@ -130,8 +130,8 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
         assertTrue(result.contains("Host Name"), "Body should contain 'Host Name' header");
         assertTrue(result.contains("Error"), "Body should contain 'Error' header");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        // TODO set boolean to false once app-specific daily digest code is removed
-        assertOpenInventoryInsightsButtonPresent(result, true);
+
+        assertOpenInventoryInsightsButtonPresent(result, false);
 
         // Make sure that the section headline is present.
         assertTrue(result.contains("Inventory"), "the \"Inventory\" header was not found as the section title");
