@@ -32,7 +32,7 @@ public class ConnectorToEngineRouteBuilder extends EndpointRouteBuilder {
         from(direct(CONNECTOR_TO_ENGINE))
                 .routeId(CONNECTOR_TO_ENGINE)
                 .process(outgoingCloudEventBuilder)
-                .to(log(getClass().getName()).level("DEBUG").showHeaders(true).showBody(true))
+                .to(log(getClass().getName()).level("INFO").showHeaders(true).showBody(true))
                 .to(kafka(connectorConfig.getOutgoingKafkaTopic()));
     }
 }
