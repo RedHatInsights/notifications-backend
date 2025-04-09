@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
@@ -10,10 +12,12 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
+import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.EmailTemplateMigrationService;
 import com.redhat.cloud.notifications.templates.TemplateService;
+import com.redhat.cloud.notifications.templates.models.DailyDigestSection;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import io.quarkus.qute.TemplateInstance;
@@ -25,12 +29,16 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 public abstract class EmailTemplatesInDbHelper {
@@ -61,6 +69,9 @@ public abstract class EmailTemplatesInDbHelper {
 
     @Inject
     EmailTemplateMigrationService emailTemplateMigrationService;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     protected final Map<String, UUID> eventTypes = new HashMap<>();
 
@@ -169,16 +180,38 @@ public abstract class EmailTemplatesInDbHelper {
         return generateAggregatedEmailBody(context, null);
     }
 
-    protected String generateAggregatedEmailBody(Map<String, Object> context, EmailPendo emailPendo) {
+    protected String generateAggregatedEmailBody(Map<String, Object> originalContext, EmailPendo emailPendo) {
+        Map<String, Object> context = new HashMap<>(originalContext); // to patch immutable maps from individual test cases
+        context.put("application", getApp());
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
         TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
-        return generateEmailFromContextMap(bodyTemplate, context, emailPendo);
+        String applicationSectionResult = generateEmailFromContextMap(bodyTemplate, context, emailPendo, bodyTemplate.getTemplate().getId() + "Intermediate");
+
+        String commonTemplatePrefix = bodyTemplate.getTemplate().getId().contains("Secure") ? "Secure/" : "";
+        Optional<Template> dailyTemplate = templateRepository.findTemplateByName(commonTemplatePrefix + "Common/insightsDailyEmailBody");
+        assertTrue(dailyTemplate.isPresent());
+
+        String titleData = applicationSectionResult.split("<!-- Body section -->")[0];
+
+        // Some application daily template such as Inventory can contain several sections
+        // each section have a "Jump to details" link that have to be added in the top of aggregated daily digest email
+        String[] sections = titleData.split("<!-- next section -->");
+
+        DailyDigestSection dailyDigestSection = new DailyDigestSection(
+            applicationSectionResult.split("<!-- Body section -->")[1],
+            Arrays.stream(sections).filter(e -> !e.isBlank()).collect(Collectors.toList()));
+
+        TemplateInstance bodyTemplateGlobalDailyDigest = templateService.compileTemplate(dailyTemplate.get().getData(), "singleDailyDigest/dailyDigest");
+
+        Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", List.of(dailyDigestSection));
+        return generateEmailFromContextMap(bodyTemplateGlobalDailyDigest, mapData, emailPendo, bodyTemplate.getTemplate().getId());
     }
 
     protected String generateAggregatedEmailBody(Action action) {
-        AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
-        TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
-        return generateEmail(bodyTemplate, action, null);
+        Map<String, Object> contextMap = objectMapper
+            .convertValue(action.getContext(), new TypeReference<Map<String, Object>>() { });
+
+        return generateAggregatedEmailBody(contextMap, null);
     }
 
     protected String generateEmail(TemplateInstance template, Object actionOrEvent, EmailPendo pendo) {
@@ -198,6 +231,15 @@ public abstract class EmailTemplatesInDbHelper {
 
         String result = templateService.renderEmailBodyTemplate(action, templateInstance, emailPendo, false);
         writeOrSendEmailTemplate(result, templateInstance.getTemplate().getId() + ".html");
+
+        return result;
+    }
+
+    protected String generateEmailFromContextMap(TemplateInstance templateInstance, Map<String, Object> context, EmailPendo emailPendo, String overrideTemplateId) {
+        Map<String, Object> action =  Map.of("context", context, "bundle", getBundle(), "timestamp", LocalDateTime.now());
+
+        String result = templateService.renderEmailBodyTemplate(action, templateInstance, emailPendo, false);
+        writeOrSendEmailTemplate(result, overrideTemplateId + ".html");
 
         return result;
     }
@@ -234,13 +276,5 @@ public abstract class EmailTemplatesInDbHelper {
 
     protected List<String> getUsedEventTypeNames() {
         return List.of();
-    }
-
-    private User createUser() {
-        User user = new User();
-        user.setFirstName("John");
-        user.setLastName("Doe");
-
-        return user;
     }
 }
