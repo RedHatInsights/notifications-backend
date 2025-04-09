@@ -14,7 +14,6 @@ import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.processors.email.EmailPendo;
-import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.EmailTemplateMigrationService;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.templates.models.DailyDigestSection;
