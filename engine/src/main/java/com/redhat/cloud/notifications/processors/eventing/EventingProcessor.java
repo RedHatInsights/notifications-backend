@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
+import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
@@ -30,6 +31,9 @@ public class EventingProcessor extends EndpointTypeProcessor {
 
     @Inject
     BaseTransformer baseTransformer;
+
+    @Inject
+    InsightsUrlsBuilder insightsUrlsBuilder;
 
     @Inject
     MeterRegistry registry;
@@ -79,6 +83,8 @@ public class EventingProcessor extends EndpointTypeProcessor {
         }
 
         final JsonObject payload = baseTransformer.toJsonObject(event);
+        insightsUrlsBuilder.buildInventoryUrl(payload, endpoint.getSubType()).ifPresent(url -> payload.put("inventory_url", url));
+        payload.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payload, endpoint.getSubType()));
         payload.put(NOTIF_METADATA_KEY, metaData);
 
         return payload;

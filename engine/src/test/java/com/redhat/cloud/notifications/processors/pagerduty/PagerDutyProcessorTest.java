@@ -18,7 +18,6 @@ import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.PagerDutyProperties;
 import com.redhat.cloud.notifications.models.PagerDutySeverity;
-import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -71,9 +70,6 @@ public class PagerDutyProcessorTest {
     @Inject
     BaseTransformer transformer;
 
-    @Inject
-    InsightsUrlsBuilder insightsUrlsBuilder;
-
     @PostConstruct
     void postConstruct() {
         inMemorySink = inMemoryConnector.sink(TOCAMEL_CHANNEL);
@@ -124,9 +120,7 @@ public class PagerDutyProcessorTest {
         JsonObject payload = message.getPayload();
 
         final JsonObject payloadToSend = transformer.toJsonObject(event);
-        insightsUrlsBuilder.buildInventoryUrl(payloadToSend)
-                .ifPresent(url -> payloadToSend.put("inventory_url", url));
-        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend));
+        payloadToSend.put("application_url", "https://localhost/insights/PagerDutyTest?from=notifications&integration=pagerduty");
         payloadToSend.put("severity", PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
@@ -186,9 +180,8 @@ public class PagerDutyProcessorTest {
         JsonObject payload = message.getPayload();
 
         final JsonObject payloadToSend = transformer.toJsonObject(event);
-        insightsUrlsBuilder.buildInventoryUrl(payloadToSend)
-                .ifPresent(url -> payloadToSend.put("inventory_url", url));
-        payloadToSend.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payloadToSend));
+        payloadToSend.put("inventory_url", "https://localhost/insights/inventory/85094ed1-1c52-4bc5-8e3e-4ea3869a17ce?from=notifications&integration=pagerduty");
+        payloadToSend.put("application_url", "https://localhost/insights/inventory?from=notifications&integration=pagerduty");
         payloadToSend.put("severity", PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
@@ -249,7 +242,7 @@ public class PagerDutyProcessorTest {
         properties.setSeverity(PagerDutySeverity.ERROR);
 
         Endpoint ep = new Endpoint();
-        ep.setType(EndpointType.WEBHOOK);
+        ep.setType(EndpointType.PAGERDUTY);
         ep.setName("positive feeling");
         ep.setDescription("needle in the haystack");
         ep.setEnabled(true);

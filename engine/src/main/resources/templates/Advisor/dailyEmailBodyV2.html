@@ -35,7 +35,7 @@
     {action.context.advisor.total_incident} total incident{#if action.context.advisor.total_incident > 1}s{/if}
 {/content-subtitle-section1}
 {#content-title-right-part-section1}
-    <a target="_blank" href="{environment.url}/insights/advisor">{action.context.advisor.total_recommendation}</a>
+    <a target="_blank" href="{environment.url}/insights/advisor?{query_params}">{action.context.advisor.total_recommendation}</a>
 {/content-title-right-part-section1}
 {#content-body-section1}
 {#if action.context.advisor.new_recommendations.orEmpty.size > 0}
@@ -61,7 +61,7 @@
                 {/if}
             {/let}
             <td class="recommendation-col">
-                <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}">{action.context.advisor.new_recommendations.get(rec).rule_description}</a>
+                <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}?{query_params}">{action.context.advisor.new_recommendations.get(rec).rule_description}</a>
             </td>
             <td>
                 {#switch action.context.advisor.new_recommendations.get(rec).total_risk}
@@ -103,7 +103,7 @@
                 {/if}
             {/let}
             <td class="recommendation-col">
-              <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}">{action.context.advisor.resolved_recommendations.get(rec).rule_description}</a>
+              <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}?{query_params}">{action.context.advisor.resolved_recommendations.get(rec).rule_description}</a>
             </td>
             <td>
               {#switch action.context.advisor.resolved_recommendations.get(rec).total_risk}
@@ -144,7 +144,7 @@
                 {/if}
             {/let}
             <td class="recommendation-col">
-                <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}">{action.context.advisor.deactivated_recommendations.get(rec).rule_description}</a>
+                <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}?{query_params}">{action.context.advisor.deactivated_recommendations.get(rec).rule_description}</a>
             </td>
             <td>
               {#switch action.context.advisor.deactivated_recommendations.get(rec).total_risk}
@@ -166,6 +166,6 @@
     </p>
 {/content-body-section2}
 {#content-button-section2}
-    <a target="_blank" href="{environment.url}/insights/advisor">Open Insights Advisor</a>
+    <a target="_blank" href="{environment.url}/insights/advisor?{query_params}">Open Insights Advisor</a>
 {/content-button-section2}
 {/include}

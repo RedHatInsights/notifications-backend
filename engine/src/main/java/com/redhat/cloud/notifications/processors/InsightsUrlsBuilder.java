@@ -8,6 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -32,9 +33,11 @@ public class InsightsUrlsBuilder {
      *
      * @param data a payload converted by
      *             {@link com.redhat.cloud.notifications.transformers.BaseTransformer#toJsonObject(Event) BaseTransformer#toJsonObject(Event)}
+     * @param integration_type a string used to construct the source query param. Inputs will be converted to lowercase,
+     *                         and spaces replaced with underscores. For example, {@code "Google Chat"} becomes {@code from=notification_google_chat}.
      * @return URL to the generating inventory item, if required fields are present
      */
-    public Optional<String> buildInventoryUrl(JsonObject data) {
+    public Optional<String> buildInventoryUrl(JsonObject data, String integration_type) {
         String path;
         ArrayList<String> queryParamParts = new ArrayList<>();
         JsonObject context = data.getJsonObject("context");
@@ -45,7 +48,7 @@ public class InsightsUrlsBuilder {
         // A provided host url does not need to be modified
         String host_url = context.getString("host_url", "");
         if (!host_url.isBlank()) {
-            return Optional.of(host_url);
+            return Optional.of(host_url + buildQueryParams(queryParamParts, integration_type));
         }
 
         String environmentUrl = environment.url();
@@ -68,25 +71,21 @@ public class InsightsUrlsBuilder {
             return Optional.empty();
         }
 
-        if (!queryParamParts.isEmpty()) {
-            String queryParams = "?" + String.join("&", queryParamParts);
-            path += queryParams;
-        }
-
-        return Optional.of(environmentUrl + path);
+        return Optional.of(environmentUrl + path + buildQueryParams(queryParamParts, integration_type));
     }
 
     /**
      * <p>Constructs an Insights URL corresponding to the specific inventory item which generated the notification.</p>
      *
-     * <p>If the expected fields {@link Action#getApplication()} and {@link Action#getBundle()} are not present, an
-     * inaccurate URL may be returned.</p>
+     * <p>If the expected fields {@link Action#getApplication()}, {@link Action#getBundle()}, and {@link Action#getEventType()}
+     *  are not present, an inaccurate URL may be returned.</p>
      *
      * @param data a payload converted by
      *             {@link com.redhat.cloud.notifications.transformers.BaseTransformer#toJsonObject(Event) BaseTransformer#toJsonObject(Event)}
+     * @param integration_type a string used to construct the source query param (ex. {@code from=notification_instant_email})
      * @return URL to the generating application
      */
-    public String buildApplicationUrl(JsonObject data) {
+    public String buildApplicationUrl(JsonObject data, String integration_type) {
         String path = "";
 
         String environmentUrl = environment.url();
@@ -95,16 +94,43 @@ public class InsightsUrlsBuilder {
 
         if (bundle.equals("openshift")) {
             path = "openshift/";
+        } else if (bundle.equals("ansible-automation-platform")) {
+            path = "ansible/";
         }
 
-        if (application.equals("integrations")) {
-            path += "settings/";
-        } else {
-            path += "insights/";
-        }
+        path = switch (application) {
+            // Hard override
+            case "rbac" -> "iam/user-access/users";
+            case "edge-management" -> "edge";
+            // Settings paths
+            case "integrations", "notifications" -> path + "settings/" + application;
+            // OpenShift path override
+            case "cluster-manager" -> path;
+            case "cost-management" -> path + application;
+            // Ansible Automation Platform path override
+            case "ansible-service-on-aws" -> path + "/service/instances";
+            // RHEL path override
+            case "malware-detection" -> path + "insights/malware";
+            case "resource-optimization" -> path + "insights/" + "ros";
+            default -> path + "insights/" +  application;
+        };
 
-        path += application;
+        return environmentUrl + "/" + path + buildQueryParams(List.of(), integration_type);
+    }
 
-        return String.format("%s/%s", environmentUrl, path);
+    /**
+     * Build query parameters from provided arguments, including default parameters. This method should only be called
+     * directly if the URL will be assembled by the endpoint application.
+     *
+     * @param params Any non default parameters to be used
+     * @param integration_type a string used to construct the source query param (ex. {@code integration=instant_email})
+     * @return formatted query parameters
+     */
+    public String buildQueryParams(List<String> params, String integration_type) {
+        List<String> all_params = new ArrayList<>(List.copyOf(params));
+        all_params.add("from=notifications");
+        all_params.add("integration=" + integration_type.toLowerCase());
+
+        return "?" + String.join("&", all_params);
     }
 }

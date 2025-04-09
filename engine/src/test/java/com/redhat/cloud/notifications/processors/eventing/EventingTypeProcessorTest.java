@@ -168,9 +168,10 @@ class EventingTypeProcessorTest {
         // We'll only check the payload and metadata of the first Kafka message.
         Message<JsonObject> message = inMemorySink.received().get(0);
 
-        // The payload should contain the action events.
+        // The payload should contain the action events and application URL.
         JsonObject payload = message.getPayload();
         assertNotNull(payload.getJsonArray("events").getJsonObject(0).getString("payload"));
+        assertEquals("https://localhost/insights/app?from=notifications&integration=sub-type", payload.getString("application_url"));
 
         // The processor added a 'notif-metadata' field to the payload, let's have a look at it.
         JsonObject notifMetadata = payload.getJsonObject(NOTIF_METADATA_KEY);

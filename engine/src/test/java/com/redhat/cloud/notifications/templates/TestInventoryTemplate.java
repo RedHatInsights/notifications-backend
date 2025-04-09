@@ -130,6 +130,8 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
         assertTrue(result.contains("Host Name"), "Body should contain 'Host Name' header");
         assertTrue(result.contains("Error"), "Body should contain 'Error' header");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        // TODO set boolean to false once app-specific daily digest code is removed
+        assertOpenInventoryInsightsButtonPresent(result, true);
 
         // Make sure that the section headline is present.
         assertTrue(result.contains("Inventory"), "the \"Inventory\" header was not found as the section title");
@@ -178,7 +180,7 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
         Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
         Assertions.assertTrue(result.contains("was registered in Inventory."), "the message body should indicate that the system was registered");
 
-        this.assertOpenInventoryInsightsButtonPresent(result);
+        this.assertOpenInventoryInsightsButtonPresent(result, true);
     }
 
     /**
@@ -218,7 +220,7 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
             "the message body should indicate that the system was registered"
         );
 
-        this.assertOpenInventoryInsightsButtonPresent(result);
+        this.assertOpenInventoryInsightsButtonPresent(result, true);
     }
 
     /**
@@ -251,20 +253,22 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
         Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
         Assertions.assertTrue(result.contains("was deleted from Inventory."), "the message body should indicate that the system was deleted");
 
-        this.assertOpenInventoryInsightsButtonPresent(result);
+        this.assertOpenInventoryInsightsButtonPresent(result, true);
     }
 
     /**
-     * Asserts that the "Open Inventory in Insights" button is present.
+     * Asserts that the "Open Inventory in Insights" button is present, with the correct Notifications query parameter.
      * @param result the resulting HTML in which we need to perform the
      *               assertion.
+     * @param instant_email specifies query parameter for instant or aggregation email
      */
-    private void assertOpenInventoryInsightsButtonPresent(final String result) {
+    private void assertOpenInventoryInsightsButtonPresent(final String result, final boolean instant_email) {
         Assertions.assertTrue(
             result.contains(
                 String.format(
-                    "<a target=\"_blank\" href=\"%s/insights/inventory/\">Open Inventory in Insights</a>",
-                    this.environment.url()
+                    "<a target=\"_blank\" href=\"%s/insights/inventory/%s\">Open Inventory in Insights</a>",
+                    this.environment.url(),
+                    instant_email ? "?from=notifications&integration=instant_email" : "?from=notifications&integration=daily_digest"
                 )
             )
         );

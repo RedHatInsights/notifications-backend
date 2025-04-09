@@ -75,8 +75,8 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
 
     protected String buildNotificationMessage(Event event) {
         JsonObject data = baseTransformer.toJsonObject(event);
-        insightsUrlsBuilder.buildInventoryUrl(data).ifPresent(url -> data.put("inventory_url", url));
-        data.put("application_url", insightsUrlsBuilder.buildApplicationUrl(data));
+        insightsUrlsBuilder.buildInventoryUrl(data, getIntegrationType()).ifPresent(url -> data.put("inventory_url", url));
+        data.put("application_url", insightsUrlsBuilder.buildApplicationUrl(data, getIntegrationType()));
 
         Map<Object, Object> dataAsMap;
         try {
