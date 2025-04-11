@@ -14,13 +14,6 @@ import static com.redhat.cloud.notifications.events.EndpointProcessor.GOOGLE_CHA
 @QuarkusTestResource(TestLifecycleManager.class)
 public class GoogleChatProcessorTest extends CamelProcessorTest {
 
-    private static final String GOOGLE_CHAT_TEMPLATE = "{\"text\":\"{#if data.context.display_name??}" +
-            "<{data.inventory_url}|{data.context.display_name}> " +
-            "triggered {data.events.size()} event{#if data.events.size() > 1}s{/if}" +
-            "{#else}{data.events.size()} event{#if data.events.size() > 1}s{/if} " +
-            "triggered{/if} from {data.source.application.display_name} - {data.source.bundle.display_name}. " +
-            "<{data.application_url}|Open {data.source.application.display_name}>\"}";
-
     private static final String GOOGLE_CHAT_EXPECTED_MSG = "{\"text\":\"<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f?from=notifications&integration=google_chat|my-computer> " +
             "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies?from=notifications&integration=google_chat|Open Policies>\"}";
 
@@ -29,11 +22,6 @@ public class GoogleChatProcessorTest extends CamelProcessorTest {
 
     @Inject
     GoogleChatProcessor googleSpacesProcessor;
-
-    @Override
-    protected String getQuteTemplate() {
-        return GOOGLE_CHAT_TEMPLATE;
-    }
 
     @Override
     protected String getExpectedMessage(boolean withHostUrl) {

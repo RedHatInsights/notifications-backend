@@ -1,11 +1,18 @@
 package helpers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
+import com.redhat.cloud.notifications.qute.templates.TemplateService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -20,7 +27,16 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static java.time.ZoneOffset.UTC;
 
+@ApplicationScoped
 public class TestHelpers {
+
+    @Inject
+    TemplateService templateService;
+
+    @Inject
+    ObjectMapper objectMapper;
+
+    public static final String expectedTestEnvUrlValue = "https://localhost";
 
     public static final String HCC_LOGO_TARGET = "Logo-Red_Hat-Hybrid_Cloud_Console-A-Reverse-RGB.png";
 
@@ -578,4 +594,19 @@ public class TestHelpers {
         }
     }
 
+    public static Map<String, Map<String, String>> buildSourceParameter(String bundleDisplayName, String applicationDisplayName, String eventTypeDisplayName) {
+        return Map.of("bundle", Map.of("display_name", bundleDisplayName),
+            "application", Map.of("display_name", applicationDisplayName),
+            "event_type", Map.of("display_name", eventTypeDisplayName));
+    }
+
+    public String renderTemplate(final IntegrationType integrationType, final String eventType, final Action action, final String inventoryUrl, final String applicationUrl) {
+        TemplateDefinition templateConfig = new TemplateDefinition(integrationType, "rhel", "unknown-app", eventType);
+        Map<String, Object> map = objectMapper
+            .convertValue(action, new TypeReference<Map<String, Object>>() { });
+        map.put("inventory_url", inventoryUrl);
+        map.put("application_url", applicationUrl);
+        map.put("source", TestHelpers.buildSourceParameter("Red Hat Enterprise Linux", "Policies", "not use"));
+        return templateService.renderTemplate(templateConfig, map);
+    }
 }

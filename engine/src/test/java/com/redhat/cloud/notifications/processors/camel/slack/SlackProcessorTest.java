@@ -28,12 +28,6 @@ public class SlackProcessorTest extends CamelProcessorTest {
 
     private static final String WEBHOOK_URL = "https://foo.bar";
     private static final String CHANNEL = "#notifications";
-    private static final String SLACK_TEMPLATE = "{#if data.context.display_name??}" +
-            "<{data.inventory_url}|{data.context.display_name}> " +
-            "triggered {data.events.size()} event{#if data.events.size() > 1}s{/if}" +
-            "{#else}{data.events.size()} event{#if data.events.size() > 1}s{/if} triggered{/if} " +
-            "from {data.source.application.display_name} - {data.source.bundle.display_name}. " +
-            "<{data.application_url}|Open {data.source.application.display_name}>";
     private static final String SLACK_EXPECTED_MSG = "<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f?from=notifications&integration=slack|my-computer> " +
             "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies?from=notifications&integration=slack|Open Policies>";
     private static final String SLACK_EXPECTED_MSG_WITH_HOST_URL = "<" + CONTEXT_HOST_URL + "?from=notifications&integration=slack|my-computer> " +
@@ -41,11 +35,6 @@ public class SlackProcessorTest extends CamelProcessorTest {
 
     @Inject
     SlackProcessor slackProcessor;
-
-    @Override
-    protected String getQuteTemplate() {
-        return SLACK_TEMPLATE;
-    }
 
     @Override
     protected String getExpectedMessage(boolean withHostUrl) {
@@ -100,8 +89,6 @@ public class SlackProcessorTest extends CamelProcessorTest {
      */
     @Test
     void testEmptyExtrasSendsSlackMessage() {
-        // Create a default template for the test.
-        this.mockTemplate();
 
         // Build the required data.
         final Event event = buildEvent(false);

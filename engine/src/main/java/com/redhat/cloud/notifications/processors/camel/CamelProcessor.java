@@ -4,18 +4,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.EngineConfig;
-import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
-import com.redhat.cloud.notifications.templates.TemplateService;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.logging.Log;
-import io.quarkus.qute.TemplateInstance;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 
@@ -23,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
-import static com.redhat.cloud.notifications.models.IntegrationTemplate.TemplateKind.ORG;
 
 public abstract class CamelProcessor extends EndpointTypeProcessor {
 
@@ -37,16 +34,13 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
     InsightsUrlsBuilder insightsUrlsBuilder;
 
     @Inject
-    TemplateRepository templateRepository;
-
-    @Inject
-    TemplateService templateService;
-
-    @Inject
     ObjectMapper objectMapper;
 
     @Inject
     ConnectorSender connectorSender;
+
+    @Inject
+    com.redhat.cloud.notifications.qute.templates.TemplateService quteTemplateService;
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
@@ -78,25 +72,20 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
         insightsUrlsBuilder.buildInventoryUrl(data, getIntegrationType()).ifPresent(url -> data.put("inventory_url", url));
         data.put("application_url", insightsUrlsBuilder.buildApplicationUrl(data, getIntegrationType()));
 
-        Map<Object, Object> dataAsMap;
+        Map<String, Object> dataAsMap;
         try {
             dataAsMap = objectMapper.readValue(data.encode(), Map.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(getIntegrationName() + " notification data transformation failed", e);
         }
 
-        String message = getTemplate(event.getOrgId())
-                .data("data", dataAsMap)
-                .render();
+        TemplateDefinition templateDefinition = new TemplateDefinition(
+            getQuteIntegrationType(),
+            event.getEventType().getApplication().getBundle().getName(),
+            event.getEventType().getApplication().getName(),
+            event.getEventType().getName());
 
-        return message;
-    }
-
-    private TemplateInstance getTemplate(String orgId) {
-        IntegrationTemplate integrationTemplate = templateRepository.findIntegrationTemplate(null, null, orgId, ORG, getIntegrationType())
-                .orElseThrow(() -> new IllegalStateException("No default template defined for integration"));
-        String template = integrationTemplate.getTheTemplate().getData();
-        return templateService.compileTemplate(template, integrationTemplate.getTheTemplate().getName());
+        return quteTemplateService.renderTemplate(templateDefinition, dataAsMap);
     }
 
     protected CamelNotification getCamelNotification(Event event, Endpoint endpoint) {
@@ -112,4 +101,8 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
     protected abstract String getIntegrationName();
 
     protected abstract String getIntegrationType();
+
+    protected IntegrationType getQuteIntegrationType() {
+        return IntegrationType.valueOf(getIntegrationType().toUpperCase());
+    }
 }
