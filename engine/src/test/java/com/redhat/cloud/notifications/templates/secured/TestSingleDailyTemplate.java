@@ -167,9 +167,8 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
     protected void generateAggregatedEmailBody(Map<String, Object> context, String app, Map<String, DailyDigestSection> dataMap) {
         context.put("application", app);
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), app, DAILY).get();
-        assertTrue(emailTemplate.getBodyTemplate().getData().contains("Secure/Common/insightsEmailBody"));
+        assertTrue(emailTemplate.getBodyTemplate().getData().contains("Secure/Common/insightsEmailBodyLight"));
 
-        emailTemplate.getBodyTemplate().setData(emailTemplate.getBodyTemplate().getData().replace("Common/insightsEmailBody", "Common/insightsEmailBodyLight"));
         TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
         addItem(dataMap, app, generateEmailFromContextMap(bodyTemplate, context, null));
     }

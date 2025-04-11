@@ -381,7 +381,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
     protected DailyDigestSection generateAggregatedEmailBody(String bundle, String app, Map<String, Object> context, Map<String, DailyDigestSection> dataMap) {
         context.put("application", app);
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(bundle, app, SubscriptionType.DAILY).get();
-        String emailBody = emailTemplate.getBodyTemplate().getData().replace("Common/insightsEmailBody", "Common/insightsEmailBodyLight");
+        String emailBody = emailTemplate.getBodyTemplate().getData();
         TemplateInstance templateInstance = templateService.compileTemplate(emailBody, emailTemplate.getBodyTemplate().getName());
         Map<String, Object> action =  Map.of("context", context, "bundle", bundle);
 
