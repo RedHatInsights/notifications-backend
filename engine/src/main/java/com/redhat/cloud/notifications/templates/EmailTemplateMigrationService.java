@@ -70,38 +70,31 @@ public class EmailTemplateMigrationService {
             getOrCreateTemplate("Secure/Common/insightsDailyEmailBody", "html", "Common Insights email body for single daily email");
             createDailyEmailTemplate(
                 warnings, "rhel", "advisor",
-                "Secure/Advisor/dailyEmailTitle", "txt", "Advisor daily email title",
                 "Secure/Advisor/dailyEmailBody", "html", "Advisor daily email body"
             );
 
             createDailyEmailTemplate(
                 warnings, "rhel", "compliance",
-                "Secure/Compliance/dailyEmailTitle", "txt", "Compliance daily email title",
                 "Secure/Compliance/dailyEmailBody", "html", "Compliance daily email body"
             );
             createDailyEmailTemplate(
                 warnings, "rhel", "inventory",
-                "Secure/Inventory/dailyEmailTitle", "txt", "Inventory daily email title",
                 "Secure/Inventory/dailyEmailBody", "html", "Inventory daily email body"
             );
             createDailyEmailTemplate(
                 warnings, "rhel", "patch",
-                "Secure/Patch/dailyEmailTitle", "txt", "Patch daily email title",
                 "Secure/Patch/dailyEmailBody", "html", "Patch daily email body"
             );
             createDailyEmailTemplate(
                 warnings, "rhel", "policies",
-                "Secure/Policies/dailyEmailTitle", "txt", "Policies daily email title",
                 "Secure/Policies/dailyEmailBody", "html", "Policies daily email body"
             );
             createDailyEmailTemplate(
                 warnings, "rhel", "resource-optimization",
-                "Secure/ResourceOptimization/dailyEmailTitle", "txt", "Resource Optimization daily email title",
                 "Secure/ResourceOptimization/dailyEmailBody", "html", "Resource Optimization daily email body"
             );
             createDailyEmailTemplate(
                 warnings, "rhel", "vulnerability",
-                "Secure/Vulnerability/dailyEmailTitle", "txt", "Vulnerability daily email title",
                 "Secure/Vulnerability/dailyEmailBody", "html", "Vulnerability daily email body"
             );
         } else {
@@ -127,7 +120,6 @@ public class EmailTemplateMigrationService {
 
             createDailyEmailTemplate(
                 warnings, "rhel", "advisor",
-                "Advisor/dailyEmailTitle", "txt", "Advisor daily email title",
                 "Advisor/dailyEmailBody", "html", "Advisor daily email body"
             );
 
@@ -164,7 +156,6 @@ public class EmailTemplateMigrationService {
             );
             createDailyEmailTemplate(
                 warnings, "rhel", "compliance",
-                "Compliance/dailyEmailTitle", "txt", "Compliance daily email title",
                 "Compliance/dailyEmailBody", "html", "Compliance daily email body"
             );
 
@@ -265,7 +256,6 @@ public class EmailTemplateMigrationService {
             );
             createDailyEmailTemplate(
                 warnings, "rhel", "inventory",
-                "Inventory/dailyEmailTitle", "txt", "Inventory daily email title",
                 "Inventory/dailyEmailBody", "html", "Inventory daily email body"
             );
 
@@ -436,7 +426,6 @@ public class EmailTemplateMigrationService {
             );
             createDailyEmailTemplate(
                 warnings, "rhel", "patch",
-                "Patch/dailyEmailTitle", "txt", "Patch daily email title",
                 "Patch/dailyEmailBody", "html", "Patch daily email body"
             );
 
@@ -450,7 +439,6 @@ public class EmailTemplateMigrationService {
             );
             createDailyEmailTemplate(
                 warnings, "rhel", "policies",
-                "Policies/dailyEmailTitle", "txt", "Policies daily email title",
                 "Policies/dailyEmailBody", "html", "Policies daily email body"
             );
 
@@ -538,7 +526,6 @@ public class EmailTemplateMigrationService {
              */
             createDailyEmailTemplate(
                 warnings, "rhel", "resource-optimization",
-                "ResourceOptimization/dailyEmailTitle", "txt", "Resource Optimization daily email title",
                 "ResourceOptimization/dailyEmailBody", "html", "Resource Optimization daily email body"
             );
 
@@ -590,7 +577,6 @@ public class EmailTemplateMigrationService {
             );
             createDailyEmailTemplate(
                 warnings, "rhel", "vulnerability",
-                "Vulnerability/dailyEmailTitle", "txt", "Vulnerability daily email title",
                 "Vulnerability/dailyEmailBody", "html", "Vulnerability daily email body"
             );
 
@@ -610,7 +596,6 @@ public class EmailTemplateMigrationService {
             );
             createDailyEmailTemplate(
                 warnings, "rhel", "image-builder",
-                "ImageBuilder/dailyEmailTitle", "txt", "Image Builder daily digest title",
                 "ImageBuilder/dailyEmailBody", "html", "Image Builder daily digest body"
             );
 
@@ -750,15 +735,12 @@ public class EmailTemplateMigrationService {
      * Existing aggregation email templates are never updated by this migration service.
      */
     private void createDailyEmailTemplate(List<String> warnings, String bundleName, String appName,
-                                          String subjectTemplateName, String subjectTemplateExtension, String subjectTemplateDescription,
                                           String bodyTemplateName, String bodyTemplateExtension, String bodyTemplateDescription) {
         if (!engineConfig.isSecuredEmailTemplatesEnabled()) {
-            subjectTemplateName += "V2";
             bodyTemplateName += "V2";
         }
         Optional<Application> app = findApplication(warnings, bundleName, appName);
         if (app.isPresent()) {
-            Template subjectTemplate = getOrCreateTemplate(subjectTemplateName, subjectTemplateExtension, subjectTemplateDescription);
             Template bodyTemplate = getOrCreateTemplate(bodyTemplateName, bodyTemplateExtension, bodyTemplateDescription);
             if (!aggregationEmailTemplateExists(app.get())) {
                 Log.infof("Creating daily email template for application: %s/%s", bundleName, appName);
@@ -766,8 +748,6 @@ public class EmailTemplateMigrationService {
                 AggregationEmailTemplate emailTemplate = new AggregationEmailTemplate();
                 emailTemplate.setApplication(app.get());
                 emailTemplate.setSubscriptionType(DAILY);
-                emailTemplate.setSubjectTemplate(subjectTemplate);
-                emailTemplate.setSubjectTemplateId(subjectTemplate.getId());
                 emailTemplate.setBodyTemplate(bodyTemplate);
                 emailTemplate.setBodyTemplateId(bodyTemplate.getId());
 

@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -17,12 +16,6 @@ public class TestResourceOptimizationTemplate extends EmailTemplatesInDbHelper {
     @Override
     protected String getApp() {
         return "resource-optimization";
-    }
-
-    @Test
-    public void testDailyDigestEmailTitle() {
-        String result = generateAggregatedEmailSubject(ACTION);
-        assertEquals("Daily digest - Resource Optimization - Red Hat Enterprise Linux", result);
     }
 
     @Test

@@ -20,7 +20,6 @@ import static com.redhat.cloud.notifications.processors.email.aggregators.Adviso
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_3;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_4;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_6;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -39,9 +38,6 @@ public class TestAdvisorDailyDigest extends EmailTemplatesInDbHelper {
         Map<String, Object> context = aggregator.getContext();
         context.put("start_time", LocalDateTime.now().toString());
         context.put("end_time", LocalDateTime.now().toString());
-
-        String resultSubject = generateAggregatedEmailSubject(context);
-        assertEquals("Daily digest - Advisor - Red Hat Enterprise Linux", resultSubject);
 
         String resultBody = generateAggregatedEmailBody(context);
         assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));

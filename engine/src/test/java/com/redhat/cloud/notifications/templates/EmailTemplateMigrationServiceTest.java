@@ -336,7 +336,6 @@ public class EmailTemplateMigrationServiceTest {
 
     private void findAndCompileAggregationEmailTemplate(String bundleName, String appName, SubscriptionType subscriptionType) {
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(bundleName, appName, subscriptionType).get();
-        templateService.compileTemplate(emailTemplate.getSubjectTemplate().getData(), emailTemplate.getSubjectTemplate().getName());
         templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
     }
 

@@ -163,18 +163,6 @@ public abstract class EmailTemplatesInDbHelper {
         return generateEmailBody(eventTypeStr, event, null, ignoreUserPreferences);
     }
 
-    protected String generateAggregatedEmailSubject(Map<String, Object> context) {
-        AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
-        TemplateInstance subjectTemplate = templateService.compileTemplate(emailTemplate.getSubjectTemplate().getData(), emailTemplate.getSubjectTemplate().getName());
-        return generateEmailFromContextMap(subjectTemplate, context, null);
-    }
-
-    protected String generateAggregatedEmailSubject(Action action) {
-        AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
-        TemplateInstance subjectTemplate = templateService.compileTemplate(emailTemplate.getSubjectTemplate().getData(), emailTemplate.getSubjectTemplate().getName());
-        return generateEmail(subjectTemplate, action, null);
-    }
-
     protected String generateAggregatedEmailBody(Map<String, Object> context) {
         return generateAggregatedEmailBody(context, null);
     }

@@ -89,9 +89,6 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
         payload.put("end_time", endTime);
         payload.put("policies", policies);
         payload.put("unique_system_count", 3);
-
-        String result = generateAggregatedEmailSubject(payload);
-        assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", result);
     }
 
     @Test
@@ -113,9 +110,6 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
         payload.put("end_time", endTime);
         payload.put("policies", policies);
         payload.put("unique_system_count", 1);
-
-        String result = generateAggregatedEmailSubject(payload);
-        assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", result);
     }
 
     @Test

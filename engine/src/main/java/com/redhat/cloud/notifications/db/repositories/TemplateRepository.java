@@ -67,7 +67,7 @@ public class TemplateRepository {
     }
 
     public Optional<AggregationEmailTemplate> findAggregationEmailTemplate(String bundleName, String appName, SubscriptionType subscriptionType) {
-        String hql = "FROM AggregationEmailTemplate t JOIN FETCH t.subjectTemplate JOIN FETCH t.bodyTemplate " +
+        String hql = "FROM AggregationEmailTemplate t JOIN FETCH t.bodyTemplate " +
                 "WHERE t.application.bundle.name = :bundleName AND t.application.name = :appName " +
                 "AND t.subscriptionType = :subscriptionType";
         try {

@@ -61,13 +61,6 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
     }
 
     @Test
-    public void testDailyEmailTitle() {
-        Action action = InventoryTestHelpers.createInventoryAction("123456", "rhel", "inventory", "Host Validation Error");
-        String result = generateAggregatedEmailSubject(action);
-        assertEquals("Daily digest - Inventory - Red Hat Enterprise Linux", result);
-    }
-
-    @Test
     public void testInstantEmailBody() {
         Action action = InventoryTestHelpers.createInventoryAction("", "", "", "FooEvent");
         String result = generateEmailBody(EVENT_TYPE_VALIDATION_ERROR, action);

@@ -45,12 +45,6 @@ public class TestPatchTemplate extends EmailTemplatesInDbHelper {
     }
 
     @Test
-    public void testDailyDigestEmailTitle() {
-        String result = generateAggregatedEmailSubject(ACTION);
-        assertEquals("Daily digest - Patch - Red Hat Enterprise Linux", result);
-    }
-
-    @Test
     public void testDailyDigestEmailBody() {
         PatchEmailPayloadAggregator aggregator = new PatchEmailPayloadAggregator();
         String bundle = "rhel";

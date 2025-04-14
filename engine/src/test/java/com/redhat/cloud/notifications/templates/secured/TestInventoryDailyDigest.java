@@ -9,7 +9,6 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -21,9 +20,6 @@ public class TestInventoryDailyDigest extends EmailTemplatesInDbHelper {
     void testSecureTemplate() {
         InventoryEmailAggregator aggregator = new InventoryEmailAggregator();
         aggregator.aggregate(InventoryTestHelpers.createEmailAggregation("tenant", "rhel", "inventory", "test event"));
-
-        String resultSubject = generateAggregatedEmailSubject(aggregator.getContext());
-        assertEquals("Daily digest - Inventory - Red Hat Enterprise Linux", resultSubject);
 
         String resultBody = generateAggregatedEmailBody(aggregator.getContext());
         assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
