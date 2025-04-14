@@ -1,0 +1,1 @@
+Red Hat published new enhancement errata that affect your products. Explore these and others in the errata search.

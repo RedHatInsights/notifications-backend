@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.qute.templates.mapping.Console;
 import com.redhat.cloud.notifications.qute.templates.mapping.DefaultTemplates;
 import com.redhat.cloud.notifications.qute.templates.mapping.OpenShift;
 import com.redhat.cloud.notifications.qute.templates.mapping.Rhel;
+import com.redhat.cloud.notifications.qute.templates.mapping.SubscriptionServices;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.Engine;
 import io.quarkus.qute.TemplateInstance;
@@ -30,6 +31,7 @@ public class TemplateService {
         templatesConfigMap.putAll(Console.templatesMap);
         templatesConfigMap.putAll(Rhel.templatesMap);
         templatesConfigMap.putAll(OpenShift.templatesMap);
+        templatesConfigMap.putAll(SubscriptionServices.templatesMap);
         checkTemplatesConsistency();
     }
 

@@ -1,0 +1,1 @@
+Red Hat published new security errata that affect your products. Explore these and others in the <https://access.redhat.com/errata-search/|errata search>.
