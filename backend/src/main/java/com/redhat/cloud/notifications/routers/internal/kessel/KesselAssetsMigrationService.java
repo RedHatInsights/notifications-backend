@@ -170,7 +170,6 @@ public class KesselAssetsMigrationService {
                 final CreateNotificationsIntegrationRequest request = this.buildCreateIntegrationRequest(endpoint);
                 Log.tracef("Generated a \"CreateNotificationsIntegrationRequest\": %s", request);
 
-                this.notificationsIntegrationClient.CreateNotificationsIntegration(request);
                 // Send the request to the inventory.
                 final CreateNotificationsIntegrationResponse response;
 
