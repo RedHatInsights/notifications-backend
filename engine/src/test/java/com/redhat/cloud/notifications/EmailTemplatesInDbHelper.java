@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -186,7 +185,7 @@ public abstract class EmailTemplatesInDbHelper {
 
         DailyDigestSection dailyDigestSection = new DailyDigestSection(
             applicationSectionResult.split("<!-- Body section -->")[1],
-            Arrays.stream(sections).filter(e -> !e.isBlank()).collect(Collectors.toList()));
+            Arrays.stream(sections).filter(e -> !e.isBlank()).toList());
 
         TemplateInstance bodyTemplateGlobalDailyDigest = templateService.compileTemplate(dailyTemplate.get().getData(), "singleDailyDigest/dailyDigest");
 
