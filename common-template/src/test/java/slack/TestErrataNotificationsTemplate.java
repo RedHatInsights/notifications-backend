@@ -6,15 +6,18 @@ import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import helpers.ErrataTestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.SLACK;
+import static helpers.ErrataTestHelpers.BUGFIX_ERRATA;
+import static helpers.ErrataTestHelpers.ENHANCEMENT_ERRATA;
+import static helpers.ErrataTestHelpers.SECURITY_ERRATA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 class TestErrataNotificationsTemplate {
 
-    static final String BUGFIX_ERRATA = "new-subscription-bugfix-errata";
     private static final Action ACTION = ErrataTestHelpers.createErrataAction();
 
     private static final String ERRATA_SEARCH_URL = "https://access.redhat.com/errata-search/";
@@ -22,14 +25,24 @@ class TestErrataNotificationsTemplate {
     @Inject
     TemplateService templateService;
 
-    @Test
-    void testRenderedTemplateBugfixErrata() {
-        String result = renderTemplate(BUGFIX_ERRATA, ACTION);
-        assertEquals("Red Hat published new bugfix errata that affect your products. Explore these and others in the <" + ERRATA_SEARCH_URL + "|errata search>.", result);
+    @ValueSource(strings = { BUGFIX_ERRATA, SECURITY_ERRATA, ENHANCEMENT_ERRATA })
+    @ParameterizedTest
+    void testRenderedErrataTemplates(final String eventType) {
+        String result = renderTemplate(eventType, ACTION);
+        checkResult(eventType, result);
     }
 
     String renderTemplate(final String eventType, final Action action) {
         TemplateDefinition templateConfig = new TemplateDefinition(SLACK, "subscription-services", "errata-notifications", eventType);
         return templateService.renderTemplate(templateConfig, action);
+    }
+
+    private void checkResult(String eventType, String result) {
+        switch (eventType) {
+            case BUGFIX_ERRATA -> assertEquals("Red Hat published new bugfix errata that affect your products. Explore these and others in the <" + ERRATA_SEARCH_URL + "|errata search>.", result);
+            case SECURITY_ERRATA -> assertEquals("Red Hat published new security errata that affect your products. Explore these and others in the <" + ERRATA_SEARCH_URL + "|errata search>.", result);
+            case ENHANCEMENT_ERRATA -> assertEquals("Red Hat published new enhancement errata that affect your products. Explore these and others in the <" + ERRATA_SEARCH_URL + "|errata search>.", result);
+            default -> throw new IllegalArgumentException(eventType + "is not a valid event type");
+        }
     }
 }

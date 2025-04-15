@@ -13,6 +13,9 @@ import java.util.List;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 
 public class ErrataTestHelpers {
+    public static final String BUGFIX_ERRATA = "new-subscription-bugfix-errata";
+    public static final String SECURITY_ERRATA = "new-subscription-security-errata";
+    public static final String ENHANCEMENT_ERRATA = "new-subscription-enhancement-errata";
 
     public static Action createErrataAction() {
         Action emailActionMessage = new Action();
