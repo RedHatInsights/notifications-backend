@@ -1,1 +1,1 @@
-Red Hat published new bugfix errata that affect your products. Explore these and others in the <https://access.redhat.com/errata-search/|errata search>.
+Red Hat published new bugfix errata that affect your products. Explore these and others in the <https://access.redhat.com/errata-search/?from=notifications&integration=slack|errata search>.
