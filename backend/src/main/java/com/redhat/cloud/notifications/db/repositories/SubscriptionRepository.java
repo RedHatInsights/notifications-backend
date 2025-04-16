@@ -16,8 +16,10 @@ import org.postgresql.util.PSQLState;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
@@ -224,5 +226,32 @@ public class SubscriptionRepository {
                 throw e;
             }
         }
+    }
+
+    /**
+     * Search org ids grouped by even type when at least one subscriber to instant email Notifications
+     *
+     * @param bundle Application bundle name
+     * @param application Application name
+     * @param eventTypes Event types
+     * @return list of org id grouped by event types
+     */
+    public Map<String, List<String>> getOrgSubscriptionsPerEventType(String bundle, String application, List<String> eventTypes) {
+        final String query = "SELECT et.name, string_agg(DISTINCT org_id, ',') " +
+            "FROM email_subscriptions es JOIN event_type et ON event_type_id = et.id " +
+            "WHERE es.subscribed is true AND EXISTS " +
+            "(SELECT 1 FROM applications app JOIN bundles b ON app.bundle_id = b.id " +
+            "WHERE b.name = :bundleName AND app.name = :applicationName and et.application_id = app.id and et.name in (:eventTypeNames)) group by et.name";
+        List<Object[]> records = entityManager.createNativeQuery(query)
+            .setParameter("bundleName", bundle)
+            .setParameter("applicationName", application)
+            .setParameter("eventTypeNames", eventTypes)
+            .getResultList();
+
+        return records.stream()
+            .collect(Collectors
+                .toMap(e -> e[0].toString(),
+                    e -> List.of(e[1].toString().split(","))
+                ));
     }
 }
