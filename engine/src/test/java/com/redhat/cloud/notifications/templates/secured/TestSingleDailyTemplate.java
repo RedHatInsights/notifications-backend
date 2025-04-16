@@ -1,13 +1,38 @@
 package com.redhat.cloud.notifications.templates.secured;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
+import com.redhat.cloud.notifications.InventoryTestHelpers;
+import com.redhat.cloud.notifications.PatchTestHelpers;
+import com.redhat.cloud.notifications.TestHelpers;
+import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.processors.email.EmailPendo;
+import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
+import com.redhat.cloud.notifications.processors.email.aggregators.InventoryEmailAggregator;
+import com.redhat.cloud.notifications.processors.email.aggregators.PatchEmailPayloadAggregator;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
+import com.redhat.cloud.notifications.templates.models.DailyDigestSection;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static com.redhat.cloud.notifications.AdvisorTestHelpers.createEmailAggregation;
+import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_MESSAGE;
+import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_TITLE;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.*;
+import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
-
- /*   static final List<String> applications = List.of("advisor", "compliance", "inventory",
-        "policies", "patch", "resource-optimization", "vulnerability");
 
     String myCurrentApp;
 
@@ -19,36 +44,6 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
     @Override
     protected Boolean useSecuredTemplates() {
         return true;
-    }
-
-    @InjectMock
-    EngineConfig engineConfig;
-
-    @Inject
-    EmailTemplateMigrationService emailTemplateMigrationService;
-
-    @Override
-    @BeforeEach
-    protected void initData() {
-        Bundle bundle = null;
-        try {
-            bundle = resourceHelpers.findBundle(getBundle());
-        } catch (NoResultException nre) {
-            bundle = resourceHelpers.createBundle(getBundle());
-        }
-
-        for (String app : applications) {
-            try {
-                resourceHelpers.findApp(getBundle(), app);
-            } catch (NoResultException nre) {
-                resourceHelpers.createApp(bundle.getId(), app);
-            }
-        }
-        when(engineConfig.isSecuredEmailTemplatesEnabled()).thenReturn(useSecuredTemplates());
-        if (engineConfig.isSecuredEmailTemplatesEnabled()) {
-            emailTemplateMigrationService.deleteAllTemplates();
-        }
-        migrate();
     }
 
     @Test
@@ -77,23 +72,19 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
             .map(Map.Entry::getValue)
             .collect(Collectors.toList());
 
-        Optional<Template> dailyTemplate = templateRepository.findTemplateByName("Secure/Common/insightsDailyEmailBody");
-        assertTrue(dailyTemplate.isPresent());
+        TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, null, null, null);
 
-        TemplateInstance bodyTemplate = templateService.compileTemplate(dailyTemplate.get().getData(), "Secure/singleDailyDigest/dailyDigest");
-
-        assertNotNull(bodyTemplate);
         Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", result);
 
         EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, GENERAL_PENDO_MESSAGE);
 
-        String templateResult = generateEmailFromContextMap(bodyTemplate, mapData, null);
+        String templateResult = generateEmailFromContextMap(globalDailyTemplateDefinition, mapData, null);
         templateResultChecks(templateResult);
         assertFalse(templateResult.contains(emailPendo.getPendoTitle()));
         assertFalse(templateResult.contains(emailPendo.getPendoMessage()));
         assertTrue(templateResult.contains(COMMON_SECURED_LABEL_CHECK));
 
-        templateResult = generateEmailFromContextMap(bodyTemplate, mapData, emailPendo);
+        templateResult = generateEmailFromContextMap(globalDailyTemplateDefinition, mapData, emailPendo);
         templateResultChecks(templateResult);
         assertTrue(templateResult.contains(emailPendo.getPendoTitle()));
         assertTrue(templateResult.contains(emailPendo.getPendoMessage()));
@@ -126,11 +117,9 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
 
     protected void generateAggregatedEmailBody(Map<String, Object> context, String app, Map<String, DailyDigestSection> dataMap) {
         context.put("application", app);
-        AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), app, DAILY).get();
-        assertTrue(emailTemplate.getBodyTemplate().getData().contains("Secure/Common/insightsEmailBodyLight"));
+        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, getBundle(), app, null);
 
-        TemplateInstance bodyTemplate = templateService.compileTemplate(emailTemplate.getBodyTemplate().getData(), emailTemplate.getBodyTemplate().getName());
-        addItem(dataMap, app, generateEmailFromContextMap(bodyTemplate, context, null));
+        addItem(dataMap, app, generateEmailFromContextMap(templateDefinition, context, null));
     }
 
     private static Map<String, Object> buildMapFromAction(Action action) {
@@ -199,5 +188,5 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
         payload.put("policies", policies);
         payload.put("unique_system_count", 3);
         return payload;
-    }*/
+    }
 }
