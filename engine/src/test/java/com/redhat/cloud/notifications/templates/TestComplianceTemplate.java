@@ -61,10 +61,4 @@ public class TestComplianceTemplate extends EmailTemplatesInDbHelper {
         assertTrue(result.contains("Red Hat Insights has identified one or more systems"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
-
-    @Test
-    public void testDailyReportEmailTitle() {
-        String result = generateAggregatedEmailSubject(Map.of());
-        assertEquals("Daily digest - Compliance - Red Hat Enterprise Linux", result);
-    }
 }

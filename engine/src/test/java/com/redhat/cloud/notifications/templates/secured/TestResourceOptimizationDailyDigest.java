@@ -8,7 +8,6 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -19,10 +18,6 @@ public class TestResourceOptimizationDailyDigest extends EmailTemplatesInDbHelpe
 
     @Test
     void testSecureTemplate() {
-
-        String resultSubject = generateAggregatedEmailSubject(ACTION);
-        assertEquals("Daily digest - Resource Optimization - Red Hat Enterprise Linux", resultSubject);
-
         String resultBody = generateAggregatedEmailBody(ACTION);
         assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
         assertTrue(resultBody.contains(TestHelpers.HCC_LOGO_TARGET));

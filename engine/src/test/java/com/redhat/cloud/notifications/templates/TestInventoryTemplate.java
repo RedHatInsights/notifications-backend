@@ -61,13 +61,6 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
     }
 
     @Test
-    public void testDailyEmailTitle() {
-        Action action = InventoryTestHelpers.createInventoryAction("123456", "rhel", "inventory", "Host Validation Error");
-        String result = generateAggregatedEmailSubject(action);
-        assertEquals("Daily digest - Inventory - Red Hat Enterprise Linux", result);
-    }
-
-    @Test
     public void testInstantEmailBody() {
         Action action = InventoryTestHelpers.createInventoryAction("", "", "", "FooEvent");
         String result = generateEmailBody(EVENT_TYPE_VALIDATION_ERROR, action);
@@ -130,8 +123,8 @@ public class TestInventoryTemplate extends EmailTemplatesInDbHelper {
         assertTrue(result.contains("Host Name"), "Body should contain 'Host Name' header");
         assertTrue(result.contains("Error"), "Body should contain 'Error' header");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        // TODO set boolean to false once app-specific daily digest code is removed
-        assertOpenInventoryInsightsButtonPresent(result, true);
+
+        assertOpenInventoryInsightsButtonPresent(result, false);
 
         // Make sure that the section headline is present.
         assertTrue(result.contains("Inventory"), "the \"Inventory\" header was not found as the section title");

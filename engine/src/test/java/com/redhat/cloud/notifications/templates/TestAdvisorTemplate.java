@@ -40,19 +40,6 @@ public class TestAdvisorTemplate extends EmailTemplatesInDbHelper {
     }
 
     @Test
-    public void testDailyEmailTitle() {
-        AdvisorEmailAggregator aggregator = new AdvisorEmailAggregator();
-        aggregator.aggregate(createEmailAggregation(NEW_RECOMMENDATION, TEST_RULE_1));
-
-        Map<String, Object> context = aggregator.getContext();
-        context.put("start_time", LocalDateTime.now().toString());
-        context.put("end_time", LocalDateTime.now().toString());
-
-        String result = generateAggregatedEmailSubject(context);
-        assertEquals("Daily digest - Advisor - Red Hat Enterprise Linux", result);
-    }
-
-    @Test
     public void testDailyEmailBody() {
         AdvisorEmailAggregator aggregator = new AdvisorEmailAggregator();
         aggregator.aggregate(createEmailAggregation(NEW_RECOMMENDATION, TEST_RULE_1));

@@ -71,9 +71,6 @@ public class TestImageBuilderTemplate extends EmailTemplatesInDbHelper {
         aggregator.aggregate(TestHelpers.createImageBuilderAggregation(LAUNCH_SUCCESS));
         aggregator.aggregate(TestHelpers.createImageBuilderAggregation(LAUNCH_FAILURE));
 
-        String resultSubject = generateAggregatedEmailSubject(aggregator.getContext());
-        assertEquals("Daily digest - Image builder - Red Hat Enterprise Linux", resultSubject);
-
         String resultBody = generateAggregatedEmailBody(aggregator.getContext());
         assertTrue(resultBody.contains("2 launch attempts deployed"));
         assertTrue(resultBody.contains("1 launch attempts failed"));

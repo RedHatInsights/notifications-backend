@@ -12,7 +12,6 @@ import java.util.Map;
 
 import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_MESSAGE;
 import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_TITLE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -42,9 +41,6 @@ public class TestPendoMessage extends EmailTemplatesInDbHelper  {
         Map<String, Object> patch = aggregator.getContext();
         patch.put("start_time", startTime.toString());
         patch.put("end_time", endTime.toString());
-
-        String resultSubject = generateAggregatedEmailSubject(patch);
-        assertEquals("Daily digest - Patch - Red Hat Enterprise Linux", resultSubject);
 
         EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, GENERAL_PENDO_MESSAGE);
 

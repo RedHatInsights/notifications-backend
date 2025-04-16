@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -36,9 +35,6 @@ public class TestPoliciesDailyDigest extends EmailTemplatesInDbHelper {
         payload.put("end_time", endTime);
         payload.put("policies", policies);
         payload.put("unique_system_count", 1);
-
-        String resultSubject = generateAggregatedEmailSubject(payload);
-        assertEquals("Daily digest - Policies - Red Hat Enterprise Linux", resultSubject);
 
         String resultBody = generateAggregatedEmailBody(payload);
         assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));

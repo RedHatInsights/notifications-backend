@@ -47,12 +47,11 @@ public class AggregationEmailTemplate extends CreationUpdateTimestamped {
     @Convert(converter = SubscriptionTypeConverter.class)
     private SubscriptionType subscriptionType;
 
-    @ManyToOne(fetch = LAZY, optional = false)
+    @ManyToOne(fetch = LAZY, optional = true)
     @JoinColumn(name = "subject_template_id")
     @JsonProperty(access = READ_ONLY)
     private Template subjectTemplate;
 
-    @NotNull
     @Transient
     private UUID subjectTemplateId;
 
