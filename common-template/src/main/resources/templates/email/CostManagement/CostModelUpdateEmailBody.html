@@ -1,0 +1,17 @@
+{@boolean renderSection1=true}
+{#include email/Common/insightsEmailBody}
+{#content-title}
+    Cost Management - OpenShift
+{/content-title}
+{#content-title-section1}
+    Cost model update
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        Cost model {action.context.cost_model_name} has been updated.
+    </p>
+    <p>
+        To review changes visits: <a href="{environment.url}/openshift/cost-management/cost-models/{action.context.cost_model_id}">{action.context.cost_model_name}</a>
+    </p>
+{/content-body-section1}
+{/include}

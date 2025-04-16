@@ -1,0 +1,40 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include email/Common/insightsEmailBody}
+{#content-title}
+    Policies - Red Hat Enterprise Linux
+{/content-title}
+{#content-title-section1}
+    Policies triggered
+{/content-title-section1}
+{#content-subtitle-section1}{action.events.size()}
+    {#if action.events.size() == 1}policy{#else}policies{/if} triggered on your system
+{/content-subtitle-section1}
+{#content-title-right-part-section1}
+    <a target="_blank" href="{environment.url}/insights/policies?{query_params}">{action.events.size()}</a>
+{/content-title-right-part-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/insights/policies?{query_params}">Open Policies in Insights</a>
+{/content-button-section1}
+{#content-body-section1}
+    <p><b>{action.context.display_name}</b> triggered {action.events.size()} {#if action.events.size() is 1}policy{#else}policies{/if}.</p>
+    <table class="rh-data-table-bordered">
+        <thead>
+        <tr>
+            <th>Policy</th>
+        </tr>
+        </thead>
+        <tbody>
+            {#if action.events.size() > 0}
+                {#each action.events}
+                <tr style="font-size: 14px;">
+                    <td>
+                    <a href="{environment.url}/insights/policies/policy/{it.payload.policy_id}?{query_params}" target="_blank">{it.payload.policy_name}</a>
+                    </td>
+                </tr>
+                {/each}
+            {/if}
+        </tbody>
+    </table>
+{/content-body-section1}
+{/include}

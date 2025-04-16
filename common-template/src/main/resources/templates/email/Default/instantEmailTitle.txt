@@ -1,0 +1,5 @@
+{#if action.isCloudEvent()}
+{action.type} triggered
+{#else}
+{action.bundle}/{action.application}/{action.eventType} triggered
+{/if}

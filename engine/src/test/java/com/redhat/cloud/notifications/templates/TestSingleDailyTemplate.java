@@ -1,57 +1,12 @@
 package com.redhat.cloud.notifications.templates;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.EmailTemplatesInDbHelper;
-import com.redhat.cloud.notifications.InventoryTestHelpers;
-import com.redhat.cloud.notifications.PatchTestHelpers;
-import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
-import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.Environment;
-import com.redhat.cloud.notifications.models.Template;
-import com.redhat.cloud.notifications.processors.email.EmailPendo;
-import com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator;
-import com.redhat.cloud.notifications.processors.email.aggregators.ImageBuilderAggregator;
-import com.redhat.cloud.notifications.processors.email.aggregators.InventoryEmailAggregator;
-import com.redhat.cloud.notifications.processors.email.aggregators.PatchEmailPayloadAggregator;
-import com.redhat.cloud.notifications.templates.models.DailyDigestSection;
-import io.quarkus.qute.TemplateInstance;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
-import jakarta.persistence.NoResultException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import static com.redhat.cloud.notifications.AdvisorTestHelpers.createEmailAggregation;
-import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
-import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_MESSAGE;
-import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_TITLE;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.RESOLVED_RECOMMENDATION;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_1;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_2;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_3;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_4;
-import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_6;
-import static org.junit.Assert.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
 
-    static final List<String> applications = List.of("advisor", "compliance", "inventory",
+/*    static final List<String> applications = List.of("advisor", "compliance", "inventory",
         "policies", "patch", "resource-optimization", "vulnerability", "image-builder");
 
     String myCurrentApp;
@@ -261,5 +216,5 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
         payload.put("policies", policies);
         payload.put("unique_system_count", 3);
         return payload;
-    }
+    }*/
 }

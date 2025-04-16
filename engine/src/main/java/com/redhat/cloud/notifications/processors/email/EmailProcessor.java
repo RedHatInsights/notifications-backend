@@ -4,12 +4,15 @@ import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
 import io.quarkus.logging.Log;
@@ -19,7 +22,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -50,10 +55,16 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     TemplateService templateService;
 
     @Inject
+    com.redhat.cloud.notifications.qute.templates.TemplateService quteTemplateService;
+
+    @Inject
     SubscriptionRepository subscriptionRepository;
 
     @Inject
     RecipientsAuthorizationCriterionExtractor recipientsAuthorizationCriterionExtractor;
+
+    @Inject
+    Environment environment;
 
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
@@ -111,12 +122,35 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         final String subject = templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
         // we don't want to include outage pendo message this time
-        final String body = templateService.renderEmailBodyTemplate(event.getEventWrapper().getEvent(), bodyTemplate, emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, false), ignoreUserPreferences);
+        EmailPendo pendoMessage = emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, false);
+        final String body = templateService.renderEmailBodyTemplate(event.getEventWrapper().getEvent(), bodyTemplate, pendoMessage, ignoreUserPreferences);
+
+        Map<String, Object> additionalContext = new HashMap<>();
+        additionalContext.put("environment", environment);
+        additionalContext.put("pendo_message", pendoMessage);
+        additionalContext.put("ignore_user_preferences", ignoreUserPreferences);
+        additionalContext.put("action", event.getEventWrapper().getEvent());
+
+        TemplateDefinition subjectTemplateDefinition = new TemplateDefinition(
+            IntegrationType.EMAIL_TITLE,
+            event.getEventType().getApplication().getBundle().getName(),
+            event.getEventType().getApplication().getName(),
+            event.getEventType().getName());
+
+        String subjectFromCommonTemplateModule = quteTemplateService.renderTemplateWithCustomDataMap(subjectTemplateDefinition, additionalContext);
+
+        TemplateDefinition bodyTemplateDefinition = new TemplateDefinition(
+            IntegrationType.EMAIL_BODY,
+            event.getEventType().getApplication().getBundle().getName(),
+            event.getEventType().getApplication().getName(),
+            event.getEventType().getName());
+
+        String bodyFromCommonTemplateModule = quteTemplateService.renderTemplateWithCustomDataMap(bodyTemplateDefinition, additionalContext);
 
         // Prepare all the data to be sent to the connector.
         final EmailNotification emailNotification = new EmailNotification(
-            body,
-            subject,
+            bodyFromCommonTemplateModule,
+            subjectFromCommonTemplateModule,
             emailActorsResolver.getEmailSender(event),
             event.getOrgId(),
             recipientSettings,

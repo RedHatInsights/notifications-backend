@@ -1,0 +1,17 @@
+{@boolean renderSection1=true}
+{#include email/Common/insightsEmailBody}
+{#content-title}
+    Compliance - Red Hat Enterprise Linux
+{/content-title}
+{#content-title-section1}
+    Compliance report upload failed
+{/content-title-section1}
+{#content-body-section1}
+    <p>Your system <a class="rh-url" href="{environment.url}/insights/compliance/systems/{action.events[0].payload.host_id}"><b>{action.events[0].payload.host_name}</b></a> failed to upload a new compliance report. The error message returned by our system for the request <i>{action.events[0].payload.request_id}</i> was:<br>
+        <i>{action.events[0].payload.error}</i>
+    </p>
+    <p>
+        To learn more about why reports can fail to upload and how to address this, refer to this <a class="rh-url" href="https://access.redhat.com/solutions/6675911">KCS article</a>.
+    </p>
+{/content-body-section1}
+{/include}
