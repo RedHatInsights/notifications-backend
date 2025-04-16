@@ -689,6 +689,7 @@ public class InternalResource {
     @GET
     @Path("/subscriptions/{bundleName}/{applicationName}")
     @Produces(APPLICATION_JSON)
+    @PermitAll
     public Map<String, List<String>> getOrgSubscriptions(@PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName, @RestQuery List<String> eventTypeNames) {
         return subscriptionRepository.getOrgSubscriptionsPerEventType(bundleName, applicationName, eventTypeNames);
     }
