@@ -7,7 +7,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class Base64Utils {
 
     /**
-     * Encodes to a UTF-8 String the given {@code value} using the {@link java.util.Base64 Base64} encoding scheme.
+     * Encodes to a UTF-8 String the given {@code value} using the {@link java.util.Base64 Base64} encoding scheme
      * @param value a UTF-8 String to encode
      * @return the UTF-8 encoded String or {@code null} if {@code value} is null
      */
