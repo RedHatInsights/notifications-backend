@@ -70,13 +70,11 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestPath;
-import org.jboss.resteasy.reactive.RestQuery;
 
 import java.net.URI;
 import java.time.LocalTime;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -676,21 +674,5 @@ public class InternalResource {
         }
 
         return this.generalCommunicationsService.sendGeneralCommunication();
-    }
-
-    /**
-     * Search org ids grouped by even type when at least one subscriber to instant email Notifications
-     *
-     * @param bundleName Application bundle name
-     * @param applicationName Application name
-     * @param eventTypeNames Event types
-     * @return list of org id grouped by event types
-     */
-    @GET
-    @Path("/subscriptions/{bundleName}/{applicationName}")
-    @Produces(APPLICATION_JSON)
-    @PermitAll
-    public Map<String, List<String>> getOrgSubscriptions(@PathParam("bundleName") String bundleName, @PathParam("applicationName") String applicationName, @RestQuery List<String> eventTypeNames) {
-        return subscriptionRepository.getOrgSubscriptionsPerEventType(bundleName, applicationName, eventTypeNames);
     }
 }
