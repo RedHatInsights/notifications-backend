@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.routers.internal;
 
 
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
-import jakarta.annotation.security.PermitAll;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
