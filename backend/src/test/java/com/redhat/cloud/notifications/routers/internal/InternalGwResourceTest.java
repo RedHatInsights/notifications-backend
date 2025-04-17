@@ -105,7 +105,7 @@ public class InternalGwResourceTest extends DbIsolatedTest {
             .pathParam("application", applicationName)
             .param("eventTypeNames", event1)
             .when()
-            .get("/internal/subscriptions/{bundle}/{application}")
+            .get("/internal/gw/subscriptions/{bundle}/{application}")
             .then()
             .statusCode(HttpStatus.SC_OK).extract().as(new TypeRef<>() {
             });
