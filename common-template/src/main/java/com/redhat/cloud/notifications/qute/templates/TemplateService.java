@@ -16,8 +16,8 @@ import io.quarkus.qute.TemplateInstance;
 import io.quarkus.runtime.Startup;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,14 +31,17 @@ public class TemplateService {
     @ConfigProperty(name = SECURED_EMAIL_TEMPLATES, defaultValue = "false")
     boolean useSecuredEmailTemplates;
 
-    @Inject
-    Engine engine;
+    final Engine engine;
 
-    @Inject
-    ObjectMapper objectMapper;
+    final ObjectMapper objectMapper;
 
     String emailTemplatePrefix = "Secure/";
     Map<TemplateDefinition, String> templatesConfigMap = new HashMap<>();
+
+    public TemplateService(Engine engine, ObjectMapper objectMapper) {
+        this.engine = engine;
+        this.objectMapper = objectMapper;
+    }
 
     public String getTemplatePrefix(final IntegrationType integrationType) {
         if (isSecuredEmailTemplatesEnabled() &&
@@ -75,7 +78,7 @@ public class TemplateService {
     private void checkTemplatesConsistency() {
         ClassLoader classLoader = getClass().getClassLoader();
         for (TemplateDefinition templateDefinition : templatesConfigMap.keySet()) {
-            String filePath = templateDefinition.integrationType().getRootFolder() + "/" + getTemplatePrefix(templateDefinition.integrationType()) + templatesConfigMap.get(templateDefinition);
+            String filePath = templateDefinition.integrationType().getRootFolder() + File.separator + getTemplatePrefix(templateDefinition.integrationType()) + templatesConfigMap.get(templateDefinition);
             if (null == classLoader.getResource("templates/" + filePath)) {
                 Log.info("Template file " + filePath + " not found");
                 throw new TemplateNotFoundException(templateDefinition);
@@ -112,7 +115,7 @@ public class TemplateService {
         }
 
         // ask Qute to load the template instance from its file path, such as drawer/Policies/policyTriggeredBody.md
-        return engine.getTemplate(templateDefinition.integrationType().getRootFolder() + "/" + getTemplatePrefix(templateDefinition.integrationType()) + path).instance();
+        return engine.getTemplate(templateDefinition.integrationType().getRootFolder() + File.separator + getTemplatePrefix(templateDefinition.integrationType()) + path).instance();
     }
 
     public String renderTemplate(final TemplateDefinition config, final Action action) {
