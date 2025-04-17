@@ -20,7 +20,7 @@ class TestErrataNotificationsTemplate {
 
     private static final Action ACTION = ErrataTestHelpers.createErrataAction();
 
-    private static final String ERRATA_SEARCH_URL = "https://access.redhat.com/errata-search/";
+    private static final String ERRATA_SEARCH_URL = "https://access.redhat.com/errata-search/?from=notifications&integration=slack";
 
     @Inject
     TemplateService templateService;
