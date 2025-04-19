@@ -41,7 +41,7 @@ public class TestPendoMessageOcm extends EmailTemplatesInDbHelper  {
         assertFalse(result.contains(emailPendo.getPendoTitle()));
         assertFalse(result.contains(emailPendo.getPendoMessage()));
 
-        result = generateEmailBody(CLUSTER_LIFECYCLE, action, emailPendo);
+        result = generateEmailBody(CLUSTER_LIFECYCLE, action, emailPendo, false);
         commonValidations(result);
         assertTrue(result.contains(emailPendo.getPendoTitle()));
         assertTrue(result.contains(emailPendo.getPendoMessage()));

@@ -44,7 +44,7 @@ public class TestPendoMessage extends EmailTemplatesInDbHelper  {
         assertFalse(result.contains(emailPendo.getPendoTitle()));
         assertFalse(result.contains(emailPendo.getPendoMessage()));
 
-        result = generateEmailBody(EVENT_TYPE_NAME, action, emailPendo);
+        result = generateEmailBody(EVENT_TYPE_NAME, action, emailPendo, false);
         commonValidations(result);
         assertTrue(result.contains(emailPendo.getPendoTitle()));
         assertTrue(result.contains(emailPendo.getPendoMessage()));

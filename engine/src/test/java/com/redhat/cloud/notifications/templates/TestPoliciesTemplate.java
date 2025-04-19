@@ -44,7 +44,7 @@ public class TestPoliciesTemplate extends EmailTemplatesInDbHelper {
     @ValueSource(booleans = {true, false})
     void testInstantEmailBody(boolean ignoreUserPreferences) {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
-        String result = generateEmailBody(EVENT_TYPE_NAME, action, ignoreUserPreferences);
+        String result = generateEmailBody(EVENT_TYPE_NAME, action, null, ignoreUserPreferences);
         assertTrue(result.contains(TestHelpers.policyId1), "Body should contain policy id" + TestHelpers.policyId1);
         assertTrue(result.contains(TestHelpers.policyName1), "Body should contain policy name" + TestHelpers.policyName1);
 

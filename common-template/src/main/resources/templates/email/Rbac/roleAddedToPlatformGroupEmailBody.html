@@ -1,0 +1,18 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include email/Common/insightsEmailBody}
+{#content-title}
+    User Access - Console
+{/content-title}
+{#content-title-section1}
+    Platform default access group change
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        Red Hat added a role <b>{action.events[0].payload.role.name}</b> to platform default access group.
+    </p>
+{/content-body-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/iam/user-access/roles/detail/{action.events[0].payload.role.uuid}?{query_params}">Check this role in Insights</a>
+{/content-button-section1}
+{/include}

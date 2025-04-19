@@ -38,7 +38,6 @@ public class TemplateService {
     public String renderEmailBodyTemplate(Object event, TemplateInstance templateInstance, EmailPendo pendoMessage, boolean ignoreUserPreferences) {
         return templateInstance
             .data("action", event)
-            .data("event", event)
             .data("environment", environment)
             .data("pendo_message", pendoMessage)
             .data("ignore_user_preferences", ignoreUserPreferences)
