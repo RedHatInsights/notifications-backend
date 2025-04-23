@@ -29,6 +29,8 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import java.util.UUID;
@@ -279,19 +281,19 @@ public class EventConsumerTest {
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
     }
 
-    @Test
-    void testDuplicatePayload() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testDuplicatePayload(final boolean remoteCachingEnabled) {
+        if (remoteCachingEnabled) {
+            when(config.isRemoteCachingKafkaMessageDeduplicatorEnabled()).thenReturn(Boolean.TRUE);
+        }
+
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction(false);
         String payload = serializeAction(action);
         UUID messageId = UUID.randomUUID();
         Message<String> message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
 
-        // Run test with Postgres DB
-        internalTestDuplicatePayload(eventType, action, payload, messageId, message);
-
-        // Rerun test with remote cache
-        when(config.isRemoteCachingKafkaMessageDeduplicatorEnabled()).thenReturn(Boolean.TRUE);
         internalTestDuplicatePayload(eventType, action, payload, messageId, message);
     }
 
