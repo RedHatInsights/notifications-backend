@@ -1,0 +1,139 @@
+{@boolean renderSection1=action.context.inventory.errors.size}
+{@boolean renderSection2=(action.context.inventory.new_systems.orEmpty.size || action.context.inventory.stale_systems.orEmpty.size || action.context.inventory.deleted_systems.orEmpty.size)}
+{@boolean renderSection3=true}
+{@boolean renderButtonSection3=true}
+{@boolean renderCustomLinks=true}
+{#include email/Common/insightsEmailBodyLight}
+{#content-render-custom-links-section}
+    {#if action.context.inventory.errors.size() > 0}
+        <a href="#inventory-section1">{#insert content-title-section1}{/}</a><span class="pf-c-badge">{#insert content-title-right-part-section1}{/}</span>
+    {/if}
+    {#if action.context.inventory.new_systems.size() > 0}
+        <!-- next section -->
+        <a href="#inventory-section2-1">New systems registered</a><span class="pf-c-badge">{action.context.inventory.new_systems.size()}</span>
+    {/if}
+    {#if action.context.inventory.stale_systems.size() > 0}
+        <!-- next section -->
+        <a href="#inventory-section2-2">Stale systems</a><span class="pf-c-badge">{action.context.inventory.stale_systems.size()}</span>
+    {/if}
+    {#if action.context.inventory.deleted_systems.size() > 0}
+        <!-- next section -->
+        <a href="#inventory-section2-3">Systems deleted</a><span class="pf-c-badge">{action.context.inventory.deleted_systems.size()}</span>
+    {/if}
+{/content-render-custom-links-section}
+{#content-title}
+    Daily digest - Inventory - Red Hat Enterprise Linux
+{/content-title}
+{#content-title-section1}
+    Host{#if action.context.inventory.errors.size() > 1}s{/if} with validation error
+{/content-title-section1}
+{#content-title-right-part-section1}
+    <a target="_blank" href="{environment.url}/insights/inventory/?{query_params}">{action.context.inventory.errors.size()}</a>
+{/content-title-right-part-section1}
+{#content-body-section1}
+    <p>
+        Red Hat Insights has identified {action.context.inventory.errors.size()} host{#if action.context.inventory.errors.size() > 1}s{/if} that presented a validation error.
+        For errors in updating hosts, please review the Insights Inventory service to further assess and determine next steps.
+    </p>
+    <p>
+        If no hosts were created by {#if action.context.inventory.errors.size() > 1}these changes, these errors{#else}this change, this error{/if} will not appear in the service.
+    </p>
+
+    <table class="rh-data-table-bordered">
+        <thead>
+            <tr>
+                <th>Host Name</th>
+                <th>Error</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#each action.context.inventory.errors}
+            <tr>
+                <td>{#if it.display_name}{it.display_name}{#else}Not available{/if}</td>
+                <td>{it.message}</td>
+            </tr>
+            {/each}
+        </tbody>
+    </table>
+
+{/content-body-section1}
+
+{#content-title-section2}
+    Inventory
+{/content-title-section2}
+{#content-subtitle-section2}
+    {#let total_systems_state_change=(action.context.inventory.new_systems.size() + action.context.inventory.stale_systems.size() + action.context.inventory.deleted_systems.size())}
+        {total_systems_state_change} system{#if total_systems_state_change > 1}s{/if} changed state
+    {/let}
+{/content-subtitle-section2}
+{#content-title-right-part-section2}
+    <a target="_blank" href="{environment.url}/insights/inventory/?{query_params}">{action.context.inventory.new_systems.size() + action.context.inventory.stale_systems.size() + action.context.inventory.deleted_systems.size()}</a>
+{/content-title-right-part-section2}
+{#content-body-section2}
+{#if action.context.inventory.new_systems.size() > 0}
+    <a id="inventory-section2-1" name="inventory-section2-1"></a>
+    <table class="rh-data-table-bordered">
+        <thead>
+            <tr>
+                <th>New system registered</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#each action.context.inventory.new_systems}
+            <tr>
+                <td><a target="_blank" href="{environment.url}/insights/inventory/{it.inventory_id}">{it.display_name}</a></td>
+            </tr>
+            {/each}
+        </tbody>
+    </table>
+    {#if action.context.inventory.stale_systems.orEmpty.size() > 0 || action.context.inventory.deleted_systems.orEmpty.size > 0}
+        <div style="height: 24px">&nbsp;</div>
+    {/if}
+{/if}
+{#if action.context.inventory.stale_systems.size() > 0}
+    <a id="inventory-section2-2" name="inventory-section2-2"></a>
+    <table class="rh-data-table-bordered">
+        <thead>
+        <tr>
+            <th>Stale system</th>
+        </tr>
+        </thead>
+        <tbody>
+        {#each action.context.inventory.stale_systems}
+        <tr>
+            <td><a target="_blank" href="{environment.url}/insights/inventory/{it.inventory_id}">{it.display_name}</a></td>
+        </tr>
+        {/each}
+        </tbody>
+    </table>
+    {#if action.context.inventory.deleted_systems.orEmpty.size > 0}
+        <div style="height: 24px">&nbsp;</div>
+    {/if}
+{/if}
+{#if action.context.inventory.deleted_systems.size() > 0}
+    <a id="inventory-section2-3" name="inventory-section2-3"></a>
+    <table class="rh-data-table-bordered">
+        <thead>
+        <tr>
+            <th>System deleted</th>
+        </tr>
+        </thead>
+        <tbody>
+        {#each action.context.inventory.deleted_systems}
+            <tr>
+                <td>{it.display_name}</td>
+            </tr>
+        {/each}
+        </tbody>
+    </table>
+{/if}
+{/content-body-section2}
+{#content-body-section3}
+    <p>
+    If you want to see more details, go to Insights Inventory for Red Hat Enterprise Linux.
+    </p>
+{/content-body-section3}
+{#content-button-section3}
+    <a target="_blank" href="{environment.url}/insights/inventory/?{query_params}">Open Inventory in Insights</a>
+{/content-button-section3}
+{/include}

@@ -1,0 +1,18 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include email/Common/insightsEmailBody}
+{#content-title}
+    User Access - Console
+{/content-title}
+{#content-title-section1}
+    User Access platform group
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        Platform default group is modified by {action.events[0].payload.username} and Red Hat will not be responsible for managing it from now on.
+    </p>
+{/content-body-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/iam/user-access/groups/detail/{action.events[0].payload.uuid}?{query_params}">Check custom platform default group in Insights</a>
+{/content-button-section1}
+{/include}

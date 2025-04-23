@@ -162,7 +162,7 @@ class EmailAggregatorTest {
         User user = result.keySet().stream().findFirst().get();
         assertTrue(user.getEmail().equals("user-2"));
         assertEquals(8, ((LinkedHashMap) result.get(user).get("policies")).size());
-        verify(recipientsResolverService, times(1)).getRecipients(any(RecipientsQuery.class));
+        verify(recipientsResolverService, times(8)).getRecipients(any(RecipientsQuery.class));
     }
 
     private Map<User, Map<String, Object>> aggregate(boolean useEventAggregationCriteria) {

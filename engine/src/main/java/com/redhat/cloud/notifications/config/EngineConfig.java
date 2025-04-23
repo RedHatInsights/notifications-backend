@@ -46,6 +46,7 @@ public class EngineConfig {
     private static final String NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD = "notifications.email.sender.openshift.prod";
     private static final String NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES = "notifications.use-ocm-refactored-templates";
 
+
     /*
      * Unleash configuration
      */
@@ -57,6 +58,7 @@ public class EngineConfig {
     private String toggleKafkaOutgoingHighVolumeTopic;
     private String toggleDirectEndpointToEventTypeDryRunEnabled;
     private String toggleUseDirectEndpointToEventTypeEnabled;
+    private String toggleUseCommonTemplateModuleToRenderEmailsEnabled;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -160,6 +162,7 @@ public class EngineConfig {
         toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
         toggleDirectEndpointToEventTypeDryRunEnabled = toggleRegistry.register("endpoint-to-event-type-dry-run", true);
         toggleUseDirectEndpointToEventTypeEnabled = toggleRegistry.register("use-endpoint-to-event-type", true);
+        toggleUseCommonTemplateModuleToRenderEmailsEnabled = toggleRegistry.register("use-common-template-module-for-emails", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -187,6 +190,7 @@ public class EngineConfig {
         config.put(NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES, isUseOCMRefactoredTemplates());
         config.put(toggleDirectEndpointToEventTypeDryRunEnabled, isDirectEndpointToEventTypeDryRunEnabled());
         config.put(toggleUseDirectEndpointToEventTypeEnabled, isUseDirectEndpointToEventTypeEnabled());
+        config.put(toggleUseCommonTemplateModuleToRenderEmailsEnabled, isUseCommonTemplateModuleToRenderEmailsEnabled());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -307,6 +311,14 @@ public class EngineConfig {
     public boolean isUseDirectEndpointToEventTypeEnabled() {
         if (unleashEnabled) {
             return unleash.isEnabled(toggleUseDirectEndpointToEventTypeEnabled, false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isUseCommonTemplateModuleToRenderEmailsEnabled() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleUseCommonTemplateModuleToRenderEmailsEnabled, false);
         } else {
             return false;
         }

@@ -1,0 +1,48 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include email/Common/insightsEmailBody}
+{#content-title}
+    Advisor - Red Hat Enterprise Linux
+{/content-title}
+{#content-title-section1}
+    Resolved recommendations
+{/content-title-section1}
+{#content-title-right-part-section1}
+    <a href="{environment.url}/insights/advisor/systems/{action.context.inventory_id}?{query_params}" target="_blank">{action.events.size()}</a>
+{/content-title-right-part-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/insights/advisor/systems/{action.context.inventory_id}?{query_params}">Go to system page</a>
+{/content-button-section1}
+{#content-body-section1}
+<p><b>{action.context.display_name}</b> has {action.events.size()} resolved {#if action.events.size() is 1}recommendation{#else}recommendations{/if}.</p>
+<table class="rh-data-table-bordered">
+    <thead>
+    <tr>
+        <th style="width: 75%">Recommendation</th>
+        <th style="width: 25%">Total Risk</th>
+    </tr>
+    </thead>
+    <tbody>
+    {#each action.events}
+        <tr>
+            <td>
+                <a href="{it.payload.rule_url}">{it.payload.rule_description}</a>
+            </td>
+            <td>
+                {#switch it.payload.total_risk}
+                {#case '1'}
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
+                {#case '2'}
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
+                {#case '3'}
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important.png" alt="Important severity" width="86" border="0">
+                {#case '4'}
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical.png" alt="Critical severity" width="70" border="0">
+                {/switch}
+            </td>
+        </tr>
+    {/each}
+    </tbody>
+</table>
+{/content-body-section1}
+{/include}

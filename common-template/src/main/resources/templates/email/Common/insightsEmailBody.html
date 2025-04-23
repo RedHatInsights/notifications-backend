@@ -1,0 +1,638 @@
+{@String query_params = "from=notifications&integration=instant_email"}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Red Hat Hybrid Cloud Console</title>
+    <style>
+    {|
+        @import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Red+Hat+Text:wght@300..700&display=swap');
+
+        .rh-masthead__subhead {
+            font-family: 'Red Hat Display', Helvetica, sans-serif;
+        }
+
+        body,
+        .rh-content__block,
+        .rh-data-table,
+        .rh-data-table-bordered,
+        .rh-masthead__subhead {
+            font-family: 'Red Hat Display', Helvetica, sans-serif;
+        }
+
+        #outlook a{padding:0;} /* Force Outlook to provide a "view in browser" message */
+        body, table, td, p, a, li, blockquote{-webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;} /* Prevent WebKit and Windows mobile changing default text sizes */
+        table, td{mso-table-lspace:0pt; mso-table-rspace:0pt;} /* Remove spacing between tables in Outlook 2007 and up */
+        img{-ms-interpolation-mode:bicubic;} /* Allow smoother rendering of resized image in Internet Explorer */
+
+        /* reset styles */
+        img{border:0; height:auto; line-height:100%; outline:none; text-decoration:none;}
+        table{border-collapse:collapse !important;}
+        a{text-decoration: none !important;}
+
+        /* Remove space around email design */
+        html,
+        body {
+            margin: 0 auto !important;
+            padding: 0 !important;
+            height: 100% !important;
+            width: 100% !important;
+            background-color: #fff;
+        }
+
+        /* Stop Outlook resizing small text */
+        * {
+            -ms-text-size-adjust: 100%;
+        }
+        /* Stop Outlook from adding extra spacing to tables */
+        table, td {
+            mso-table-lspace: 0pt !important;
+            mso-table-rspace: 0pt !important;
+        }
+        /* Better rendering method when resizing impages in Outlook IE */
+        img {
+            -ms-interpolation-mode:bicubic;
+        }
+
+        a {
+            text-decoration: none;
+            color: #fff;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: 'Red Hat Display', sans-serif;
+            font-size: 16px;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        p {
+            margin-top: 0;
+        }
+
+        h1:last-child,
+        h2:last-child,
+        h3:last-child,
+        h4:last-child,
+        h5:last-child,
+        h6:last-child,
+        p:last-child {
+            margin-bottom: 0;
+        }
+
+
+        .rh-masthead__content-title h1,
+        .rh-masthead__content-title h2,
+        .rh-masthead__content-title h3,
+        .rh-masthead__content-title h4,
+        .rh-masthead__subhead h1,
+        .rh-masthead__subhead h2,
+        .rh-masthead__subhead h3,
+        .rh-masthead__subhead h4 {
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .rh-body-table,
+        .rh-body-cell {
+            height:100% !important;
+            margin:0;
+            padding:0;
+            width:100% !important;
+        }
+
+        .rh-body-table {
+            background-color: #f5f5f5;
+            background-color: #fff;
+        }
+
+        .rh-template-container {
+            padding: 0 0 30px 0;
+            width: 600px;
+            background-color: #ededed;
+        }
+
+
+        .rh-head,
+        .rh-body,
+        .rh-footer {
+            margin: 0;
+            mso-line-height-rule: exactly;
+            font-family: arial;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .rh-body {
+            padding: 0 16px 24px 16px;
+        }
+
+        .rh-body,
+        .rh-masthead,
+        .rh-content,
+        .rh-data-table,
+        .rh-data-table-bordered,
+        .rh-head {
+            width: 100% !important;
+            align: center;
+        }
+
+        .rh-head {
+            padding: 0 0 24px 0;
+        }
+
+        .rh-footer {
+            padding: 24px 20px 24px 20px;
+            background-color: #212427 !important;
+            color: #ffffff !important;
+        }
+
+        .rh-masthead__subhead {
+            background-color: #212427 !important;
+            padding: 22px 0px 22px 0px;
+            color: #ffffff !important;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .rh-masthead__section__head {
+            background-color: #212427 !important;
+            padding: 16px 22px 16px 22px;
+            color: #ffffff !important;
+            font-size: 20px;
+            text-align: left;
+            font-family: 'Red Hat Display', sans-serif;
+            font-weight: 500;
+        }
+
+        .rh-masthead__incident_section__head {
+            background-color: #C9190B !important;
+            padding: 16px 22px 16px 22px;
+            color: #ffffff !important;
+            font-size: 20px;
+            text-align: left;
+            font-family: 'Red Hat Display', sans-serif;
+            font-weight: 500;
+        }
+
+        .rh-masthead__section__head__subtitle {
+            font-size: 16px;
+            font-family: 'Red Hat Text', sans-serif;
+            font-weight: 400;
+        }
+
+        .rh-masthead__section__head__counter {
+            float: right;
+            font-size: 36px;
+            font-family: 'Red Hat Text', sans-serif;
+            color: #ffffff !important;
+            font-weight: 500;
+        }
+
+        .rh-masthead__section__head__counter a {
+            color: #ffffff !important;
+        }
+
+        .rh-masthead__brand {
+            padding: 22px 0px 22px 0px;
+            background-color: #151515 !important;
+            background-repeat: repeat;
+            background-image: url(https://console.redhat.com/apps/frontend-assets/email-assets/bg_151515.jpg);
+            text-align: center;
+        }
+
+        .rh-masthead__brand-link {
+            display: block;
+            text-align: center;
+        }
+
+        .rh-content + .rh-content {
+            padding: 0 0 20px 0;
+        }
+
+        .rh-content a {
+            color: #0066cc;
+        }
+
+        .rh-content {
+            background: #efefef;
+        }
+
+        .rh-content table {
+            background: #fff;
+        }
+
+        /* Content block */
+        .rh-content__block {
+            max-width: 100%;
+            padding: 0px 20px 0px 20px;
+            overflow: hidden;
+        }
+
+        .rh-content tr + tr .rh-content__block {
+            padding-top: 0;
+        }
+
+        .rh-content .rh-content__block {
+            background-color: #fff;
+        }
+
+        .rh-footer__text {
+            text-align: center;
+            font-size: 14px;
+            color: #ffffff !important;
+        }
+
+        .rh-footer__text a {
+            color: #0066cc;
+        }
+
+        .rh-cta-link {
+            display:block;
+            padding: 10px 20px;
+            background-color: #0066cc;
+            border-radius: 3px;
+            text-decoration:none;
+            font-weight:bold;
+        }
+
+        .rh-cta-link a {
+            color:#ffffff;
+            text-decoration: none;
+        }
+
+        .rh-data-table thead th {
+            font-weight: 700;
+            text-align: left;
+        }
+
+        .rh-data-table tbody th,
+        .rh-data-table-bordered tbody th{
+            font-weight: 500;
+            text-align: left;
+            width: 200px;
+        }
+
+        .rh-data-table.rh-m-bordered th,
+        .rh-data-table-bordered th {
+            padding: 10px;
+            text-align: left;
+            font-size: 14px;
+            font-weight: bold;
+            background-color: #ededed !important;
+        }
+
+        .rh-data-table-bordered thead th{
+            padding: 10px;
+            text-align: left;
+            font-size: 14px;
+            font-weight: bold;
+            background-color: #ededed !important;
+        }
+
+
+        .rh-data-table.rh-m-bordered,
+        .rh-data-table-bordered tbody {
+            background-color: #ffffff !important;
+            border-collapse: collapse;
+        }
+
+        .rh-m-bordered th,
+        .rh-data-table-bordered th,
+        .rh-m-bordered td,
+        .rh-data-table-bordered td {
+            padding: 10px;
+            border-width: 1px;
+            border-color: #b8bbbe;
+            border-style: solid;
+        }
+
+        .rh-m-bordered,
+        .rh-data-table-bordered tbody tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        .rh-stack > * + * {
+            margin-top: 10px;
+        }
+
+        .rh-inline > * + * {
+            display: inline-block;
+            margin-left: 5px;
+        }
+        .inline-16px{
+            width: 16px;
+            height: 16px;
+            vertical-align: -2px;
+            display: inline-block;
+        }
+        .col-16px{
+            padding: 10px 0px 10px 10px !important;
+            border-right: 0px !important;
+        }
+
+        .rh-masthead__brand-img{
+            width: 340px;
+        }
+        /* dark mode hacks */
+        [data-ogsc] .rh-masthead__brand,
+        [data-ogsb] .rh-masthead__brand {
+            background-color: #151515 !important;
+        }
+
+        @media only screen and (max-width: 320px) {
+            .rh-masthead__block {
+                width: 100% !important;
+                display: block !important;
+            }
+        }
+
+        @media only screen and (max-width: 480px) {
+            .rh-template-container {
+                max-width: 480px !important;
+                /*@editable*/ width:100% !important;
+            }
+
+            .rh-data-table tbody th {
+                width: auto !important;
+            }
+
+            .rh-data-table th,
+            .rh-data-table td {
+                font-size: 14px;
+            }
+
+            .rh-data-table.rh-m-bordered th,
+            .rh-data-table-bordered th,
+            .rh-data-table.rh-m-bordered td,
+            .rh-data-table-bordered td,
+            .rh-data-table-bordered tbody td{
+                padding: 5px;
+                text-align: left;
+            }
+        }
+
+        @media only screen and (max-width: 600px) {
+            body{
+                width: 100% !important;
+                min-width: 100% !important;
+            }
+
+            .rh-template-container {
+                max-width: 600px !important;
+                /*@editable*/ width:100% !important;
+            }
+        }
+    |}
+    {#insert extra-css}{/}
+</style>
+</head>
+
+<body leftmargin="0" marginwidth="0" topmargin="0" marginheight="0" offset="0" class="rh-body">
+<center>
+    <table align="center" border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" class="rh-body-table">
+        <tr>
+            <td align="center" valign="top" class="rh-body-cell">
+                <table border="0" cellpadding="0" cellspacing="0" class="rh-template-container" >
+
+                    <!-- Head -->
+                    <tr>
+                        <td class="rh-head">
+                            <table class="rh-masthead" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <!--Red Hat logo-->
+                                    <td align="center" class="rh-masthead__brand">
+                                        <a href="{environment.url}" target="_blank" class="rh-masthead__brand-link">
+                                            <img src="https://console.redhat.com/apps/frontend-assets/console-logos/Logo-Red_Hat-Hybrid_Cloud_Console-A-Reverse-RGB.png" alt="Red Hat logo" class="rh-masthead__brand-img" border="0" width="350" />
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="rh-masthead__subhead">
+                                        <h1>{#insert content-title}{/}</h1>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- end head -->
+
+                    <!-- Body section -->
+                    {#if renderSection1.or(false)}
+                        <tr>
+                            <td class="rh-body">
+                                <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                    <tr>
+                                        <td>
+                                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                                <tr>
+                                                    {#if renderSection1AsIncident.or(false)}
+                                                        <td class="rh-masthead__incident_section__head" style="width: 10%;">
+                                                            <img src="https://console.redhat.com/apps/frontend-assets/email-assets/lightning-bolt-light.png" alt="" width="30">
+                                                        </td>
+                                                    {/if}
+
+                                                    <td {#if renderSection1AsIncident.or(false)} class="rh-masthead__incident_section__head" style="padding: 0px;"{#else} class="rh-masthead__section__head"{/if}>
+                                                        {#insert content-title-section1}{/}<br/>
+                                                        <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section1}{/}</span>
+                                                    </td>
+                                                    <td {#if renderSection1AsIncident.or(false)} class="rh-masthead__incident_section__head" {#else} class="rh-masthead__section__head" {/if} style="text-align: right">
+                                                        <span class="rh-masthead__section__head__counter" >{#insert content-title-right-part-section1}{/}</span>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
+                                    </tr>
+                                    <tr>
+                                        <td class="rh-content__block">
+                                            {#insert content-body-section1}{/}
+                                        </td>
+                                    </tr>
+                                    {#if renderButtonSection1.or(false)}
+                                        <tr>
+                                            <td class="rh-content__block" style="padding: 24px 0px;">
+                                                <table align="center">
+                                                    <tr>
+                                                        <td class="rh-cta-link" align="center">
+                                                            {#insert content-button-section1}{/}
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    {#else}
+                                        <tr>
+                                            <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
+                                        </tr>
+                                    {/if}
+                                </table>
+                            </td>
+                        </tr>
+                    {/if}
+
+                    {#if renderSection2.or(false)}
+                    <tr>
+                        <td class="rh-body">
+                            <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td>
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td class="rh-masthead__section__head">
+                                                    {#insert content-title-section2}{/}<br/>
+                                                    <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section2}{/}</span>
+                                                </td>
+                                                <td class="rh-masthead__section__head" style="text-align: right">
+                                                    <span class="rh-masthead__section__head__counter">{#insert content-title-right-part-section2}{/}</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
+                                </tr>
+                                <tr>
+                                    <td class="rh-content__block">
+                                        {#insert content-body-section2}{/}
+                                    </td>
+                                </tr>
+                                {#if renderButtonSection2.or(false)}
+                                <tr>
+                                    <td class="rh-content__block" style="padding: 24px 0px;">
+                                        <table align="center">
+                                            <tr>
+                                                <td class="rh-cta-link" align="center">
+                                                    {#insert content-button-section2}{/}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                {#else}
+                                <tr>
+                                    <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
+                                </tr>
+                                {/if}
+                            </table>
+                        </td>
+                    </tr>
+                    {/if}
+
+                    {#if renderSection3.or(false)}
+                    <tr>
+                        <td class="rh-body">
+                            <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td>
+                                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td class="rh-masthead__section__head">
+                                                    {#insert content-title-section3}{/}<br/>
+                                                    <span class="rh-masthead__section__head__subtitle">{#insert content-subtitle-section3}{/}</span>
+                                                </td>
+                                                <td class="rh-masthead__section__head" style="text-align: right">
+                                                    <span class="rh-masthead__section__head__counter">{#insert content-title-right-part-section3}{/}</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
+                                </tr>
+                                <tr>
+                                    <td class="rh-content__block">
+                                        {#insert content-body-section3}{/}
+                                    </td>
+                                </tr>
+                                {#if renderButtonSection3.or(false)}
+                                <tr>
+                                    <td class="rh-content__block" style="padding: 24px 0px;">
+                                        <table align="center">
+                                            <tr>
+                                                <td class="rh-cta-link" align="center">
+                                                    {#insert content-button-section3}{/}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                {#else}
+                                <tr>
+                                    <td class="rh-content__block" style="padding: 0px 0px 24px 0px;"/>
+                                </tr>
+                                {/if}
+                            </table>
+                        </td>
+                    </tr>
+                    {/if}
+
+                    <!-- Pendo message -->
+                    {#if pendo_message != null}
+                        <tr>
+                            <td class="rh-body" >
+                                <table class="rh-content" role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%">
+                                    <tbody>
+                                        <tr>
+                                            <td colspan="2" style="height: 2px;background-color: #0066cc"></td>
+                                        </tr>
+                                        <tr class="rh-content__block" style="background-color: #DEF3FF; font-size: 14px; font-family: 'Red Hat Text', sans-serif;">
+                                        <td class="col-16px" style="vertical-align: top;">
+                                            <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_info.png" title="Info" alt="Info" class="inline-16px" border="0" width="16" />
+                                        </td>
+                                        <td style="padding: 10px 10px 10px 8px;">
+                                            <p style="color: #002952; font-weight: 700;">
+                                                {pendo_message.pendoTitle.safe}
+                                            </p>
+                                            <p>
+                                                {pendo_message.pendoMessage.safe}
+                                            </p>
+                                        </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    {/if}
+                    <!-- end pendo message -->
+
+                    <!-- Footer -->
+                    <tr>
+                        <td class="rh-footer">
+                            <table role="presentation" border="0" align="center" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td class="rh-footer__text">
+                                        {#if ignore_user_preferences??}
+                                            This email was sent by Red Hat Hybrid Cloud Console, it is critical or requires action.<br/>
+                                            Therefore, you are receiving this message regardless of your email preferences.
+                                        {#else}
+                                            This email was sent by Red Hat Hybrid Cloud Console | <a href="{environment.url}/user-preferences/notifications/notifications?bundle={action.bundle.or("")}&app={action.application.or("")}" target="_blank">Manage email preferences</a>
+                                        {/if}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- end footer -->
+                </table>
+            </td>
+        </tr>
+    </table>
+</center>
+</body>
+</html>
