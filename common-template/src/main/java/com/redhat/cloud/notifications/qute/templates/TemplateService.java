@@ -58,6 +58,13 @@ public class TemplateService {
         }
     }
 
+    private String buildTemplateFilePath(TemplateDefinition templateDefinition, String templateFileName) {
+        return templateDefinition.integrationType().getRootFolder()
+            + File.separator
+            + getTemplatePrefix(templateDefinition.integrationType())
+            + templateFileName;
+    }
+
     @PostConstruct
     public void init() {
         templatesConfigMap.clear();
@@ -93,7 +100,7 @@ public class TemplateService {
     private void checkTemplatesConsistency() {
         ClassLoader classLoader = getClass().getClassLoader();
         for (TemplateDefinition templateDefinition : templatesConfigMap.keySet()) {
-            String filePath = templateDefinition.integrationType().getRootFolder() + File.separator + getTemplatePrefix(templateDefinition.integrationType()) + templatesConfigMap.get(templateDefinition);
+            final String filePath = buildTemplateFilePath(templateDefinition, templatesConfigMap.get(templateDefinition));
             if (null == classLoader.getResource("templates/" + filePath)) {
                 Log.info("Template file " + filePath + " not found");
                 throw new TemplateNotFoundException(templateDefinition);
@@ -112,25 +119,27 @@ public class TemplateService {
      *
      * @throws TemplateNotFoundException
      */
-    private TemplateInstance compileTemplate(final TemplateDefinition templateDefinition) throws TemplateNotFoundException {
+    private TemplateInstance compileTemplate(TemplateDefinition templateDefinition) throws TemplateNotFoundException {
 
         // try to find template path with full config parameters
         String path = templatesConfigMap.get(templateDefinition);
 
         // if not found try to find if a default template for the app exists
         if (path == null) {
-            path = templatesConfigMap.get(new TemplateDefinition(templateDefinition.integrationType(), templateDefinition.bundle(), templateDefinition.application(), null));
+            templateDefinition = new TemplateDefinition(templateDefinition.integrationType(), templateDefinition.bundle(), templateDefinition.application(), null);
+            path = templatesConfigMap.get(templateDefinition);
             // if not found try to find if a default/system template for the integration type exists
             if (path == null) {
-                path = templatesConfigMap.get(new TemplateDefinition(templateDefinition.integrationType(), null, null, null));
+                templateDefinition = new TemplateDefinition(templateDefinition.integrationType(), null, null, null);
+                path = templatesConfigMap.get(templateDefinition);
                 if (path == null) {
                     throw new TemplateNotFoundException(templateDefinition);
                 }
             }
         }
-
+        final String filePath = buildTemplateFilePath(templateDefinition, templatesConfigMap.get(templateDefinition));
         // ask Qute to load the template instance from its file path, such as drawer/Policies/policyTriggeredBody.md
-        return engine.getTemplate(templateDefinition.integrationType().getRootFolder() + File.separator + getTemplatePrefix(templateDefinition.integrationType()) + path).instance();
+        return engine.getTemplate(filePath).instance();
     }
 
     public String renderTemplate(final TemplateDefinition config, final Action action) {

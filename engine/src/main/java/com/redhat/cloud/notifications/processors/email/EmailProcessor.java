@@ -154,16 +154,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
                 String bodyFromCommonTemplateModule = quteTemplateService.renderTemplateWithCustomDataMap(bodyTemplateDefinition, additionalContext);
 
-                if (!getTrimmed(subject).equals(getTrimmed(subjectFromCommonTemplateModule))) {
-                    Log.error("Rendered Subject with both methods is different ");
-                    Log.infof("Subject from legacy template management: %s", getTrimmed(subject));
-                    Log.infof("Subject from common template module: %s", getTrimmed(subjectFromCommonTemplateModule));
-                }
-                if (!getTrimmed(body).equals(getTrimmed(bodyFromCommonTemplateModule))) {
-                    Log.error("Rendered Body with both methods is different ");
-                    Log.infof("body from legacy template management: %s", getTrimmed(body));
-                    Log.infof("body from common template module: %s", getTrimmed(bodyFromCommonTemplateModule));
-                }
+                compareTemplateRenderings(subject, subjectFromCommonTemplateModule, "Rendered Subjects with both methods are different");
+                compareTemplateRenderings(body, bodyFromCommonTemplateModule, "Rendered Bodies with both methods are different");
             } catch (Exception e) {
                 Log.error("Error rendering email template for event type " + event.getEventType().getName(), e);
             }
@@ -197,7 +189,22 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
      * We need to get free of them in order to compare results.
      *
      */
-    public static String getTrimmed(String bodyStr) {
+    private static String getTrimmed(String bodyStr) {
         return bodyStr.replaceAll("[\\n\\r]", "").trim();
+    }
+
+    /**
+     * Check and log differences between old and new qute renderers
+     *
+     * @param legacyResult
+     * @param commonTemplateResult
+     * @param errorMsg contextual message
+     */
+    public static void compareTemplateRenderings(String legacyResult, String commonTemplateResult, String errorMsg) {
+        if (!getTrimmed(legacyResult).equals(getTrimmed(commonTemplateResult))) {
+            Log.error(errorMsg);
+            Log.debugf("Legacy: %s", EmailProcessor.getTrimmed(legacyResult));
+            Log.debugf("New: %s", EmailProcessor.getTrimmed(commonTemplateResult));
+        }
     }
 }

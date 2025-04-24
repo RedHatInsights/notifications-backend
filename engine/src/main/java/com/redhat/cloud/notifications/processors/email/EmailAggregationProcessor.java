@@ -359,11 +359,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
                         String fullDailyDigestResult = commonQuteTemplateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
 
-                        if (!EmailProcessor.getTrimmed(bodyStr).equals(EmailProcessor.getTrimmed(fullDailyDigestResult))) {
-                            Log.error("Rendered aggregated Bodies with both methods are different ");
-                            Log.infof("body from legacy template management: %s", EmailProcessor.getTrimmed(bodyStr));
-                            Log.infof("body from common template module: %s", EmailProcessor.getTrimmed(fullDailyDigestResult));
-                        }
+                        EmailProcessor.compareTemplateRenderings(bodyStr, fullDailyDigestResult, "Rendered aggregated Bodies with both methods are different");
                     } catch (Exception e) {
                         Log.error(String.format("Error rendering daily digest email template for %s", bundle.getName()), e);
                     }
@@ -429,11 +425,9 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                 Map<String, Object> additionalContext = buildFullTemplateContext(action);
 
                 String applicationSectionResult = commonQuteTemplateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
-                if (!EmailProcessor.getTrimmed(result).equals(EmailProcessor.getTrimmed(applicationSectionResult))) {
-                    Log.error("Rendered Body with both methods is different ");
-                    Log.infof("body from legacy template management: %s", EmailProcessor.getTrimmed(result));
-                    Log.infof("body from common template module: %s", EmailProcessor.getTrimmed(applicationSectionResult));
-                }
+
+                EmailProcessor.compareTemplateRenderings(result, applicationSectionResult, "Rendered application section bodies with both methods is different");
+
             } catch (Exception e) {
                 Log.error(String.format("Error rendering aggregated email template for %s/%s", bundle, app), e);
             }
