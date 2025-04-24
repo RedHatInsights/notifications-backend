@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -105,7 +106,15 @@ public class InsightsUrlsBuilder {
             // Settings paths
             case "integrations", "notifications" -> path + "settings/" + application;
             // OpenShift path override
-            case "cluster-manager" -> path;
+            case "cluster-manager" -> {
+                // Adapted from OCM email templates
+                Optional<String> subscriptionId = getOCMSubscriptionId(data);
+                if (subscriptionId.isPresent()) {
+                    yield path + "details/s/" + subscriptionId.get();
+                } else {
+                    yield path + "cluster-list";
+                }
+            }
             case "cost-management" -> path + application;
             // Ansible Automation Platform path override
             case "ansible-service-on-aws" -> path + "/service/instances";
@@ -132,5 +141,23 @@ public class InsightsUrlsBuilder {
         all_params.add("integration=" + integration_type.toLowerCase());
 
         return "?" + String.join("&", all_params);
+    }
+
+    /**
+     * Extracts the {@code subscription_id} from an OCM event, if present.
+     *
+     * @param data the payload
+     * @return a subscription ID, if present
+     */
+    private Optional<String> getOCMSubscriptionId(final JsonObject data) {
+        JsonObject firstEvent = data.getJsonArray("events", JsonArray.of())
+                .getJsonObject(0);
+        if (firstEvent != null) {
+            return Optional.ofNullable(firstEvent.getJsonObject("payload", JsonObject.of())
+                    .getJsonObject("global_vars", JsonObject.of())
+                    .getString("subscription_id"));
+        }
+
+        return Optional.empty();
     }
 }
