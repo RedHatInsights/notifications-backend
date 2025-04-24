@@ -30,7 +30,9 @@ import org.project_kessel.api.inventory.v1beta1.resources.ListNotificationsInteg
 import org.project_kessel.api.inventory.v1beta1.resources.ListNotificationsIntegrationsResponse;
 import org.project_kessel.inventory.client.KesselCheckClient;
 import org.project_kessel.inventory.client.NotificationsIntegrationClient;
+
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -287,9 +289,11 @@ public class KesselInventoryAuthorization {
         final RhIdentity identity = SecurityContextUtil.extractRhIdentity(securityContext);
         final ListNotificationsIntegrationsRequest request = this.buildListIntegrationRequest(identity, workspaceId, integrationPermission);
 
+        Log.tracef("[identity: %s][workspaceID: %s][permission: %s] Payload for the listNotificationsIntegrations check: %s", identity, workspaceId, integrationPermission, request);
+
         // Measure the time it takes to perform the operation with Kessel.
         final Timer.Sample listIntegrationTimer = Timer.start(this.meterRegistry);
-
+        LocalDateTime startTime = LocalDateTime.now();
         Set<UUID> authorizedIds;
         try {
             // Send the request to the inventory.
@@ -303,6 +307,8 @@ public class KesselInventoryAuthorization {
                 .await()
                 .atMost(Duration.ofSeconds(30));
 
+            Log.debugf("[identity: %s][workspaceID: %s][permission: %s] listNotificationsIntegrations returned %d integrations", identity,  workspaceId, integrationPermission, authorizedIds.size());
+
         } catch (final Exception e) {
             meterRegistry.counter(KESSEL_METRICS_LIST_INTEGRATIONS_COUNTER_NAME, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES)).increment();
 
@@ -312,6 +318,10 @@ public class KesselInventoryAuthorization {
             listIntegrationTimer.stop(this.meterRegistry.timer(KESSEL_METRICS_LIST_INTEGRATIONS_TIMER_NAME, Tags.of(Constants.KESSEL_METRICS_TAG_RESOURCE_TYPE_KEY, ResourceType.INTEGRATION.name())));
         }
 
+        Duration duration = Duration.between(startTime, LocalDateTime.now());
+        if (Duration.ofMillis(300).compareTo(duration) < 0) {
+            Log.warnf("listNotificationsIntegrations service response time was %dms for request %s and returned %d integrations", duration.toMillis(), request, authorizedIds.size());
+        }
         return authorizedIds;
     }
 
