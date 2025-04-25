@@ -36,8 +36,7 @@ objects:
           limits:
             cpu: ${REMOTE_CACHE_CLEANER_CPU_LIMIT}
             memory: ${REMOTE_CACHE_CLEANER_MEMORY_LIMIT}
-          # TODO replace with Red Hat image
-        image: docker.io/valkey/valkey:8
+        image: docker.io/fedora/valkey-8:latest
         volume:
           - name: notifications-remote-cache-cleaner-volume
             configMap:
@@ -47,7 +46,10 @@ objects:
             mountPath: /notifications-remote-cache-cleaner
         command: ['sh', '/notifications-remote-cache-cleaner/clean.sh']
         env:
-          # TODO determine necessary env vars
+          - name: VALKEY_URI
+            valueFrom:
+              secretKeyRef:
+                # TODO figure out what secretKeyRef to use
     kafkaTopics:
     - topicName: platform.notifications.connector.email.high.volume
       partitions: 6
@@ -226,9 +228,16 @@ objects:
   metadata:
     name: notifications-remote-cache-cleaner-config
   data:
-    clean.sh: # TODO add Bash script
-    clean.valkey: # TODO add valkey command runner
-    clean.lua: # TODO add lua library
+    clean.sh: |
+      cat /notifications-remote-cache-cleaner/clean.lua | valkey-cli -u $VALKEY_URI -x FUNCTION LOAD REPLACE
+      valkey-cli -u $VALKEY_URI FCALL clean_msg_id 1 engine:kafka-message
+    clean.lua: |
+      #!lua name=cleaner
+      local function clean_msg_id(keys, args)
+          local msg_key = keys[1]
+          return server.call('DEL', msg_key)
+      end
+      server.register_function('clean_msg_id', clean_msg_id)
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
