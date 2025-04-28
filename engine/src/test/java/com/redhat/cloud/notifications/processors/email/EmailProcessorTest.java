@@ -312,6 +312,8 @@ public class EmailProcessorTest {
     void testSuccess(final boolean useCommonQuteTemplateModule) {
         Mockito.when(this.engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonQuteTemplateModule);
         Mockito.when(this.engineConfig.isDefaultTemplateEnabled()).thenReturn(true);
+        Mockito.when(this.quteTemplateService.isDefaultEmailTemplateEnabled()).thenReturn(true);
+        quteTemplateService.init();
 
         // Prepare the required stubs.
         final Event event = this.setUpStubEvent();

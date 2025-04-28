@@ -41,7 +41,6 @@ public class TemplateService {
 
     final ObjectMapper objectMapper;
 
-    String emailTemplatePrefix = "Secure/";
     Map<TemplateDefinition, String> templatesConfigMap = new HashMap<>();
 
     public TemplateService(Engine engine, ObjectMapper objectMapper) {
@@ -49,19 +48,9 @@ public class TemplateService {
         this.objectMapper = objectMapper;
     }
 
-    public String getTemplatePrefix(final IntegrationType integrationType) {
-        if (isSecuredEmailTemplatesEnabled() &&
-            integrationType.getRootFolder().equals(IntegrationType.EMAIL_BODY.getRootFolder())) {
-            return emailTemplatePrefix;
-        } else {
-            return "";
-        }
-    }
-
     private String buildTemplateFilePath(TemplateDefinition templateDefinition, String templateFileName) {
         return templateDefinition.integrationType().getRootFolder()
             + File.separator
-            + getTemplatePrefix(templateDefinition.integrationType())
             + templateFileName;
     }
 

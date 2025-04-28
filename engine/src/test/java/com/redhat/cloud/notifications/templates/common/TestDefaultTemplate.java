@@ -2,10 +2,10 @@ package com.redhat.cloud.notifications.templates.common;
 
 import com.redhat.cloud.notifications.EmailTemplatesRendererHelper;
 import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.ingress.Action;
-import io.quarkus.test.InjectMock;
+import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.util.List;
@@ -18,8 +18,8 @@ public class TestDefaultTemplate extends EmailTemplatesRendererHelper {
 
     private static final String EVENT_TYPE_NAME = "event-type-without-template";
 
-    @InjectMock
-    EngineConfig engineConfig;
+    @InjectSpy
+    protected TemplateService templateService;
 
     @Override
     protected String getApp() {
@@ -33,7 +33,8 @@ public class TestDefaultTemplate extends EmailTemplatesRendererHelper {
 
     @BeforeEach
     void beforeEach() {
-        when(engineConfig.isDefaultTemplateEnabled()).thenReturn(true);
+        when(templateService.isDefaultEmailTemplateEnabled()).thenReturn(true);
+        templateService.init();
     }
 
     @Test

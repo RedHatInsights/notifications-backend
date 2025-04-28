@@ -58,8 +58,6 @@ public abstract class EmailTemplatesRendererHelper {
         templateService.init();
     }
 
-    protected final Map<String, UUID> eventTypes = new HashMap<>();
-
     protected String generateEmailSubject(String eventTypeStr, Action action) {
         TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_TITLE, getBundle(), getApp(), eventTypeStr);
         return generateEmail(templateDefinition, action, null);
