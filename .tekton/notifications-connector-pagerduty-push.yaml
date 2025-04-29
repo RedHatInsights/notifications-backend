@@ -8,6 +8,7 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch
       == "master"
+    pipelinesascode.tekton.dev/pipeline: https://github.com/RedHatInsights/konflux-pipelines/raw/v1.9.0/pipelines/docker-build.yaml
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: notifications
@@ -28,14 +29,7 @@ spec:
   - name: path-context
     value: .
   pipelineRef:
-    params:
-    - name: url
-      value: https://github.com/RedHatInsights/konflux-pipelines
-    - name: revision
-      value: main
-    - name: pathInRepo
-      value: pipelines/docker-build.yaml
-    resolver: git
+    name: docker-build
   taskRunTemplate: {}
   workspaces:
   - name: workspace
