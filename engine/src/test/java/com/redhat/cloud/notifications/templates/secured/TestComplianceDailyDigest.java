@@ -19,7 +19,6 @@ public class TestComplianceDailyDigest extends EmailTemplatesInDbHelper {
 
     @Test
     void testSecureTemplate() {
-
         String resultBody = generateAggregatedEmailBody(ACTION);
         assertTrue(resultBody.contains(COMMON_SECURED_LABEL_CHECK));
         assertTrue(resultBody.contains("Red Hat Insights has identified one or more systems"));

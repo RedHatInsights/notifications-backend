@@ -1,0 +1,17 @@
+{@boolean renderSection1=true}
+{#include email/Common/insightsEmailBody}
+{#content-title}
+    Cost Management - OpenShift
+{/content-title}
+{#content-title-section1}
+    Cost Management has not received data
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        OpenShift source {action.context.source_name} has not received any payloads in the last 3 or more days.
+    </p>
+    <p>
+        Please go to <a href="{environment.url}/settings/sources/detail/{action.context.source_id}">{action.context.source_name} and confirm whether it should be recieving data or not. </a> If the source/cluster no longer exists consider removing the source or pausing its data collection.
+    </p>
+{/content-body-section1}
+{/include}

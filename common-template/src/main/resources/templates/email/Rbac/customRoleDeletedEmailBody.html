@@ -1,0 +1,14 @@
+{@boolean renderSection1=true}
+{#include email/Common/insightsEmailBody}
+{#content-title}
+    User Access - Console
+{/content-title}
+{#content-title-section1}
+    User Access role change
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        Custom role <b>{action.events[0].payload.name}</b> has been deleted by {action.events[0].payload.username} and is not available anymore.
+    </p>
+{/content-body-section1}
+{/include}

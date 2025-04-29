@@ -1,0 +1,18 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include email/Common/insightsEmailBody}
+{#content-title}
+    Edge Management - Red Hat Enterprise Linux
+{/content-title}
+{#content-title-section1}
+    Image notification
+{/content-title-section1}
+{#content-body-section1}
+    <p>
+        A new image named {action.context.ImageName} was created {action.timestamp.toTimeAgo()}.
+    </p>
+{/content-body-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/edge/manage-images/{action.events[0].payload.ImageSetID}/versions/{action.events[0].payload.ImageId}/details?{query_params}">Open this image</a>
+{/content-button-section1}
+{/include}

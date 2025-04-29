@@ -1,0 +1,39 @@
+{@boolean renderSection1=true}
+{@boolean renderSection2=true}
+{#include email/Common/insightsEmailBody}
+{#content-title}
+    Errata - Subscription Services
+{/content-title}
+{#content-title-section1}
+    Enhancements
+{/content-title-section1}
+{#content-subtitle-section1}
+    There are {action.events.size()} enhancements affecting your subscriptions.
+{/content-subtitle-section1}
+{#content-body-section1}
+    <table class="rh-data-table-bordered">
+        <thead>
+            <tr>
+              <th style="width: 30%">Enhancement</th>
+              <th style="width: 60%">Synopsis</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#if action.events.size() > 0}
+                {#each action.events}
+                <tr style="font-size: 14px;">
+                    <td><a href="{action.context.base_url}{it.payload.id}" target="_blank">{it.payload.id}</a></td>
+                    <td>{it.payload.synopsis}</td>
+                </tr>
+                {/each}
+            {/if}
+        </tbody>
+    </table>
+{/content-body-section1}
+{#content-title-section2}
+Contact
+{/content-title-section2}
+{#content-body-section2}
+The Red Hat security contact is <a href="mailto:secalert@redhat.com">secalert@redhat.com</a>. More contact details at <a href="https://access.redhat.com/security/team/contact/">https://access.redhat.com/security/team/contact/</a>.
+{/content-body-section2}
+{/include}

@@ -154,9 +154,10 @@ class EmailAggregationProcessorTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients(final boolean useAggregationBasedOnEventTable) {
+    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients(final boolean useCommonTemplateModuleToRenderEmails) {
+        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
 
-        when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(useAggregationBasedOnEventTable);
+        when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(true);
         resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
 
         final String ORG_ID_1 = RandomStringUtils.secure().nextAlphanumeric(6);
@@ -171,7 +172,7 @@ class EmailAggregationProcessorTest {
             TestHelpers.createEmailAggregation(ORG_ID_1, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3")
         );
 
-        createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1, aggregationKey2);
+        createAggregationsAndSendAggregationKeysToIngress(true, eventToAggregate, aggregationKey1, aggregationKey2);
 
         ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
         verify(connectorSender, timeout(5000L).times(2)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
@@ -203,9 +204,10 @@ class EmailAggregationProcessorTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipientsWithTwoApps(final boolean useAggregationBasedOnEventTable) {
+    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipientsWithTwoApps(final boolean useCommonTemplateModuleToRenderEmails) {
+        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
         try {
-            when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(useAggregationBasedOnEventTable);
+            when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(true);
             initData("patch", "new-advisory");
 
             // Because this test will use a real Payload Aggregator
@@ -220,7 +222,7 @@ class EmailAggregationProcessorTest {
                 PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02")
             );
 
-            createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1, aggregationKey2);
+            createAggregationsAndSendAggregationKeysToIngress(true, eventToAggregate, aggregationKey1, aggregationKey2);
 
             ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
             verify(connectorSender, timeout(5000L).times(2)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
@@ -263,9 +265,10 @@ class EmailAggregationProcessorTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void shouldSuccessfullySendOneAggEmailWithOneAppHandlingAggregationError(final boolean useAggregationBasedOnEventTable) {
+    void shouldSuccessfullySendOneAggEmailWithOneAppHandlingAggregationError(final boolean useCommonTemplateModuleToRenderEmails) {
+        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
         try {
-            when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(useAggregationBasedOnEventTable);
+            when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(true);
             initData("patch", "new-advisory");
 
             // Because this test will use a real Payload Aggregator
@@ -283,7 +286,7 @@ class EmailAggregationProcessorTest {
             errorOnPoliciesPayload.getPayload().getMap().put("events", "Wrong format");
             eventToAggregate.add(errorOnPoliciesPayload);
 
-            createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1, aggregationKey2);
+            createAggregationsAndSendAggregationKeysToIngress(true, eventToAggregate, aggregationKey1, aggregationKey2);
 
             ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
             verify(connectorSender, timeout(5000L).times(1)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
@@ -311,9 +314,10 @@ class EmailAggregationProcessorTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void shouldSuccessfullySendOneAggEmailWithOneAppHandlingTemplateError(final boolean useAggregationBasedOnEventTable) {
+    void shouldSuccessfullySendOneAggEmailWithOneAppHandlingTemplateError(final boolean useCommonTemplateModuleToRenderEmails) {
+        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
         try {
-            when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(useAggregationBasedOnEventTable);
+            when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(true);
             when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
 
             when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY)))
@@ -349,7 +353,7 @@ class EmailAggregationProcessorTest {
                 PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02")
             );
 
-            createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1, aggregationKey2);
+            createAggregationsAndSendAggregationKeysToIngress(true, eventToAggregate, aggregationKey1, aggregationKey2);
 
             ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
             verify(connectorSender, timeout(5000L).times(2)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
@@ -386,8 +390,9 @@ class EmailAggregationProcessorTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void shouldNotSendAggEmailBecauseNoAppSucceedToRender(final boolean useAggregationBasedOnEventTable) {
-        when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(useAggregationBasedOnEventTable);
+    void shouldNotSendAggEmailBecauseNoAppSucceedToRender(final boolean useCommonTemplateModuleToRenderEmails) {
+        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
+        when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(true);
         when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
 
         // Because this test will use a real Payload Aggregator
@@ -400,15 +405,16 @@ class EmailAggregationProcessorTest {
         errorOnPoliciesPayload.getPayload().getMap().put("events", "Wrong format");
         eventToAggregate.add(errorOnPoliciesPayload);
 
-        createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1);
+        createAggregationsAndSendAggregationKeysToIngress(true, eventToAggregate, aggregationKey1);
 
         verifyNoInteractions(connectorSender);
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void shouldNotSendAggregatedEmailBecausePatchAggIsEmpty(final boolean useAggregationBasedOnEventTable) {
-        when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(useAggregationBasedOnEventTable);
+    void shouldNotSendAggregatedEmailBecausePatchAggIsEmpty(final boolean useCommonTemplateModuleToRenderEmails) {
+        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
+        when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(true);
 
         try {
             initData("patch", "new-advisory");
@@ -421,7 +427,7 @@ class EmailAggregationProcessorTest {
                 PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_2", "test synopsis", "unknown", "host-01")
             );
 
-            createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, aggregationKey1);
+            createAggregationsAndSendAggregationKeysToIngress(true, eventToAggregate, aggregationKey1);
 
             verifyNoInteractions(connectorSender);
 

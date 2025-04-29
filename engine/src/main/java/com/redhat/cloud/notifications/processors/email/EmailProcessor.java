@@ -1,15 +1,19 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
 import io.quarkus.logging.Log;
@@ -19,7 +23,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -50,10 +56,19 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     TemplateService templateService;
 
     @Inject
+    com.redhat.cloud.notifications.qute.templates.TemplateService quteTemplateService;
+
+    @Inject
     SubscriptionRepository subscriptionRepository;
 
     @Inject
     RecipientsAuthorizationCriterionExtractor recipientsAuthorizationCriterionExtractor;
+
+    @Inject
+    Environment environment;
+
+    @Inject
+    EngineConfig engineConfig;
 
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
@@ -109,9 +124,42 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final TemplateInstance subjectTemplate = this.templateService.compileTemplate(subjectData, "subject");
         final TemplateInstance bodyTemplate = this.templateService.compileTemplate(bodyData, "body");
 
-        final String subject = templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
+        String subject = templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
         // we don't want to include outage pendo message this time
-        final String body = templateService.renderEmailBodyTemplate(event.getEventWrapper().getEvent(), bodyTemplate, emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, false), ignoreUserPreferences);
+        EmailPendo pendoMessage = emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, false);
+        String body = templateService.renderEmailBodyTemplate(event.getEventWrapper().getEvent(), bodyTemplate, pendoMessage, ignoreUserPreferences);
+
+        if (engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()) {
+            Log.debug("Uses common template module to render emails");
+            try {
+                Map<String, Object> additionalContext = new HashMap<>();
+                additionalContext.put("environment", environment);
+                additionalContext.put("pendo_message", pendoMessage);
+                additionalContext.put("ignore_user_preferences", ignoreUserPreferences);
+                additionalContext.put("action", event.getEventWrapper().getEvent());
+
+                TemplateDefinition subjectTemplateDefinition = new TemplateDefinition(
+                    IntegrationType.EMAIL_TITLE,
+                    event.getEventType().getApplication().getBundle().getName(),
+                    event.getEventType().getApplication().getName(),
+                    event.getEventType().getName());
+
+                String subjectFromCommonTemplateModule = quteTemplateService.renderTemplateWithCustomDataMap(subjectTemplateDefinition, additionalContext);
+
+                TemplateDefinition bodyTemplateDefinition = new TemplateDefinition(
+                    IntegrationType.EMAIL_BODY,
+                    event.getEventType().getApplication().getBundle().getName(),
+                    event.getEventType().getApplication().getName(),
+                    event.getEventType().getName());
+
+                String bodyFromCommonTemplateModule = quteTemplateService.renderTemplateWithCustomDataMap(bodyTemplateDefinition, additionalContext);
+
+                compareTemplateRenderings(subject, subjectFromCommonTemplateModule, "Rendered Subjects with both methods are different");
+                compareTemplateRenderings(body, bodyFromCommonTemplateModule, "Rendered Bodies with both methods are different");
+            } catch (Exception e) {
+                Log.error("Error rendering email template for event type " + event.getEventType().getName(), e);
+            }
+        }
 
         // Prepare all the data to be sent to the connector.
         final EmailNotification emailNotification = new EmailNotification(
@@ -133,5 +181,30 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EMAIL_SUBSCRIPTION);
 
         connectorSender.send(event, endpoint, payload);
+    }
+
+    /**
+     * For some internal qute reasons, between template standard management vs database management
+     * some templates could have extra empty line at the end and/or extra white spaces.
+     * We need to get free of them in order to compare results.
+     *
+     */
+    private static String getTrimmed(String bodyStr) {
+        return bodyStr.replaceAll("[\\n\\r]", "").trim();
+    }
+
+    /**
+     * Check and log differences between old and new qute renderers
+     *
+     * @param legacyResult
+     * @param commonTemplateResult
+     * @param errorMsg contextual message
+     */
+    public static void compareTemplateRenderings(String legacyResult, String commonTemplateResult, String errorMsg) {
+        if (!getTrimmed(legacyResult).equals(getTrimmed(commonTemplateResult))) {
+            Log.error(errorMsg);
+            Log.debugf("Legacy: %s", EmailProcessor.getTrimmed(legacyResult));
+            Log.debugf("New: %s", EmailProcessor.getTrimmed(commonTemplateResult));
+        }
     }
 }

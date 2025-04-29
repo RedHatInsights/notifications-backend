@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
+import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriteria;
 import com.redhat.cloud.notifications.models.EventType;
@@ -25,6 +26,8 @@ import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.templates.models.DailyDigestSection;
@@ -100,6 +103,9 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
     TemplateService templateService;
 
     @Inject
+    com.redhat.cloud.notifications.qute.templates.TemplateService commonQuteTemplateService;
+
+    @Inject
     EngineConfig engineConfig;
 
     @Inject
@@ -124,6 +130,9 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     Instance<AsyncAggregation> asyncAggregations;
+
+    @Inject
+    Environment environment;
 
     private Counter rejectedAggregationCommandCount;
     private Counter processedAggregationCommandCount;
@@ -343,6 +352,19 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                 // build final body
                 String bodyStr = templateService.renderTemplate(action, SingleBodyTemplate);
 
+                if (engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()) {
+                    try {
+                        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, null, null, null);
+                        Map<String, Object> additionalContext = buildFullTemplateContext(action);
+
+                        String fullDailyDigestResult = commonQuteTemplateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
+
+                        EmailProcessor.compareTemplateRenderings(bodyStr, fullDailyDigestResult, "Rendered aggregated Bodies with both methods are different");
+                    } catch (Exception e) {
+                        Log.error(String.format("Error rendering daily digest email template for %s", bundle.getName()), e);
+                    }
+                }
+
                 // Format data to send to the connector.
                 Set<String> recipientsUsernames = listApplicationWithUserCollection.getValue().stream().map(User::getUsername).collect(Collectors.toSet());
                 Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(aggregatorEvent, List.of(endpoint));
@@ -378,14 +400,38 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         }
     }
 
+    private Map<String, Object> buildFullTemplateContext(Map<String, Object> action) {
+        Map<String, Object> additionalContext = new HashMap<>();
+        additionalContext.put("environment", environment);
+        additionalContext.put("pendo_message", null);
+        additionalContext.put("ignore_user_preferences", false);
+        additionalContext.put("action", action);
+        return additionalContext;
+    }
+
     protected DailyDigestSection generateAggregatedEmailBody(String bundle, String app, Map<String, Object> context, Map<String, DailyDigestSection> dataMap) {
         context.put("application", app);
+
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(bundle, app, SubscriptionType.DAILY).get();
         String emailBody = emailTemplate.getBodyTemplate().getData();
         TemplateInstance templateInstance = templateService.compileTemplate(emailBody, emailTemplate.getBodyTemplate().getName());
         Map<String, Object> action =  Map.of("context", context, "bundle", bundle);
 
         String result = templateService.renderTemplate(action, templateInstance);
+
+        if (engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()) {
+            try {
+                TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, bundle, app, null);
+                Map<String, Object> additionalContext = buildFullTemplateContext(action);
+
+                String applicationSectionResult = commonQuteTemplateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
+
+                EmailProcessor.compareTemplateRenderings(result, applicationSectionResult, "Rendered application section bodies with both methods is different");
+
+            } catch (Exception e) {
+                Log.error(String.format("Error rendering aggregated email template for %s/%s", bundle, app), e);
+            }
+        }
 
         return addItem(result);
     }

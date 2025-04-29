@@ -1,10 +1,15 @@
 package com.redhat.cloud.notifications.qute.templates;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.qute.templates.mapping.AnsibleAutomationPlatform;
 import com.redhat.cloud.notifications.qute.templates.mapping.Console;
+import com.redhat.cloud.notifications.qute.templates.mapping.DefaultInstantEmailTemplates;
 import com.redhat.cloud.notifications.qute.templates.mapping.DefaultTemplates;
 import com.redhat.cloud.notifications.qute.templates.mapping.OpenShift;
 import com.redhat.cloud.notifications.qute.templates.mapping.Rhel;
+import com.redhat.cloud.notifications.qute.templates.mapping.SecureEmailTemplates;
 import com.redhat.cloud.notifications.qute.templates.mapping.SubscriptionServices;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.Engine;
@@ -12,7 +17,8 @@ import io.quarkus.qute.TemplateInstance;
 import io.quarkus.runtime.Startup;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,19 +26,61 @@ import java.util.Map;
 @ApplicationScoped
 public class TemplateService {
 
-    @Inject
-    Engine engine;
+    private static final String SECURED_EMAIL_TEMPLATES = "notifications.use-secured-email-templates.enabled";
+    private static final String DEFAULT_TEMPLATE = "notifications.use-default-template";
+
+    // Only used in special environments.
+    @ConfigProperty(name = SECURED_EMAIL_TEMPLATES, defaultValue = "false")
+    boolean useSecuredEmailTemplates;
+
+    // Only used in stage environments.
+    @ConfigProperty(name = DEFAULT_TEMPLATE, defaultValue = "false")
+    boolean defaultEmailTemplateEnabled;
+
+    final Engine engine;
+
+    final ObjectMapper objectMapper;
 
     Map<TemplateDefinition, String> templatesConfigMap = new HashMap<>();
 
+    public TemplateService(Engine engine, ObjectMapper objectMapper) {
+        this.engine = engine;
+        this.objectMapper = objectMapper;
+    }
+
+    private String buildTemplateFilePath(TemplateDefinition templateDefinition, String templateFileName) {
+        return templateDefinition.integrationType().getRootFolder()
+            + File.separator
+            + templateFileName;
+    }
+
     @PostConstruct
     public void init() {
-        templatesConfigMap.putAll(DefaultTemplates.templatesMap);
-        templatesConfigMap.putAll(Console.templatesMap);
-        templatesConfigMap.putAll(Rhel.templatesMap);
-        templatesConfigMap.putAll(OpenShift.templatesMap);
-        templatesConfigMap.putAll(SubscriptionServices.templatesMap);
+        templatesConfigMap.clear();
+        if (isSecuredEmailTemplatesEnabled()) {
+            templatesConfigMap.putAll(SecureEmailTemplates.templatesMap);
+        } else {
+            templatesConfigMap.putAll(DefaultTemplates.templatesMap);
+            templatesConfigMap.putAll(AnsibleAutomationPlatform.templatesMap);
+            templatesConfigMap.putAll(Console.templatesMap);
+            templatesConfigMap.putAll(OpenShift.templatesMap);
+            templatesConfigMap.putAll(Rhel.templatesMap);
+            templatesConfigMap.putAll(SubscriptionServices.templatesMap);
+
+            // For tenants onboarding, should be only enabled in stage
+            if (isDefaultEmailTemplateEnabled()) {
+                templatesConfigMap.putAll(DefaultInstantEmailTemplates.templatesMap);
+            }
+        }
         checkTemplatesConsistency();
+    }
+
+    public boolean isSecuredEmailTemplatesEnabled() {
+        return useSecuredEmailTemplates;
+    }
+
+    public boolean isDefaultEmailTemplateEnabled() {
+        return defaultEmailTemplateEnabled;
     }
 
     /**
@@ -41,12 +89,12 @@ public class TemplateService {
     private void checkTemplatesConsistency() {
         ClassLoader classLoader = getClass().getClassLoader();
         for (TemplateDefinition templateDefinition : templatesConfigMap.keySet()) {
-            String filePath = "templates/" + templateDefinition.integrationType().name().toLowerCase() + "/" + templatesConfigMap.get(templateDefinition);
-            if (null == classLoader.getResource(filePath)) {
+            final String filePath = buildTemplateFilePath(templateDefinition, templatesConfigMap.get(templateDefinition));
+            if (null == classLoader.getResource("templates/" + filePath)) {
                 Log.info("Template file " + filePath + " not found");
                 throw new TemplateNotFoundException(templateDefinition);
             }
-            engine.getTemplate(templateDefinition.integrationType().name().toLowerCase() + "/" + templatesConfigMap.get(templateDefinition)).instance();
+            engine.getTemplate(filePath).instance();
         }
     }
 
@@ -55,30 +103,32 @@ public class TemplateService {
      * If the template for the selected event type can't be found,
      * it will look for a generic template defined for the selected application,
      * it can't be found, it will look for a generic/system template defined for the selected integration type
-     * @param config the template definition
+     * @param templateDefinition the template definition
      * @return the template instance
      *
      * @throws TemplateNotFoundException
      */
-    private TemplateInstance compileTemplate(final TemplateDefinition config) throws TemplateNotFoundException {
+    private TemplateInstance compileTemplate(TemplateDefinition templateDefinition) throws TemplateNotFoundException {
 
         // try to find template path with full config parameters
-        String path = templatesConfigMap.get(config);
+        String path = templatesConfigMap.get(templateDefinition);
 
         // if not found try to find if a default template for the app exists
         if (path == null) {
-            path = templatesConfigMap.get(new TemplateDefinition(config.integrationType(), config.bundle(), config.application(), null));
+            templateDefinition = new TemplateDefinition(templateDefinition.integrationType(), templateDefinition.bundle(), templateDefinition.application(), null);
+            path = templatesConfigMap.get(templateDefinition);
             // if not found try to find if a default/system template for the integration type exists
             if (path == null) {
-                path = templatesConfigMap.get(new TemplateDefinition(config.integrationType(), null, null, null));
+                templateDefinition = new TemplateDefinition(templateDefinition.integrationType(), null, null, null);
+                path = templatesConfigMap.get(templateDefinition);
                 if (path == null) {
-                    throw new TemplateNotFoundException(config);
+                    throw new TemplateNotFoundException(templateDefinition);
                 }
             }
         }
-
+        final String filePath = buildTemplateFilePath(templateDefinition, templatesConfigMap.get(templateDefinition));
         // ask Qute to load the template instance from its file path, such as drawer/Policies/policyTriggeredBody.md
-        return engine.getTemplate(config.integrationType().name().toLowerCase() + "/" + path).instance();
+        return engine.getTemplate(filePath).instance();
     }
 
     public String renderTemplate(final TemplateDefinition config, final Action action) {
@@ -93,5 +143,20 @@ public class TemplateService {
             .data("data", action)
             .render();
         return result.trim();
+    }
+
+    public String renderTemplateWithCustomDataMap(final TemplateDefinition config, final Map<String, Object> additionalContext) {
+        TemplateInstance templateInstance = compileTemplate(config).data(additionalContext);
+        String result = templateInstance.render();
+        return result.trim();
+    }
+
+    public String getTemplateId(final TemplateDefinition config) {
+        return compileTemplate(config).getTemplate().getId();
+    }
+
+    public Map<String, Object> convertActionToContextMap(final Action action) {
+        return objectMapper
+            .convertValue(action.getContext(), new TypeReference<Map<String, Object>>() { });
     }
 }
