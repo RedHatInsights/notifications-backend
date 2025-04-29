@@ -7,7 +7,8 @@ metadata:
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "master"
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
+      == "master"
     pipelinesascode.tekton.dev/pipeline: https://github.com/RedHatInsights/konflux-pipelines/raw/v1.9.0/pipelines/docker-build.yaml
   creationTimestamp: null
   labels:
@@ -32,7 +33,8 @@ spec:
     value: .
   pipelineRef:
     name: docker-build
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-notifications-connector-splunk
   workspaces:
   - name: workspace
     volumeClaimTemplate:
