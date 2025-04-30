@@ -49,7 +49,7 @@ import static org.mockito.Mockito.verify;
 
 public abstract class CamelProcessorTest {
 
-    private static final String WEBHOOK_URL = "https://foo.bar";
+    protected static final String WEBHOOK_URL = "https://foo.bar";
     protected static final String CONTEXT_HOST_URL = EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/my-custom-host-url";
 
     @InjectMock

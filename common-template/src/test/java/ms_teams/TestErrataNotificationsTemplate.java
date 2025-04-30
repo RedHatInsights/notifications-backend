@@ -13,7 +13,7 @@ import static com.redhat.cloud.notifications.qute.templates.IntegrationType.MS_T
 import static helpers.ErrataTestHelpers.BUGFIX_ERRATA;
 import static helpers.ErrataTestHelpers.ENHANCEMENT_ERRATA;
 import static helpers.ErrataTestHelpers.SECURITY_ERRATA;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 class TestErrataNotificationsTemplate {
@@ -38,10 +38,11 @@ class TestErrataNotificationsTemplate {
     }
 
     private void checkResult(String eventType, String result) {
+        assertTrue(result.contains("\"contentType\":\"application/vnd.microsoft.card.adaptive\""));
         switch (eventType) {
-            case BUGFIX_ERRATA -> assertEquals("{\"text\":\"Red Hat published new bugfix errata that affect your products. Explore these and others in the [errata search](" + ERRATA_SEARCH_URL + ").\"}", result);
-            case SECURITY_ERRATA -> assertEquals("{\"text\":\"Red Hat published new security errata that affect your products. Explore these and others in the [errata search](" + ERRATA_SEARCH_URL + ").\"}", result);
-            case ENHANCEMENT_ERRATA -> assertEquals("{\"text\":\"Red Hat published new enhancement errata that affect your products. Explore these and others in the [errata search](" + ERRATA_SEARCH_URL + ").\"}", result);
+            case BUGFIX_ERRATA -> assertTrue(result.contains("\"text\": \"Red Hat published new bugfix errata that affect your products. Explore these and others in the [errata search](" + ERRATA_SEARCH_URL + ").\""));
+            case SECURITY_ERRATA -> assertTrue(result.contains("\"text\": \"Red Hat published new security errata that affect your products. Explore these and others in the [errata search](" + ERRATA_SEARCH_URL + ").\""));
+            case ENHANCEMENT_ERRATA -> assertTrue(result.contains("\"text\": \"Red Hat published new enhancement errata that affect your products. Explore these and others in the [errata search](" + ERRATA_SEARCH_URL + ").\""));
             default -> throw new IllegalArgumentException(eventType + "is not a valid event type");
         }
     }
