@@ -6,6 +6,9 @@ import java.util.Map;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.DRAWER;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_BODY;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_TITLE;
+import static com.redhat.cloud.notifications.qute.templates.IntegrationType.GOOGLE_CHAT;
+import static com.redhat.cloud.notifications.qute.templates.IntegrationType.MS_TEAMS;
+import static com.redhat.cloud.notifications.qute.templates.IntegrationType.SLACK;
 import static java.util.Map.entry;
 
 public class OpenShift {
@@ -117,6 +120,10 @@ public class OpenShift {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_NETWORKING), CLUSTER_MANAGER_FOLDER_NAME + "clusterNetworkingInstantEmailBody.html"),
 
         entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_GENERAL_NOTIFICATION), CLUSTER_MANAGER_FOLDER_NAME + "generalNotificationInstantEmailTitle.txt"),
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_GENERAL_NOTIFICATION), CLUSTER_MANAGER_FOLDER_NAME + "generalNotificationInstantEmailBody.html")
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_GENERAL_NOTIFICATION), CLUSTER_MANAGER_FOLDER_NAME + "generalNotificationInstantEmailBody.html"),
+
+        entry(new TemplateDefinition(GOOGLE_CHAT, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.json"),
+        entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.json"),
+        entry(new TemplateDefinition(SLACK, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.md")
     );
 }
