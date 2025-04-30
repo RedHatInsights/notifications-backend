@@ -40,7 +40,7 @@ class TestDefaultTemplate {
 
         // check content from parent template
         assertTrue(result.contains("\"contentType\":\"application/vnd.microsoft.card.adaptive\""));
-System.out.println(result);
+
         // check notification body
         assertTrue(result.contains(expectedMessage));
     }
