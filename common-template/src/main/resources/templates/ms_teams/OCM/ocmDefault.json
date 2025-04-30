@@ -1,0 +1,1 @@
+{"text":"{data.events.size()} event{#if data.events.size() > 1}s{/if} triggered from {data.source.application.display_name} - {data.source.bundle.display_name}. [Open {data.source.application.display_name}]({#if data.context.environment_url??}{data.context.environment_url}/{data.ocm_cluster_path}{#else}{data.application_url}{/if})"}

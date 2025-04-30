@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
@@ -29,6 +30,9 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
 
     @Inject
     BaseTransformer baseTransformer;
+
+    @Inject
+    Environment environment;
 
     @Inject
     InsightsUrlsBuilder insightsUrlsBuilder;
@@ -71,6 +75,14 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
         JsonObject data = baseTransformer.toJsonObject(event);
         insightsUrlsBuilder.buildInventoryUrl(data, getIntegrationType()).ifPresent(url -> data.put("inventory_url", url));
         data.put("application_url", insightsUrlsBuilder.buildApplicationUrl(data, getIntegrationType()));
+
+        JsonObject context = data.getJsonObject("context");
+        if (context != null) {
+            context.put("environment_url", environment.url());
+        } else {
+            context = JsonObject.of("environment_url", environment.url());
+        }
+        data.put("context", context);
 
         Map<String, Object> dataAsMap;
         try {
