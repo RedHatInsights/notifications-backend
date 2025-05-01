@@ -20,7 +20,7 @@ class TestOcmTemplate {
 
     private static final JsonObject MESSAGE = OcmTestHelpers.createOcmMessage("Atlantic", "OSDTrial", "<b>Altlantic</b> server is experiencing flooding issues", "Subject line!");
 
-    private static final String CLUSTER_MANAGER_DEFAULT_EVENT_URL = "http://localhost/openshift/details/s/2XqNHRdLNEAzshh7MkkOql6fx6I";
+    private static final String CLUSTER_MANAGER_DEFAULT_EVENT_URL = "http://localhost/openshift/details/s/2XqNHRdLNEAzshh7MkkOql6fx6I?from=notifications&integration=teams";
 
     @Inject
     TemplateService templateService;
