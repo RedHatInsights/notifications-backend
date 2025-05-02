@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,16 +21,15 @@ public class TestEdgeManagementTemplate extends EmailTemplatesRendererHelper {
         return "edge-management";
     }
 
-    @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(IMAGE_CREATION, UPDATE_DEVICES);
+    protected String getAppDisplayName() {
+        return "Edge Management";
     }
-
 
     @Test
     public void testImageCreationEmailTitle() {
+        eventTypeDisplayName = "Image Creation";
         String result = generateEmailSubject(IMAGE_CREATION, ACTION);
-        assertEquals("Instant notification - Image creation started - Edge Management - Red Hat Enterprise Linux", result);
+        assertEquals("Instant notification - Image Creation - Edge Management - Red Hat Enterprise Linux", result);
     }
 
     @Test
@@ -43,8 +41,9 @@ public class TestEdgeManagementTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testUpdateDeviceEmailTitle() {
+        eventTypeDisplayName = "Update Devices";
         String result = generateEmailSubject(UPDATE_DEVICES, ACTION);
-        assertEquals("Instant notification - Update device started - Edge Management - Red Hat Enterprise Linux", result);
+        assertEquals("Instant notification - Update Devices - Edge Management - Red Hat Enterprise Linux", result);
     }
 
     @Test
