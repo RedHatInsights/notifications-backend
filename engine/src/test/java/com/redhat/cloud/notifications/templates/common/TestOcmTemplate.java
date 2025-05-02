@@ -46,13 +46,6 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
         return "cluster-manager";
     }
 
-    @Override
-    protected List<String> getUsedEventTypeNames() {
-        List<String> eventTypes = getIdenticalTemplateContentEventTypeNames();
-        eventTypes.addAll(List.of(CLUSTER_UPDATE, CLUSTER_LIFECYCLE, CLUSTER_CUSTOMER_SUPPORT));
-        return eventTypes;
-    }
-
     static final List<String> getIdenticalTemplateContentEventTypeNames() {
         return new ArrayList<>(Arrays.asList(CAPACITY_MANAGEMENT, CLUSTER_ACCESS, CLUSTER_ADD_ON, CLUSTER_CONFIGURATION, CLUSTER_NETWORKING, CLUSTER_OWNERSHIP, CLUSTER_SCALING, CLUSTER_SECURITY, CLUSTER_SUBSCRIPTION, GENERAL_NOTIFICATION));
     }

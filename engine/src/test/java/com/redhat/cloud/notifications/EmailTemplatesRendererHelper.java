@@ -188,8 +188,4 @@ public abstract class EmailTemplatesRendererHelper {
             mailer.send(m);
         }
     }
-
-    protected List<String> getUsedEventTypeNames() {
-        return List.of();
-    }
 }

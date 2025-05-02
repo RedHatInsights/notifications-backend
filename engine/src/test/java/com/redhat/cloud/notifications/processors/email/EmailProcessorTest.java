@@ -111,6 +111,9 @@ public class EmailProcessorTest {
         event.setId(UUID.randomUUID());
         event.setEventWrapper(eventWrapper);
         event.setEventType(eventType);
+        event.setBundleDisplayName("Red Hat Enterprise Linux");
+        event.setApplicationDisplayName("Policies");
+        event.setEventTypeDisplayName("Policy triggered");
         event.setOrgId("email-processor-test-event-type-org-id");
 
         return event;

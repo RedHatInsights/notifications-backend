@@ -8,8 +8,8 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -27,8 +27,8 @@ public class TestDefaultTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(EVENT_TYPE_NAME);
+    protected String getAppDisplayName() {
+        return "Policies";
     }
 
     @BeforeEach
@@ -40,9 +40,10 @@ public class TestDefaultTemplate extends EmailTemplatesRendererHelper {
     @Test
     public void testInstantEmailTitle() {
         Action action = TestHelpers.createPoliciesAction("", "my-bundle", "my-app", "FooMachine");
+        eventTypeDisplayName = "Policy Triggered";
 
         String result = generateEmailSubject(EVENT_TYPE_NAME, action);
-        assertTrue(result.contains("my-bundle/my-app/policy-triggered triggered"), "Title contains the bundle/app/event-type");
+        assertEquals("Instant notification - Policy Triggered - Policies - Red Hat Enterprise Linux", result);
     }
 
     @Test
