@@ -195,6 +195,7 @@ class EmailAggregationProcessorTest {
         capturedPayloads.stream().forEach(capturedPayload -> {
             EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
             assertEquals("Daily digest - Red Hat Enterprise Linux", capturedEmailRequest.emailSubject());
+            assertTrue(capturedEmailRequest.emailBody().contains("Org ID: " + ORG_ID_1));
             assertTrue(capturedEmailRequest.emailBody().contains("Daily digest - Red Hat Enterprise Linux"));
             assertTrue(capturedEmailRequest.emailBody().contains("Jump to details"));
         });

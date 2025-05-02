@@ -54,6 +54,7 @@ public class TestAdvisorTemplate extends EmailTemplatesInDbHelper {
 
         String result = generateAggregatedEmailBody(context);
         assertTrue(result.contains("New Recommendations"));
+        assertTrue(result.contains("Org ID: default-org-id"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_1"));
         assertTrue(result.contains("Active rule 1</a>"));
         assertTrue(result.contains("https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png"));
