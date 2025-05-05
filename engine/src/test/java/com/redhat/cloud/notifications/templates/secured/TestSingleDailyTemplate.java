@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.AdvisorTestHelpers.createEmailAggregation;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_MESSAGE;
 import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_TITLE;
@@ -123,7 +124,7 @@ public class TestSingleDailyTemplate extends EmailTemplatesInDbHelper {
         TemplateInstance bodyTemplate = templateService.compileTemplate(dailyTemplate.get().getData(), "Secure/singleDailyDigest/dailyDigest");
 
         assertNotNull(bodyTemplate);
-        Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", result);
+        Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", result, "orgId", DEFAULT_ORG_ID);
 
         EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, GENERAL_PENDO_MESSAGE);
 

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static org.mockito.Mockito.when;
 
 public abstract class EmailTemplatesRendererHelper {
@@ -91,7 +92,7 @@ public abstract class EmailTemplatesRendererHelper {
             applicationSectionResult.split("<!-- Body section -->")[1],
             Arrays.stream(sections).filter(e -> !e.isBlank()).toList());
 
-        Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", List.of(dailyDigestSection));
+        Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", List.of(dailyDigestSection), "orgId", DEFAULT_ORG_ID);
         TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, null, null, null);
         return generateEmailFromContextMap(globalDailyTemplateDefinition, mapData, emailPendo);
     }
