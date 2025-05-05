@@ -1,14 +1,14 @@
 {@boolean renderSection1=true}
 {#include email/Common/insightsEmailBody}
 {#content-title}
-    {action.application} - {action.bundle}
+    {source.application.display_name} - {source.bundle.display_name}
 {/content-title}
 {#content-title-section1}
     Notification
 {/content-title-section1}
 {#content-body-section1}
     <p>
-        {action.bundle}/{action.application}/{action.eventType} notification was triggered.
+        {source.bundle.display_name}/{source.application.display_name}/{source.event_type.display_name} notification was triggered.
     </p>
     <p>You are receiving this email because the email template associated with this event type is not configured properly.</p>
     <p>Please see the <a class="rh-url" href="https://core-platform-apps.pages.redhat.com/notifications-docs/dev/user-guide/email-templates.html">documentation</a> for information about setting up email templates.</p>

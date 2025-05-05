@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
-import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
