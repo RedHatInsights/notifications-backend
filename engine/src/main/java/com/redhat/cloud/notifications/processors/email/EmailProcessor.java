@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
-import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
@@ -139,9 +138,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
                 additionalContext.put("pendo_message", pendoMessage);
                 additionalContext.put("ignore_user_preferences", ignoreUserPreferences);
                 additionalContext.put("action", event.getEventWrapper().getEvent());
-                if (event.getEventWrapper().getEvent() instanceof Action) {
-                    additionalContext.put(BaseTransformer.SOURCE, BaseTransformer.getEventSource(event));
-                }
+                additionalContext.put(BaseTransformer.SOURCE, BaseTransformer.getEventSource(event));
 
                 TemplateDefinition subjectTemplateDefinition = new TemplateDefinition(
                     IntegrationType.EMAIL_TITLE,

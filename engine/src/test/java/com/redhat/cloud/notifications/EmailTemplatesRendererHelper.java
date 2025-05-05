@@ -68,7 +68,7 @@ public abstract class EmailTemplatesRendererHelper {
 
     protected String generateEmailSubject(String eventTypeStr, Action action) {
         TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_TITLE, getBundle(), getApp(), eventTypeStr);
-        return generateEmail(templateDefinition, action, getSourceEntry(), null);
+        return generateEmail(templateDefinition, action, null);
     }
 
     protected String generateEmailBody(String eventTypeStr, Action action) {
@@ -77,7 +77,7 @@ public abstract class EmailTemplatesRendererHelper {
 
     protected String generateEmailBody(String eventTypeStr, Action event, EmailPendo pendo, boolean ignoreUserPreferences) {
         TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_BODY, getBundle(), getApp(), eventTypeStr);
-        return generateEmail(templateDefinition, event, null, pendo, ignoreUserPreferences);
+        return generateEmail(templateDefinition, event, pendo, ignoreUserPreferences);
     }
 
     protected String generateAggregatedEmailBody(Map<String, Object> context) {
@@ -108,17 +108,17 @@ public abstract class EmailTemplatesRendererHelper {
         return generateAggregatedEmailBody(templateService.convertActionToContextMap(action), null);
     }
 
-    protected String generateEmail(TemplateDefinition templateDefinition, Action action, JsonObject source, EmailPendo pendo) {
-        return generateEmail(templateDefinition, action, source, pendo, false);
+    protected String generateEmail(TemplateDefinition templateDefinition, Action action, EmailPendo pendo) {
+        return generateEmail(templateDefinition, action, pendo, false);
     }
 
-    protected String generateEmail(TemplateDefinition templateDefinition, Action action, JsonObject source, EmailPendo emailPendo, boolean ignoreUserPreferences) {
+    protected String generateEmail(TemplateDefinition templateDefinition, Object action, EmailPendo emailPendo, boolean ignoreUserPreferences) {
         Map<String, Object> additionalContext = new HashMap<>();
         additionalContext.put("environment", environment);
         additionalContext.put("pendo_message", emailPendo);
         additionalContext.put("ignore_user_preferences", ignoreUserPreferences);
         additionalContext.put("action", action);
-        additionalContext.put("source", source);
+        additionalContext.put("source", getSourceEntry());
 
         String result = templateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
         writeOrSendEmailTemplate(result, templateService.getTemplateId(templateDefinition) + ".html");
