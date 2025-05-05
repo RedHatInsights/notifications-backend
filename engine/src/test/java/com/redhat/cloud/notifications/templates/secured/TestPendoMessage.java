@@ -44,12 +44,12 @@ public class TestPendoMessage extends EmailTemplatesInDbHelper  {
 
         EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, GENERAL_PENDO_MESSAGE);
 
-        String resultBody = generateAggregatedEmailBody(patch, null);
+        String resultBody = generateAggregatedEmailBody(patch, (EmailPendo) null);
         commonValidations(resultBody);
         assertFalse(resultBody.contains(emailPendo.getPendoTitle()));
         assertFalse(resultBody.contains(emailPendo.getPendoMessage()));
 
-        resultBody = generateAggregatedEmailBody(patch, emailPendo);
+        resultBody = generateAggregatedEmailBody(patch, (EmailPendo) emailPendo);
         commonValidations(resultBody);
         assertTrue(resultBody.contains(emailPendo.getPendoTitle()));
         assertTrue(resultBody.contains(emailPendo.getPendoMessage()));

@@ -164,10 +164,19 @@ public abstract class EmailTemplatesInDbHelper {
     }
 
     protected String generateAggregatedEmailBody(Map<String, Object> context) {
-        return generateAggregatedEmailBody(context, null);
+        return generateAggregatedEmailBody(context, (EmailPendo) null);
+    }
+
+    /** Additionally specifies an account number that would be included with the email event. */
+    protected String generateAggregatedEmailBody(Map<String, Object> originalContext, String accountId) {
+        return generateAggregatedEmailBody(originalContext, null, accountId);
     }
 
     protected String generateAggregatedEmailBody(Map<String, Object> originalContext, EmailPendo emailPendo) {
+        return generateAggregatedEmailBody(originalContext, emailPendo, null);
+    }
+
+    protected String generateAggregatedEmailBody(Map<String, Object> originalContext, EmailPendo emailPendo, String accountId) {
         Map<String, Object> context = new HashMap<>(originalContext); // to patch immutable maps from individual test cases
         context.put("application", getApp());
         AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(getBundle(), getApp(), DAILY).get();
@@ -190,7 +199,10 @@ public abstract class EmailTemplatesInDbHelper {
 
         TemplateInstance bodyTemplateGlobalDailyDigest = templateService.compileTemplate(dailyTemplate.get().getData(), "singleDailyDigest/dailyDigest");
 
-        Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", List.of(dailyDigestSection), "orgId", DEFAULT_ORG_ID);
+        Map<String, Object> mapData = new HashMap<>(Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", List.of(dailyDigestSection), "orgId", DEFAULT_ORG_ID));
+        if (accountId != null && !accountId.isBlank()) {
+            mapData.put("accountId", accountId);
+        }
         return generateEmailFromContextMap(bodyTemplateGlobalDailyDigest, mapData, emailPendo, bodyTemplate.getTemplate().getId());
     }
 
@@ -198,7 +210,7 @@ public abstract class EmailTemplatesInDbHelper {
         Map<String, Object> contextMap = objectMapper
             .convertValue(action.getContext(), new TypeReference<Map<String, Object>>() { });
 
-        return generateAggregatedEmailBody(contextMap, null);
+        return generateAggregatedEmailBody(contextMap, (EmailPendo) null);
     }
 
     protected String generateEmail(TemplateInstance template, Object actionOrEvent, EmailPendo pendo) {
