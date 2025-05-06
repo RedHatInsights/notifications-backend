@@ -241,10 +241,11 @@ public class ApplicationRepository {
 
         // update Event table only when relevant
         if (eventTypeDisplayNameChanged) {
-            String eventQuery = "UPDATE Event SET eventTypeDisplayName = :displayName WHERE eventType.id = :eventTypeId";
+            String eventQuery = "UPDATE Event SET eventTypeDisplayName = :displayName WHERE applicationId = :applicationId and eventType.id = :eventTypeId";
             entityManager.createQuery(eventQuery)
                 .setParameter("displayName", eventType.getDisplayName())
                 .setParameter("eventTypeId", id)
+                .setParameter("applicationId", eventTypeFromDatabase.getApplicationId())
                 .executeUpdate();
         }
         return rowCount;
