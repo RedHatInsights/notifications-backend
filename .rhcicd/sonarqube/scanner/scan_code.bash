@@ -40,5 +40,6 @@ else
     -Dsonar.sourceEncoding="UTF-8" \
     -Dsonar.token="${SONARQUBE_TOKEN}" \
     -Dquarkus.devservices.enabled=false \
+    -Dquarkus.datasource.devservices.enabled=false \
     --no-transfer-progress
 fi
