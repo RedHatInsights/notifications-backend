@@ -30,7 +30,8 @@ spec:
     value: .
   pipelineRef:
     name: docker-build
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-notifications-email
   workspaces:
   - name: workspace
     volumeClaimTemplate:

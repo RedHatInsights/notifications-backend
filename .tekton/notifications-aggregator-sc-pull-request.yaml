@@ -39,7 +39,8 @@ spec:
     - name: pathInRepo
       value: pipelines/docker-build.yaml
     resolver: git
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-notifications-aggregator-sc
   workspaces:
   - name: workspace
     volumeClaimTemplate:
