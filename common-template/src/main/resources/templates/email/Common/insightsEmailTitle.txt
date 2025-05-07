@@ -1,0 +1,1 @@
+Instant notification - {source.event_type.display_name} - {source.application.display_name} - {source.bundle.display_name}

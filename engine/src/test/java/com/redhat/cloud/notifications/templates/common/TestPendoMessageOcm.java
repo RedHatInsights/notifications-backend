@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -25,10 +24,6 @@ public class TestPendoMessageOcm extends EmailTemplatesRendererHelper {
     @Override
     protected String getApp() {
         return "cluster-manager";
-    }
-
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(CLUSTER_LIFECYCLE);
     }
 
     @Test
