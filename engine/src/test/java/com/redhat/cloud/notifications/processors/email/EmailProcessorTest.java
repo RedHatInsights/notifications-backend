@@ -339,18 +339,17 @@ public class EmailProcessorTest {
         // Call the processor under test.
         this.emailProcessor.process(event, endpoints);
 
-        // Verify that the compilation functions were called.
-        Mockito.verify(this.templateService, Mockito.times(1)).compileTemplate(anyString(), eq("subject"));
-        Mockito.verify(this.templateService, Mockito.times(1)).compileTemplate(anyString(), eq("body"));
-
-        // Verify that the rendering functions were called.
-        Mockito.verify(this.templateService, Mockito.times(1)).renderTemplate(eq(event.getEventWrapper().getEvent()), any(TemplateInstance.class));
-        Mockito.verify(this.templateService, Mockito.times(2)).renderEmailBodyTemplate(eq(event.getEventWrapper().getEvent()), any(TemplateInstance.class), Mockito.isNull(), Mockito.anyBoolean());
-
         if (useCommonQuteTemplateModule) {
             Mockito.verify(this.quteTemplateService, Mockito.times(2)).renderTemplateWithCustomDataMap(any(TemplateDefinition.class), anyMap());
         } else {
             Mockito.verify(this.quteTemplateService, Mockito.never()).renderTemplateWithCustomDataMap(any(TemplateDefinition.class), anyMap());
+            // Verify that the compilation functions were called.
+            Mockito.verify(this.templateService, Mockito.times(1)).compileTemplate(anyString(), eq("subject"));
+            Mockito.verify(this.templateService, Mockito.times(1)).compileTemplate(anyString(), eq("body"));
+
+            // Verify that the rendering functions were called.
+            Mockito.verify(this.templateService, Mockito.times(2)).renderTemplate(eq(event.getEventWrapper().getEvent()), any(TemplateInstance.class));
+            Mockito.verify(this.templateService, Mockito.times(2)).renderEmailBodyTemplate(eq(event.getEventWrapper().getEvent()), any(TemplateInstance.class), Mockito.isNull(), Mockito.anyBoolean());
         }
 
         // Verify that the endpoint repository was called to fetch the result
