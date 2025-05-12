@@ -26,6 +26,7 @@ if [ -n "${GIT_BRANCH:-}" ] && [ "${GIT_BRANCH}" == "origin/master" ]; then
     -Dsonar.sourceEncoding="UTF-8" \
     -Dsonar.token="${SONARQUBE_TOKEN}" \
     -Dquarkus.devservices.enabled=false \
+    -Dquarkus.datasource.devservices.enabled=false \
     --no-transfer-progress
 else
   ./mvnw clean verify sonar:sonar \
@@ -39,5 +40,6 @@ else
     -Dsonar.sourceEncoding="UTF-8" \
     -Dsonar.token="${SONARQUBE_TOKEN}" \
     -Dquarkus.devservices.enabled=false \
+    -Dquarkus.datasource.devservices.enabled=false \
     --no-transfer-progress
 fi
