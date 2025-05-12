@@ -3,14 +3,17 @@ package com.redhat.cloud.notifications;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Environment;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.templates.models.DailyDigestSection;
+import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +48,11 @@ public abstract class EmailTemplatesRendererHelper {
 
     @InjectSpy
     protected TemplateService templateService;
+
+    @Inject
+    protected BaseTransformer baseTransformer;
+
+    protected String eventTypeDisplayName;
 
     @BeforeEach
     protected void initData() {
@@ -104,12 +112,13 @@ public abstract class EmailTemplatesRendererHelper {
         return generateEmail(templateDefinition, action, pendo, false);
     }
 
-    protected String generateEmail(TemplateDefinition templateDefinition, Action action, EmailPendo emailPendo, boolean ignoreUserPreferences) {
+    protected String generateEmail(TemplateDefinition templateDefinition, Object action, EmailPendo emailPendo, boolean ignoreUserPreferences) {
         Map<String, Object> additionalContext = new HashMap<>();
         additionalContext.put("environment", environment);
         additionalContext.put("pendo_message", emailPendo);
         additionalContext.put("ignore_user_preferences", ignoreUserPreferences);
         additionalContext.put("action", action);
+        additionalContext.put("source", getSourceEntry());
 
         String result = templateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
         writeOrSendEmailTemplate(result, templateService.getTemplateId(templateDefinition) + ".html");
@@ -132,8 +141,24 @@ public abstract class EmailTemplatesRendererHelper {
         return result;
     }
 
+    private JsonObject getSourceEntry() {
+        Event event = new Event();
+        event.setBundleDisplayName(getBundleDisplayName());
+        event.setApplicationDisplayName(getAppDisplayName());
+        event.setEventTypeDisplayName(eventTypeDisplayName);
+        return BaseTransformer.getEventSource(event);
+    }
+
     protected String getBundle() {
         return BUNDLE_RHEL;
+    }
+
+    protected String getBundleDisplayName() {
+        return "Red Hat Enterprise Linux";
+    }
+
+    protected String getAppDisplayName() {
+        return null;
     }
 
     protected String getApp() {
@@ -160,9 +185,5 @@ public abstract class EmailTemplatesRendererHelper {
             );
             mailer.send(m);
         }
-    }
-
-    protected List<String> getUsedEventTypeNames() {
-        return List.of();
     }
 }

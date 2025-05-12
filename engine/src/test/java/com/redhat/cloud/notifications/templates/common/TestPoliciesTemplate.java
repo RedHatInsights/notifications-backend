@@ -9,7 +9,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,16 +26,16 @@ public class TestPoliciesTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(EVENT_TYPE_NAME);
+    protected String getAppDisplayName() {
+        return "Policies";
     }
 
     @Test
     void testInstantEmailTitle() {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
-
+        eventTypeDisplayName = "Policy Triggered";
         String result = generateEmailSubject(EVENT_TYPE_NAME, action);
-        assertEquals("Instant notification - Policies - Red Hat Enterprise Linux", result);
+        assertEquals("Instant notification - Policy Triggered - Policies - Red Hat Enterprise Linux", result);
     }
 
     @ParameterizedTest

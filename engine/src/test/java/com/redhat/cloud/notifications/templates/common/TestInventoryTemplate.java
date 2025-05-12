@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -42,18 +41,14 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(
-            EVENT_TYPE_SYSTEM_BECAME_STALE,
-            EVENT_TYPE_SYSTEM_DELETED,
-            EVENT_TYPE_NEW_SYSTEM_REGISTERED,
-            EVENT_TYPE_VALIDATION_ERROR
-        );
+    protected String getAppDisplayName() {
+        return "Inventory";
     }
 
     @Test
     public void testInstantEmailTitle() {
         Action action = InventoryTestHelpers.createInventoryAction("123456", "rhel", "inventory", "Host Validation Error");
+        eventTypeDisplayName = "Validation error";
         String result = generateEmailSubject(EVENT_TYPE_VALIDATION_ERROR, action);
         assertEquals("Instant notification - Validation error - Inventory - Red Hat Enterprise Linux", result);
     }
@@ -149,7 +144,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
     void testInstantNewSystemRegisteredSubject() {
         final String hostDisplayName = "new-host";
         final UUID inventoryId = UUID.randomUUID();
-
+        eventTypeDisplayName = "New system registered";
         final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", EVENT_TYPE_NEW_SYSTEM_REGISTERED, inventoryId, hostDisplayName);
         final String result = this.generateEmailSubject(EVENT_TYPE_NEW_SYSTEM_REGISTERED, action);
 
@@ -182,7 +177,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
     void testInstantSystemBecameStaleSubject() {
         final String hostDisplayName = "stale-host";
         final UUID inventoryId = UUID.randomUUID();
-
+        eventTypeDisplayName = "System became stale";
         final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", EVENT_TYPE_SYSTEM_BECAME_STALE, inventoryId, hostDisplayName);
         final String result = this.generateEmailSubject(EVENT_TYPE_SYSTEM_BECAME_STALE, action);
 
@@ -222,7 +217,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
     void testInstantSystemDeletedSubject() {
         final String hostDisplayName = "deleted-host";
         final UUID inventoryId = UUID.randomUUID();
-
+        eventTypeDisplayName = "System deleted";
         final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", "new-system-registered", inventoryId, hostDisplayName);
         final String result = this.generateEmailSubject(EVENT_TYPE_SYSTEM_DELETED, action);
 
