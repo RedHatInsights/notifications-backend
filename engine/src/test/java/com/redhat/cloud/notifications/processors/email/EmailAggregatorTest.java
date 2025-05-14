@@ -193,17 +193,17 @@ class EmailAggregatorTest {
                 payload.getJsonArray("events").add(jso2);
                 payload.put("context", contextAsString);
             }
-            resourceHelpers.addEventEmailAggregation("org-1", "rhel", "policies", payload, false);
+            resourceHelpers.addEventEmailAggregation("org-1", "acc-1", "rhel", "policies", payload, false);
         }
         JsonObject payload = TestHelpers.createEmailAggregation("org-2", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)).getPayload();
         // the base transformer adds a "source" element which should not be present in an original event payload
         payload.remove(BaseTransformer.SOURCE);
-        resourceHelpers.addEventEmailAggregation("org-2", "rhel", "policies", payload, false);
+        resourceHelpers.addEventEmailAggregation("org-2", "acc-2", "rhel", "policies", payload, false);
 
         EmailAggregationKey aggregationKey = AGGREGATION_KEY;
         if (useEventAggregationCriteria) {
             Application policiesApp = resourceHelpers.findApp("rhel", "policies");
-            aggregationKey = new EventAggregationCriteria(AGGREGATION_KEY.getOrgId(), policiesApp.getBundleId(), policiesApp.getId(), AGGREGATION_KEY.getBundle(), AGGREGATION_KEY.getApplication());
+            aggregationKey = new EventAggregationCriteria(AGGREGATION_KEY.getOrgId(), policiesApp.getBundleId(), policiesApp.getId(), AGGREGATION_KEY.getBundle(), AGGREGATION_KEY.getApplication(), "acc-1");
         }
         result.putAll(emailAggregator.getAggregated(application.getId(), aggregationKey, DAILY, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1), LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1)));
         return result;

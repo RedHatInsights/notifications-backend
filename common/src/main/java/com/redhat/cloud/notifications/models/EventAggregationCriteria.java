@@ -12,10 +12,13 @@ public class EventAggregationCriteria extends EmailAggregationKey {
     @NotNull
     private final UUID applicationId;
 
-    public EventAggregationCriteria(String orgId, UUID bundleId, UUID applicationId, String bundle, String application) {
+    private final String accountId;
+
+    public EventAggregationCriteria(String orgId, UUID bundleId, UUID applicationId, String bundle, String application, String accountId) {
         super(orgId, bundle, application);
         this.bundleId = bundleId;
         this.applicationId = applicationId;
+        this.accountId = accountId;
     }
 
     public UUID getBundleId() {
@@ -24,6 +27,10 @@ public class EventAggregationCriteria extends EmailAggregationKey {
 
     public UUID getApplicationId() {
         return applicationId;
+    }
+
+    public String getAccountId() {
+        return accountId;
     }
 
     @Override
@@ -46,6 +53,7 @@ public class EventAggregationCriteria extends EmailAggregationKey {
     public String toString() {
         return "EventAggregationCriteria{" +
             "orgId='" + getOrgId() + '\'' +
+            ", accountId='" + accountId + '\'' +
             ", bundleId=" + bundleId +
             ", bundleName=" + getBundle() +
             ", applicationId=" + applicationId +

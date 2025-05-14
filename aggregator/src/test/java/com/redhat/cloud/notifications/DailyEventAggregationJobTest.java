@@ -108,6 +108,8 @@ class DailyEventAggregationJobTest {
         InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL);
         for (Message message : results.received()) {
             Action action = Parser.decode(String.valueOf(message.getPayload()));
+            assertTrue(action.getOrgId() != null && !action.getOrgId().isBlank());
+            assertTrue(action.getAccountId() != null && !action.getAccountId().isBlank());
             for (Event event : action.getEvents()) {
                 AggregationCommand aggCommand = objectMapper.convertValue(event.getPayload().getAdditionalProperties(), AggregationCommand.class);
                 EventAggregationCriteria aggregationCriteria = objectMapper.convertValue(event.getPayload().getAdditionalProperties().get("aggregationKey"), EventAggregationCriteria.class);

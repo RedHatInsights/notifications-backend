@@ -147,7 +147,7 @@ class EmailAggregationProcessorTest {
     private EmailAggregationKey buildEmailAggregationKey(String orgId, String bundleName, String appName) {
         if (engineConfig.isAggregationBasedOnEventEnabled(orgId)) {
             Application app = resourceHelpers.findApp(bundleName, appName);
-            return new EventAggregationCriteria(orgId, app.getBundleId(), app.getId(), bundleName, appName);
+            return new EventAggregationCriteria(orgId, app.getBundleId(), app.getId(), bundleName, appName, DEFAULT_ACCOUNT_ID);
         }
         return new EmailAggregationKey(orgId, bundleName, appName);
     }
@@ -556,7 +556,7 @@ class EmailAggregationProcessorTest {
             emailAggregationRepository.addEmailAggregation(aggregation);
             // the base transformer adds a "source" element which should not be present in an original event payload
             aggregation.getPayload().remove(BaseTransformer.SOURCE);
-            resourceHelpers.addEventEmailAggregation(aggregation.getOrgId(), aggregation.getBundleName(), aggregation.getApplicationName(),  aggregation.getPayload());
+            resourceHelpers.addEventEmailAggregation(aggregation.getOrgId(), accountId, aggregation.getBundleName(), aggregation.getApplicationName(),  aggregation.getPayload());
         }
 
         inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(Arrays.asList(aggregationKeys), accountId));

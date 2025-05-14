@@ -24,6 +24,7 @@ public class EmailAggregationRepositoryBasedOnEventTest {
 
     private static final ZoneId UTC = ZoneId.of("UTC");
     private static final String ORG_ID = "someOrgId";
+    private static final String ACCOUNT_ID = "someAccountId";
     private static final String BUNDLE_NAME = "best-bundle-email-aggregation-repository-based-on-event-test";
     private static final String APP_NAME = "awesome-app";
     private static final JsonObject PAYLOAD1 = new JsonObject("{\"foo\":\"bar\"}");
@@ -43,14 +44,14 @@ public class EmailAggregationRepositoryBasedOnEventTest {
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
         Application application = resourceHelpers.findOrCreateApplication(BUNDLE_NAME, APP_NAME);
-        EventAggregationCriteria key =  new EventAggregationCriteria(ORG_ID, application.getBundleId(), application.getId(), BUNDLE_NAME, APP_NAME);
+        EventAggregationCriteria key =  new EventAggregationCriteria(ORG_ID, application.getBundleId(), application.getId(), BUNDLE_NAME, APP_NAME, ACCOUNT_ID);
 
         resourceHelpers.clearEvents();
-        resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
-        resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
-        resourceHelpers.addEventEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, PAYLOAD2);
-        resourceHelpers.addEventEmailAggregation(ORG_ID, "other-bundle", APP_NAME, PAYLOAD2);
-        resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
+        resourceHelpers.addEventEmailAggregation(ORG_ID, ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);
+        resourceHelpers.addEventEmailAggregation(ORG_ID, ACCOUNT_ID, BUNDLE_NAME, APP_NAME, PAYLOAD2);
+        resourceHelpers.addEventEmailAggregation("other-org-id", "other-account-id", BUNDLE_NAME, APP_NAME, PAYLOAD2);
+        resourceHelpers.addEventEmailAggregation(ORG_ID, ACCOUNT_ID, "other-bundle", APP_NAME, PAYLOAD2);
+        resourceHelpers.addEventEmailAggregation(ORG_ID, ACCOUNT_ID, BUNDLE_NAME, "other-app", PAYLOAD2);
 
         List<Event> aggregations = emailAggregationRepository.getEmailAggregationBasedOnEvent(key, start, end, 0, 10);
         assertEquals(2, aggregations.size());

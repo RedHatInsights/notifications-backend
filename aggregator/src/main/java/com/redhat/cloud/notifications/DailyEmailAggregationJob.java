@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.models.EventAggregationCriteria;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.PushGateway;
@@ -210,6 +211,10 @@ public class DailyEmailAggregationJob {
                 .withAdditionalProperty("single_daily_digest_enabled", true)
                 .build())
             .build();
+
+        if (aggregationCommands.get(0).getAggregationKey() instanceof EventAggregationCriteria aggKey) {
+            action.setAccountId(aggKey.getAccountId());
+        }
 
         String encodedAction = Parser.encode(action);
         Log.infof("Encoded Payload: %s", encodedAction);
