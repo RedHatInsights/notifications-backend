@@ -6,6 +6,10 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,10 +20,21 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
-public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
+public class TestOcmTemplate extends EmailTemplatesInDbHelper {
 
     private static final String CLUSTER_UPDATE = "cluster-update";
     private static final String CLUSTER_LIFECYCLE = "cluster-lifecycle";
+    private static final String CLUSTER_CUSTOMER_SUPPORT = "customer-support";
+    private static final String CAPACITY_MANAGEMENT = "capacity-management";
+    private static final String CLUSTER_ACCESS = "cluster-access";
+    private static final String CLUSTER_ADD_ON = "cluster-add-on";
+    private static final String CLUSTER_CONFIGURATION = "cluster-configuration";
+    private static final String CLUSTER_NETWORKING = "cluster-networking";
+    private static final String CLUSTER_OWNERSHIP = "cluster-ownership";
+    private static final String CLUSTER_SCALING = "cluster-scaling";
+    private static final String CLUSTER_SECURITY = "cluster-security";
+    private static final String CLUSTER_SUBSCRIPTION = "cluster-subscription";
+    private static final String GENERAL_NOTIFICATION = "general-notification";
 
     @Override
     protected String getBundle() {
@@ -33,7 +48,13 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
 
     @Override
     protected List<String> getUsedEventTypeNames() {
-        return List.of(CLUSTER_UPDATE, CLUSTER_LIFECYCLE);
+        List<String> eventTypes = getIdenticalTemplateContentEventTypeNames();
+        eventTypes.addAll(List.of(CLUSTER_UPDATE, CLUSTER_LIFECYCLE, CLUSTER_CUSTOMER_SUPPORT));
+        return eventTypes;
+    }
+
+    static final List<String> getIdenticalTemplateContentEventTypeNames() {
+        return new ArrayList<>(Arrays.asList(CAPACITY_MANAGEMENT, CLUSTER_ACCESS, CLUSTER_ADD_ON, CLUSTER_CONFIGURATION, CLUSTER_NETWORKING, CLUSTER_OWNERSHIP, CLUSTER_SCALING, CLUSTER_SECURITY, CLUSTER_SUBSCRIPTION, GENERAL_NOTIFICATION));
     }
 
     @Test
@@ -102,7 +123,7 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
     public void testApprovedAccessEmailBody() {
         // test generic template case
         Action action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> need a revision", "Awesome subject", null, Optional.of(Map.of("template_sub_type", "ocm-approved-access-template")));
-        String result = generateEmailBody(CLUSTER_LIFECYCLE, action);
+        String result = generateEmailBody(CLUSTER_CUSTOMER_SUPPORT, action);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Awesome subject"));
         assertTrue(result.contains("This notification is for your"));
@@ -210,5 +231,39 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper  {
         assertTrue(result.contains("Check these resources for more information"));
         assertTrue(result.contains("https://docs.openshift.com/rosa/ocm/ocm-overview.html"));
         assertTrue(result.contains("https://console.redhat.com/openshift"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("getIdenticalTemplateContentEventTypeNames")
+    public void testIdenticalInstantEmailBody(String eventType) {
+        // test generic template case
+        Action action = OcmTestHelpers.createOcmAction("Batcave", "OSD", "<b>Batmobile</b> need a revision", "Awesome subject");
+        String result = generateEmailBody(eventType, action);
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(result.contains("Awesome subject"));
+        assertTrue(result.contains("This notification is for your"));
+        assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
+        assertFalse(result.contains("We are notifying you about your"));
+        assertFalse(result.contains("Thank you for trialing OpenShift Dedicated"));
+
+        assertTrue(result.contains("Your subscription provides"));
+        assertFalse(result.contains("To learn more about the OpenShift Dedicated trial"));
+        assertFalse(result.contains("You will be notified once your cluster is deleted"));
+        assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
+
+        // test generic template case with osd trial
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject");
+        result = generateEmailBody(eventType, action);
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+        assertTrue(result.contains("Awesome subject"));
+        assertTrue(result.contains("This notification is for your"));
+        assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
+        assertFalse(result.contains("We are notifying you about your"));
+        assertFalse(result.contains("Thank you for trialing OpenShift Dedicated"));
+
+        assertFalse(result.contains("Your subscription provides"));
+        assertFalse(result.contains("To learn more about the OpenShift Dedicated trial"));
+        assertFalse(result.contains("You will be notified once your cluster is deleted"));
+        assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
     }
 }
