@@ -22,11 +22,11 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
     public Map<String, String> start() {
 
         System.out.println("++++  TestLifecycleManager start +++");
-        Optional<Boolean> quarkusDevServiceEnabledFlag = ConfigProvider.getConfig().getOptionalValue("quarkus.devservices.enabled", Boolean.class);
+        Optional<Boolean> quarkusDevServiceEnabledFlag = ConfigProvider.getConfig().getOptionalValue("quarkus.datasource.devservices.enabled", Boolean.class);
         if (quarkusDevServiceEnabledFlag.isPresent()) {
             quarkusDevServiceEnabled = quarkusDevServiceEnabledFlag.get();
         }
-        System.out.println(" -- quarkusDevServiceEnabled is " + quarkusDevServiceEnabled);
+        System.out.println(" -- quarkusDatasourceDevServiceEnabled is " + quarkusDevServiceEnabled);
 
         Map<String, String> properties = new HashMap<>();
         try {
