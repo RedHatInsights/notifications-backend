@@ -12,7 +12,7 @@ import static com.redhat.cloud.notifications.qute.templates.IntegrationType.SLAC
 import static java.util.Map.entry;
 
 public class OpenShift {
-    static final String BUNDLE_NAME = "openshift";
+    public static final String BUNDLE_NAME = "openshift";
 
     static final String ADVISOR_APP_NAME = "advisor";
     static final String ADVISOR_FOLDER_NAME = "AdvisorOpenshift/";
@@ -20,7 +20,7 @@ public class OpenShift {
     static final String COST_MANAGEMENT_APP_NAME = "cost-management";
     static final String COST_MANAGEMENT_FOLDER_NAME = "CostManagement/";
 
-    static final String CLUSTER_MANAGER_APP_NAME = "cluster-manager";
+    public static final String CLUSTER_MANAGER_APP_NAME = "cluster-manager";
     static final String CLUSTER_MANAGER_FOLDER_NAME = "OCM/";
 
     public static final String ADVISOR_NEW_RECOMMENDATION = "new-recommendation";

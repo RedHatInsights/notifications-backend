@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "title": "Product",
+  "description": "A product from the catalog",
+  "type": "object",
+  "properties": {
+    "type": {
+      "enum": [
+        "message"
+      ],
+      "description": "Must be `message`"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "enum": [
+              "application/vnd.microsoft.card.adaptive"
+            ],
+            "description": "Must be `application/vnd.microsoft.card.adaptive`"
+          },
+          "contentUrl": {
+            "enum": [
+              null
+            ],
+            "description": "Must be `null`"
+          },
+          "content": {
+            "type": "object"
+          },
+          "required": [
+            "contentType",
+            "contentUrl",
+            "content"
+          ]
+        },
+        "description": "The card elements to show in the primary card region."
+      }
+    },
+    "required": [
+      "type",
+      "attachments"
+    ]
+  }
+}

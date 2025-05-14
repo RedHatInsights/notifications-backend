@@ -38,7 +38,9 @@ class TestErrataNotificationsTemplate {
     }
 
     private void checkResult(String eventType, String result) {
-        assertTrue(result.contains("\"contentType\":\"application/vnd.microsoft.card.adaptive\""));
+        // check content from parent template
+        AdaptiveCardValidatorHelper.validate(result);
+
         switch (eventType) {
             case BUGFIX_ERRATA -> assertTrue(result.contains("\"text\": \"Red Hat published new bugfix errata that affect your products. Explore these and others in the [errata search](" + ERRATA_SEARCH_URL + ").\""));
             case SECURITY_ERRATA -> assertTrue(result.contains("\"text\": \"Red Hat published new security errata that affect your products. Explore these and others in the [errata search](" + ERRATA_SEARCH_URL + ").\""));
