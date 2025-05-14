@@ -52,7 +52,7 @@ public class EmailAggregationRepository {
      */
     public List<AggregationCommand> getApplicationsWithPendingAggregationAccordingOrgPref(LocalDateTime now) {
         LocalDateTime currentTimeTwoDaysAgo = now.minusDays(2);
-        String query = "SELECT DISTINCT ev.orgId, ev.bundleId, ev.applicationId, acp.lastRun, bu.name, ap.name FROM Event ev " +
+        String query = "SELECT DISTINCT ev.orgId, ev.bundleId, ev.applicationId, acp.lastRun, bu.name, ap.name, ev.accountId FROM Event ev " +
             "join Application ap on ev.applicationId = ap.id join Bundle bu on ev.bundleId = bu.id " +
             "join AggregationOrgConfig acp on ev.orgId = acp.orgId WHERE " +
 
@@ -76,7 +76,13 @@ public class EmailAggregationRepository {
         List<Object[]> records = hqlQuery.getResultList();
         return records.stream()
             .map(emailAggregationRecord -> new AggregationCommand<>(
-                new EventAggregationCriteria((String) emailAggregationRecord[0], (UUID) emailAggregationRecord[1], (UUID) emailAggregationRecord[2], (String) emailAggregationRecord[4], (String) emailAggregationRecord[5]),
+                new EventAggregationCriteria(
+                    (String) emailAggregationRecord[0], // orgId
+                    (UUID) emailAggregationRecord[1],   // bundleId
+                    (UUID) emailAggregationRecord[2],   // applicationId
+                    (String) emailAggregationRecord[4], // bundle name
+                    (String) emailAggregationRecord[5], // application name
+                    (String) emailAggregationRecord[6]), // accountId
                 ((LocalDateTime) emailAggregationRecord[3]).isBefore(currentTimeTwoDaysAgo) ? currentTimeTwoDaysAgo : ((LocalDateTime) emailAggregationRecord[3]),
                 now,
                 DAILY
