@@ -205,6 +205,10 @@ objects:
               threshold: "25"
             type: prometheus
             metricType: Value
+          - metadata:
+              value: 20m
+            type: cpu
+            metricType: AverageValue
         advanced:
           horizontalPodAutoscalerConfig:
             behavior:
