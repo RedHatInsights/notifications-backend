@@ -22,14 +22,10 @@ public class DrawerPayloadBuilder implements Processor {
     @Override
     public void process(Exchange exchange) {
         final DrawerEntryPayload entryPayloadModel = exchange.getProperty(ExchangeProperty.DRAWER_ENTRY_PAYLOAD, DrawerEntryPayload.class);
-
-        DrawerEntry drawerEntry = new DrawerEntry();
-        drawerEntry.setPayload(entryPayloadModel);
-        drawerEntry.setUsernames(exchange.getProperty(ExchangeProperty.RESOLVED_RECIPIENT_LIST, Set.class));
-        JsonObject myPayload = JsonObject.mapFrom(drawerEntry);
+        final Set<String> recipients = exchange.getProperty(ExchangeProperty.RESOLVED_RECIPIENT_LIST, Set.class);
+        JsonObject outgoingCloudEvent = buildDrawerPayload(entryPayloadModel, recipients);
 
         Message in = exchange.getIn();
-
         /*
          * The exchange may contain headers used by a connector to perform a call to an external service.
          * These headers shouldn't be leaked, especially if they contain authorization data, so we're
@@ -37,6 +33,15 @@ public class DrawerPayloadBuilder implements Processor {
          */
         in.removeHeaders("*");
         in.setHeader("content-type", "application/cloudevents+json; charset=UTF-8");
+
+        in.setBody(outgoingCloudEvent.encode());
+    }
+
+    public static JsonObject buildDrawerPayload(final DrawerEntryPayload entryPayloadModel, final Set<String> recipients) {
+        DrawerEntry drawerEntry = new DrawerEntry();
+        drawerEntry.setPayload(entryPayloadModel);
+        drawerEntry.setUsernames(recipients);
+        JsonObject myPayload = JsonObject.mapFrom(drawerEntry);
 
         JsonObject outgoingCloudEvent = new JsonObject();
         outgoingCloudEvent.put("type", CE_TYPE);
@@ -46,7 +51,6 @@ public class DrawerPayloadBuilder implements Processor {
         outgoingCloudEvent.put("id", entryPayloadModel.getEventId());
         outgoingCloudEvent.put("time", ZonedDateTime.now(UTC).toString());
         outgoingCloudEvent.put("data", myPayload);
-
-        in.setBody(outgoingCloudEvent.encode());
+        return outgoingCloudEvent;
     }
 }

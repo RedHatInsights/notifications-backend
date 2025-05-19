@@ -12,6 +12,7 @@ import java.util.Set;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.*;
 import static com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty.RESOLVED_RECIPIENT_LIST;
+import static com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty.USE_SIMPLIFIED_ROUTE;
 import static org.apache.camel.LoggingLevel.INFO;
 
 @ApplicationScoped
@@ -33,6 +34,9 @@ public class DrawerRouteBuilder extends EngineToConnectorRouteBuilder {
     @Inject
     DrawerPayloadBuilder drawerPayloadBuilder;
 
+    @Inject
+    DrawerProcessor drawerProcessor;
+
     public static final String CONNECTOR_TO_DRAWER = "connector-to-drawer";
 
     @Override
@@ -40,16 +44,21 @@ public class DrawerRouteBuilder extends EngineToConnectorRouteBuilder {
         from(seda(ENGINE_TO_CONNECTOR))
             .routeId(drawerConnectorConfig.getConnectorName())
             .process(recipientsResolverPreparer)
-            .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
-                .to(drawerConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver")
-            .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
-            .process(recipientsResolverResponseProcessor)
-            .choice().when(hasRecipients())
-                .process(drawerPayloadBuilder)
-                .to(log(getClass().getName()).level("INFO").showHeaders(true).showBody(true))
-                .to(direct(CONNECTOR_TO_DRAWER))
-                .log(INFO, getClass().getName(), "Sent Drawer notification " +
-                    "[orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
+            .choice()
+                .when(shouldUseSimplifiedManagement())
+                    .process(drawerProcessor)
+                .otherwise()
+                    .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_START)
+                        .to(drawerConnectorConfig.getRecipientsResolverServiceURL() + "/internal/recipients-resolver")
+                    .to(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC + TIMER_ACTION_STOP)
+                    .process(recipientsResolverResponseProcessor)
+                    .choice().when(hasRecipients())
+                        .process(drawerPayloadBuilder)
+                        .to(log(getClass().getName()).level("INFO").showHeaders(true).showBody(true))
+                        .to(direct(CONNECTOR_TO_DRAWER))
+                        .log(INFO, getClass().getName(), "Sent Drawer notification " +
+                            "[orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
+                    .end()
             .end()
             .to(direct(SUCCESS));
 
@@ -58,6 +67,9 @@ public class DrawerRouteBuilder extends EngineToConnectorRouteBuilder {
             .to(kafka(drawerConnectorConfig.getOutgoingDrawerTopic()));
     }
 
+    private Predicate shouldUseSimplifiedManagement() {
+        return exchange -> exchange.getProperty(USE_SIMPLIFIED_ROUTE, false, Boolean.class);
+    }
 
     private Predicate hasRecipients() {
         return exchange -> !exchange.getProperty(RESOLVED_RECIPIENT_LIST, Set.class).isEmpty();
