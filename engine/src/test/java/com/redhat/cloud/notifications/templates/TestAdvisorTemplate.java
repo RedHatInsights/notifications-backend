@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.AdvisorTestHelpers.createEmailAggregation;
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.DEACTIVATED_RECOMMENDATION;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.NEW_RECOMMENDATION;
@@ -102,9 +101,9 @@ public class TestAdvisorTemplate extends EmailTemplatesInDbHelper {
         context.put("start_time", LocalDateTime.now().toString());
         context.put("end_time", LocalDateTime.now().toString());
 
-        String result = generateAggregatedEmailBody(context, DEFAULT_ACCOUNT_ID);
+        String result = generateAggregatedEmailBody(context);
         assertTrue(result.contains("Resolved Recommendation"));
-        assertTrue(result.contains("(Org ID: " + DEFAULT_ORG_ID + " | Account number: " + DEFAULT_ACCOUNT_ID + ")"));
+        assertTrue(result.contains("(Org ID: " + DEFAULT_ORG_ID + ")"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
         assertTrue(result.contains("Active rule 2</a>"));
         assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
