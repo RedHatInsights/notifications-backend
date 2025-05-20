@@ -54,7 +54,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.processors.email.EmailAggregationProcessor.AGGREGATION_COMMAND_ERROR_COUNTER_NAME;
@@ -224,7 +223,7 @@ class EmailAggregationProcessorTest {
             );
 
             // Also test with an account ID associated with the event
-            createAggregationsAndSendAggregationKeysToIngress(true, eventToAggregate, DEFAULT_ACCOUNT_ID, aggregationKey1, aggregationKey2);
+            createAggregationsAndSendAggregationKeysToIngress(true, eventToAggregate, aggregationKey1, aggregationKey2);
 
             ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
             verify(connectorSender, timeout(5000L).times(2)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
@@ -248,7 +247,7 @@ class EmailAggregationProcessorTest {
                 EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
                 assertEquals("Daily digest - Red Hat Enterprise Linux", capturedEmailRequest.emailSubject());
                 assertTrue(capturedEmailRequest.emailBody().contains("Daily digest - Red Hat Enterprise Linux"));
-                assertTrue(capturedEmailRequest.emailBody().contains("(Org ID: " + DEFAULT_ORG_ID + " | Account number: " + DEFAULT_ACCOUNT_ID + ")"));
+                assertTrue(capturedEmailRequest.emailBody().contains("(Org ID: " + DEFAULT_ORG_ID + ")"));
                 assertTrue(capturedEmailRequest.emailBody().contains("Jump to details"));
                 assertTrue(capturedEmailRequest.emailBody().contains("id=\"policies-section1\""));
             });
@@ -461,7 +460,7 @@ class EmailAggregationProcessorTest {
         }
     }
 
-    private String buildAggregatorActionFromKey(List<EmailAggregationKey> aggregationKeys, String accountId) {
+    private String buildAggregatorActionFromKey(List<EmailAggregationKey> aggregationKeys) {
         List<AggregationCommand> aggregationCommands = new ArrayList<>();
         for (EmailAggregationKey aggregationKey : aggregationKeys) {
             AggregationCommand aggregationCommand = new AggregationCommand(
@@ -472,10 +471,10 @@ class EmailAggregationProcessorTest {
             );
             aggregationCommands.add(aggregationCommand);
         }
-        return buildAggregatorAction(aggregationCommands, accountId);
+        return buildAggregatorAction(aggregationCommands);
     }
 
-    private String buildAggregatorAction(List<AggregationCommand> aggregationCommands, String accountId) {
+    private String buildAggregatorAction(List<AggregationCommand> aggregationCommands) {
 
         String orgId = aggregationCommands.get(0).getOrgId();
 
@@ -500,10 +499,6 @@ class EmailAggregationProcessorTest {
             .withOrgId(orgId)
             .withTimestamp(LocalDateTime.now(UTC))
             .withEvents(events);
-
-        if (accountId != null && !accountId.isEmpty()) {
-            actionBuilder.withAccountId(accountId);
-        }
 
         return Parser.encode(actionBuilder.build());
     }
@@ -548,10 +543,6 @@ class EmailAggregationProcessorTest {
     }
 
     private void createAggregationsAndSendAggregationKeysToIngress(boolean useAggregationBasedOnEventTable, List<EmailAggregation> eventToAggregate, EmailAggregationKey... aggregationKeys) {
-        createAggregationsAndSendAggregationKeysToIngress(useAggregationBasedOnEventTable, eventToAggregate, null, aggregationKeys);
-    }
-
-    private void createAggregationsAndSendAggregationKeysToIngress(boolean useAggregationBasedOnEventTable, List<EmailAggregation> eventToAggregate, String accountId, EmailAggregationKey... aggregationKeys) {
         for (EmailAggregation aggregation : eventToAggregate) {
             emailAggregationRepository.addEmailAggregation(aggregation);
             // the base transformer adds a "source" element which should not be present in an original event payload
@@ -559,7 +550,7 @@ class EmailAggregationProcessorTest {
             resourceHelpers.addEventEmailAggregation(aggregation.getOrgId(), aggregation.getBundleName(), aggregation.getApplicationName(),  aggregation.getPayload());
         }
 
-        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(Arrays.asList(aggregationKeys), accountId));
+        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(Arrays.asList(aggregationKeys)));
 
         validateCommonAssertions(useAggregationBasedOnEventTable, aggregationKeys);
     }

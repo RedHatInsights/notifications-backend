@@ -347,10 +347,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                 TemplateInstance SingleBodyTemplate = templateService.compileTemplate(dailyTemplate.get().getData(), "singleDailyDigest/dailyDigest");
 
                 Map<String, Object> actionContext = new HashMap<>(Map.of("title", emailTitle, "items", result, "orgId", aggregatorEvent.getOrgId()));
-                String accountId = aggregatorEvent.getAccountId();
-                if (accountId != null && !accountId.isBlank()) {
-                    actionContext.put("accountId", accountId);
-                }
                 Map<String, Object> action = Map.of("context", actionContext, "bundle", bundle);
 
                 // build final body
