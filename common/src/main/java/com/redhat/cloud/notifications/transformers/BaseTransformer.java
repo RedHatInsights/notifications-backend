@@ -62,21 +62,7 @@ public class BaseTransformer {
             message.put(ORG_ID, action.getOrgId());
             message.put(TIMESTAMP, action.getTimestamp().toString());
 
-            // Include the display names of the different objects.
-            // Since "insights-notifications-schemas-java:0.20".
-            final JsonObject source = new JsonObject();
-
-            final JsonObject sourceAppDisplayName = new JsonObject();
-            sourceAppDisplayName.put(DISPLAY_NAME, event.getApplicationDisplayName());
-            source.put(APPLICATION, sourceAppDisplayName);
-
-            final JsonObject sourceBundleDisplayName = new JsonObject();
-            sourceBundleDisplayName.put(DISPLAY_NAME, event.getBundleDisplayName());
-            source.put(BUNDLE, sourceBundleDisplayName);
-
-            final JsonObject sourceEventTypeDisplayName = new JsonObject();
-            sourceEventTypeDisplayName.put(DISPLAY_NAME, event.getEventTypeDisplayName());
-            source.put(EVENT_TYPE, sourceEventTypeDisplayName);
+            final JsonObject source = getEventSource(event);
 
             message.put(SOURCE, source);
 
@@ -89,5 +75,24 @@ public class BaseTransformer {
         }
 
         throw new RuntimeException("Unknown event wrapper sub-type received");
+    }
+
+    public static JsonObject getEventSource(Event event) {
+        // Include the display names of the different objects.
+        // Since "insights-notifications-schemas-java:0.20".
+        final JsonObject source = new JsonObject();
+
+        final JsonObject sourceAppDisplayName = new JsonObject();
+        sourceAppDisplayName.put(DISPLAY_NAME, event.getApplicationDisplayName());
+        source.put(APPLICATION, sourceAppDisplayName);
+
+        final JsonObject sourceBundleDisplayName = new JsonObject();
+        sourceBundleDisplayName.put(DISPLAY_NAME, event.getBundleDisplayName());
+        source.put(BUNDLE, sourceBundleDisplayName);
+
+        final JsonObject sourceEventTypeDisplayName = new JsonObject();
+        sourceEventTypeDisplayName.put(DISPLAY_NAME, event.getEventTypeDisplayName());
+        source.put(EVENT_TYPE, sourceEventTypeDisplayName);
+        return source;
     }
 }

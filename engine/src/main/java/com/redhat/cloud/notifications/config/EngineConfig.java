@@ -44,8 +44,6 @@ public class EngineConfig {
     private static final String NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE = "notifications.email.sender.hybrid.cloud.console";
     private static final String NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE = "notifications.email.sender.openshift.stage";
     private static final String NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD = "notifications.email.sender.openshift.prod";
-    private static final String NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES = "notifications.use-ocm-refactored-templates";
-
 
     /*
      * Unleash configuration
@@ -125,9 +123,6 @@ public class EngineConfig {
     @ConfigProperty(name = KAFKA_TOCAMEL_MAXIMUM_REQUEST_SIZE, defaultValue = "10485760")
     int kafkaToCamelMaximumRequestSize;
 
-    @ConfigProperty(name = NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES, defaultValue = "false")
-    boolean useOCMRefactoredTemplates;
-
     /**
      * The email sender address for the Red Hat Hybrid Cloud Console.
      */
@@ -187,7 +182,6 @@ public class EngineConfig {
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, rhOpenshiftSenderProd);
         config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
         config.put(asyncEventProcessingToggle, isAsyncEventProcessing());
-        config.put(NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES, isUseOCMRefactoredTemplates());
         config.put(toggleDirectEndpointToEventTypeDryRunEnabled, isDirectEndpointToEventTypeDryRunEnabled());
         config.put(toggleUseDirectEndpointToEventTypeEnabled, isUseDirectEndpointToEventTypeEnabled());
         config.put(toggleUseCommonTemplateModuleToRenderEmailsEnabled, isUseCommonTemplateModuleToRenderEmailsEnabled());
@@ -330,9 +324,5 @@ public class EngineConfig {
         } else {
             return this.outgoingKafkaHighVolumeTopicEnabled;
         }
-    }
-
-    public boolean isUseOCMRefactoredTemplates() {
-        return useOCMRefactoredTemplates;
     }
 }
