@@ -11,11 +11,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ErrataTestHelpers {
     public static final String BUGFIX_ERRATA = "new-subscription-bugfix-errata";
     public static final String SECURITY_ERRATA = "new-subscription-security-errata";
     public static final String ENHANCEMENT_ERRATA = "new-subscription-enhancement-errata";
+
+    private static final String ERRATA_SEARCH_URL = "https://access.redhat.com/errata-search/?from=notifications&integration=";
 
     public static Action createErrataAction() {
         Action emailActionMessage = new Action();
@@ -63,12 +67,41 @@ public class ErrataTestHelpers {
                                         .withAdditionalProperty("synopsis", "cockpit security update")
                                         .build()
                         )
-                        .build()
+                        .build(),
+                new Event.EventBuilder()
+                    .withMetadata(new Metadata.MetadataBuilder().build())
+                    .withPayload(
+                        new Payload.PayloadBuilder()
+                            .withAdditionalProperty("id", "RHSA-2025:7174")
+                            .withAdditionalProperty("severity", "Important")
+                            .withAdditionalProperty("synopsis", "sanlock bug fix and enhancement update")
+                            .build()
+                )
+                .build()
         ));
 
         emailActionMessage.setAccountId(StringUtils.EMPTY);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         return emailActionMessage;
+    }
+
+    public static void checkErrataChatTemplateContent(String eventType, String result, Action action, String integrationUrlTag) {
+        String expectedEventTypeLabel = switch (eventType) {
+            case BUGFIX_ERRATA -> "bug fixes";
+            case SECURITY_ERRATA -> "security updates";
+            case ENHANCEMENT_ERRATA -> "enhancements";
+            default -> throw new IllegalArgumentException(eventType + "is not a valid event type");
+        };
+
+        assertTrue(result.contains(
+            String.format("There are %d %s affecting your subscriptions.", action.getEvents().size(), expectedEventTypeLabel)));
+        assertTrue(result.contains("First 3 are:"));
+        for (int i = 0; i < 3; i++) {
+            assertTrue(result.contains(action.getEvents().get(i).getPayload().getAdditionalProperties().get("id").toString()));
+            assertTrue(result.contains(action.getEvents().get(i).getPayload().getAdditionalProperties().get("synopsis").toString()));
+        }
+        assertFalse(result.contains(action.getEvents().get(3).getPayload().getAdditionalProperties().get("id").toString()));
+        assertTrue(result.contains(ERRATA_SEARCH_URL + integrationUrlTag));
     }
 }

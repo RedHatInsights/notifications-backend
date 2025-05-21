@@ -1,0 +1,44 @@
+{
+  "cardsV2": [
+    {
+      "cardId": "tableCard",
+      "card": {
+        "sections": [
+          {
+            "header": "<b>Bug fixes - Errata - Subscription Services</b>",
+            "collapsible": false,
+            "uncollapsibleWidgetsCount": 1,
+            "widgets": [
+              {
+                "textParagraph": {
+                  "text": "<br>There are {data.events.size()} bug {#if data.events.size() == 1}fix{#else}fixes{/if} affecting your subscriptions.{#if data.events.size() > 3}<br>First 3 are:"{/if}
+                }
+              },
+              {
+                "divider": {}
+              },
+              {#each data.events}
+              {#if it_index < 3}
+              {
+                "decoratedText": {
+                  "text": "\uD83D\uDD27 <a href=\"{data.context.base_url}{it.payload.id}?from=notifications&integration=google_chat\">{it.payload.id}</a><br>{it.payload.synopsis}",
+                  "wrapText": true
+                }
+              },
+              {/if}
+              {/each}
+              {
+                "divider": {}
+              },
+              {
+                "textParagraph": {
+                  "text": "Explore these and others in the <a href=\"https://access.redhat.com/errata-search/?from=notifications&integration=google_chat\">errata search</a>."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

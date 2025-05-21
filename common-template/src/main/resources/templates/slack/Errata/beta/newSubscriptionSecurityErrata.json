@@ -1,0 +1,42 @@
+{
+    "blocks": [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Security Updates - Errata - Subscription Services*"
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "There are {data.events.size()} security {#if data.events.size() == 1}update{#else}updates{/if} affecting your subscriptions.{#if data.events.size() > 3}\nFirst 3 are:{/if}"
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {#each data.events}
+        {#if it_index < 3}
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "{#when it.payload.severity.toLowerCase}{#is 'important'}\uD83D\uDEA8{#is 'moderate'}\u26A0\uFE0F{#else}\uD83D\uDD37{/when} <{data.context.base_url}{it.payload.id}?from=notifications&integration=slack|*{it.payload.id}*>\n{it.payload.synopsis}"
+            }
+        },
+        {/if}
+        {/each}
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Explore these and others in the <https://access.redhat.com/errata-search/?from=notifications&integration=slack|errata search>."
+            }
+        }
+    ]
+}
