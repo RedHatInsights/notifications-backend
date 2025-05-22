@@ -360,6 +360,27 @@ class DailyEventAggregationJobTest {
     }
 
     @Test
+    void shouldProcessOneAggregationOnlyWithoutLastRunDate() {
+        addEventEmailAggregation("someOrgIdWithoutLastRunDate", "rhel", "policies", "somePolicyId", "someHostId");
+        addEventEmailAggregation("shouldBeIgnoredOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        addEventEmailAggregation("someOrgIdWithoutLastRunDate", "rhel", "policies", "somePolicyId", "someHostId");
+        helpers.addAggregationOrgConfig(new AggregationOrgConfig("someOrgIdWithoutLastRunDate",
+            dailyEmailAggregationJob.computeScheduleExecutionTime().toLocalTime(),
+            null));
+
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime(), new CollectorRegistry());
+
+        assertEquals(1, emailAggregations.size());
+
+        final AggregationCommand aggregationCommand = (AggregationCommand) emailAggregations.get(0);
+        assertEquals("someOrgIdWithoutLastRunDate", aggregationCommand.getAggregationKey().getOrgId());
+        Application application = resourceHelpers.findApp("rhel", "policies");
+        assertEquals(application.getBundleId(), ((EventAggregationCriteria) aggregationCommand.getAggregationKey()).getBundleId());
+        assertEquals(application.getId(), ((EventAggregationCriteria) aggregationCommand.getAggregationKey()).getApplicationId());
+        assertEquals(DAILY, aggregationCommand.getSubscriptionType());
+    }
+
+    @Test
     void shouldNotIncreaseAggregationsWhenPolicyIdIsDifferent() {
         addEventEmailAggregation("someOrgId", "some-rhel", "some-policies", "policyId1", "someHostId");
         addEventEmailAggregation("someOrgId", "some-rhel", "some-policies", "policyId2", "someHostId");
