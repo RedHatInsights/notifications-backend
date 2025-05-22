@@ -28,6 +28,8 @@ class TestErrataNotificationsBetaTemplate {
     void testRenderedErrataTemplates(final String eventType) {
         TemplateDefinition templateConfig = new TemplateDefinition(MS_TEAMS, "subscription-services", "errata-notifications", eventType, true);
         String result = templateService.renderTemplate(templateConfig, ACTION);
+        // check content from parent template
+        AdaptiveCardValidatorHelper.validate(result);
         ErrataTestHelpers.checkErrataChatTemplateContent(eventType, result, ACTION, "teams");
     }
 }
