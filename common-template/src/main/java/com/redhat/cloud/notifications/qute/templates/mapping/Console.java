@@ -10,9 +10,9 @@ import static java.util.Map.entry;
 
 
 public class Console {
-    static final String BUNDLE_NAME = "console";
+    public static final String BUNDLE_NAME = "console";
 
-    static final String INTEGRATIONS_APP_NAME = "integrations";
+    public static final String INTEGRATIONS_APP_NAME = "integrations";
     static final String INTEGRATIONS_FOLDER_NAME = "Integrations/";
 
     static final String RBAC_APP_NAME = "rbac";

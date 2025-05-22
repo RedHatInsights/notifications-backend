@@ -113,6 +113,13 @@ public class TemplateService {
         // try to find template path with full config parameters
         String path = templatesConfigMap.get(templateDefinition);
 
+        // if not found and templateDefinition is a beta version, try to find matching GA version.
+        if (path == null && templateDefinition.isBetaVersion()) {
+            Log.infof("Beta template definition not found for %s, try to fallback on his GA version", templateDefinition);
+            templateDefinition = new TemplateDefinition(templateDefinition.integrationType(), templateDefinition.bundle(), templateDefinition.application(), templateDefinition.eventType());
+            path = templatesConfigMap.get(templateDefinition);
+        }
+
         // if not found try to find if a default template for the app exists
         if (path == null) {
             templateDefinition = new TemplateDefinition(templateDefinition.integrationType(), templateDefinition.bundle(), templateDefinition.application(), null);

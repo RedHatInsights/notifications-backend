@@ -1,0 +1,44 @@
+{
+  "cardsV2": [
+    {
+      "cardId": "tableCard",
+      "card": {
+        "sections": [
+          {
+            "header": "<b>Security Updates - Errata - Subscription Services</b>",
+            "collapsible": false,
+            "uncollapsibleWidgetsCount": 1,
+            "widgets": [
+              {
+                "textParagraph": {
+                  "text": "<br>There are {data.events.size()} security {#if data.events.size() == 1}update{#else}updates{/if} affecting your subscriptions.{#if data.events.size() > 3}<br>First 3 are:"{/if}
+                }
+              },
+              {
+                "divider": {}
+              },
+              {#each data.events}
+              {#if it_index < 3}
+              {
+                "decoratedText": {
+                  "text": "{#when it.payload.severity.toLowerCase}{#is 'important'}\uD83D\uDEA8{#is 'moderate'}\u26A0\uFE0F{#else}\uD83D\uDD37{/when} <a href=\"{data.context.base_url}{it.payload.id}?from=notifications&integration=google_chat\">{it.payload.id}</a><br>{it.payload.synopsis}",
+                  "wrapText": true
+                }
+              },
+              {/if}
+              {/each}
+              {
+                "divider": {}
+              },
+              {
+                "textParagraph": {
+                  "text": "Explore these and others in the <a href=\"https://access.redhat.com/errata-search/?from=notifications&integration=google_chat\">errata search</a>."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

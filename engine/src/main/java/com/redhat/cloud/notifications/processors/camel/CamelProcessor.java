@@ -91,11 +91,14 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
             throw new RuntimeException(getIntegrationName() + " notification data transformation failed", e);
         }
 
+        boolean shouldUseBetaVersion = engineConfig.isUseBetaTemplatesEnabled(event.getOrgId(), event.getEventType().getId());
+
         TemplateDefinition templateDefinition = new TemplateDefinition(
             getQuteIntegrationType(),
             event.getEventType().getApplication().getBundle().getName(),
             event.getEventType().getApplication().getName(),
-            event.getEventType().getName());
+            event.getEventType().getName(),
+            shouldUseBetaVersion);
 
         return quteTemplateService.renderTemplate(templateDefinition, dataAsMap);
     }
