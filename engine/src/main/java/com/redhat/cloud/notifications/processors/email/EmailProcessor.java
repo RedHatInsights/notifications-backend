@@ -14,6 +14,7 @@ import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotifi
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
+import com.redhat.cloud.notifications.qute.templates.TemplateNotFoundException;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
@@ -87,6 +88,26 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             return;
         }
 
+        final TemplateDefinition bodyTemplateDefinition = new TemplateDefinition(
+            IntegrationType.EMAIL_BODY,
+            event.getEventType().getApplication().getBundle().getName(),
+            event.getEventType().getApplication().getName(),
+            event.getEventType().getName());
+
+        final TemplateDefinition subjectTemplateDefinition = new TemplateDefinition(
+            IntegrationType.EMAIL_TITLE,
+            event.getEventType().getApplication().getBundle().getName(),
+            event.getEventType().getApplication().getName(),
+            event.getEventType().getName());
+
+        try {
+            quteTemplateService.getTemplateId(subjectTemplateDefinition);
+            quteTemplateService.getTemplateId(bodyTemplateDefinition);
+        } catch (TemplateNotFoundException e) {
+            Log.infof("[event_uuid: %s] The event was skipped because there were no suitable templates for its event type %s", event.getId(), event.getEventType().getName());
+            return;
+        }
+
         Set<String> subscribers;
         Set<String> unsubscribers;
         if (event.getEventType().isSubscribedByDefault()) {
@@ -116,19 +137,10 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         final boolean ignoreUserPreferences = recipientSettings.stream().filter(RecipientSettings::isIgnoreUserPreferences).count() > 0;
 
-        // Render the subject and the body of the email.
-        final InstantEmailTemplate instantEmailTemplate = instantEmailTemplateMaybe.get();
-
-        final String subjectData = instantEmailTemplate.getSubjectTemplate().getData();
-        final String bodyData = instantEmailTemplate.getBodyTemplate().getData();
-
-        final TemplateInstance subjectTemplate = this.templateService.compileTemplate(subjectData, "subject");
-        final TemplateInstance bodyTemplate = this.templateService.compileTemplate(bodyData, "body");
-
-        String subject = templateService.renderTemplate(event.getEventWrapper().getEvent(), subjectTemplate);
         // we don't want to include outage pendo message this time
         EmailPendo pendoMessage = emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, false);
-        String body = templateService.renderEmailBodyTemplate(event.getEventWrapper().getEvent(), bodyTemplate, pendoMessage, ignoreUserPreferences);
+        String subject;
+        String body;
 
         if (engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()) {
             Log.debug("Uses common template module to render emails");
@@ -140,27 +152,17 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
                 additionalContext.put("action", event.getEventWrapper().getEvent());
                 additionalContext.put(BaseTransformer.SOURCE, BaseTransformer.getEventSource(event));
 
-                TemplateDefinition subjectTemplateDefinition = new TemplateDefinition(
-                    IntegrationType.EMAIL_TITLE,
-                    event.getEventType().getApplication().getBundle().getName(),
-                    event.getEventType().getApplication().getName(),
-                    event.getEventType().getName());
-
-                String subjectFromCommonTemplateModule = quteTemplateService.renderTemplateWithCustomDataMap(subjectTemplateDefinition, additionalContext);
-
-                TemplateDefinition bodyTemplateDefinition = new TemplateDefinition(
-                    IntegrationType.EMAIL_BODY,
-                    event.getEventType().getApplication().getBundle().getName(),
-                    event.getEventType().getApplication().getName(),
-                    event.getEventType().getName());
-
-                String bodyFromCommonTemplateModule = quteTemplateService.renderTemplateWithCustomDataMap(bodyTemplateDefinition, additionalContext);
-
-                compareTemplateRenderings(subject, subjectFromCommonTemplateModule, "Rendered Subjects with both methods are different");
-                compareTemplateRenderings(body, bodyFromCommonTemplateModule, "Rendered Bodies with both methods are different");
+                subject = quteTemplateService.renderTemplateWithCustomDataMap(subjectTemplateDefinition, additionalContext);
+                body = quteTemplateService.renderTemplateWithCustomDataMap(bodyTemplateDefinition, additionalContext);
             } catch (Exception e) {
                 Log.error("Error rendering email template for event type " + event.getEventType().getName(), e);
+                subject = renderEmailSubjectFromDbTemplates(instantEmailTemplateMaybe.get(), event.getEventWrapper().getEvent());
+                body = renderEmailBodyFromDbTemplates(instantEmailTemplateMaybe.get(), event.getEventWrapper().getEvent());
             }
+        } else {
+            // Render the subject and the body of the email.
+            subject = renderEmailSubjectFromDbTemplates(instantEmailTemplateMaybe.get(), event.getEventWrapper().getEvent());
+            body = renderEmailBodyFromDbTemplates(instantEmailTemplateMaybe.get(), event.getEventWrapper().getEvent());
         }
 
         // Prepare all the data to be sent to the connector.
@@ -176,7 +178,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             recipientsAuthorizationCriterionExtractor.extract(event)
         );
 
-        Log.debugf("[org_id: %s] Sending email notification to connector", emailNotification);
+        Log.tracef("[org_id: %s] Sending email notification to connector", emailNotification);
 
         final JsonObject payload = JsonObject.mapFrom(emailNotification);
 
@@ -185,28 +187,15 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         connectorSender.send(event, endpoint, payload);
     }
 
-    /**
-     * For some internal qute reasons, between template standard management vs database management
-     * some templates could have extra empty line at the end and/or extra white spaces.
-     * We need to get free of them in order to compare results.
-     *
-     */
-    private static String getTrimmed(String bodyStr) {
-        return bodyStr.replaceAll("[\\n\\r]", "").trim();
+    private String renderEmailSubjectFromDbTemplates(final InstantEmailTemplate instantEmailTemplate, final Object wrappedEvent) {
+        final String subjectData = instantEmailTemplate.getSubjectTemplate().getData();
+        final TemplateInstance subjectTemplate = this.templateService.compileTemplate(subjectData, "subject");
+        return templateService.renderTemplate(wrappedEvent, subjectTemplate);
     }
 
-    /**
-     * Check and log differences between old and new qute renderers
-     *
-     * @param legacyResult
-     * @param commonTemplateResult
-     * @param errorMsg contextual message
-     */
-    public static void compareTemplateRenderings(String legacyResult, String commonTemplateResult, String errorMsg) {
-        if (!getTrimmed(legacyResult).equals(getTrimmed(commonTemplateResult))) {
-            Log.error(errorMsg);
-            Log.debugf("Legacy: %s", EmailProcessor.getTrimmed(legacyResult));
-            Log.debugf("New: %s", EmailProcessor.getTrimmed(commonTemplateResult));
-        }
+    private String renderEmailBodyFromDbTemplates(final InstantEmailTemplate instantEmailTemplate, final Object wrappedEvent) {
+        final String bodyData = instantEmailTemplate.getBodyTemplate().getData();
+        final TemplateInstance bodyTemplate = this.templateService.compileTemplate(bodyData, "body");
+        return templateService.renderTemplate(wrappedEvent, bodyTemplate);
     }
 }

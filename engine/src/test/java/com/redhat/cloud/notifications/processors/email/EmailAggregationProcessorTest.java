@@ -21,6 +21,10 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriteria;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
+import com.redhat.cloud.notifications.qute.templates.TemplateNotFoundException;
+import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
@@ -45,7 +49,6 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -67,9 +70,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -109,6 +114,9 @@ class EmailAggregationProcessorTest {
 
     @InjectSpy
     EngineConfig engineConfig;
+
+    @InjectSpy
+    TemplateService templateService;
 
     static User user1 = new User();
     static User user2 = new User();
@@ -341,6 +349,10 @@ class EmailAggregationProcessorTest {
                     }
                 });
 
+            final TemplateDefinition patchTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, "rhel", "patch", null);
+            doThrow(new TemplateNotFoundException(patchTemplateDefinition))
+                .when(templateService).renderTemplateWithCustomDataMap(eq(patchTemplateDefinition), anyMap());
+
             initData("patch", "new-advisory");
 
             // Because this test will use a real Payload Aggregator
@@ -465,8 +477,8 @@ class EmailAggregationProcessorTest {
         for (EmailAggregationKey aggregationKey : aggregationKeys) {
             AggregationCommand aggregationCommand = new AggregationCommand(
                 aggregationKey,
-                LocalDateTime.now(ZoneOffset.UTC).minusDays(1),
-                LocalDateTime.now(ZoneOffset.UTC).plusDays(1),
+                LocalDateTime.now(UTC).minusDays(1),
+                LocalDateTime.now(UTC).plusDays(1),
                 DAILY
             );
             aggregationCommands.add(aggregationCommand);
