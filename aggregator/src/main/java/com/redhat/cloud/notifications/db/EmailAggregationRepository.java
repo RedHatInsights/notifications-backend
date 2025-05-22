@@ -65,7 +65,7 @@ public class EmailAggregationRepository {
             // check for linked email integration linked to this event type (to honor legacy mechanism)
             "AND EXISTS (SELECT 1 FROM Endpoint ep, EndpointEventType eet where ev.orgId = ep.orgId and ep.compositeType.type = 'EMAIL_SUBSCRIPTION' and eet.eventType = ev.eventType and eet.endpoint = ep) " +
             // filter on new events since the latest run of this org aggregation, and not older than two days
-            "AND ev.created > acp.lastRun AND ev.created > :twoDaysAgo AND ev.created <= :now " +
+            "AND (ev.created > acp.lastRun OR acp.lastRun is null) AND ev.created > :twoDaysAgo AND ev.created <= :now " +
             // filter on org scheduled execution time
             "AND :nowTime = acp.scheduledExecutionTime";
         Query hqlQuery = entityManager.createQuery(query)
@@ -76,11 +76,26 @@ public class EmailAggregationRepository {
         List<Object[]> records = hqlQuery.getResultList();
         return records.stream()
             .map(emailAggregationRecord -> new AggregationCommand<>(
-                new EventAggregationCriteria((String) emailAggregationRecord[0], (UUID) emailAggregationRecord[1], (UUID) emailAggregationRecord[2], (String) emailAggregationRecord[4], (String) emailAggregationRecord[5]),
-                ((LocalDateTime) emailAggregationRecord[3]).isBefore(currentTimeTwoDaysAgo) ? currentTimeTwoDaysAgo : ((LocalDateTime) emailAggregationRecord[3]),
+                new EventAggregationCriteria(
+                    (String) emailAggregationRecord[0],     // Org id
+                    (UUID) emailAggregationRecord[1],       // bundle id
+                    (UUID) emailAggregationRecord[2],       // application id
+                    (String) emailAggregationRecord[4],     // bundle name
+                    (String) emailAggregationRecord[5]),    // application name
+                computeStartDateTime((LocalDateTime) emailAggregationRecord[3], currentTimeTwoDaysAgo),
                 now,
                 DAILY
             ))
             .collect(toList());
+    }
+
+    // compute aggregation start date, it must not be older than two days ago
+    private static LocalDateTime computeStartDateTime(final LocalDateTime startDateTimeFromDb, final LocalDateTime currentTimeTwoDaysAgo) {
+        if (startDateTimeFromDb != null
+            && startDateTimeFromDb.isBefore(currentTimeTwoDaysAgo)) {
+            return currentTimeTwoDaysAgo;
+        } else {
+            return startDateTimeFromDb;
+        }
     }
 }
