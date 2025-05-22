@@ -38,10 +38,10 @@ class TestDefaultTemplate {
             action.getEvents().size(),
             !action.getEvents().isEmpty() ? "s" : StringUtils.EMPTY);
 
-        // check content from parent template
-        assertTrue(result.contains("\"contentType\":\"application/vnd.microsoft.card.adaptive\""));
-
         // check notification body
         assertTrue(result.contains(expectedMessage));
+
+        // check content from parent template
+        AdaptiveCardValidatorHelper.validate(result);
     }
 }
