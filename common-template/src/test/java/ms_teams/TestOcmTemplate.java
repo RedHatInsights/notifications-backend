@@ -36,7 +36,7 @@ class TestOcmTemplate {
 
     private static final JsonObject MESSAGE = OcmTestHelpers.createOcmMessage("Atlantic", "OSDTrial", "<b>Altlantic</b> server is experiencing flooding issues", "Subject line!");
 
-    private static final String CLUSTER_MANAGER_DEFAULT_EVENT_URL = "http://localhost/openshift/details/s/2XqNHRdLNEAzshh7MkkOql6fx6I?from=notifications&integration=teams";
+    private static final String CLUSTER_MANAGER_DEFAULT_EVENT_URL = "https://cloud.redhat.com/openshift/details/s/2XqNHRdLNEAzshh7MkkOql6fx6I?from=notifications&integration=teams";
     public static final String EXPECTED_NOTIFICATION_TEXT_MESSAGE = "\"text\": \"1 event triggered from Cluster Manager - OpenShift. [Open Cluster Manager](" + CLUSTER_MANAGER_DEFAULT_EVENT_URL + ")\"";
 
     @Inject

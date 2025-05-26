@@ -41,7 +41,7 @@ public class TeamsProcessorTest extends CamelProcessorTest {
     private static final String TEAMS_EXPECTED_MSG_WITH_HOST_URL = "\"text\": \"[my-computer](" + CONTEXT_HOST_URL + "?from=notifications&integration=teams) " +
             "triggered 1 event from Policies - Red Hat Enterprise Linux. [Open Policies](" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies?from=notifications&integration=teams)\"";
 
-    private static final String TEAMS_EXPECTED_OCM_MSG_WITH_SUBSCRIPTION_ID = "\"text\": \"1 event triggered from Cluster Manager - OpenShift. [Open Cluster Manager](" + EnvironmentTest.expectedTestEnvUrlValue + "/openshift/details/s/64503ec1-a365-4a1b-8c8b-0a6c519ec5fb?from=notifications&integration=teams)\"";
+    private static final String TEAMS_EXPECTED_OCM_MSG_WITH_SUBSCRIPTION_ID = "\"text\": \"1 event triggered from Cluster Manager - OpenShift. [Open Cluster Manager](https://cloud.redhat.com/openshift/details/s/64503ec1-a365-4a1b-8c8b-0a6c519ec5fb?from=notifications&integration=teams)\"";
 
     @Inject
     TeamsProcessor teamsProcessor;
@@ -108,6 +108,7 @@ public class TeamsProcessorTest extends CamelProcessorTest {
 
         // Retrieve the OCM notification and validate that the correct URL is provided.
         JsonObject notification = message.getPayload();
+        System.out.println(notification.getString("message"));
         assertTrue(notification.getString("message").contains(TEAMS_EXPECTED_OCM_MSG_WITH_SUBSCRIPTION_ID));
     }
 
