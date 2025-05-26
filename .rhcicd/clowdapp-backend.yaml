@@ -228,6 +228,7 @@ objects:
       \timing
       CALL cleanEventLog();
       VACUUM ANALYZE event;
+      VACUUM ANALYZE drawer_notification;
       VACUUM ANALYZE notification_history;
       CALL cleanKafkaMessagesIds();
       VACUUM ANALYZE kafka_message;
