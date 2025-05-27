@@ -15,12 +15,19 @@ public class Environment {
     @ConfigProperty(name = "env.base.url", defaultValue = "https://localhost")
     String url;
 
+    @ConfigProperty(name = "env.ocm.base.url", defaultValue = "https://localhost")
+    String ocmUrl;
+
     public String name() {
         return this.environment;
     }
 
     public String url() {
         return this.url;
+    }
+
+    public String ocmUrl() {
+        return this.ocmUrl;
     }
 
     /**
