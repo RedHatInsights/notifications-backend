@@ -325,7 +325,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
             Map<String, DailyDigestSection> dataMap  = new HashMap<>();
             for (ApplicationAggregatedData applicationAggregatedData : listApplicationWithUserCollection.getKey()) {
                 try {
-                    dataMap.put(applicationAggregatedData.appName, generateAggregatedEmailBody(bundleName, applicationAggregatedData.appName, applicationAggregatedData.aggregatedData, dataMap));
+                    dataMap.put(applicationAggregatedData.appName, generateAggregatedEmailBody(bundleName, applicationAggregatedData.appName, applicationAggregatedData.aggregatedData));
                 } catch (Exception ex) {
                     Log.error("Error rendering application template for " + applicationAggregatedData.appName, ex);
                 }
@@ -338,31 +338,22 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                     .map(Map.Entry::getValue)
                     .toList();
 
-                // get single daily template
-                String singleDailyEmailTemplateName = "Common/insightsDailyEmailBody";
-                if (engineConfig.isSecuredEmailTemplatesEnabled()) {
-                    singleDailyEmailTemplateName = "Secure/" + singleDailyEmailTemplateName;
-                }
-                Optional<Template> dailyTemplate = templateRepository.findTemplateByName(singleDailyEmailTemplateName);
-                TemplateInstance SingleBodyTemplate = templateService.compileTemplate(dailyTemplate.get().getData(), "singleDailyDigest/dailyDigest");
-
                 Map<String, Object> actionContext = new HashMap<>(Map.of("title", emailTitle, "items", result, "orgId", aggregatorEvent.getOrgId()));
                 Map<String, Object> action = Map.of("context", actionContext, "bundle", bundle);
 
-                // build final body
-                String bodyStr = templateService.renderTemplate(action, SingleBodyTemplate);
-
+                String bodyStr;
                 if (engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()) {
                     try {
                         TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, null, null, null);
                         Map<String, Object> additionalContext = buildFullTemplateContext(action);
 
-                        String fullDailyDigestResult = commonQuteTemplateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
-
-                        EmailProcessor.compareTemplateRenderings(bodyStr, fullDailyDigestResult, "Rendered aggregated Bodies with both methods are different");
+                        bodyStr = commonQuteTemplateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
                     } catch (Exception e) {
                         Log.error(String.format("Error rendering daily digest email template for %s", bundle.getName()), e);
+                        bodyStr = renderEmailFromTemplatesInDb(action);
                     }
+                } else {
+                    bodyStr = renderEmailFromTemplatesInDb(action);
                 }
 
                 // Format data to send to the connector.
@@ -400,6 +391,21 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         }
     }
 
+    private String renderEmailFromTemplatesInDb(Map<String, Object> action) {
+        String bodyStr;
+        // get single daily template
+        String singleDailyEmailTemplateName = "Common/insightsDailyEmailBody";
+        if (engineConfig.isSecuredEmailTemplatesEnabled()) {
+            singleDailyEmailTemplateName = "Secure/" + singleDailyEmailTemplateName;
+        }
+        Optional<Template> dailyTemplate = templateRepository.findTemplateByName(singleDailyEmailTemplateName);
+        TemplateInstance SingleBodyTemplate = templateService.compileTemplate(dailyTemplate.get().getData(), "singleDailyDigest/dailyDigest");
+
+        // build final body
+        bodyStr = templateService.renderTemplate(action, SingleBodyTemplate);
+        return bodyStr;
+    }
+
     private Map<String, Object> buildFullTemplateContext(Map<String, Object> action) {
         Map<String, Object> additionalContext = new HashMap<>();
         additionalContext.put("environment", environment);
@@ -409,31 +415,36 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         return additionalContext;
     }
 
-    protected DailyDigestSection generateAggregatedEmailBody(String bundle, String app, Map<String, Object> context, Map<String, DailyDigestSection> dataMap) {
+    protected DailyDigestSection generateAggregatedEmailBody(String bundle, String app, Map<String, Object> context) {
         context.put("application", app);
 
-        AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(bundle, app, SubscriptionType.DAILY).get();
-        String emailBody = emailTemplate.getBodyTemplate().getData();
-        TemplateInstance templateInstance = templateService.compileTemplate(emailBody, emailTemplate.getBodyTemplate().getName());
         Map<String, Object> action =  Map.of("context", context, "bundle", bundle);
 
-        String result = templateService.renderTemplate(action, templateInstance);
+        String result;
 
         if (engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()) {
             try {
                 TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, bundle, app, null);
                 Map<String, Object> additionalContext = buildFullTemplateContext(action);
 
-                String applicationSectionResult = commonQuteTemplateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
-
-                EmailProcessor.compareTemplateRenderings(result, applicationSectionResult, "Rendered application section bodies with both methods is different");
-
+                result = commonQuteTemplateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
             } catch (Exception e) {
                 Log.error(String.format("Error rendering aggregated email template for %s/%s", bundle, app), e);
+                result = renderEmailFromTemplatesInDb(bundle, app, action);
             }
+        } else {
+            result = renderEmailFromTemplatesInDb(bundle, app, action);
         }
 
         return addItem(result);
+    }
+
+    private String renderEmailFromTemplatesInDb(String bundle, String app, Map<String, Object> action) {
+        AggregationEmailTemplate emailTemplate = templateRepository.findAggregationEmailTemplate(bundle, app, SubscriptionType.DAILY).get();
+        String emailBody = emailTemplate.getBodyTemplate().getData();
+        TemplateInstance templateInstance = templateService.compileTemplate(emailBody, emailTemplate.getBodyTemplate().getName());
+
+        return templateService.renderTemplate(action, templateInstance);
     }
 
     private DailyDigestSection addItem(String template) {
