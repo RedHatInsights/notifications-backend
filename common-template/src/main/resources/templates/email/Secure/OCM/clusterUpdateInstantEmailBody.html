@@ -1,0 +1,72 @@
+{@boolean renderSection1=true}
+{@boolean renderSection2=true}
+{#include email/Secure/Common/insightsEmailBody}
+{#content-title}
+    Cluster Manager - OpenShift
+{/content-title}
+{#content-title-section1}
+    {action.events[0].payload.title.or(action.events[0].payload.subject.or(""))}
+{/content-title-section1}
+{#content-body-section1}
+{#let global_var=action.events[0].payload.global_vars}
+<p>
+This notification is for your <a href="{environment.ocmUrl}/openshift/cluster-list" target="_blank">cluster</a>.
+</p>
+<p>
+    {global_var.log_description}
+</p>
+{#if global_var.template_sub_type == 'upgrade-scheduled-template'}
+    <p>
+        <strong>What can you expect?</strong>
+        <ul>
+            <li>Your cluster capacity may increase briefly during the course of the upgrade but will never decrease. Your cluster will remain operational during the upgrade.</li>
+            <li>If your applications are not designed as highly available, they may experience brief outages as we roll through the upgrade.</li>
+            <li>We will send reminders as we get closer to the upgrade date. The maintenance window for the upgrade is variable and should take approximately 90 minutes for the control plane nodes and 10 minutes for each worker node.</li>
+        </ul>
+
+        <strong>What should you do to minimize impact?</strong>
+        <ul>
+            <li>You can minimize the impact on your applications by scaling your services to more than one pod. In general, for applications to be able to continue to service clients, they should be scaled.</li>
+            <li>Some pod workloads are not appropriate for scaling, such as a single-instance, non-replicated database using a persistent volume claim. In this situation, a deployment strategy of 'recreate' will ensure the pod is restarted after migration, although a brief outage will be experienced.</li>
+        </ul>
+
+        <strong>For more information, refer to</strong> <a href="https://www.openshift.com/blog/deploying-highly-available-applications-openshift-kubernetes" target="_blank" title="OpenShift HA guide blog">our highly available deployment guide</a>.
+    </p>
+{#else if global_var.template_sub_type == 'upgrade-scheduled-template-rosa-hcp'}
+    <p>
+        <strong>What can you expect?</strong>
+        <ul>
+            <li>Your cluster will remain operational during the upgrade.</li>
+            <li>During the upgrade, the control plane components hosted in the service account will be updated to the required version.</li>
+            <li>The machine pools hosting the applications will not be upgraded. The machine pools must be upgraded separately.</li>
+        </ul>
+
+        <strong>For more information, refer to</strong> our <a href="https://access.redhat.com/documentation/en-us/red_hat_openshift_service_on_aws/4/html/upgrading/rosa-hcp-upgrading" target="_blank" title="Upgrading ROSA with HCP">Documentation</a>.
+    </p>
+{/if}
+
+{#if action.events[0].payload.global_vars.doc_references.orEmpty.size > 0}
+    <p>
+        <b>Need help? Check these resources for more information:</b>
+    </p>
+    <ul>
+        {#each action.events[0].payload.global_vars.doc_references}
+            <li><a href="{it}" target="_blank">{it}</a></li>
+        {/each}
+    </ul>
+{/if}
+{/let}
+{/content-body-section1}
+{#content-title-section2}
+More info
+{/content-title-section2}
+{#content-body-section2}
+<p>
+If you have any questions, please <a href="https://access.redhat.com/support/contact/technicalSupport/" target="_blank" title="Red Hat Support">contact us</a>. Review the <a href="https://access.redhat.com/support/policy/support_process" target="_blank" title="Red Hat support process">support process</a> for guidance on working with Red Hat support.
+</p>
+<p>
+Thank you for choosing Red Hat OpenShift{#switch action.events[0].payload.global_vars.subscription_plan}{#case 'OSD'} Dedicated{#case 'OSDTrial'} Dedicated Trial{#case 'MOA'} Service on AWS{/switch}.
+</p>
+
+{/content-body-section2}
+{/include}
