@@ -1,7 +1,5 @@
 package com.redhat.cloud.notifications.templates.common.secured;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
 import com.redhat.cloud.notifications.EmailTemplatesRendererHelper;
 import com.redhat.cloud.notifications.OcmTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
@@ -9,16 +7,19 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -64,11 +65,6 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
 
     static final List<String> getIdenticalTemplateContentEventTypeNames() {
         return new ArrayList<>(Arrays.asList(CAPACITY_MANAGEMENT, CLUSTER_ACCESS, CLUSTER_ADD_ON, CLUSTER_CONFIGURATION, CLUSTER_NETWORKING, CLUSTER_OWNERSHIP, CLUSTER_SCALING, CLUSTER_SECURITY, CLUSTER_SUBSCRIPTION, GENERAL_NOTIFICATION));
-    }
-
-    @Override
-    protected Boolean useOcmRefactoredTemplates() {
-        return true;
     }
 
     @BeforeEach
