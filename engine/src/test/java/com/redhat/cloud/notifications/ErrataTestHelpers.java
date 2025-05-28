@@ -14,11 +14,15 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 public class ErrataTestHelpers {
 
     public static Action createErrataAction() {
+        return createErrataAction(StringUtils.EMPTY);
+    }
+
+    public static Action createErrataAction(final String eventTypeName) {
         Action emailActionMessage = new Action();
-        emailActionMessage.setBundle(StringUtils.EMPTY);
-        emailActionMessage.setApplication(StringUtils.EMPTY);
+        emailActionMessage.setBundle("subscription-services");
+        emailActionMessage.setApplication("errata-notifications");
         emailActionMessage.setTimestamp(LocalDateTime.of(2022, 10, 3, 15, 22, 13, 25));
-        emailActionMessage.setEventType(StringUtils.EMPTY);
+        emailActionMessage.setEventType(eventTypeName);
         emailActionMessage.setRecipients(List.of());
 
         emailActionMessage.setContext(
