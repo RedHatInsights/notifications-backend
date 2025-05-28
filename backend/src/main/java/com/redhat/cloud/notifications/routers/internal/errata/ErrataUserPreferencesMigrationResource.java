@@ -74,15 +74,15 @@ public class ErrataUserPreferencesMigrationResource {
             .collect(
                 Collectors.toMap(
                     et -> switch (et.getName()) {
-                        case EVENT_TYPE_NAME_BUGFIX -> JSON_VALUE_PREFERENCE_BUGFIX;
-                        case EVENT_TYPE_NAME_ENHANCEMENT -> JSON_VALUE_PREFERENCE_ENHANCEMENT;
-                        case EVENT_TYPE_NAME_SECURITY -> JSON_VALUE_PREFERENCE_SECURITY;
-                        default -> {
-                            Log.errorf("Unable to map event type \"%s\" to any expected preference values that we expect to find in the JSON", et.getName());
+                            case EVENT_TYPE_NAME_BUGFIX -> JSON_VALUE_PREFERENCE_BUGFIX;
+                            case EVENT_TYPE_NAME_ENHANCEMENT -> JSON_VALUE_PREFERENCE_ENHANCEMENT;
+                            case EVENT_TYPE_NAME_SECURITY -> JSON_VALUE_PREFERENCE_SECURITY;
+                            default -> {
+                                Log.errorf("Unable to map event type \"%s\" to any expected preference values that we expect to find in the JSON", et.getName());
 
-                            throw new InternalServerErrorException("A non errata event type was detected. Nothing was executed.");
-                        }
-                    },
+                                throw new InternalServerErrorException("A non errata event type was detected. Nothing was executed.");
+                            }
+                        },
                     // ... to our event types.
                     Function.identity()
                 )
