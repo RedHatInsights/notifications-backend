@@ -15,6 +15,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.util.Map;
 import java.util.TreeMap;
 
+//test comment
+
 @ApplicationScoped
 public class BackendConfig {
 

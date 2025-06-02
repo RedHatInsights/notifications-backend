@@ -5,6 +5,8 @@ import io.quarkus.runtime.Startup;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
+//test comment
+
 @Startup
 public class RunOnBackendStartup {
 
