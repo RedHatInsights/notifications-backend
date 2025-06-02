@@ -189,7 +189,6 @@ public class EngineConfig {
         config.put(toggleDirectEndpointToEventTypeDryRunEnabled, isDirectEndpointToEventTypeDryRunEnabled());
         config.put(toggleUseDirectEndpointToEventTypeEnabled, isUseDirectEndpointToEventTypeEnabled());
         config.put(toggleUseCommonTemplateModuleToRenderEmailsEnabled, isUseCommonTemplateModuleToRenderEmailsEnabled());
-        config.put(toggleUseBetaTemplatesEnabled, isUseBetaTemplatesEnabled(null, UUID.randomUUID()));
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
