@@ -50,7 +50,6 @@ public class SlackConnectorRoutesMessageBlocksFormatTest extends ConnectorRoutes
     protected Predicate checkOutgoingPayload(JsonObject incomingPayload) {
         return exchange -> {
             JsonObject outgoingPayload = new JsonObject(exchange.getIn().getBody(String.class));
-            System.out.println(outgoingPayload);
             boolean textMessageMatch = outgoingPayload.getString("blocks").equals(new JsonObject(EXPECTED_MESSAGE).getString("blocks"));
             if (!testWithoutChannel) {
                 return textMessageMatch && outgoingPayload.getString(ExchangeProperty.CHANNEL).equals(incomingPayload.getString(ExchangeProperty.CHANNEL));
