@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.config;
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
+import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -14,6 +15,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.time.Duration;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
 
 @ApplicationScoped
 public class EngineConfig {
@@ -57,6 +59,7 @@ public class EngineConfig {
     private String toggleDirectEndpointToEventTypeDryRunEnabled;
     private String toggleUseDirectEndpointToEventTypeEnabled;
     private String toggleUseCommonTemplateModuleToRenderEmailsEnabled;
+    private String toggleUseBetaTemplatesEnabled;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -158,6 +161,7 @@ public class EngineConfig {
         toggleDirectEndpointToEventTypeDryRunEnabled = toggleRegistry.register("endpoint-to-event-type-dry-run", true);
         toggleUseDirectEndpointToEventTypeEnabled = toggleRegistry.register("use-endpoint-to-event-type", true);
         toggleUseCommonTemplateModuleToRenderEmailsEnabled = toggleRegistry.register("use-common-template-module-for-emails", true);
+        toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -323,6 +327,18 @@ public class EngineConfig {
             return this.unleash.isEnabled(this.toggleKafkaOutgoingHighVolumeTopic, false);
         } else {
             return this.outgoingKafkaHighVolumeTopicEnabled;
+        }
+    }
+
+    public boolean isUseBetaTemplatesEnabled(final String orgId, final UUID eventTypeId) {
+        if (unleashEnabled) {
+            UnleashContext unleashContext = UnleashContext.builder()
+                .addProperty("orgId", orgId)
+                .addProperty("eventTypeId", eventTypeId.toString())
+                .build();
+            return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContext, false);
+        } else {
+            return false;
         }
     }
 }
