@@ -16,6 +16,8 @@ import java.util.regex.Pattern;
 
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 
+// test comment
+
 @Provider
 @PreMatching
 public class IncomingRequestInterceptor implements ContainerRequestFilter {
