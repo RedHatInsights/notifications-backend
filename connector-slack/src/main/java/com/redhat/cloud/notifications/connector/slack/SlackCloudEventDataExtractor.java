@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.json.JsonException;
 import org.apache.camel.Exchange;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
