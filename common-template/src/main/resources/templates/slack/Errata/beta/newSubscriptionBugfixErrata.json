@@ -11,7 +11,7 @@
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "There are {data.events.size()} bug {#if data.events.size() == 1}fix{#else}fixes{/if} affecting your subscriptions.{#if data.events.size() > 3}\nFirst 3 are:{/if}"
+                "text": "There {#if data.events.size() == 1}is 1 bug fix{#else}are {data.events.size()} bug fixes{/if} affecting your subscriptions.{#if data.events.size() > 3}\nFirst 3 are:{/if}"
             }
         },
         {

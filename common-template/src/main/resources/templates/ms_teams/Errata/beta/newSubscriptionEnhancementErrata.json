@@ -9,7 +9,7 @@
 },
 {
   "type":"TextBlock",
-  "text":"There are {data.events.size()} {#if data.events.size() == 1}enhancement{#else}enhancements{/if} affecting your subscriptions.",
+  "text":"There {#if data.events.size() == 1}is 1 enhancement{#else}are {data.events.size()} enhancements{/if} affecting your subscriptions.",
   "wrap":true
 },
 {#if data.events.size() > 3}

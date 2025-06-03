@@ -8,7 +8,7 @@
     Enhancements
 {/content-title-section1}
 {#content-subtitle-section1}
-    There are {action.events.size()} enhancements affecting your subscriptions.
+    There {#if data.events.size() == 1}is 1 enhancement{#else}are {data.events.size()} enhancements{/if} affecting your subscriptions.
 {/content-subtitle-section1}
 {#content-body-section1}
     <table class="rh-data-table-bordered">
