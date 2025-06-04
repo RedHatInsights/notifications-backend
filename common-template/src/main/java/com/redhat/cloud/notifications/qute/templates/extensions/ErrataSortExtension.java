@@ -41,13 +41,17 @@ public class ErrataSortExtension {
     }
 
     private static int sortById(Map<String, Object> m1, Map<String, Object> m2) {
-        Integer name1 = extractIdIntValue(String.valueOf(m1.get("id")));
-        Integer name2 = extractIdIntValue(String.valueOf(m2.get("id")));
-        return name2.compareTo(name1);
+        Integer id1 = extractIdIntValue(String.valueOf(m1.get("id")));
+        Integer id2 = extractIdIntValue(String.valueOf(m2.get("id")));
+        return id2.compareTo(id1);
     }
 
+    // Id format is like RHSA-2024:0315, we need to extract the numeric part to compare it
     private static int extractIdIntValue(String id) {
-        return Integer.parseInt(id.split("-")[1].replace(":", ""));
+        String yearPlusId = id.split("-")[1];
+        String YearOnly = yearPlusId.split(":")[0];
+        String idOnly = Integer.valueOf(yearPlusId.split(":")[1]).toString();
+        return Integer.parseInt(YearOnly + idOnly);
     }
 }
 
