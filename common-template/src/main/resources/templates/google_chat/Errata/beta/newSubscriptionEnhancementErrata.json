@@ -11,7 +11,7 @@
             "widgets": [
               {
                 "textParagraph": {
-                  "text": "<br>There are {data.events.size()} {#if data.events.size() == 1}enhancement{#else}enhancements{/if} affecting your subscriptions.{#if data.events.size() > 3}<br>First 3 are:{/if}"
+                  "text": "<br>There {#if data.events.size() == 1}is 1 enhancement{#else}are {data.events.size()} enhancements{/if} affecting your subscriptions.{#if data.events.size() > 3}<br>First 3 are:{/if}"
                 }
               },
               {
