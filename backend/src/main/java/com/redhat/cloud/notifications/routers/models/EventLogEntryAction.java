@@ -35,6 +35,9 @@ public class EventLogEntryAction {
     @Nullable
     private Map<String, Object> details;
 
+    @Nullable
+    private Integer recipientsCount;
+
     public UUID getId() {
         return id;
     }
@@ -85,6 +88,14 @@ public class EventLogEntryAction {
 
     public void setDetails(Map<String, Object> details) {
         this.details = details;
+    }
+
+    public Integer getRecipientsCount() {
+        return recipientsCount;
+    }
+
+    public void setRecipientsCount(Integer recipientsCount) {
+        this.recipientsCount = recipientsCount;
     }
 
     @Nullable

@@ -78,6 +78,7 @@ import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.PAGERDUTY;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
+import static com.redhat.cloud.notifications.routers.handlers.event.EventResource.TOTAL_RECIPIENTS;
 import static com.redhat.cloud.notifications.routers.handlers.event.EventResource.toNotificationStatus;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -233,8 +234,8 @@ public class EventResourceTest extends DbIsolatedTest {
         Endpoint endpoint3 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, CAMEL, "SlAcK");
         Endpoint endpoint4 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DRAWER);
         Endpoint endpoint5 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, PAGERDUTY);
-        NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1, NotificationStatus.SUCCESS);
-        NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, NotificationStatus.FAILED_INTERNAL);
+        NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1, NotificationStatus.SUCCESS, "123");
+        NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, NotificationStatus.FAILED_INTERNAL, "I'm not a valid Integer");
         NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, NotificationStatus.SUCCESS);
         NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2, NotificationStatus.SUCCESS);
         NotificationHistory history5 = resourceHelpers.createNotificationHistory(event3, endpoint3, NotificationStatus.SUCCESS);
@@ -974,6 +975,17 @@ public class EventResourceTest extends DbIsolatedTest {
                 assertEquals(historyEntry.get().getEndpointSubType(), eventLogEntryAction.getEndpointSubType());
                 assertEquals(historyEntry.get().isInvocationResult(), eventLogEntryAction.getInvocationResult());
                 assertEquals(EventResource.fromNotificationStatus(historyEntry.get().getStatus()), eventLogEntryAction.getStatus());
+                if (historyEntry.get().getDetails() != null) {
+                    Object totalRecipients = historyEntry.get().getDetails().get(TOTAL_RECIPIENTS);
+                    if (totalRecipients != null) {
+                        try {
+                            Integer recipientsCount = Integer.valueOf((String) totalRecipients);
+                            assertEquals(recipientsCount, eventLogEntryAction.getRecipientsCount());
+                        } catch (NumberFormatException e) {
+                            assertNull(eventLogEntryAction.getRecipientsCount());
+                        }
+                    }
+                }
             }
         }
     }
@@ -1020,8 +1032,8 @@ public class EventResourceTest extends DbIsolatedTest {
         Endpoint endpoint3 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, CAMEL, "SlAcK");
         Endpoint endpoint4 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DRAWER);
         Endpoint endpoint5 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, PAGERDUTY);
-        NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1, NotificationStatus.SUCCESS);
-        NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, NotificationStatus.FAILED_INTERNAL);
+        NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1, NotificationStatus.SUCCESS, "123");
+        NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, NotificationStatus.FAILED_INTERNAL, "I'm not a valid Integer");
         NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, NotificationStatus.SUCCESS);
         NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2, NotificationStatus.SUCCESS);
         NotificationHistory history5 = resourceHelpers.createNotificationHistory(event3, endpoint3, NotificationStatus.SUCCESS);
