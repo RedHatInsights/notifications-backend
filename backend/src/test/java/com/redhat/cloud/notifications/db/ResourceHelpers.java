@@ -41,6 +41,7 @@ import java.util.function.Supplier;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.routers.handlers.event.EventResource.TOTAL_RECIPIENTS;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
@@ -239,6 +240,10 @@ public class ResourceHelpers {
     }
 
     public NotificationHistory createNotificationHistory(Event event, Endpoint endpoint, NotificationStatus status) {
+        return createNotificationHistory(event, endpoint, status, null);
+    }
+
+    public NotificationHistory createNotificationHistory(Event event, Endpoint endpoint, NotificationStatus status, String totalRecipients) {
         NotificationHistory history = new NotificationHistory();
         history.setId(UUID.randomUUID());
         history.setInvocationTime(1L);
@@ -247,6 +252,9 @@ public class ResourceHelpers {
         history.setEndpoint(endpoint);
         history.setEndpointType(endpoint.getType());
         history.setEndpointSubType(endpoint.getSubType());
+        if (totalRecipients != null) {
+            history.setDetails(Map.of(TOTAL_RECIPIENTS, totalRecipients));
+        }
         history.prePersist();
         entityManager.persist(history);
         return history;

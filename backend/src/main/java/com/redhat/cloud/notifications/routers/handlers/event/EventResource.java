@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
@@ -51,6 +52,9 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path(API_NOTIFICATIONS_V_1_0 + "/notifications/events")
 public class EventResource {
+
+    public static final String TOTAL_RECIPIENTS = "total_recipients";
+
     @Inject
     BackendConfig backendConfig;
 
@@ -157,6 +161,7 @@ public class EventResource {
                     if (includeDetails) {
                         action.setDetails(historyEntry.getDetails());
                     }
+                    getRecipientsCount(historyEntry).ifPresent(action::setRecipientsCount);
                     return action;
                 }).collect(Collectors.toList());
             }
@@ -232,5 +237,20 @@ public class EventResource {
         });
 
         return notificationStatusSet;
+    }
+
+    private static Optional<Integer> getRecipientsCount(NotificationHistory notificationHistory) {
+        if (notificationHistory.getDetails() != null) {
+            Object totalRecipients = notificationHistory.getDetails().get(TOTAL_RECIPIENTS);
+            if (totalRecipients != null) {
+                try {
+                    Integer recipientsCount = Integer.valueOf((String) totalRecipients);
+                    return Optional.of(recipientsCount);
+                } catch (NumberFormatException e) {
+                    Log.warnf(e, "Could not parse total_recipients to an Integer [history_id=%s, total_recipients=%s]", notificationHistory.getId(), totalRecipients);
+                }
+            }
+        }
+        return Optional.empty();
     }
 }
