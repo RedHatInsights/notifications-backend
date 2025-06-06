@@ -125,6 +125,8 @@ public class SettingsValueByEventTypeJsonForm {
                 }
                 formEventType.fields.add(field);
             });
+
+            formEventType.fields = formEventType.fields.stream().sorted(Comparator.comparing(eventType -> eventType.label, Comparator.reverseOrder())).toList();
             eventTypes.add(formEventType);
         });
         application.eventTypes =

@@ -50,6 +50,7 @@ public class BackendConfig {
     private String maintenanceModeToggle;
     private String bypassBehaviorGroupMaxCreationLimitToggle;
     private String ignoreSourcesErrorOnEndpointDeleteToggle;
+    private String useCommonTemplateModuleForUserPrefApisToggle;
 
     private static String toggleName(String feature) {
         return String.format("notifications-backend.%s.enabled", feature);
@@ -130,6 +131,7 @@ public class BackendConfig {
         bypassBehaviorGroupMaxCreationLimitToggle = toggleRegistry.register("bypass-behavior-group-max-creation-limit", true);
         ignoreSourcesErrorOnEndpointDeleteToggle = toggleRegistry.register("ignore-sources-error-on-endpoint-delete", true);
         kesselInventoryUseForPermissionsChecksToggle = toggleRegistry.register("kessel-inventory-permissions-checks", true);
+        useCommonTemplateModuleForUserPrefApisToggle = toggleRegistry.register("use-common-template-module-for-user-pref-apis", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -252,6 +254,14 @@ public class BackendConfig {
 
     public String getKesselDomain() {
         return kesselDomain;
+    }
+
+    public boolean isUseCommonTemplateModuleForUserPrefApisToggle() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(useCommonTemplateModuleForUserPrefApisToggle, false);
+        } else {
+            return false;
+        }
     }
 
     public boolean isRBACEnabled() {
