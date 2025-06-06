@@ -12,12 +12,13 @@ import static java.util.Map.entry;
 
 public class DefaultTemplates {
 
+    public static final String INTERNAL_DAILY_DIGEST_BUNDLE = "internal-notifications";
     public static final Map<TemplateDefinition, String> templatesMap = Map.ofEntries(
         // Default Drawer template
         entry(new TemplateDefinition(DRAWER, null, null, null), "Default/defaultBody.md"),
         entry(new TemplateDefinition(MS_TEAMS, null, null, null), "Default/default.json"),
         entry(new TemplateDefinition(GOOGLE_CHAT, null, null, null), "Default/default.json"),
         entry(new TemplateDefinition(SLACK, null, null, null), "Default/default.md"),
-        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, null, null, null), "Common/insightsDailyEmailBody.html")
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, INTERNAL_DAILY_DIGEST_BUNDLE, null, null), "Common/insightsDailyEmailBody.html")
     );
 }
