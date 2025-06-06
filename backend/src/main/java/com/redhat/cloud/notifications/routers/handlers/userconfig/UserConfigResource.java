@@ -15,6 +15,9 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
+import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
 import jakarta.inject.Inject;
@@ -25,6 +28,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -39,6 +43,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
@@ -65,6 +71,9 @@ public class UserConfigResource {
 
     @Inject
     TemplateRepository templateRepository;
+
+    @Inject
+    TemplateService templateService;
 
     @Inject
     BackendConfig backendConfig;
@@ -103,6 +112,11 @@ public class UserConfigResource {
                         if (eventType.isPresent() && !eventType.get().isSubscriptionLocked()) {
                             // for each email subscription
                             eventTypeValue.emailSubscriptionTypes.forEach((subscriptionType, subscribed) -> {
+                                boolean supported = isTemplateSupported(bundleName, applicationName, eventType.get(), subscriptionType);
+
+                                if (!supported) {
+                                    throw new NotFoundException(String.format("Event type '%s' doesn't support '%s' subscription", eventType.get().getId(), subscriptionType.name()));
+                                }
                                 if (subscribed) {
                                     subscriptionRepository.subscribe(
                                         orgId, userName, eventType.get().getId(), subscriptionType
@@ -210,7 +224,8 @@ public class UserConfigResource {
                 eventTypeSettingsValue.subscriptionLocked = eventType.isSubscriptionLocked();
                 for (SubscriptionType subscriptionType : SubscriptionType.values()) {
                     if (backendConfig.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
-                        boolean supported = templateRepository.isSubscriptionTypeSupported(eventType.getId(), subscriptionType);
+                        boolean supported = isTemplateSupported(bundle.getName(), application.getName(), eventType, subscriptionType);
+
                         if (supported) {
                             boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
                             eventTypeSettingsValue.emailSubscriptionTypes.put(subscriptionType, subscribedByDefault);
@@ -230,6 +245,38 @@ public class UserConfigResource {
                 return bundleSettingsValue;
             }).applications.put(application.getName(), applicationSettingsValue);
         }
+    }
+
+    private boolean isTemplateSupported(String bundleName, String applicationName, EventType eventType, SubscriptionType subscriptionType) {
+        boolean supported;
+        if (backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()) {
+            if (!backendConfig.isDrawerEnabled() && subscriptionType == DRAWER) {
+                supported = false;
+            } else {
+                TemplateDefinition templateDefinition = getTemplateDefinition(bundleName, applicationName, eventType.getName(), subscriptionType);
+                supported = templateService.isValidTemplateDefinition(templateDefinition);
+            }
+        } else {
+            supported = templateRepository.isSubscriptionTypeSupported(eventType.getId(), subscriptionType);
+        }
+        return supported;
+    }
+
+    private static TemplateDefinition getTemplateDefinition(final String bundleName, final String applicationName, final String eventTypeName, final SubscriptionType subscriptionType) {
+        IntegrationType integrationType = null;
+        if (subscriptionType == INSTANT) {
+            integrationType = IntegrationType.EMAIL_BODY;
+        } else if (subscriptionType == DAILY) {
+            integrationType = IntegrationType.EMAIL_DAILY_DIGEST_BODY;
+        } else if (subscriptionType == DRAWER) {
+            integrationType = IntegrationType.DRAWER;
+        }
+        return new TemplateDefinition(
+            integrationType,
+            bundleName,
+            applicationName,
+            eventTypeName
+        );
     }
 
     private void patchWithUserPreferencesIfExists(final SettingsValuesByEventType settingsValues, List<EventTypeEmailSubscription> emailSubscriptions) {

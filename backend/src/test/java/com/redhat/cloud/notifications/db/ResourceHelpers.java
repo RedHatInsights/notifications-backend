@@ -34,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -106,8 +107,16 @@ public class ResourceHelpers {
     }
 
     public UUID createEventType(String bundleName, String applicationName, String eventTypeName) {
-        Application app = applicationRepository.getApplication(bundleName, applicationName);
-        return createEventType(app.getId(), eventTypeName, eventTypeName, "new event type")
+        Application application = applicationRepository.getApplication(bundleName, applicationName);
+        if (application == null) {
+            Optional<Bundle> bundle = bundleRepository.findByName(bundleName);
+            Application app = new Application();
+            app.setBundleId(bundle.get().getId());
+            app.setName(applicationName);
+            app.setDisplayName(applicationName);
+            application = applicationRepository.createApp(app);
+        }
+        return createEventType(application.getId(), eventTypeName, eventTypeName, "new event type")
                 .getId();
     }
 

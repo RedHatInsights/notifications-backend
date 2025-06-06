@@ -39,6 +39,7 @@ import static com.redhat.cloud.notifications.processors.email.aggregators.Adviso
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_3;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_4;
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregatorTest.TEST_RULE_6;
+import static com.redhat.cloud.notifications.qute.templates.mapping.DefaultTemplates.INTERNAL_DAILY_DIGEST_BUNDLE;
 import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -93,7 +94,7 @@ public class TestSingleDailyTemplate extends EmailTemplatesRendererHelper {
             .map(Map.Entry::getValue)
             .collect(Collectors.toList());
 
-        TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, null, null, null);
+        TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, INTERNAL_DAILY_DIGEST_BUNDLE, null, null);
 
         Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", result, "orgId", DEFAULT_ORG_ID);
 
