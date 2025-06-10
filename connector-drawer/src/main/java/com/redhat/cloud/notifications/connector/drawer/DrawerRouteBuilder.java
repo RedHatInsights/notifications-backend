@@ -13,7 +13,7 @@ import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBui
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.*;
 import static com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty.RESOLVED_RECIPIENT_LIST;
 import static com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty.USE_SIMPLIFIED_ROUTE;
-import static org.apache.camel.LoggingLevel.INFO;
+import static org.apache.camel.LoggingLevel.DEBUG;
 
 @ApplicationScoped
 public class DrawerRouteBuilder extends EngineToConnectorRouteBuilder {
@@ -56,7 +56,7 @@ public class DrawerRouteBuilder extends EngineToConnectorRouteBuilder {
                         .process(drawerPayloadBuilder)
                         .to(log(getClass().getName()).level("INFO").showHeaders(true).showBody(true))
                         .to(direct(CONNECTOR_TO_DRAWER))
-                        .log(INFO, getClass().getName(), "Sent Drawer notification " +
+                        .log(DEBUG, getClass().getName(), "Sent Drawer notification " +
                             "[orgId=${exchangeProperty." + ORG_ID + "}, historyId=${exchangeProperty." + ID + "}]")
                     .end()
             .end()

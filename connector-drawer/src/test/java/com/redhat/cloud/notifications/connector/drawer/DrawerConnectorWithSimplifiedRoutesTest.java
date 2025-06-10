@@ -52,8 +52,6 @@ import static com.redhat.cloud.notifications.connector.OutgoingCloudEventBuilder
 import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
@@ -83,7 +81,6 @@ class DrawerConnectorWithSimplifiedRoutesTest extends CamelQuarkusTestSupport {
 
     @BeforeEach
     void beforeEach() {
-        when(drawerConnectorConfig.useSimplifiedRoute(anyString())).thenReturn(true);
         saveRoutesMetrics(
             ENGINE_TO_CONNECTOR,
             drawerConnectorConfig.getConnectorName(),

@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.connector.drawer;
 
-import com.redhat.cloud.notifications.connector.drawer.config.DrawerConnectorConfig;
 import com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntryPayload;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerUser;
@@ -30,9 +29,6 @@ public class DrawerProcessor implements Processor {
     static final String RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC = "email.recipients_resolver.response.time";
 
     public static final String DRAWER_CHANNEL = "drawer";
-
-    @Inject
-    DrawerConnectorConfig drawerConnectorConfig;
 
     @Inject
     ExternalRecipientsResolver externalRecipientsResolver;

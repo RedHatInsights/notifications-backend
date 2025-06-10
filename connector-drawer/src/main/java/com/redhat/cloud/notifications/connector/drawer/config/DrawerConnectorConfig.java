@@ -45,9 +45,9 @@ public class DrawerConnectorConfig extends HttpConnectorConfig {
 
     public boolean useSimplifiedRoute(String orgId) {
         if (unleashEnabled) {
-            return unleash.isEnabled(toggleUseSimplifiedRoute, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+            return unleash.isEnabled(toggleUseSimplifiedRoute, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), true);
         } else {
-            return false;
+            return true;
         }
     }
 }
