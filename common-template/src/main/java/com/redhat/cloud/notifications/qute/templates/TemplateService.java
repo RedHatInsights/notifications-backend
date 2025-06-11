@@ -166,4 +166,13 @@ public class TemplateService {
         return objectMapper
             .convertValue(action.getContext(), new TypeReference<Map<String, Object>>() { });
     }
+
+    public boolean isValidTemplateDefinition(final TemplateDefinition config) {
+        try {
+            compileTemplate(config);
+        } catch (TemplateNotFoundException e) {
+            return false;
+        }
+        return true;
+    }
 }

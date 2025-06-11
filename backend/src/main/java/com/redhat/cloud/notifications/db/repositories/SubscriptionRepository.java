@@ -51,7 +51,7 @@ public class SubscriptionRepository {
     @Transactional
     void updateSubscription(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType, boolean subscribed) {
 
-        if (subscribed) {
+        if (subscribed && !backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()) {
             checkIfSubscriptionTypeIsSupportedForCurrentEventType(eventTypeId, subscriptionType);
         }
 
