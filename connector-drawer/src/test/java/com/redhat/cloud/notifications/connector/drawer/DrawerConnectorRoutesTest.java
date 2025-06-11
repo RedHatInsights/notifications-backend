@@ -12,13 +12,14 @@ import com.redhat.cloud.notifications.connector.drawer.model.DrawerUser;
 import com.redhat.cloud.notifications.connector.drawer.model.RecipientSettings;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
 import org.apache.camel.builder.AdviceWithRouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockserver.mock.action.ExpectationResponseCallback;
@@ -35,13 +36,15 @@ import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
 
-    @Inject
+    @InjectSpy
     DrawerConnectorConfig drawerConnectorConfig;
 
     @Override
@@ -80,6 +83,11 @@ class DrawerConnectorRoutesTest extends ConnectorRoutesTest {
     protected Predicate checkOutgoingPayload(JsonObject incomingPayload) {
         // Not applicable on drawer use case
         return null;
+    }
+
+    @BeforeEach
+    void beforeEach() {
+        when(drawerConnectorConfig.useSimplifiedRoute(anyString())).thenReturn(false);
     }
 
     final String RECIPIENTS_RESOLVER_EXCEPTION_MESSAGE = "HTTP operation failed invoking http://";
