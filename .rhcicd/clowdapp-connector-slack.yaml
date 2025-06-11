@@ -28,7 +28,7 @@ objects:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}
       webServices:
-        private:
+        public:
           enabled: true
       podSpec:
         image: ${IMAGE}:${IMAGE_TAG}
@@ -166,8 +166,8 @@ parameters:
 - name: NOTIFICATIONS_UNLEASH_ENABLED
   value: "false"
 - name: QUARKUS_HTTP_PORT
-  description: Quarkus HTTP server port, defaulting to the default Clowder private port
-  value: "9000"
+  description: Quarkus HTTP server port
+  value: "8000"
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
   description: Amount of time to allow the CloudWatch client to complete the execution of an API call expressed with the ISO-8601 duration format PnDTnHnMn.nS.
   value: PT30S
