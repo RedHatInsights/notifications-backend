@@ -5867,7 +5867,7 @@ data:
                 "axisLabel": "",
                 "axisPlacement": "auto",
                 "barAlignment": 0,
-                "drawStyle": "line",
+                "drawStyle": "points",
                 "fillOpacity": 0,
                 "gradientMode": "none",
                 "hideFrom": {
@@ -5934,10 +5934,9 @@ data:
                 "type": "prometheus",
                 "uid": "$datasource"
               },
-              "editorMode": "code",
-              "exemplar": true,
-              "expr": "aggregation_time_consumed_seconds_max{}",
-              "legendFormat": "\"{{bundle}}/{{application}}\"",
+              "editorMode": "builder",
+              "expr": "max_over_time(aggregation_time_consumed_seconds_max[10m])",
+              "legendFormat": "{{bundle}}/{{application}}",
               "range": true,
               "refId": "A"
             }
