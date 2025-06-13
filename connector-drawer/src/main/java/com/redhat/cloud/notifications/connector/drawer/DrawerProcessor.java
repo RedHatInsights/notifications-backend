@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.drawer;
 
 import com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty;
+import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntry;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntryPayload;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerUser;
 import com.redhat.cloud.notifications.connector.drawer.model.RecipientSettings;
@@ -8,6 +9,7 @@ import com.redhat.cloud.notifications.connector.drawer.recipients.recipientsreso
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
+import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -15,12 +17,18 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
+import org.eclipse.microprofile.reactive.messaging.Message;
+import java.net.URI;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Set;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.drawer.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
+import static com.redhat.cloud.notifications.connector.drawer.DrawerPayloadBuilder.CE_SPEC_VERSION;
+import static com.redhat.cloud.notifications.connector.drawer.DrawerPayloadBuilder.CE_TYPE;
+import static java.time.ZoneOffset.UTC;
 import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
@@ -51,8 +59,7 @@ public class DrawerProcessor implements Processor {
         } else {
             // send to kafka chrome service
             final DrawerEntryPayload entryPayloadModel = exchange.getProperty(ExchangeProperty.DRAWER_ENTRY_PAYLOAD, DrawerEntryPayload.class);
-            JsonObject drawerPayload = DrawerPayloadBuilder.buildDrawerPayload(entryPayloadModel, recipientsList);
-            emitter.send(drawerPayload);
+            emitter.send(buildMessage(entryPayloadModel, recipientsList));
         }
     }
 
@@ -75,5 +82,26 @@ public class DrawerProcessor implements Processor {
 
         exchange.setProperty(TOTAL_RECIPIENTS_KEY, recipientsList.size());
         return recipientsList;
+    }
+
+    public static Message<JsonObject> buildMessage(final DrawerEntryPayload entryPayloadModel, final Set<String> recipients) {
+        DrawerEntry drawerEntry = new DrawerEntry();
+        drawerEntry.setPayload(entryPayloadModel);
+        drawerEntry.setUsernames(recipients);
+        JsonObject myPayload = JsonObject.mapFrom(drawerEntry);
+
+        OutgoingCloudEventMetadata<String> cloudEventMetadata = OutgoingCloudEventMetadata.<String>builder()
+            .withId(entryPayloadModel.getEventId().toString())
+            .withType(CE_TYPE)
+            .withSpecVersion(CE_SPEC_VERSION)
+            .withDataContentType("application/json")
+            .withSource(URI.create("urn:redhat:source:notifications:drawer"))
+            .withTimestamp(ZonedDateTime.now(UTC))
+            .build();
+
+        Log.debugf("Built message %s", myPayload);
+
+        return Message.of(myPayload)
+            .addMetadata(cloudEventMetadata);
     }
 }
