@@ -13,6 +13,8 @@ import com.redhat.cloud.notifications.connector.drawer.model.RecipientSettings;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
+import io.smallrye.reactive.messaging.ce.impl.DefaultOutgoingCloudEventMetadata;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import io.smallrye.reactive.messaging.memory.InMemorySink;
 import io.vertx.core.json.JsonArray;
@@ -252,14 +254,14 @@ class DrawerConnectorWithSimplifiedRoutesTest extends CamelQuarkusTestSupport {
 
         //inMemoryToCamelSink.
         for (Message<JsonObject> message : inMemoryToCamelSink.received()) {
-            JsonObject payload = message.getPayload();
-            assertEquals("com.redhat.console.notifications.drawer", payload.getString("type"));
-            assertEquals("1.0.2", payload.getString("specversion"));
-            assertNotNull(payload.getString("id"));
-            assertEquals("urn:redhat:source:notifications:drawer", payload.getString("source"));
-            assertNotNull(payload.getString("time"));
+            OutgoingCloudEventMetadata<JsonObject> cloudEventMetadata  = message.getMetadata().get(DefaultOutgoingCloudEventMetadata.class).get();
+            assertEquals("com.redhat.console.notifications.drawer", cloudEventMetadata.getType());
+            assertEquals("1.0.2", cloudEventMetadata.getSpecVersion());
+            assertNotNull(cloudEventMetadata.getId());
+            assertEquals("urn:redhat:source:notifications:drawer", cloudEventMetadata.getSource().toString());
+            assertNotNull(cloudEventMetadata.getTimeStamp());
 
-            JsonObject data = payload.getJsonObject("data");
+            JsonObject data = message.getPayload();
 
             assertEquals(expectedNumberOfUsers, data.getJsonArray("usernames").size());
 
