@@ -90,7 +90,7 @@ public class DrawerProcessor implements Processor {
         drawerEntry.setUsernames(recipients);
         JsonObject myPayload = JsonObject.mapFrom(drawerEntry);
 
-        OutgoingCloudEventMetadata<String> cloudEventMetadata = OutgoingCloudEventMetadata.<String>builder()
+        OutgoingCloudEventMetadata<JsonObject> cloudEventMetadata = OutgoingCloudEventMetadata.<JsonObject>builder()
             .withId(entryPayloadModel.getEventId().toString())
             .withType(CE_TYPE)
             .withSpecVersion(CE_SPEC_VERSION)
