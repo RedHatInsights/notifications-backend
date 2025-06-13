@@ -71,8 +71,9 @@
         <failsafe.version>3.3.2</failsafe.version>
 
         <mockserver-netty-no-dependencies.version>5.15.0</mockserver-netty-no-dependencies.version>
+        <mockserver-netty.version>5.15.0</mockserver-netty.version>
 
-        <insights-notification-schemas-java.version>0.22</insights-notification-schemas-java.version>
+        <insights-notification-schemas-java.version>0.23</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>2.7.1</clowder-quarkus-config-source.version>
 
         <quarkus-logging-cloudwatch.version>6.13.0</quarkus-logging-cloudwatch.version>
@@ -82,7 +83,7 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.23.3</quarkus.platform.version>
-        <redhat.event-schemas.version>1.4.11</redhat.event-schemas.version>
+        <redhat.event-schemas.version>1.4.12</redhat.event-schemas.version>
 
         <sonar.maven.plugin.version>5.1.0.4751</sonar.maven.plugin.version>
         <jacoco.output.directory>${project.build.directory}/jacoco-report</jacoco.output.directory>
