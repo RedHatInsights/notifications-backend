@@ -92,7 +92,7 @@ public class ValidationResource {
         } catch (ParsingException parsingException) {
             MessageValidationResponse responseMessage = new MessageValidationResponse();
             for (ValidationMessage message : parsingException.getValidationMessages()) {
-                responseMessage.addError(message.getPath(), message.getMessage());
+                responseMessage.addError(message.getProperty(), message.getMessage());
             }
             return Response.status(BAD_REQUEST).entity(responseMessage).build();
         }
@@ -122,7 +122,7 @@ public class ValidationResource {
         } catch (ConsoleCloudEventValidationException exception) {
             MessageValidationResponse responseMessage = new MessageValidationResponse();
             for (ValidationMessage message : exception.getValidationMessages()) {
-                responseMessage.addError(message.getPath(), message.getMessage());
+                responseMessage.addError(message.getProperty(), message.getMessage());
             }
             return Response.status(BAD_REQUEST).entity(responseMessage).build();
         }
