@@ -209,8 +209,8 @@
         </dependency>
         <dependency>
             <groupId>org.mock-server</groupId>
-            <artifactId>mockserver-netty-no-dependencies</artifactId>
-            <version>${mockserver-netty-no-dependencies.version}</version>
+            <artifactId>mockserver-netty</artifactId>
+            <version>${mockserver-netty.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

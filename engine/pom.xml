@@ -179,8 +179,22 @@
         </dependency>
         <dependency>
             <groupId>org.mock-server</groupId>
-            <artifactId>mockserver-netty-no-dependencies</artifactId>
-            <version>${mockserver-netty-no-dependencies.version}</version>
+            <artifactId>mockserver-netty</artifactId>
+            <version>${mockserver-netty.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- io.swagger.core.v3:swagger-models is requested by org.mock-server:mockserver-netty -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-models</artifactId>
+            <version>${swagger-v3-core.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- com.github.fge:jackson-coreutils is requested by org.mock-server:mockserver-netty -->
+        <dependency>
+            <groupId>com.github.fge</groupId>
+            <artifactId>jackson-coreutils</artifactId>
+            <version>1.8</version>
             <scope>test</scope>
         </dependency>
         <dependency>
