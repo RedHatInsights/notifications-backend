@@ -54,7 +54,7 @@ objects:
             path: /q/health/ready
             port: ${{QUARKUS_HTTP_PORT}}
             scheme: HTTP
-          initialDelaySeconds: 40
+          initialDelaySeconds: ${{READINESS_INITIAL_DELAY}}
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
@@ -64,7 +64,7 @@ objects:
             path: /q/health/live
             port: ${{QUARKUS_HTTP_PORT}}
             scheme: HTTP
-          initialDelaySeconds: 40
+          initialDelaySeconds: ${{LIVENESS_INITIAL_DELAY}}
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
@@ -262,8 +262,11 @@ parameters:
 - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
   description: Optional maximum size of the log events queue. If this is not set, the queue will have a capacity of Integer#MAX_VALUE.
   value: "100000"
-
 - name: SENTRY_DSN
   description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED
   value: "false"
+- name: READINESS_INITIAL_DELAY
+  value: "40"
+- name: LIVENESS_INITIAL_DELAY
+  value: "40"
