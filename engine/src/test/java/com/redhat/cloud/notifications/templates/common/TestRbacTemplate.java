@@ -6,8 +6,9 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,11 +32,24 @@ public class TestRbacTemplate extends EmailTemplatesRendererHelper {
     static final String REQUEST_ACCESS = "request-access";
     static final String RH_TAM_ACCESS_REQUESTED = "rh-new-tam-request-created";
 
-    static String[] RBAC_EVENT_TYPE_NAMES() {
-        return new String[]{RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED,
-            CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS,
-            CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM,
-            REQUEST_ACCESS, RH_TAM_ACCESS_REQUESTED};
+    static Stream<Arguments> RBAC_EVENT_TYPE_NAMES() {
+        return Stream.of(
+            Arguments.of(RH_NEW_ROLE_AVAILABLE, "New Red Hat role available"),
+            Arguments.of(RH_PLATFORM_DEFAULT_ROLE_UPDATED, "Red Hat role in platform default access group updated"),
+            Arguments.of(RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, "Red Hat role not in platform default access group updated"),
+            Arguments.of(CUSTOM_ROLE_CREATED, "Custom role created"),
+            Arguments.of(CUSTOM_ROLE_UPDATED, "Custom role updated"),
+            Arguments.of(CUSTOM_ROLE_DELETED, "Custom role deleted"),
+            Arguments.of(RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, "New Red Hat role added to platform default access group"),
+            Arguments.of(RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS, "Red Hat role removed from platform default access group"),
+            Arguments.of(CUSTOM_DEFAULT_ACCESS_UPDATED, "Custom platform default access group updated"),
+            Arguments.of(GROUP_CREATED, "Group created"),
+            Arguments.of(GROUP_UPDATED, "Group updated"),
+            Arguments.of(GROUP_DELETED, "Group deleted"),
+            Arguments.of(PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM, "Platform default access group turned into custom"),
+            Arguments.of(REQUEST_ACCESS, "Request access"),
+            Arguments.of(RH_TAM_ACCESS_REQUESTED, "New TAM access request created")
+        );
     }
 
     @Override
@@ -49,15 +63,20 @@ public class TestRbacTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(RBAC_EVENT_TYPE_NAMES());
+    protected String getBundleDisplayName() {
+        return "Console";
+    }
+
+    @Override
+    protected String getAppDisplayName() {
+        return "User Access";
     }
 
     @MethodSource("RBAC_EVENT_TYPE_NAMES")
     @ParameterizedTest
-    void shouldTestAllEventTypeTemplateTitles(String eventType) {
+    void shouldTestAllEventTypeTemplateTitles(String eventType, String eventTypeDispName) {
         Action action = RbacTestHelpers.createRbacAction();
-
+        eventTypeDisplayName = eventTypeDispName;
         String result = generateEmailSubject(eventType, action);
         testTitle(eventType, result);
     }
@@ -74,13 +93,13 @@ public class TestRbacTemplate extends EmailTemplatesRendererHelper {
     private void testTitle(String eventType, String result) {
         switch (eventType) {
             case RH_NEW_ROLE_AVAILABLE:
-                assertEquals("Instant notification - Red Hat now provides a new role - User Access - Console", result);
+                assertEquals("Instant notification - New Red Hat role available - User Access - Console", result);
                 break;
             case RH_PLATFORM_DEFAULT_ROLE_UPDATED:
-                assertEquals("Instant notification - Platform default role updated by Red Hat - User Access - Console", result);
+                assertEquals("Instant notification - Red Hat role in platform default access group updated - User Access - Console", result);
                 break;
             case RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED:
-                assertEquals("Instant notification - Role updated by Red Hat - User Access - Console", result);
+                assertEquals("Instant notification - Red Hat role not in platform default access group updated - User Access - Console", result);
                 break;
             case CUSTOM_ROLE_CREATED:
                 assertEquals("Instant notification - Custom role created - User Access - Console", result);
@@ -92,25 +111,25 @@ public class TestRbacTemplate extends EmailTemplatesRendererHelper {
                 assertEquals("Instant notification - Custom role deleted - User Access - Console", result);
                 break;
             case RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS:
-                assertEquals("Instant notification - Red Hat added a role to platform default access group - User Access - Console", result);
+                assertEquals("Instant notification - New Red Hat role added to platform default access group - User Access - Console", result);
                 break;
             case RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS:
-                assertEquals("Instant notification - Red Hat removed a role from platform default access group - User Access - Console", result);
+                assertEquals("Instant notification - Red Hat role removed from platform default access group - User Access - Console", result);
                 break;
             case CUSTOM_DEFAULT_ACCESS_UPDATED:
-                assertEquals("Instant notification - Custom platform access group updated - User Access - Console", result);
+                assertEquals("Instant notification - Custom platform default access group updated - User Access - Console", result);
                 break;
             case GROUP_CREATED:
-                assertEquals("Instant notification - Custom group created - User Access - Console", result);
+                assertEquals("Instant notification - Group created - User Access - Console", result);
                 break;
             case GROUP_UPDATED:
-                assertEquals("Instant notification - Custom group updated - User Access - Console", result);
+                assertEquals("Instant notification - Group updated - User Access - Console", result);
                 break;
             case GROUP_DELETED:
-                assertEquals("Instant notification - Custom group deleted - User Access - Console", result);
+                assertEquals("Instant notification - Group deleted - User Access - Console", result);
                 break;
             case PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM:
-                assertEquals("Instant notification - Platform default group is turned into custom - User Access - Console", result);
+                assertEquals("Instant notification - Platform default access group turned into custom - User Access - Console", result);
                 break;
             case REQUEST_ACCESS:
                 assertEquals("Instant notification - Request access - User Access - Console", result);

@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.processors.email.aggregators.PatchEmailPay
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,14 +25,15 @@ public class TestPatchTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(NEW_ADVISORY);
+    protected String getAppDisplayName() {
+        return "Patch";
     }
 
     @Test
     public void testNewAdvisoryEmailTitle() {
+        eventTypeDisplayName = "New advisory";
         String result = generateEmailSubject(NEW_ADVISORY, ACTION);
-        assertEquals("Instant notification - New advisories affecting your systems - Patch - Red Hat Enterprise Linux", result);
+        assertEquals("Instant notification - New advisory - Patch - Red Hat Enterprise Linux", result);
     }
 
     @Test

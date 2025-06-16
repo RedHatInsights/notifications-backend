@@ -108,7 +108,6 @@ public class TeamsProcessorTest extends CamelProcessorTest {
 
         // Retrieve the OCM notification and validate that the correct URL is provided.
         JsonObject notification = message.getPayload();
-        System.out.println(notification.getString("message"));
         assertTrue(notification.getString("message").contains(TEAMS_EXPECTED_OCM_MSG_WITH_SUBSCRIPTION_ID));
     }
 
