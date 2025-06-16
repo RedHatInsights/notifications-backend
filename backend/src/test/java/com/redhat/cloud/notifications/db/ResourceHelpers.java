@@ -243,7 +243,7 @@ public class ResourceHelpers {
         return createNotificationHistory(event, endpoint, status, null);
     }
 
-    public NotificationHistory createNotificationHistory(Event event, Endpoint endpoint, NotificationStatus status, String totalRecipients) {
+    public NotificationHistory createNotificationHistory(Event event, Endpoint endpoint, NotificationStatus status, Object totalRecipients) {
         NotificationHistory history = new NotificationHistory();
         history.setId(UUID.randomUUID());
         history.setInvocationTime(1L);

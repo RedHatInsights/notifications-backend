@@ -236,7 +236,7 @@ public class EventResourceTest extends DbIsolatedTest {
         Endpoint endpoint5 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, PAGERDUTY);
         NotificationHistory history1 = resourceHelpers.createNotificationHistory(event1, endpoint1, NotificationStatus.SUCCESS, "123");
         NotificationHistory history2 = resourceHelpers.createNotificationHistory(event1, endpoint2, NotificationStatus.FAILED_INTERNAL, "I'm not a valid Integer");
-        NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, NotificationStatus.SUCCESS);
+        NotificationHistory history3 = resourceHelpers.createNotificationHistory(event2, endpoint1, NotificationStatus.SUCCESS, 123);
         NotificationHistory history4 = resourceHelpers.createNotificationHistory(event3, endpoint2, NotificationStatus.SUCCESS);
         NotificationHistory history5 = resourceHelpers.createNotificationHistory(event3, endpoint3, NotificationStatus.SUCCESS);
         NotificationHistory history6 = resourceHelpers.createNotificationHistory(event1, endpoint4, NotificationStatus.FAILED_INTERNAL);
@@ -978,10 +978,9 @@ public class EventResourceTest extends DbIsolatedTest {
                 if (historyEntry.get().getDetails() != null) {
                     Object totalRecipients = historyEntry.get().getDetails().get(TOTAL_RECIPIENTS);
                     if (totalRecipients != null) {
-                        try {
-                            Integer recipientsCount = Integer.valueOf((String) totalRecipients);
-                            assertEquals(recipientsCount, eventLogEntryAction.getRecipientsCount());
-                        } catch (NumberFormatException e) {
+                        if (totalRecipients instanceof Integer recipientsAsInteger) {
+                            assertEquals(recipientsAsInteger, eventLogEntryAction.getRecipientsCount());
+                        } else {
                             assertNull(eventLogEntryAction.getRecipientsCount());
                         }
                     }
