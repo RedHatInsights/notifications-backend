@@ -243,6 +243,9 @@ public class EventResource {
         if (notificationHistory.getDetails() != null) {
             Object totalRecipients = notificationHistory.getDetails().get(TOTAL_RECIPIENTS);
             if (totalRecipients != null) {
+                if (totalRecipients instanceof Integer recipientsAsInteger) {
+                    return Optional.of(recipientsAsInteger);
+                }
                 try {
                     Integer recipientsCount = Integer.valueOf((String) totalRecipients);
                     return Optional.of(recipientsCount);
