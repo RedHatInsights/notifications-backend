@@ -6,7 +6,6 @@ import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
-import org.apache.hc.core5.http.URIScheme;
 import org.apache.http.ProtocolException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -25,6 +24,8 @@ public class SplunkCloudEventDataExtractor extends CloudEventDataExtractor {
     public static final String SERVICES_COLLECTOR_EVENT = SERVICES_COLLECTOR + EVENT;
     public static final String RAW = "/raw";
     public static final String SERVICES_COLLECTOR_RAW = SERVICES_COLLECTOR + RAW;
+    private static final String HTTP_SCHEME = "http";
+    private static final String HTTPS_SCHEME = "https";
 
     @Inject
     AuthenticationDataExtractor authenticationDataExtractor;
@@ -55,9 +56,9 @@ public class SplunkCloudEventDataExtractor extends CloudEventDataExtractor {
         try {
             String scheme = (new URI(targetUrl)).getScheme();
 
-            if (URIScheme.HTTP.same(scheme)) {
+            if (HTTP_SCHEME.equalsIgnoreCase(scheme)) {
                 throw new ProtocolException("HTTP protocol is not supported");
-            } else if (!URIScheme.HTTPS.same(scheme)) {
+            } else if (!HTTPS_SCHEME.equalsIgnoreCase(scheme)) {
                 throw new IllegalArgumentException("URL validation failed");
             }
             // handle case where url is null (should never happen)

@@ -6,7 +6,6 @@ import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
-import org.apache.hc.core5.http.URIScheme;
 import org.apache.http.ProtocolException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -20,6 +19,8 @@ import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProper
 public class ServiceNowCloudEventDataExtractor extends CloudEventDataExtractor {
 
     public static final String NOTIF_METADATA = "notif-metadata";
+    private static final String HTTP_SCHEME = "http";
+    private static final String HTTPS_SCHEME = "https";
 
     @Inject
     AuthenticationDataExtractor authenticationDataExtractor;
@@ -49,9 +50,9 @@ public class ServiceNowCloudEventDataExtractor extends CloudEventDataExtractor {
         try {
             String scheme = (new URI(targetUrl)).getScheme();
 
-            if (URIScheme.HTTP.same(scheme)) {
+            if (HTTP_SCHEME.equalsIgnoreCase(scheme)) {
                 throw new ProtocolException("HTTP protocol is not supported");
-            } else if (!URIScheme.HTTPS.same(scheme)) {
+            } else if (!HTTPS_SCHEME.equalsIgnoreCase(scheme)) {
                 throw new IllegalArgumentException("URL validation failed");
             }
             // handle case where url is null (should never happen)
