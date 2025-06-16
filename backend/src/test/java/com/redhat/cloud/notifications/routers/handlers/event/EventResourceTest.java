@@ -981,12 +981,7 @@ public class EventResourceTest extends DbIsolatedTest {
                         if (totalRecipients instanceof Integer recipientsAsInteger) {
                             assertEquals(recipientsAsInteger, eventLogEntryAction.getRecipientsCount());
                         } else {
-                            try {
-                                Integer recipientsCount = Integer.valueOf((String) totalRecipients);
-                                assertEquals(recipientsCount, eventLogEntryAction.getRecipientsCount());
-                            } catch (NumberFormatException e) {
-                                assertNull(eventLogEntryAction.getRecipientsCount());
-                            }
+                            assertNull(eventLogEntryAction.getRecipientsCount());
                         }
                     }
                 }

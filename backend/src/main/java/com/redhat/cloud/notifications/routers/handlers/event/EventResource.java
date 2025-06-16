@@ -246,12 +246,7 @@ public class EventResource {
                 if (totalRecipients instanceof Integer recipientsAsInteger) {
                     return Optional.of(recipientsAsInteger);
                 }
-                try {
-                    Integer recipientsCount = Integer.valueOf((String) totalRecipients);
-                    return Optional.of(recipientsCount);
-                } catch (NumberFormatException e) {
-                    Log.warnf(e, "Could not parse total_recipients to an Integer [history_id=%s, total_recipients=%s]", notificationHistory.getId(), totalRecipients);
-                }
+                Log.warnf("total_recipients field must be an Integer [history_id=%s, total_recipients=%s]", notificationHistory.getId(), totalRecipients);
             }
         }
         return Optional.empty();
