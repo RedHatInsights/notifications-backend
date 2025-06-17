@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.openapi;
 
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.reprezen.kaizen.oasparser.OpenApi3Parser;
+import com.reprezen.kaizen.oasparser.OpenApiParser;
 import com.reprezen.kaizen.oasparser.model3.OpenApi3;
 import com.reprezen.kaizen.oasparser.model3.Operation;
 import com.reprezen.kaizen.oasparser.model3.Path;
@@ -17,6 +18,7 @@ import io.vertx.core.json.JsonObject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
@@ -24,6 +26,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,12 +61,29 @@ public class OpenApiTest {
     @ConfigProperty(name = "quarkus.smallrye-openapi.security-scheme-name", defaultValue = "SecurityScheme")
     String securitySchemeName;
 
+    private Optional<OpenApi3> getModelFromUrl(URL url) throws Exception {
+        try {
+            OpenApi3 model = new OpenApi3Parser().parse(url, true);
+            return Optional.of(model);
+        } catch (OpenApiParser.OpenApiParserException e) {
+            if (!url.toString().contains("/private/v2")) {
+                throw e;
+            }
+        }
+        return Optional.empty();
+    }
+
     @Test
     public void validateOpenApi() throws Exception {
         List<URL> urls = buildApiUrls(true);
 
         for (URL url : urls) {
-            OpenApi3 model = new OpenApi3Parser().parse(url, true);
+            final Optional<OpenApi3> optModel = getModelFromUrl(url);
+            if (optModel.isEmpty()) {
+                continue;
+            }
+            final OpenApi3 model = optModel.get();
+
             Log.infof("testing api %s", url);
             if (!model.isValid()) {
                 for (ValidationResults.ValidationItem item : model.getValidationItems()) {
@@ -91,7 +111,11 @@ public class OpenApiTest {
         List<URL> urls = buildApiUrls(false);
 
         for (URL url: urls) {
-            final OpenApi3 model = new OpenApi3Parser().parse(url, true);
+            final Optional<OpenApi3> optModel = getModelFromUrl(url);
+            if (optModel.isEmpty()) {
+                continue;
+            }
+            final OpenApi3 model = optModel.get();
 
             // Loop through all the paths...
             for (final var pathEntry : model.getPaths().entrySet()) {
@@ -125,6 +149,23 @@ public class OpenApiTest {
     }
 
     @Test
+    void testPrivateV2DontExist() {
+        given()
+            .accept("application/json")
+            .when()
+            .get("/api/private/v2.0/openapi.json")
+            .then()
+            .statusCode(404);
+
+        given()
+            .accept("application/json")
+            .when()
+            .get("/api/private/v2/openapi.json")
+            .then()
+            .statusCode(404);
+    }
+
+    @Test
     void exportOpenApiFile() throws Exception {
 
         List<URL> urls = buildApiUrls(true);
@@ -134,6 +175,11 @@ public class OpenApiTest {
                 java.nio.file.Path path = Paths.get("./target/" + url.getPath());
                 Files.createDirectories(path.getParent());
                 Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                if (url.toString().contains("/private/v2")) {
+                    continue;
+                }
+                throw e;
             }
         }
     }
