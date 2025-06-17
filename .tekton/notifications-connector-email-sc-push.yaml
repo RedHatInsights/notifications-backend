@@ -22,7 +22,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/hcc-integrations-tenant/notifications-sc/notifications-connector-email-sc:{{revision}}
+    value: quay.io/redhat-user-workloads/hcc-fr-tenant/hcc-integrations-tenant/notifications-sc/notifications-connector-email-sc:{{revision}}
   - name: dockerfile
     value: ./docker/Dockerfile.notifications-connector-email.jvm
   - name: path-context
