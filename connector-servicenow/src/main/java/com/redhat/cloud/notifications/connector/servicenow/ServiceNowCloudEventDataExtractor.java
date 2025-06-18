@@ -6,22 +6,21 @@ import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
-import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.ProtocolException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TARGET_URL_NO_SCHEME;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TRUST_ALL;
-import static org.apache.commons.validator.routines.UrlValidator.ALLOW_LOCAL_URLS;
 
 @ApplicationScoped
 public class ServiceNowCloudEventDataExtractor extends CloudEventDataExtractor {
 
     public static final String NOTIF_METADATA = "notif-metadata";
-
-    private static final UrlValidator HTTP_URL_VALIDATOR = new UrlValidator(new String[] {"http"}, ALLOW_LOCAL_URLS);
-    private static final UrlValidator HTTPS_URL_VALIDATOR = new UrlValidator(new String[] {"https"}, ALLOW_LOCAL_URLS);
+    private static final String HTTP_SCHEME = "http";
+    private static final String HTTPS_SCHEME = "https";
 
     @Inject
     AuthenticationDataExtractor authenticationDataExtractor;
@@ -48,10 +47,17 @@ public class ServiceNowCloudEventDataExtractor extends CloudEventDataExtractor {
 
     private void validateTargetUrl(Exchange exchange) throws Exception {
         String targetUrl = exchange.getProperty(TARGET_URL, String.class);
-        if (HTTP_URL_VALIDATOR.isValid(targetUrl)) {
-            throw new ProtocolException("HTTP protocol is not supported");
-        } else if (!HTTPS_URL_VALIDATOR.isValid(targetUrl)) {
-            throw new IllegalArgumentException("URL validation failed");
+        try {
+            String scheme = (new URI(targetUrl)).getScheme();
+
+            if (HTTP_SCHEME.equalsIgnoreCase(scheme)) {
+                throw new ProtocolException("HTTP protocol is not supported");
+            } else if (!HTTPS_SCHEME.equalsIgnoreCase(scheme)) {
+                throw new IllegalArgumentException("URL validation failed");
+            }
+            // handle case where url is null (should never happen)
+        } catch (URISyntaxException | NullPointerException e) {
+            throw new IllegalArgumentException("Invalid target URL: " + targetUrl);
         }
     }
 }

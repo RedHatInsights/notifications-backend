@@ -66,13 +66,6 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Target URL validation -->
-        <dependency>
-            <groupId>commons-validator</groupId>
-            <artifactId>commons-validator</artifactId>
-            <version>1.9.0</version>
-        </dependency>
-
         <!-- Scope: test -->
         <!-- Some test dependencies are declared in the "profiles" section of this POM. -->
 
