@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.routers.handlers.userconfig;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.CrudTestHelpers;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
@@ -12,13 +11,10 @@ import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
-import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
-import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
+import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.SubscriptionType;
-import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
@@ -28,19 +24,14 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.http.Header;
-import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceException;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.NotFoundException;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,14 +41,12 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createBundle;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createEventType;
-import static com.redhat.cloud.notifications.CrudTestHelpers.createInstantEmailTemplate;
-import static com.redhat.cloud.notifications.CrudTestHelpers.createTemplate;
-import static com.redhat.cloud.notifications.CrudTestHelpers.deleteAggregationEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.deleteBundle;
-import static com.redhat.cloud.notifications.CrudTestHelpers.deleteInstantEmailTemplate;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.qute.templates.mapping.Rhel.MALWARE_APP_NAME;
+import static com.redhat.cloud.notifications.qute.templates.mapping.Rhel.MALWARE_DETECTED_MALWARE;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static java.util.Collections.emptyList;
@@ -65,7 +54,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -74,15 +62,12 @@ import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class UserConfigResourceTest extends DbIsolatedTest {
+public class UserConfigResourceTemplateModuleTest extends DbIsolatedTest {
 
     static final String PATH_EVENT_TYPE_PREFERENCE_API = TestConstants.API_NOTIFICATIONS_V_1_0 + "/user-config/notification-event-type-preference";
 
     @InjectMock
     BackendConfig backendConfig;
-
-    @Inject
-    SubscriptionRepository subscriptionRepository;
 
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
@@ -94,13 +79,13 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     ApplicationRepository applicationRepository;
 
     @Inject
-    EventTypeRepository eventTypeRepository;
-
-    @Inject
     ResourceHelpers resourceHelpers;
 
-    @InjectMock
+    @InjectSpy
     TemplateService templateService;
+
+    @InjectSpy
+    TemplateRepository templateRepository;
 
     record TestRecordNameAndDisplayName(String name, String displayName) { }
 
@@ -109,21 +94,23 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     @BeforeEach
     void beforeEach() {
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
-        when(backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()).thenReturn(false);
+        when(backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()).thenReturn(true);
     }
 
     @AfterEach
     void afterEach() {
-        verifyNoInteractions(templateService);
+        verifyNoInteractions(templateRepository);
     }
 
     private SettingsValueByEventTypeJsonForm.Application rhelPolicyForm(SettingsValueByEventTypeJsonForm settingsValuesByEventType) {
-        for (String bundleName : settingsValuesByEventType.bundles.keySet()) {
-            if (settingsValuesByEventType.bundles.get(bundleName).applications.containsKey("policies")) {
-                Assertions.assertEquals("Red Hat Enterprise Linux", settingsValuesByEventType.bundles.get(bundleName).label, "unexpected label for the bundle");
-                Assertions.assertEquals("Policies", settingsValuesByEventType.bundles.get(bundleName).applications.get("policies").label, "unexpected label for the application");
+        return rhelAppForm(settingsValuesByEventType, "policies");
+    }
 
-                return settingsValuesByEventType.bundles.get(bundleName).applications.get("policies");
+    private SettingsValueByEventTypeJsonForm.Application rhelAppForm(SettingsValueByEventTypeJsonForm settingsValuesByEventType, String appName) {
+        for (String bundleName : settingsValuesByEventType.bundles.keySet()) {
+            if (settingsValuesByEventType.bundles.get(bundleName).applications.containsKey(appName)) {
+                Assertions.assertEquals("Red Hat Enterprise Linux", settingsValuesByEventType.bundles.get(bundleName).label, "unexpected label for the bundle");
+                return settingsValuesByEventType.bundles.get(bundleName).applications.get(appName);
             }
         }
         return null;
@@ -179,7 +166,12 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // to be able to return all event types without adding one template to each event types,
         // we need to enable the default template feature.
-        when(backendConfig.isDefaultTemplateEnabled()).thenReturn(true);
+        when(templateService.isDefaultEmailTemplateEnabled()).thenReturn(true);
+        templateService.init();
+
+        // hide policy app
+        EventType policyTriggered = resourceHelpers.getEventType("rhel", "policies", "policy-triggered");
+        //applicationRepository.updateEventTypeVisibility(policyTriggered.getId(), false);
 
         Map<TestRecordNameAndDisplayName, List<TestRecordNameAndDisplayName>> bundleAndApps = Map.of(
             new TestRecordNameAndDisplayName("bundle-name1", "zbundle"),        // declare a bundle
@@ -219,11 +211,13 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         // We want to validate bundles and apps orders returned as a json string
         String mappedString = mapper.writeValueAsString(settingsValuesByEventType);
-        final String RESULT = "{\"bundles\":{\"bundle-name2\":{\"applications\":{\"app-name3\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name2].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname\"},\"app-name2\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name2].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname3\"},\"app-name1\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name2].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appnamez\"}},\"label\":\"abundle\"},\"bundle-name3\":{\"applications\":{\"app-name3\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name3].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"a-appname\"},\"app-name1\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name3].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"e-appname\"},\"app-name2\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name3].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"r-appname\"}},\"label\":\"bbundle\"},\"rhel\":{\"applications\":{\"policies\":{\"eventTypes\":[{\"name\":\"policy-triggered\",\"label\":\"Policy triggered\",\"fields\":[{\"name\":\"bundles[rhel].applications[policies].eventTypes[policy-triggered].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"Policies\"}},\"label\":\"Red Hat Enterprise Linux\"},\"bundle-name1\":{\"applications\":{\"app-name1\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name1].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname1\"},\"app-name3\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name1].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname3\"},\"app-name2\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name1].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname4\"}},\"label\":\"zbundle\"}}}";
+        final String RESULT = "{\"bundles\":{\"bundle-name2\":{\"applications\":{\"app-name3\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name2].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname\"},\"app-name2\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name2].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname3\"},\"app-name1\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name2].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appnamez\"}},\"label\":\"abundle\"},\"bundle-name3\":{\"applications\":{\"app-name3\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name3].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"a-appname\"},\"app-name1\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name3].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"e-appname\"},\"app-name2\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name3].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"r-appname\"}},\"label\":\"bbundle\"},\"rhel\":{\"applications\":{\"policies\":{\"eventTypes\":[{\"name\":\"policy-triggered\",\"label\":\"Policy triggered\",\"fields\":[{\"name\":\"bundles[rhel].applications[policies].eventTypes[policy-triggered].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false},{\"name\":\"bundles[rhel].applications[policies].eventTypes[policy-triggered].emailSubscriptionTypes[DAILY]\",\"label\":\"Daily digest\",\"description\":\"Daily summary of triggered application events in 24 hours span.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"disabled\":false}]}],\"label\":\"Policies\"}},\"label\":\"Red Hat Enterprise Linux\"},\"bundle-name1\":{\"applications\":{\"app-name1\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name1].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname1\"},\"app-name3\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name1].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname3\"},\"app-name2\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name1].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname4\"}},\"label\":\"zbundle\"}}}";
         assertEquals(RESULT, mappedString);
 
         // delete created bundles, apps and event types
         bundleIdsToRemove.forEach(bundleIdToRemove -> deleteBundle(adminIdentity, bundleIdToRemove, true));
+
+        applicationRepository.updateEventTypeVisibility(policyTriggered.getId(), true);
     }
 
 
@@ -249,10 +243,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         String bundle = "rhel";
         String application = "policies";
         String eventType = "policy-triggered";
-
-        String instantTemplateId = createInstantTemplate(bundle, application, eventType);
-        String aggregationTemplateId = CrudTestHelpers.createAggregationTemplate(bundle, application, applicationRepository, adminRole);
-        resourceHelpers.createDrawerTemplate(bundle, application, eventType);
 
         updatePoliciesEventTypeVisibility(false);
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = given()
@@ -358,16 +348,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT, DRAWER), List.of(DAILY, INSTANT, DRAWER));
         }
 
-        // Fail if we have unknown event type on subscribe, but nothing will be added on database
-        assertThrows(NotFoundException.class, () -> {
-            subscriptionRepository.subscribe(orgId, username, UUID.randomUUID(), DAILY);
-        });
-
-        // Fail if we have unknown event type on unsubscribe, but nothing will be added on database
-        assertThrows(PersistenceException.class, () -> {
-            subscriptionRepository.unsubscribe(orgId, username, UUID.randomUUID(), DAILY);
-        });
-
         // does not add if we try to create unknown bundle/apps
         settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", eventType, true, true, true);
         given()
@@ -390,8 +370,12 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         Map<SubscriptionType, Boolean> initialValues = extractNotificationValues(rhelPolicy.eventTypes, "not-found-bundle-2", "not-found-app-2", eventType);
         assertEquals(0, initialValues.size());
 
-        // Does not add event type if is not supported by the templates
-        deleteAggregationTemplate(aggregationTemplateId);
+        // hide policy app
+        EventType policyTriggered = resourceHelpers.getEventType(bundle, application, eventType);
+        applicationRepository.updateEventTypeVisibility(policyTriggered.getId(), false);
+
+        // check for app without daily digest
+        UUID malwareEventTypeId = resourceHelpers.createEventType(bundle, MALWARE_APP_NAME, MALWARE_DETECTED_MALWARE);
         SettingsValueByEventTypeJsonForm settingsValueJsonForm = given()
             .header(identityHeader)
             .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
@@ -399,10 +383,10 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .statusCode(200)
             .contentType(JSON)
             .extract().body().as(SettingsValueByEventTypeJsonForm.class);
-        rhelPolicy = rhelPolicyForm(settingsValueJsonForm);
-        assertNotNull(rhelPolicy, "RHEL policies not found");
+        SettingsValueByEventTypeJsonForm.Application rhelMalware = rhelAppForm(settingsValueJsonForm, MALWARE_APP_NAME);
+        assertNotNull(rhelMalware, String.format("RHEL app %s not found", MALWARE_APP_NAME));
 
-        Map<SubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
+        Map<SubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(rhelMalware.eventTypes, bundle, MALWARE_APP_NAME, MALWARE_DETECTED_MALWARE);
 
         if (backendConfig.isDrawerEnabled()) {
             assertEquals(2, notificationPreferenes.size());
@@ -412,8 +396,13 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         }
         assertTrue(notificationPreferenes.containsKey(INSTANT));
 
+        // delete malware created event type
+        applicationRepository.deleteEventTypeById(malwareEventTypeId);
+
         // Skip the application if there are no supported types
-        deleteInstantTemplate(instantTemplateId);
+        final String APP_WITHOUT_TEMPLATE = "app-without-template";
+        resourceHelpers.createEventType(bundle, APP_WITHOUT_TEMPLATE, MALWARE_DETECTED_MALWARE);
+
         settingsValueJsonForm = given()
             .header(identityHeader)
             .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
@@ -421,17 +410,24 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .statusCode(200)
             .contentType(JSON)
             .extract().body().as(SettingsValueByEventTypeJsonForm.class);
-        rhelPolicy = rhelPolicyForm(settingsValueJsonForm);
+        rhelMalware = rhelAppForm(settingsValueJsonForm, APP_WITHOUT_TEMPLATE);
+
         if (backendConfig.isDrawerEnabled()) {
             // drawer type will be always supported
-            assertNotNull(rhelPolicy);
+            assertNotNull(rhelMalware);
             assertEquals(1, settingsValueJsonForm.bundles.size());
-            notificationPreferenes = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
+            notificationPreferenes = extractNotificationValues(rhelMalware.eventTypes, bundle, APP_WITHOUT_TEMPLATE, MALWARE_DETECTED_MALWARE);
             assertTrue(notificationPreferenes.containsKey(DRAWER));
         } else {
-            assertNull(rhelPolicy, "RHEL policies was not supposed to be here");
+            assertNull(rhelMalware, String.format("RHEL %s was not supposed to be here", APP_WITHOUT_TEMPLATE));
             assertEquals(0, settingsValueJsonForm.bundles.size());
         }
+
+        // Restore policy triggered event type visibility
+        applicationRepository.updateEventTypeVisibility(policyTriggered.getId(), true);
+        // delete malware app
+        UUID malwareAppId = applicationRepository.getApplication(bundle, MALWARE_APP_NAME).getId();
+        applicationRepository.deleteApplication(malwareAppId);
     }
 
     private void updateAndCheckUserPreference(Header identityHeader, String bundle, String application, String eventType, List<SubscriptionType> subscriptionsToSet, List<SubscriptionType> expectedResult) {
@@ -504,34 +500,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
                 .extract().body().as(SettingsValueByEventTypeJsonForm.class);
     }
 
-    private String createInstantTemplate(String bundle, String application, String eventTypeName) {
-        Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-
-        // We also need templates that will be linked with the instant email template tested below.
-        Template subjectTemplate = CrudTestHelpers.buildTemplate("subject-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
-
-        JsonObject subjectJsonTemplate = createTemplate(adminIdentity, subjectTemplate, 200).get();
-        Template bodyTemplate = CrudTestHelpers.buildTemplate("body-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
-        JsonObject bodyJsonTemplate = createTemplate(adminIdentity, bodyTemplate, 200).get();
-
-        Application app = applicationRepository.getApplication(bundle, application);
-        EventType eventType = eventTypeRepository.find(app.getId(), eventTypeName).get();
-
-        InstantEmailTemplate emailTemplate = CrudTestHelpers.buildInstantEmailTemplate(eventType.getId().toString(), subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
-        JsonObject jsonEmailTemplate = createInstantEmailTemplate(adminIdentity, emailTemplate, 200).get();
-        return jsonEmailTemplate.getString("id");
-    }
-
-    private void deleteInstantTemplate(String templateId) {
-        Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        deleteInstantEmailTemplate(adminIdentity, templateId);
-    }
-
-    private void deleteAggregationTemplate(String templateId) {
-        Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        deleteAggregationEmailTemplate(adminIdentity, templateId);
-    }
-
     @Test
     void testSettingsUserPreferenceUsingDeprecatedApi() {
         String accountId = "empty";
@@ -544,9 +512,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         String bundle = "rhel";
         String application = "policies";
         String eventType = "policy-triggered";
-
-        createInstantTemplate(bundle, application, eventType);
-        CrudTestHelpers.createAggregationTemplate(bundle, application, applicationRepository, adminRole);
 
         // Daily and Instant to false
         updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, false, false, true);
@@ -587,7 +552,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         assertTrue(response.contains("service account authentication"));
 
-        //String path = TestConstants.API_NOTIFICATIONS_V_1_0 + "/user-config/notification-event-type-preference";
         SettingsValuesByEventType settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", "eventType", true, true, true);
         response = given()
             .header(identityHeader)

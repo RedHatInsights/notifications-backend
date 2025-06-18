@@ -79,7 +79,7 @@ public class TestSingleDailyTemplate extends EmailTemplatesRendererHelper {
             .map(Map.Entry::getValue)
             .collect(Collectors.toList());
 
-        TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, null, null, null);
+        TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null);
 
         Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", result, "orgId", DEFAULT_ORG_ID);
 

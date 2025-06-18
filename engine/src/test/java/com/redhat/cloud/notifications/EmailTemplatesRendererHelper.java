@@ -101,7 +101,7 @@ public abstract class EmailTemplatesRendererHelper {
             Arrays.stream(sections).filter(e -> !e.isBlank()).toList());
 
         Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", List.of(dailyDigestSection), "orgId", DEFAULT_ORG_ID);
-        TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, null, null, null);
+        TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null);
         return generateEmailFromContextMap(globalDailyTemplateDefinition, mapData, emailPendo);
     }
 
