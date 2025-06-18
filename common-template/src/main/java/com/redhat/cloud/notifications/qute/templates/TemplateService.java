@@ -103,16 +103,17 @@ public class TemplateService {
      * If the template for the selected event type can't be found,
      * it will look for a generic template defined for the selected application,
      * it can't be found, it will look for a generic/system template defined for the selected integration type
-     * @param templateDefinition the template definition
+     * @param originalTemplateDefinition the template definition
      * @return the template instance
      *
      * @throws TemplateNotFoundException
      */
-    private TemplateInstance compileTemplate(TemplateDefinition templateDefinition) throws TemplateNotFoundException {
+    private TemplateInstance compileTemplate(final TemplateDefinition originalTemplateDefinition) throws TemplateNotFoundException {
 
         // try to find template path with full config parameters
-        String path = templatesConfigMap.get(templateDefinition);
+        String path = templatesConfigMap.get(originalTemplateDefinition);
 
+        TemplateDefinition templateDefinition = originalTemplateDefinition;
         // if not found and templateDefinition is a beta version, try to find matching GA version.
         if (path == null && templateDefinition.isBetaVersion()) {
             Log.infof("Beta template definition not found for %s, try to fallback on his GA version", templateDefinition);
@@ -122,10 +123,12 @@ public class TemplateService {
 
         // if not found try to find if a default template for the app exists
         if (path == null) {
+            Log.debugf("No template found for %s", templateDefinition);
             templateDefinition = new TemplateDefinition(templateDefinition.integrationType(), templateDefinition.bundle(), templateDefinition.application(), null);
             path = templatesConfigMap.get(templateDefinition);
             // if not found try to find if a default/system template for the integration type exists
             if (path == null) {
+                Log.debugf("No template found for %s", templateDefinition);
                 templateDefinition = new TemplateDefinition(templateDefinition.integrationType(), null, null, null);
                 path = templatesConfigMap.get(templateDefinition);
                 if (path == null) {
