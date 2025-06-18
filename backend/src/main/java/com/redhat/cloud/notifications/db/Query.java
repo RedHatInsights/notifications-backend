@@ -19,7 +19,7 @@ public class Query {
 
     private static final Pattern SORT_BY_PATTERN = Pattern.compile("^[a-z0-9_-]+(:(asc|desc))?$", CASE_INSENSITIVE);
 
-    private static final int DEFAULT_RESULTS_PER_PAGE = 20;
+    public static final int DEFAULT_RESULTS_PER_PAGE = 20;
 
     @QueryParam("limit")
     @DefaultValue(DEFAULT_RESULTS_PER_PAGE + "")
