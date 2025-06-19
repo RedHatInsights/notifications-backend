@@ -344,7 +344,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                 String bodyStr;
                 if (engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()) {
                     try {
-                        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, null, null, null);
+                        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null);
                         Map<String, Object> additionalContext = buildFullTemplateContext(action);
 
                         bodyStr = commonQuteTemplateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
