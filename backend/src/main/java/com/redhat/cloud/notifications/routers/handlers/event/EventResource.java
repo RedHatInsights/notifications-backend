@@ -31,6 +31,10 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import java.time.LocalDate;
@@ -47,6 +51,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
+import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -70,6 +75,12 @@ public class EventResource {
     @GET
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the event log entries", description = "Retrieves the event log entries. Use this endpoint to review a full history of the events related to the tenant. You can sort by the bundle, application, event, and created fields. You can specify the sort order by appending :asc or :desc to the field, for example bundle:desc. Sorting defaults to desc for the created field and to asc for all other fields."
+    )
+    @Parameter(
+        name = "limit",
+        in = ParameterIn.QUERY,
+        description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
+        schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
     )
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS, workspacePermissions = {WorkspacePermission.EVENT_LOG_VIEW})
     public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @Context UriInfo uriInfo,

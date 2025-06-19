@@ -96,7 +96,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.redhat.cloud.notifications.db.repositories.NotificationRepository.MAX_NOTIFICATION_HISTORY_RESULTS;
+import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -175,8 +175,8 @@ public class EndpointResource {
             @Parameter(
                 name = "limit",
                 in = ParameterIn.QUERY,
-                description = "Number of items per page, if not specified or 0 is used, returns a maximum of " + MAX_NOTIFICATION_HISTORY_RESULTS + " elements.",
-                schema = @Schema(type = SchemaType.INTEGER)
+                description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
+                schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
                 ),
             @Parameter(
                 name = "pageNumber",
@@ -210,8 +210,8 @@ public class EndpointResource {
         @Parameter(
                 name = "limit",
                 in = ParameterIn.QUERY,
-                description = "Number of items per page. If the value is 0, it will return all elements",
-                schema = @Schema(type = SchemaType.INTEGER)
+                description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used",
+                schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
             ),
         @Parameter(
                 name = "pageNumber",
