@@ -112,7 +112,7 @@ public class UserConfigResource {
                         if (eventType.isPresent() && !eventType.get().isSubscriptionLocked()) {
                             // for each email subscription
                             eventTypeValue.emailSubscriptionTypes.forEach((subscriptionType, subscribed) -> {
-                                boolean supported = isTemplateSupported(bundleName, applicationName, eventType.get(), subscriptionType);
+                                boolean supported = isTemplateSupported(bundleName, applicationName, eventType.get(), subscriptionType, orgId);
 
                                 if (!supported) {
                                     throw new NotFoundException(String.format("Event type '%s' doesn't support '%s' subscription", eventType.get().getId(), subscriptionType.name()));
@@ -206,13 +206,13 @@ public class UserConfigResource {
         SettingsValuesByEventType settingsValues = new SettingsValuesByEventType();
         Application application = applicationRepository.getApplication(bundleName, applicationName);
         List<String> mapApplicationsWithForcedEmail = applicationsWithForcedEmails.stream().map(app -> app.getName()).collect(Collectors.toList());
-        addApplicationStructureDetails(settingsValues, application, mapApplicationsWithForcedEmail.contains(applicationName));
+        addApplicationStructureDetails(settingsValues, application, mapApplicationsWithForcedEmail.contains(applicationName), orgId);
 
         patchWithUserPreferencesIfExists(settingsValues, eventTypeEmailSubscriptions);
         return settingsValues;
     }
 
-    private void addApplicationStructureDetails(final SettingsValuesByEventType settingsValues, Application application, boolean withForcedEmails) {
+    private void addApplicationStructureDetails(final SettingsValuesByEventType settingsValues, Application application, boolean withForcedEmails, final String orgId) {
         Bundle bundle = application.getBundle();
         SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = new SettingsValuesByEventType.ApplicationSettingsValue();
         applicationSettingsValue.displayName = application.getDisplayName();
@@ -224,7 +224,7 @@ public class UserConfigResource {
                 eventTypeSettingsValue.subscriptionLocked = eventType.isSubscriptionLocked();
                 for (SubscriptionType subscriptionType : SubscriptionType.values()) {
                     if (backendConfig.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
-                        boolean supported = isTemplateSupported(bundle.getName(), application.getName(), eventType, subscriptionType);
+                        boolean supported = isTemplateSupported(bundle.getName(), application.getName(), eventType, subscriptionType, orgId);
 
                         if (supported) {
                             boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
@@ -247,13 +247,14 @@ public class UserConfigResource {
         }
     }
 
-    private boolean isTemplateSupported(String bundleName, String applicationName, EventType eventType, SubscriptionType subscriptionType) {
+    private boolean isTemplateSupported(String bundleName, String applicationName, EventType eventType, SubscriptionType subscriptionType, final String orgId) {
         boolean supported;
         if (backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()) {
             if (!backendConfig.isDrawerEnabled() && subscriptionType == DRAWER) {
                 supported = false;
             } else {
-                TemplateDefinition templateDefinition = getTemplateDefinition(bundleName, applicationName, eventType.getName(), subscriptionType);
+                boolean canUseTemplateBetaVersion = backendConfig.isUseBetaTemplatesEnabled(orgId);
+                TemplateDefinition templateDefinition = getTemplateDefinition(bundleName, applicationName, eventType.getName(), subscriptionType, canUseTemplateBetaVersion);
                 supported = templateService.isValidTemplateDefinition(templateDefinition);
             }
         } else {
@@ -262,7 +263,7 @@ public class UserConfigResource {
         return supported;
     }
 
-    private static TemplateDefinition getTemplateDefinition(final String bundleName, final String applicationName, final String eventTypeName, final SubscriptionType subscriptionType) {
+    private static TemplateDefinition getTemplateDefinition(final String bundleName, final String applicationName, final String eventTypeName, final SubscriptionType subscriptionType, final boolean canUseBetaVersion) {
         IntegrationType integrationType = null;
         if (subscriptionType == INSTANT) {
             integrationType = IntegrationType.EMAIL_BODY;
@@ -275,7 +276,8 @@ public class UserConfigResource {
             integrationType,
             bundleName,
             applicationName,
-            eventTypeName
+            eventTypeName,
+            canUseBetaVersion
         );
     }
 
@@ -303,7 +305,7 @@ public class UserConfigResource {
             List<String> applicationsWithForcedEmails = applicationRepository.getApplicationsWithForcedEmail(bundle.getId(), orgId)
                     .stream().map(Application::getName).collect(Collectors.toList());
             for (Application application : bundle.getApplications()) {
-                addApplicationStructureDetails(settingsValues, application, applicationsWithForcedEmails.contains(application.getName()));
+                addApplicationStructureDetails(settingsValues, application, applicationsWithForcedEmails.contains(application.getName()), orgId);
             }
         }
 
