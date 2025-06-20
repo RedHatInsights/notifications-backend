@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class EmailPayloadAggregatorFactory {
 
     private static final String RHEL = "rhel";
+    private static final String SUBSCRIPTION_SERVICES = "subscription-services";
     private static final String APPLICATION_SERVICES = "application-services";
     private static final String ADVISOR = "advisor";
     private static final String POLICIES = "policies";
@@ -17,6 +18,8 @@ public class EmailPayloadAggregatorFactory {
     private static final String INVENTORY = "inventory";
     private static final String RESOURCE_OPTIMIZATION = "resource-optimization";
     private static final String IMAGE_BUILDER = "image-builder";
+    private static final String ERRATA = "errata-notifications";
+
 
     private EmailPayloadAggregatorFactory() {
 
@@ -40,6 +43,15 @@ public class EmailPayloadAggregatorFactory {
                 switch (application.toLowerCase()) { // TODO Remove toLowerCase if possible
                     case ANSIBLE:
                         return new AnsibleEmailAggregator();
+                    default:
+                        // Do nothing.
+                        break;
+                }
+                break;
+            case SUBSCRIPTION_SERVICES:
+                switch (application) {
+                    case ERRATA:
+                        return new ErrataEmailPayloadAggregator();
                     default:
                         // Do nothing.
                         break;

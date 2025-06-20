@@ -54,6 +54,7 @@ public class BackendConfig {
     private String useCommonTemplateModuleForUserPrefApisToggle;
     private String rbacOidcAuthToggle;
     private String sourcesOidcAuthToggle;
+    private String toggleUseBetaTemplatesEnabled;
 
     private static String toggleName(String feature) {
         return String.format("notifications-backend.%s.enabled", feature);
@@ -141,6 +142,7 @@ public class BackendConfig {
         useCommonTemplateModuleForUserPrefApisToggle = toggleRegistry.register("use-common-template-module-for-user-pref-apis", true);
         rbacOidcAuthToggle = toggleRegistry.register("rbac-oidc-auth", true);
         sourcesOidcAuthToggle = toggleRegistry.register("sources-oidc-auth", true);
+        toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -300,6 +302,17 @@ public class BackendConfig {
             return unleash.isEnabled(maintenanceModeToggle, unleashContext, false);
         }
         return maintenanceModeEnabled;
+    }
+
+    public boolean isUseBetaTemplatesEnabled(final String orgId) {
+        if (unleashEnabled) {
+            UnleashContext unleashContext = UnleashContext.builder()
+                .addProperty("orgId", orgId)
+                .build();
+            return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContext, false);
+        } else {
+            return false;
+        }
     }
 
     /**

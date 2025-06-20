@@ -95,6 +95,17 @@ public class TestHelpers {
         return aggregation;
     }
 
+    public static EmailAggregation createEmailAggregationFromAction(Action emailActionMessage) {
+        EmailAggregation aggregation = new EmailAggregation();
+        aggregation.setBundleName(emailActionMessage.getBundle());
+        aggregation.setApplicationName(emailActionMessage.getApplication());
+        aggregation.setOrgId(emailActionMessage.getOrgId());
+        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
+
+        return aggregation;
+    }
+
+
     public static String serializeAction(Action action) {
         return Parser.encode(action);
     }
