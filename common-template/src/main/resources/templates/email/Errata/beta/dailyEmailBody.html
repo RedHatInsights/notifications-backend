@@ -1,0 +1,116 @@
+{@boolean renderSection1=true}
+{@boolean renderSection2=false}
+{@boolean renderSection3=false}
+{@boolean renderButtonSection3=false}
+{@boolean renderCustomLinks=true}
+{#include email/Common/insightsEmailBodyLight}
+{#content-render-custom-links-section}
+    {#if action.context.errata.new-subscription-bugfix-errata.size() > 0}
+        <!-- next section -->
+        <a href="#errata-notifications-section1-1">Bug fixes</a><span class="pf-c-badge">{action.context.errata.new-subscription-bugfix-errata.size()}</span>
+    {/if}
+    {#if action.context.errata.new-subscription-enhancement-errata.size() > 0}
+        <!-- next section -->
+        <a href="#errata-notifications-section1-2">Enhancements</a><span class="pf-c-badge">{action.context.errata.new-subscription-enhancement-errata.size()}</span>
+    {/if}
+    {#if action.context.errata.new-subscription-security-errata.size() > 0}
+        <!-- next section -->
+        <a href="#errata-notifications-section1-3">Security updates</a><span class="pf-c-badge">{action.context.errata.new-subscription-security-errata.size()}</span>
+    {/if}
+{/content-render-custom-links-section}
+
+{#content-title-section1}
+    Errata
+{/content-title-section1}
+{#content-title-right-part-section1}
+    <a target="_blank" href="https://access.redhat.com/errata-search/?{query_params}">{action.context.errata.new-subscription-bugfix-errata.size() + action.context.errata.new-subscription-enhancement-errata.size() + action.context.errata.new-subscription-security-errata.size()}</a>
+{/content-title-right-part-section1}
+{#content-body-section1}
+{#if action.context.errata.new-subscription-bugfix-errata.size() > 0}
+    <a id="errata-notifications-section1-1" name="errata-notifications-section1-1"></a>
+    {#if action.context.errata.new-subscription-bugfix-errata.size() == 1}
+        <p>There is 1 bug fix affecting your subscriptions.</p>
+    {#else}
+        <p>There are {action.context.errata.new-subscription-bugfix-errata.size()} bug fixes affecting your subscriptions.</p>
+    {/if}
+    <table class="rh-data-table-bordered">
+        <thead>
+            <tr>
+              <th style="width: 30%">Bugfix</th>
+              <th style="width: 60%">Synopsis</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#if action.context.errata.new-subscription-bugfix-errata.size() > 0}
+                {#each action.context.errata.new-subscription-bugfix-errata.sortErrataArray}
+                <tr style="font-size: 14px;">
+                    <td><a href="{action.context.errata.base_url}{it.id}" target="_blank">{it.id}</a></td>
+                    <td>{it.synopsis}</td>
+                </tr>
+                {/each}
+            {/if}
+        </tbody>
+    </table>
+    {#if action.context.errata.new-subscription-enhancement-errata.orEmpty.size() > 0 || action.context.errata.new-subscription-security-errata.orEmpty.size > 0}
+        <div style="height: 24px">&nbsp;</div>
+    {/if}
+{/if}
+{#if action.context.errata.new-subscription-enhancement-errata.size() > 0}
+    <a id="errata-notifications-section1-2" name="errata-notifications-section1-2"></a>
+    {#if action.context.errata.new-subscription-enhancement-errata.size() == 1}
+        <p>There is 1 enhancement affecting your subscriptions.</p>
+    {#else}
+        <p>There are {action.context.errata.new-subscription-enhancement-errata.size()} enhancements affecting your subscriptions.</p>
+    {/if}
+    <table class="rh-data-table-bordered">
+        <thead>
+            <tr>
+              <th style="width: 30%">Enhancement</th>
+              <th style="width: 60%">Synopsis</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#if action.context.errata.new-subscription-enhancement-errata.size() > 0}
+                {#each action.context.errata.new-subscription-enhancement-errata.sortErrataArray}
+                <tr style="font-size: 14px;">
+                    <td><a href="{action.context.errata.base_url}{it.id}" target="_blank">{it.id}</a></td>
+                    <td>{it.synopsis}</td>
+                </tr>
+                {/each}
+            {/if}
+        </tbody>
+    </table>
+    {#if action.context.errata.new-subscription-security-errata.orEmpty.size > 0}
+        <div style="height: 24px">&nbsp;</div>
+    {/if}
+{/if}
+{#if action.context.errata.new-subscription-security-errata.size() > 0}
+    <a id="errata-notifications-section1-3" name="errata-notifications-section1-3"></a>
+    {#if action.context.errata.new-subscription-security-errata.size() == 1}
+        <p>There is 1 security update affecting your subscriptions.</p>
+    {#else}
+        <p>There are {action.context.errata.new-subscription-security-errata.size()} security updates affecting your subscriptions.</p>
+    {/if}
+    <table class="rh-data-table-bordered">
+        <thead>
+            <tr>
+              <th style="width: 30%">Security update</th>
+              <th style="width: 15%">Severity</th>
+              <th style="width: 45%">Synopsis</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#if action.context.errata.new-subscription-security-errata.size() > 0}
+                {#each action.context.errata.new-subscription-security-errata.sortErrataSecurityArray}
+                <tr style="font-size: 14px;">
+                    <td><a href="{action.context.errata.base_url}{it.id}" target="_blank">{it.id}</a></td>
+                    <td>{it.severity}</td>
+                    <td>{it.synopsis}</td>
+                </tr>
+                {/each}
+            {/if}
+        </tbody>
+    </table>
+{/if}
+{/content-body-section1}
+{/include}
