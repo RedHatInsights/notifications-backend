@@ -72,6 +72,12 @@
             <artifactId>commons-validator</artifactId>
             <version>1.9.0</version>
         </dependency>
+        <dependency>
+            <!-- Remove once commons-validator:1.10 is released (see https://issues.apache.org/jira/browse/VALIDATOR-500)-->
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>1.11.0</version>
+        </dependency>
 
         <!-- Scope: test -->
         <!-- Some test dependencies are declared in the "profiles" section of this POM. -->
