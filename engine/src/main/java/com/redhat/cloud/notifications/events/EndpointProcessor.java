@@ -24,6 +24,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -95,7 +96,7 @@ public class EndpointProcessor {
 
     public void process(Event event, boolean replayEmailsOnly) {
         processedItems.increment();
-        final List<Endpoint> endpoints;
+        List<Endpoint> endpoints;
         if (TestEventHelper.isIntegrationTestEvent(event)) {
             final UUID endpointUuid = TestEventHelper.extractEndpointUuidFromTestEvent(event);
 
@@ -125,6 +126,17 @@ public class EndpointProcessor {
                 }
             }
         }
+
+        List<Endpoint> filteredEndpoints = new ArrayList<>();
+        for (Endpoint endpoint: endpoints) {
+            // Default endpoints (orgId is null) used as system integrations for the all orgs can't be blacklisted
+            if (null != endpoint.getOrgId() && engineConfig.isBlacklistedEndpoint(endpoint.getId())) {
+                Log.infof("Org: %s, skipping endpoint: %s because it was blacklisted", endpoint.getOrgId(), endpoint.getId());
+            } else {
+                filteredEndpoints.add(endpoint);
+            }
+        }
+        endpoints = filteredEndpoints;
 
         // Target endpoints are grouped by endpoint type.
         endpointTargeted.increment(endpoints.size());

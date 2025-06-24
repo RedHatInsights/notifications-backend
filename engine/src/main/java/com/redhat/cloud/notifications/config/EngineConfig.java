@@ -55,6 +55,7 @@ public class EngineConfig {
     private String drawerToggle;
     private String kafkaConsumedTotalCheckerToggle;
     private String fetchAggregationBasedOnEvents;
+    private String fetchBlacklistedEndpoints;
     private String toggleKafkaOutgoingHighVolumeTopic;
     private String toggleDirectEndpointToEventTypeDryRunEnabled;
     private String toggleUseDirectEndpointToEventTypeEnabled;
@@ -162,6 +163,7 @@ public class EngineConfig {
         toggleUseDirectEndpointToEventTypeEnabled = toggleRegistry.register("use-endpoint-to-event-type", true);
         toggleUseCommonTemplateModuleToRenderEmailsEnabled = toggleRegistry.register("use-common-template-module-for-emails", true);
         toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
+        fetchBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -259,6 +261,17 @@ public class EngineConfig {
     public boolean isAggregationBasedOnEventEnabled(final String orgId) {
         if (unleashEnabled) {
             return unleash.isEnabled(fetchAggregationBasedOnEvents, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isBlacklistedEndpoint(final UUID endpointId) {
+        if (unleashEnabled) {
+            UnleashContext unleashContext = UnleashContext.builder()
+                .addProperty("endpointId", endpointId.toString())
+                .build();
+            return unleash.isEnabled(fetchBlacklistedEndpoints, unleashContext, false);
         } else {
             return false;
         }
