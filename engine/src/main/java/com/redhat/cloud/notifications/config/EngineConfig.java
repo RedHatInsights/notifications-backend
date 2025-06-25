@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
 import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -55,7 +56,7 @@ public class EngineConfig {
     private String drawerToggle;
     private String kafkaConsumedTotalCheckerToggle;
     private String fetchAggregationBasedOnEvents;
-    private String fetchBlacklistedEndpoints;
+    private String toggleBlacklistedEndpoints;
     private String toggleKafkaOutgoingHighVolumeTopic;
     private String toggleDirectEndpointToEventTypeDryRunEnabled;
     private String toggleUseDirectEndpointToEventTypeEnabled;
@@ -163,7 +164,7 @@ public class EngineConfig {
         toggleUseDirectEndpointToEventTypeEnabled = toggleRegistry.register("use-endpoint-to-event-type", true);
         toggleUseCommonTemplateModuleToRenderEmailsEnabled = toggleRegistry.register("use-common-template-module-for-emails", true);
         toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
-        fetchBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
+        toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -266,12 +267,12 @@ public class EngineConfig {
         }
     }
 
-    public boolean isBlacklistedEndpoint(final UUID endpointId) {
+    public boolean isBlacklistedEndpoint(@Nonnull final UUID endpointId) {
         if (unleashEnabled) {
             UnleashContext unleashContext = UnleashContext.builder()
                 .addProperty("endpointId", endpointId.toString())
                 .build();
-            return unleash.isEnabled(fetchBlacklistedEndpoints, unleashContext, false);
+            return unleash.isEnabled(toggleBlacklistedEndpoints, unleashContext, false);
         } else {
             return false;
         }

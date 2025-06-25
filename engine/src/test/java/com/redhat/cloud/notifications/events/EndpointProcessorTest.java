@@ -40,7 +40,6 @@ import static java.time.ZoneOffset.UTC;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 
 @QuarkusTest
 public class EndpointProcessorTest {
@@ -165,7 +164,7 @@ public class EndpointProcessorTest {
         // Create an Endpoint which will be simulated to be fetched from the database.
         final String orgId = "test-org-id";
         final UUID endpointUuid = UUID.randomUUID();
-        when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
+        Mockito.when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
 
         final Endpoint endpointFixture = new Endpoint();
         endpointFixture.setId(endpointUuid);
@@ -293,7 +292,7 @@ public class EndpointProcessorTest {
         final String orgId = "test-org-id";
         final UUID endpointUuid = UUID.randomUUID();
         final UUID endpointUuid2 = UUID.randomUUID();
-        when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
+        Mockito.when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
 
         final Endpoint blacklistedEndpoint = new Endpoint();
         blacklistedEndpoint.setId(endpointUuid);
@@ -325,7 +324,7 @@ public class EndpointProcessorTest {
 
         Mockito.doNothing().when(this.webhookProcessor).process(Mockito.any(Event.class), Mockito.anyList());
 
-        when(engineConfig.isBlacklistedEndpoint(eq(endpointUuid))).thenReturn(true);
+        Mockito.when(engineConfig.isBlacklistedEndpoint(eq(endpointUuid))).thenReturn(true);
 
         this.endpointProcessor.process(event);
 
@@ -341,6 +340,23 @@ public class EndpointProcessorTest {
             Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class));
             Mockito.verify(this.endpointRepository, Mockito.times(0)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
         }
+
+        // all endpoints blacklisted
+        Mockito.reset(this.webhookProcessor);
+        Mockito.reset(this.emailConnectorProcessor);
+        Mockito.reset(this.engineConfig);
+        Mockito.reset(this.engineConfig);
+
+        Mockito.when(this.endpointRepository.getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(regularEndpoint, blacklistedEndpoint));
+        Mockito.when(this.endpointRepository.getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(regularEndpoint, blacklistedEndpoint));
+
+        Mockito.when(engineConfig.isBlacklistedEndpoint(any(UUID.class))).thenReturn(true);
+
+        this.endpointProcessor.process(event);
+
+        Mockito.verify(this.webhookProcessor, Mockito.times(0)).process(eq(event), Mockito.anyList());
+        Mockito.verify(this.emailConnectorProcessor, Mockito.times(0)).process(eq(event), Mockito.anyList(), anyBoolean());
+        Mockito.verify(this.engineConfig, Mockito.times(2)).isBlacklistedEndpoint(any(UUID.class));
     }
 
     private static Action buildAction(String orgId) {
