@@ -71,7 +71,7 @@ public class PagerDutyCloudEventDataExtractorTest extends CamelQuarkusTestSuppor
     }
 
     @Test
-    void testExtractWithValidTargetUrlPath() {
+    void testExtractWithValidTargetUrlPath() throws Exception {
         Exchange exchange = createExchangeWithBody(context, "I am not used!");
         JsonObject cloudEventData = createCloudEventData("https://foo.bar");
         /*

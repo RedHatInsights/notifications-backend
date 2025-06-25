@@ -48,7 +48,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testMissingEventType() {
+    void testMissingEventType() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.remove(EVENT_TYPE);
@@ -58,7 +58,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testMissingSource() {
+    void testMissingSource() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.remove(APPLICATION);
@@ -68,7 +68,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testMissingSeverity() {
+    void testMissingSeverity() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.remove(SEVERITY);
@@ -78,7 +78,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testSuccessfulPayloadTransform() {
+    void testSuccessfulPayloadTransform() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
 
         JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
@@ -90,7 +90,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
      * integrations endpoint, with the account and org id replaced.
      */
     @Test
-    void testSuccessfulTestMessage() {
+    void testSuccessfulTestMessage() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
 
         JsonObject cloudEventPayload = JsonObject.of(
@@ -121,7 +121,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testSuccessfulIqeTestMessage() {
+    void testSuccessfulIqeTestMessage() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudEventPayload = JsonObject.of(
                 "account_id", "default-account-id",
@@ -154,7 +154,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testInvalidTimestampDropped() {
+    void testInvalidTimestampDropped() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.put(TIMESTAMP, "not a timestamp");
@@ -165,7 +165,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testMissingSourceNames() {
+    void testMissingSourceNames() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.remove(SOURCE);
@@ -175,7 +175,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testMissingApplicationDisplayName() {
+    void testMissingApplicationDisplayName() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         JsonObject sourceNames = cloudPayload.getJsonObject(SOURCE);
@@ -186,7 +186,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testSourceWithoutDisplayNames() {
+    void testSourceWithoutDisplayNames() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.put(SOURCE, new JsonObject());
@@ -197,7 +197,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testMissingEvents() {
+    void testMissingEvents() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.remove(EVENTS);
@@ -207,7 +207,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testWithHostUrl() {
+    void testWithHostUrl() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         JsonObject context = cloudPayload.getJsonObject(CONTEXT);
@@ -218,7 +218,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testWithMissingClientDisplayName() {
+    void testWithMissingClientDisplayName() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         JsonObject context = cloudPayload.getJsonObject(CONTEXT);
@@ -229,7 +229,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testWithMissingInventoryId() {
+    void testWithMissingInventoryId() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         JsonObject context = cloudPayload.getJsonObject(CONTEXT);
@@ -240,7 +240,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testMissingInventoryUrl() {
+    void testMissingInventoryUrl() throws Exception {
         JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.remove(INVENTORY_URL);
@@ -249,7 +249,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
         validatePayloadTransform(cloudEventData, expectedPayload);
     }
 
-    void verifyTransformExceptionThrown(JsonObject cloudEventData, Class<? extends Throwable> exceptionType, String exceptionMessage) {
+    void verifyTransformExceptionThrown(JsonObject cloudEventData, Class<? extends Throwable> exceptionType, String exceptionMessage) throws Exception {
         Exchange exchange = createExchangeWithBody(context, "I am not used!");
 
         extractor.extract(exchange, cloudEventData);
@@ -260,7 +260,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
      * @param cloudEventData the cloud event, as provided to the connector
      * @param expectedPayload the PagerDuty payload expected to be sent
      */
-    void validatePayloadTransform(JsonObject cloudEventData, JsonObject expectedPayload) {
+    void validatePayloadTransform(JsonObject cloudEventData, JsonObject expectedPayload) throws Exception {
         Exchange exchange = createExchangeWithBody(context, "I am not used!");
 
         extractor.extract(exchange, cloudEventData);

@@ -2,13 +2,11 @@ package com.redhat.cloud.notifications.connector.servicenow;
 
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import com.redhat.cloud.notifications.connector.authentication.AuthenticationDataExtractor;
+import com.redhat.cloud.notifications.connector.http.UrlValidationHelper;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
-import org.apache.http.ProtocolException;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
@@ -19,8 +17,6 @@ import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProper
 public class ServiceNowCloudEventDataExtractor extends CloudEventDataExtractor {
 
     public static final String NOTIF_METADATA = "notif-metadata";
-    private static final String HTTP_SCHEME = "http";
-    private static final String HTTPS_SCHEME = "https";
 
     @Inject
     AuthenticationDataExtractor authenticationDataExtractor;
@@ -39,25 +35,9 @@ public class ServiceNowCloudEventDataExtractor extends CloudEventDataExtractor {
 
         cloudEventData.remove(NOTIF_METADATA);
 
-        validateTargetUrl(exchange);
+        UrlValidationHelper.validateTargetUrl(exchange);
         exchange.setProperty(TARGET_URL_NO_SCHEME, exchange.getProperty(TARGET_URL, String.class).replace("https://", ""));
 
         exchange.getIn().setBody(cloudEventData.encode());
-    }
-
-    private void validateTargetUrl(Exchange exchange) throws Exception {
-        String targetUrl = exchange.getProperty(TARGET_URL, String.class);
-        try {
-            String scheme = (new URI(targetUrl)).getScheme();
-
-            if (HTTP_SCHEME.equalsIgnoreCase(scheme)) {
-                throw new ProtocolException("HTTP protocol is not supported");
-            } else if (!HTTPS_SCHEME.equalsIgnoreCase(scheme)) {
-                throw new IllegalArgumentException("URL validation failed");
-            }
-            // handle case where url is null (should never happen)
-        } catch (URISyntaxException | NullPointerException e) {
-            throw new IllegalArgumentException("Invalid target URL: " + targetUrl);
-        }
     }
 }

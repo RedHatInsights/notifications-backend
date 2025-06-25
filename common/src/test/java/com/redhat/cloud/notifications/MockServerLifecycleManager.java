@@ -1,6 +1,10 @@
 package com.redhat.cloud.notifications;
 
+import org.mockserver.configuration.Configuration;
 import org.mockserver.integration.ClientAndServer;
+import org.mockserver.logging.MockServerLogger;
+import org.mockserver.socket.tls.KeyStoreFactory;
+import javax.net.ssl.HttpsURLConnection;
 
 import static org.mockserver.integration.ClientAndServer.startClientAndServer;
 
@@ -16,6 +20,9 @@ public class MockServerLifecycleManager {
             System.setProperty(LOG_LEVEL_KEY, "OFF");
             System.out.println("MockServer log is disabled. Use '-D" + LOG_LEVEL_KEY + "=WARN|INFO|DEBUG|TRACE' to enable it.");
         }
+        // Thanks to the addition of MockServer KeyStoreFactory into default ssl context,
+        // MockServer ssl certificate issuer will be recognized
+        HttpsURLConnection.setDefaultSSLSocketFactory(new KeyStoreFactory(Configuration.configuration(), new MockServerLogger()).sslContext().getSocketFactory());
         mockServer = startClientAndServer();
         mockServerUrl = "http://localhost:" + mockServer.getPort();
     }

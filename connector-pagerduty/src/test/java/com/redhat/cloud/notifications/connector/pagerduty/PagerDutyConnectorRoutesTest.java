@@ -46,6 +46,11 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
     }
 
     @Override
+    protected boolean useHttps() {
+        return true;
+    }
+
+    @Override
     protected Predicate checkOutgoingPayload(JsonObject incomingPayload) {
 
         JsonObject expectedPayload = incomingPayload.copy();
