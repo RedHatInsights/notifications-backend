@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.connector.pagerduty;
 
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import com.redhat.cloud.notifications.connector.authentication.AuthenticationDataExtractor;
-import com.redhat.cloud.notifications.connector.http.UrlValidationHelper;
+import com.redhat.cloud.notifications.connector.http.UrlValidator;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -31,7 +31,7 @@ public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
             exchange.setProperty(TARGET_URL, providedUrl);
         }
 
-        UrlValidationHelper.validateTargetUrl(exchange);
+        UrlValidator.validateTargetUrl(exchange);
 
         JsonObject authentication = cloudEventData.getJsonObject(AUTHENTICATION);
         authenticationDataExtractor.extract(exchange, authentication);

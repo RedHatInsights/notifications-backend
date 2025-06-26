@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.connector.splunk;
 
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import com.redhat.cloud.notifications.connector.authentication.AuthenticationDataExtractor;
-import com.redhat.cloud.notifications.connector.http.UrlValidationHelper;
+import com.redhat.cloud.notifications.connector.http.UrlValidator;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -40,7 +40,7 @@ public class SplunkCloudEventDataExtractor extends CloudEventDataExtractor {
 
         cloudEventData.remove(NOTIF_METADATA);
 
-        UrlValidationHelper.validateTargetUrl(exchange);
+        UrlValidator.validateTargetUrl(exchange);
         fixTargetUrlPathIfNeeded(exchange);
         exchange.setProperty(TARGET_URL_NO_SCHEME, exchange.getProperty(TARGET_URL, String.class).replace("https://", ""));
 
