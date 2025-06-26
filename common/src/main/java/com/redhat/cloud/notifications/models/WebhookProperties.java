@@ -87,22 +87,6 @@ public class WebhookProperties extends EndpointProperties implements SourcesSecr
         this.secretTokenSourcesId = secretTokenSourcesId;
     }
 
-    public BasicAuthentication getBasicAuthentication() {
-        return null;
-    }
-
-    public void setBasicAuthentication(BasicAuthentication basicAuthentication) {
-        // do nothing
-    }
-
-    public Long getBasicAuthenticationSourcesId() {
-        return null;
-    }
-
-    public void setBasicAuthenticationSourcesId(Long basicAuthenticationSourcesId) {
-        // do nothing
-    }
-
     public Long getBearerAuthenticationSourcesId() {
         return bearerAuthenticationSourcesId;
     }

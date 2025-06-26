@@ -29,31 +29,6 @@ public interface SourcesSecretable {
      */
     void setSecretTokenSourcesId(Long secretTokenSourcesId);
 
-    /**
-     * Get the basic authentication object.
-     * @return the basic authentication object.
-     */
-    BasicAuthentication getBasicAuthentication();
-
-    /**
-     * Set the basic authentication object.
-     * @param basicAuthentication the basic authentication object to be set.
-     */
-    void setBasicAuthentication(BasicAuthentication basicAuthentication);
-
-
-    /**
-     * Get the ID of the "basic authentication" secret stored in Sources.
-     * @return the ID of the secret.
-     */
-    Long getBasicAuthenticationSourcesId();
-
-    /**
-     * Set the ID of the "basic authentication" secret stored in Sources.
-     * @param basicAuthenticationSourcesId the ID of the secret.
-     */
-    void setBasicAuthenticationSourcesId(Long basicAuthenticationSourcesId);
-
     Long getBearerAuthenticationSourcesId();
 
     void setBearerAuthenticationSourcesId(Long bearerAuthenticationSourcesId);

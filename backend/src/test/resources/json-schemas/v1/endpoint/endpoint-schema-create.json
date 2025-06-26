@@ -181,26 +181,6 @@
       "title": "Definition of the endpoint properties' URL object",
       "type": "string"
     },
-    "basic-authentication": {
-      "title": "Definition of the endpoint properties' basic authentication object",
-      "type": "object",
-      "required": [
-        "username",
-        "password"
-      ],
-      "properties": {
-        "username": {
-          "minLength": 1,
-          "title": "Username of the basic authentication object",
-          "type": "string"
-        },
-        "password": {
-          "minLength": 1,
-          "title": "Password of the basic authentication object",
-          "type": "string"
-        }
-      }
-    },
     "bearer-authentication": {
       "minLength": 1,
       "title": "Definition of the endpoint properties' bearer token object",
