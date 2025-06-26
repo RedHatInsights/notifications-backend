@@ -5,8 +5,8 @@ import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.AggregationCommand;
-import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Environment;
+import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import com.redhat.cloud.notifications.utils.ActionParser;
@@ -26,6 +26,7 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static io.restassured.RestAssured.given;
@@ -61,6 +62,8 @@ public class DailyDigestResourceTest {
         final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
             "application-name",
             "bundle-name",
+            UUID.randomUUID(),
+            UUID.randomUUID(),
             "organization-id",
             null,
             null
@@ -98,6 +101,8 @@ public class DailyDigestResourceTest {
         final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
             applicationName,
             bundleName,
+            UUID.randomUUID(),
+            UUID.randomUUID(),
             orgId,
             start,
             end
@@ -139,7 +144,7 @@ public class DailyDigestResourceTest {
         Assertions.assertEquals(end, aggregationCommand.getEnd(), "unexpected end timestamp coming from the Kafka aggregation command");
         Assertions.assertEquals(SubscriptionType.DAILY, aggregationCommand.getSubscriptionType(), "unexpected subscription type coming from the Kafka aggregation command");
 
-        final EmailAggregationKey emailAggregationKey = aggregationCommand.getAggregationKey();
+        final EventAggregationCriterion emailAggregationKey = aggregationCommand.getAggregationKey();
 
         Assertions.assertEquals(applicationName, emailAggregationKey.getApplication(), "unexpected application name coming from the Kafka aggregation command");
         Assertions.assertEquals(bundleName, emailAggregationKey.getBundle(), "unexpected bundle name coming from the Kafka aggregation command");
