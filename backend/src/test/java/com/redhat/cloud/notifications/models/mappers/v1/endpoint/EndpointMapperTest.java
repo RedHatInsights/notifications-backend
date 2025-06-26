@@ -119,7 +119,6 @@ public class EndpointMapperTest {
         webhookProperties.setDisableSslVerification(false);
         webhookProperties.setMethod(HttpType.POST);
         webhookProperties.setUrl("https://redhat.com");
-        webhookProperties.setBasicAuthentication(new BasicAuthentication("username", "password"));
         webhookProperties.setBearerAuthentication("bearer authentication");
         webhookProperties.setSecretToken("secret token");
 
@@ -246,11 +245,6 @@ public class EndpointMapperTest {
         Assertions.assertEquals(HttpType.POST.name(), webhookPropertiesDTO.getMethod(), "the method property was not properly deserialized");
         Assertions.assertEquals("https://redhat.com", webhookPropertiesDTO.getUrl(), "the url was not properly deserialized");
 
-        final BasicAuthenticationDTO basicAuthenticationDTO = webhookPropertiesDTO.getBasicAuthentication();
-        Assertions.assertNotNull(basicAuthenticationDTO, "the basic authentication object was not properly deserialized");
-        Assertions.assertEquals("webhook-user", basicAuthenticationDTO.getUsername(), "the username of the basic authentication object was not properly deserialized");
-        Assertions.assertEquals("webhook-pass", basicAuthenticationDTO.getPassword(), "the password of the basic authentication object was not properly deserialized");
-
         Assertions.assertEquals("w3bh00k-bearer-t0k3n", webhookPropertiesDTO.getBearerAuthentication(), "the bearer authentication was not properly deserialized");
         Assertions.assertEquals("w3bh00k-sup3r-s3cr3t-t0k3n", webhookPropertiesDTO.getSecretToken(), "the secret token was not properly deserialized");
 
@@ -272,11 +266,6 @@ public class EndpointMapperTest {
         Assertions.assertTrue(webhookProperties.getDisableSslVerification(), "the \"disable SSL verification\" flag was not properly mapped");
         Assertions.assertEquals(HttpType.POST.name(), webhookPropertiesDTO.getMethod(), "the method property was not properly mapped");
         Assertions.assertEquals("https://redhat.com", webhookProperties.getUrl(), "the url was not properly mapped");
-
-        final BasicAuthentication basicAuthentication = webhookProperties.getBasicAuthentication();
-        Assertions.assertNotNull(basicAuthentication, "the basic authentication object was not properly mapped");
-        Assertions.assertEquals("webhook-user", basicAuthentication.getUsername(), "the username of the basic authentication object was not properly mapped");
-        Assertions.assertEquals("webhook-pass", basicAuthentication.getPassword(), "the password of the basic authentication object was not properly mapped");
 
         Assertions.assertEquals("w3bh00k-bearer-t0k3n", webhookProperties.getBearerAuthentication(), "the bearer authentication was not properly mapped");
         Assertions.assertEquals("w3bh00k-sup3r-s3cr3t-t0k3n", webhookProperties.getSecretToken(), "the secret token was not properly mapped");
