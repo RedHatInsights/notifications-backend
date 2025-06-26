@@ -634,6 +634,8 @@ public class InternalResourceTest extends DbIsolatedTest {
         final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
             "application-name",
             "bundle-name",
+            UUID.randomUUID(),
+            UUID.randomUUID(),
             "organization-id",
             null,
             null
@@ -669,6 +671,8 @@ public class InternalResourceTest extends DbIsolatedTest {
         final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
             application.getName(),
             bundle.getName(),
+            bundle.getId(),
+            application.getId(),
             "org-id",
             start,
             end
@@ -707,11 +711,13 @@ public class InternalResourceTest extends DbIsolatedTest {
     @Test
     public void testTriggerDailyDigestInvalidApplication() {
         final String bundleName = "test-trigger-daily-digest-invalid-application";
-        this.resourceHelpers.createBundle(bundleName, bundleName + "-display-name");
+        Bundle bundle = this.resourceHelpers.createBundle(bundleName, bundleName + "-display-name");
 
         final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
             UUID.randomUUID().toString(),
             bundleName,
+            bundle.getId(),
+            UUID.randomUUID(),
             "trigger-daily-digest-invalid-application-name-org-id",
             null,
             null
@@ -752,6 +758,8 @@ public class InternalResourceTest extends DbIsolatedTest {
         final TriggerDailyDigestRequest triggerDailyDigestRequest = new TriggerDailyDigestRequest(
                 application.getName(),
                 UUID.randomUUID().toString(),
+                UUID.randomUUID(),
+                application.getId(),
                 "trigger-daily-digest-invalid-bundle-name-org-id",
                 null,
                 null
@@ -810,6 +818,8 @@ public class InternalResourceTest extends DbIsolatedTest {
                 new TriggerDailyDigestRequest(
                     "     ",
                     "bundle-name-blank-application-name",
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
                     "org-id-blank-application-name",
                     null,
                     null
@@ -823,6 +833,8 @@ public class InternalResourceTest extends DbIsolatedTest {
                 new TriggerDailyDigestRequest(
                     "application-name-blank-bundle-name",
                     "     ",
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
                     "org-id-blank-bundle-name",
                     null,
                     null
@@ -836,6 +848,8 @@ public class InternalResourceTest extends DbIsolatedTest {
                 new TriggerDailyDigestRequest(
                     "application-name-blank-org-id",
                     "bundle-name-blank-org-id",
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
                     "     ",
                     null,
                     null

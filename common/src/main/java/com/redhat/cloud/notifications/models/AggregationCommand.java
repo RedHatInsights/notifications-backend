@@ -4,10 +4,10 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-public class AggregationCommand<T extends EmailAggregationKey> {
+public class AggregationCommand {
 
     @NotNull
-    private T aggregationKey;
+    private EventAggregationCriterion aggregationKey;
 
     @NotNull
     private final LocalDateTime start;
@@ -18,18 +18,18 @@ public class AggregationCommand<T extends EmailAggregationKey> {
     @NotNull
     private final SubscriptionType subscriptionType;
 
-    public AggregationCommand(T aggregationKey, LocalDateTime start, LocalDateTime end, SubscriptionType subscriptionType) {
+    public AggregationCommand(EventAggregationCriterion aggregationKey, LocalDateTime start, LocalDateTime end, SubscriptionType subscriptionType) {
         this.aggregationKey = aggregationKey;
         this.start = start;
         this.end = end;
         this.subscriptionType = subscriptionType;
     }
 
-    public void setAggregationKey(@NotNull T aggregationKey) {
+    public void setAggregationKey(@NotNull EventAggregationCriterion aggregationKey) {
         this.aggregationKey = aggregationKey;
     }
 
-    public EmailAggregationKey getAggregationKey() {
+    public EventAggregationCriterion getAggregationKey() {
         return aggregationKey;
     }
 
@@ -57,7 +57,7 @@ public class AggregationCommand<T extends EmailAggregationKey> {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        AggregationCommand<?> that = (AggregationCommand<?>) o;
+        AggregationCommand that = (AggregationCommand) o;
         return Objects.equals(aggregationKey, that.aggregationKey) && Objects.equals(start, that.start) && Objects.equals(end, that.end) && subscriptionType == that.subscriptionType;
     }
 
