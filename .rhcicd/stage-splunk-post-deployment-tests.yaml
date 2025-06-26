@@ -15,7 +15,7 @@ objects:
         debug: false
         dynaconfEnvName: stage_post_deploy
         filter: ''
-        marker: 'splunk and smoke'
+        marker: 'notif_splunk and api'
 parameters:
 - name: IMAGE_TAG
   value: ''
