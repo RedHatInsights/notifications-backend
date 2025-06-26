@@ -10,7 +10,6 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -38,17 +37,6 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
     @Column(name = "secret_token_id")
     @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     private Long secretTokenSourcesId;
-
-    @Transient
-    @Valid
-    private BasicAuthentication basicAuthentication;
-
-    /**
-     * The ID of the "basic authentication" secret in the Sources backend.
-     */
-    @Column(name = "basic_authentication_id")
-    @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
-    private Long basicAuthenticationSourcesId;
 
     @Convert(converter = MapConverter.class)
     private Map<String, String> extras;
@@ -86,19 +74,19 @@ public class CamelProperties extends EndpointProperties implements SourcesSecret
     }
 
     public BasicAuthentication getBasicAuthentication() {
-        return basicAuthentication;
+        return null;
     }
 
     public void setBasicAuthentication(BasicAuthentication basicAuthentication) {
-        this.basicAuthentication = basicAuthentication;
+        // do nothing
     }
 
     public Long getBasicAuthenticationSourcesId() {
-        return basicAuthenticationSourcesId;
+        return null;
     }
 
     public void setBasicAuthenticationSourcesId(Long basicAuthenticationSourcesId) {
-        this.basicAuthenticationSourcesId = basicAuthenticationSourcesId;
+        // do nothing
     }
 
     public Long getBearerAuthenticationSourcesId() {

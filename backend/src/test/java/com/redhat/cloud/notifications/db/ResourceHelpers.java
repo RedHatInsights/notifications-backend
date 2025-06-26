@@ -7,7 +7,6 @@ import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CamelProperties;
@@ -37,7 +36,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
@@ -413,22 +411,11 @@ public class ResourceHelpers {
                 camelProperties.setDisableSslVerification(random.nextBoolean());
                 camelProperties.setUrl("https://redhat.com");
 
-                // Maybe set a basic authentication, maybe not...
-                if (i % 3 == 0) {
-                    camelProperties.setBasicAuthentication(
-                        new BasicAuthentication(
-                            UUID.randomUUID().toString(),
-                            UUID.randomUUID().toString()
-                        )
-                    );
-                }
-
                 // Maybe set a secret token, maybe not...
                 if (i % 3 == 0) {
                     camelProperties.setSecretToken(UUID.randomUUID().toString());
                 }
 
-                camelProperties.setBasicAuthenticationSourcesId(random.nextLong());
                 camelProperties.setSecretTokenSourcesId(random.nextLong());
 
                 endpoint.setProperties(camelProperties);
@@ -459,8 +446,8 @@ public class ResourceHelpers {
      * {@link CamelProperties} and five containing {@link WebhookProperties}.
      * They are specifically prepared so that the
      * {@link EndpointRepository#findEndpointWithPropertiesWithStoredSecrets()}
-     * function picks them up, because the basic authentication and secret
-     * token secrets are set, but no reference ID for a Source secret gets set.
+     * function picks them up, because the secret token is set, but no reference
+     * ID for a Source secret gets set.
      *
      * @return the map of the created endpoints.
      */
@@ -477,9 +464,6 @@ public class ResourceHelpers {
             camelProperties.setDisableSslVerification(random.nextBoolean());
             camelProperties.setUrl("https://redhat.com");
 
-            camelProperties.setBasicAuthentication(
-                new BasicAuthentication(UUID.randomUUID().toString(), UUID.randomUUID().toString())
-            );
             camelProperties.setSecretToken(UUID.randomUUID().toString());
 
             final Endpoint endpoint = new Endpoint();
@@ -517,72 +501,6 @@ public class ResourceHelpers {
         }
 
         return  createdEndpoints;
-    }
-
-    /**
-     * Generates five endpoints which contain either {@link CamelProperties} or
-     * {@link WebhookProperties} properties, but that have either a null
-     * or empty {@link BasicAuthentication}, mimicking what current basic
-     * authentications look like right now in the database. The properties
-     * always contain a secret token. They should be fetchable by
-     * {@link EndpointRepository#findEndpointWithPropertiesWithStoredSecrets()}
-     * because there are no Source ID secret references set.
-     *
-     * @return the map of the created endpoints.
-     */
-    @Deprecated(forRemoval = true)
-    @Transactional
-    public Map<UUID, Endpoint> createFiveEndpointsNullEmptyBasicAuths() {
-        final Random random = new Random();
-
-        final Map<UUID, Endpoint> createdEndpoints = new HashMap<>();
-
-        // Generates an empty basic authentication or a null one, replicating
-        // what we currently have in the database.
-        final Supplier<BasicAuthentication> getRandomBasicAuth = () -> {
-            if (random.nextBoolean()) {
-                return new BasicAuthentication("", "");
-            } else {
-                return new BasicAuthentication(null, null);
-            }
-        };
-
-        for (int i = 0; i < 5; i++) {
-            final Endpoint endpoint = new Endpoint();
-            endpoint.setDescription(UUID.randomUUID().toString());
-            endpoint.setName(UUID.randomUUID().toString());
-            endpoint.setOrgId(DEFAULT_ORG_ID);
-
-            // Should it be a camel, or a webhook endpoint?
-            if (i % 3 == 0) {
-                endpoint.setType(EndpointType.CAMEL);
-                endpoint.setSubType("dromedary");
-
-                final CamelProperties camelProperties = new CamelProperties();
-                camelProperties.setBasicAuthentication(getRandomBasicAuth.get());
-                camelProperties.setDisableSslVerification(random.nextBoolean());
-                camelProperties.setSecretToken(UUID.randomUUID().toString());
-                camelProperties.setUrl("https://redhat.com");
-
-                endpoint.setProperties(camelProperties);
-            } else {
-                endpoint.setType(EndpointType.WEBHOOK);
-
-                final WebhookProperties webhookProperties = new WebhookProperties();
-                webhookProperties.setDisableSslVerification(random.nextBoolean());
-                webhookProperties.setMethod(HttpType.GET);
-                webhookProperties.setSecretToken(UUID.randomUUID().toString());
-                webhookProperties.setUrl("https://redhat.com");
-
-                endpoint.setProperties(webhookProperties);
-            }
-
-            this.endpointRepository.createEndpoint(endpoint);
-
-            createdEndpoints.put(endpoint.getId(), endpoint);
-        }
-
-        return createdEndpoints;
     }
 
     @Transactional

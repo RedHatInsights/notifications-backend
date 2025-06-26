@@ -18,7 +18,6 @@ import com.redhat.cloud.notifications.db.model.Stats;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CamelProperties;
@@ -574,7 +573,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Different endpoint type with same name
         CamelProperties camelProperties = new CamelProperties();
-        camelProperties.setBasicAuthentication(new BasicAuthentication());
         camelProperties.setExtras(Map.of());
         camelProperties.setSecretToken("secret");
         camelProperties.setUrl("http://nowhere");
@@ -727,7 +725,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
         cAttr.setUrl(getMockServerUrl());
-        cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
         cAttr.setSecretToken("secret-token");
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
@@ -742,18 +739,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setProperties(cAttr);
 
         // Mock the Sources service calls.
-        final Secret basicAuthSecret = new Secret();
-        basicAuthSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
-        basicAuthSecret.password = cAttr.getBasicAuthentication().getPassword();
-        basicAuthSecret.username = cAttr.getBasicAuthentication().getUsername();
-
-        when(this.sourcesServiceMock.create(anyString(), anyString(), any()))
-            .thenReturn(basicAuthSecret);
+        final Secret secretTokenSecret = mockSources(cAttr);
 
         // Make sure that when the secrets are loaded when we fetch the
         // endpoint again for checking the assertions, we simulate fetching
         // the secrets from Sources too.
-        when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(basicAuthSecret.id))).thenReturn(basicAuthSecret);
+        when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
 
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
@@ -785,13 +776,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
             String template  = extrasObject.getString("template");
             assertEquals("11", template);
 
-            JsonObject basicAuth = properties.getJsonObject("basic_authentication");
-            assertNotNull(basicAuth);
-            String user = basicAuth.getString("username");
-            String pass = basicAuth.getString("password");
-            assertEquals("testuser", user);
-            assertEquals("secret", pass);
-
             assertEquals("secret-token", properties.getString("secret_token"));
         } finally {
             this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, id);
@@ -818,7 +802,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
         cAttr.setUrl(getMockServerUrl());
-        cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
         cAttr.setExtras(extras);
@@ -2433,7 +2416,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Create the properties for the endpoint. Leave the URL so that we can set it afterwards.
         final var camelProperties = new CamelProperties();
-        camelProperties.setBasicAuthentication(new BasicAuthentication("endpoint-invalid-urls-basic-authentication-username", "endpoint-invalid-urls-basic-authentication-password"));
         camelProperties.setDisableSslVerification(false);
         camelProperties.setSecretToken("endpoint-invalid-urls-secret-token");
 
@@ -2564,13 +2546,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Set up the fixture data.
         final boolean disableSslVerification = false;
-        final String password = "endpoint-invalid-urls-basic-authentication-password";
-        final String username = "endpoint-invalid-urls-basic-authentication-username";
         final String secretToken = "endpoint-invalid-urls-secret-token";
 
         // Create the properties for the endpoint. Leave the URL so that we can set it afterwards.
         final CamelProperties camelProperties = new CamelProperties();
-        camelProperties.setBasicAuthentication(new BasicAuthentication(username, password));
         camelProperties.setDisableSslVerification(disableSslVerification);
         camelProperties.setSecretToken(secretToken);
 
@@ -2679,7 +2658,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         CamelProperties cAttr = new CamelProperties();
         cAttr.setDisableSslVerification(false);
         cAttr.setUrl(getMockServerUrl());
-        cAttr.setBasicAuthentication(new BasicAuthentication("testuser", "secret"));
         Map<String, String> extras = new HashMap<>();
         extras.put("template", "11");
         cAttr.setExtras(extras);

@@ -1,8 +1,6 @@
 package com.redhat.cloud.notifications.models.dto.v1.endpoint.properties;
 
-import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.secrets.BasicAuthenticationDTO;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -17,9 +15,6 @@ public final class CamelPropertiesDTO extends EndpointPropertiesDTO {
     @NotNull
     @ValidNonPrivateUrl
     private String url;
-
-    @Valid
-    private BasicAuthenticationDTO basicAuthentication;
 
     @Size(max = 255)
     private String secretToken;
@@ -46,14 +41,6 @@ public final class CamelPropertiesDTO extends EndpointPropertiesDTO {
 
     public void setUrl(final String url) {
         this.url = url;
-    }
-
-    public BasicAuthenticationDTO getBasicAuthentication() {
-        return basicAuthentication;
-    }
-
-    public void setBasicAuthentication(final BasicAuthenticationDTO basicAuthentication) {
-        this.basicAuthentication = basicAuthentication;
     }
 
     public String getSecretToken() {

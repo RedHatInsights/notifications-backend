@@ -100,9 +100,6 @@
             "url": {
               "$ref": "#/definitions/url"
             },
-            "basic_authentication": {
-              "$ref": "#/definitions/basic-authentication"
-            },
             "secret_token": {
               "$ref": "#/definitions/secret-token"
             }
