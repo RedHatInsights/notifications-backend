@@ -1,10 +1,8 @@
 package com.redhat.cloud.notifications.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
-import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
 import io.quarkus.logging.Log;
-import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
@@ -25,8 +23,6 @@ public class AggregatorConfig {
     /*
      * Unleash configuration
      */
-    private String fetchAggregationBasedOnEvents;
-    private String fetchAggregationBasedOnEventsByOrgId;
 
     private static String toggleName(String feature) {
         return String.format("notifications-aggregator.%s.enabled", feature);
@@ -42,36 +38,13 @@ public class AggregatorConfig {
     @Inject
     Unleash unleash;
 
-    @PostConstruct
-    void postConstruct() {
-        fetchAggregationBasedOnEvents = toggleRegistry.register("fetch-aggregation-based-on-events", true);
-        fetchAggregationBasedOnEventsByOrgId = toggleRegistry.register("fetch-aggregation-based-on-events-by-orgid", true);
-    }
-
     void logConfigAtStartup(@Observes Startup event) {
 
         Map<String, Object> config = new TreeMap<>();
         config.put(UNLEASH, unleashEnabled);
-        config.put(fetchAggregationBasedOnEvents, isAggregationBasedOnEventEnabled());
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
             Log.infof("%s=%s", key, value);
         });
-    }
-
-    public boolean isAggregationBasedOnEventEnabled() {
-        if (unleashEnabled) {
-            return unleash.isEnabled(fetchAggregationBasedOnEvents, false);
-        } else {
-            return false;
-        }
-    }
-
-    public boolean isAggregationBasedOnEventEnabledByOrgId(String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(fetchAggregationBasedOnEventsByOrgId, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return false;
-        }
     }
 }

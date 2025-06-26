@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
-import com.redhat.cloud.notifications.models.EmailAggregationKey;
-
+import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import java.time.LocalDateTime;
 
 public class EmailPayloadAggregatorFactory {
@@ -25,7 +24,7 @@ public class EmailPayloadAggregatorFactory {
 
     }
 
-    public static AbstractEmailPayloadAggregator by(EmailAggregationKey aggregationKey, LocalDateTime start, LocalDateTime end) {
+    public static AbstractEmailPayloadAggregator by(EventAggregationCriterion aggregationKey, LocalDateTime start, LocalDateTime end) {
         String bundle = aggregationKey.getBundle();
         String application = aggregationKey.getApplication();
 

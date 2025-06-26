@@ -14,10 +14,9 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.EventAggregationCriteria;
+import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import com.redhat.cloud.notifications.models.SubscriptionType;
@@ -36,7 +35,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.persistence.NoResultException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.time.LocalDateTime;
@@ -91,7 +89,7 @@ public class EmailAggregator {
     @ConfigProperty(name = "notifications.aggregation.max-page-size", defaultValue = "100")
     int maxPageSize;
 
-    public Map<User, Map<String, Object>> getAggregated(UUID appId, EmailAggregationKey aggregationKey, SubscriptionType subscriptionType, LocalDateTime start, LocalDateTime end) {
+    public Map<User, Map<String, Object>> getAggregated(UUID appId, EventAggregationCriterion aggregationKey, SubscriptionType subscriptionType, LocalDateTime start, LocalDateTime end) {
 
         Map<User, AbstractEmailPayloadAggregator> aggregated = new HashMap<>();
         Map<String, Set<String>> subscribersByEventType = subscriptionRepository
@@ -99,12 +97,7 @@ public class EmailAggregator {
         Map<String, Set<String>> unsubscribersByEventType = subscriptionRepository
                 .getUnsubscribersByEventType(aggregationKey.getOrgId(), appId, subscriptionType);
 
-        if (engineConfig.isAggregationBasedOnEventEnabled(aggregationKey.getOrgId()) && aggregationKey instanceof EventAggregationCriteria eventAggregationCriteria) {
-            Log.infof("Processing aggregation for %s based on event table", aggregationKey.getOrgId());
-            aggregationBasedOnEvent(eventAggregationCriteria, start, end, subscribersByEventType, unsubscribersByEventType, aggregated);
-        } else {
-            aggregationBasedOnEmailAggregation(aggregationKey, start, end, subscribersByEventType, unsubscribersByEventType, aggregated);
-        }
+        aggregationBasedOnEvent(aggregationKey, start, end, subscribersByEventType, unsubscribersByEventType, aggregated);
 
         return aggregated.entrySet().stream()
                 .filter(entry -> !entry.getValue().isEmpty())
@@ -114,77 +107,12 @@ public class EmailAggregator {
                 ));
     }
 
-    private void aggregationBasedOnEmailAggregation(EmailAggregationKey aggregationKey, LocalDateTime start, LocalDateTime end, Map<String, Set<String>> subscribersByEventType, Map<String, Set<String>> unsubscribersByEventType, Map<User, AbstractEmailPayloadAggregator> aggregated) {
-        int offset = 0;
-        int totalAggregatedElements = 0;
-
-        List<EmailAggregation> aggregations;
-        do {
-            // First, we retrieve paginated aggregations that match the given key.
-            aggregations = emailAggregationRepository.getEmailAggregation(aggregationKey, start, end, offset, maxPageSize);
-            offset += maxPageSize;
-
-            // For each aggregation...
-            for (EmailAggregation aggregation : aggregations) {
-
-                // We need its event type to determine the target endpoints.
-                String eventTypeName = getEventType(aggregation);
-                EventType eventType;
-                try {
-                    eventType = eventTypeRepository.getEventType(aggregationKey.getBundle(), aggregationKey.getApplication(), eventTypeName);
-                } catch (NoResultException e) {
-                    Log.warnf(e, "Unknown event type found in an aggregation payload [orgId=%s, bundle=%s, application=%s, eventType=%s]",
-                            aggregationKey.getOrgId(), aggregationKey.getBundle(), aggregationKey.getApplication(), eventTypeName);
-                    // The exception must not interrupt the loop.
-                    continue;
-                }
-                // Let's retrieve these targets.
-                Set<Endpoint> endpoints = Set.copyOf(endpointRepository
-                    .getTargetEmailSubscriptionEndpoints(aggregationKey.getOrgId(), eventType.getId()));
-
-                /*
-                 * Now we want to determine who will actually receive the aggregation email.
-                 * All users who subscribed to the current application and subscription type combination are recipients candidates.
-                 * The actual recipients list may differ from the candidates depending on the endpoint properties and the action settings.
-                 * The target endpoints properties will determine whether each candidate will actually receive an email.
-                 */
-
-                Set<String> subscribers = subscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
-                Set<String> unsubscribers = unsubscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
-                RecipientsAuthorizationCriterion externalAuthorizationCriteria = recipientsAuthorizationCriterionExtractor.extract(aggregation);
-
-                Set<User> recipients = externalRecipientsResolver.recipientUsers(
-                    aggregationKey.getOrgId(),
-                    Stream.concat(
-                        endpoints
-                            .stream()
-                            .map(EndpointRecipientSettings::new),
-                        getActionRecipientSettings(aggregation.getPayload())
-                    ).collect(toSet()),
-                    subscribers,
-                    unsubscribers,
-                    eventType.isSubscribedByDefault(),
-                    externalAuthorizationCriteria
-                ).stream().filter(user -> user.getEmail() != null && !user.getEmail().isBlank()).collect(toSet());
-
-                /*
-                 * We now have the final recipients list.
-                 * Let's populate the Map that will be returned by the method.
-                 */
-                recipients.forEach(recipient -> {
-                    // We may or may not have already initialized an aggregator for the recipient.
-                    AbstractEmailPayloadAggregator aggregator = aggregated
-                        .computeIfAbsent(recipient, ignored -> EmailPayloadAggregatorFactory.by(aggregationKey, start, end));
-                    // It's aggregation time!
-                    aggregator.aggregate(aggregation);
-                });
-            }
-            totalAggregatedElements += aggregations.size();
-        } while (maxPageSize == aggregations.size());
-        Log.infof("%d elements were aggregated for key %s", totalAggregatedElements, aggregationKey);
-    }
-
-    private void aggregationBasedOnEvent(EventAggregationCriteria eventAggregationCriteria, LocalDateTime start, LocalDateTime end, Map<String, Set<String>> subscribersByEventType, Map<String, Set<String>> unsubscribersByEventType, Map<User, AbstractEmailPayloadAggregator> aggregated) {
+    private void aggregationBasedOnEvent(EventAggregationCriterion eventAggregationCriteria,
+                                         LocalDateTime start,
+                                         LocalDateTime end,
+                                         Map<String, Set<String>> subscribersByEventType,
+                                         Map<String, Set<String>> unsubscribersByEventType,
+                                         Map<User, AbstractEmailPayloadAggregator> aggregated) {
         int offset = 0;
         int totalAggregatedElements = 0;
 
