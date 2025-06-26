@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
-import static com.redhat.cloud.notifications.processors.AuthenticationType.BASIC;
 import static com.redhat.cloud.notifications.processors.AuthenticationType.BEARER;
 import static com.redhat.cloud.notifications.processors.AuthenticationType.SECRET_TOKEN;
 
@@ -86,12 +85,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
     }
 
     private static Optional<JsonObject> getAuthentication(WebhookProperties properties) {
-        if (properties.getBasicAuthenticationSourcesId() != null) {
-            return Optional.of(JsonObject.of(
-                "type", BASIC,
-                "secretId", properties.getBasicAuthenticationSourcesId()
-            ));
-        } else if (properties.getBearerAuthenticationSourcesId() != null) {
+        if (properties.getBearerAuthenticationSourcesId() != null) {
             return Optional.of(JsonObject.of(
                 "type", BEARER,
                 "secretId", properties.getBearerAuthenticationSourcesId()

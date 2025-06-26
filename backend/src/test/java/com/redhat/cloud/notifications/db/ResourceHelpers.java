@@ -440,22 +440,11 @@ public class ResourceHelpers {
                 webhookProperties.setMethod(HttpType.GET);
                 webhookProperties.setUrl("https://redhat.com");
 
-                // Maybe set a basic authentication, maybe not...
-                if (i % 3 == 0) {
-                    webhookProperties.setBasicAuthentication(
-                        new BasicAuthentication(
-                            UUID.randomUUID().toString(),
-                            UUID.randomUUID().toString()
-                        )
-                    );
-                }
-
                 // Maybe set a secret token, maybe not...
                 if (i % 3 == 0) {
                     webhookProperties.setSecretToken(UUID.randomUUID().toString());
                 }
 
-                webhookProperties.setBasicAuthenticationSourcesId(random.nextLong());
                 webhookProperties.setSecretTokenSourcesId(random.nextLong());
 
                 endpoint.setProperties(webhookProperties);
@@ -513,9 +502,6 @@ public class ResourceHelpers {
             webhookProperties.setMethod(HttpType.GET);
             webhookProperties.setUrl("https://redhat.com");
 
-            webhookProperties.setBasicAuthentication(
-                new BasicAuthentication(UUID.randomUUID().toString(), UUID.randomUUID().toString())
-            );
             webhookProperties.setSecretToken(UUID.randomUUID().toString());
 
             final Endpoint endpoint = new Endpoint();
@@ -583,7 +569,6 @@ public class ResourceHelpers {
                 endpoint.setType(EndpointType.WEBHOOK);
 
                 final WebhookProperties webhookProperties = new WebhookProperties();
-                webhookProperties.setBasicAuthentication(getRandomBasicAuth.get());
                 webhookProperties.setDisableSslVerification(random.nextBoolean());
                 webhookProperties.setMethod(HttpType.GET);
                 webhookProperties.setSecretToken(UUID.randomUUID().toString());

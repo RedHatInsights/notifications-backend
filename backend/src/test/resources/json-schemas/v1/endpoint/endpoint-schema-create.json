@@ -154,9 +154,6 @@
             "url": {
               "$ref": "#/definitions/url"
             },
-            "basic_authentication": {
-              "$ref": "#/definitions/basic-authentication"
-            },
             "bearer_authentication": {
               "$ref": "#/definitions/bearer-authentication"
             },

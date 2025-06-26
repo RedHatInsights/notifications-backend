@@ -1628,7 +1628,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         properties.setMethod(POST);
         properties.setDisableSslVerification(false);
         properties.setSecretToken("my-super-secret-token");
-        properties.setBasicAuthentication(new BasicAuthentication("myuser", "mypassword"));
         properties.setBearerAuthentication("my-test-bearer-token");
         properties.setUrl(getMockServerUrl());
 
@@ -1640,11 +1639,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setProperties(properties);
 
         // Mock the Sources service calls.
-        final Secret basicAuthSecret = new Secret();
-        basicAuthSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
-        basicAuthSecret.password = properties.getBasicAuthentication().getPassword();
-        basicAuthSecret.username = properties.getBasicAuthentication().getUsername();
-
         final Secret secretTokenSecret = new Secret();
         secretTokenSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
         secretTokenSecret.password = properties.getSecretToken();
@@ -1653,16 +1647,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
         bearerTokenSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
         bearerTokenSecret.password = properties.getBearerAuthentication();
 
-        // The SecretUtils class follows the "basic authentication", "secret
+        // The SecretUtils class follows the "secret
         // token" and "bearer token" order, so that is why we make the returns
         // in that order for the mock.
         when(this.sourcesServiceMock.create(anyString(), anyString(), any()))
-            .thenReturn(basicAuthSecret, secretTokenSecret, bearerTokenSecret);
+            .thenReturn(secretTokenSecret, bearerTokenSecret);
 
         // Make sure that when the secrets are loaded when we fetch the
         // endpoint again for checking the assertions, we simulate fetching
         // the secrets from Sources too.
-        when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(basicAuthSecret.id))).thenReturn(basicAuthSecret);
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(bearerTokenSecret.id))).thenReturn(bearerTokenSecret);
 
@@ -1698,8 +1691,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         JsonObject attr = responsePointSingle.getJsonObject("properties");
         attr.mapTo(WebhookProperties.class);
-        assertNotNull(attr.getJsonObject("basic_authentication"));
-        assertEquals("mypassword", attr.getJsonObject("basic_authentication").getString("password"));
         assertEquals(properties.getBearerAuthentication(), attr.getString("bearer_authentication"));
     }
 
@@ -2447,7 +2438,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         camelProperties.setSecretToken("endpoint-invalid-urls-secret-token");
 
         final var webhookProperties = new WebhookProperties();
-        webhookProperties.setBasicAuthentication(new BasicAuthentication("endpoint-invalid-urls-basic-authentication-username", "endpoint-invalid-urls-basic-authentication-password"));
         webhookProperties.setDisableSslVerification(false);
         webhookProperties.setMethod(POST);
         webhookProperties.setSecretToken("endpoint-invalid-urls-secret-token");
@@ -2585,7 +2575,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         camelProperties.setSecretToken(secretToken);
 
         final WebhookProperties webhookProperties = new WebhookProperties();
-        webhookProperties.setBasicAuthentication(new BasicAuthentication(username, password));
         webhookProperties.setDisableSslVerification(disableSslVerification);
         webhookProperties.setMethod(POST);
         webhookProperties.setSecretToken(secretToken);
@@ -2896,9 +2885,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         properties.setUrl(getMockServerUrl());
 
         final Endpoint endpoint = new Endpoint();
-        endpoint.setDescription("test update endpoint delete basic authentication");
+        endpoint.setDescription("test update endpoint delete secrets");
         endpoint.setEnabled(true);
-        endpoint.setName("test update endpoint delete basic authentication");
+        endpoint.setName("test update endpoint delete secrets");
         endpoint.setOrgId(DEFAULT_ORG_ID);
         endpoint.setProperties(properties);
         endpoint.setServerErrors(0);
@@ -2924,17 +2913,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Assertions.assertTrue(endpointUuidRaw != null && !endpointUuidRaw.isBlank(), "the endpoint's UUID is not present after creating it");
         final UUID endpointUuid = UUID.fromString(endpointUuidRaw);
 
-        // Now update the endpoint by setting the "basic authentication"
+        // Now update the endpoint by setting the "bearer authentication"
         // and the "secret token".
-        properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
         properties.setSecretToken("my-super-secret-token");
         properties.setBearerAuthentication("my-super-bearer-token");
 
         // The below two secrets will be returned when we simulate that
         // we have called sources to create these secrets.
-        final Secret mockedBasicAuthenticationSecret = new Secret();
-        mockedBasicAuthenticationSecret.id = 25L;
-
         final Secret mockedSecretTokenSecret = new Secret();
         mockedSecretTokenSecret.id = 50L;
 
@@ -2948,7 +2933,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 any()
             )
         ).thenReturn(
-            mockedBasicAuthenticationSecret,
             mockedSecretTokenSecret,
             mockedSecretBearer
         );
@@ -2965,7 +2949,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .statusCode(HttpStatus.SC_OK);
 
         // Verify that both secrets were created in Sources.
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(3)).create(
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(2)).create(
             eq(DEFAULT_ORG_ID),
             eq(this.sourcesPsk),
             any()
@@ -2975,15 +2959,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final Endpoint databaseEndpoint = this.endpointRepository.getEndpoint(DEFAULT_ORG_ID, endpointUuid);
         final WebhookProperties webhookProperties = databaseEndpoint.getProperties(WebhookProperties.class);
 
-        Assertions.assertEquals(25L, webhookProperties.getBasicAuthenticationSourcesId(), "Sources was called to create the basic authentication secret, but the secret's ID wasn't present in the database");
         Assertions.assertEquals(50L, webhookProperties.getSecretTokenSourcesId(), "Sources was called to create the secret token secret, but the secret's ID wasn't present in the database");
         Assertions.assertEquals(75L, webhookProperties.getBearerAuthenticationSourcesId(), "Sources was called to create the bearer authentication secret, but the secret's ID wasn't present in the database");
     }
 
     /**
-     * Tests that when an endpoint gets updated, if the user removes the "basic
-     * authentication" and "secret token" secrets, then the secrets are deleted
-     * from Sources and their references deleted from our database.
+     * Tests that when an endpoint gets updated, if the user removes the
+     * "secret token" secrets, then the secrets are deleted from Sources and
+     * their references deleted from our database.
      */
     @ParameterizedTest
     @MethodSource("kesselFlags")
@@ -2997,15 +2980,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Create the endpoint that we will attempt to modify.
         final WebhookProperties properties = new WebhookProperties();
         properties.setDisableSslVerification(false);
-        properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
         properties.setMethod(POST);
         properties.setSecretToken("my-super-secret-token");
         properties.setUrl(getMockServerUrl());
 
         final Endpoint endpoint = new Endpoint();
-        endpoint.setDescription("test update endpoint delete basic authentication");
+        endpoint.setDescription("test update endpoint delete secrets");
         endpoint.setEnabled(true);
-        endpoint.setName("test update endpoint delete basic authentication");
+        endpoint.setName("test update endpoint delete secrets");
         endpoint.setOrgId(DEFAULT_ORG_ID);
         endpoint.setProperties(properties);
         endpoint.setServerErrors(0);
@@ -3014,9 +2996,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // The below two secrets will be returned when we simulate that
         // we have called sources to create these secrets.
-        final Secret mockedBasicAuthenticationSecret = new Secret();
-        mockedBasicAuthenticationSecret.id = 25L;
-
         final Secret mockedSecretTokenSecret = new Secret();
         mockedSecretTokenSecret.id = 50L;
 
@@ -3027,7 +3006,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 any()
             )
         ).thenReturn(
-            mockedBasicAuthenticationSecret,
             mockedSecretTokenSecret
         );
 
@@ -3050,9 +3028,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Assertions.assertTrue(endpointUuidRaw != null && !endpointUuidRaw.isBlank(), "the endpoint's UUID is not present after creating it");
         final UUID endpointUuid = UUID.fromString(endpointUuidRaw);
 
-        // Now update the endpoint by setting its "basic authentication" to
+        // Now update the endpoint by setting its "secret token" to
         // null, which triggers the secret deletion in Sources.
-        properties.setBasicAuthentication(null);
         properties.setSecretToken(null);
 
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointUuid.toString());
@@ -3066,14 +3043,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(HttpStatus.SC_OK);
 
-        // Verify that the basic authentication secret was deleted from
-        // Sources.
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(1)).delete(
-            DEFAULT_ORG_ID,
-            this.sourcesPsk,
-            25L
-        );
-
         // Verify that the secret token secret was deleted from Sources.
         Mockito.verify(this.sourcesServiceMock, Mockito.times(1)).delete(
             DEFAULT_ORG_ID,
@@ -3085,7 +3054,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final Endpoint databaseEndpoint = this.endpointRepository.getEndpoint(DEFAULT_ORG_ID, endpointUuid);
         final WebhookProperties webhookProperties = databaseEndpoint.getProperties(WebhookProperties.class);
 
-        assertNull(webhookProperties.getBasicAuthenticationSourcesId(), "Sources was called to delete the basic authentication secret, but the secret's ID wasn't deleted from the database");
         assertNull(webhookProperties.getSecretTokenSourcesId(), "Sources was called to delete the secret token secret, but the secret's ID wasn't deleted from the database");
     }
 
@@ -3105,16 +3073,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Create the endpoint that we will attempt to modify.
         final WebhookProperties properties = new WebhookProperties();
-        properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
         properties.setDisableSslVerification(false);
         properties.setMethod(POST);
         properties.setSecretToken("my-super-secret-token ");
         properties.setUrl(getMockServerUrl());
 
         final Endpoint endpoint = new Endpoint();
-        endpoint.setDescription("test update endpoint delete basic authentication");
+        endpoint.setDescription("test update endpoint delete secrets");
         endpoint.setEnabled(true);
-        endpoint.setName("test update endpoint delete basic authentication");
+        endpoint.setName("test update endpoint delete secrets");
         endpoint.setOrgId(DEFAULT_ORG_ID);
         endpoint.setProperties(properties);
         endpoint.setServerErrors(0);
@@ -3123,9 +3090,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // The below two secrets will be returned when we simulate that
         // we have called sources to create these secrets.
-        final Secret mockedBasicAuthenticationSecret = new Secret();
-        mockedBasicAuthenticationSecret.id = 25L;
-
         final Secret mockedSecretTokenSecret = new Secret();
         mockedSecretTokenSecret.id = 50L;
 
@@ -3136,7 +3100,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 any()
             )
         ).thenReturn(
-            mockedBasicAuthenticationSecret,
             mockedSecretTokenSecret
         );
 
@@ -3163,21 +3126,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // references from the database.
         final Endpoint databaseEndpointPreUpdate = this.endpointRepository.getEndpoint(DEFAULT_ORG_ID, endpointUuid);
         final WebhookProperties databasePropertiesPreUpdate = databaseEndpointPreUpdate.getProperties(WebhookProperties.class);
-        final long basicAuthReferencePreUpdate = databasePropertiesPreUpdate.getBasicAuthenticationSourcesId();
         final long secretTokenReferencePreUpdate = databasePropertiesPreUpdate.getSecretTokenSourcesId();
 
-        // Now update the endpoint by updating its "basic authentication"
-        // and "secret token".
-        properties.setBasicAuthentication(new BasicAuthentication("basic-auth-user", "basic-auth-password"));
+        // Now update the endpoint by updating its "secret token".
         properties.setSecretToken("my-super-secret-token");
 
         // The below two secrets will be returned when we simulate that
         // we have called sources to update these secrets. This should
         // never ever happen in real life, but I want to make sure that our
         // logic doesn't, by mistake, update the references.
-        final Secret mockedBasicAuthenticationUpdatedSecret = new Secret();
-        mockedBasicAuthenticationSecret.id = 75L;
-
         final Secret mockedSecretTokenUpdatedSecret = new Secret();
         mockedSecretTokenSecret.id = 100L;
 
@@ -3189,7 +3146,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 any()
             )
         ).thenReturn(
-            mockedBasicAuthenticationUpdatedSecret,
             mockedSecretTokenUpdatedSecret
         );
 
@@ -3204,8 +3160,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(HttpStatus.SC_OK);
 
-        // Verify that both secrets were updated in Sources.
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(2)).update(
+        // Verify that the secret token was updated in Sources.
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(1)).update(
             eq(DEFAULT_ORG_ID),
             eq(this.sourcesPsk),
             Mockito.anyLong(),
@@ -3216,10 +3172,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // in the database.
         final Endpoint databaseEndpoint = this.endpointRepository.getEndpoint(DEFAULT_ORG_ID, endpointUuid);
         final WebhookProperties webhookProperties = databaseEndpoint.getProperties(WebhookProperties.class);
-        final long basicAuthReferenceAfterUpdate = webhookProperties.getBasicAuthenticationSourcesId();
         final long secretTokenReferenceAfterUpdate = webhookProperties.getSecretTokenSourcesId();
 
-        Assertions.assertEquals(basicAuthReferencePreUpdate, basicAuthReferenceAfterUpdate, "the ID of the basic authentication's secret got updated after updating the secret in Sources, which should never happen");
         Assertions.assertEquals(secretTokenReferencePreUpdate, secretTokenReferenceAfterUpdate, "the ID of the secret token's secret got updated after updating the secret in Sources, which should never happen");
     }
 
@@ -3395,7 +3349,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         WebhookProperties properties = new WebhookProperties();
-        properties.setBasicAuthentication(new BasicAuthentication("username", "password"));
         properties.setBearerAuthentication("bearer-authentication");
         properties.setDisableSslVerification(false);
         properties.setMethod(POST);
@@ -3414,12 +3367,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Mock the Sources service calls.
-        final Secret basicAuthSecret = new Secret();
-        basicAuthSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
-        basicAuthSecret.authenticationType = Secret.TYPE_BASIC_AUTH;
-        basicAuthSecret.password = properties.getBasicAuthentication().getPassword();
-        basicAuthSecret.username = properties.getBasicAuthentication().getUsername();
-
         final Secret bearerAuthentication = new Secret();
         bearerAuthentication.id = new Random().nextLong(1, Long.MAX_VALUE);
         bearerAuthentication.authenticationType = Secret.TYPE_BEARER_AUTHENTICATION;
@@ -3431,7 +3378,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
         secretToken.password = properties.getSecretToken();
 
         Mockito.when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any())).thenReturn(
-            basicAuthSecret,
             bearerAuthentication,
             secretToken
         );
@@ -3453,17 +3399,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .contentType(JSON);
 
         // Verify that all the secrets were created in Sources.
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(3)).create(
+        Mockito.verify(this.sourcesServiceMock, Mockito.times(2)).create(
             eq(DEFAULT_ORG_ID),
             eq(this.sourcesPsk),
             any()
-        );
-
-        // Assert that the basic authentication secret is deleted.
-        Mockito.verify(this.sourcesServiceMock, Mockito.times(1)).delete(
-            eq(DEFAULT_ORG_ID),
-            eq(this.sourcesPsk),
-            eq(basicAuthSecret.id)
         );
 
         // Assert that the bearer authentication secret is deleted.

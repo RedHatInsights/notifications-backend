@@ -22,7 +22,6 @@ import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBui
 import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
-import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BASIC;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BEARER;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_3XX;
@@ -58,8 +57,6 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
     boolean addInsightsToken = false;
     boolean addBearerToken = false;
 
-    boolean addBasicAuth = false;
-
     @Override
     protected JsonObject buildIncomingPayload(String targetUrl) {
         JsonObject endpointProperties = new JsonObject();
@@ -82,10 +79,6 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
         if (addBearerToken) {
             authentication.put("type", BEARER.name());
             authentication.put("secretId", 456L);
-        }
-        if (addBasicAuth) {
-            authentication.put("type", BASIC.name());
-            authentication.put("secretId", 789L);
         }
         if (!authentication.isEmpty()) {
             fullPayload.put("authentication", authentication);
@@ -116,19 +109,10 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
                 checkBearerToken = outgoingAuthorization == null || !outgoingAuthorization.startsWith("Bearer ");
             }
 
-            boolean checkBasicAuth;
-            if (addBasicAuth) {
-                checkBasicAuth = exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class) == BASIC &&
-                    exchange.getProperty(SECRET_ID, Long.class).equals(789L);
-            } else {
-                checkBasicAuth = outgoingAuthorization == null || !outgoingAuthorization.startsWith("Basic ");
-            }
-
             return outgoingPayload.equals(incomingPayload.getString("payload"))
                 && outgoingContentType.equals("application/json; charset=utf-8")
                 && checkInsightsToken
-                && checkBearerToken
-                && checkBasicAuth;
+                && checkBearerToken;
         };
     }
 
@@ -175,16 +159,6 @@ class WebhookConnectorRoutesTest extends ConnectorRoutesTest {
             testSuccessfulNotification();
         } finally {
             addBearerToken = false;
-        }
-    }
-
-    @Test
-    void testSuccessfulNotificationWithBasicAuth() throws Exception {
-        try {
-            addBasicAuth = true;
-            testSuccessfulNotification();
-        } finally {
-            addBasicAuth = false;
         }
     }
 
