@@ -277,7 +277,6 @@ public class EndpointRepositoryTest {
         final CamelProperties camelProperties = new CamelProperties();
 
         camelProperties.setId(UUID.randomUUID());
-        camelProperties.setBasicAuthenticationSourcesId(513L);
         camelProperties.setDisableSslVerification(false);
         camelProperties.setExtras(Map.of("channel", "#notifications"));
         camelProperties.setSecretTokenSourcesId(214L);
@@ -286,7 +285,6 @@ public class EndpointRepositoryTest {
         CamelProperties dbProperties = findByUuidAndOrgIdInternal(CAMEL, "slack", camelProperties, CamelProperties.class);
 
         Assertions.assertEquals(camelProperties.getId(), dbProperties.getId(), "the ID of the associated camel properties doesn't match");
-        Assertions.assertEquals(camelProperties.getBasicAuthenticationSourcesId(), dbProperties.getBasicAuthenticationSourcesId(), "unexpected basic authentication sources id value");
         Assertions.assertEquals(camelProperties.getDisableSslVerification(), dbProperties.getDisableSslVerification(), "unexpected ssl verification value");
         Assertions.assertEquals(camelProperties.getExtras(), dbProperties.getExtras(), "unexpected extras map (slack channel)");
         Assertions.assertEquals(camelProperties.getSecretTokenSourcesId(), dbProperties.getSecretTokenSourcesId(), "unexpected secret token sources ID value");

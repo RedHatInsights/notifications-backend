@@ -5,7 +5,6 @@ import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
-import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
@@ -24,7 +23,6 @@ import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.CamelPro
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.PagerDutyPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.PagerDutySeverityDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.WebhookPropertiesDTO;
-import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.secrets.BasicAuthenticationDTO;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -107,7 +105,6 @@ public class EndpointMapperTest {
         final CamelProperties camelProperties = new CamelProperties();
         camelProperties.setDisableSslVerification(false);
         camelProperties.setUrl("https://redhat.com");
-        camelProperties.setBasicAuthentication(new BasicAuthentication("username", "password"));
         camelProperties.setSecretToken("secret-token");
 
         final SystemSubscriptionProperties systemSubscriptionProperties = new SystemSubscriptionProperties();
@@ -176,11 +173,6 @@ public class EndpointMapperTest {
         Assertions.assertEquals("my-slack-channel", camelPropertiesDTO.getExtras().get("channel"), "the \"channel\" property from the \"extras\" was not properly deserialized");
         Assertions.assertEquals("https://redhat.com", camelPropertiesDTO.getUrl(), "the url was not properly deserialized");
 
-        final BasicAuthenticationDTO basicAuthenticationDTO = camelPropertiesDTO.getBasicAuthentication();
-        Assertions.assertNotNull(basicAuthenticationDTO, "the basic authentication object was not properly deserialized");
-        Assertions.assertEquals("camel-user", basicAuthenticationDTO.getUsername(), "the username of the basic authentication object was not properly deserialized");
-        Assertions.assertEquals("camel-pass", basicAuthenticationDTO.getPassword(), "the password of the basic authentication object was not properly deserialized");
-
         Assertions.assertEquals("c4m3l-up3r-s3cr3t-t0k3n", camelPropertiesDTO.getSecretToken(), "the secret token was not properly deserialized");
 
         final Endpoint entity = this.endpointMapper.toEntity(dto);
@@ -201,11 +193,6 @@ public class EndpointMapperTest {
         Assertions.assertTrue(camelProperties.getDisableSslVerification(), "the \"disable SSL verification\" flag was not properly mapped");
         Assertions.assertEquals("my-slack-channel", camelProperties.getExtras().get("channel"), "the \"channel\" property from the \"extras\" was not properly mapped");
         Assertions.assertEquals("https://redhat.com", camelProperties.getUrl(), "the url was not properly mapped");
-
-        final BasicAuthentication basicAuthentication = camelProperties.getBasicAuthentication();
-        Assertions.assertNotNull(basicAuthentication, "the basic authentication object was not properly mapped");
-        Assertions.assertEquals("camel-user", basicAuthentication.getUsername(), "the username of the basic authentication object was not properly mapped");
-        Assertions.assertEquals("camel-pass", basicAuthentication.getPassword(), "the password of the basic authentication object was not properly mapped");
 
         Assertions.assertEquals("c4m3l-up3r-s3cr3t-t0k3n", camelProperties.getSecretToken(), "the secret token was not properly mapped");
     }
