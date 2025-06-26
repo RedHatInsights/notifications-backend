@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.Objects;
 import java.util.UUID;
 
-public class EventAggregationCriteria extends EmailAggregationKey {
+public class EventAggregationCriterion {
 
     @NotNull
     private final UUID bundleId;
@@ -12,8 +12,31 @@ public class EventAggregationCriteria extends EmailAggregationKey {
     @NotNull
     private final UUID applicationId;
 
-    public EventAggregationCriteria(String orgId, UUID bundleId, UUID applicationId, String bundle, String application) {
-        super(orgId, bundle, application);
+    @NotNull
+    private final String orgId;
+
+    @NotNull
+    private final String bundle;
+
+    @NotNull
+    private final String application;
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public String getBundle() {
+        return bundle;
+    }
+
+    public String getApplication() {
+        return application;
+    }
+
+    public EventAggregationCriterion(String orgId, UUID bundleId, UUID applicationId, String bundle, String application) {
+        this.orgId = orgId;
+        this.bundle = bundle;
+        this.application = application;
         this.bundleId = bundleId;
         this.applicationId = applicationId;
     }
@@ -28,13 +51,11 @@ public class EventAggregationCriteria extends EmailAggregationKey {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
+        if (o == null || getClass() != o.getClass()) {
+            return false;
         }
-        EmailAggregationKey that = (EmailAggregationKey) o;
-        return Objects.equals(getOrgId(), that.getOrgId()) &&
-            Objects.equals(getBundle(), that.getBundle()) &&
-            Objects.equals(getApplication(), that.getApplication());
+        EventAggregationCriterion that = (EventAggregationCriterion) o;
+        return Objects.equals(bundleId, that.bundleId) && Objects.equals(applicationId, that.applicationId) && Objects.equals(orgId, that.orgId) && Objects.equals(bundle, that.bundle) && Objects.equals(application, that.application);
     }
 
     @Override

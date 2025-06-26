@@ -77,11 +77,8 @@ public class DailyEmailAggregationJob {
             // get targeted schedule execution time
             LocalDateTime now = computeScheduleExecutionTime();
 
-            if (aggregatorConfig.isAggregationBasedOnEventEnabled()) {
-                aggregationOrgConfigRepository.createMissingDefaultConfigurationBasedOnEvent(defaultDailyDigestTime);
-            } else {
-                aggregationOrgConfigRepository.createMissingDefaultConfiguration(defaultDailyDigestTime);
-            }
+            aggregationOrgConfigRepository.createMissingDefaultConfigurationBasedOnEvent(defaultDailyDigestTime);
+
             List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(now, registry);
             Log.infof("found %s commands", aggregationCommands.size());
             Log.debugf("Aggregation commands: %s", aggregationCommands);
@@ -141,39 +138,7 @@ public class DailyEmailAggregationJob {
 
     List<AggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
 
-        List<AggregationCommand> pendingAggregationCommands = new ArrayList<>();
-
-        final List<AggregationCommand> pendingAggregationCommandsFromEmailAggregation = emailAggregationResources.getApplicationsWithPendingAggregationAccordinfOrgPref(endTime);
-        if (aggregatorConfig.isAggregationBasedOnEventEnabled()) {
-            final List<AggregationCommand> pendingAggregationCommandsFromEvents = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(endTime);
-
-            List<AggregationCommand> differences = pendingAggregationCommandsFromEmailAggregation.stream()
-                .filter(element -> !pendingAggregationCommandsFromEvents.contains(element))
-                .collect(Collectors.toList());
-
-            if (!differences.isEmpty()) {
-                Log.warnf("Fetching aggregation from legacy way have more record than the events way:");
-                for (AggregationCommand differencesCommand : differences) {
-                    Log.info(differencesCommand.toString());
-                }
-            }
-
-            differences = pendingAggregationCommandsFromEvents.stream()
-                .filter(element -> !pendingAggregationCommandsFromEmailAggregation.contains(element))
-                .collect(Collectors.toList());
-
-            if (!differences.isEmpty()) {
-                Log.warnf("Fetching aggregation from events have more record than the legacy way:");
-                for (AggregationCommand differencesCommand : differences) {
-                    Log.info(differencesCommand.toString());
-                }
-            }
-
-            pendingAggregationCommands = pendingAggregationCommandsFromEvents.stream().filter(e -> aggregatorConfig.isAggregationBasedOnEventEnabledByOrgId(e.getOrgId())).collect(Collectors.toList());
-            pendingAggregationCommands.addAll(pendingAggregationCommandsFromEmailAggregation.stream().filter(e -> !aggregatorConfig.isAggregationBasedOnEventEnabledByOrgId(e.getOrgId())).collect(Collectors.toList()));
-        } else {
-            pendingAggregationCommands = pendingAggregationCommandsFromEmailAggregation;
-        }
+        List<AggregationCommand> pendingAggregationCommands = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(endTime);
 
         pairsProcessed = Gauge
                 .build()

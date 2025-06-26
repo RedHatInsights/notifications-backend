@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 public class TriggerDailyDigestRequestTest {
 
@@ -40,6 +41,8 @@ public class TriggerDailyDigestRequestTest {
             final TriggerDailyDigestRequest blankApplicationName = new TriggerDailyDigestRequest(
                     blankAppName,
                     "bundle-name",
+                    UUID.randomUUID(),
+                UUID.randomUUID(),
                     "test-blank-application-name-org-id",
                     null,
                     null
@@ -67,6 +70,8 @@ public class TriggerDailyDigestRequestTest {
             final TriggerDailyDigestRequest blankApplicationName = new TriggerDailyDigestRequest(
                     "application-name",
                     blankBundleName,
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
                     "test-blank-bundle-name-org-id",
                     null,
                     null
@@ -95,6 +100,8 @@ public class TriggerDailyDigestRequestTest {
             final TriggerDailyDigestRequest blankApplicationName = new TriggerDailyDigestRequest(
                     "application-name",
                     "bundle-name",
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
                     blankOrgId,
                     null,
                     null
@@ -115,6 +122,8 @@ public class TriggerDailyDigestRequestTest {
         final TriggerDailyDigestRequest blankApplicationName = new TriggerDailyDigestRequest(
                 "application-name",
                 "bundle-name",
+            null,
+            null,
                 "test-default-local-date-time-values-org-id",
                 null,
                 null
