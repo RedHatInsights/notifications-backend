@@ -127,16 +127,14 @@ public class EndpointProcessor {
             }
         }
 
-        List<Endpoint> filteredEndpoints = new ArrayList<>();
-        for (Endpoint endpoint: endpoints) {
+        endpoints.removeIf(endpoint -> {
             // Default endpoints (orgId is null) used as system integrations for the all orgs can't be blacklisted
             if (null != endpoint.getOrgId() && engineConfig.isBlacklistedEndpoint(endpoint.getId())) {
                 Log.infof("Org: %s, skipping endpoint: %s because it was blacklisted", endpoint.getOrgId(), endpoint.getId());
-            } else {
-                filteredEndpoints.add(endpoint);
+                return true;
             }
-        }
-        endpoints = filteredEndpoints;
+            return false;
+        });
 
         // Target endpoints are grouped by endpoint type.
         endpointTargeted.increment(endpoints.size());
