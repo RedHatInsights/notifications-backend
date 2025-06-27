@@ -292,6 +292,7 @@ public class EndpointProcessorTest {
         final String orgId = "test-org-id";
         final UUID endpointUuid = UUID.randomUUID();
         final UUID endpointUuid2 = UUID.randomUUID();
+        final UUID endpointUuid3 = UUID.randomUUID();
         Mockito.when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
 
         final Endpoint blacklistedEndpoint = new Endpoint();
@@ -305,7 +306,7 @@ public class EndpointProcessorTest {
         regularEndpoint.setType(EndpointType.WEBHOOK);
 
         final Endpoint systemEndpoint = new Endpoint();
-        systemEndpoint.setId(endpointUuid2);
+        systemEndpoint.setId(endpointUuid3);
         systemEndpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
 
         Action action = buildAction(orgId);
@@ -322,9 +323,9 @@ public class EndpointProcessorTest {
         Mockito.when(this.endpointRepository.getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(regularEndpoint, blacklistedEndpoint, systemEndpoint));
         Mockito.when(this.endpointRepository.getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(regularEndpoint, blacklistedEndpoint, systemEndpoint));
 
-        Mockito.doNothing().when(this.webhookProcessor).process(Mockito.any(Event.class), Mockito.anyList());
-
         Mockito.when(engineConfig.isBlacklistedEndpoint(eq(endpointUuid))).thenReturn(true);
+        // endpointUuid3 blacklisting should fe ignored because it's a system endpoint (org_id is null)
+        Mockito.when(engineConfig.isBlacklistedEndpoint(eq(endpointUuid3))).thenReturn(true);
 
         this.endpointProcessor.process(event);
 
@@ -344,7 +345,6 @@ public class EndpointProcessorTest {
         // all endpoints blacklisted
         Mockito.reset(this.webhookProcessor);
         Mockito.reset(this.emailConnectorProcessor);
-        Mockito.reset(this.engineConfig);
         Mockito.reset(this.engineConfig);
 
         Mockito.when(this.endpointRepository.getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(regularEndpoint, blacklistedEndpoint));

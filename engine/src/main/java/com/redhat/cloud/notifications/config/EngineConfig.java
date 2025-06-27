@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
 import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
-import jakarta.annotation.Nonnull;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -267,8 +266,8 @@ public class EngineConfig {
         }
     }
 
-    public boolean isBlacklistedEndpoint(@Nonnull final UUID endpointId) {
-        if (unleashEnabled) {
+    public boolean isBlacklistedEndpoint(final UUID endpointId) {
+        if (unleashEnabled && null != endpointId) {
             UnleashContext unleashContext = UnleashContext.builder()
                 .addProperty("endpointId", endpointId.toString())
                 .build();

@@ -96,24 +96,24 @@ public class EndpointProcessor {
 
     public void process(Event event, boolean replayEmailsOnly) {
         processedItems.increment();
-        List<Endpoint> endpoints;
+        final List<Endpoint> endpoints = new ArrayList<>();
         if (TestEventHelper.isIntegrationTestEvent(event)) {
             final UUID endpointUuid = TestEventHelper.extractEndpointUuidFromTestEvent(event);
 
             final Endpoint endpoint = this.endpointRepository.findByUuidAndOrgId(endpointUuid, event.getOrgId());
 
-            endpoints = List.of(endpoint);
+            endpoints.add(endpoint);
         } else if (isAggregatorEvent(event)) {
             Log.debugf("[org_id: %s] Processing aggregation event: %s", event.getOrgId(), event);
 
-            endpoints = List.of(endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION));
+            endpoints.add(endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION));
 
             Log.debugf("[org_id: %s] Found %s endpoints for the aggregation event: %s", event.getOrgId(), endpoints.size(), event);
         } else {
             if (engineConfig.isUseDirectEndpointToEventTypeEnabled()) {
-                endpoints = endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType());
+                endpoints.addAll(endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType()));
             } else {
-                endpoints = endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType());
+                endpoints.addAll(endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType()));
                 if (engineConfig.isDirectEndpointToEventTypeDryRunEnabled()) {
                     final List<Endpoint> fetchEndpointWithoutBg = endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType());
                     Set<Endpoint> endpointsWithBG = endpoints.stream().collect(Collectors.toSet());
