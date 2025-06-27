@@ -8,7 +8,6 @@ import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
-import org.apache.http.ProtocolException;
 import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
@@ -73,7 +72,7 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
 
     @Test
     void httpProtocolShouldBeInvalid() {
-        assertInvalidTargetUrl("http://example.com/foo?bar=baz", ProtocolException.class);
+        assertInvalidTargetUrl("http://example.com/foo?bar=baz", IllegalArgumentException.class);
     }
 
     @Test

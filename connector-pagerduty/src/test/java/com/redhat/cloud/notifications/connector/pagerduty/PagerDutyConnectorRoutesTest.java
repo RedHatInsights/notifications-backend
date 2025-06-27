@@ -4,9 +4,11 @@ import com.redhat.cloud.notifications.connector.ConnectorRoutesTest;
 import com.redhat.cloud.notifications.connector.TestLifecycleManager;
 import com.redhat.cloud.notifications.connector.authentication.AuthenticationType;
 import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLoader;
+import com.redhat.cloud.notifications.connector.pagerduty.config.PagerDutyConnectorConfig;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.vertx.core.json.JsonObject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Predicate;
@@ -22,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -29,6 +32,9 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
 
     @InjectMock
     SecretsLoader secretsLoader;
+
+    @InjectSpy
+    PagerDutyConnectorConfig config;
 
     @Override
     protected String getMockEndpointPattern() {
@@ -42,7 +48,13 @@ public class PagerDutyConnectorRoutesTest extends ConnectorRoutesTest {
 
     @Override
     protected JsonObject buildIncomingPayload(String targetUrl) {
-        return createIncomingPayload(targetUrl);
+        when(config.getPagerDutyUrl()).thenReturn(targetUrl);
+        return createIncomingPayload();
+    }
+
+    @Override
+    protected boolean useHttps() {
+        return true;
     }
 
     @Override

@@ -1,13 +1,14 @@
 package com.redhat.cloud.notifications.connector.pagerduty;
 
-import com.redhat.cloud.notifications.connector.TestLifecycleManager;
-import io.quarkus.test.common.QuarkusTestResource;
+import com.redhat.cloud.notifications.connector.pagerduty.config.PagerDutyConnectorConfig;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
@@ -27,12 +28,12 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransf
 import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 
 /**
  * These test cases are intended to verify that the {@link PagerDutyTransformer} can handle various possible inputs.
  */
 @QuarkusTest
-@QuarkusTestResource(TestLifecycleManager.class)
 public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     static final String TEST_URL = "https://example.com/";
 
@@ -42,14 +43,19 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     @Inject
     PagerDutyTransformer transformer;
 
-    @Override
-    public boolean isUseRouteBuilder() {
-        return false;
+    @InjectMock
+    PagerDutyConnectorConfig config;
+
+    JsonObject cloudEventData;
+
+    @BeforeEach
+    void init() {
+        when(config.getPagerDutyUrl()).thenReturn(TEST_URL);
+        cloudEventData = createIncomingPayload();
     }
 
     @Test
     void testMissingEventType() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.remove(EVENT_TYPE);
         cloudEventData.put(PAYLOAD, cloudPayload);
@@ -59,7 +65,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
 
     @Test
     void testMissingSource() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.remove(APPLICATION);
         cloudEventData.put(PAYLOAD, cloudPayload);
@@ -69,7 +74,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
 
     @Test
     void testMissingSeverity() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.remove(SEVERITY);
         cloudEventData.put(PAYLOAD, cloudPayload);
@@ -79,8 +83,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
 
     @Test
     void testSuccessfulPayloadTransform() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
-
         JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
         validatePayloadTransform(cloudEventData, expectedPayload);
     }
@@ -91,8 +93,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
      */
     @Test
     void testSuccessfulTestMessage() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
-
         JsonObject cloudEventPayload = JsonObject.of(
                 "version", "2.0.0",
                 "id", "13bb45fe-28a9-416d-81a1-aeb9abb24d41",
@@ -122,7 +122,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
 
     @Test
     void testSuccessfulIqeTestMessage() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudEventPayload = JsonObject.of(
                 "account_id", "default-account-id",
                 "application", "inventory",
@@ -155,7 +154,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
 
     @Test
     void testInvalidTimestampDropped() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.put(TIMESTAMP, "not a timestamp");
         cloudEventData.put(PAYLOAD, cloudPayload);
@@ -166,7 +164,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
 
     @Test
     void testMissingSourceNames() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.remove(SOURCE);
 
@@ -176,7 +173,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
 
     @Test
     void testMissingApplicationDisplayName() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         JsonObject sourceNames = cloudPayload.getJsonObject(SOURCE);
         sourceNames.remove(APPLICATION);
@@ -187,7 +183,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
 
     @Test
     void testSourceWithoutDisplayNames() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.put(SOURCE, new JsonObject());
         cloudEventData.put(PAYLOAD, cloudPayload);
@@ -198,7 +193,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
 
     @Test
     void testMissingEvents() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.remove(EVENTS);
 
@@ -208,7 +202,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
 
     @Test
     void testWithHostUrl() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         JsonObject context = cloudPayload.getJsonObject(CONTEXT);
         context.put("host_url", "https://console.redhat.com/insights/inventory/8a4a4f75-5319-4255-9eb5-1ee5a92efd7f");
@@ -219,7 +212,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
 
     @Test
     void testWithMissingClientDisplayName() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         JsonObject context = cloudPayload.getJsonObject(CONTEXT);
         context.remove(DISPLAY_NAME);
@@ -230,7 +222,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
 
     @Test
     void testWithMissingInventoryId() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         JsonObject context = cloudPayload.getJsonObject(CONTEXT);
         context.remove("inventory_id");
@@ -241,7 +232,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
 
     @Test
     void testMissingInventoryUrl() {
-        JsonObject cloudEventData = createIncomingPayload(TEST_URL);
         JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
         cloudPayload.remove(INVENTORY_URL);
 
