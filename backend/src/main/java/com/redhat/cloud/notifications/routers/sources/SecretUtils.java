@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers.sources;
 
-import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
@@ -44,18 +43,6 @@ public class SecretUtils {
         if (endpointProperties instanceof SourcesSecretable) {
             var props = (SourcesSecretable) endpointProperties;
 
-            final Long basicAuthSourcesId = props.getBasicAuthenticationSourcesId();
-            if (basicAuthSourcesId != null) {
-                Secret secret = loadSecretFromSources(endpoint, basicAuthSourcesId);
-
-                props.setBasicAuthentication(
-                    new BasicAuthentication(
-                        secret.username,
-                        secret.password
-                    )
-                );
-            }
-
             final Long secretTokenSourcesId = props.getSecretTokenSourcesId();
             if (secretTokenSourcesId != null) {
                 Secret secret = loadSecretFromSources(endpoint, secretTokenSourcesId);
@@ -94,15 +81,6 @@ public class SecretUtils {
         if (endpointProperties instanceof SourcesSecretable) {
             var props = (SourcesSecretable) endpointProperties;
 
-            final BasicAuthentication basicAuth = props.getBasicAuthentication();
-            if (!this.isBasicAuthNullOrBlank(basicAuth)) {
-                final long id = this.createBasicAuthentication(basicAuth, endpoint.getOrgId());
-
-                Log.infof("[secret_id: %s] Basic authentication secret created in Sources", id);
-
-                props.setBasicAuthenticationSourcesId(id);
-            }
-
             final String secretToken = props.getSecretToken();
             if (secretToken != null && !secretToken.isBlank()) {
                 final long id = this.createSecretTokenSecret(secretToken, Secret.TYPE_SECRET_TOKEN, endpoint.getOrgId());
@@ -140,38 +118,6 @@ public class SecretUtils {
 
         if (endpointProperties instanceof SourcesSecretable) {
             var props = (SourcesSecretable) endpointProperties;
-
-            final BasicAuthentication basicAuth = props.getBasicAuthentication();
-            final Long basicAuthId = props.getBasicAuthenticationSourcesId();
-            if (basicAuthId != null) {
-                if (this.isBasicAuthNullOrBlank(basicAuth)) {
-                    deleteSecret(endpoint, basicAuthId, "[endpoint_id: %s][secret_id: %s] Basic authentication secret deleted in Sources during an endpoint update operation");
-
-                    props.setBasicAuthenticationSourcesId(null);
-                } else {
-                    Secret secret = new Secret();
-
-                    secret.password = basicAuth.getPassword();
-                    secret.username = basicAuth.getUsername();
-
-                    this.sourcesService.update(
-                        endpoint.getOrgId(),
-                        this.sourcesPsk,
-                        basicAuthId,
-                        secret
-                    );
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources during an endpoint update operation", endpoint.getId(), basicAuthId);
-                }
-            } else {
-                if (this.isBasicAuthNullOrBlank(basicAuth)) {
-                    Log.debugf("[endpoint_id: %s] Basic authentication secret not created in Sources: the basic authentication object is null", endpoint.getId());
-                } else {
-                    final long id = this.createBasicAuthentication(basicAuth, endpoint.getOrgId());
-                    Log.infof("[endpoint_id: %s][secret_id: %s] Basic authentication secret created in Sources during an endpoint update operation", endpoint.getId(), id);
-
-                    props.setBasicAuthenticationSourcesId(id);
-                }
-            }
 
             final String secretToken = props.getSecretToken();
             final Long secretTokenId = props.getSecretTokenSourcesId();
@@ -219,8 +165,7 @@ public class SecretUtils {
     }
 
     /**
-     * Deletes the endpoint's secrets. It requires for the properties to have a "basic authentication" ID or "secret
-     * token" ID on the database.
+     * Deletes the endpoint's secrets. It requires for the properties to have a "secret token" ID on the database.
      * @param endpoint the endpoint to delete the secrets from.
      */
     public void deleteSecretsForEndpoint(Endpoint endpoint) {
@@ -228,11 +173,6 @@ public class SecretUtils {
 
         if (endpointProperties instanceof SourcesSecretable) {
             var props = (SourcesSecretable) endpointProperties;
-
-            final Long basicAuthId = props.getBasicAuthenticationSourcesId();
-            if (basicAuthId != null) {
-                deleteSecret(endpoint, basicAuthId, "[endpoint_id: %s][secret_id: %s] Basic authentication secret updated in Sources");
-            }
 
             final Long secretTokenId = props.getSecretTokenSourcesId();
             if (secretTokenId != null) {
@@ -253,22 +193,6 @@ public class SecretUtils {
             secretId
         );
         Log.infof(logMessageFormat, endpoint.getId(), secretId);
-    }
-
-    /**
-     * Creates a "basic authentication" secret in Sources.
-     * @param basicAuthentication the contents of the "basic authentication" secret.
-     * @param orgId the organization id related to this operation for the tenant identification.
-     * @return the id of the created secret.
-     */
-    private long createBasicAuthentication(final BasicAuthentication basicAuthentication, final String orgId) {
-        Secret secret = new Secret();
-
-        secret.authenticationType = Secret.TYPE_BASIC_AUTH;
-        secret.password = basicAuthentication.getPassword();
-        secret.username = basicAuthentication.getUsername();
-
-        return createSecret(orgId, secret);
     }
 
     /**
@@ -294,21 +218,5 @@ public class SecretUtils {
         );
 
         return createdSecret.id;
-    }
-
-    /**
-     * Checks whether the provided {@link BasicAuthentication} object is null, or if its inner password and username
-     * fields are blank. If any of the username or password fields contain a non-blank string, then it is assumed that
-     * the object is not blank.
-     * @param basicAuthentication the object to check.
-     * @return {@code true} if the object is null, or if the password and the username are blank.
-     */
-    protected boolean isBasicAuthNullOrBlank(final BasicAuthentication basicAuthentication) {
-        if (basicAuthentication == null) {
-            return true;
-        }
-
-        return (basicAuthentication.getPassword() == null || basicAuthentication.getPassword().isBlank()) &&
-                (basicAuthentication.getUsername() == null || basicAuthentication.getUsername().isBlank());
     }
 }
