@@ -39,7 +39,7 @@ import static com.redhat.cloud.notifications.events.EndpointProcessor.TEAMS_ENDP
 import static java.time.ZoneOffset.UTC;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
 
 @QuarkusTest
 public class EndpointProcessorTest {
@@ -164,32 +164,14 @@ public class EndpointProcessorTest {
         // Create an Endpoint which will be simulated to be fetched from the database.
         final String orgId = "test-org-id";
         final UUID endpointUuid = UUID.randomUUID();
-        when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
+        Mockito.when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
 
         final Endpoint endpointFixture = new Endpoint();
         endpointFixture.setId(endpointUuid);
         endpointFixture.setOrgId(orgId);
         endpointFixture.setType(EndpointType.ANSIBLE);
 
-        Action action = new Action.ActionBuilder()
-            .withBundle("rhel")
-            .withApplication("policies")
-            .withEventType("policy-triggered")
-            .withOrgId(orgId)
-            .withTimestamp(LocalDateTime.now(UTC))
-            .withContext(new Context.ContextBuilder()
-                    .withAdditionalProperty("inventory_id", "6ad30f3e-0497-4e74-99f1-b3f9a6120a6f")
-                    .withAdditionalProperty("display_name", "my-computer")
-                    .build()
-            )
-            .withEvents(List.of(
-                    new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
-                            .withMetadata(new Metadata.MetadataBuilder().build())
-                            .withPayload(new Payload.PayloadBuilder()
-                                    .withAdditionalProperty("foo", "bar")
-                                    .build()
-                            ).build()
-            )).build();
+        Action action = buildAction(orgId);
 
         final EventType eventType = new EventType();
         eventType.setId(UUID.randomUUID());
@@ -208,7 +190,7 @@ public class EndpointProcessorTest {
         this.endpointProcessor.process(event);
 
         Mockito.verify(this.endpointRepository, Mockito.times(0)).findByUuidAndOrgId(endpointUuid, orgId);
-        Mockito.verify(this.webhookProcessor, Mockito.times(1)).process(Mockito.eq(event), Mockito.anyList());
+        Mockito.verify(this.webhookProcessor, Mockito.times(1)).process(eq(event), Mockito.anyList());
 
         if (useEndpointToEventTypeDirectLink) {
             Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
@@ -262,25 +244,7 @@ public class EndpointProcessorTest {
         Mockito.when(endpointRepository.getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class)))
             .thenReturn(List.of(webhookEndpoint, slackEndpoint, ansibleEndpoint, drawerEndpoint, pagerDutyEndpoint, emailEndpoint, teamsEndpoint, googleEndpoint, otherEndpoint));
 
-        Action action = new Action.ActionBuilder()
-            .withBundle("rhel")
-            .withApplication("policies")
-            .withEventType("policy-triggered")
-            .withOrgId(orgId)
-            .withTimestamp(LocalDateTime.now(UTC))
-            .withContext(new Context.ContextBuilder()
-                .withAdditionalProperty("inventory_id", "6ad30f3e-0497-4e74-99f1-b3f9a6120a6f")
-                .withAdditionalProperty("display_name", "my-computer")
-                .build()
-            )
-            .withEvents(List.of(
-                new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
-                    .withMetadata(new Metadata.MetadataBuilder().build())
-                    .withPayload(new Payload.PayloadBuilder()
-                        .withAdditionalProperty("foo", "bar")
-                        .build()
-                    ).build()
-            )).build();
+        Action action = buildAction(orgId);
 
         // Convert the action to JSON and back to simulate the event going
         // through Kafka. If not, some additional properties of the context are
@@ -316,6 +280,106 @@ public class EndpointProcessorTest {
             Mockito.verify(googleChatProcessor, Mockito.times(1)).process(any(), any());
             Mockito.verify(camelProcessor, Mockito.times(1)).process(any(), any());
         }
+    }
+
+    /**
+     * Tests Event-Driven Ansible endpoint type being aliased to a WebHook processor.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testBlacklistedEndpoints(final boolean useEndpointToEventTypeDirectLink) {
+        // Create an Endpoint which will be simulated to be fetched from the database.
+        final String orgId = "test-org-id";
+        final UUID endpointUuid = UUID.randomUUID();
+        final UUID endpointUuid2 = UUID.randomUUID();
+        final UUID endpointUuid3 = UUID.randomUUID();
+        Mockito.when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
+
+        final Endpoint blacklistedEndpoint = new Endpoint();
+        blacklistedEndpoint.setId(endpointUuid);
+        blacklistedEndpoint.setOrgId(orgId);
+        blacklistedEndpoint.setType(EndpointType.ANSIBLE);
+
+        final Endpoint regularEndpoint = new Endpoint();
+        regularEndpoint.setId(endpointUuid2);
+        regularEndpoint.setOrgId(orgId);
+        regularEndpoint.setType(EndpointType.WEBHOOK);
+
+        final Endpoint systemEndpoint = new Endpoint();
+        systemEndpoint.setId(endpointUuid3);
+        systemEndpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+
+        Action action = buildAction(orgId);
+
+        final EventType eventType = new EventType();
+        eventType.setId(UUID.randomUUID());
+
+        Event event = new Event();
+        event.setId(UUID.randomUUID());
+        event.setEventWrapper(new EventWrapperAction(action));
+        event.setEventType(eventType);
+        event.setOrgId(orgId);
+
+        Mockito.when(this.endpointRepository.getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(regularEndpoint, blacklistedEndpoint, systemEndpoint));
+        Mockito.when(this.endpointRepository.getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(regularEndpoint, blacklistedEndpoint, systemEndpoint));
+
+        Mockito.when(engineConfig.isBlacklistedEndpoint(eq(endpointUuid))).thenReturn(true);
+        // endpointUuid3 blacklisting should fe ignored because it's a system endpoint (org_id is null)
+        Mockito.when(engineConfig.isBlacklistedEndpoint(eq(endpointUuid3))).thenReturn(true);
+
+        this.endpointProcessor.process(event);
+
+        Mockito.verify(this.endpointRepository, Mockito.times(0)).findByUuidAndOrgId(endpointUuid, orgId);
+        Mockito.verify(this.webhookProcessor, Mockito.times(1)).process(eq(event), Mockito.anyList());
+        Mockito.verify(this.emailConnectorProcessor, Mockito.times(1)).process(eq(event), Mockito.anyList(), anyBoolean());
+        Mockito.verify(this.engineConfig, Mockito.times(2)).isBlacklistedEndpoint(any(UUID.class));
+
+        if (useEndpointToEventTypeDirectLink) {
+            Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
+            Mockito.verify(this.endpointRepository, Mockito.times(0)).getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class));
+        } else {
+            Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class));
+            Mockito.verify(this.endpointRepository, Mockito.times(0)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
+        }
+
+        // all endpoints blacklisted
+        Mockito.reset(this.webhookProcessor);
+        Mockito.reset(this.emailConnectorProcessor);
+        Mockito.reset(this.engineConfig);
+
+        Mockito.when(this.endpointRepository.getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(regularEndpoint, blacklistedEndpoint));
+        Mockito.when(this.endpointRepository.getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(regularEndpoint, blacklistedEndpoint));
+
+        Mockito.when(engineConfig.isBlacklistedEndpoint(any(UUID.class))).thenReturn(true);
+
+        this.endpointProcessor.process(event);
+
+        Mockito.verify(this.webhookProcessor, Mockito.times(0)).process(eq(event), Mockito.anyList());
+        Mockito.verify(this.emailConnectorProcessor, Mockito.times(0)).process(eq(event), Mockito.anyList(), anyBoolean());
+        Mockito.verify(this.engineConfig, Mockito.times(2)).isBlacklistedEndpoint(any(UUID.class));
+    }
+
+    private static Action buildAction(String orgId) {
+        Action action = new Action.ActionBuilder()
+            .withBundle("rhel")
+            .withApplication("policies")
+            .withEventType("policy-triggered")
+            .withOrgId(orgId)
+            .withTimestamp(LocalDateTime.now(UTC))
+            .withContext(new Context.ContextBuilder()
+                .withAdditionalProperty("inventory_id", "6ad30f3e-0497-4e74-99f1-b3f9a6120a6f")
+                .withAdditionalProperty("display_name", "my-computer")
+                .build()
+            )
+            .withEvents(List.of(
+                new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                    .withMetadata(new Metadata.MetadataBuilder().build())
+                    .withPayload(new Payload.PayloadBuilder()
+                        .withAdditionalProperty("foo", "bar")
+                        .build()
+                    ).build()
+            )).build();
+        return action;
     }
 
 }

@@ -24,6 +24,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -95,24 +96,24 @@ public class EndpointProcessor {
 
     public void process(Event event, boolean replayEmailsOnly) {
         processedItems.increment();
-        final List<Endpoint> endpoints;
+        final List<Endpoint> endpoints = new ArrayList<>();
         if (TestEventHelper.isIntegrationTestEvent(event)) {
             final UUID endpointUuid = TestEventHelper.extractEndpointUuidFromTestEvent(event);
 
             final Endpoint endpoint = this.endpointRepository.findByUuidAndOrgId(endpointUuid, event.getOrgId());
 
-            endpoints = List.of(endpoint);
+            endpoints.add(endpoint);
         } else if (isAggregatorEvent(event)) {
             Log.debugf("[org_id: %s] Processing aggregation event: %s", event.getOrgId(), event);
 
-            endpoints = List.of(endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION));
+            endpoints.add(endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION));
 
             Log.debugf("[org_id: %s] Found %s endpoints for the aggregation event: %s", event.getOrgId(), endpoints.size(), event);
         } else {
             if (engineConfig.isUseDirectEndpointToEventTypeEnabled()) {
-                endpoints = endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType());
+                endpoints.addAll(endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType()));
             } else {
-                endpoints = endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType());
+                endpoints.addAll(endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType()));
                 if (engineConfig.isDirectEndpointToEventTypeDryRunEnabled()) {
                     final List<Endpoint> fetchEndpointWithoutBg = endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType());
                     Set<Endpoint> endpointsWithBG = endpoints.stream().collect(Collectors.toSet());
@@ -125,6 +126,15 @@ public class EndpointProcessor {
                 }
             }
         }
+
+        endpoints.removeIf(endpoint -> {
+            // Default endpoints (orgId is null) used as system integrations for the all orgs can't be blacklisted
+            if (null != endpoint.getOrgId() && engineConfig.isBlacklistedEndpoint(endpoint.getId())) {
+                Log.infof("Org: %s, skipping endpoint: %s because it was blacklisted", endpoint.getOrgId(), endpoint.getId());
+                return true;
+            }
+            return false;
+        });
 
         // Target endpoints are grouped by endpoint type.
         endpointTargeted.increment(endpoints.size());
