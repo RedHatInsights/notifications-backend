@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.connector.pagerduty;
 
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import com.redhat.cloud.notifications.connector.authentication.AuthenticationDataExtractor;
-import com.redhat.cloud.notifications.connector.http.UrlValidator;
+import com.redhat.cloud.notifications.connector.pagerduty.config.PagerDutyConnectorConfig;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -15,23 +15,17 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransf
 public class PagerDutyCloudEventDataExtractor extends CloudEventDataExtractor {
 
     public static final String AUTHENTICATION = "authentication";
-    public static final String URL = "url";
-    public static final String PAGERDUTY_EVENT_V2_URL = "https://events.pagerduty.com/v2/enqueue";
+
+    @Inject
+    PagerDutyConnectorConfig config;
 
     @Inject
     AuthenticationDataExtractor authenticationDataExtractor;
 
     @Override
-    public void extract(Exchange exchange, JsonObject cloudEventData) throws Exception {
+    public void extract(Exchange exchange, JsonObject cloudEventData) {
 
-        String providedUrl = cloudEventData.getString(URL);
-        if (providedUrl == null || providedUrl.isEmpty()) {
-            exchange.setProperty(TARGET_URL, PAGERDUTY_EVENT_V2_URL);
-        } else {
-            exchange.setProperty(TARGET_URL, providedUrl);
-        }
-
-        UrlValidator.validateTargetUrl(exchange);
+        exchange.setProperty(TARGET_URL, config.getPagerDutyUrl());
 
         JsonObject authentication = cloudEventData.getJsonObject(AUTHENTICATION);
         authenticationDataExtractor.extract(exchange, authentication);

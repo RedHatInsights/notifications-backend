@@ -35,22 +35,19 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransf
 
 public class PagerDutyTestUtils {
 
-    static final String DEFAULT_ENVIRONMENT_URL = "https://console.redhat.com";
-
-    static JsonObject createCloudEventData(String url) {
+    static JsonObject createCloudEventData() {
         JsonObject authentication = new JsonObject();
         authentication.put("type", SECRET_TOKEN.name());
         authentication.put("secretId", 123L);
 
         JsonObject cloudEventData = new JsonObject();
-        cloudEventData.put("url", url);
         cloudEventData.put(AUTHENTICATION, authentication);
 
         return cloudEventData;
     }
 
-    static JsonObject createIncomingPayload(String url) {
-        JsonObject cloudEventData = createCloudEventData(url);
+    static JsonObject createIncomingPayload() {
+        JsonObject cloudEventData = createCloudEventData();
         return createIncomingPayload(cloudEventData);
     }
 
@@ -93,7 +90,6 @@ public class PagerDutyTestUtils {
 
     static JsonObject buildExpectedOutgoingPayload(final JsonObject incoming) {
         JsonObject expected = incoming.copy();
-        expected.remove(PagerDutyCloudEventDataExtractor.URL);
         expected.remove(PagerDutyCloudEventDataExtractor.AUTHENTICATION);
 
         JsonObject oldInnerPayload = expected.getJsonObject(PAYLOAD);
