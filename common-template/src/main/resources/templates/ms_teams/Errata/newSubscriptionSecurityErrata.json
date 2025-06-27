@@ -1,2 +1,75 @@
-{#include ms_teams/Common/commonMsAdaptiveCard.json}
-{#content-body}Red Hat published new security errata that affect your products. Explore these and others in the [errata search](https://access.redhat.com/errata-search/?from=notifications&integration=teams).{/content-body}
+{#include ms_teams/Common/commonMsAdaptiveCardHighLevelStructure.json}
+{#content-body}
+{
+  "type":"TextBlock",
+  "text":"Security updates - Errata - Subscription Services",
+  "wrap":true,
+  "size":"Medium",
+  "weight":"Bolder"
+},
+{
+  "type":"TextBlock",
+  "text":"There {#if data.events.size() == 1}is 1 security update{#else}are {data.events.size()} security updates{/if} affecting your subscriptions.",
+  "wrap":true
+},
+{#if data.events.size() > 3}
+{
+  "type":"TextBlock",
+  "text":"First 3 are:",
+  "wrap":true,
+  "spacing":"Small"
+},
+{/if}
+{#each data.events}
+{#if it_index < 3}
+{
+  "type":"ColumnSet",
+  "separator": {it_isFirst},
+  "columns":[
+    {
+      "type":"Column",
+      "width":"auto",
+      "items":[
+        {
+        "type":"TextBlock",
+        {#when it.payload.severity.toLowerCase}
+        {#is 'important'}
+        "text":"\uD83D\uDEA8",
+        {#is 'moderate'}
+        "text":"\u26A0\uFE0F",
+        {#else}
+        "text":"\uD83D\uDD37",
+        {/when}
+        "size":"Medium"
+        }
+      ]
+    },
+    {
+      "type":"Column",
+      "width":"stretch",
+      "items":[
+        {
+          "type":"TextBlock",
+          "text":"[{it.payload.id}]({data.context.base_url}{it.payload.id}?from=notifications&integration=teams)",
+          "wrap":true,
+          "weight":"Bolder"
+        },
+        {
+          "type":"TextBlock",
+          "text":"{it.payload.synopsis}",
+          "wrap":true
+        }
+      ]
+    }
+  ]
+},
+{/if}
+{/each}
+{
+  "type":"TextBlock",
+  "separator":true,
+  "text":"Explore these and others in the [errata search](https://access.redhat.com/errata-search/?from=notifications&integration=teams)",
+  "wrap":true,
+  "spacing":"Medium"
+}
+{/content-body}
