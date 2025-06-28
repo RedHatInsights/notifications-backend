@@ -19,10 +19,15 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 import java.util.List;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -31,6 +36,12 @@ public class NotificationResourceV2 extends NotificationResource {
     @GET
     @Path("/eventTypes/{eventTypeId}/behaviorGroups")
     @Produces(APPLICATION_JSON)
+    @Parameter(
+        name = "limit",
+        in = ParameterIn.QUERY,
+        description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
+        schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
+    )
     @Operation(summary = "Retrieve the behavior groups linked to an event type.")
     public Page<BehaviorGroup> getLinkedBehaviorGroups(
         @Context SecurityContext sec,
