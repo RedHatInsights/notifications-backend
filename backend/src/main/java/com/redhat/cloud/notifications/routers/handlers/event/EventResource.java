@@ -50,8 +50,11 @@ import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Path(API_NOTIFICATIONS_V_1_0 + "/notifications/events")
 public class EventResource {
+
+    @Path(API_NOTIFICATIONS_V_1_0 + "/notifications/events")
+    public static class V1 extends EventResource {
+    }
 
     public static final String TOTAL_RECIPIENTS = "total_recipients";
 
