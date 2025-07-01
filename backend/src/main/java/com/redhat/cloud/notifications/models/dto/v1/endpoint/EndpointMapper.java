@@ -55,7 +55,6 @@ public interface EndpointMapper {
      * @param camelPropertiesDTO the DTO to map.
      * @return the mapped internal entity.
      */
-    @Mapping(target = "basicAuthenticationSourcesId", ignore = true)
     @Mapping(target = "bearerAuthentication", ignore = true)
     @Mapping(target = "bearerAuthenticationSourcesId", ignore = true)
     @Mapping(target = "endpoint", ignore = true)
@@ -91,7 +90,6 @@ public interface EndpointMapper {
      * @param webhookPropertiesDTO the DTO to map.
      * @return the mapped internal entity.
      */
-    @Mapping(target = "basicAuthenticationSourcesId", ignore = true)
     @Mapping(target = "bearerAuthenticationSourcesId", ignore = true)
     @Mapping(target = "endpoint", ignore = true)
     @Mapping(target = "id", ignore = true)
