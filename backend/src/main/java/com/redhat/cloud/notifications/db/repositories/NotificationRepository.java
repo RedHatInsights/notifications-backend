@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -96,4 +97,11 @@ public class NotificationRepository {
         }
     }
 
+    @Transactional
+    public void cleanupEmailAggregation(int limit) {
+        String deleteQuery = "delete from email_aggregation where id in (select id from email_aggregation limit :limit)";
+        entityManager.createNativeQuery(deleteQuery)
+            .setParameter("limit", limit)
+            .executeUpdate();
+    }
 }

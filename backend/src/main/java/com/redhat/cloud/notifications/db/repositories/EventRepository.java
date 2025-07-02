@@ -11,6 +11,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -227,5 +228,16 @@ public class EventRepository {
         if  (status != null && !status.isEmpty()) {
             query.setParameter("status", status);
         }
+    }
+
+    @Transactional
+    public void cleanupInventoryEvents(int limit) {
+        //  where id in (select id from endpoints where endpoint_type_v2 = 'DRAWER' " +
+        //            "and org_id is not null and not exists (select 1 from endpoint_event_type where endpoint_id = id) limit :limit)
+        String deleteQuery = "delete from event WHERE id in " +
+            "(select id from event where application_id = '332d6b96-5e91-439d-8345-452acac9a722' AND created > '2025-06-20:00:00:00' limit :limit)";
+        entityManager.createNativeQuery(deleteQuery)
+            .setParameter("limit", limit)
+            .executeUpdate();
     }
 }

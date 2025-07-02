@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-class DrawerIntegrationCleanUpResourceTest extends DbIsolatedTest {
+class CleanUpResourceTest extends DbIsolatedTest {
 
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
@@ -51,7 +51,7 @@ class DrawerIntegrationCleanUpResourceTest extends DbIsolatedTest {
                 .when()
                 .contentType(JSON)
                 .body(10)
-                .post("/drawer_cleanup")
+                .post("/cleanup/drawer")
                 .then()
                 .statusCode(200);
 
@@ -66,7 +66,7 @@ class DrawerIntegrationCleanUpResourceTest extends DbIsolatedTest {
             .when()
             .contentType(JSON)
             .body(10)
-            .post("/drawer_cleanup")
+            .post("/cleanup/drawer")
             .then()
             .statusCode(200);
 
@@ -74,5 +74,33 @@ class DrawerIntegrationCleanUpResourceTest extends DbIsolatedTest {
             .setParameter("orgId", 123456)
             .getResultList();
         assertEquals(0, endpoints.size());
+    }
+
+    @Test
+    void testInventoryEventsDelete() {
+
+        given()
+            .basePath(Constants.API_INTERNAL)
+            .header(TestHelpers.createTurnpikeIdentityHeader("user", this.adminRole))
+            .when()
+            .contentType(JSON)
+            .body(10)
+            .post("/cleanup/inventory_events")
+            .then()
+            .statusCode(200);
+    }
+
+    @Test
+    void testEmailAggregationDelete() {
+
+        given()
+            .basePath(Constants.API_INTERNAL)
+            .header(TestHelpers.createTurnpikeIdentityHeader("user", this.adminRole))
+            .when()
+            .contentType(JSON)
+            .body(10)
+            .post("/cleanup/email_aggregation")
+            .then()
+            .statusCode(200);
     }
 }
