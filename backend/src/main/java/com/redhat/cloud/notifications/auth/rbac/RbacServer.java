@@ -20,7 +20,6 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 
 @RegisterRestClient(configKey = "rbac-authentication")
-@RegisterProvider(RbacRestClientRequestFilter.class)
 @RegisterProvider(RbacClientResponseFilter.class)
 public interface RbacServer {
 

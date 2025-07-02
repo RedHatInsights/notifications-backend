@@ -554,8 +554,8 @@ public class LifecycleITest extends DbIsolatedTest {
         secretTokenSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
         secretTokenSecret.password = properties.getSecretToken();
 
-        // The SecretUtils class follows the "basic authentication", "secret
-        // token" and "bearer token" order, so that is why we make the returns
+        // The SecretUtils class follows the "secret token", then
+        // "bearer token" order, so that is why we make the returns
         // in that order for the mock.
         when(this.sourcesServiceMock.create(Mockito.anyString(), Mockito.anyString(), Mockito.any()))
             .thenReturn(secretTokenSecret);

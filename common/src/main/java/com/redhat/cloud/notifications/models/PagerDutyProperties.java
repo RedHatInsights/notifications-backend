@@ -65,26 +65,6 @@ public class PagerDutyProperties extends EndpointProperties implements SourcesSe
     }
 
     @Override
-    public BasicAuthentication getBasicAuthentication() {
-        return null;
-    }
-
-    @Override
-    public void setBasicAuthentication(BasicAuthentication basicAuthentication) {
-        // Do nothing
-    }
-
-    @Override
-    public Long getBasicAuthenticationSourcesId() {
-        return null;
-    }
-
-    @Override
-    public void setBasicAuthenticationSourcesId(Long basicAuthenticationSourcesId) {
-        // do nothing
-    }
-
-    @Override
     public String getBearerAuthentication() {
         return null;
     }

@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
-import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.BASIC;
+import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,10 +32,10 @@ public class AuthenticationDataExtractorTest extends CamelQuarkusTestSupport {
     void testValidAuthentication() {
 
         Exchange exchange = createExchangeWithBody(context, "");
-        JsonObject authentication = buildAuthentication("BASIC", 123L);
+        JsonObject authentication = buildAuthentication("SECRET_TOKEN", 123L);
 
         authenticationDataExtractor.extract(exchange, authentication);
-        assertEquals(BASIC, exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class));
+        assertEquals(SECRET_TOKEN, exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class));
         assertEquals(123L, exchange.getProperty(SECRET_ID, Long.class));
     }
 
@@ -65,7 +65,7 @@ public class AuthenticationDataExtractorTest extends CamelQuarkusTestSupport {
     void testNullSecretId() {
 
         Exchange exchange = createExchangeWithBody(context, "");
-        JsonObject authentication = buildAuthentication("BASIC", null);
+        JsonObject authentication = buildAuthentication("SECRET_TOKEN", null);
 
         IllegalStateException e = assertThrows(IllegalStateException.class, () ->
                 authenticationDataExtractor.extract(exchange, authentication));
