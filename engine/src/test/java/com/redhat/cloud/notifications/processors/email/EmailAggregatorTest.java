@@ -6,10 +6,9 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
-import com.redhat.cloud.notifications.models.EventAggregationCriteria;
+import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.recipients.User;
@@ -27,8 +26,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -49,7 +47,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -82,14 +79,13 @@ class EmailAggregatorTest {
     Application application;
     EventType eventType1;
     EventType eventType2;
-    final EmailAggregationKey AGGREGATION_KEY = new EmailAggregationKey("org-1", "rhel", "policies");
+    final EventAggregationCriterion AGGREGATION_KEY = new EventAggregationCriterion("org-1", UUID.randomUUID(), UUID.randomUUID(), "rhel", "policies");
 
     @BeforeEach
     void beforeEach() {
         emailAggregator.maxPageSize = 5;
         clearCachedData("recipients-resolver-results");
         clearInvocations(recipientsResolverService);
-        emailAggregationRepository.purgeOldAggregation(AGGREGATION_KEY, LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1));
         resourceHelpers.clearEvents();
     }
 
@@ -100,11 +96,8 @@ class EmailAggregatorTest {
         resourceHelpers.clearEvents();
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void shouldTestRecipientsFromSubscription(boolean isAggregationBasedOnEvents) {
-        when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(isAggregationBasedOnEvents);
-
+    @Test
+    void shouldTestRecipientsFromSubscription() {
         // init test environment
         application = resourceHelpers.findApp("rhel", "policies");
         eventType1 = resourceHelpers.findOrCreateEventType(application.getId(), TestHelpers.eventType);
@@ -129,16 +122,10 @@ class EmailAggregatorTest {
 
         // Test user subscription based on event type
         Map<User, Map<String, Object>> result = null;
-        result = aggregate(isAggregationBasedOnEvents);
-        if (isAggregationBasedOnEvents) {
-            verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriteria.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
-            verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriteria.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
-            verify(emailAggregationRepository, never()).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
-        } else {
-            verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
-            verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
-            verify(emailAggregationRepository, never()).getEmailAggregationBasedOnEvent(any(EventAggregationCriteria.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
-        }
+        result = aggregate();
+
+        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
 
         // nobody subscribed to the right event type yet
         assertEquals(0, result.size());
@@ -146,18 +133,12 @@ class EmailAggregatorTest {
         clearInvocations(emailAggregationRepository);
         resourceHelpers.createEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY);
         // because after the previous aggregate() call the email_aggregation DB table was not purged, we already have 4 records on database
-        result = aggregate(isAggregationBasedOnEvents);
-        if (isAggregationBasedOnEvents) {
-            verify(emailAggregationRepository, times(2)).getEmailAggregationBasedOnEvent(any(EventAggregationCriteria.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
-            verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriteria.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
-            verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriteria.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(5), eq(emailAggregator.maxPageSize));
-            verify(emailAggregationRepository, never()).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
-        } else {
-            verify(emailAggregationRepository, times(2)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
-            verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
-            verify(emailAggregationRepository, times(1)).getEmailAggregation(any(EmailAggregationKey.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(5), eq(emailAggregator.maxPageSize));
-            verify(emailAggregationRepository, never()).getEmailAggregationBasedOnEvent(any(EventAggregationCriteria.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
-        }
+        result = aggregate();
+
+        verify(emailAggregationRepository, times(2)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
+        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(5), eq(emailAggregator.maxPageSize));
+
         assertEquals(1, result.size());
         User user = result.keySet().stream().findFirst().get();
         assertTrue(user.getEmail().equals("user-2"));
@@ -165,14 +146,8 @@ class EmailAggregatorTest {
         verify(recipientsResolverService, times(8)).getRecipients(any(RecipientsQuery.class));
     }
 
-    private Map<User, Map<String, Object>> aggregate(boolean useEventAggregationCriteria) {
+    private Map<User, Map<String, Object>> aggregate() {
         Map<User, Map<String, Object>> result = new HashMap<>();
-        emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-        emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-        emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-        emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
-
-        emailAggregationRepository.addEmailAggregation(TestHelpers.createEmailAggregation("org-2", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)));
 
         for (int i = 0; i < 4; i++) {
             JsonObject payload = TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)).getPayload();
@@ -200,11 +175,9 @@ class EmailAggregatorTest {
         payload.remove(BaseTransformer.SOURCE);
         resourceHelpers.addEventEmailAggregation("org-2", "rhel", "policies", payload, false);
 
-        EmailAggregationKey aggregationKey = AGGREGATION_KEY;
-        if (useEventAggregationCriteria) {
-            Application policiesApp = resourceHelpers.findApp("rhel", "policies");
-            aggregationKey = new EventAggregationCriteria(AGGREGATION_KEY.getOrgId(), policiesApp.getBundleId(), policiesApp.getId(), AGGREGATION_KEY.getBundle(), AGGREGATION_KEY.getApplication());
-        }
+        Application policiesApp = resourceHelpers.findApp("rhel", "policies");
+        EventAggregationCriterion aggregationKey = new EventAggregationCriterion(AGGREGATION_KEY.getOrgId(), policiesApp.getBundleId(), policiesApp.getId(), AGGREGATION_KEY.getBundle(), AGGREGATION_KEY.getApplication());
+
         result.putAll(emailAggregator.getAggregated(application.getId(), aggregationKey, DAILY, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1), LocalDateTime.now(ZoneOffset.UTC).plusMinutes(1)));
         return result;
     }

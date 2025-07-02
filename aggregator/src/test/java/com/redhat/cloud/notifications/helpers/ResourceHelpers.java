@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -76,17 +75,6 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
     @Transactional
     public void purgeEventAggregations() {
         entityManager.createQuery("DELETE FROM Event").executeUpdate();
-    }
-
-    @Transactional
-    public Integer purgeOldAggregation(EmailAggregationKey key, LocalDateTime lastUsedTime) {
-        String query = "DELETE FROM EmailAggregation WHERE orgId = :orgId AND bundleName = :bundleName AND applicationName = :applicationName AND created <= :created";
-        return entityManager.createQuery(query)
-                .setParameter("orgId", key.getOrgId())
-                .setParameter("bundleName", key.getBundle())
-                .setParameter("applicationName", key.getApplication())
-                .setParameter("created", lastUsedTime)
-                .executeUpdate();
     }
 
     @Transactional

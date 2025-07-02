@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
-import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
@@ -13,13 +12,11 @@ import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.EventAggregationCriteria;
-import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
@@ -31,7 +28,6 @@ import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.templates.models.DailyDigestSection;
-import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -77,12 +73,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
     protected static final String TAG_KEY_BUNDLE = "bundle";
     protected static final String TAG_KEY_APPLICATION = "application";
     protected static final String TAG_KEY_ORG_ID = "orgid";
-
-    @Inject
-    EmailAggregationRepository emailAggregationRepository;
-
-    @Inject
-    BaseTransformer baseTransformer;
 
     @Inject
     EmailActorsResolver emailActorsResolver;
@@ -153,35 +143,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         throw new UnsupportedOperationException("No longer used");
     }
 
-    /**
-     * In the case that the event and the event type support aggregations, a
-     * new one will be generated in the database. The event is left untouched.
-     * @param event the event to be included, or not, in the aggregation.
-     */
-    public void generateAggregationWhereDue(final Event event) {
-        final EventType eventType = event.getEventType();
-        final String bundleName = eventType.getApplication().getBundle().getName();
-        final String applicationName = eventType.getApplication().getName();
-
-        final boolean shouldSaveAggregation = this.templateRepository.isEmailAggregationSupported(eventType.getApplicationId());
-
-        if (shouldSaveAggregation) {
-            final EmailAggregation aggregation = new EmailAggregation();
-            aggregation.setOrgId(event.getOrgId());
-            aggregation.setApplicationName(applicationName);
-            aggregation.setBundleName(bundleName);
-
-            final JsonObject transformedEvent = this.baseTransformer.toJsonObject(event);
-            aggregation.setPayload(transformedEvent);
-            try {
-                this.emailAggregationRepository.addEmailAggregation(aggregation);
-            } catch (Exception e) {
-                // ConstraintViolationException may be thrown here and it must not interrupt the email that is being sent.
-                Log.warn("Email aggregation persisting failed", e);
-            }
-        }
-    }
-
     public void processAggregation(Event event) {
         if (engineConfig.isAsyncAggregationEnabled()) {
             /*
@@ -223,8 +184,8 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                     AggregationCommand command = objectMapper.convertValue(actionEvent.getPayload().getAdditionalProperties(), AggregationCommand.class);
                     try {
                         JsonObject aggregationKey = new JsonObject(actionEvent.getPayload().getAdditionalProperties()).getJsonObject("aggregationKey");
-                        EventAggregationCriteria key = objectMapper.convertValue(aggregationKey, EventAggregationCriteria.class);
-                        Set<ConstraintViolation<EventAggregationCriteria>> constraintViolations = validator.validate(key);
+                        EventAggregationCriterion key = objectMapper.convertValue(aggregationKey, EventAggregationCriterion.class);
+                        Set<ConstraintViolation<EventAggregationCriterion>> constraintViolations = validator.validate(key);
                         if (constraintViolations.isEmpty()) {
                             command.setAggregationKey(key);
                         }
@@ -385,10 +346,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                 Log.debugf("Sent email notification to connector: %s", emailNotification);
             }
         });
-
-        for (AggregationCommand applicationAggregationCommand : aggregationCommands) {
-            emailAggregationRepository.purgeOldAggregation(applicationAggregationCommand.getAggregationKey(), applicationAggregationCommand.getEnd());
-        }
     }
 
     private String renderEmailFromTemplatesInDb(Map<String, Object> action) {
