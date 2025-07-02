@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.routers.internal.cleanup;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
+import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import com.redhat.cloud.notifications.models.Environment;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -20,6 +21,9 @@ public class CleanUpResource {
 
     @Inject
     DrawerNotificationRepository drawerNotificationRepository;
+
+    @Inject
+    NotificationRepository notificationRepository;
 
     @Inject
     EventRepository eventRepository;
@@ -44,6 +48,17 @@ public class CleanUpResource {
     public Response cleanUpInventoryEvent(int limit) {
         if (environment.isStage() || environment.isLocal()) {
             eventRepository.cleanupInventoryEvents(limit);
+            return Response.ok().build();
+        }
+        return Response.status(Response.Status.FORBIDDEN).build();
+    }
+
+    @POST
+    @Path("/email_aggregation")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response cleanEmailAggregation(int limit) {
+        if (environment.isStage() || environment.isLocal()) {
+            notificationRepository.cleanupEmailAggregation(limit);
             return Response.ok().build();
         }
         return Response.status(Response.Status.FORBIDDEN).build();

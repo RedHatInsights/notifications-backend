@@ -89,4 +89,18 @@ class CleanUpResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(200);
     }
+
+    @Test
+    void testEmailAggregationDelete() {
+
+        given()
+            .basePath(Constants.API_INTERNAL)
+            .header(TestHelpers.createTurnpikeIdentityHeader("user", this.adminRole))
+            .when()
+            .contentType(JSON)
+            .body(10)
+            .post("/cleanup/email_aggregation")
+            .then()
+            .statusCode(200);
+    }
 }
