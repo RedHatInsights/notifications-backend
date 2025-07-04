@@ -96,7 +96,6 @@ public class EventConsumer {
     private Counter processingErrorCounter;
     private Counter duplicateCounter;
     private Counter processingExceptionCounter;
-    private Counter processingBlacklistedCounter;
     private ExecutorService executor;
 
     @PostConstruct
@@ -105,7 +104,6 @@ public class EventConsumer {
         processingErrorCounter = registry.counter(PROCESSING_ERROR_COUNTER_NAME);
         processingExceptionCounter = registry.counter(PROCESSING_EXCEPTION_COUNTER_NAME);
         duplicateCounter = registry.counter(DUPLICATE_COUNTER_NAME);
-        //processingBlacklistedCounter = registry.counter(PROCESSING_BLACKLISTED_COUNTER_NAME);
 
         /*
          * The ThreadPoolExecutor#submit method from this executor is blocking. If it is called while all threads from
