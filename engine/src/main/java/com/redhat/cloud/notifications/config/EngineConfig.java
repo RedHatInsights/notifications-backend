@@ -56,6 +56,7 @@ public class EngineConfig {
     private String kafkaConsumedTotalCheckerToggle;
     private String fetchAggregationBasedOnEvents;
     private String toggleBlacklistedEndpoints;
+    private String toggleBlacklistedEventTypes;
     private String toggleKafkaOutgoingHighVolumeTopic;
     private String toggleDirectEndpointToEventTypeDryRunEnabled;
     private String toggleUseDirectEndpointToEventTypeEnabled;
@@ -164,6 +165,7 @@ public class EngineConfig {
         toggleUseCommonTemplateModuleToRenderEmailsEnabled = toggleRegistry.register("use-common-template-module-for-emails", true);
         toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
         toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
+        toggleBlacklistedEventTypes = toggleRegistry.register("blacklisted-event-types", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -272,6 +274,17 @@ public class EngineConfig {
                 .addProperty("endpointId", endpointId.toString())
                 .build();
             return unleash.isEnabled(toggleBlacklistedEndpoints, unleashContext, false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isBlacklistedEventType(final UUID eventTypeId) {
+        if (unleashEnabled && null != eventTypeId) {
+            UnleashContext unleashContext = UnleashContext.builder()
+                .addProperty("eventTypeId", eventTypeId.toString())
+                .build();
+            return unleash.isEnabled(toggleBlacklistedEventTypes, unleashContext, false);
         } else {
             return false;
         }
