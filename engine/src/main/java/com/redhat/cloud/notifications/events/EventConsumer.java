@@ -47,12 +47,14 @@ public class EventConsumer {
     public static final String INGRESS_CHANNEL = "ingress";
     public static final String REJECTED_COUNTER_NAME = "input.rejected";
     public static final String PROCESSING_ERROR_COUNTER_NAME = "input.processing.error";
+    public static final String PROCESSING_BLACKLISTED_COUNTER_NAME = "input.processing.blacklisted";
     public static final String PROCESSING_EXCEPTION_COUNTER_NAME = "input.processing.exception";
     public static final String DUPLICATE_COUNTER_NAME = "input.duplicate";
     public static final String CONSUMED_TIMER_NAME = "input.consumed";
 
     static final String TAG_KEY_BUNDLE = "bundle";
     static final String TAG_KEY_APPLICATION = "application";
+    static final String TAG_KEY_EVENT_TYPE = "event-type";
     static final String TAG_KEY_EVENT_TYPE_FQN = "event-type-fqn";
 
     private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for key: %s";
@@ -233,6 +235,19 @@ public class EventConsumer {
 
                     tags.computeIfAbsent(TAG_KEY_BUNDLE, key -> eventType.getApplication().getBundle().getName());
                     tags.computeIfAbsent(TAG_KEY_APPLICATION, key -> eventType.getApplication().getName());
+                    tags.computeIfAbsent(TAG_KEY_EVENT_TYPE, key -> eventType.getName());
+
+                    if (config.isBlacklistedEventType(eventType.getId())) {
+                        Log.debugf("Skipping event type [id=%s, name=%s] because it was blacklisted", eventType.getId(), eventType.getName());
+                        registry.counter(
+                            PROCESSING_BLACKLISTED_COUNTER_NAME,
+                            TAG_KEY_BUNDLE, tags.getOrDefault(TAG_KEY_BUNDLE, ""),
+                            TAG_KEY_APPLICATION, tags.getOrDefault(TAG_KEY_APPLICATION, ""),
+                            TAG_KEY_EVENT_TYPE, tags.getOrDefault(TAG_KEY_EVENT_TYPE, ""),
+                            TAG_KEY_EVENT_TYPE_FQN, tags.getOrDefault(TAG_KEY_EVENT_TYPE_FQN, ""))
+                            .increment();
+                        return;
+                    }
                 } catch (NoResultException | IllegalArgumentException e) {
                     /*
                      * A NoResultException was thrown because no EventType was found. The message is therefore
@@ -279,6 +294,7 @@ public class EventConsumer {
                     CONSUMED_TIMER_NAME,
                     TAG_KEY_BUNDLE, tags.getOrDefault(TAG_KEY_BUNDLE, ""),
                     TAG_KEY_APPLICATION, tags.getOrDefault(TAG_KEY_APPLICATION, ""),
+                    TAG_KEY_EVENT_TYPE, tags.getOrDefault(TAG_KEY_EVENT_TYPE, ""),
                     TAG_KEY_EVENT_TYPE_FQN, tags.getOrDefault(TAG_KEY_EVENT_TYPE_FQN, "")
             ));
         }
@@ -289,6 +305,7 @@ public class EventConsumer {
             Action action = actionParser.fromJsonString(payload);
             tags.put(TAG_KEY_BUNDLE, action.getBundle());
             tags.put(TAG_KEY_APPLICATION, action.getApplication());
+            tags.put(TAG_KEY_EVENT_TYPE, action.getEventType());
             return new EventWrapperAction(action);
         } catch (ActionParsingException actionParseException) {
             // Try to load it as a CloudEvent
