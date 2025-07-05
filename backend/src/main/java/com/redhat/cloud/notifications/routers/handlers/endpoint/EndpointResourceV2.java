@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.db.repositories.NotificationRepository.MAX_NOTIFICATION_HISTORY_RESULTS;
+import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -54,8 +54,8 @@ public class EndpointResourceV2 extends EndpointResource {
             @Parameter(
                 name = "limit",
                 in = ParameterIn.QUERY,
-                description = "Number of items per page, if not specified or 0 is used, returns a maximum of " + MAX_NOTIFICATION_HISTORY_RESULTS + " elements.",
-                schema = @Schema(type = SchemaType.INTEGER)
+                description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
+                schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
             ),
             @Parameter(
                 name = "pageNumber",
