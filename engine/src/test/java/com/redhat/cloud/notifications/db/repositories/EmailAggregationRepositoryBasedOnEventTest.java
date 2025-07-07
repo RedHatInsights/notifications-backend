@@ -4,7 +4,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.EventAggregationCriteria;
+import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
@@ -43,7 +43,7 @@ public class EmailAggregationRepositoryBasedOnEventTest {
         LocalDateTime start = LocalDateTime.now(UTC).minusHours(1L);
         LocalDateTime end = LocalDateTime.now(UTC).plusHours(1L);
         Application application = resourceHelpers.findOrCreateApplication(BUNDLE_NAME, APP_NAME);
-        EventAggregationCriteria key =  new EventAggregationCriteria(ORG_ID, application.getBundleId(), application.getId(), BUNDLE_NAME, APP_NAME);
+        EventAggregationCriterion key =  new EventAggregationCriterion(ORG_ID, application.getBundleId(), application.getId(), BUNDLE_NAME, APP_NAME);
 
         resourceHelpers.clearEvents();
         resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, PAYLOAD1);

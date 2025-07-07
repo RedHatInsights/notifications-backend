@@ -1,37 +1,37 @@
 package com.redhat.cloud.notifications.routers.dailydigest;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.constraints.NotBlank;
-
-import java.beans.ConstructorProperties;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.Objects;
+import java.util.UUID;
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class TriggerDailyDigestRequest {
 
-    @JsonProperty("application_name")
     @NotBlank
     private final String applicationName;
 
-    @JsonProperty("bundle_name")
     @NotBlank
     private final String bundleName;
 
-    @JsonProperty("end")
     private final LocalDateTime end;
 
-    @JsonProperty("org_id")
     @NotBlank
     private final String orgId;
 
-    @JsonProperty("start")
     private final LocalDateTime start;
+
+    @NotNull
+    private final UUID bundleId;
+
+    @NotNull
+    private final UUID applicationId;
 
     /**
      * Creates a new instance of the class.
@@ -44,16 +44,19 @@ public class TriggerDailyDigestRequest {
      * @param end the end date to trigger the daily digest from. If a null
      *            value is given, then the date and time get set to UTC "now".
      */
-    @ConstructorProperties({"application_name", "bundle_name", "org_id", "start", "end"})
     public TriggerDailyDigestRequest(
             final String applicationName,
             final String bundleName,
+            final UUID bundleId,
+            final UUID applicationId,
             final String orgId,
             final LocalDateTime start,
             final LocalDateTime end
     ) {
         this.applicationName = applicationName;
         this.bundleName = bundleName;
+        this.bundleId = bundleId;
+        this.applicationId = applicationId;
         this.orgId = orgId;
 
         this.start = Objects.requireNonNullElseGet(start, () -> {
@@ -84,5 +87,13 @@ public class TriggerDailyDigestRequest {
 
     public LocalDateTime getStart() {
         return start;
+    }
+
+    public UUID getBundleId() {
+        return bundleId;
+    }
+
+    public UUID getApplicationId() {
+        return applicationId;
     }
 }

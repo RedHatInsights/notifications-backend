@@ -1,11 +1,9 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -37,9 +35,6 @@ import static java.time.ZoneOffset.UTC;
 
 @ApplicationScoped
 public class ResourceHelpers {
-
-    @Inject
-    EmailAggregationRepository emailAggregationRepository;
 
     @Inject
     EntityManager entityManager;
@@ -80,15 +75,6 @@ public class ResourceHelpers {
         entityManager.createQuery("DELETE FROM Bundle WHERE name = :bundleName")
             .setParameter("bundleName", bundleName)
             .executeUpdate();
-    }
-
-    public Boolean addEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
-        EmailAggregation aggregation = new EmailAggregation();
-        aggregation.setOrgId(orgId);
-        aggregation.setBundleName(bundleName);
-        aggregation.setApplicationName(applicationName);
-        aggregation.setPayload(payload);
-        return emailAggregationRepository.addEmailAggregation(aggregation);
     }
 
     @Transactional
