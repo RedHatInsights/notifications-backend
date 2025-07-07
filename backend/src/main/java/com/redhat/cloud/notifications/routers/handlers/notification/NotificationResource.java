@@ -56,6 +56,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -76,6 +77,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
@@ -123,6 +125,12 @@ public class NotificationResource {
         @Path("/eventTypes/{eventTypeId}/behaviorGroups")
         @Produces(APPLICATION_JSON)
         @Operation(summary = "List the behavior groups linked to an event type", description = "Lists the behavior groups that are linked to an event type. Use this endpoint to see which behavior groups will be affected if you delete an event type.")
+        @Parameter(
+            name = "limit",
+            in = ParameterIn.QUERY,
+            description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
+            schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
+        )
         @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BEHAVIOR_GROUPS_VIEW, WorkspacePermission.EVENT_TYPES_VIEW})
         public List<BehaviorGroup> getLinkedBehaviorGroups(
             @Context SecurityContext sec,
@@ -139,6 +147,12 @@ public class NotificationResource {
     @Path("/eventTypes")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "List all event types", description = "Lists all event types. You can filter the returned list by bundle, application name, or unmuted types.")
+    @Parameter(
+        name = "limit",
+        in = ParameterIn.QUERY,
+        description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
+        schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
+    )
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.EVENT_TYPES_VIEW})
     public Page<EventType> getEventTypes(
         @Context SecurityContext securityContext, @Context UriInfo uriInfo, @BeanParam @Valid Query query, @QueryParam("applicationIds") Set<UUID> applicationIds,
