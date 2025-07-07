@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.EventPayloadTestHelper;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -38,11 +39,13 @@ import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static com.redhat.cloud.notifications.events.EventConsumer.CONSUMED_TIMER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.DUPLICATE_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
+import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_BLACKLISTED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_ERROR_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_EXCEPTION_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.REJECTED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.TAG_KEY_APPLICATION;
 import static com.redhat.cloud.notifications.events.EventConsumer.TAG_KEY_BUNDLE;
+import static com.redhat.cloud.notifications.events.EventConsumer.TAG_KEY_EVENT_TYPE;
 import static com.redhat.cloud.notifications.events.EventConsumer.TAG_KEY_EVENT_TYPE_FQN;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_HEADER;
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_INVALID_COUNTER_NAME;
@@ -89,6 +92,9 @@ public class EventConsumerTest {
     @Inject
     MeterRegistry registry;
 
+    @InjectSpy
+    EngineConfig config;
+
     @Inject
     EntityManager entityManager;
 
@@ -101,12 +107,14 @@ public class EventConsumerTest {
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         micrometerAssertionHelper.removeDynamicTimer(CONSUMED_TIMER_NAME);
 
         // Connect the real method for all tests - this test only does the wiring for the cloud-events and the regular notification
         when(eventTypeRepository.getEventType((EventTypeKey) any())).thenCallRealMethod();
+        when(config.isBlacklistedEventType(any())).thenReturn(false);
     }
 
     @AfterEach
@@ -127,11 +135,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
-                TAG_KEY_BUNDLE, action.getBundle(),
-                TAG_KEY_APPLICATION, action.getApplication(),
-                TAG_KEY_EVENT_TYPE_FQN, ""
-        ).count());
+        assertEquals(1L, getTimerCount(action.getBundle(), action.getApplication(), action.getEventType()));
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
@@ -139,9 +143,49 @@ public class EventConsumerTest {
                 PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, true);
+        verify(kafkaMessageDeduplicator, times(1)).isNew(messageId);
+    }
+
+    @Test
+    void testValidPayloadWithBlacklistedEventType() {
+        EventType eventType = mockGetEventTypeAndCreateEvent(true);
+        Action action = buildValidAction(true);
+        RecipientsAuthorizationCriterion authorizationCriterion = EventPayloadTestHelper.buildRecipientsAuthorizationCriterion();
+        action.setRecipientsAuthorizationCriterion(authorizationCriterion);
+        String payload = serializeAction(action);
+        UUID messageId = UUID.randomUUID();
+        Message<String> message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
+        when(config.isBlacklistedEventType(eq(eventType.getId()))).thenReturn(true);
+
+        inMemoryConnector.source(INGRESS_CHANNEL).send(message);
+
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        assertEquals(1L, getTimerCount(action.getBundle(), action.getApplication(), action.getEventType()));
+        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 1);
+
+        assertEquals(1L,
+            registry.counter(PROCESSING_BLACKLISTED_COUNTER_NAME,
+            TAG_KEY_BUNDLE, action.getBundle(),
+            TAG_KEY_APPLICATION, action.getApplication(),
+            TAG_KEY_EVENT_TYPE, action.getEventType(),
+            TAG_KEY_EVENT_TYPE_FQN, ""
+        ).count());
+
+        assertNoCounterIncrement(
+            REJECTED_COUNTER_NAME,
+            PROCESSING_ERROR_COUNTER_NAME,
+            PROCESSING_EXCEPTION_COUNTER_NAME,
+            DUPLICATE_COUNTER_NAME,
+            MESSAGE_ID_INVALID_COUNTER_NAME,
+            MESSAGE_ID_MISSING_COUNTER_NAME
+        );
+
+        verify(endpointProcessor, never()).process(any(Event.class));
+
         verify(kafkaMessageDeduplicator, times(1)).isNew(messageId);
     }
 
@@ -153,11 +197,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
-                TAG_KEY_BUNDLE, action.getBundle(),
-                TAG_KEY_APPLICATION, action.getApplication(),
-                TAG_KEY_EVENT_TYPE_FQN, ""
-        ).count());
+        assertEquals(1L, getTimerCount(action.getBundle(), action.getApplication(), action.getEventType()));
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
@@ -165,7 +205,8 @@ public class EventConsumerTest {
                 PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
@@ -177,11 +218,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
-                TAG_KEY_BUNDLE, "",
-                TAG_KEY_APPLICATION, "",
-                TAG_KEY_EVENT_TYPE_FQN, ""
-        ).count());
+        assertEquals(1L, getTimerCount("", "", ""));
         micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(PROCESSING_EXCEPTION_COUNTER_NAME, 1);
         assertNoCounterIncrement(
@@ -189,7 +226,8 @@ public class EventConsumerTest {
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verify(endpointProcessor, never()).process(any(Event.class));
         verify(kafkaMessageDeduplicator, never()).isNew(any(UUID.class));
@@ -203,11 +241,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
-                TAG_KEY_BUNDLE, action.getBundle(),
-                TAG_KEY_APPLICATION, action.getApplication(),
-                TAG_KEY_EVENT_TYPE_FQN, ""
-        ).count());
+        assertEquals(1L, getTimerCount(action.getBundle(), action.getApplication(), action.getEventType()));
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(REJECTED_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(PROCESSING_EXCEPTION_COUNTER_NAME, 1);
@@ -215,7 +249,8 @@ public class EventConsumerTest {
                 PROCESSING_ERROR_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verify(endpointProcessor, never()).process(any(Event.class));
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
@@ -230,18 +265,15 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
-                TAG_KEY_BUNDLE, action.getBundle(),
-                TAG_KEY_APPLICATION, action.getApplication(),
-                TAG_KEY_EVENT_TYPE_FQN, ""
-        ).count());
+        assertEquals(1L, getTimerCount(action.getBundle(), action.getApplication(), action.getEventType()));
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         micrometerAssertionHelper.assertCounterIncrement(PROCESSING_ERROR_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
@@ -258,11 +290,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 2);
-        assertEquals(2L, registry.timer(CONSUMED_TIMER_NAME,
-                TAG_KEY_BUNDLE, action.getBundle(),
-                TAG_KEY_APPLICATION, action.getApplication(),
-                TAG_KEY_EVENT_TYPE_FQN, ""
-        ).count());
+        assertEquals(2L, getTimerCount(action.getBundle(), action.getApplication(), action.getEventType()));
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 2);
         micrometerAssertionHelper.assertCounterIncrement(DUPLICATE_COUNTER_NAME, 1);
         assertNoCounterIncrement(
@@ -270,7 +298,8 @@ public class EventConsumerTest {
                 PROCESSING_ERROR_COUNTER_NAME,
                 PROCESSING_EXCEPTION_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(2)).isNew(messageId);
@@ -285,11 +314,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
-                TAG_KEY_BUNDLE, action.getBundle(),
-                TAG_KEY_APPLICATION, action.getApplication(),
-                TAG_KEY_EVENT_TYPE_FQN, ""
-        ).count());
+        assertEquals(1L, getTimerCount(action.getBundle(), action.getApplication(), action.getEventType()));
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_MISSING_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
@@ -297,7 +322,8 @@ public class EventConsumerTest {
                 PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
@@ -312,11 +338,7 @@ public class EventConsumerTest {
         inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
-        assertEquals(1L, registry.timer(CONSUMED_TIMER_NAME,
-                TAG_KEY_BUNDLE, action.getBundle(),
-                TAG_KEY_APPLICATION, action.getApplication(),
-                TAG_KEY_EVENT_TYPE_FQN, ""
-        ).count());
+        assertEquals(1L, getTimerCount(action.getBundle(), action.getApplication(), action.getEventType()));
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_INVALID_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
@@ -324,7 +346,8 @@ public class EventConsumerTest {
                 PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
@@ -399,5 +422,14 @@ public class EventConsumerTest {
                 .withHeaders(new RecordHeaders().add(MESSAGE_ID_HEADER, messageId))
                 .build();
         return Message.of(payload).addMetadata(metadata);
+    }
+
+    private long getTimerCount(final String bundle, final String application, final String eventType) {
+        return registry.timer(CONSUMED_TIMER_NAME,
+            TAG_KEY_BUNDLE, bundle,
+            TAG_KEY_APPLICATION, application,
+            TAG_KEY_EVENT_TYPE, eventType,
+            TAG_KEY_EVENT_TYPE_FQN, ""
+        ).count();
     }
 }
