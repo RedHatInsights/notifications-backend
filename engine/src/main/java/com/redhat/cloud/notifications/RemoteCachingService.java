@@ -1,26 +1,27 @@
 package com.redhat.cloud.notifications;
 
 import io.quarkus.redis.datasource.RedisDataSource;
-import io.quarkus.redis.datasource.hash.HashCommands;
+import io.quarkus.redis.datasource.value.ValueCommands;
 import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import java.time.Clock;
-import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.UUID;
 
-/**
- * Stores and retrieves data from remote cache (i.e. Redis or Valkey).
- */
+/** Stores and retrieves data from remote cache (i.e. Redis or Valkey). */
 @ApplicationScoped
 public class RemoteCachingService {
 
-    private static final String KAFKA_MESSAGE_KEY = "engine:kafka-message";
+    private static final String KAFKA_MESSAGE_KEY = "engine:kafka-message:";
+    private static final String NOT_USED = "";
 
-    // Key, message ID, creation timestamp
-    private final HashCommands<String, UUID, LocalDateTime> kafkaMessageCommands;
+    @ConfigProperty(name = "remote-caching-service.ttl", defaultValue = "PT24H")
+    Duration ttl;
+
+    private final ValueCommands<String, String> kafkaMessageCommands;
 
     public RemoteCachingService(RedisDataSource ds) {
-        kafkaMessageCommands = ds.hash(String.class, UUID.class, LocalDateTime.class);
+        kafkaMessageCommands = ds.value(String.class);
     }
 
     /**
@@ -32,6 +33,12 @@ public class RemoteCachingService {
      * @return true if the message has not been processed yet
      */
     public boolean isNewMessageId(UUID messageId) {
-        return kafkaMessageCommands.hsetnx(KAFKA_MESSAGE_KEY, messageId, LocalDateTime.now(Clock.systemUTC()));
+        String key = KAFKA_MESSAGE_KEY + messageId;
+        boolean isNew = kafkaMessageCommands.setnx(key, NOT_USED);
+        if (isNew) {
+            kafkaMessageCommands.setex(key, ttl.toSeconds(), NOT_USED);
+        }
+
+        return isNew;
     }
 }
