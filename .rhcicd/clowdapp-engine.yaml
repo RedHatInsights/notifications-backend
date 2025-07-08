@@ -22,34 +22,6 @@ objects:
       sharedDbAppName: notifications-backend
     inMemoryDb: ${{IN_MEMORY_DB_ENABLED}}
     featureFlags: true
-    jobs:
-    - name: remote-cache-cleaner-cronjob
-      schedule: ${REMOTE_CACHE_CLEANER_SCHEDULE}
-      suspend: ${{DISABLE_REMOTE_CACHE_CLEANER}}
-      concurrencyPolicy: Forbid
-      restartPolicy: Never
-      podSpec:
-        resources:
-          requests:
-            cpu: ${REMOTE_CACHE_CLEANER_CPU_REQUEST}
-            memory: ${REMOTE_CACHE_CLEANER_CPU_REQUEST}
-          limits:
-            cpu: ${REMOTE_CACHE_CLEANER_CPU_LIMIT}
-            memory: ${REMOTE_CACHE_CLEANER_MEMORY_LIMIT}
-        image: docker.io/fedora/valkey-8:latest
-        volume:
-          - name: notifications-remote-cache-cleaner-volume
-            configMap:
-              name: notifications-remote-cache-cleaner-config
-        volumeMounts:
-          - name: notifications-remote-cache-cleaner-volume
-            mountPath: /notifications-remote-cache-cleaner
-        command: ['sh', '/notifications-remote-cache-cleaner/clean.sh']
-        env:
-          - name: VALKEY_URI
-            valueFrom:
-              secretKeyRef:
-                # TODO figure out what secretKeyRef to use
     kafkaTopics:
     - topicName: platform.notifications.connector.email.high.volume
       partitions: 6
@@ -225,21 +197,6 @@ objects:
           value: ${PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR}
         - name: NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES
           value: ${NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES}
-- apiVersion: v1
-  kind: ConfigMap
-  metadata:
-    name: notifications-remote-cache-cleaner-config
-  data:
-    clean.sh: |
-      cat /notifications-remote-cache-cleaner/clean.lua | valkey-cli -u $VALKEY_URI -x FUNCTION LOAD REPLACE
-      valkey-cli -u $VALKEY_URI FCALL clean_msg_id 1 engine:kafka-message
-    clean.lua: |
-      #!lua name=cleaner
-      local function clean_msg_id(keys, args)
-          local msg_key = keys[1]
-          return server.call('DEL', msg_key)
-      end
-      server.register_function('clean_msg_id', clean_msg_id)
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -250,24 +207,6 @@ parameters:
 - name: CPU_REQUEST
   description: CPU request
   value: 500m
-- name: REMOTE_CACHE_CLEANER_SCHEDULE
-  description: Execution time specified in cron format
-  value: "0 */6 * * *"
-- name: DISABLE_REMOTE_CACHE_CLEANER
-  description: Should the remote cache cleaner cronjob be disabled?
-  value: "false"
-- name: REMOTE_CACHE_CLEANER_CPU_LIMIT
-  description: CPU limit of the remote cache cleaner cronjob
-  value: 200m
-- name: REMOTE_CACHE_CLEANER_CPU_REQUEST
-  description: CPU requested by the remote cache cleaner cronjob
-  value: 100m
-- name: REMOTE_CACHE_CLEANER_MEMORY_LIMIT
-  description: Memory limit of the remote cache cleaner cronjob
-  value: 200Mi
-- name: REMOTE_CACHE_CLEANER_CPU_REQUEST
-  description: Memory requested by the remote cache cleaner cronjob
-  value: 100Mi
 - name: ENV_BASE_URL
   value: https://console.redhat.com
   description: The environment's base URL
