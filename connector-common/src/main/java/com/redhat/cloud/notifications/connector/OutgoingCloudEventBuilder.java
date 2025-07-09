@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector;
 
 import com.redhat.cloud.notifications.connector.payload.PayloadDetails;
 import io.quarkus.arc.DefaultBean;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.camel.Exchange;
 import org.apache.camel.Message;
@@ -11,6 +12,7 @@ import org.apache.camel.util.json.JsonObject;
 import java.time.LocalDateTime;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.OUTCOME;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.RETURN_SOURCE;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.START_TIME;
@@ -56,6 +58,13 @@ public class OutgoingCloudEventBuilder implements Processor {
 
             exchange.removeProperty(ExchangeProperty.PAYLOAD_ID);
         }
+
+        Log.infof("Notification sent [orgId=%s, type=%s, historyId=%s, duration=%d, successful=%b]",
+            exchange.getProperty(ORG_ID, String.class),
+            exchange.getProperty(RETURN_SOURCE, String.class),
+            exchange.getProperty(ID, String.class),
+            data.get("duration"),
+            exchange.getProperty(SUCCESSFUL, Boolean.class));
 
         JsonObject outgoingCloudEvent = new JsonObject();
         outgoingCloudEvent.put("type", CE_TYPE);
