@@ -15,7 +15,7 @@ objects:
         debug: false
         dynaconfEnvName: stage_post_deploy
         filter: ''
-        marker: 'snow and smoke'
+        marker: 'notif_snow and api'
 parameters:
 - name: IMAGE_TAG
   value: ''
