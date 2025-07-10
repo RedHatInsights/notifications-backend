@@ -12,10 +12,6 @@
       "channel": "my-slack-channel"
     },
     "url": "https://redhat.com",
-    "basic_authentication": {
-      "username": "camel-user",
-      "password": "camel-pass"
-    },
     "secret_token": "c4m3l-up3r-s3cr3t-t0k3n"
   }
 }

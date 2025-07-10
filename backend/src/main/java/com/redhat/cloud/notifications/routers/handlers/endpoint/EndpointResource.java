@@ -20,7 +20,6 @@ import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CamelProperties;
@@ -675,7 +674,6 @@ public class EndpointResource {
         if (endpointProperties instanceof SourcesSecretable incomingProperties && databaseEndpointProperties instanceof SourcesSecretable dep) {
             // In order to be able to update the secrets in Sources, we need to grab the IDs of these secrets from the
             // database endpoint, since the client won't be sending those IDs.
-            dep.setBasicAuthentication(incomingProperties.getBasicAuthentication());
             dep.setSecretToken(incomingProperties.getSecretToken());
             dep.setBearerAuthentication(incomingProperties.getBearerAuthentication());
             this.secretUtils.updateSecretsForEndpoint(updatedDbEndpoint);
@@ -785,12 +783,6 @@ public class EndpointResource {
 
         if (shouldRedactSecrets) {
             if (endpoint.getProperties() instanceof SourcesSecretable sourcesSecretable) {
-                final BasicAuthentication basicAuthentication = sourcesSecretable.getBasicAuthentication();
-                if (basicAuthentication != null) {
-                    basicAuthentication.setPassword(REDACTED_CREDENTIAL);
-                    basicAuthentication.setUsername(REDACTED_CREDENTIAL);
-                }
-
                 final String bearerToken = sourcesSecretable.getBearerAuthentication();
                 if (bearerToken != null) {
                     sourcesSecretable.setBearerAuthentication(REDACTED_CREDENTIAL);

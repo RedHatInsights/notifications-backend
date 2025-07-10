@@ -41,14 +41,6 @@ public class OApiFilter {
     @ConfigProperty(name = "quarkus.http.port", defaultValue = "8085")
     Integer port;
 
-    /**
-     * The name of the security scheme that smallrye will create for basic authentications. The default value is taken
-     * from
-     * <a href="https://quarkus.io/guides/openapi-swaggerui#quarkus-smallrye-openapi_quarkus.smallrye-openapi.security-scheme-name">the quarkus docs</a>.
-     */
-    @ConfigProperty(name = "quarkus.smallrye-openapi.security-scheme-name", defaultValue = "SecurityScheme")
-    String securitySchemeName;
-
     private WebClient client;
 
     @PostConstruct
