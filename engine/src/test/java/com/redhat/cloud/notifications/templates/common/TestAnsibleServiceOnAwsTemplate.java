@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,11 +23,6 @@ public class TestAnsibleServiceOnAwsTemplate extends EmailTemplatesRendererHelpe
     @Override
     protected String getApp() {
         return "ansible-service-on-aws";
-    }
-
-    @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(NOTIFY_CUSTOMER_PROVISION_SUCCESS);
     }
 
     @Test
