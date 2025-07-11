@@ -44,8 +44,8 @@ public abstract class EmailTemplatesRendererHelper {
     @Inject
     protected ResourceHelpers resourceHelpers;
 
-    @Inject
-    Environment environment;
+    @InjectSpy
+    protected Environment environment;
 
     @InjectSpy
     protected TemplateService templateService;

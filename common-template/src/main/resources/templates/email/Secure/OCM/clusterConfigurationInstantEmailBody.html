@@ -1,0 +1,76 @@
+{@boolean renderSection1=true}
+{@boolean renderSection2=true}
+{#include email/Secure/Common/insightsEmailBody}
+{#content-title}
+    Cluster Manager - OpenShift
+{/content-title}
+{#content-title-section1}
+    {action.events[0].payload.title.or(action.events[0].payload.subject.or(""))}
+{/content-title-section1}
+{#content-body-section1}
+{#let global_vars=action.events[0].payload.global_vars}
+<p>
+    {#switch global_vars.template_sub_type.or("")}
+    {#case 'osd-trial-creation-template'}
+        Welcome to your OpenShift Dedicated trial! We are notifying you about your <a href="{environment.ocmUrl}/openshift/cluster-list" target="_blank">OpenShift Dedicated trial cluster</a>.
+    {#case 'osd-trial-reminder-template'}
+        We are notifying you about your <a href="{environment.ocmUrl}/openshift/cluster-list">OpenShift Dedicated trial cluster</a>.
+    {#case 'osd-trial-deletion-template'}
+        Thank you for trialing OpenShift Dedicated!
+    {#case}
+        This notification is for your <a href="{environment.ocmUrl}/openshift/cluster-list" target="_blank">cluster</a>.
+    {/switch}
+</p>
+<p>
+    {global_vars.log_description}
+</p>
+
+{#if global_vars.doc_references.orEmpty.size > 0}
+    <p>
+        <b>Need help? Check these resources for more information:</b>
+    </p>
+    <ul>
+        {#each global_vars.doc_references}
+            <li><a href="{it}" target="_blank">{it}</a></li>
+        {/each}
+    </ul>
+{/if}
+{/let}
+{/content-body-section1}
+{#content-title-section2}
+More info
+{/content-title-section2}
+{#content-body-section2}
+{#let global_vars=action.events[0].payload.global_vars}
+{#switch global_vars.template_sub_type.or("")}
+{#case 'osd-trial-creation-template'}
+    <p>
+        To learn more about the OpenShift Dedicated trial, please refer to <a href="https://access.redhat.com/articles/5990101" target="_blank">our documentation</a>. You can upgrade your trial to a paid subscription at any time by clicking "Upgrade from trial" in <a href="{environment.ocmUrl}/openshift/cluster-list" target="_blank">OpenShift Cluster Manager</a>.
+    </p>
+{#case 'osd-trial-reminder-template'}
+    <p>
+        You will be notified once your cluster is deleted. You can prevent this automatic deletion by upgrading your trial to a paid subscription at any time by clicking "Upgrade from trial" in <a href="{environment.ocmUrl}/openshift/cluster-list" target="_blank">OpenShift Cluster Manager</a>.
+    </p>
+{#case 'osd-trial-deletion-template'}
+    <p>
+        <a href="https://www.openshift.com/products/dedicated/" target="_blank">Learn more</a> about OpenShift Dedicated, and create a new cluster at any time in <a href="{environment.ocmUrl}/openshift/create" target="_blank">OpenShift Cluster Manager</a>!
+    </p>
+{#case 'ocm-approved-access-template'}
+    <p>
+        Your organization has enabled "Approved Access" for ROSA clusters. Red Hat SRE cannot access any cluster in your organization unless it is approved.
+        As a reminder, the ROSA SLA can be affected if access to a cluster is not approved in a timely manner. More information can be found on this <a href="https://docs.openshift.com/rosa/support/approved-access.html" target="_blank">here</a>.
+    </p>
+{#case}
+    {#if global_vars.subscription_plan != 'OSDTrial'}
+        <p>
+            Your subscription provides <a href="https://access.redhat.com/support/offerings/openshift/sla" target="_blank">premium Red Hat support</a>. If you require any further assistance, or have any questions related to this message, please <a href="https://access.redhat.com/support/contact/technicalSupport/" target="_blank" title="Red Hat Support">open a support case</a>. Review the <a href="https://access.redhat.com/support/policy/support_process" target="_blank" title="Red Hat support process">support process</a> for guidance on working with Red Hat support.
+        </p>
+    {/if}
+{/switch}
+
+<p>
+    Thank you for choosing Red Hat OpenShift{#switch global_vars.subscription_plan}{#case 'OSD'} Dedicated{#case 'OSDTrial'} Dedicated Trial{#case 'MOA'} Service on AWS{/switch}.
+</p>
+{/let}
+{/content-body-section2}
+{/include}

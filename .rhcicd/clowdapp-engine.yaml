@@ -86,6 +86,8 @@ objects:
           value: ${ENV_BASE_URL}
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: ENV_OCM_BASE_URL
+          value: ${ENV_OCM_BASE_URL}
         - name: HOST_NAME
           value: ${HOSTNAME}
         - name: MP_MESSAGING_INCOMING_FROMCAMEL_ENABLED
@@ -207,6 +209,9 @@ parameters:
 - name: ENV_BASE_URL
   value: https://console.redhat.com
   description: The environment's base URL
+- name: ENV_OCM_BASE_URL
+  value: https://cloud.redhat.com
+  description: The environment's base URL for OCM
 - name: ENV_NAME
   description: ClowdEnvironment name (ephemeral, stage, prod)
   required: true
