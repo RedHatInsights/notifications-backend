@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.processors.email.aggregators.ImageBuilderAggregator;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -21,24 +20,20 @@ public class TestImageBuilderTemplate extends EmailTemplatesRendererHelper {
     private static final Action FAILURE_ACTION = TestHelpers.createImageBuilderAction(LAUNCH_FAILURE);
 
     @Override
-    protected String getBundle() {
-        return "rhel";
-    }
-
-    @Override
     protected String getApp() {
         return "image-builder";
     }
 
     @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(LAUNCH_SUCCESS, LAUNCH_FAILURE);
+    protected String getAppDisplayName() {
+        return "Images";
     }
 
     @Test
     public void testSuccessLaunchEmailTitle() {
+        eventTypeDisplayName = "Launch completed";
         String result = generateEmailSubject(LAUNCH_SUCCESS, SUCCESS_ACTION);
-        assertEquals("Instant notification - successful image launch - Image builder - Red Hat Enterprise Linux", result);
+        assertEquals("Instant notification - Launch completed - Images - Red Hat Enterprise Linux", result);
     }
 
     @Test
@@ -52,8 +47,9 @@ public class TestImageBuilderTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testFailedLaunchEmailTitle() {
+        eventTypeDisplayName = "Launch failed";
         String result = generateEmailSubject(LAUNCH_FAILURE, FAILURE_ACTION);
-        assertEquals("Instant notification - image launch failed - Image builder - Red Hat Enterprise Linux", result);
+        assertEquals("Instant notification - Launch failed - Images - Red Hat Enterprise Linux", result);
     }
 
     @Test

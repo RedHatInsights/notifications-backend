@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,14 +30,20 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(NEW_SUBSCRIPTION_BUGFIX_ERRATA, NEW_SUBSCRIPTION_SECURITY_UPDATE_ERRATA, NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA);
+    protected String getBundleDisplayName() {
+        return "Subscription Services";
+    }
+
+    @Override
+    protected String getAppDisplayName() {
+        return "Errata";
     }
 
     @Test
     public void testNewSubscriptionBugfixErrataEmailTitle() {
+        eventTypeDisplayName = "Subscription Bug Fixes";
         String result = generateEmailSubject(NEW_SUBSCRIPTION_BUGFIX_ERRATA, ACTION);
-        assertEquals("Instant notification - Bug fixes - Errata - Subscription Services", result);
+        assertEquals("Instant notification - Subscription Bug Fixes - Errata - Subscription Services", result);
     }
 
     @Test
@@ -52,8 +57,9 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testNewSubscriptionSecurityUpdateErrataEmailTitle() {
+        eventTypeDisplayName = "Subscription Security Updates";
         String result = generateEmailSubject(NEW_SUBSCRIPTION_SECURITY_UPDATE_ERRATA, ACTION);
-        assertEquals("Instant notification - Security updates - Errata - Subscription Services", result);
+        assertEquals("Instant notification - Subscription Security Updates - Errata - Subscription Services", result);
     }
 
     @Test
@@ -68,8 +74,9 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testNewSubscriptionEnhancementErrataEmailTitle() {
+        eventTypeDisplayName = "Subscription Enhancements";
         String result = generateEmailSubject(NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA, ACTION);
-        assertEquals("Instant notification - Enhancements - Errata - Subscription Services", result);
+        assertEquals("Instant notification - Subscription Enhancements - Errata - Subscription Services", result);
     }
 
     @Test

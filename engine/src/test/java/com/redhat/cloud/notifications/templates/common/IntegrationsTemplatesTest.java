@@ -29,21 +29,27 @@ public class IntegrationsTemplatesTest extends EmailTemplatesRendererHelper {
     }
 
     @Override
+    protected String getBundleDisplayName() {
+        return "Console";
+    }
+
+    @Override
     protected String getApp() {
         return "integrations";
     }
 
     @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(INTEGRATION_DISABLED_EVENT_TYPE, GeneralCommunicationsHelper.GENERAL_COMMUNICATIONS_EVENT_TYPE);
+    protected String getAppDisplayName() {
+        return "Integrations";
     }
 
     @Test
     void testIntegrationDisabledTitle() {
         Endpoint endpoint = buildEndpoint();
+        eventTypeDisplayName = "Integration disabled";
         Action action = buildIntegrationDisabledAction(endpoint, HTTP_4XX, 401, 1);
         String result = generateEmailSubject(INTEGRATION_DISABLED_EVENT_TYPE, action);
-        assertEquals("Instant notification - Integrations - Console", result);
+        assertEquals("Instant notification - Integration disabled - Integrations - Console", result);
     }
 
     @Test

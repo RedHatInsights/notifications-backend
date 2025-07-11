@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,15 +23,16 @@ public class TestTasksTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(EVENT_TYPE_EXECUTED_TASK_COMPLETED, EVENT_TYPE_JOB_FAILED);
+    protected String getAppDisplayName() {
+        return "Tasks";
     }
 
     @Test
     public void testExecutedTaskCompletedEmailTitle() {
         Action action = TasksTestHelpers.createTasksExecutedTaskCompletedAction(EVENT_TYPE_EXECUTED_TASK_COMPLETED);
+        eventTypeDisplayName = "Executed Task completed";
         String result = generateEmailSubject(EVENT_TYPE_EXECUTED_TASK_COMPLETED, action);
-        assertEquals("Instant notification - Executed task completed - Tasks - Red Hat Enterprise Linux", result);
+        assertEquals("Instant notification - Executed Task completed - Tasks - Red Hat Enterprise Linux", result);
     }
 
     @Test
@@ -47,6 +47,7 @@ public class TestTasksTemplate extends EmailTemplatesRendererHelper {
     @Test
     public void testJobFailedEmailTitle() {
         Action action = TasksTestHelpers.createTasksJobFailedAction(EVENT_TYPE_JOB_FAILED);
+        eventTypeDisplayName = "Job failed";
         String result = generateEmailSubject(EVENT_TYPE_JOB_FAILED, action);
         assertEquals("Instant notification - Job failed - Tasks - Red Hat Enterprise Linux", result);
     }

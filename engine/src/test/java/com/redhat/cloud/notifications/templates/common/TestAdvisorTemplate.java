@@ -9,7 +9,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -34,9 +33,8 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         return "advisor";
     }
 
-    @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(NEW_RECOMMENDATION, RESOLVED_RECOMMENDATION, DEACTIVATED_RECOMMENDATION);
+    protected String getAppDisplayName() {
+        return "Advisor";
     }
 
     @Test
@@ -112,6 +110,7 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     void testInstantEmailTitleForResolvedRecommendations() {
+        eventTypeDisplayName = "Resolved recommendation";
         Action action = TestHelpers.createAdvisorAction("123456", RESOLVED_RECOMMENDATION);
 
         String result = generateEmailSubject(RESOLVED_RECOMMENDATION, action);
@@ -120,6 +119,7 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testInstantEmailTitleForNewRecommendations() {
+        eventTypeDisplayName = "New recommendation";
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
         String result = generateEmailSubject(NEW_RECOMMENDATION, action);
         assertEquals("Instant notification - New recommendation - Advisor - Red Hat Enterprise Linux", result);
@@ -159,6 +159,7 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testInstantEmailTitleForDeactivatedRecommendation() {
+        eventTypeDisplayName = "Deactivated recommendation";
         Action action = TestHelpers.createAdvisorAction("123456", DEACTIVATED_RECOMMENDATION);
         String result = generateEmailSubject(DEACTIVATED_RECOMMENDATION, action);
         assertEquals("Instant notification - Deactivated recommendation - Advisor - Red Hat Enterprise Linux", result);

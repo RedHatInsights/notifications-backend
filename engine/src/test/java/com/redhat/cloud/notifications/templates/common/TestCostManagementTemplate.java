@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,15 +32,20 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(MISSING_COST_MODEL, COST_MODEL_CREATE, COST_MODEL_UPDATE, COST_MODEL_REMOVE,
-            CM_OPERATOR_STALE, CM_OPERATOR_DATA_PROCESSED, CM_OPERATOR_DATA_RECEIVED);
+    protected String getBundleDisplayName() {
+        return "OpenShift";
+    }
+
+    @Override
+    protected String getAppDisplayName() {
+        return "Cost management";
     }
 
     @Test
     public void testInstantMissingCostModelEmailTitle() {
+        eventTypeDisplayName = "Missing Openshift Cost Model";
         String result = generateEmailSubject(MISSING_COST_MODEL, ACTION);
-        assertEquals("Instant notification - Missing cost model- Cost management - OpenShift", result);
+        assertEquals("Instant notification - Missing Openshift Cost Model - Cost management - OpenShift", result);
     }
 
     @Test
@@ -53,8 +57,9 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testInstantCostModelCreateEmailTitle() {
+        eventTypeDisplayName = "Cost Model Create";
         String result = generateEmailSubject(COST_MODEL_CREATE, ACTION);
-        assertEquals("Instant notification - Cost model changed - Cost management - OpenShift", result);
+        assertEquals("Instant notification - Cost Model Create - Cost management - OpenShift", result);
     }
 
     @Test
@@ -66,8 +71,9 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testInstantCostModelUpdateEmailTitle() {
+        eventTypeDisplayName = "Cost Model Update";
         String result = generateEmailSubject(COST_MODEL_UPDATE, ACTION);
-        assertEquals("Instant notification - Cost model update - Cost management - OpenShift", result);
+        assertEquals("Instant notification - Cost Model Update - Cost management - OpenShift", result);
     }
 
     @Test
@@ -79,8 +85,9 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testInstantCostModelRemoveEmailTitle() {
+        eventTypeDisplayName = "Cost Model Remove";
         String result = generateEmailSubject(COST_MODEL_REMOVE, ACTION);
-        assertEquals("Instant notification - Cost model removal - Cost management - OpenShift", result);
+        assertEquals("Instant notification - Cost Model Remove - Cost management - OpenShift", result);
     }
 
     @Test
@@ -92,8 +99,9 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testInstantCostModelOperatorStaleEmailTitle() {
+        eventTypeDisplayName = "CM Operator Stale Data";
         String result = generateEmailSubject(CM_OPERATOR_STALE, ACTION);
-        assertEquals("Instant notification - Stale cost management - Cost management - OpenShift", result);
+        assertEquals("Instant notification - CM Operator Stale Data - Cost management - OpenShift", result);
     }
 
     @Test
@@ -105,8 +113,9 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testInstantCostModelOperatorDataProcessedEmailTitle() {
+        eventTypeDisplayName = "CM Operator Data Processed";
         String result = generateEmailSubject(CM_OPERATOR_DATA_PROCESSED, ACTION);
-        assertEquals("Instant notification - OpenShift cluster data processed - Cost management - OpenShift", result);
+        assertEquals("Instant notification - CM Operator Data Processed - Cost management - OpenShift", result);
     }
 
     @Test
@@ -118,8 +127,9 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testInstantCostModelOperatorDataReceivedEmailTitle() {
+        eventTypeDisplayName = "CM Operator Data Received";
         String result = generateEmailSubject(CM_OPERATOR_DATA_RECEIVED, ACTION);
-        assertEquals("Instant notification - OpenShift cluster data received - Cost management - OpenShift", result);
+        assertEquals("Instant notification - CM Operator Data Received - Cost management - OpenShift", result);
     }
 
     @Test

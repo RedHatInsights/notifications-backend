@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,8 +26,13 @@ public class TestSourcesTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(AVAILABILITY_STATUS);
+    protected String getBundleDisplayName() {
+        return "Console";
+    }
+
+    @Override
+    protected String getAppDisplayName() {
+        return "Sources";
     }
 
     @Test
@@ -40,7 +44,8 @@ public class TestSourcesTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testAvailabilityStatusEmailTitle() {
+        eventTypeDisplayName = "Availability Status";
         String result = generateEmailSubject(AVAILABILITY_STATUS, ACTION);
-        assertEquals("Instant notification - Availability Status Change - Sources - Console", result);
+        assertEquals("Instant notification - Availability Status - Sources - Console", result);
     }
 }

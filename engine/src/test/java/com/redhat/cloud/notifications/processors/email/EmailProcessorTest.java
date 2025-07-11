@@ -111,6 +111,9 @@ public class EmailProcessorTest {
         event.setId(UUID.randomUUID());
         event.setEventWrapper(eventWrapper);
         event.setEventType(eventType);
+        event.setBundleDisplayName("Red Hat Enterprise Linux");
+        event.setApplicationDisplayName("Policies");
+        event.setEventTypeDisplayName("Policy triggered");
         event.setOrgId("email-processor-test-event-type-org-id");
 
         return event;
@@ -387,7 +390,11 @@ public class EmailProcessorTest {
             }).collect(toSet());
 
         Assertions.assertTrue(resultEmailBody.contains("<p>You are receiving this email because the email template associated with this event type is not configured properly.</p>"), "the rendered email's body from the email notification does not match with expectation");
-        Assertions.assertTrue(resultEmailSubject.contains("rhel/policies/policy-triggered triggered"), "the rendered email's subject from the email notification does not match with expectation");
+        if (useCommonQuteTemplateModule) {
+            Assertions.assertTrue(resultEmailSubject.contains("Instant notification - Policy triggered - Policies - Red Hat Enterprise Linux"), "the rendered email's subject from the email notification does not match with expectation ");
+        } else {
+            Assertions.assertTrue(resultEmailSubject.contains("rhel/policies/policy-triggered triggered"), "the rendered email's subject from the email notification does not match with expectation ");
+        }
         Assertions.assertEquals(stubbedSender, resultEmailSender, "the rendered email's sender from the email notification does not match the stubbed sender");
         Assertions.assertEquals(event.getOrgId(), resultOrgId, "the organization ID from the email notification does not match the one set in the stubbed event");
         Assertions.assertEquals(Set.copyOf(subscribers), resultSubscribers, "the subscribers set in the email notification do not match the stubbed ones");

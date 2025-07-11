@@ -9,7 +9,6 @@ import com.redhat.cloud.notifications.processors.email.EmailPendo;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 
 import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_MESSAGE;
 import static com.redhat.cloud.notifications.processors.email.EmailPendoResolver.GENERAL_PENDO_TITLE;
@@ -27,11 +26,6 @@ public class TestPendoMessage extends EmailTemplatesRendererHelper {
     @Override
     protected String getApp() {
         return "patch";
-    }
-
-    @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(EVENT_TYPE_NAME);
     }
 
     @Test
