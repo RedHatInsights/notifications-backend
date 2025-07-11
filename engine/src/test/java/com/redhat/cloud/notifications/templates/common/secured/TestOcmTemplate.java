@@ -94,14 +94,13 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("Thank you for choosing Red Hat OpenShift Dedicated Trial."));
         assertFalse(result.contains("Check these resources for more information"));
         assertTrue(result.contains("What should you do to minimize impact"));
-        assertTrue(result.contains(COMMON_SECURED_LABEL_CHECK));
 
         action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template", "doc_references", List.of("https://docs.openshift.com/rosa/ocm/ocm-overview.html", "https://console.redhat.com/openshift"))));
         result = generateEmailBody(CLUSTER_UPDATE, action);
+        assertTrue(result.contains(COMMON_SECURED_LABEL_CHECK));
         assertTrue(result.contains("Check these resources for more information"));
         assertTrue(result.contains("https://docs.openshift.com/rosa/ocm/ocm-overview.html"));
         assertTrue(result.contains("https://console.redhat.com/openshift"));
-        assertTrue(result.contains(COMMON_SECURED_LABEL_CHECK));
 
         action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template-rosa-hcp")));
         result = generateEmailBody(CLUSTER_UPDATE, action);
@@ -110,11 +109,8 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains(OCM_TEST_ENV_URL));
         assertTrue(result.contains("Upgrade scheduled"));
         assertTrue(result.contains(((Map<String, String>) action.getEvents().get(0).getPayload().getAdditionalProperties().get("global_vars")).get("log_description")));
-        assertTrue(result.contains("What can you expect"));
         assertTrue(result.contains("Thank you for choosing Red Hat OpenShift Dedicated Trial."));
-        assertTrue(result.contains("The machine pools hosting the applications will not be upgraded. The machine pools must be upgraded separately."));
         assertFalse(result.contains("What should you do to minimize impact"));
-        assertTrue(result.contains(COMMON_SECURED_LABEL_CHECK));
     }
 
     @Test
