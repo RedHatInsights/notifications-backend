@@ -83,9 +83,6 @@
             "url": {
               "$ref": "#/definitions/url"
             },
-            "basic_authentication": {
-              "$ref": "#/definitions/basic-authentication"
-            },
             "secret_token": {
               "$ref": "#/definitions/secret-token"
             }
@@ -154,9 +151,6 @@
             "url": {
               "$ref": "#/definitions/url"
             },
-            "basic_authentication": {
-              "$ref": "#/definitions/basic-authentication"
-            },
             "bearer_authentication": {
               "$ref": "#/definitions/bearer-authentication"
             },
@@ -186,26 +180,6 @@
       "format": "url",
       "title": "Definition of the endpoint properties' URL object",
       "type": "string"
-    },
-    "basic-authentication": {
-      "title": "Definition of the endpoint properties' basic authentication object",
-      "type": "object",
-      "required": [
-        "username",
-        "password"
-      ],
-      "properties": {
-        "username": {
-          "minLength": 1,
-          "title": "Username of the basic authentication object",
-          "type": "string"
-        },
-        "password": {
-          "minLength": 1,
-          "title": "Password of the basic authentication object",
-          "type": "string"
-        }
-      }
     },
     "bearer-authentication": {
       "minLength": 1,

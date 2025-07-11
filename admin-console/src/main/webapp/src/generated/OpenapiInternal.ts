@@ -76,12 +76,6 @@ export namespace Schemas {
       | null;
   };
 
-  export const BasicAuthentication = zodSchemaBasicAuthentication();
-  export type BasicAuthentication = {
-    password?: string | undefined | null;
-    username?: string | undefined | null;
-  };
-
   export const BehaviorGroup = zodSchemaBehaviorGroup();
   export type BehaviorGroup = {
     actions?: Array<BehaviorGroupAction> | undefined | null;
@@ -129,7 +123,6 @@ export namespace Schemas {
 
   export const CamelProperties = zodSchemaCamelProperties();
   export type CamelProperties = {
-    basic_authentication?: BasicAuthentication | undefined | null;
     bearer_authentication?: string | undefined | null;
     bearer_authentication_sources_id?: number | undefined | null;
     disable_ssl_verification: boolean;
@@ -553,7 +546,6 @@ export namespace Schemas {
 
   export const WebhookProperties = zodSchemaWebhookProperties();
   export type WebhookProperties = {
-    basic_authentication?: BasicAuthentication | undefined | null;
     bearer_authentication?: string | undefined | null;
     disable_ssl_verification: boolean;
     method: HttpType;
@@ -647,15 +639,6 @@ export namespace Schemas {
       .nonstrict();
   }
 
-  function zodSchemaBasicAuthentication() {
-      return z
-      .object({
-          password: z.string().optional().nullable(),
-          username: z.string().optional().nullable(),
-      })
-      .nonstrict();
-  }
-
   function zodSchemaBehaviorGroup() {
       return z
       .object({
@@ -717,9 +700,6 @@ export namespace Schemas {
   function zodSchemaCamelProperties() {
       return z
       .object({
-          basic_authentication: zodSchemaBasicAuthentication()
-          .optional()
-          .nullable(),
           bearer_authentication: z.string().optional().nullable(),
           bearer_authentication_sources_id: z
           .number()
@@ -1232,9 +1212,6 @@ export namespace Schemas {
   function zodSchemaWebhookProperties() {
       return z
       .object({
-          basic_authentication: zodSchemaBasicAuthentication()
-          .optional()
-          .nullable(),
           bearer_authentication: z.string().optional().nullable(),
           disable_ssl_verification: z.boolean(),
           method: zodSchemaHttpType(),

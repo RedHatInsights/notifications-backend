@@ -22,7 +22,6 @@ public class AuthenticationProcessor implements Processor {
             String secretPassword = exchange.getProperty(SECRET_PASSWORD, String.class);
 
             switch (authType) {
-                case BASIC -> throw new IllegalStateException("Unsupported authentication type: BASIC");
                 case BEARER -> throw new IllegalStateException("Unsupported authentication type: BEARER");
                 case SECRET_TOKEN -> {
                     if (secretPassword != null) {

@@ -2,9 +2,7 @@ package com.redhat.cloud.notifications.models.dto.v1.endpoint.properties;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.redhat.cloud.notifications.models.HttpType;
-import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.secrets.BasicAuthenticationDTO;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrl;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -19,9 +17,6 @@ public final class WebhookPropertiesDTO extends EndpointPropertiesDTO {
     @NotNull
     @ValidNonPrivateUrl
     private String url;
-
-    @Valid
-    private BasicAuthenticationDTO basicAuthentication;
 
     private String bearerAuthentication;
 
@@ -56,14 +51,6 @@ public final class WebhookPropertiesDTO extends EndpointPropertiesDTO {
 
     public void setUrl(final String url) {
         this.url = url;
-    }
-
-    public BasicAuthenticationDTO getBasicAuthentication() {
-        return basicAuthentication;
-    }
-
-    public void setBasicAuthentication(final BasicAuthenticationDTO basicAuthentication) {
-        this.basicAuthentication = basicAuthentication;
     }
 
     public String getBearerAuthentication() {

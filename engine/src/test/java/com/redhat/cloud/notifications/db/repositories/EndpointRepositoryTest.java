@@ -206,7 +206,6 @@ public class EndpointRepositoryTest {
         final WebhookProperties webhookProperties = new WebhookProperties();
 
         webhookProperties.setId(UUID.randomUUID());
-        webhookProperties.setBasicAuthenticationSourcesId(512L);
         webhookProperties.setDisableSslVerification(true);
         webhookProperties.setMethod(HttpType.PUT);
         webhookProperties.setSecretTokenSourcesId(213L);
@@ -215,7 +214,6 @@ public class EndpointRepositoryTest {
         WebhookProperties dbProperties = findByUuidAndOrgIdInternal(WEBHOOK, null, webhookProperties, WebhookProperties.class);
 
         Assertions.assertEquals(webhookProperties.getId(), dbProperties.getId(), "the ID of the associated webhook properties doesn't match");
-        Assertions.assertEquals(webhookProperties.getBasicAuthenticationSourcesId(), dbProperties.getBasicAuthenticationSourcesId(), "unexpected basic authentication sources id value");
         Assertions.assertEquals(webhookProperties.getDisableSslVerification(), dbProperties.getDisableSslVerification(), "unexpected ssl verification value");
         Assertions.assertEquals(webhookProperties.getMethod(), dbProperties.getMethod(), "unexpected http method value");
         Assertions.assertEquals(webhookProperties.getSecretTokenSourcesId(), dbProperties.getSecretTokenSourcesId(), "unexpected secret token sources ID value");
@@ -230,7 +228,6 @@ public class EndpointRepositoryTest {
         WebhookProperties dbAnsibleProperties = findByUuidAndOrgIdInternal(ANSIBLE, null, webhookProperties, WebhookProperties.class);
 
         Assertions.assertEquals(ansibleProperties.getId(), dbAnsibleProperties.getId(), "the ID of the associated Ansible properties doesn't match");
-        Assertions.assertEquals(ansibleProperties.getBasicAuthenticationSourcesId(), dbAnsibleProperties.getBasicAuthenticationSourcesId(), "unexpected basic authentication sources id value");
         Assertions.assertEquals(ansibleProperties.getDisableSslVerification(), dbAnsibleProperties.getDisableSslVerification(), "unexpected ssl verification value");
         Assertions.assertEquals(ansibleProperties.getMethod(), dbAnsibleProperties.getMethod(), "unexpected http method value");
         Assertions.assertEquals(ansibleProperties.getSecretTokenSourcesId(), dbAnsibleProperties.getSecretTokenSourcesId(), "unexpected secret token sources ID value");
@@ -280,7 +277,6 @@ public class EndpointRepositoryTest {
         final CamelProperties camelProperties = new CamelProperties();
 
         camelProperties.setId(UUID.randomUUID());
-        camelProperties.setBasicAuthenticationSourcesId(513L);
         camelProperties.setDisableSslVerification(false);
         camelProperties.setExtras(Map.of("channel", "#notifications"));
         camelProperties.setSecretTokenSourcesId(214L);
@@ -289,7 +285,6 @@ public class EndpointRepositoryTest {
         CamelProperties dbProperties = findByUuidAndOrgIdInternal(CAMEL, "slack", camelProperties, CamelProperties.class);
 
         Assertions.assertEquals(camelProperties.getId(), dbProperties.getId(), "the ID of the associated camel properties doesn't match");
-        Assertions.assertEquals(camelProperties.getBasicAuthenticationSourcesId(), dbProperties.getBasicAuthenticationSourcesId(), "unexpected basic authentication sources id value");
         Assertions.assertEquals(camelProperties.getDisableSslVerification(), dbProperties.getDisableSslVerification(), "unexpected ssl verification value");
         Assertions.assertEquals(camelProperties.getExtras(), dbProperties.getExtras(), "unexpected extras map (slack channel)");
         Assertions.assertEquals(camelProperties.getSecretTokenSourcesId(), dbProperties.getSecretTokenSourcesId(), "unexpected secret token sources ID value");
