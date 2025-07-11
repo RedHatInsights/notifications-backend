@@ -86,7 +86,7 @@ public abstract class EmailTemplatesRendererHelper {
     }
 
     protected String generateAggregatedEmailBody(Map<String, Object> originalContext, EmailPendo emailPendo) {
-        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, getBundle(), getApp(), null);
+        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, getBundle(), getApp(), null, true);
         Map<String, Object> context = new HashMap<>(originalContext); // to patch immutable maps from individual test cases
         context.put("application", getApp());
 

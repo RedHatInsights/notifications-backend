@@ -51,6 +51,7 @@ public class BackendConfig {
     private String bypassBehaviorGroupMaxCreationLimitToggle;
     private String ignoreSourcesErrorOnEndpointDeleteToggle;
     private String useCommonTemplateModuleForUserPrefApisToggle;
+    private String toggleUseBetaTemplatesEnabled;
 
     private static String toggleName(String feature) {
         return String.format("notifications-backend.%s.enabled", feature);
@@ -132,6 +133,7 @@ public class BackendConfig {
         ignoreSourcesErrorOnEndpointDeleteToggle = toggleRegistry.register("ignore-sources-error-on-endpoint-delete", true);
         kesselInventoryUseForPermissionsChecksToggle = toggleRegistry.register("kessel-inventory-permissions-checks", true);
         useCommonTemplateModuleForUserPrefApisToggle = toggleRegistry.register("use-common-template-module-for-user-pref-apis", true);
+        toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -288,6 +290,17 @@ public class BackendConfig {
             return unleash.isEnabled(maintenanceModeToggle, unleashContext, false);
         }
         return maintenanceModeEnabled;
+    }
+
+    public boolean isUseBetaTemplatesEnabled(final String orgId) {
+        if (unleashEnabled) {
+            UnleashContext unleashContext = UnleashContext.builder()
+                .addProperty("orgId", orgId)
+                .build();
+            return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContext, false);
+        } else {
+            return false;
+        }
     }
 
     /**
