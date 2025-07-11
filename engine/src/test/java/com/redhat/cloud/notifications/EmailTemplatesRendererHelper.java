@@ -113,7 +113,7 @@ public abstract class EmailTemplatesRendererHelper {
         return generateEmail(templateDefinition, action, pendo, false);
     }
 
-    protected String generateEmail(TemplateDefinition templateDefinition, Action action, EmailPendo emailPendo, boolean ignoreUserPreferences) {
+    protected String generateEmail(TemplateDefinition templateDefinition, Object action, EmailPendo emailPendo, boolean ignoreUserPreferences) {
         Map<String, Object> additionalContext = new HashMap<>();
         additionalContext.put("environment", environment);
         additionalContext.put("pendo_message", emailPendo);
@@ -154,7 +154,6 @@ public abstract class EmailTemplatesRendererHelper {
         return BUNDLE_RHEL;
     }
 
-
     protected String getBundleDisplayName() {
         return "Red Hat Enterprise Linux";
     }
@@ -187,9 +186,5 @@ public abstract class EmailTemplatesRendererHelper {
             );
             mailer.send(m);
         }
-    }
-
-    protected List<String> getUsedEventTypeNames() {
-        return List.of();
     }
 }

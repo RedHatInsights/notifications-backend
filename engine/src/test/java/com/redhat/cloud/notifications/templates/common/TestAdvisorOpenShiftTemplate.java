@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,16 +26,22 @@ public class TestAdvisorOpenShiftTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(NEW_RECOMMENDATION);
+    protected String getBundleDisplayName() {
+        return "OpenShift";
+    }
+
+    @Override
+    protected String getAppDisplayName() {
+        return "Advisor";
     }
 
     @Test
     public void testInstantEmailTitleForNewRecommendations() {
+        eventTypeDisplayName = "New Recommendation";
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
 
         String result = generateEmailSubject(NEW_RECOMMENDATION, action);
-        assertEquals("Instant notification - New recommendation - Advisor - OpenShift", result);
+        assertEquals("Instant notification - New Recommendation - Advisor - OpenShift", result);
     }
 
     @Test

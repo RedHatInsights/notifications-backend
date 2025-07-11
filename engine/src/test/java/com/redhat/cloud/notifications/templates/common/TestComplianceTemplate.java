@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,8 +23,8 @@ public class TestComplianceTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Override
-    protected List<String> getUsedEventTypeNames() {
-        return List.of(COMPLIANCE_BELOW_THRESHOLD, REPORT_UPLOAD_FAILED);
+    protected String getAppDisplayName() {
+        return "Compliance";
     }
 
     @Test
@@ -37,8 +36,9 @@ public class TestComplianceTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testInstantComplianceBelowThresholdEmailTitle() {
+        eventTypeDisplayName = "System is non compliant to SCAP policy";
         String result = generateEmailSubject(COMPLIANCE_BELOW_THRESHOLD, ACTION);
-        assertEquals("Instant notification - Compliance - Red Hat Enterprise Linux", result);
+        assertEquals("Instant notification - System is non compliant to SCAP policy - Compliance - Red Hat Enterprise Linux", result);
     }
 
     @Test
@@ -50,8 +50,9 @@ public class TestComplianceTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testInstantReportUploadFailedEmailTitle() {
+        eventTypeDisplayName = "Policy report failed to upload";
         String result = generateEmailSubject(REPORT_UPLOAD_FAILED, ACTION);
-        assertEquals("Instant notification - Compliance - Red Hat Enterprise Linux", result);
+        assertEquals("Instant notification - Policy report failed to upload - Compliance - Red Hat Enterprise Linux", result);
     }
 
     @Test
