@@ -23,7 +23,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/hcc-fr-tenant/hcc-integrations-tenant/notifications-sc/notifications-connector-pagerduty-sc:{{revision}}
+    value: quay.io/redhat-user-workloads/hcc-integrations-tenant/notifications-sc/notifications-connector-pagerduty-sc:{{revision}}
   - name: dockerfile
     value: ./docker/Dockerfile.notifications-connector-pagerduty.jvm
   - name: path-context
