@@ -7,13 +7,9 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
-import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import java.util.UUID;
 
 @Path("/api/rbac/v1")
-@RegisterRestClient(configKey = "rbac-s2s")
-@RegisterProvider(AuthRequestFilter.class)
 public interface RbacServiceToService {
 
     @GET

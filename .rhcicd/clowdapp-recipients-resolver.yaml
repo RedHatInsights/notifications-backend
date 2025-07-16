@@ -173,6 +173,13 @@ objects:
             secretKeyRef:
               name: kessel-authentication
               key: relations-api.client.secret
+        - name: QUARKUS_OIDC_CLIENT_AUTH_SERVER_URL
+          value: ${NOTIFICATIONS_KESSEL_OIDC_ISSUER}
+        - name: QUARKUS_OIDC_CLIENT_CREDENTIALS_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: kessel-authentication
+              key: relations-api.client.secret
         - name: RELATIONS_API_IS_SECURE_CLIENTS
           value: ${NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS}
         - name: KESSEL_DOMAIN

@@ -16,7 +16,7 @@ import com.redhat.cloud.notifications.recipients.resolver.mbop.MBOPUsers.MBOPUse
 import com.redhat.cloud.notifications.recipients.resolver.rbac.Meta;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.Page;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacGroup;
-import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacServiceToService;
+import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacServiceToServicePsk;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacUser;
 import dev.failsafe.FailsafeException;
 import io.micrometer.core.instrument.Tags;
@@ -66,7 +66,7 @@ public class FetchUsersFromExternalServicesTest {
 
     @InjectMock
     @RestClient
-    RbacServiceToService rbacServiceToService;
+    RbacServiceToServicePsk rbacServiceToService;
 
     @InjectMock
     @RestClient
