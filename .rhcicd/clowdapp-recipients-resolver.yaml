@@ -133,9 +133,9 @@ objects:
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
         - name: QUARKUS_OIDC_CLIENT_AUTH_SERVER_URL
-          value: ${NOTIFICATIONS_KESSEL_OIDC_ISSUER}
+          value: ${OIDC_ISSUER}
         - name: QUARKUS_OIDC_CLIENT_CLIENT_ENABLED
-          value: ${QUARKUS_OIDC_CLIENT_CLIENT_ENABLED}
+          value: ${OIDC_CLIENT_ENABLED}
         - name: QUARKUS_OIDC_CLIENT_CLIENT_ID
           valueFrom:
             secretKeyRef:
@@ -146,8 +146,6 @@ objects:
             secretKeyRef:
               name: kessel-authentication
               key: relations-api.client.secret
-        - name: QUARKUS_OIDC_CLIENT_EARLY_TOKENS_ACQUISITION
-          value: ${QUARKUS_OIDC_CLIENT_EARLY_TOKENS_ACQUISITION}
         - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE
           value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
         - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_PASSWORD
@@ -256,12 +254,12 @@ parameters:
 - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
   description: Optional maximum size of the log events queue. If this is not set, the queue will have a capacity of Integer#MAX_VALUE.
   value: "100000"
-- name: QUARKUS_OIDC_CLIENT_CLIENT_ENABLED
+- name: OIDC_CLIENT_ENABLED
   description: If true, the OIDC client will be enabled.
-  value: "false"
-- name: QUARKUS_OIDC_CLIENT_EARLY_TOKENS_ACQUISITION
-  description: If true, all filters which use OidcClient will acquire the tokens at application startup time, possibly failing and preventing Quarkus from starting if the OIDC auth server is not available.
-  value: "false"
+  value: "true"
+- name: OIDC_ISSUER
+  description: The issuer of the OIDC tokens.
+  value: https://redhat.com/realms/redhat-external
 - name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
   description: When set to 'request-response', rest-client will log the request and response contents
   value: ""
