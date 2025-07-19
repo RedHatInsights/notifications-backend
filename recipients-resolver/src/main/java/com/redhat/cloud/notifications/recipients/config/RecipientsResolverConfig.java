@@ -49,7 +49,7 @@ public class RecipientsResolverConfig {
     private String fetchUsersWithMbopToggle;
     private String fetchUsersWithRbacToggle;
     private String useKesselToggle;
-    private String rbacOidcAuthEnabledToggle;
+    private String rbacOidcAuthToggle;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -128,7 +128,7 @@ public class RecipientsResolverConfig {
         fetchUsersWithMbopToggle = toggleRegistry.register("fetch-users-with-mbop", true);
         fetchUsersWithRbacToggle = toggleRegistry.register("fetch-users-with-rbac", true);
         useKesselToggle = toggleRegistry.register("use-kessel", true);
-        rbacOidcAuthEnabledToggle = toggleRegistry.register("rbac-oidc-auth-enabled", true);
+        rbacOidcAuthToggle = toggleRegistry.register("rbac-oidc-auth", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -144,7 +144,7 @@ public class RecipientsResolverConfig {
         config.put(WARN_IF_DURATION_EXCEEDS, getLogTooLongRequestLimit());
         config.put(UNLEASH, unleashEnabled);
         config.put(useKesselToggle, isUseKesselEnabled(null));
-        config.put(rbacOidcAuthEnabledToggle, isRbacOidcAuthEnabled());
+        config.put(rbacOidcAuthToggle, isRbacOidcAuthEnabled());
         config.put(KESSEL_TARGET_URL, getKesselTargetUrl());
         config.put(KESSEL_USE_SECURE_CLIENT, isKesselUseSecureClient());
         config.put(KESSEL_DOMAIN, getKesselDomain());
@@ -181,7 +181,7 @@ public class RecipientsResolverConfig {
 
     public boolean isRbacOidcAuthEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(rbacOidcAuthEnabledToggle, false);
+            return unleash.isEnabled(rbacOidcAuthToggle, false);
         } else {
             return false;
         }
