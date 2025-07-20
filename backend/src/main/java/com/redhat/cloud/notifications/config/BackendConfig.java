@@ -51,6 +51,7 @@ public class BackendConfig {
     private String bypassBehaviorGroupMaxCreationLimitToggle;
     private String ignoreSourcesErrorOnEndpointDeleteToggle;
     private String useCommonTemplateModuleForUserPrefApisToggle;
+    private String rbacOidcAuthToggle;
 
     private static String toggleName(String feature) {
         return String.format("notifications-backend.%s.enabled", feature);
@@ -132,6 +133,7 @@ public class BackendConfig {
         ignoreSourcesErrorOnEndpointDeleteToggle = toggleRegistry.register("ignore-sources-error-on-endpoint-delete", true);
         kesselInventoryUseForPermissionsChecksToggle = toggleRegistry.register("kessel-inventory-permissions-checks", true);
         useCommonTemplateModuleForUserPrefApisToggle = toggleRegistry.register("use-common-template-module-for-user-pref-apis", true);
+        rbacOidcAuthToggle = toggleRegistry.register("rbac-oidc-auth", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -150,6 +152,7 @@ public class BackendConfig {
         config.put(KESSEL_DOMAIN, getKesselDomain());
         config.put(RBAC_ENABLED, isRBACEnabled());
         config.put(UNLEASH, unleashEnabled);
+        config.put(rbacOidcAuthToggle, isRbacOidcAuthEnabled());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -306,6 +309,14 @@ public class BackendConfig {
             final UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
 
             return unleash.isEnabled(bypassBehaviorGroupMaxCreationLimitToggle, unleashContext, false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isRbacOidcAuthEnabled() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(rbacOidcAuthToggle, false);
         } else {
             return false;
         }
