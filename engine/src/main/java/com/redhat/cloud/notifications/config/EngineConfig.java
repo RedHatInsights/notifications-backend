@@ -342,9 +342,9 @@ public class EngineConfig {
 
     public boolean isUseCommonTemplateModuleToRenderEmailsEnabled() {
         if (unleashEnabled) {
-            return unleash.isEnabled(toggleUseCommonTemplateModuleToRenderEmailsEnabled, false);
+            return unleash.isEnabled(toggleUseCommonTemplateModuleToRenderEmailsEnabled, true);
         } else {
-            return false;
+            return true;
         }
     }
 
