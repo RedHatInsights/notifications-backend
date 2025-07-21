@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.BasicAuthentication;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -182,12 +181,6 @@ public class EndpointResourceCommon {
 
         if (shouldRedactSecrets) {
             if (endpoint.getProperties() instanceof SourcesSecretable sourcesSecretable) {
-                final BasicAuthentication basicAuthentication = sourcesSecretable.getBasicAuthentication();
-                if (basicAuthentication != null) {
-                    basicAuthentication.setPassword(REDACTED_CREDENTIAL);
-                    basicAuthentication.setUsername(REDACTED_CREDENTIAL);
-                }
-
                 final String bearerToken = sourcesSecretable.getBearerAuthentication();
                 if (bearerToken != null) {
                     sourcesSecretable.setBearerAuthentication(REDACTED_CREDENTIAL);
