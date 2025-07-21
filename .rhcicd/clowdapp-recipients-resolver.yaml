@@ -39,10 +39,31 @@ objects:
                 path: clientkeystore.jks
             defaultMode: 420
             optional: true
+        - name: it-services-cert
+          secret:
+            secretName: it-services-cert
+        - name: it-services-jks-builder-volume
+          configMap:
+            name: it-services-jks-builder-script
         volumeMounts:
         - name: keystore
           readOnly: true
           mountPath: /mnt/secrets
+        - name: it-services-cert
+          mountPath: /mnt/keystores
+        - name: it-services-jks-builder-volume
+          mountPath: /mnt/it-services-jks-builder
+        initContainers:
+          - name: it-services-jks-builder
+            image: ${IT_SERVICES_JKS_BUILDER_IMAGE}:${IT_SERVICES_JKS_BUILDER_IMAGE_TAG}
+            command: [ "bash", "/mnt/it-services-jks-builder/build-it-services-jks.sh" ]
+            env:
+              - name: IT_SERVICES_KEYSTORE_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: it-services
+                    key: it-services-keystorepassword
+                    optional: true
         readinessProbe:
           httpGet:
             path: /q/health/ready
@@ -191,6 +212,33 @@ objects:
           value: ${NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS}
         - name: KESSEL_DOMAIN
           value: ${KESSEL_DOMAIN}
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: it-services-jks-builder-script
+  data:
+    build-it-services-jks.sh: |
+      #!/bin/bash -e
+      # Install OpenJDK 21 and OpenSSL
+      microdnf -y install java-21-openjdk-devel openssl-devel
+
+      # Extract account name (subject UID)
+      ACCOUNT_NAME=$(openssl x509 -in /mnt/keystores/tls.crt -noout -subject -nameopt rfc2253 |\
+          sed 's/^subject=//' |\
+          awk -F ',' '{for (i=1;i<=NF;i++) if ($i ~ /^UID/) print $i;}' | awk -F '=' '{print $2}')
+
+      # Create JKS
+      openssl pkcs12 -export \
+          -chain -CAfile /mnt/keystores/ca.crt \
+          -inkey /mnt/keystores/tls.key -passin "env:IT_SERVICES_KEYSTORE_PASSWORD" \
+          -in /mnt/keystores/tls.crt -name "$ACCOUNT_NAME" \
+          -out /mnt/keystores/tls.pfx -passout "env:IT_SERVICES_KEYSTORE_PASSWORD"
+      keytool -importkeystore \
+          -srckeystore /mnt/keystores/tls.pfx -srcstoretype PKCS12 -srcalias "$ACCOUNT_NAME" -srcstorepass "$IT_SERVICES_KEYSTORE_PASSWORD" \
+          -destkeystore /mnt/keystores/tls.jks -destalias "$ACCOUNT_NAME" -deststorepass "$IT_SERVICES_KEYSTORE_PASSWORD"
+
+      # Verify JKS
+      [[ $(keytool -list -keystore /mnt/keystores/tls.jks -storepass "$IT_SERVICES_KEYSTORE_PASSWORD") =~ $ACCOUNT_NAME ]]
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -209,10 +257,15 @@ parameters:
   value: quay.io/cloudservices/notifications-recipients-resolver
 - name: IMAGE_TAG
   value: latest
+- name: IT_SERVICES_JKS_BUILDER_IMAGE
+  description: Image URL for container to assemble JKS for IT server
+  value: registry.access.redhat.com/ubi9/ubi-minimal
+- name: IT_SERVICES_JKS_BUILDER_IMAGE_TAG
+  value: latest
 - name: IO_SMALLRYE_REACTIVE_MESSAGING_LOG_LEVEL
   value: INFO
 - name: IT_SERVICE_TO_SERVICE_KEY_STORE
-  description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/secrets/clientkeystore.jks"
+  description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/keystores/tls.jks"
   value: ""
 - name: MEMORY_LIMIT
   description: Memory limit
