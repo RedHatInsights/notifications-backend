@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.recipients.config;
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
+import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -144,7 +145,7 @@ public class RecipientsResolverConfig {
         config.put(WARN_IF_DURATION_EXCEEDS, getLogTooLongRequestLimit());
         config.put(UNLEASH, unleashEnabled);
         config.put(useKesselToggle, isUseKesselEnabled(null));
-        config.put(rbacOidcAuthToggle, isRbacOidcAuthEnabled());
+        config.put(rbacOidcAuthToggle, isRbacOidcAuthEnabled(null));
         config.put(KESSEL_TARGET_URL, getKesselTargetUrl());
         config.put(KESSEL_USE_SECURE_CLIENT, isKesselUseSecureClient());
         config.put(KESSEL_DOMAIN, getKesselDomain());
@@ -179,9 +180,12 @@ public class RecipientsResolverConfig {
         }
     }
 
-    public boolean isRbacOidcAuthEnabled() {
+    public boolean isRbacOidcAuthEnabled(String orgId) {
         if (unleashEnabled) {
-            return unleash.isEnabled(rbacOidcAuthToggle, false);
+            UnleashContext unleashContext = UnleashContext.builder()
+                .addProperty("orgId", orgId)
+                .build();
+            return unleash.isEnabled(rbacOidcAuthToggle, unleashContext, false);
         } else {
             return false;
         }

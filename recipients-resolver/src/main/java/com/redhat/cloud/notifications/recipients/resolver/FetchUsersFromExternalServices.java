@@ -112,8 +112,8 @@ public class FetchUsersFromExternalServices {
     /**
      * Choose between PSK and OIDC RBAC clients based on feature flag
      */
-    private RbacServiceToService getRbacClient() {
-        if (recipientsResolverConfig.isRbacOidcAuthEnabled()) {
+    private RbacServiceToService getRbacClient(String orgId) {
+        if (recipientsResolverConfig.isRbacOidcAuthEnabled(orgId)) {
             Log.debug("Using OIDC RBAC client");
             return rbacServiceToServiceOidc;
         } else {
@@ -136,7 +136,7 @@ public class FetchUsersFromExternalServices {
                 users = getWithPagination(
                     page -> retryOnError(() -> {
                         LocalDateTime startTime = LocalDateTime.now();
-                        Page<RbacUser> rbacUserPage = getRbacClient().getUsers(orgId, adminsOnly, page * recipientsResolverConfig.getMaxResultsPerPage(), recipientsResolverConfig.getMaxResultsPerPage());
+                        Page<RbacUser> rbacUserPage = getRbacClient(orgId).getUsers(orgId, adminsOnly, page * recipientsResolverConfig.getMaxResultsPerPage(), recipientsResolverConfig.getMaxResultsPerPage());
                         Duration duration = Duration.between(startTime, LocalDateTime.now());
                         if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
                             Log.warnf("Rbac service response time was %ds for request OrgId: %s, adminOnly: %s, page %d ", duration.toSeconds(), orgId, adminsOnly, page);
@@ -317,7 +317,7 @@ public class FetchUsersFromExternalServices {
         Timer.Sample getGroupUsersTotalTimer = Timer.start(meterRegistry);
         RbacGroup rbacGroup;
         try {
-            rbacGroup = retryOnError(() -> getRbacClient().getGroup(orgId, groupId));
+            rbacGroup = retryOnError(() -> getRbacClient(orgId).getGroup(orgId, groupId));
         } catch (ClientWebApplicationException exception) {
             this.incrementFailuresCounterWithTag(COUNTER_TAG_USER_PROVIDER_RBAC);
 
@@ -340,7 +340,7 @@ public class FetchUsersFromExternalServices {
             users = getWithPagination(page -> {
                 Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
                 Page<RbacUser> rbacUsers = retryOnError(() ->
-                    getRbacClient().getGroupUsers(orgId, groupId, adminOnly, page * recipientsResolverConfig.getMaxResultsPerPage(), recipientsResolverConfig.getMaxResultsPerPage()));
+                    getRbacClient(orgId).getGroupUsers(orgId, groupId, adminOnly, page * recipientsResolverConfig.getMaxResultsPerPage(), recipientsResolverConfig.getMaxResultsPerPage()));
                 // Micrometer doesn't like when tags are null and throws a NPE.
                 String orgIdTag = orgId == null ? "" : orgId;
                 getGroupUsersPageTimer.stop(meterRegistry.timer("rbac.get-group-users.page", "orgId", orgIdTag));

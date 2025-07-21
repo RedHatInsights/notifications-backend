@@ -76,7 +76,7 @@ public class WorkspaceUtils {
     public UUID getDefaultWorkspaceId(final String orgId) {
         // Call RBAC.
         Page<RbacWorkspace> workspacePage;
-        if (backendConfig.isRbacOidcAuthEnabled()) {
+        if (backendConfig.isRbacOidcAuthEnabled(orgId)) {
             workspacePage = rbacWorkspacesOidcClient.getWorkspaces(
                 orgId,
                 WorkspaceType.DEFAULT.toString().toLowerCase(),

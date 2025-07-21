@@ -152,7 +152,7 @@ public class BackendConfig {
         config.put(KESSEL_DOMAIN, getKesselDomain());
         config.put(RBAC_ENABLED, isRBACEnabled());
         config.put(UNLEASH, unleashEnabled);
-        config.put(rbacOidcAuthToggle, isRbacOidcAuthEnabled());
+        config.put(rbacOidcAuthToggle, isRbacOidcAuthEnabled(null));
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -314,9 +314,10 @@ public class BackendConfig {
         }
     }
 
-    public boolean isRbacOidcAuthEnabled() {
+    public boolean isRbacOidcAuthEnabled(String orgId) {
         if (unleashEnabled) {
-            return unleash.isEnabled(rbacOidcAuthToggle, false);
+            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+            return unleash.isEnabled(rbacOidcAuthToggle, unleashContext, false);
         } else {
             return false;
         }
