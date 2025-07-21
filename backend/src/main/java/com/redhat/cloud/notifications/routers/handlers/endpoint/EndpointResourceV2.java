@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.routers.handlers.endpoint;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.annotation.IntegrationId;
-import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
@@ -68,9 +67,6 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
 
     @Inject
     WorkspaceUtils workspaceUtils;
-
-    @Inject
-    KesselAuthorization kesselAuthorization;
 
     @Inject
     KesselInventoryAuthorization kesselInventoryAuthorization;

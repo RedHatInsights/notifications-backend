@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.annotation.IntegrationId;
 import com.redhat.cloud.notifications.auth.kessel.KesselAssets;
-import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
@@ -120,9 +119,6 @@ public class EndpointResource extends EndpointResourceCommon {
 
     @Inject
     KesselAssets kesselAssets;
-
-    @Inject
-    KesselAuthorization kesselAuthorization;
 
     @Inject
     KesselInventoryAuthorization kesselInventoryAuthorization;
