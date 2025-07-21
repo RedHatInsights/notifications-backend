@@ -215,6 +215,20 @@ objects:
               optional: true
         - name: KESSEL_DOMAIN
           value: ${KESSEL_DOMAIN}
+        - name: QUARKUS_OIDC_CLIENT_AUTH_SERVER_URL
+          value: ${OIDC_ISSUER}
+        - name: QUARKUS_OIDC_CLIENT_CLIENT_ENABLED
+          value: ${OIDC_CLIENT_ENABLED}
+        - name: QUARKUS_OIDC_CLIENT_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: kessel-authentication
+              key: relations-api.client.id
+        - name: QUARKUS_OIDC_CLIENT_CREDENTIALS_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: kessel-authentication
+              key: relations-api.client.secret
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -343,3 +357,9 @@ parameters:
   value: "40"
 - name: LIVENESS_INITIAL_DELAY
   value: "40"
+- name: OIDC_CLIENT_ENABLED
+  description: If true, the OIDC client will be enabled.
+  value: "false"
+- name: OIDC_ISSUER
+  description: The issuer of the OIDC tokens.
+  value: https://redhat.com/realms/redhat-external

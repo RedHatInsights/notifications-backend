@@ -74,7 +74,7 @@ public class MockServerConfig {
     }
 
     /**
-     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacServer#getWorkspaces(String, String, String, String, Integer, Integer)}
+     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacWorkspacesPskClient#getWorkspaces(String, String, String, String, Integer, Integer)}
      * method, which simulates RBAC returning a response which does not have
      * the expected "count" JSON key.
      */
@@ -97,7 +97,7 @@ public class MockServerConfig {
     }
 
     /**
-     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacServer#getWorkspaces(String, String, String, String, Integer, Integer)}
+     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacWorkspacesPskClient#getWorkspaces(String, String, String, String, Integer, Integer)}
      * method, which simulates RBAC returning more than one workspace in the
      * response.
      */
@@ -120,7 +120,7 @@ public class MockServerConfig {
     }
 
     /**
-     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacServer#getWorkspaces(String, String, String, String, Integer, Integer)}
+     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacWorkspacesPskClient#getWorkspaces(String, String, String, String, Integer, Integer)}
      * method, which simulates RBAC returning a default workspace in the
      * response.
      */
@@ -143,7 +143,7 @@ public class MockServerConfig {
     }
 
     /**
-     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacServer#getWorkspaces(String, String, String, String, Integer, Integer)}
+     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacWorkspacesPskClient#getWorkspaces(String, String, String, String, Integer, Integer)}
      * method, which simulates RBAC returning a response with no workspaces in
      * it.
      */
@@ -166,7 +166,7 @@ public class MockServerConfig {
     }
 
     /**
-     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacServer#getWorkspaces(String, String, String, String, Integer, Integer)}
+     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacWorkspacesPskClient#getWorkspaces(String, String, String, String, Integer, Integer)}
      * method, which simulates RBAC returning a "root" workspace instead of the
      * expected "default" workspace.
      */

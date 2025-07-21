@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.auth.rbac.workspace;
 
-import com.redhat.cloud.notifications.auth.rbac.RbacServer;
+import com.redhat.cloud.notifications.auth.rbac.RbacWorkspacesOidcClient;
+import com.redhat.cloud.notifications.auth.rbac.RbacWorkspacesPskClient;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.cache.CacheResult;
@@ -45,7 +46,11 @@ public class WorkspaceUtils {
 
     @Inject
     @RestClient
-    RbacServer rbacServer;
+    RbacWorkspacesPskClient rbacWorkspacesPskClient;
+
+    @Inject
+    @RestClient
+    RbacWorkspacesOidcClient rbacWorkspacesOidcClient;
 
     /**
      * Extracts the PSK we need to use to talk to RBAC.
@@ -70,14 +75,22 @@ public class WorkspaceUtils {
     @CacheResult(cacheName = "kessel-rbac-workspace-id")
     public UUID getDefaultWorkspaceId(final String orgId) {
         // Call RBAC.
-        final Page<RbacWorkspace> workspacePage = this.rbacServer.getWorkspaces(
-            this.notificationsPsk,
-            APPLICATION_KEY,
-            orgId,
-            WorkspaceType.DEFAULT.toString().toLowerCase(),
-            REQUEST_DEFAULT_OFFSET,
-            REQUEST_DEFAULT_LIMIT
-        );
+        Page<RbacWorkspace> workspacePage;
+        if (backendConfig.isRbacOidcAuthEnabled(orgId)) {
+            workspacePage = rbacWorkspacesOidcClient.getWorkspaces(
+                orgId,
+                WorkspaceType.DEFAULT.toString().toLowerCase(),
+                REQUEST_DEFAULT_OFFSET,
+                REQUEST_DEFAULT_LIMIT);
+        } else {
+            workspacePage = rbacWorkspacesPskClient.getWorkspaces(
+                this.notificationsPsk,
+                APPLICATION_KEY,
+                orgId,
+                WorkspaceType.DEFAULT.toString().toLowerCase(),
+                REQUEST_DEFAULT_OFFSET,
+                REQUEST_DEFAULT_LIMIT);
+        }
 
         // We have been told we are only going to have one workspace per
         // organization.
