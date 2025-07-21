@@ -359,7 +359,7 @@ parameters:
   value: "40"
 - name: OIDC_CLIENT_ENABLED
   description: If true, the OIDC client will be enabled.
-  value: "true"
+  value: "false"
 - name: OIDC_ISSUER
   description: The issuer of the OIDC tokens.
   value: https://redhat.com/realms/redhat-external
