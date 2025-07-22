@@ -23,6 +23,7 @@ public class BackendConfig {
      */
     private static final String DEFAULT_TEMPLATE = "notifications.use-default-template";
     private static final String EMAILS_ONLY_MODE = "notifications.emails-only-mode.enabled";
+    private static final String SECURED_EMAIL_TEMPLATES = "notifications.use-secured-email-templates.enabled";
     private static final String ERRATA_MIGRATION_BATCH_SIZE = "notifications.errata.migration.batch.size";
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
     private static final String KESSEL_INVENTORY_CLIENT_ID = "inventory-api.authn.client.id";
@@ -116,6 +117,10 @@ public class BackendConfig {
     @ConfigProperty(name = KESSEL_RELATIONS_URL, defaultValue = "localhost:9000")
     String kesselRelationsUrl;
 
+    // Only used in special environments.
+    @ConfigProperty(name = SECURED_EMAIL_TEMPLATES, defaultValue = "false")
+    boolean useSecuredEmailTemplates;
+
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -151,6 +156,7 @@ public class BackendConfig {
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(KESSEL_DOMAIN, getKesselDomain());
         config.put(RBAC_ENABLED, isRBACEnabled());
+        config.put(SECURED_EMAIL_TEMPLATES, useSecuredEmailTemplates);
         config.put(UNLEASH, unleashEnabled);
         config.put(rbacOidcAuthToggle, isRbacOidcAuthEnabled(null));
 
@@ -261,9 +267,9 @@ public class BackendConfig {
 
     public boolean isUseCommonTemplateModuleForUserPrefApisToggle() {
         if (unleashEnabled) {
-            return unleash.isEnabled(useCommonTemplateModuleForUserPrefApisToggle, false);
+            return unleash.isEnabled(useCommonTemplateModuleForUserPrefApisToggle, true);
         } else {
-            return false;
+            return true;
         }
     }
 
