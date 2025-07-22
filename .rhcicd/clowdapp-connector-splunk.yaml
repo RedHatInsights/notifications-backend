@@ -118,6 +118,20 @@ objects:
           value: ${SENTRY_DSN}${ENV_NAME}
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: QUARKUS_OIDC_CLIENT_AUTH_SERVER_URL
+          value: ${OIDC_ISSUER}
+        - name: QUARKUS_OIDC_CLIENT_CLIENT_ENABLED
+          value: ${OIDC_CLIENT_ENABLED}
+        - name: QUARKUS_OIDC_CLIENT_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: kessel-authentication
+              key: relations-api.client.id
+        - name: QUARKUS_OIDC_CLIENT_CREDENTIALS_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: kessel-authentication
+              key: relations-api.client.secret
         - name: QUARKUS_UNLEASH_ACTIVE
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
 parameters:
@@ -181,6 +195,12 @@ parameters:
   value: INFO
 - name: NOTIFICATIONS_UNLEASH_ENABLED
   value: "false"
+- name: OIDC_CLIENT_ENABLED
+  description: If true, the OIDC client will be enabled.
+  value: "false"
+- name: OIDC_ISSUER
+  description: The issuer of the OIDC tokens.
+  value: https://redhat.com/realms/redhat-external
 - name: QUARKUS_HTTP_PORT
   description: Quarkus HTTP server port
   value: "8000"

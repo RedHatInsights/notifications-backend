@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.connector.secrets;
 
 import com.redhat.cloud.notifications.connector.authentication.secrets.SecretsLoader;
-import com.redhat.cloud.notifications.connector.authentication.secrets.SourcesClient;
+import com.redhat.cloud.notifications.connector.authentication.secrets.SourcesPskClient;
 import com.redhat.cloud.notifications.connector.authentication.secrets.SourcesSecret;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -32,7 +32,7 @@ public class SecretsLoaderTest extends CamelQuarkusTestSupport {
 
     @InjectMock
     @RestClient
-    SourcesClient sourcesClient;
+    SourcesPskClient sourcesClient;
 
     @Override
     public boolean isUseRouteBuilder() {
