@@ -1,8 +1,10 @@
 package com.redhat.cloud.notifications.auth.rbac.workspace;
 
+import com.redhat.cloud.notifications.auth.OidcServerMockResource;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.MediaType;
+
 import java.util.HashMap;
 import java.util.Map;
 

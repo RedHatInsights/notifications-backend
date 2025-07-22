@@ -53,6 +53,7 @@ public class BackendConfig {
     private String ignoreSourcesErrorOnEndpointDeleteToggle;
     private String useCommonTemplateModuleForUserPrefApisToggle;
     private String rbacOidcAuthToggle;
+    private String sourcesOidcAuthToggle;
 
     private static String toggleName(String feature) {
         return String.format("notifications-backend.%s.enabled", feature);
@@ -139,6 +140,7 @@ public class BackendConfig {
         kesselInventoryUseForPermissionsChecksToggle = toggleRegistry.register("kessel-inventory-permissions-checks", true);
         useCommonTemplateModuleForUserPrefApisToggle = toggleRegistry.register("use-common-template-module-for-user-pref-apis", true);
         rbacOidcAuthToggle = toggleRegistry.register("rbac-oidc-auth", true);
+        sourcesOidcAuthToggle = toggleRegistry.register("sources-oidc-auth", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -159,6 +161,7 @@ public class BackendConfig {
         config.put(SECURED_EMAIL_TEMPLATES, useSecuredEmailTemplates);
         config.put(UNLEASH, unleashEnabled);
         config.put(rbacOidcAuthToggle, isRbacOidcAuthEnabled(null));
+        config.put(sourcesOidcAuthToggle, isSourcesOidcAuthEnabled(null));
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -324,6 +327,15 @@ public class BackendConfig {
         if (unleashEnabled) {
             UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
             return unleash.isEnabled(rbacOidcAuthToggle, unleashContext, false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isSourcesOidcAuthEnabled(String orgId) {
+        if (unleashEnabled) {
+            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+            return unleash.isEnabled(sourcesOidcAuthToggle, unleashContext, false);
         } else {
             return false;
         }

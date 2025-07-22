@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.sources;
 
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
@@ -21,15 +22,25 @@ public class SecretUtils {
     @Inject
     MeterRegistry meterRegistry;
 
+    @Inject
+    BackendConfig backendConfig;
+
     @ConfigProperty(name = "sources.psk")
     String sourcesPsk;
 
     /**
-     * Used to manage the secrets on Sources.
+     * Used to manage the secrets on Sources with PSK authentication.
      */
     @Inject
     @RestClient
-    SourcesService sourcesService;
+    SourcesPskService sourcesPskService;
+
+    /**
+     * Used to manage the secrets on Sources with OIDC authentication.
+     */
+    @Inject
+    @RestClient
+    SourcesOidcService sourcesOidcService;
 
     private static final String SOURCES_TIMER = "sources.get.secret.request";
 
@@ -61,11 +72,21 @@ public class SecretUtils {
 
         final Timer.Sample getSecretTimer = Timer.start(this.meterRegistry);
 
-        final Secret secret = this.sourcesService.getById(
-            endpoint.getOrgId(),
-            this.sourcesPsk,
-            secretId
-        );
+        final Secret secret;
+        if (backendConfig.isSourcesOidcAuthEnabled(endpoint.getOrgId())) {
+            Log.debug("Using OIDC Sources client");
+            secret = this.sourcesOidcService.getById(
+                endpoint.getOrgId(),
+                secretId
+            );
+        } else {
+            Log.debug("Using PSK Sources client");
+            secret = this.sourcesPskService.getById(
+                endpoint.getOrgId(),
+                this.sourcesPsk,
+                secretId
+            );
+        }
 
         getSecretTimer.stop(this.meterRegistry.timer(SOURCES_TIMER));
         return secret;
@@ -132,23 +153,42 @@ public class SecretUtils {
     private Long updateSecretToken(Endpoint endpoint, String password, Long secretId, String secretType, String logDisplaySecretType) {
         if (secretId != null) {
             if (password == null || password.isBlank()) {
-                this.sourcesService.delete(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    secretId
-                );
+                if (backendConfig.isSourcesOidcAuthEnabled(endpoint.getOrgId())) {
+                    Log.debug("Using OIDC Sources client");
+                    this.sourcesOidcService.delete(
+                        endpoint.getOrgId(),
+                        secretId
+                    );
+                } else {
+                    Log.debug("Using PSK Sources client");
+                    this.sourcesPskService.delete(
+                        endpoint.getOrgId(),
+                        this.sourcesPsk,
+                        secretId
+                    );
+                }
                 Log.infof("[endpoint_id: %s][secret_id: %s] %s deleted in Sources during an endpoint update operation", endpoint.getId(), secretId, logDisplaySecretType);
                 return null;
             } else {
                 Secret secret = new Secret();
                 secret.password = password;
 
-                this.sourcesService.update(
-                    endpoint.getOrgId(),
-                    this.sourcesPsk,
-                    secretId,
-                    secret
-                );
+                if (backendConfig.isSourcesOidcAuthEnabled(endpoint.getOrgId())) {
+                    Log.debug("Using OIDC Sources client");
+                    this.sourcesOidcService.update(
+                        endpoint.getOrgId(),
+                        secretId,
+                        secret
+                    );
+                } else {
+                    Log.debug("Using PSK Sources client");
+                    this.sourcesPskService.update(
+                        endpoint.getOrgId(),
+                        this.sourcesPsk,
+                        secretId,
+                        secret
+                    );
+                }
                 Log.infof("[endpoint_id: %s][secret_id: %s] %s updated in Sources", endpoint.getId(), secretId, logDisplaySecretType);
                 return secretId;
             }
@@ -187,11 +227,20 @@ public class SecretUtils {
     }
 
     private void deleteSecret(Endpoint endpoint, Long secretId, String logMessageFormat) {
-        this.sourcesService.delete(
-            endpoint.getOrgId(),
-            this.sourcesPsk,
-            secretId
-        );
+        if (backendConfig.isSourcesOidcAuthEnabled(endpoint.getOrgId())) {
+            Log.debug("Using OIDC Sources client");
+            this.sourcesOidcService.delete(
+                endpoint.getOrgId(),
+                secretId
+            );
+        } else {
+            Log.debug("Using PSK Sources client");
+            this.sourcesPskService.delete(
+                endpoint.getOrgId(),
+                this.sourcesPsk,
+                secretId
+            );
+        }
         Log.infof(logMessageFormat, endpoint.getId(), secretId);
     }
 
@@ -211,11 +260,21 @@ public class SecretUtils {
     }
 
     private Long createSecret(String orgId, Secret secret) {
-        final Secret createdSecret = this.sourcesService.create(
-            orgId,
-            this.sourcesPsk,
-            secret
-        );
+        final Secret createdSecret;
+        if (backendConfig.isSourcesOidcAuthEnabled(orgId)) {
+            Log.debug("Using OIDC Sources client");
+            createdSecret = this.sourcesOidcService.create(
+                orgId,
+                secret
+            );
+        } else {
+            Log.debug("Using PSK Sources client");
+            createdSecret = this.sourcesPskService.create(
+                orgId,
+                this.sourcesPsk,
+                secret
+            );
+        }
 
         return createdSecret.id;
     }
