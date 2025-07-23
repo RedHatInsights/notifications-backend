@@ -22,7 +22,7 @@ public class SecretUtilsTest {
 
     @InjectMock
     @RestClient
-    SourcesService sourcesServiceMock;
+    SourcesPskService sourcesServiceMock;
 
     @Inject
     SecretUtils secretUtils;

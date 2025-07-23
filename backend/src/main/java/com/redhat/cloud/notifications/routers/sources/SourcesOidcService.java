@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.routers.sources;
 
 import com.redhat.cloud.notifications.Constants;
+import io.quarkus.oidc.client.filter.OidcClientFilter;
 import io.quarkus.rest.client.reactive.ClientExceptionMapper;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.DELETE;
@@ -16,7 +17,7 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
 /**
- * <p>REST Client for the Sources API. The OpenAPI spec is available at:</p>
+ * <p>OIDC-enabled REST Client for the Sources API. The OpenAPI spec is available at:</p>
  *
  * <ul>
  *  <li><a href="https://console.stage.redhat.com/docs/api/sources/v3.1">OpenApi v3.1 in the stage environment.</a></li>
@@ -31,18 +32,18 @@ import org.jboss.resteasy.reactive.RestPath;
  *     <li>On the other hand, if sources is using the AWS Secrets Manager, then the whole secret will get encrypted.</li>
  * </ul>
  *
- * <p>The authentication to Sources works by using a service-to-service PSK that will be sent in the header that
- * Sources expects. At the same time, the organization id will be sent so that Sources knows to which tenants belongs
- * the operation that is going to be performed.</p>
+ * <p>The authentication to Sources works by using OIDC client credentials to obtain a bearer token that will be sent
+ * in the Authorization header. At the same time, the organization id will be sent so that Sources knows to which
+ * tenants belongs the operation that is going to be performed.</p>
  */
-@RegisterRestClient(configKey = "sources")
-public interface SourcesService {
+@RegisterRestClient(configKey = "sources-oidc")
+@OidcClientFilter
+public interface SourcesOidcService {
 
     /**
      * Get a single secret from Sources. In this case we need to hit the internal endpoint —which is only available for
      * requests coming from inside the cluster— to be able to get the password of these secrets.
      * @param xRhSourcesOrgId the organization id related to this operation for the tenant identification.
-     * @param xRhSourcesPsk the sources PSK required for the authorization.
      * @param id the secret id.
      * @return a {@link Secret} instance.
      */
@@ -51,14 +52,12 @@ public interface SourcesService {
     @Retry(maxRetries = 3)
     Secret getById(
         @HeaderParam(Constants.X_RH_SOURCES_ORG_ID) @NotBlank String xRhSourcesOrgId,
-        @HeaderParam(Constants.X_RH_SOURCES_PSK) @NotBlank String xRhSourcesPsk,
         @RestPath long id
     );
 
     /**
      * Create a secret on the Sources backend.
      * @param xRhSourcesOrgId the organization id related to this operation for the tenant identification.
-     * @param xRhSourcesPsk the sources PSK required for the authorization.
      * @param secret the {@link Secret} to be created.
      * @return the created secret.
      */
@@ -67,14 +66,12 @@ public interface SourcesService {
     @Retry(maxRetries = 3)
     Secret create(
         @HeaderParam(Constants.X_RH_SOURCES_ORG_ID) @NotBlank String xRhSourcesOrgId,
-        @HeaderParam(Constants.X_RH_SOURCES_PSK) @NotBlank String xRhSourcesPsk,
         Secret secret
     );
 
     /**
      * Update a secret on the Sources backend.
      * @param xRhSourcesOrgId the organization id related to this operation for the tenant identification.
-     * @param xRhSourcesPsk the sources PSK required for the authorization.
      * @param secret the {@link Secret} to be updated.
      * @return the updated secret.
      */
@@ -83,7 +80,6 @@ public interface SourcesService {
     @Retry(maxRetries = 3)
     Secret update(
         @HeaderParam(Constants.X_RH_SOURCES_ORG_ID) @NotBlank String xRhSourcesOrgId,
-        @HeaderParam(Constants.X_RH_SOURCES_PSK) String xRhSourcesPsk,
         @RestPath long id,
         Secret secret
     );
@@ -91,7 +87,6 @@ public interface SourcesService {
     /**
      * Delete a secret on the Sources backend.
      * @param xRhSourcesOrgId the organization id related to this operation for the tenant identification.
-     * @param xRhSourcesPsk the sources PSK required for the authorization.
      * @param id the id of the {@link Secret} to be deleted.
      */
     @DELETE
@@ -99,7 +94,6 @@ public interface SourcesService {
     @Retry(maxRetries = 3)
     void delete(
         @HeaderParam(Constants.X_RH_SOURCES_ORG_ID) @NotBlank String xRhSourcesOrgId,
-        @HeaderParam(Constants.X_RH_SOURCES_PSK) String xRhSourcesPsk,
         @RestPath long id
     );
 

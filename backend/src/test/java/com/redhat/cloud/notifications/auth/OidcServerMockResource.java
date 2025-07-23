@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.auth.rbac.workspace;
+package com.redhat.cloud.notifications.auth;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import org.mockserver.integration.ClientAndServer;

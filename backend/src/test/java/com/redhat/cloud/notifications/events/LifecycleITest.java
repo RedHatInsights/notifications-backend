@@ -29,7 +29,7 @@ import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBeha
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
 import com.redhat.cloud.notifications.routers.sources.Secret;
-import com.redhat.cloud.notifications.routers.sources.SourcesService;
+import com.redhat.cloud.notifications.routers.sources.SourcesPskService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -119,7 +119,7 @@ public class LifecycleITest extends DbIsolatedTest {
      */
     @InjectMock
     @RestClient
-    SourcesService sourcesServiceMock;
+    SourcesPskService sourcesServiceMock;
 
     @BeforeEach
     void beforeEach() {

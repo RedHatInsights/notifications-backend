@@ -43,7 +43,7 @@ import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.Secret;
-import com.redhat.cloud.notifications.routers.sources.SourcesService;
+import com.redhat.cloud.notifications.routers.sources.SourcesPskService;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.quarkus.logging.Log;
@@ -211,7 +211,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
      */
     @InjectMock
     @RestClient
-    SourcesService sourcesServiceMock;
+    SourcesPskService sourcesServiceMock;
 
     /**
      * Mocked RBAC's workspace utilities so that the {@link KesselTestHelper}

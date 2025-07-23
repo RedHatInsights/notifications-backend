@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.auth.rbac.workspace;
 
+import com.redhat.cloud.notifications.auth.OidcServerMockResource;
 import com.redhat.cloud.notifications.auth.rbac.RbacWorkspacesOidcClient;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
