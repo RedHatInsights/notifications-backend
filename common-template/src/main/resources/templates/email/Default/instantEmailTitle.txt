@@ -1,5 +1,1 @@
-{#if action.isCloudEvent()}
-{action.type} triggered
-{#else}
-{action.bundle}/{action.application}/{action.eventType} triggered
-{/if}
+{source.bundle.display_name}/{source.application.display_name}/{source.event_type.display_name} triggered

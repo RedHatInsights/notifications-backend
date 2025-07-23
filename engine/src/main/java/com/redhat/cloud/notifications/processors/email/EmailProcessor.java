@@ -178,7 +178,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             recipientsAuthorizationCriterionExtractor.extract(event)
         );
 
-        Log.tracef("[org_id: %s] Sending email notification to connector", emailNotification);
+        Log.debugf("[org_id: %s] Sending email notification to connector", emailNotification);
 
         final JsonObject payload = JsonObject.mapFrom(emailNotification);
 
