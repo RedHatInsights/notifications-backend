@@ -37,15 +37,15 @@ public class ErrataEmailPayloadAggregator extends AbstractEmailPayloadAggregator
     void processEmailAggregation(EmailAggregation notification) {
         JsonObject errata = context.getJsonObject(ERRATA_KEY);
         JsonObject notificationJson = notification.getPayload();
-        JsonObject context = notificationJson.getJsonObject(CONTEXT_KEY);
+        JsonObject payloadContext = notificationJson.getJsonObject(CONTEXT_KEY);
         String eventType = notificationJson.getString(EVENT_TYPE);
 
         if (!EVENT_TYPES.contains(eventType)) {
             return;
         }
 
-        if (!errata.containsKey(BASE_URL_KEY) && context.containsKey(BASE_URL_KEY)) {
-            errata.put(BASE_URL_KEY, context.getString(BASE_URL_KEY));
+        if (!errata.containsKey(BASE_URL_KEY) && payloadContext.containsKey(BASE_URL_KEY)) {
+            errata.put(BASE_URL_KEY, payloadContext.getString(BASE_URL_KEY));
         }
 
         notificationJson.getJsonArray(EVENTS_KEY).stream().forEach(eventObject -> {
