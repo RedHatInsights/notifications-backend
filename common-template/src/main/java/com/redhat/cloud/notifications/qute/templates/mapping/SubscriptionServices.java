@@ -5,15 +5,16 @@ import java.util.Map;
 
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.DRAWER;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_BODY;
+import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_DAILY_DIGEST_BODY;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.GOOGLE_CHAT;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.MS_TEAMS;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.SLACK;
 import static java.util.Map.entry;
 
 public class SubscriptionServices {
-    static final String BUNDLE_NAME = "subscription-services";
+    public static final String BUNDLE_NAME = "subscription-services";
 
-    static final String ERRATA_APP_NAME = "errata-notifications";
+    public static final String ERRATA_APP_NAME = "errata-notifications";
     static final String ERRATA_FOLDER_NAME = "Errata/";
 
     public static final String ERRATA_NEW_SUBSCRIPTION_BUGFIX_ERRATA = "new-subscription-bugfix-errata";
@@ -38,6 +39,8 @@ public class SubscriptionServices {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA), ERRATA_FOLDER_NAME + "enhancementEmailBody.html"),
         entry(new TemplateDefinition(GOOGLE_CHAT, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionEnhancementErrata.json"),
         entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionEnhancementErrata.json"),
-        entry(new TemplateDefinition(SLACK, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionEnhancementErrata.json")
+        entry(new TemplateDefinition(SLACK, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionEnhancementErrata.json"),
+
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, ERRATA_APP_NAME, null, true), ERRATA_FOLDER_NAME + "beta/dailyEmailBody.html")
     );
 }
