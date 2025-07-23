@@ -79,8 +79,8 @@ class ErrataSortExtensionTest {
     @Test
     void testSortById() {
         Map<String, Object> errata1 = Map.of("id", "RHSA-2024:0315");
-        Map<String, Object> errata2 = Map.of("id", "RHSA-2025:1315");
-        Map<String, Object> errata3 = Map.of("id", "RHSA-2025:0315");
+        Map<String, Object> errata2 = Map.of("id", "RHSA-2025:0315");
+        Map<String, Object> errata3 = Map.of("id", "RHSA-2025:1315");
         Map<String, Object> errata4 = Map.of("id", "RHSA-2023:9999");
 
         List<Map<String, Object>> input = Arrays.asList(errata1, errata2, errata3, errata4);

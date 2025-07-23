@@ -4,8 +4,13 @@ import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateExtension;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ErrataSortExtension {
+
+    // pattern to extract data from an errata ID such as "RHSA-2024:0315"
+    private static final Pattern errataIdPattern = Pattern.compile("([A-Z]+)-([0-9]+):([0-9]+)");
 
     private static final Map<String, Integer> severityOrder = Map.of(
         "Important", 0,
@@ -49,16 +54,18 @@ public class ErrataSortExtension {
 
     // Id format is like RHSA-2024:0315, we need to extract the numeric part to compare it
     private static Long extractIdIntValue(String id) {
-        try {
-            String yearPlusId = id.split("-")[1];
-            String yearOnly = yearPlusId.split(":")[0];
-            String idOnly = Integer.valueOf(yearPlusId.split(":")[1]).toString();
+
+        Matcher matcher = errataIdPattern.matcher(id);
+        if (matcher.matches()) {
+            String yearOnly = matcher.group(2);  // extracts "2024"
+            String idOnly = matcher.group(3);    // extracts "0315"
+
             // we have to pad the second part of id to avoid 2025:0001 to be considered as lower than 2024:0010
             String paddedId = String.format("%1$9s", idOnly).replace(' ', '0');
 
             return Long.valueOf(yearOnly + paddedId);
-        } catch (Exception e) {
-            Log.errorf("Error extracting id int: %s", id);
+        } else {
+            Log.errorf("Unrecognized identifier format: %s", id);
             return 0L;
         }
     }
