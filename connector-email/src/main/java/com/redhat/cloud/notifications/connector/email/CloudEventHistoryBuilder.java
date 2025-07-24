@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.connector.email;
 
+import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
+import com.redhat.cloud.notifications.connector.email.payload.PayloadDetails;
 import com.redhat.cloud.notifications.connector.http.HttpOutgoingCloudEventBuilder;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.Priority;
@@ -30,6 +32,17 @@ public class CloudEventHistoryBuilder extends HttpOutgoingCloudEventBuilder {
         if (exchange.getProperties().containsKey(ADDITIONAL_ERROR_DETAILS)) {
             data.getJsonObject("details").put(ADDITIONAL_ERROR_DETAILS, getErrorDetail(exchange));
         }
+
+        // Include the payload's identifier in the response, so that the engine
+        // can delete it afterward. Also, remove the exchange property from the
+        // exchange.
+        final String payloadId = exchange.getProperty(ExchangeProperty.PAYLOAD_ID, String.class);
+        if (null != payloadId) {
+            data.put(PayloadDetails.PAYLOAD_DETAILS_ID_KEY, payloadId);
+
+            exchange.removeProperty(ExchangeProperty.PAYLOAD_ID);
+        }
+
         cloudEvent.put("data", data.encode());
         in.setBody(cloudEvent.encode());
     }

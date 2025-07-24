@@ -115,7 +115,7 @@ public class ConnectorSenderTest {
         final Application application = this.resourceHelpers.createApp(bundle.getId(), "app-test-heavy-payload");
         final EventType eventType = this.resourceHelpers.createEventType(application.getId(), "event-test-heavy-payload");
         final Event event = this.resourceHelpers.createEvent(eventType);
-        final Endpoint endpoint = this.resourceHelpers.createEndpoint(EndpointType.WEBHOOK, null, true, 0);
+        final Endpoint endpoint = this.resourceHelpers.createEndpoint(EndpointType.EMAIL_SUBSCRIPTION, null, true, 0);
 
         final JsonObject payload = new JsonObject();
         payload.put("flavor", "Red Hat Enterprise Linux");

@@ -1,13 +1,10 @@
 package com.redhat.cloud.notifications.connector;
 
-import com.redhat.cloud.notifications.connector.engine.InternalEngine;
-import com.redhat.cloud.notifications.connector.payload.PayloadDetails;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
@@ -29,9 +26,6 @@ public class IncomingCloudEventProcessor implements Processor {
     @Inject
     CloudEventDataExtractor cloudEventDataExtractor;
 
-    @RestClient
-    InternalEngine internalEngine;
-
     @Override
     public void process(Exchange exchange) throws Exception {
         JsonObject cloudEvent = new JsonObject(exchange.getIn().getBody(String.class));
@@ -48,16 +42,6 @@ public class IncomingCloudEventProcessor implements Processor {
         exchange.setProperty(RETURN_SOURCE, connectorConfig.getConnectorName());
 
         JsonObject data = cloudEvent.getJsonObject(CLOUD_EVENT_DATA);
-
-        // Should the "data" object contain the payload's identifier, then we
-        // need to fetch the original payload's contents from the engine.
-        final String payloadId = data.getString(PayloadDetails.PAYLOAD_DETAILS_ID_KEY);
-        if (null != payloadId) {
-            final PayloadDetails payloadDetails = this.internalEngine.getPayloadDetails(payloadId);
-
-            data = new JsonObject(payloadDetails.contents());
-            exchange.setProperty(ExchangeProperty.PAYLOAD_ID, payloadId);
-        }
 
         exchange.setProperty(ORG_ID, data.getString("org_id"));
 

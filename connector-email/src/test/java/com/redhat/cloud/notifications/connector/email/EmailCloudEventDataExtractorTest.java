@@ -1,11 +1,16 @@
 package com.redhat.cloud.notifications.connector.email;
 
+import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
+import com.redhat.cloud.notifications.connector.email.engine.InternalEngine;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
+import com.redhat.cloud.notifications.connector.email.payload.PayloadDetails;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -25,11 +30,18 @@ import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
     @Inject
     EmailCloudEventDataExtractor emailCloudEventDataExtractor;
+
+    @InjectMock
+    @RestClient
+    InternalEngine internalEngine;
 
     /**
      * Tests that the incoming JSON payload's extraction works as intended.
@@ -103,5 +115,38 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         assertEquals(Set.of("foo@bar.com", "bar@foo.com", "john@doe.com"), exchange.getProperty(EMAIL_RECIPIENTS, Set.class));
         assertEquals(emailSender, exchange.getProperty(EMAIL_SENDER, String.class));
         assertTrue(exchange.getProperty(SUBSCRIBED_BY_DEFAULT, boolean.class));
+    }
+
+    /**
+     * Tests that when a payload identifier is present in the Cloud Event's
+     * payload, the engine gets called to fetch the payload. It also tests that
+     * the exchange property containing the payload's identifier gets also set.
+     */
+    @Test
+    void testPayloadFetchedFromEngine() {
+
+        String payloadId = "123";
+        String emailSubject = "fake email subject from engine";
+        String emailBody = "fake email body from engine";
+
+        JsonObject mockedPayload = JsonObject.of(
+            "email_subject", emailSubject,
+            "email_body", emailBody,
+            "recipient_settings", new ArrayList<>()
+        );
+        when(internalEngine.getPayloadDetails(payloadId)).thenReturn(new PayloadDetails(mockedPayload.encode()));
+
+        Exchange exchange = createExchangeWithBody(context, "");
+
+        JsonObject cloudEventData = new JsonObject();
+        cloudEventData.put(PayloadDetails.PAYLOAD_DETAILS_ID_KEY, "123");
+
+        emailCloudEventDataExtractor.extract(exchange, cloudEventData);
+
+        verify(internalEngine, times(1)).getPayloadDetails(payloadId);
+
+        assertEquals(payloadId, exchange.getProperty(ExchangeProperty.PAYLOAD_ID, String.class));
+        assertEquals(emailSubject, exchange.getProperty(RENDERED_SUBJECT, String.class));
+        assertEquals(emailBody, exchange.getProperty(RENDERED_BODY, String.class));
     }
 }

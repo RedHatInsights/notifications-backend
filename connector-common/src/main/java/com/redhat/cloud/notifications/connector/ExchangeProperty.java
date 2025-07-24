@@ -4,12 +4,6 @@ public class ExchangeProperty {
 
     public static final String ID = "id";
     /**
-     * Specifies the ID of the payload for which its payload was fetched.
-     * Signals that the engine must be notified about deleting the stored
-     * payload.
-     */
-    public static final String PAYLOAD_ID = "payloadId";
-    /**
      * Specifies the number of times the message was reinjected to the
      * "incoming" Kafka topic.
      */

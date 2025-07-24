@@ -3,11 +3,14 @@ package com.redhat.cloud.notifications.connector.email;
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
+import com.redhat.cloud.notifications.connector.email.engine.InternalEngine;
 import com.redhat.cloud.notifications.connector.email.model.EmailNotification;
+import com.redhat.cloud.notifications.connector.email.payload.PayloadDetails;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.util.Set;
 
@@ -19,6 +22,9 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
     @Inject
     EmailConnectorConfig emailConnectorConfig;
 
+    @RestClient
+    InternalEngine internalEngine;
+
     /**
      * Extracts the relevant information for the email connector from the
      * received message from the engine.
@@ -28,7 +34,18 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
     @Override
     public void extract(final Exchange exchange, final JsonObject cloudEventData) {
 
-        EmailNotification emailNotification =  cloudEventData.mapTo(EmailNotification.class);
+        // Should the "cloudEventData" object contain the payload's identifier, then we
+        // need to fetch the original payload's contents from the engine.
+        final String payloadId = cloudEventData.getString(PayloadDetails.PAYLOAD_DETAILS_ID_KEY);
+        JsonObject dataToProcess = cloudEventData;
+        if (null != payloadId) {
+            final PayloadDetails payloadDetails = this.internalEngine.getPayloadDetails(payloadId);
+
+            dataToProcess = new JsonObject(payloadDetails.contents());
+            exchange.setProperty(ExchangeProperty.PAYLOAD_ID, payloadId);
+        }
+
+        EmailNotification emailNotification = dataToProcess.mapTo(EmailNotification.class);
         final Set<String> emails = emailNotification.recipientSettings().stream()
                 .filter(settings -> settings.getEmails() != null)
                 .flatMap(settings -> settings.getEmails().stream())

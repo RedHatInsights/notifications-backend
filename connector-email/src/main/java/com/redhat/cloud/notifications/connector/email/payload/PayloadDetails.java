@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.payload;
+package com.redhat.cloud.notifications.connector.email.payload;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
