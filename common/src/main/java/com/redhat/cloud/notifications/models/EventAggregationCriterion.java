@@ -60,7 +60,7 @@ public class EventAggregationCriterion {
 
     @Override
     public int hashCode() {
-        return Objects.hash(getOrgId(), getBundle(), getApplication());
+        return Objects.hash(bundleId, applicationId, getOrgId(), getBundle(), getApplication());
     }
 
     @Override
