@@ -12,7 +12,7 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
 /**
- * <p>REST Client for the Sources API. The OpenAPI spec is available at:</p>
+ * <p>PSK-based REST Client for the Sources API. The OpenAPI spec is available at:</p>
  *
  * <ul>
  *  <li><a href="https://console.stage.redhat.com/docs/api/sources/v3.1">OpenApi v3.1 in the stage environment.</a></li>
@@ -32,7 +32,7 @@ import org.jboss.resteasy.reactive.RestPath;
  * the operation that is going to be performed.</p>
  */
 @RegisterRestClient(configKey = "sources")
-public interface SourcesClient {
+public interface SourcesPskClient {
 
     /**
      * Get a single secret from Sources. In this case we need to hit the internal endpoint —which is only available for

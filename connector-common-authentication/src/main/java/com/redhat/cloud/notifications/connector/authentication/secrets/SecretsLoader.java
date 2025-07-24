@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.connector.authentication.secrets;
 
+import com.redhat.cloud.notifications.connector.ConnectorConfig;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
@@ -25,11 +26,18 @@ public class SecretsLoader implements Processor {
     String sourcesApiPsk;
 
     @Inject
+    ConnectorConfig connectorConfig;
+
+    @Inject
     MeterRegistry meterRegistry;
 
     @Inject
     @RestClient
-    SourcesClient sourcesClient;
+    SourcesPskClient sourcesPskClient;
+
+    @Inject
+    @RestClient
+    SourcesOidcClient sourcesOidcClient;
 
     @Override
     public void process(Exchange exchange) {
@@ -40,7 +48,14 @@ public class SecretsLoader implements Processor {
             Log.debugf("Calling Sources to retrieve a secret [orgId=%s, secretId=%d]", orgId, secretId);
 
             Timer.Sample timer = Timer.start(meterRegistry);
-            SourcesSecret sourcesSecret = sourcesClient.getById(orgId, sourcesApiPsk, secretId);
+            SourcesSecret sourcesSecret;
+            if (connectorConfig.isSourcesOidcAuthEnabled(orgId)) {
+                Log.debug("Using OIDC Sources client");
+                sourcesSecret = sourcesOidcClient.getById(orgId, secretId);
+            } else {
+                Log.debug("Using PSK Sources client");
+                sourcesSecret = sourcesPskClient.getById(orgId, sourcesApiPsk, secretId);
+            }
             timer.stop(meterRegistry.timer(SOURCES_TIMER));
 
             if (sourcesSecret.username != null && !sourcesSecret.username.isBlank()) {
