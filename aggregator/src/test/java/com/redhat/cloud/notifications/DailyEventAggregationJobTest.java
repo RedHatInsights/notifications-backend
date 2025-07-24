@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.config.AggregatorConfig;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.helpers.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -10,7 +9,7 @@ import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.EventAggregationCriteria;
+import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -38,7 +37,6 @@ import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -62,9 +60,6 @@ class DailyEventAggregationJobTest {
     @Inject
     ObjectMapper objectMapper;
 
-    @InjectSpy
-    AggregatorConfig aggregatorConfig;
-
     LocalDateTime baseReferenceTime;
 
     AggregationOrgConfig someOrgIdToProceed;
@@ -83,8 +78,6 @@ class DailyEventAggregationJobTest {
 
         helpers.purgeEventAggregations();
         initAggregationParameters();
-        when(aggregatorConfig.isAggregationBasedOnEventEnabled()).thenReturn(true);
-        when(aggregatorConfig.isAggregationBasedOnEventEnabledByOrgId(anyString())).thenReturn(true);
 
         baseReferenceTime = dailyEmailAggregationJob.computeScheduleExecutionTime();
 
@@ -102,15 +95,15 @@ class DailyEventAggregationJobTest {
         dailyEmailAggregationJob.defaultDailyDigestTime = LocalTime.now(ZoneOffset.UTC);
     }
 
-    List<AggregationCommand<EventAggregationCriteria>> getRecordsFromKafka() {
-        List<AggregationCommand<EventAggregationCriteria>> aggregationCommands = new ArrayList<>();
+    List<AggregationCommand> getRecordsFromKafka() {
+        List<AggregationCommand> aggregationCommands = new ArrayList<>();
 
         InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL);
         for (Message message : results.received()) {
             Action action = Parser.decode(String.valueOf(message.getPayload()));
             for (Event event : action.getEvents()) {
                 AggregationCommand aggCommand = objectMapper.convertValue(event.getPayload().getAdditionalProperties(), AggregationCommand.class);
-                EventAggregationCriteria aggregationCriteria = objectMapper.convertValue(event.getPayload().getAdditionalProperties().get("aggregationKey"), EventAggregationCriteria.class);
+                EventAggregationCriterion aggregationCriteria = objectMapper.convertValue(event.getPayload().getAdditionalProperties().get("aggregationKey"), EventAggregationCriterion.class);
                 aggCommand.setAggregationKey(aggregationCriteria);
                 aggregationCommands.add(aggCommand);
             }
@@ -130,7 +123,7 @@ class DailyEventAggregationJobTest {
 
         dailyEmailAggregationJob.processDailyEmail();
 
-        List<AggregationCommand<EventAggregationCriteria>> listCommand = getRecordsFromKafka();
+        List<AggregationCommand> listCommand = getRecordsFromKafka();
         assertEquals(4, listCommand.size());
         checkAggCommand(listCommand, "anotherOrgId", "rhel", "policies");
         checkAggCommand(listCommand, "anotherOrgId", "rhel", "unknown-application");
@@ -152,7 +145,7 @@ class DailyEventAggregationJobTest {
         // Because we added time preferences for orgId someOrgId two hours in the past, those messages must be ignored
         dailyEmailAggregationJob.processDailyEmail();
 
-        List<AggregationCommand<EventAggregationCriteria>> listCommand = getRecordsFromKafka();
+        List<AggregationCommand> listCommand = getRecordsFromKafka();
         assertEquals(2, listCommand.size());
 
         checkAggCommand(listCommand, "anotherOrgId", "rhel", "policies");
@@ -196,7 +189,7 @@ class DailyEventAggregationJobTest {
 
         dailyEmailAggregationJob.processDailyEmail();
 
-        List<AggregationCommand<EventAggregationCriteria>> listCommand = getRecordsFromKafka();
+        List<AggregationCommand> listCommand = getRecordsFromKafka();
         assertEquals(2, listCommand.size());
 
         final LocalDateTime expectedStartTime = LocalDateTime.now(UTC)
@@ -210,7 +203,7 @@ class DailyEventAggregationJobTest {
         checkAggCommand(listCommand, "someOrgId", "rhel", "unknown-application", expectedStartTime);
     }
 
-    private void checkAggCommand(final List<AggregationCommand<EventAggregationCriteria>> commands, final String orgId, final String bundleName, final String applicationName, final LocalDateTime expectedStartDate) {
+    private void checkAggCommand(final List<AggregationCommand> commands, final String orgId, final String bundleName, final String applicationName, final LocalDateTime expectedStartDate) {
         final Application application = resourceHelpers.findApp(bundleName, applicationName);
 
         final LocalDateTime expectedEndDate = LocalDateTime.now(UTC)
@@ -221,15 +214,15 @@ class DailyEventAggregationJobTest {
 
         assertTrue(commands.stream().anyMatch(
             com -> orgId.equals(com.getAggregationKey().getOrgId()) &&
-                application.getBundleId().equals(((EventAggregationCriteria) com.getAggregationKey()).getBundleId()) &&
-                application.getId().equals(((EventAggregationCriteria) com.getAggregationKey()).getApplicationId()) &&
+                application.getBundleId().equals(((EventAggregationCriterion) com.getAggregationKey()).getBundleId()) &&
+                application.getId().equals(((EventAggregationCriterion) com.getAggregationKey()).getApplicationId()) &&
                 DAILY.equals(com.getSubscriptionType()) &&
                 com.getStart().isEqual(expectedStartDate) &&
                 com.getEnd().isEqual(expectedEndDate)
         ));
     }
 
-    private void checkAggCommand(final List<AggregationCommand<EventAggregationCriteria>> commands, final String orgId, final String bundleName, final String applicationName) {
+    private void checkAggCommand(final List<AggregationCommand> commands, final String orgId, final String bundleName, final String applicationName) {
         final LocalDateTime expectedStartTime = LocalDateTime.now(UTC)
             .withHour(baseReferenceTime.getHour())
             .withMinute(baseReferenceTime.getMinute())
@@ -354,8 +347,8 @@ class DailyEventAggregationJobTest {
         final AggregationCommand aggregationCommand = (AggregationCommand) emailAggregations.get(0);
         assertEquals("someOrgId", aggregationCommand.getAggregationKey().getOrgId());
         Application application = resourceHelpers.findApp("rhel", "policies");
-        assertEquals(application.getBundleId(), ((EventAggregationCriteria) aggregationCommand.getAggregationKey()).getBundleId());
-        assertEquals(application.getId(), ((EventAggregationCriteria) aggregationCommand.getAggregationKey()).getApplicationId());
+        assertEquals(application.getBundleId(), ((EventAggregationCriterion) aggregationCommand.getAggregationKey()).getBundleId());
+        assertEquals(application.getId(), ((EventAggregationCriterion) aggregationCommand.getAggregationKey()).getApplicationId());
         assertEquals(DAILY, aggregationCommand.getSubscriptionType());
     }
 
@@ -375,8 +368,8 @@ class DailyEventAggregationJobTest {
         final AggregationCommand aggregationCommand = (AggregationCommand) emailAggregations.get(0);
         assertEquals("someOrgIdWithoutLastRunDate", aggregationCommand.getAggregationKey().getOrgId());
         Application application = resourceHelpers.findApp("rhel", "policies");
-        assertEquals(application.getBundleId(), ((EventAggregationCriteria) aggregationCommand.getAggregationKey()).getBundleId());
-        assertEquals(application.getId(), ((EventAggregationCriteria) aggregationCommand.getAggregationKey()).getApplicationId());
+        assertEquals(application.getBundleId(), ((EventAggregationCriterion) aggregationCommand.getAggregationKey()).getBundleId());
+        assertEquals(application.getId(), ((EventAggregationCriterion) aggregationCommand.getAggregationKey()).getApplicationId());
         assertEquals(DAILY, aggregationCommand.getSubscriptionType());
     }
 

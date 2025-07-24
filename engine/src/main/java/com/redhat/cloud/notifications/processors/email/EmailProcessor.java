@@ -49,9 +49,6 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     EmailPendoResolver emailPendoResolver;
 
     @Inject
-    EmailAggregationProcessor emailAggregationProcessor;
-
-    @Inject
     TemplateRepository templateRepository;
 
     @Inject
@@ -78,8 +75,6 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     }
 
     public void process(final Event event, final List<Endpoint> endpoints, final boolean replayedEvent) {
-        // Generate an aggregation if the event supports it.
-        emailAggregationProcessor.generateAggregationWhereDue(event);
 
         // Fetch the template that will be used to hydrate it with the data.
         final Optional<InstantEmailTemplate> instantEmailTemplateMaybe = this.templateRepository.findInstantEmailTemplate(event.getEventType().getId());

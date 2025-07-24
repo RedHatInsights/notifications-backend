@@ -20,20 +20,6 @@ public class AggregationOrgConfigRepository {
     @Inject
     EntityManager entityManager;
 
-    @Transactional
-    public void createMissingDefaultConfiguration(LocalTime defaultRunningTime) {
-        String query = "INSERT INTO aggregation_org_config (org_id, scheduled_execution_time, last_run) " +
-            "SELECT DISTINCT ema.org_id, CAST(:expectedRunningTime as time without time zone), CAST(:lastRun as timestamp without time zone) FROM email_aggregation ema " +
-            "WHERE NOT EXISTS (SELECT 1 FROM aggregation_org_config agcjp WHERE ema.org_id = agcjp.org_id)";
-
-        int createdEntries = entityManager.createNativeQuery(query)
-            .setParameter("expectedRunningTime", defaultRunningTime)
-            .setParameter("lastRun", LocalDateTime.now(UTC).minusDays(1))
-            .executeUpdate();
-
-        Log.infof("Default time preference must be created for %d OrgId", createdEntries);
-    }
-
     /**
      * Creates an aggregation_org_config with a last run date of yesterday at defaultRunningTime time,
      * for orgs with at least one subscriber to daily digest

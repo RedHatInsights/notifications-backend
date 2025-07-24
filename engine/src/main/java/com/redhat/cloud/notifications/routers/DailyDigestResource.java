@@ -6,8 +6,8 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
-import com.redhat.cloud.notifications.models.EmailAggregationKey;
 import com.redhat.cloud.notifications.models.Environment;
+import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import io.quarkus.logging.Log;
@@ -64,11 +64,12 @@ public class DailyDigestResource {
                 .build();
         }
 
-        final EmailAggregationKey emailAggregationKey = new EmailAggregationKey(
-            triggerDailyDigestRequest.getOrgId(),
-            triggerDailyDigestRequest.getBundleName(),
-            triggerDailyDigestRequest.getApplicationName()
-        );
+        final EventAggregationCriterion emailAggregationKey = new EventAggregationCriterion(
+            triggerDailyDigestRequest.getOrgId(),     // Org id
+            triggerDailyDigestRequest.getBundleId(),       // bundle id
+            triggerDailyDigestRequest.getApplicationId(),  // application id
+            triggerDailyDigestRequest.getBundleName(),     // bundle name
+            triggerDailyDigestRequest.getApplicationName());
 
         final AggregationCommand aggregationCommand = new AggregationCommand(
             emailAggregationKey,
