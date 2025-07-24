@@ -1,11 +1,12 @@
 package com.redhat.cloud.notifications.routers.handlers.endpoint;
 
-import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.annotation.IntegrationId;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
+import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.dto.v1.NotificationHistoryDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
@@ -14,6 +15,7 @@ import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import io.quarkus.logging.Log;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.ForbiddenException;
@@ -39,13 +41,24 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.API_INTEGRATIONS_V_2_0;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Path(Constants.API_INTEGRATIONS_V_2_0 + "/endpoints")
-public class EndpointResourceV2 extends EndpointResource {
+public class EndpointResourceV2 extends EndpointResourceCommon {
+
+    @Inject
+    NotificationRepository notificationRepository;
+
+    @Inject
+    WorkspaceUtils workspaceUtils;
+
+    @Path(API_INTEGRATIONS_V_2_0 + "/endpoints")
+    public static class V2 extends EndpointResourceV2 {
+    }
+
     @GET
     @Path("/{id}/history")
     @Produces(APPLICATION_JSON)
