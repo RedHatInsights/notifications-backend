@@ -3,15 +3,11 @@ package com.redhat.cloud.notifications.routers.handlers.endpoint;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.annotation.IntegrationId;
-import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
-import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
-import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.models.dto.v1.CommonMapper;
 import com.redhat.cloud.notifications.models.dto.v1.NotificationHistoryDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
@@ -54,22 +50,10 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 public class EndpointResourceV2 extends EndpointResourceCommon {
 
     @Inject
-    BackendConfig backendConfig;
-
-    @Inject
-    CommonMapper commonMapper;
-
-    @Inject
-    EndpointRepository endpointRepository;
-
-    @Inject
     NotificationRepository notificationRepository;
 
     @Inject
     WorkspaceUtils workspaceUtils;
-
-    @Inject
-    KesselInventoryAuthorization kesselInventoryAuthorization;
 
     @Path(API_INTEGRATIONS_V_2_0 + "/endpoints")
     public static class V2 extends EndpointResourceV2 {

@@ -657,50 +657,6 @@ public class EndpointResource extends EndpointResourceCommon {
         return !backendConfig.isEmailsOnlyModeEnabled() || endpointType.isSystemEndpointType;
     }
 
-    /**
-     * Removes the secrets from the endpoint's properties when returning them
-     * to the client.
-     * @param endpoint the endpoint to redact the secrets from.
-     */
-    @Deprecated(forRemoval = true)
-    protected void redactSecretsForEndpoint(final SecurityContext securityContext, final Endpoint endpoint) {
-        // Figure out if the principal has "write" permissions on the
-        // integration or not, to decide whether we should redact the secrets
-        // from the returning payload.
-        //
-        // Users with just read permissions will get the secrets redacted for
-        // them.
-        boolean shouldRedactSecrets;
-        if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
-            try {
-                if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(getOrgId(securityContext))) {
-                    this.kesselInventoryAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpoint.getId());
-                } else {
-                    this.kesselAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpoint.getId());
-                }
-                shouldRedactSecrets = false;
-            } catch (final ForbiddenException | NotFoundException e) {
-                shouldRedactSecrets = true;
-            }
-        } else {
-            shouldRedactSecrets = !securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
-        }
-
-        if (shouldRedactSecrets) {
-            if (endpoint.getProperties() instanceof SourcesSecretable sourcesSecretable) {
-                final String bearerToken = sourcesSecretable.getBearerAuthentication();
-                if (bearerToken != null) {
-                    sourcesSecretable.setBearerAuthentication(REDACTED_CREDENTIAL);
-                }
-
-                final String secretToken = sourcesSecretable.getSecretToken();
-                if (secretToken != null) {
-                    sourcesSecretable.setSecretToken(REDACTED_CREDENTIAL);
-                }
-            }
-        }
-    }
-
     @DELETE
     @Path("/{endpointId}/eventType/{eventTypeId}")
     @Operation(summary = "Delete the link between an endpoint and an event type", description = "Delete the link between an endpoint and an event type.")
