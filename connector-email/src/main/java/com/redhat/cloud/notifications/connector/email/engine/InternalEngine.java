@@ -1,6 +1,6 @@
-package com.redhat.cloud.notifications.connector.engine;
+package com.redhat.cloud.notifications.connector.email.engine;
 
-import com.redhat.cloud.notifications.connector.payload.PayloadDetails;
+import com.redhat.cloud.notifications.connector.email.payload.PayloadDetails;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;

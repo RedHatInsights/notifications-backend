@@ -95,7 +95,7 @@ public class ConnectorSender {
         // When the payload to be sent is greater than the configured limit,
         // store the payload in the database so that we can fetch it from the
         // connectors themselves.
-        if (this.engineConfig.getKafkaToCamelMaximumRequestSize() <= payloadSize) {
+        if (endpoint.getType() == EMAIL_SUBSCRIPTION && this.engineConfig.getKafkaToCamelMaximumRequestSize() <= payloadSize) {
             final PayloadDetails payloadDetails = new PayloadDetails(event, payload);
             this.payloadDetailsRepository.save(payloadDetails);
 

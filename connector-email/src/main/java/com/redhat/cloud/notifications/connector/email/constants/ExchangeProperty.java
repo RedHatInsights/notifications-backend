@@ -18,6 +18,12 @@ public class ExchangeProperty {
      */
     public static final String FILTERED_USERS = "users_filtered";
     /**
+     * Specifies the ID of the payload for which its payload was fetched.
+     * Signals that the engine must be notified about deleting the stored
+     * payload.
+     */
+    public static final String PAYLOAD_ID = "payloadId";
+    /**
      * Holds the gathered recipient settings both from the subscription
      * endpoints and the received event.
      */
