@@ -14,10 +14,6 @@ import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -198,72 +194,6 @@ public class TestHelpers {
         return emailActionMessage;
     }
 
-    public static Action createAdvisorOpenshiftAction(String accountId, String eventType) {
-        Action emailActionMessage = new Action();
-        emailActionMessage.setBundle("openshift");
-        emailActionMessage.setApplication("advisor");
-        emailActionMessage.setTimestamp(LocalDateTime.of(2021, 5, 20, 15, 22, 13, 25));
-        emailActionMessage.setEventType(eventType);
-        emailActionMessage.setAccountId(accountId);
-        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
-
-        if (eventType.equals("new-recommendation")) {
-            emailActionMessage.setContext(
-                    new Context.ContextBuilder()
-                            .withAdditionalProperty("display_name", "some-cluster-name")
-                            .withAdditionalProperty("host_url", "some-ocm-url-to-the-cluster")
-                            .build()
-            );
-            emailActionMessage.setEvents(List.of(
-                    new Event.EventBuilder()
-                        .withMetadata(new Metadata.MetadataBuilder().build())
-                        .withPayload(
-                                new Payload.PayloadBuilder()
-                                        .withAdditionalProperty("rule_description", "nice rule with low risk")
-                                        .withAdditionalProperty("total_risk", "1")
-                                        .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
-                                        .withAdditionalProperty("rule_url", "http://the-rule-id-low-001")
-                                        .build()
-                        )
-                        .build(),
-                    new Event.EventBuilder()
-                        .withMetadata(new Metadata.MetadataBuilder().build())
-                        .withPayload(
-                                new Payload.PayloadBuilder()
-                                        .withAdditionalProperty("rule_description", "nice rule with moderate risk")
-                                        .withAdditionalProperty("total_risk", "2")
-                                        .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
-                                        .withAdditionalProperty("rule_url", "http://the-rule-id-moderate-001")
-                                        .build()
-                        )
-                        .build(),
-                    new Event.EventBuilder()
-                        .withMetadata(new Metadata.MetadataBuilder().build())
-                        .withPayload(
-                                new Payload.PayloadBuilder()
-                                        .withAdditionalProperty("rule_description", "nice rule with important risk")
-                                        .withAdditionalProperty("total_risk", "3")
-                                        .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
-                                        .withAdditionalProperty("rule_url", "http://the-rule-id-important-001")
-                                        .build()
-                        )
-                        .build(),
-                    new Event.EventBuilder()
-                        .withMetadata(new Metadata.MetadataBuilder().build())
-                        .withPayload(
-                                new Payload.PayloadBuilder()
-                                        .withAdditionalProperty("rule_description", "nice rule with critical risk")
-                                        .withAdditionalProperty("total_risk", "4")
-                                        .withAdditionalProperty("publish_date", "2020-08-03T15:22:42.199046")
-                                        .withAdditionalProperty("rule_url", "http://the-rule-id-critical-001")
-                                        .build()
-                        )
-                        .build()
-            ));
-        }
-        return emailActionMessage;
-    }
-
     public static Action createComplianceAction() {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(StringUtils.EMPTY);
@@ -374,39 +304,6 @@ public class TestHelpers {
 
         return emailActionMessage;
     }
-
-    public static Action createIntegrationsFailedAction() {
-        Action emailActionMessage = new Action();
-        emailActionMessage.setBundle(StringUtils.EMPTY);
-        emailActionMessage.setApplication(StringUtils.EMPTY);
-        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
-        emailActionMessage.setEventType(EVENT_TYPE);
-        emailActionMessage.setRecipients(List.of());
-
-        emailActionMessage.setContext(
-            new Context.ContextBuilder()
-                .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
-                .withAdditionalProperty("failed-integration", "Failed integration")
-                .build()
-        );
-
-        emailActionMessage.setEvents(List.of(
-            new Event.EventBuilder()
-                .withMetadata(new Metadata.MetadataBuilder().build())
-                .withPayload(
-                    new Payload.PayloadBuilder()
-                        .withAdditionalProperty("outcome", "test outcome data")
-                        .build()
-                )
-                .build()
-        ));
-
-        emailActionMessage.setAccountId(StringUtils.EMPTY);
-        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
-
-        return emailActionMessage;
-    }
-
 
     public static Action createSourcesAction() {
         Action emailActionMessage = new Action();
@@ -576,22 +473,6 @@ public class TestHelpers {
             .withEvents(List.of(event))
             .withRecipients(List.of(recipients))
             .build();
-    }
-
-    public static void writeEmailTemplate(String result, String fileName) {
-        final String TARGET_DIR = "target";
-        try {
-            String[] splitPath = fileName.split("/");
-            String actualPath = TARGET_DIR;
-            for (int part = 0; part < splitPath.length - 1; part++) {
-                actualPath += "/" + splitPath[part];
-            }
-            Files.createDirectories(Paths.get(actualPath));
-            Files.write(Paths.get(TARGET_DIR + "/" + fileName), result.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            System.out.println("An error occurred");
-            e.printStackTrace();
-        }
     }
 
     public static Map<String, Map<String, String>> buildSourceParameter(String bundleDisplayName, String applicationDisplayName, String eventTypeDisplayName) {
