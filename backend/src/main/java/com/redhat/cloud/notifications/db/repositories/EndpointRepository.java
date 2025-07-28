@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.db.builder.QueryBuilder;
 import com.redhat.cloud.notifications.db.builder.WhereBuilder;
 import com.redhat.cloud.notifications.models.CamelProperties;
@@ -97,12 +98,8 @@ public class EndpointRepository {
     }
 
     public List<Endpoint> getEndpointsPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter, final Set<UUID> authorizedIds) {
-        if (limiter != null) {
-            limiter.setSortFields(Endpoint.SORT_FIELDS);
-        }
-
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
-        Optional<Query.Sort> sort = limiter == null ? Optional.empty() : limiter.getSort();
+        Optional<Sort> sort = limiter == null ? Optional.empty() : Sort.getSort(limiter, null, Endpoint.SORT_FIELDS);
 
         Log.debugf("[org_id: %s][name: %s][composite_type: %s][active_only: %s][query: %s][authorized_ids: %s] Looking up endpoints in our database", orgId, name, type, activeOnly, limiter, authorizedIds);
         List<Endpoint> endpoints = EndpointRepository.queryBuilderEndpointsPerType(orgId, name, type, activeOnly, authorizedIds)

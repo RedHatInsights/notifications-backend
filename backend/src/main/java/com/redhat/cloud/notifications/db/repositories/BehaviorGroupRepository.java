@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -613,8 +614,7 @@ public class BehaviorGroupRepository {
         String query = "SELECT bg FROM BehaviorGroup bg JOIN bg.behaviors b WHERE (bg.orgId = :orgId OR bg.orgId IS NULL) AND b.eventType.id = :eventTypeId";
 
         if (limiter != null) {
-            limiter.setSortFields(BehaviorGroup.SORT_FIELDS);
-            query = limiter.getModifiedQuery(query);
+            query = Sort.getModifiedQuery(query, limiter, BehaviorGroup.SORT_FIELDS, null);
         }
 
         TypedQuery<BehaviorGroup> typedQuery = entityManager.createQuery(query, BehaviorGroup.class)

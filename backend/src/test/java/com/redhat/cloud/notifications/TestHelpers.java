@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.auth.principal.ConsoleIdentity;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.Sort;
 import io.restassured.http.Header;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -89,27 +90,28 @@ public class TestHelpers {
             String sortField,
             Function<Query, List<T>> producer,
             Function<List<T>, List<P>> testAdapter,
-            Query.Sort.Order defaultOrder,
+            Sort.Order defaultOrder,
             List<P> expectedDefault) {
 
         List<P> asc = new ArrayList<>(expectedDefault);
         List<P> desc = new ArrayList<>(expectedDefault);
 
-        if (defaultOrder == Query.Sort.Order.ASC) {
+        if (defaultOrder == Sort.Order.ASC) {
             Collections.reverse(desc);
         } else {
             Collections.reverse(asc);
         }
 
-        Query query = Query.queryWithSortBy(sortField);
+        Query query = new Query();
+        query.sortBy = sortField;
         List<T> values = producer.apply(query);
         assertEquals(expectedDefault, testAdapter.apply(values));
 
-        query = Query.queryWithSortBy(sortField + ":asc");
+        query.sortBy = sortField + ":asc";
         values = producer.apply(query);
         assertEquals(asc, testAdapter.apply(values));
 
-        query = Query.queryWithSortBy(sortField + ":desc");
+        query.sortBy = sortField + ":desc";
         values = producer.apply(query);
         assertEquals(desc, testAdapter.apply(values));
     }

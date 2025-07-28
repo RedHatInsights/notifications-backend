@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -81,7 +82,7 @@ public class EndpointRepositoryTest {
                 "id",
                 provider,
                 endpoints -> endpoints.stream().map(Endpoint::getId).collect(Collectors.toList()),
-                Query.Sort.Order.ASC,
+                Sort.Order.ASC,
                 createdEndpointList.stream().map(Endpoint::getId).map(UUID::toString).sorted().map(UUID::fromString).collect(Collectors.toList())
         );
 
@@ -89,7 +90,7 @@ public class EndpointRepositoryTest {
                 "name",
                 provider,
                 endpoints -> endpoints.stream().map(Endpoint::getName).collect(Collectors.toList()),
-                Query.Sort.Order.ASC,
+                Sort.Order.ASC,
                 createdEndpointList.stream().map(Endpoint::getName).sorted().collect(Collectors.toList())
         );
 
@@ -97,7 +98,7 @@ public class EndpointRepositoryTest {
                 "enabled",
                 provider,
                 endpoints -> endpoints.stream().map(Endpoint::isEnabled).collect(Collectors.toList()),
-                Query.Sort.Order.ASC,
+                Sort.Order.ASC,
                 List.of(Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE, Boolean.TRUE)
         );
 
@@ -105,7 +106,7 @@ public class EndpointRepositoryTest {
                 "type",
                 provider,
                 endpoints -> endpoints.stream().map(Endpoint::getType).collect(Collectors.toList()),
-                Query.Sort.Order.ASC,
+                Sort.Order.ASC,
                 List.of(EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.CAMEL, EndpointType.DRAWER, EndpointType.EMAIL_SUBSCRIPTION, EndpointType.PAGERDUTY, EndpointType.WEBHOOK)
         );
 
@@ -113,7 +114,7 @@ public class EndpointRepositoryTest {
                 "created",
                 provider,
                 endpoints -> endpoints.stream().map(Endpoint::getCreated).collect(Collectors.toList()),
-                Query.Sort.Order.ASC,
+                Sort.Order.ASC,
                 createdEndpointList.stream().map(Endpoint::getCreated).sorted().collect(Collectors.toList())
         );
     }
