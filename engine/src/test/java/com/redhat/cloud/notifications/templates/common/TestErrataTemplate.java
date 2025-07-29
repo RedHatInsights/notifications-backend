@@ -4,6 +4,8 @@ import com.redhat.cloud.notifications.EmailTemplatesRendererHelper;
 import com.redhat.cloud.notifications.ErrataTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -98,5 +100,11 @@ class TestErrataTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("There are 24 security updates affecting your subscriptions"));
         assertEquals(51, StringUtils.countMatches(result, "https://access.redhat.com/errata/RHSA-2024:"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+    }
+
+    @Test
+    public void testFetchDailyDigestBetaWithEventType() {
+        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, getBundle(), getApp(), NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA, true);
+        assertTrue(templateService.isValidTemplateDefinition(templateDefinition));
     }
 }

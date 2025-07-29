@@ -114,24 +114,41 @@ public class TemplateService {
         String path = templatesConfigMap.get(originalTemplateDefinition);
 
         TemplateDefinition templateDefinition = originalTemplateDefinition;
-        // if not found and templateDefinition is a beta version, try to find matching GA version.
-        if (path == null && templateDefinition.isBetaVersion()) {
-            Log.infof("Beta template definition not found for %s, try to fallback on his GA version", templateDefinition);
-            templateDefinition = new TemplateDefinition(templateDefinition.integrationType(), templateDefinition.bundle(), templateDefinition.application(), templateDefinition.eventType());
-            path = templatesConfigMap.get(templateDefinition);
-        }
 
         // if not found try to find if a default template for the app exists
         if (path == null) {
             Log.debugf("No template found for %s", templateDefinition);
-            templateDefinition = new TemplateDefinition(templateDefinition.integrationType(), templateDefinition.bundle(), templateDefinition.application(), null);
+            templateDefinition = new TemplateDefinition(
+                templateDefinition.integrationType(),
+                templateDefinition.bundle(),
+                templateDefinition.application(),
+                null,
+                templateDefinition.isBetaVersion());
+
             path = templatesConfigMap.get(templateDefinition);
             // if not found try to find if a default/system template for the integration type exists
             if (path == null) {
                 Log.debugf("No template found for %s", templateDefinition);
-                templateDefinition = new TemplateDefinition(templateDefinition.integrationType(), null, null, null);
+                templateDefinition = new TemplateDefinition(
+                    templateDefinition.integrationType(),
+                    null,
+                    null,
+                    null,
+                    templateDefinition.isBetaVersion());
+
                 path = templatesConfigMap.get(templateDefinition);
                 if (path == null) {
+                    if (templateDefinition.isBetaVersion()) {
+                        // if not found and templateDefinition is a beta version, try to find matching GA version.
+                        Log.debugf("Beta template definition not found for %s, try to fallback on his GA version", originalTemplateDefinition);
+                        TemplateDefinition templateGaVersion = new TemplateDefinition(
+                            originalTemplateDefinition.integrationType(),
+                            originalTemplateDefinition.bundle(),
+                            originalTemplateDefinition.application(),
+                            originalTemplateDefinition.eventType(),
+                            false);
+                        return compileTemplate(templateGaVersion);
+                    }
                     throw new TemplateNotFoundException(templateDefinition);
                 }
             }
