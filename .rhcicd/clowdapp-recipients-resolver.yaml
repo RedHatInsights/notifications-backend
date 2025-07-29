@@ -54,6 +54,16 @@ objects:
         - name: it-services-jks-builder-volume
           mountPath: /mnt/it-services-jks-builder
         initContainers:
+          - name: it-services-pfx-builder
+            image: ${IT_SERVICES_PFX_BUILDER_IMAGE}:${IT_SERVICES_PFX_BUILDER_IMAGE_TAG}
+            command: [ "bash", "/mnt/it-services-jks-builder/build-it-services-pfx.sh" ]
+            env:
+              - name: IT_SERVICES_KEYSTORE_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: it-services
+                    key: it-services-keystorepassword
+                    optional: true
           - name: it-services-jks-builder
             image: ${IT_SERVICES_JKS_BUILDER_IMAGE}:${IT_SERVICES_JKS_BUILDER_IMAGE_TAG}
             command: [ "bash", "/mnt/it-services-jks-builder/build-it-services-jks.sh" ]
@@ -217,28 +227,48 @@ objects:
   metadata:
     name: it-services-jks-builder-script
   data:
-    build-it-services-jks.sh: |
-      #!/bin/bash -e
-      # Install OpenJDK 21 and OpenSSL
-      microdnf -y install java-21-openjdk-devel openssl-devel
+    build-it-services-pfx.sh: |
+      #!/bin/bash
+      set -e
 
       # Extract account name (subject UID)
       ACCOUNT_NAME=$(openssl x509 -in /mnt/keystores/tls.crt -noout -subject -nameopt rfc2253 |\
           sed 's/^subject=//' |\
           awk -F ',' '{for (i=1;i<=NF;i++) if ($i ~ /^UID/) print $i;}' | awk -F '=' '{print $2}')
+      echo -n "$ACCOUNT_NAME" > /mnt/it-services-jks-builder/account_name
+      printf "Loaded account name\n"
 
-      # Create JKS
+      # Create PFX
       openssl pkcs12 -export \
           -chain -CAfile /mnt/keystores/ca.crt \
           -inkey /mnt/keystores/tls.key -passin "env:IT_SERVICES_KEYSTORE_PASSWORD" \
           -in /mnt/keystores/tls.crt -name "$ACCOUNT_NAME" \
           -out /mnt/keystores/tls.pfx -passout "env:IT_SERVICES_KEYSTORE_PASSWORD"
+      
+      # Signal creation of PFX
+      touch /mnt/it-services-jks-builder/pfx_created
+      printf "Created PFX archive\n"
+    build-it-services-jks.sh: |
+      #!/bin/bash
+      set -e
+      ACCOUNT_NAME=$(cat /mnt/it-services-jks-builder/account_name)
+      
+      # Await creation of PFX
+      until [[ -f touch /mnt/it-services-jks-builder/pfx_created ]]; do
+        sleep 1
+      done
+      printf "Detected PFX creation\n"
+      
+      # Create and verify JKS
       keytool -importkeystore \
           -srckeystore /mnt/keystores/tls.pfx -srcstoretype PKCS12 -srcalias "$ACCOUNT_NAME" -srcstorepass "$IT_SERVICES_KEYSTORE_PASSWORD" \
           -destkeystore /mnt/keystores/tls.jks -destalias "$ACCOUNT_NAME" -deststorepass "$IT_SERVICES_KEYSTORE_PASSWORD"
-
-      # Verify JKS
-      [[ $(keytool -list -keystore /mnt/keystores/tls.jks -storepass "$IT_SERVICES_KEYSTORE_PASSWORD") =~ $ACCOUNT_NAME ]]
+      if [[ $(keytool -list -keystore /mnt/keystores/tls.jks -storepass "$IT_SERVICES_KEYSTORE_PASSWORD") =~ $ACCOUNT_NAME ]]; then
+        printf "JKS created and validated\n"
+      else
+        printf "JKS was not successfully created with provided account name\n"
+        exit 1
+      fi
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -257,9 +287,14 @@ parameters:
   value: quay.io/cloudservices/notifications-recipients-resolver
 - name: IMAGE_TAG
   value: latest
+- name: IT_SERVICES_PFX_BUILDER_IMAGE
+  description: "Image URL for container to assemble intermediate PKCS #12 for IT server"
+  value: registry.access.redhat.com/ubi9/ubi
+- name: IT_SERVICES_PFX_BUILDER_IMAGE_TAG
+  value: latest
 - name: IT_SERVICES_JKS_BUILDER_IMAGE
   description: Image URL for container to assemble JKS for IT server
-  value: registry.access.redhat.com/ubi9/ubi-minimal
+  value: registry.access.redhat.com/ubi9/openjdk-21
 - name: IT_SERVICES_JKS_BUILDER_IMAGE_TAG
   value: latest
 - name: IO_SMALLRYE_REACTIVE_MESSAGING_LOG_LEVEL
