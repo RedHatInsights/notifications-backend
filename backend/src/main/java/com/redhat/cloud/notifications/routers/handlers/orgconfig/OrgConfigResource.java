@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.orgconfig;
 
+import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
@@ -30,16 +31,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
+@Path(Constants.API_NOTIFICATIONS_V_1_0 + "/org-config")
 public class OrgConfigResource {
-
-    @Path(API_NOTIFICATIONS_V_1_0 + "/org-config")
-    public static class V1 extends OrgConfigResource {
-    }
-
     static final List<Integer> ALLOWED_MINUTES = Arrays.asList(0, 15, 30, 45);
 
     @Inject
