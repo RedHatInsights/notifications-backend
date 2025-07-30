@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -56,9 +57,9 @@ public class EventRepository {
                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                       Set<Boolean> invocationResults, boolean fetchNotificationHistory, Set<NotificationStatus> status, Query query,
                                       Optional<List<UUID>> uuidToExclude, boolean includeEventsWithAuthCriterion) {
-        query.setSortFields(Event.SORT_FIELDS);
-        query.setDefaultSortBy("created:DESC");
-        Optional<Query.Sort> sort = query.getSort();
+
+        Optional<Sort> sort = Sort.getSort(query, "created:DESC", Event.SORT_FIELDS);
+
         List<UUID> eventIds = getEventIds(orgId, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status, query, uuidToExclude, includeEventsWithAuthCriterion);
         if (eventIds.isEmpty()) {
             return new ArrayList<>();
@@ -94,7 +95,7 @@ public class EventRepository {
         return query.getSingleResult();
     }
 
-    private String getOrderBy(Query.Sort sort) {
+    private String getOrderBy(Sort sort) {
         if (!sort.getSortColumn().equals("e.created")) {
             return " " + sort.getSortQuery() + ", e.created DESC";
         } else {
@@ -108,7 +109,7 @@ public class EventRepository {
         String hql = "SELECT e.id FROM Event e WHERE e.orgId = :orgId";
 
         hql = addHqlConditions(hql, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status, uuidToExclude, includeEventsWithAuthCriterion);
-        Optional<Query.Sort> sort = query.getSort();
+        Optional<Sort> sort = Sort.getSort(query, "created:DESC", Event.SORT_FIELDS);
 
         if (sort.isPresent()) {
             hql += getOrderBy(sort.get());

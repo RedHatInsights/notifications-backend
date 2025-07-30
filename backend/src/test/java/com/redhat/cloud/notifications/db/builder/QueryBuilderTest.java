@@ -1,11 +1,11 @@
 package com.redhat.cloud.notifications.db.builder;
 
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.Sort;
 import jakarta.persistence.TypedQuery;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
@@ -191,10 +191,12 @@ public class QueryBuilderTest {
 
     @Test
     public void usingQuerySort() {
+        Query query = new Query();
+        query.sortBy = "col:ASC";
         assertEquals(
                 "SELECT o FROM Object o ORDER BY o.col ASC",
                 QueryBuilder.builder(Object.class).alias("o")
-                        .sort(Optional.of(new Query.Sort("o.col", Query.Sort.Order.ASC)))
+                        .sort(Sort.getSort(query, null, Map.of("col", "o.col")))
                         .buildRawQuery()
         );
     }
