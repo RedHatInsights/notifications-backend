@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.notification;
 
+import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.annotation.IntegrationId;
@@ -76,7 +77,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
@@ -119,29 +119,28 @@ public class NotificationResource {
     @Inject
     EventTypeRepository eventTypeRepository;
 
-    @Path(API_NOTIFICATIONS_V_1_0 + "/notifications")
+    @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/notifications")
     public static class V1 extends NotificationResource {
-    }
+        @GET
+        @Path("/eventTypes/{eventTypeId}/behaviorGroups")
+        @Produces(APPLICATION_JSON)
+        @Operation(summary = "List the behavior groups linked to an event type", description = "Lists the behavior groups that are linked to an event type. Use this endpoint to see which behavior groups will be affected if you delete an event type.")
+        @Parameter(
+            name = "limit",
+            in = ParameterIn.QUERY,
+            description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
+            schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
+        )
+        @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BEHAVIOR_GROUPS_VIEW, WorkspacePermission.EVENT_TYPES_VIEW})
+        public List<BehaviorGroup> getLinkedBehaviorGroups(
+            @Context SecurityContext sec,
+            @PathParam("eventTypeId") UUID eventTypeId,
+            @BeanParam @Valid Query query
+        ) {
+            final String orgId = getOrgId(sec);
 
-    @GET
-    @Path("/eventTypes/{eventTypeId}/behaviorGroups")
-    @Produces(APPLICATION_JSON)
-    @Operation(summary = "List the behavior groups linked to an event type", description = "Lists the behavior groups that are linked to an event type. Use this endpoint to see which behavior groups will be affected if you delete an event type.")
-    @Parameter(
-        name = "limit",
-        in = ParameterIn.QUERY,
-        description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
-        schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
-    )
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BEHAVIOR_GROUPS_VIEW, WorkspacePermission.EVENT_TYPES_VIEW})
-    public List<BehaviorGroup> getLinkedBehaviorGroups(
-        @Context SecurityContext sec,
-        @PathParam("eventTypeId") UUID eventTypeId,
-        @BeanParam @Valid Query query
-    ) {
-        final String orgId = getOrgId(sec);
-
-        return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, query);
+            return behaviorGroupRepository.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, query);
+        }
     }
 
     @GET
