@@ -86,7 +86,7 @@ public class StartupUtils {
         }
         try {
             File f = new File(keystoreFile.get());
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("pkcs12");
             try (FileInputStream keystoreFileInputStream = new FileInputStream(f)) {
 
                 ks.load(keystoreFileInputStream, keystorePassword.get().toCharArray());
