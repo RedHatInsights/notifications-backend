@@ -25,7 +25,7 @@ public class StartupUtilsTest {
 
     @Test
     void readKeystoreTest() {
-        String resourceName = "testKeystore.jks";
+        String resourceName = "testKeystore.p12";
         String testPassword = "change_it";
 
         ClassLoader classLoader = getClass().getClassLoader();
