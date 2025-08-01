@@ -201,7 +201,7 @@ public class FetchUsersFromExternalServicesTest {
 
     @Test
     public void getAllUsersFromDefaultGroupRBAC() {
-        when(recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
+        when(recipientsResolverConfig.isFetchUsersWithRbacEnabled(anyString())).thenReturn(true);
         RbacGroup defaultGroup = new RbacGroup();
         defaultGroup.setPlatformDefault(true);
         defaultGroup.setUuid(UUID.randomUUID());
@@ -252,7 +252,7 @@ public class FetchUsersFromExternalServicesTest {
 
     @Test
     public void getAllUsersCacheRBAC() {
-        when(recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
+        when(recipientsResolverConfig.isFetchUsersWithRbacEnabled(anyString())).thenReturn(true);
 
         int initialSize = 1095;
         int updatedSize = 1323;
@@ -309,7 +309,7 @@ public class FetchUsersFromExternalServicesTest {
      */
     @Test
     void testGetUsersMBOP() {
-        when(recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(true);
+        when(recipientsResolverConfig.isFetchUsersWithMbopEnabled(anyString())).thenReturn(true);
 
         // Fake a REST call to MBOP.
         final MBOPUsers firstPageMBOPUsers = this.mockGetMBOPUsersPage(recipientsResolverConfig.getMaxResultsPerPage());
@@ -365,7 +365,7 @@ public class FetchUsersFromExternalServicesTest {
         when(this.itUserService.getUsers(Mockito.any())).thenAnswer((answer) -> { throw new IOException(); });
 
         // Test that the RBAC failures counter gets incremented.
-        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled(anyString())).thenReturn(true);
 
         this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
 
@@ -377,8 +377,8 @@ public class FetchUsersFromExternalServicesTest {
         this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, this.recipientsResolverConfig.getMaxRetryAttempts(), Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
 
         // Test that the MBOP failures counter gets incremented.
-        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(false);
-        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(true);
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled(anyString())).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled(anyString())).thenReturn(true);
 
         this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP));
 
@@ -390,7 +390,7 @@ public class FetchUsersFromExternalServicesTest {
         this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, this.recipientsResolverConfig.getMaxRetryAttempts(), Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP));
 
         // Test that the IT failures counter gets incremented.
-        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled(anyString())).thenReturn(false);
 
         this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT));
 
@@ -413,8 +413,8 @@ public class FetchUsersFromExternalServicesTest {
         when(this.itUserService.getUsers(Mockito.any())).thenAnswer((answer) -> { throw new WebApplicationException(); });
 
         // Test that the RBAC failures counter gets incremented.
-        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
-        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled(anyString())).thenReturn(true);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled(anyString())).thenReturn(false);
 
         this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
 
@@ -426,8 +426,8 @@ public class FetchUsersFromExternalServicesTest {
         this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, 1, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
 
         // Test that the MBOP failures counter gets incremented.
-        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(false);
-        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(true);
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled(anyString())).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled(anyString())).thenReturn(true);
 
         this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP));
 
@@ -439,7 +439,7 @@ public class FetchUsersFromExternalServicesTest {
         this.micrometerAssertionHelper.assertCounterIncrementFilteredByTags(COUNTER_REQUESTS, 1, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_MBOP));
 
         // Test that the IT failures counter gets incremented.
-        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled(anyString())).thenReturn(false);
 
         this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT));
 
@@ -460,8 +460,8 @@ public class FetchUsersFromExternalServicesTest {
         when(this.rbacServiceToService.getGroup(Mockito.anyString(), Mockito.any())).thenAnswer((answer) -> { throw new ClientWebApplicationException(HttpStatus.SC_NOT_FOUND); });
 
         // Test that the RBAC failures counter gets incremented.
-        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
-        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled(anyString())).thenReturn(true);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled(anyString())).thenReturn(false);
 
         this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
 
@@ -481,8 +481,8 @@ public class FetchUsersFromExternalServicesTest {
         when(this.rbacServiceToService.getGroup(Mockito.anyString(), Mockito.any())).thenAnswer((answer) -> { throw new IOException(); });
 
         // Test that the RBAC failures counter gets incremented.
-        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
-        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled(anyString())).thenReturn(true);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled(anyString())).thenReturn(false);
 
         this.micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(COUNTER_REQUESTS, Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_RBAC));
 
@@ -503,8 +503,8 @@ public class FetchUsersFromExternalServicesTest {
     @Test
     void testIncrementSuccessfulUserFetchesRBAC() {
         // Mock a call to RBAC.
-        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(true);
-        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled(anyString())).thenReturn(true);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled(anyString())).thenReturn(false);
 
         final int mockedRbacPagesToFetch = 2;
         this.mockGetUsersRBAC(this.recipientsResolverConfig.getMaxResultsPerPage() * mockedRbacPagesToFetch, false);
@@ -529,8 +529,8 @@ public class FetchUsersFromExternalServicesTest {
     @Test
     void testIncrementSuccessfulUserFetchesMBOP() {
         // Mock a call to MBOP.
-        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(false);
-        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(true);
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled(anyString())).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled(anyString())).thenReturn(true);
 
         final int mockedMbopPagesToFetch = 3;
         final int mockedMbopElements = this.recipientsResolverConfig.getMaxResultsPerPage();
@@ -556,8 +556,8 @@ public class FetchUsersFromExternalServicesTest {
     @Test
     void testIncrementSuccessfulUserFetchesIT() {
         // Mock an IT call.
-        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()).thenReturn(false);
-        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithRbacEnabled(anyString())).thenReturn(false);
+        when(this.recipientsResolverConfig.isFetchUsersWithMbopEnabled(anyString())).thenReturn(false);
 
         final int mockedITUserPagesToFetch = 3;
         this.mockGetUsers(this.recipientsResolverConfig.getMaxResultsPerPage() * mockedITUserPagesToFetch, false);

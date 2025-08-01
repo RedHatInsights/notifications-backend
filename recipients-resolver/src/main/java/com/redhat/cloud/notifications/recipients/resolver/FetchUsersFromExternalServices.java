@@ -29,7 +29,6 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
-import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
@@ -91,23 +90,10 @@ public class FetchUsersFromExternalServices {
     @Inject
     ObjectMapper objectMapper;
 
-    private RetryPolicy<Object> retryPolicy;
 
     private Map</* orgId */ String, AtomicInteger> rbacUsers = new ConcurrentHashMap<>();
+    private Map</* orgId */ String, RetryPolicy<Object>> retryPolicies = new ConcurrentHashMap<>();
 
-    @PostConstruct
-    public void postConstruct() {
-        retryPolicy = RetryPolicy.builder()
-                .onRetry(event -> this.incrementFailuresCounter())
-                .handle(IOException.class)
-                .withBackoff(recipientsResolverConfig.getInitialRetryBackoff(), recipientsResolverConfig.getMaxRetryBackoff())
-                .withMaxAttempts(recipientsResolverConfig.getMaxRetryAttempts())
-                .onRetriesExceeded(event -> {
-                    // All retry attempts failed, let's log a warning about the failure.
-                    Log.warn("Users fetching from external service failed", event.getException());
-                })
-                .build();
-    }
 
     /**
      * Choose between PSK and OIDC RBAC clients based on feature flag
@@ -130,11 +116,11 @@ public class FetchUsersFromExternalServices {
         String supplier;
 
         try {
-            if (recipientsResolverConfig.isFetchUsersWithRbacEnabled()) {
+            if (recipientsResolverConfig.isFetchUsersWithRbacEnabled(orgId)) {
                 Log.debug("Fetching users with RBAC");
                 supplier = "RBAC";
                 users = getWithPagination(
-                    page -> retryOnError(() -> {
+                    page -> retryOnError(orgId, () -> {
                         LocalDateTime startTime = LocalDateTime.now();
                         Page<RbacUser> rbacUserPage = getRbacClient(orgId).getUsers(orgId, adminsOnly, page * recipientsResolverConfig.getMaxResultsPerPage(), recipientsResolverConfig.getMaxResultsPerPage());
                         Duration duration = Duration.between(startTime, LocalDateTime.now());
@@ -144,7 +130,7 @@ public class FetchUsersFromExternalServices {
 
                         return rbacUserPage;
                     }));
-            } else if (recipientsResolverConfig.isFetchUsersWithMbopEnabled()) {
+            } else if (recipientsResolverConfig.isFetchUsersWithMbopEnabled(orgId)) {
                 Log.debug("Fetching users with BOP/MBOP");
                 supplier = "BOP";
                 users = fetchUsersWithMbop(orgId, adminsOnly);
@@ -167,7 +153,7 @@ public class FetchUsersFromExternalServices {
             //
             // Therefore, for three attempts the counter gets incremented only
             // two times.
-            this.incrementFailuresCounter();
+            this.incrementFailuresCounter(orgId);
 
             throw e;
         }
@@ -198,7 +184,7 @@ public class FetchUsersFromExternalServices {
         do {
             ITUserRequest itRequest = new ITUserRequest(orgId, adminsOnly, firstResult, recipientsResolverConfig.getMaxResultsPerPage());
             final LocalDateTime startTime = LocalDateTime.now();
-            usersPaging = retryOnError(() -> itUserService.getUsers(itRequest));
+            usersPaging = retryOnError(orgId, () -> itUserService.getUsers(itRequest));
             Duration duration = Duration.between(startTime, LocalDateTime.now());
             if (recipientsResolverConfig.getLogTooLongRequestLimit().compareTo(duration) < 0) {
                 try {
@@ -231,7 +217,7 @@ public class FetchUsersFromExternalServices {
             // Required variable since lambdas are not allowed to modify
             // the captured variables.
             int finalOffset = offset;
-            final List<MBOPUser> receivedUsers = this.retryOnError(() -> {
+            final List<MBOPUser> receivedUsers = this.retryOnError(orgId, () -> {
                     LocalDateTime startTime = LocalDateTime.now();
                     try {
                         MBOPUsers receivedMbopUsers = mbopService.getUsersByOrgId(
@@ -312,12 +298,27 @@ public class FetchUsersFromExternalServices {
         });
     }
 
+    private RetryPolicy<Object> getRetryPolicy(String orgId) {
+        return retryPolicies.computeIfAbsent(orgId, id ->
+            RetryPolicy.builder()
+                .onRetry(event -> this.incrementFailuresCounter(id))
+                .handle(IOException.class)
+                .withBackoff(recipientsResolverConfig.getInitialRetryBackoff(), recipientsResolverConfig.getMaxRetryBackoff())
+                .withMaxAttempts(recipientsResolverConfig.getMaxRetryAttempts())
+                .onRetriesExceeded(event -> {
+                    // All retry attempts failed, let's log a warning about the failure.
+                    Log.warn("Users fetching from external service failed", event.getException());
+                })
+                .build()
+        );
+    }
+
     @CacheResult(cacheName = "recipients-users-provider-get-group-users")
     public List<User> getGroupUsers(String orgId, boolean adminOnly, UUID groupId) {
         Timer.Sample getGroupUsersTotalTimer = Timer.start(meterRegistry);
         RbacGroup rbacGroup;
         try {
-            rbacGroup = retryOnError(() -> getRbacClient(orgId).getGroup(orgId, groupId));
+            rbacGroup = retryOnError(orgId, () -> getRbacClient(orgId).getGroup(orgId, groupId));
         } catch (ClientWebApplicationException exception) {
             this.incrementFailuresCounterWithTag(COUNTER_TAG_USER_PROVIDER_RBAC);
 
@@ -339,7 +340,7 @@ public class FetchUsersFromExternalServices {
         } else {
             users = getWithPagination(page -> {
                 Timer.Sample getGroupUsersPageTimer = Timer.start(meterRegistry);
-                Page<RbacUser> rbacUsers = retryOnError(() ->
+                Page<RbacUser> rbacUsers = retryOnError(orgId, () ->
                     getRbacClient(orgId).getGroupUsers(orgId, groupId, adminOnly, page * recipientsResolverConfig.getMaxResultsPerPage(), recipientsResolverConfig.getMaxResultsPerPage()));
                 // Micrometer doesn't like when tags are null and throws a NPE.
                 String orgIdTag = orgId == null ? "" : orgId;
@@ -353,8 +354,8 @@ public class FetchUsersFromExternalServices {
         return users;
     }
 
-    private <T> T retryOnError(final CheckedSupplier<T> usersServiceCall) {
-        return Failsafe.with(retryPolicy).get(usersServiceCall);
+    private <T> T retryOnError(String orgId, final CheckedSupplier<T> usersServiceCall) {
+        return Failsafe.with(getRetryPolicy(orgId)).get(usersServiceCall);
     }
 
     private List<User> getWithPagination(Function<Integer, Page<RbacUser>> fetcher) {
@@ -404,10 +405,10 @@ public class FetchUsersFromExternalServices {
      * depending on which user service is enabled. Useful for the retry policy
      * which is used with the three different user back ends.
      */
-    private void incrementFailuresCounter() {
-        if (this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()) {
+    private void incrementFailuresCounter(String orgId) {
+        if (this.recipientsResolverConfig.isFetchUsersWithRbacEnabled(orgId)) {
             this.incrementFailuresCounterWithTag(COUNTER_TAG_USER_PROVIDER_RBAC);
-        } else if (this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()) {
+        } else if (this.recipientsResolverConfig.isFetchUsersWithMbopEnabled(orgId)) {
             this.incrementFailuresCounterWithTag(COUNTER_TAG_USER_PROVIDER_MBOP);
         } else {
             this.incrementFailuresCounterWithTag(COUNTER_TAG_USER_PROVIDER_IT);
