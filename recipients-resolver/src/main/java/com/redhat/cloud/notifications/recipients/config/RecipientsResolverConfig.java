@@ -135,8 +135,8 @@ public class RecipientsResolverConfig {
     void logConfigAtStartup(@Observes Startup event) {
 
         Map<String, Object> config = new TreeMap<>();
-        config.put(fetchUsersWithMbopToggle, isFetchUsersWithMbopEnabled());
-        config.put(fetchUsersWithRbacToggle, isFetchUsersWithRbacEnabled());
+        config.put(fetchUsersWithMbopToggle, isFetchUsersWithMbopEnabled(null));
+        config.put(fetchUsersWithRbacToggle, isFetchUsersWithRbacEnabled(null));
         config.put(MAX_RESULTS_PER_PAGE, getMaxResultsPerPage());
         config.put(MBOP_ENV, getMbopEnv());
         config.put(RETRY_INITIAL_BACKOFF, getInitialRetryBackoff());
@@ -156,17 +156,17 @@ public class RecipientsResolverConfig {
         });
     }
 
-    public boolean isFetchUsersWithMbopEnabled() {
+    public boolean isFetchUsersWithMbopEnabled(String orgId) {
         if (unleashEnabled) {
-            return unleash.isEnabled(fetchUsersWithMbopToggle, false);
+            return unleash.isEnabled(fetchUsersWithMbopToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
         } else {
             return fetchUsersWithMbopEnabled;
         }
     }
 
-    public boolean isFetchUsersWithRbacEnabled() {
+    public boolean isFetchUsersWithRbacEnabled(String orgId) {
         if (unleashEnabled) {
-            return unleash.isEnabled(fetchUsersWithRbacToggle, false);
+            return unleash.isEnabled(fetchUsersWithRbacToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
         } else {
             return fetchUsersWithRbacEnabled;
         }
