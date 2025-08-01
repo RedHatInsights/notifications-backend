@@ -67,7 +67,7 @@
         <testcontainers.version>1.21.3</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
-        <swagger-v3-core.version>2.2.34</swagger-v3-core.version>
+        <swagger-v3-core.version>2.2.35</swagger-v3-core.version>
         <failsafe.version>3.3.2</failsafe.version>
 
         <mockserver-netty-no-dependencies.version>5.15.0</mockserver-netty-no-dependencies.version>
