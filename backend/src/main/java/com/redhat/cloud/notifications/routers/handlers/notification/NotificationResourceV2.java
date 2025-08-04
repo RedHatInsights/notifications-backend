@@ -1,14 +1,19 @@
 package com.redhat.cloud.notifications.routers.handlers.notification;
 
-import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
+import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.GET;
@@ -27,12 +32,32 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import java.util.List;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Path(Constants.API_NOTIFICATIONS_V_2_0 + "/notifications")
-public class NotificationResourceV2 extends NotificationResource {
+public class NotificationResourceV2 {
+
+    @Inject
+    BackendConfig backendConfig;
+
+    @Inject
+    WorkspaceUtils workspaceUtils;
+
+    @Inject
+    KesselAuthorization kesselAuthorization;
+
+    @Inject
+    KesselInventoryAuthorization kesselInventoryAuthorization;
+
+    @Inject
+    BehaviorGroupRepository behaviorGroupRepository;
+
+    @Path(API_NOTIFICATIONS_V_2_0 + "/notifications")
+    public static class V2 extends NotificationResourceV2 {
+    }
+
     @GET
     @Path("/eventTypes/{eventTypeId}/behaviorGroups")
     @Produces(APPLICATION_JSON)
