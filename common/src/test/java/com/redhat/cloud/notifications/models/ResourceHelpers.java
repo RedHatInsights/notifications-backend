@@ -129,13 +129,18 @@ public abstract class ResourceHelpers {
         getEntityManager().remove(getEntityManager().find(Event.class, event.getId()));
     }
 
-    public Application findOrCreateApplication(String bundleName, String appName) {
+    public Bundle findOrCreateBundle(String bundleName) {
         Bundle bundle = null;
         try {
             bundle = findBundle(bundleName);
         } catch (NoResultException nre) {
             bundle = createBundle(bundleName);
         }
+        return bundle;
+    }
+
+    public Application findOrCreateApplication(String bundleName, String appName) {
+        Bundle bundle = findOrCreateBundle(bundleName);
 
         Application app = null;
         try {

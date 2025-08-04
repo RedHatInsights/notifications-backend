@@ -47,9 +47,6 @@ class DailyEventAggregationJobTest {
     @Inject
     ResourceHelpers helpers;
 
-    @Inject
-    ResourceHelpers resourceHelpers;
-
     @InjectSpy
     DailyEmailAggregationJob dailyEmailAggregationJob;
 
@@ -97,19 +94,31 @@ class DailyEventAggregationJobTest {
 
     List<AggregationCommand> getRecordsFromKafka() {
         List<AggregationCommand> aggregationCommands = new ArrayList<>();
-
         InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL);
         for (Message message : results.received()) {
             Action action = Parser.decode(String.valueOf(message.getPayload()));
-            for (Event event : action.getEvents()) {
-                AggregationCommand aggCommand = objectMapper.convertValue(event.getPayload().getAdditionalProperties(), AggregationCommand.class);
-                EventAggregationCriterion aggregationCriteria = objectMapper.convertValue(event.getPayload().getAdditionalProperties().get("aggregationKey"), EventAggregationCriterion.class);
-                aggCommand.setAggregationKey(aggregationCriteria);
-                aggregationCommands.add(aggCommand);
-            }
+            aggregationCommands.addAll(extractAggregationCommandsFromAction(action));
         }
 
         return aggregationCommands;
+    }
+
+    private List<AggregationCommand> extractAggregationCommandsFromAction(Action action) {
+        List<AggregationCommand> aggregationCommands = new ArrayList<>();
+        for (Event event : action.getEvents()) {
+            AggregationCommand aggCommand = objectMapper.convertValue(event.getPayload().getAdditionalProperties(), AggregationCommand.class);
+            EventAggregationCriterion aggregationCriteria = objectMapper.convertValue(event.getPayload().getAdditionalProperties().get("aggregationKey"), EventAggregationCriterion.class);
+            aggCommand.setAggregationKey(aggregationCriteria);
+            aggregationCommands.add(aggCommand);
+        }
+        return aggregationCommands;
+    }
+
+    List<Action> getActionRecordsFromKafka() {
+        InMemorySink<String> results = connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL);
+        return results.received().stream()
+            .map(message -> Parser.decode(String.valueOf(message.getPayload())))
+            .toList();
     }
 
     @Test
@@ -129,6 +138,59 @@ class DailyEventAggregationJobTest {
         checkAggCommand(listCommand, "anotherOrgId", "rhel", "unknown-application");
         checkAggCommand(listCommand, "someOrgId", "rhel", "policies");
         checkAggCommand(listCommand, "someOrgId", "rhel", "unknown-application");
+    }
+
+    @Test
+    void shouldSentFourAggregationsOnTwoBundlesToKafkaTopic() {
+        addEventEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        addEventEmailAggregation("someOrgId", "rhel", "advisor", "somePolicyId", "someHostId");
+        addEventEmailAggregation("someOrgId", "subscription-services", "errata", "somePolicyId", "someHostId");
+        addEventEmailAggregation("someOrgId", "subscription-services", "errata", "somePolicyId", "someHostId");
+        addEventEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        addEventEmailAggregation("anotherOrgId", "rhel", "advisor", "somePolicyId", "someHostId");
+        addEventEmailAggregation("anotherOrgId", "subscription-services", "errata", "somePolicyId", "someHostId");
+        addEventEmailAggregation("anotherOrgId", "subscription-services", "errata", "somePolicyId", "someHostId");
+        dailyEmailAggregationJob.setDefaultDailyDigestTime(baseReferenceTime.toLocalTime());
+
+        dailyEmailAggregationJob.processDailyEmail();
+
+        List<Action> listActions = getActionRecordsFromKafka();
+        assertEquals(4, listActions.size(), "Must have actions for [someOrgId/rhel], [anotherOrgId/rhel], [someOrgId/subscription-services] and [anotherOrgId/subscription-services].");
+
+        boolean someOrgIdRhelValidated = false;
+        boolean anotherOrgIdRhelValidated = false;
+        boolean someOrgIdSubscriptionServicesValidated = false;
+        boolean anotherOrgIdSubscriptionServicesValidated = false;
+
+        for (Action action : listActions) {
+            List<AggregationCommand> listCommand = extractAggregationCommandsFromAction(action);
+            if (listCommand.getFirst().getAggregationKey().getBundle().equals("rhel")) {
+                assertEquals(2, listCommand.size());
+                if (action.getOrgId().equals("someOrgId")) {
+                    checkAggCommand(listCommand, "someOrgId", "rhel", "policies");
+                    checkAggCommand(listCommand, "someOrgId", "rhel", "advisor");
+                    someOrgIdRhelValidated = true;
+                } else {
+                    checkAggCommand(listCommand, "anotherOrgId", "rhel", "policies");
+                    checkAggCommand(listCommand, "anotherOrgId", "rhel", "advisor");
+                    anotherOrgIdRhelValidated = true;
+                }
+            } else {
+                assertEquals(1, listCommand.size());
+                if (action.getOrgId().equals("someOrgId")) {
+                    checkAggCommand(listCommand, "someOrgId", "subscription-services", "errata");
+                    someOrgIdSubscriptionServicesValidated = true;
+                } else {
+                    checkAggCommand(listCommand, "anotherOrgId", "subscription-services", "errata");
+                    anotherOrgIdSubscriptionServicesValidated = true;
+                }
+            }
+        }
+
+        assertTrue(someOrgIdRhelValidated);
+        assertTrue(anotherOrgIdRhelValidated);
+        assertTrue(someOrgIdSubscriptionServicesValidated);
+        assertTrue(anotherOrgIdSubscriptionServicesValidated);
     }
 
     @Test
@@ -204,7 +266,7 @@ class DailyEventAggregationJobTest {
     }
 
     private void checkAggCommand(final List<AggregationCommand> commands, final String orgId, final String bundleName, final String applicationName, final LocalDateTime expectedStartDate) {
-        final Application application = resourceHelpers.findApp(bundleName, applicationName);
+        final Application application = helpers.findApp(bundleName, applicationName);
 
         final LocalDateTime expectedEndDate = LocalDateTime.now(UTC)
             .withHour(baseReferenceTime.getHour())
@@ -346,7 +408,7 @@ class DailyEventAggregationJobTest {
 
         final AggregationCommand aggregationCommand = (AggregationCommand) emailAggregations.get(0);
         assertEquals("someOrgId", aggregationCommand.getAggregationKey().getOrgId());
-        Application application = resourceHelpers.findApp("rhel", "policies");
+        Application application = helpers.findApp("rhel", "policies");
         assertEquals(application.getBundleId(), ((EventAggregationCriterion) aggregationCommand.getAggregationKey()).getBundleId());
         assertEquals(application.getId(), ((EventAggregationCriterion) aggregationCommand.getAggregationKey()).getApplicationId());
         assertEquals(DAILY, aggregationCommand.getSubscriptionType());
@@ -367,7 +429,7 @@ class DailyEventAggregationJobTest {
 
         final AggregationCommand aggregationCommand = (AggregationCommand) emailAggregations.get(0);
         assertEquals("someOrgIdWithoutLastRunDate", aggregationCommand.getAggregationKey().getOrgId());
-        Application application = resourceHelpers.findApp("rhel", "policies");
+        Application application = helpers.findApp("rhel", "policies");
         assertEquals(application.getBundleId(), ((EventAggregationCriterion) aggregationCommand.getAggregationKey()).getBundleId());
         assertEquals(application.getId(), ((EventAggregationCriterion) aggregationCommand.getAggregationKey()).getApplicationId());
         assertEquals(DAILY, aggregationCommand.getSubscriptionType());
@@ -444,6 +506,6 @@ class DailyEventAggregationJobTest {
 
     private com.redhat.cloud.notifications.models.Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, String policyId, String inventoryId, LocalDateTime created) {
         final String payload = TestHelpers.generatePayloadContent(orgId, bundleName, applicationName, policyId, inventoryId).toString();
-        return resourceHelpers.addEventEmailAggregation(orgId, bundleName, applicationName, created, payload);
+        return helpers.addEventEmailAggregation(orgId, bundleName, applicationName, created, payload, false);
     }
 }
