@@ -38,7 +38,7 @@ public class EmailAggregationRepository {
             //"EXISTS (SELECT 1 FROM EventTypeEmailSubscription es where ev.orgId = es.id.orgId and es.id.subscriptionType='DAILY' and es.eventType = ev.eventType and es.subscribed is true) " + warning: need an new index on EventTypeEmailSubscription before being enabled
 
             // check for linked email integration linked to this event type (to honor legacy mechanism)
-            "AND EXISTS (SELECT 1 FROM Endpoint ep, EndpointEventType eet where ev.orgId = ep.orgId and ep.compositeType.type = 'EMAIL_SUBSCRIPTION' and eet.eventType = ev.eventType and eet.endpoint = ep) " +
+            "AND EXISTS (SELECT 1 FROM Endpoint ep, EndpointEventType eet where (ev.orgId = ep.orgId or ep.orgId is null) and ep.compositeType.type = 'EMAIL_SUBSCRIPTION' and eet.eventType = ev.eventType and eet.endpoint = ep) " +
             // filter on new events since the latest run of this org aggregation, and not older than two days
             "AND (ev.created > acp.lastRun OR acp.lastRun is null) AND ev.created > :twoDaysAgo AND ev.created <= :now " +
             // filter on org scheduled execution time
