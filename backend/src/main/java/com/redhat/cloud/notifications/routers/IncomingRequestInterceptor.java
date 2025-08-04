@@ -25,6 +25,10 @@ public class IncomingRequestInterceptor implements ContainerRequestFilter {
     private static final Pattern ANTI_INJECTION_PATTERN = Pattern.compile("[\n|\r|\t]");
 
     private static final Pattern p = Pattern.compile("/api/(integrations|notifications)/v(\\d+)/(.*)");
+    private static final Pattern patternV2 = Pattern.compile("/api/(integrations|notifications)/v2.0/(.*)");
+    private static final Pattern patternNotificationsBgV2 = Pattern.compile("notifications/eventTypes/(.*)/behaviorGroups");
+    private static final Pattern patternIntegrationEndpointsV2 = Pattern.compile("endpoints(.*)");
+    private static final Pattern patternIntegrationEndpointsDetailsV2 = Pattern.compile("endpoints/(.*)/details");
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -87,6 +91,31 @@ public class IncomingRequestInterceptor implements ContainerRequestFilter {
             Log.tracef("Rerouting to: %s", newTarget);
 
             requestContext.setRequestUri(UriBuilder.fromUri(requestContext.getUriInfo().getRequestUri()).replacePath(newTarget).build());
+            uri = requestContext.getUriInfo().getPath();
+        }
+
+        Matcher matcherUrlV2 = patternV2.matcher(uri);
+        if (matcherUrlV2.matches()) {
+            boolean rewriteToV1 = true;
+            if ("GET".equals(requestContext.getMethod())) {
+                if (matcherUrlV2.group(1).equals("notifications")) {
+                    Matcher notificationsBG = patternNotificationsBgV2.matcher(matcherUrlV2.group(2));
+                    if (notificationsBG.matches()) {
+                        rewriteToV1 = false;
+                    }
+                } else if (matcherUrlV2.group(1).equals("integrations")) {
+                    Matcher integrationsEndpoints = patternIntegrationEndpointsV2.matcher(matcherUrlV2.group(2));
+                    Matcher integrationsEndpointsHistoryDetails = patternIntegrationEndpointsDetailsV2.matcher(matcherUrlV2.group(2));
+                    if (integrationsEndpoints.matches() && !integrationsEndpointsHistoryDetails.matches()) {
+                        rewriteToV1 = false;
+                    }
+                }
+            }
+
+            if (rewriteToV1) {
+                String newTarget = "/api/" + matcherUrlV2.group(1) + "/v1.0/" + matcherUrlV2.group(2);
+                requestContext.setRequestUri(UriBuilder.fromUri(requestContext.getUriInfo().getRequestUri()).replacePath(newTarget).build());
+            }
         }
     }
 }

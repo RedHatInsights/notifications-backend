@@ -830,7 +830,7 @@ public class LifecycleITest extends DbIsolatedTest {
 
             if (!expectedInvocationResult) {
                 String responseBody = given()
-                        .basePath(API_INTEGRATIONS_V_1_0)
+                        .basePath(API_INTEGRATIONS_V_2_0)
                         .header(identityHeader)
                         .pathParam("endpointId", endpointId)
                         .pathParam("historyId", jsonNotificationHistory.getString("id"))
