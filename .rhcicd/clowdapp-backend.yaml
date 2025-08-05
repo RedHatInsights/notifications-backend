@@ -37,7 +37,7 @@ objects:
           limits:
             cpu: ${DB_CLEANER_CPU_LIMIT}
             memory: ${DB_CLEANER_MEMORY_LIMIT}
-        image: quay.io/cloudservices/postgresql-rds:12
+        image: registry.redhat.io/rhel9/postgresql-16:latest
         volumes:
           - name: notifications-db-cleaner-volume
             configMap:
