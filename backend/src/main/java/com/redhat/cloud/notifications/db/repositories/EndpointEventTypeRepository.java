@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
@@ -46,9 +47,7 @@ public class EndpointEventTypeRepository {
         }
 
         if (limiter != null) {
-            limiter.setSortFields(Endpoint.SORT_FIELDS);
-            limiter.setDefaultSortBy("name:DESC");
-            query = limiter.getModifiedQuery(query);
+            query = Sort.getModifiedQuery(query, limiter, Endpoint.SORT_FIELDS, "name:DESC");
         }
 
         TypedQuery<Endpoint> typedQuery = entityManager.createQuery(query, Endpoint.class)

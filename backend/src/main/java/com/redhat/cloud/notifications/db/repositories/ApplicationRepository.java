@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.db.builder.JoinBuilder;
 import com.redhat.cloud.notifications.db.builder.QueryBuilder;
 import com.redhat.cloud.notifications.db.builder.WhereBuilder;
@@ -271,14 +272,10 @@ public class ApplicationRepository {
     }
 
     public List<EventType> getEventTypes(Query limiter, Set<UUID> appIds, UUID bundleId, String eventTypeName, boolean excludeMutedTypes, List<UUID> unmutedEventTypeIds) {
-        if (limiter != null) {
-            limiter.setSortFields(EventType.SORT_FIELDS);
-        }
-
         return getEventTypesQueryBuilder(appIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds)
                 .join(JoinBuilder.builder().leftJoinFetch("e.application"))
                 .limit(limiter != null ? limiter.getLimit() : null)
-                .sort(limiter != null ? limiter.getSort() : null)
+                .sort(limiter != null ? Sort.getSort(limiter, null, EventType.SORT_FIELDS) : null)
                 .build(entityManager::createQuery)
                 .getResultList();
     }
