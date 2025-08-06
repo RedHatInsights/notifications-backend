@@ -45,6 +45,13 @@
                     <type>test-jar</type>
                     <scope>test</scope>
                 </dependency>
+                <dependency>
+                    <groupId>com.redhat.cloud.notifications</groupId>
+                    <artifactId>notifications-common-template</artifactId>
+                    <version>${project.version}</version>
+                    <type>test-jar</type>
+                    <scope>test</scope>
+                </dependency>
             </dependencies>
         </profile>
 
@@ -58,6 +65,12 @@
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
             <artifactId>notifications-connector-common-http</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.redhat.cloud.notifications</groupId>
+            <artifactId>notifications-common-template</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -99,6 +112,12 @@
             <groupId>org.mock-server</groupId>
             <artifactId>mockserver-netty-no-dependencies</artifactId>
             <version>${mockserver-netty-no-dependencies.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>1.5.8</version>
             <scope>test</scope>
         </dependency>
         <dependency>
