@@ -182,6 +182,10 @@ class EventingTypeProcessorTest {
         assertEquals(SECRET_TOKEN.name(), notifMetadata.getJsonObject("authentication").getString("type"));
         assertEquals(properties1.getSecretTokenSourcesId(), notifMetadata.getJsonObject("authentication").getLong("secretId"));
 
+        // The processor also added an Insights application URL, and potentially an inventory URL.
+        assertEquals("https://localhost/insights/app?from=notifications&integration=sub-type", payload.getString("application_url"));
+        assertFalse(payload.containsKey("inventory_url"));
+
         // Finally, we need to check the Kafka message metadata.
         UUID historyId = result.get(0).getId();
         checkCloudEventMetadata(message, historyId, endpoint1.getAccountId(), endpoint1.getOrgId(), endpoint1.getSubType());
@@ -199,6 +203,38 @@ class EventingTypeProcessorTest {
 
         camelProcessor.process(buildEvent(), List.of(new Endpoint()));
         micrometerAssertionHelper.assertCounterIncrement(EventingProcessor.PROCESSED_COUNTER_NAME, 0);
+    }
+
+    @Test
+    void testSplunkEndpointQueryParams() {
+        // Make sure that the payload does not get stored in the database.
+        Mockito.when(this.engineConfig.getKafkaToCamelMaximumRequestSize()).thenReturn(Integer.MAX_VALUE);
+
+        // We need input data for the test.
+        Event event = buildEvent();
+        Endpoint endpoint = buildCamelEndpoint(event.getEventWrapper().getAccountId());
+        endpoint.setSubType("splunk");
+
+        // Let's trigger the processing.
+        camelProcessor.process(event, List.of(endpoint));
+        ArgumentCaptor<NotificationHistory> historyArgumentCaptor = ArgumentCaptor.forClass(NotificationHistory.class);
+        verify(notificationHistoryRepository, times(1)).createNotificationHistory(historyArgumentCaptor.capture());
+        List<NotificationHistory> result = historyArgumentCaptor.getAllValues();
+
+        // One endpoint should have been processed, and the channel should have received one message.
+        assertEquals(1, result.size());
+        assertEquals(1, inMemorySink.received().size());
+
+        // We'll only check the payload of the first Kafka message.
+        JsonObject payload = inMemorySink.received().get(0).getPayload();
+
+        // Assert that the environment URL and query params are provided to a Splunk endpoint.
+        assertEquals("https://localhost", payload.getString("environment_url"));
+        assertEquals("?from=notifications&integration=splunk", payload.getString("query_params"));
+
+        // DB and Kafka data must be cleared to prevent a side effect on other tests.
+        inMemorySink.clear();
+        resourceHelpers.deleteEndpoint(endpoint.getId());
     }
 
     private static Event buildEvent() {

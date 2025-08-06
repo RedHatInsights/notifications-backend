@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.DelayedThrower;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
@@ -34,6 +35,9 @@ public class EventingProcessor extends EndpointTypeProcessor {
 
     @Inject
     InsightsUrlsBuilder insightsUrlsBuilder;
+
+    @Inject
+    Environment environment;
 
     @Inject
     MeterRegistry registry;
@@ -85,6 +89,11 @@ public class EventingProcessor extends EndpointTypeProcessor {
         final JsonObject payload = baseTransformer.toJsonObject(event);
         insightsUrlsBuilder.buildInventoryUrl(payload, endpoint.getSubType()).ifPresent(url -> payload.put("inventory_url", url));
         payload.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payload, endpoint.getSubType()));
+        if (endpoint.getSubType().equals("splunk")) {
+            // Splunk assembles its own URLs
+            payload.put("environment_url", environment.url());
+            payload.put("query_params", insightsUrlsBuilder.buildQueryParams(List.of(), endpoint.getSubType()));
+        }
         payload.put(NOTIF_METADATA_KEY, metaData);
 
         return payload;
