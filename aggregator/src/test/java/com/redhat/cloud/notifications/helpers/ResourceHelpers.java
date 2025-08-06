@@ -61,6 +61,11 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
         entityManager.clear();
     }
 
+    @Transactional
+    public void purgeEndpoints() {
+        entityManager.createQuery("DELETE FROM Endpoint").executeUpdate();
+        entityManager.clear();
+    }
 
     @Transactional
     public void addEmailAggregation(EmailAggregation aggregation) {
@@ -78,12 +83,12 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
     }
 
     @Transactional
-    public Endpoint getOrCreateEmailEndpointAndLinkItToEventType(final String orgId, final EventType eventType) {
+    public Endpoint getOrCreateEmailEndpointAndLinkItToEventType(final String orgId, final EventType eventType, boolean useSystemEndpoint) {
         Endpoint emailEndpoint;
         try {
             final String query = "FROM Endpoint WHERE orgId = :orgId AND compositeType.type = :type";
             emailEndpoint = entityManager.createQuery(query, Endpoint.class)
-                .setParameter("orgId", orgId)
+                .setParameter("orgId", useSystemEndpoint ? null : orgId)
                 .setParameter("type", EndpointType.EMAIL_SUBSCRIPTION)
                 .getSingleResult();
         } catch (NoResultException e) {
@@ -132,12 +137,13 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
         }
     }
 
-    public Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, LocalDateTime created, String eventPayload) {
+    public Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, LocalDateTime created, String eventPayload, boolean useSystemEndpoint) {
+        findOrCreateBundle(bundleName);
         Application application = findOrCreateApplication(bundleName, applicationName);
         EventType eventType = findOrCreateEventType(application.getId(), "event_type_test");
         findOrCreateEventTypeEmailSubscription(orgId, "obiwan", eventType, SubscriptionType.DAILY);
 
-        getOrCreateEmailEndpointAndLinkItToEventType(orgId, eventType);
+        getOrCreateEmailEndpointAndLinkItToEventType(orgId, eventType, useSystemEndpoint);
         getOrCreateAggregationTemplate(application);
 
         Event event = new Event();

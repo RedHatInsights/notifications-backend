@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.models;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 public class AggregationCommand {
 
@@ -47,6 +48,10 @@ public class AggregationCommand {
 
     public String getOrgId() {
         return aggregationKey.getOrgId();
+    }
+
+    public UUID getBundleId() {
+        return aggregationKey.getBundleId();
     }
 
     @Override
