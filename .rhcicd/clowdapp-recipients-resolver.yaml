@@ -42,7 +42,7 @@ objects:
         - name: it-services-cert
           secret:
             secretName: it-services-cert
-            optional: true
+            optional: ${{IT_SERVICE_OPTIONAL}}
         - name: it-services-pkcs12-builder-volume
           configMap:
             name: it-services-pkcs12-builder-script
@@ -266,6 +266,9 @@ parameters:
   value: quay.io/cloudservices/notifications-recipients-resolver
 - name: IMAGE_TAG
   value: latest
+- name: IT_SERVICE_OPTIONAL
+  description: "Is IT service integration optional for current env?"
+  value: "true"
 - name: IT_SERVICES_PKCS12_BUILDER_IMAGE
   description: "Image URL for container to assemble intermediate PKCS #12 for IT server"
   value: registry.access.redhat.com/ubi9/ubi
