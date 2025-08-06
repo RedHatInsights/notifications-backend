@@ -130,7 +130,7 @@ public class FetchUsersFromExternalServices {
         String supplier;
 
         try {
-            if (recipientsResolverConfig.isFetchUsersWithRbacEnabled()) {
+            if (recipientsResolverConfig.isFetchUsersWithRbacEnabled(orgId)) {
                 Log.debug("Fetching users with RBAC");
                 supplier = "RBAC";
                 users = getWithPagination(
@@ -144,7 +144,7 @@ public class FetchUsersFromExternalServices {
 
                         return rbacUserPage;
                     }));
-            } else if (recipientsResolverConfig.isFetchUsersWithMbopEnabled()) {
+            } else if (recipientsResolverConfig.isFetchUsersWithMbopEnabled(orgId)) {
                 Log.debug("Fetching users with BOP/MBOP");
                 supplier = "BOP";
                 users = fetchUsersWithMbop(orgId, adminsOnly);
@@ -405,9 +405,9 @@ public class FetchUsersFromExternalServices {
      * which is used with the three different user back ends.
      */
     private void incrementFailuresCounter() {
-        if (this.recipientsResolverConfig.isFetchUsersWithRbacEnabled()) {
+        if (this.recipientsResolverConfig.isFetchUsersWithRbacEnabled(null)) {
             this.incrementFailuresCounterWithTag(COUNTER_TAG_USER_PROVIDER_RBAC);
-        } else if (this.recipientsResolverConfig.isFetchUsersWithMbopEnabled()) {
+        } else if (this.recipientsResolverConfig.isFetchUsersWithMbopEnabled(null)) {
             this.incrementFailuresCounterWithTag(COUNTER_TAG_USER_PROVIDER_MBOP);
         } else {
             this.incrementFailuresCounterWithTag(COUNTER_TAG_USER_PROVIDER_IT);
