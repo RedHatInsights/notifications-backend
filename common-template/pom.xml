@@ -41,13 +41,6 @@
 
         <!-- Test -->
         <dependency>
-            <groupId>com.redhat.cloud.notifications</groupId>
-            <artifactId>notifications-common</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>com.networknt</groupId>
             <artifactId>json-schema-validator</artifactId>
             <version>1.5.8</version>

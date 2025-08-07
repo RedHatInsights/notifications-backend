@@ -137,6 +137,7 @@ class DrawerProcessorTest {
         assertNotNull(message);
         assertFalse(message.getPayload().isEmpty());
 
+        assertNotNull(message.getPayload().getJsonObject("event_data"));
         CloudEventMetadata cloudEventMetadata = message.getMetadata(CloudEventMetadata.class).get();
         assertNotNull(cloudEventMetadata);
         assertFalse(cloudEventMetadata.getId().isEmpty());

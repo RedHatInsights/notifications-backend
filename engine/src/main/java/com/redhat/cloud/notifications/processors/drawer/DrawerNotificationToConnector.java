@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import java.util.Collection;
+import java.util.Map;
 
 public record DrawerNotificationToConnector(
 
@@ -21,5 +22,9 @@ public record DrawerNotificationToConnector(
     Collection<String> unsubscribers,
 
     @JsonProperty("recipients_authorization_criterion")
-    RecipientsAuthorizationCriterion recipientsAuthorizationCriterion
+    RecipientsAuthorizationCriterion recipientsAuthorizationCriterion,
+
+    @JsonProperty("event_data")
+    Map<String, Object> eventData
+
 )  { }

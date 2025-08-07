@@ -30,6 +30,9 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
+import static com.redhat.cloud.notifications.transformers.BaseTransformer.APPLICATION;
+import static com.redhat.cloud.notifications.transformers.BaseTransformer.BUNDLE;
+import static com.redhat.cloud.notifications.transformers.BaseTransformer.EVENT_TYPE;
 
 @ApplicationScoped
 public class DrawerProcessor extends SystemEndpointTypeProcessor {
@@ -80,7 +83,16 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         }
 
         // build event thought qute template
-        String renderedData = buildNotificationMessage(event);
+        JsonObject data = baseTransformer.toJsonObject(event);
+
+        Map<String, Object> dataAsMap;
+        try {
+            dataAsMap = objectMapper.readValue(data.encode(), Map.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Drawer notification data transformation failed", e);
+        }
+
+        String renderedData = buildNotificationMessage(dataAsMap);
 
         // store it on event table
         event.setRenderedDrawerNotification(renderedData);
@@ -99,7 +111,8 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
             drawerEntryPayload,
             recipientSettings,
             unsubscribers,
-            recipientsAuthorizationCriterionExtractor.extract(event)
+            recipientsAuthorizationCriterionExtractor.extract(event),
+            dataAsMap
         );
 
         connectorSender.send(event, endpoints.getFirst(), JsonObject.mapFrom(drawerNotificationToConnector));
@@ -116,21 +129,12 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         return drawerEntryPayload;
     }
 
-    public String buildNotificationMessage(Event event) {
-        JsonObject data = baseTransformer.toJsonObject(event);
-
-        Map<String, Object> dataAsMap;
-        try {
-            dataAsMap = objectMapper.readValue(data.encode(), Map.class);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Drawer notification data transformation failed", e);
-        }
-
+    public String buildNotificationMessage(Map<String, Object> dataAsMap) {
         TemplateDefinition templateDefinition = new TemplateDefinition(
             IntegrationType.DRAWER,
-            event.getEventType().getApplication().getBundle().getName(),
-            event.getEventType().getApplication().getName(),
-            event.getEventType().getName());
+            dataAsMap.get(BUNDLE).toString(),
+            dataAsMap.get(APPLICATION).toString(),
+            dataAsMap.get(EVENT_TYPE).toString());
         return templateService.renderTemplate(templateDefinition, dataAsMap);
     }
 

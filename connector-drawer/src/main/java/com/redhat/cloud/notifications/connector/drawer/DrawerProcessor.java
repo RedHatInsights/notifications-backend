@@ -6,6 +6,9 @@ import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntryPayload;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerUser;
 import com.redhat.cloud.notifications.connector.drawer.model.RecipientSettings;
 import com.redhat.cloud.notifications.connector.drawer.recipients.recipientsresolver.ExternalRecipientsResolver;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
+import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
@@ -21,6 +24,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import java.net.URI;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
@@ -48,6 +52,8 @@ public class DrawerProcessor implements Processor {
     @Channel(DRAWER_CHANNEL)
     Emitter<JsonObject> emitter;
 
+    @Inject
+    TemplateService templateService;
 
     @Override
     public void process(final Exchange exchange) {
@@ -59,6 +65,21 @@ public class DrawerProcessor implements Processor {
         } else {
             // send to kafka chrome service
             final DrawerEntryPayload entryPayloadModel = exchange.getProperty(ExchangeProperty.DRAWER_ENTRY_PAYLOAD, DrawerEntryPayload.class);
+            final Map<String, Object> eventDataMap = exchange.getProperty(ExchangeProperty.EVENT_DATA, Map.class);
+
+            String templatedEvent = null;
+            if (eventDataMap != null) {
+                TemplateDefinition templateDefinition = new TemplateDefinition(
+                    IntegrationType.DRAWER,
+                    eventDataMap.get("bundle").toString(),
+                    eventDataMap.get("application").toString(),
+                    eventDataMap.get("event_type").toString());
+                templatedEvent = templateService.renderTemplate(templateDefinition, eventDataMap);
+            }
+
+            if (!entryPayloadModel.getDescription().equals(templatedEvent)) {
+                Log.errorf("Legacy and new rendered messages are different: '%s' vs. '%s'", entryPayloadModel.getDescription(), templatedEvent);
+            }
             emitter.send(buildMessage(entryPayloadModel, recipientsList));
         }
     }

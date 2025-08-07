@@ -10,7 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static helpers.TestHelpers.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

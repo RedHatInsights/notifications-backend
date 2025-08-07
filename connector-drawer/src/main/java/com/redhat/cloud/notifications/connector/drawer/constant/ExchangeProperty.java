@@ -9,4 +9,5 @@ public class ExchangeProperty {
     public static final String AUTHORIZATION_CRITERIA = "authorization_criteria";
     public static final String USE_SIMPLIFIED_ROUTE = "use_simplified_route";
     public static final String ADDITIONAL_ERROR_DETAILS = "additionalErrorDetails";
+    public static final String EVENT_DATA = "event_data";
 }
