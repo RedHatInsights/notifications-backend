@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static helpers.TestHelpers.DEFAULT_ORG_ID;
 
 public class OcmTestHelpers {
 
