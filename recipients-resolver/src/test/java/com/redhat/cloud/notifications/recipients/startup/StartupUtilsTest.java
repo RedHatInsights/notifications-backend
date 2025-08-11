@@ -27,6 +27,7 @@ public class StartupUtilsTest {
     void readKeystoreTest() {
         String resourceName = "testKeystore.p12";
         String testPassword = "change_it";
+        String testKeystoreType = "pkcs12";
 
         ClassLoader classLoader = getClass().getClassLoader();
         File file = new File(classLoader.getResource(resourceName).getFile());
@@ -34,6 +35,7 @@ public class StartupUtilsTest {
 
         when(recipientsResolverConfig.getQuarkusItServiceKeystore()).thenReturn(Optional.of(fileUri));
         when(recipientsResolverConfig.getQuarkusItServicePassword()).thenReturn(Optional.of(testPassword));
+        when(recipientsResolverConfig.getMappedQuarkusItServiceKeystoreType()).thenReturn(Optional.of(testKeystoreType));
         List<String> certificateData = startupUtils.checkCertificatesExpiration();
         assertEquals(1, certificateData.size());
         assertEquals("(@channel) Certificate 'testexpcertif' has expired since Mon Sep 02 10:12:19 UTC 2024", certificateData.get(0));

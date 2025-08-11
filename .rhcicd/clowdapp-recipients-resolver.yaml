@@ -112,6 +112,8 @@ objects:
           value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}
         - name: QUARKUS_REST_CLIENT_MBOP_KEY_STORE
           value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
+        - name: QUARKUS_REST_CLIENT_MBOP_KEY_STORE_TYPE
+          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE_TYPE}
         - name: QUARKUS_REST_CLIENT_MBOP_KEY_STORE_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -170,6 +172,8 @@ objects:
               key: relations-api.client.secret
         - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE
           value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
+        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_TYPE
+          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE_TYPE}
         - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -278,6 +282,9 @@ parameters:
   value: INFO
 - name: IT_SERVICE_TO_SERVICE_KEY_STORE
   description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/keystores/tls.p12"
+  value: ""
+- name: IT_SERVICE_TO_SERVICE_KEY_STORE_TYPE
+  description: "The type of the key store used for authenticating with IT. It should be set to P12."
   value: ""
 - name: MEMORY_LIMIT
   description: Memory limit
