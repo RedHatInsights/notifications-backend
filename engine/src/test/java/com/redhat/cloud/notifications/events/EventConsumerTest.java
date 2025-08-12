@@ -283,9 +283,9 @@ public class EventConsumerTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testDuplicatePayload(final boolean remoteCachingEnabled) {
-        if (remoteCachingEnabled) {
-            when(config.isRemoteCachingKafkaMessageDeduplicatorEnabled()).thenReturn(Boolean.TRUE);
+    void testDuplicatePayload(final boolean valkeyEnabled) {
+        if (valkeyEnabled) {
+            when(config.isValkeyKafkaMessageDeduplicatorEnabled()).thenReturn(Boolean.TRUE);
         }
 
         EventType eventType = mockGetEventTypeAndCreateEvent();
