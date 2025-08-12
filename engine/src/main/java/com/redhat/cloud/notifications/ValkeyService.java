@@ -8,19 +8,19 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.time.Duration;
 import java.util.UUID;
 
-/** Stores and retrieves data from remote cache (i.e. Redis or Valkey). */
+/** Stores and retrieves data from remote cache (i.e. Valkey). */
 @ApplicationScoped
-public class RemoteCachingService {
+public class ValkeyService {
 
     private static final String KAFKA_MESSAGE_KEY = "engine:kafka-message:";
     private static final String NOT_USED = "";
 
-    @ConfigProperty(name = "remote-caching-service.ttl", defaultValue = "PT24H")
+    @ConfigProperty(name = "valkey-service.ttl", defaultValue = "PT24H")
     Duration ttl;
 
     private final ValueCommands<String, String> kafkaMessageCommands;
 
-    public RemoteCachingService(RedisDataSource ds) {
+    public ValkeyService(RedisDataSource ds) {
         kafkaMessageCommands = ds.value(String.class);
     }
 

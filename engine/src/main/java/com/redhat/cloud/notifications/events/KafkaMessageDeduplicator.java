@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.RemoteCachingService;
+import com.redhat.cloud.notifications.ValkeyService;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.EventTypeKey;
 import io.micrometer.core.instrument.Counter;
@@ -29,7 +29,7 @@ public class KafkaMessageDeduplicator {
     EntityManager entityManager;
 
     @Inject
-    RemoteCachingService remoteCachingService;
+    ValkeyService valkeyService;
 
     @Inject
     MeterRegistry meterRegistry;
@@ -95,8 +95,8 @@ public class KafkaMessageDeduplicator {
              */
             return true;
         } else {
-            if (config.isRemoteCachingKafkaMessageDeduplicatorEnabled()) {
-                return remoteCachingService.isNewMessageId(messageId);
+            if (config.isValkeyKafkaMessageDeduplicatorEnabled()) {
+                return valkeyService.isNewMessageId(messageId);
             } else {
                 String sql = "INSERT INTO kafka_message(id) " +
                         "VALUES (:messageId) " +
