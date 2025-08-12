@@ -29,6 +29,8 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import java.util.UUID;
@@ -279,30 +281,20 @@ public class EventConsumerTest {
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
     }
 
-    @Test
-    void testDuplicatePayload() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testDuplicatePayload(final boolean valkeyEnabled) {
+        if (valkeyEnabled) {
+            when(config.isValkeyKafkaMessageDeduplicatorEnabled()).thenReturn(Boolean.TRUE);
+        }
+
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction(false);
         String payload = serializeAction(action);
         UUID messageId = UUID.randomUUID();
         Message<String> message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
-        inMemoryConnector.source(INGRESS_CHANNEL).send(message);
-        inMemoryConnector.source(INGRESS_CHANNEL).send(message);
 
-        micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 2);
-        assertEquals(2L, getTimerCount(action.getBundle(), action.getApplication(), action.getEventType()));
-        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 2);
-        micrometerAssertionHelper.assertCounterIncrement(DUPLICATE_COUNTER_NAME, 1);
-        assertNoCounterIncrement(
-                REJECTED_COUNTER_NAME,
-                PROCESSING_ERROR_COUNTER_NAME,
-                PROCESSING_EXCEPTION_COUNTER_NAME,
-                MESSAGE_ID_INVALID_COUNTER_NAME,
-                MESSAGE_ID_MISSING_COUNTER_NAME,
-                PROCESSING_BLACKLISTED_COUNTER_NAME
-        );
-        verifyExactlyOneProcessing(eventType, payload, action, false);
-        verify(kafkaMessageDeduplicator, times(2)).isNew(messageId);
+        internalTestDuplicatePayload(eventType, action, payload, messageId, message);
     }
 
     @Test
@@ -351,6 +343,26 @@ public class EventConsumerTest {
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
+    }
+
+    private void internalTestDuplicatePayload(EventType eventType, Action action, String payload, UUID messageId, Message<String> message) {
+        inMemoryConnector.source(INGRESS_CHANNEL).send(message);
+        inMemoryConnector.source(INGRESS_CHANNEL).send(message);
+
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 2);
+        assertEquals(2L, getTimerCount(action.getBundle(), action.getApplication(), action.getEventType()));
+        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 2);
+        micrometerAssertionHelper.assertCounterIncrement(DUPLICATE_COUNTER_NAME, 1);
+        assertNoCounterIncrement(
+                REJECTED_COUNTER_NAME,
+                PROCESSING_ERROR_COUNTER_NAME,
+                PROCESSING_EXCEPTION_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                PROCESSING_BLACKLISTED_COUNTER_NAME
+        );
+        verifyExactlyOneProcessing(eventType, payload, action, false);
+        verify(kafkaMessageDeduplicator, times(2)).isNew(messageId);
     }
 
     private EventType mockGetEventTypeAndCreateEvent() {
