@@ -118,6 +118,9 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store")
     Optional<URI> quarkusItServiceKeystore;
 
+    @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store")
+    Optional<String> quarkusItServiceKeystoreType;
+
     @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store-password")
     Optional<String> quarkusItServicePassword;
 
@@ -243,6 +246,15 @@ public class RecipientsResolverConfig {
 
     public Optional<URI> getQuarkusItServiceKeystore() {
         return quarkusItServiceKeystore;
+    }
+
+    /** Maps from Quarkus-recognized "P12" to {@link java.security.KeyStore} type of "pkcs12"; otherwise returns as-is. */
+    public Optional<String> getMappedQuarkusItServiceKeystoreType() {
+        if (quarkusItServiceKeystoreType.isPresent() && quarkusItServiceKeystoreType.get().equalsIgnoreCase("P12")) {
+            return Optional.of("pkcs12");
+        } else {
+            return quarkusItServiceKeystoreType;
+        }
     }
 
     public Optional<String> getQuarkusItServicePassword() {
