@@ -27,6 +27,7 @@ public class BaseTransformer {
     public static final String ORG_ID = "org_id";
     public static final String PAYLOAD = "payload";
     public static final String SOURCE = "source";
+    public static final String SEVERITY = "severity";
     public static final String TIMESTAMP = "timestamp";
     public static final String RECIPIENTS_AUTHORIZATION_CRITERION = "recipients_authorization_criterion";
 
@@ -61,6 +62,7 @@ public class BaseTransformer {
             );
             message.put(ORG_ID, action.getOrgId());
             message.put(TIMESTAMP, action.getTimestamp().toString());
+            message.put(SEVERITY, action.getSeverity());
 
             final JsonObject source = getEventSource(event);
 
