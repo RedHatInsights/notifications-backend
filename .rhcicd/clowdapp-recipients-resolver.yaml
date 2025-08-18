@@ -285,7 +285,7 @@ parameters:
   value: ""
 - name: IT_SERVICE_TO_SERVICE_KEY_STORE_TYPE
   description: "The type of the key store used for authenticating with IT. It should be set to P12."
-  value: ""
+  value: "JKS"
 - name: MEMORY_LIMIT
   description: Memory limit
   value: 500Mi

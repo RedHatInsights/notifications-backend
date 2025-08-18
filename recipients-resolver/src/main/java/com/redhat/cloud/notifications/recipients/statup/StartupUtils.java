@@ -82,7 +82,15 @@ public class StartupUtils {
         List<String> result = new ArrayList<>();
         String logMessage;
         if (keystoreFile.isEmpty() || keystorePassword.isEmpty() || mappedKeystoreType.isEmpty()) {
-            result.add("keystore file or password or type is empty");
+            if (keystoreFile.isEmpty()) {
+                result.add("keystore file is empty");
+            }
+            if (keystorePassword.isEmpty()) {
+                result.add("keystore password is empty");
+            }
+            if (mappedKeystoreType.isEmpty()) {
+                result.add("keystore type is empty");
+            }
             return result;
         }
         try {

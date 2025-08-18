@@ -118,7 +118,7 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store")
     Optional<URI> quarkusItServiceKeystore;
 
-    @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store")
+    @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store-type")
     Optional<String> quarkusItServiceKeystoreType;
 
     @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store-password")
