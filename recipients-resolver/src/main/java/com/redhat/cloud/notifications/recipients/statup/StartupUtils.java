@@ -77,16 +77,25 @@ public class StartupUtils {
 
     public List<String> checkCertificatesExpiration() {
         Optional<URI> keystoreFile = recipientsResolverConfig.getQuarkusItServiceKeystore();
+        Optional<String> mappedKeystoreType = recipientsResolverConfig.getMappedQuarkusItServiceKeystoreType();
         Optional<String> keystorePassword = recipientsResolverConfig.getQuarkusItServicePassword();
         List<String> result = new ArrayList<>();
         String logMessage;
-        if (keystoreFile.isEmpty() || keystorePassword.isEmpty()) {
-            result.add("keystore file or password is empty");
+        if (keystoreFile.isEmpty() || keystorePassword.isEmpty() || mappedKeystoreType.isEmpty()) {
+            if (keystoreFile.isEmpty()) {
+                result.add("keystore file is empty");
+            }
+            if (keystorePassword.isEmpty()) {
+                result.add("keystore password is empty");
+            }
+            if (mappedKeystoreType.isEmpty()) {
+                result.add("keystore type is empty");
+            }
             return result;
         }
         try {
             File f = new File(keystoreFile.get());
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance(mappedKeystoreType.get());
             try (FileInputStream keystoreFileInputStream = new FileInputStream(f)) {
 
                 ks.load(keystoreFileInputStream, keystorePassword.get().toCharArray());
