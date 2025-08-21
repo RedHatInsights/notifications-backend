@@ -38,11 +38,20 @@ objects:
             items:
               - key: keystore.jks
                 path: clientkeystore.jks
+              - key: keystore.p12
+                path: keystore.p12
             defaultMode: 420
             optional: true
         - name: it-services-cert
           secret:
             secretName: it-services-cert
+            items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+              - key: ca.crt
+                path: ca.crt
             optional: ${{IT_SERVICE_OPTIONAL}}
         # Due to read-only volume restrictions, this volume must be independent from mounted ConfigMaps and secrets.
         - name: p12-archive
