@@ -31,6 +31,7 @@ objects:
             cpu: ${CPU_LIMIT}
             memory: ${MEMORY_LIMIT}
         volumes:
+        # This volume is used for ephemeral testing. Do not remove.
         - name: keystore
           secret:
             secretName: it-services
@@ -43,6 +44,7 @@ objects:
           secret:
             secretName: it-services-cert
             optional: ${{IT_SERVICE_OPTIONAL}}
+        # Due to read-only volume restrictions, this volume must be independent from mounted ConfigMaps and secrets.
         - name: p12-archive
         - name: it-services-pkcs12-builder-volume
           configMap:
