@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static helpers.TestHelpers.DEFAULT_ORG_ID;
 
@@ -57,6 +58,7 @@ public class RbacTestHelpers {
 
     private static class TestRole {
         public String name;
+        public UUID uuid = UUID.randomUUID();
 
         TestRole(String name) {
             this.name = name;
