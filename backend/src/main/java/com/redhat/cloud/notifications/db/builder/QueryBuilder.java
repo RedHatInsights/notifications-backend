@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.builder;
 
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.Sort;
 import jakarta.persistence.TypedQuery;
 
 import java.util.Map;
@@ -53,10 +54,8 @@ public class QueryBuilder<T> {
         return this;
     }
 
-    public QueryBuilder<T> sort(Optional<Query.Sort> sort) {
-        if (sort.isPresent()) {
-            rawSort = " " + sort.get().getSortQuery();
-        }
+    public QueryBuilder<T> sort(Optional<Sort> sort) {
+        sort.ifPresent(value -> rawSort = " " + value.getSortQuery());
 
         return this;
     }
