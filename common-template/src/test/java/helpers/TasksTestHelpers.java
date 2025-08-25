@@ -8,7 +8,7 @@ import com.redhat.cloud.notifications.ingress.Payload;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static helpers.TestHelpers.DEFAULT_ORG_ID;
 
 public class TasksTestHelpers {
 

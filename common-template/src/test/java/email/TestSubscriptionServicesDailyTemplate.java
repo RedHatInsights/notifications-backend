@@ -12,10 +12,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static email.TestErrataTemplate.JSON_ERRATA_DEFAULT_AGGREGATION_CONTEXT;
 import static email.pojo.EmailPendo.GENERAL_PENDO_MESSAGE;
 import static email.pojo.EmailPendo.GENERAL_PENDO_TITLE;
+import static helpers.TestHelpers.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
