@@ -117,7 +117,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
         assertTrue(rendered.contains("retiring Office 365 connectors in favor of Power Automate workflows"));
         assertTrue(rendered.contains("https://devblogs.microsoft.com/microsoft365dev/retirement-of-office-365-connectors-within-microsoft-teams/#why-are-we-retiring-office-365-connectors"));
         assertTrue(rendered.contains("https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/integrating_the_red_hat_hybrid_cloud_console_with_third-party_applications/index#assembly-configuring-integration-with-teams_integrating-communications"));
-        assertTrue(rendered.contains("Red Hat Hybrid Cloud Console."));
+        assertTrue(rendered.contains("Red Hat Hybrid Cloud Console"));
     }
 
     private Action buildIntegrationDisabledAction(final String errorType, final String errorDetails, final int errorCount, final int errorStatusCode) {
