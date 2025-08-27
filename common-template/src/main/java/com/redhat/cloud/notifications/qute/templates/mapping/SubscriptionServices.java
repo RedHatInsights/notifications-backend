@@ -1,11 +1,13 @@
 package com.redhat.cloud.notifications.qute.templates.mapping;
 
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
+
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.DRAWER;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_BODY;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_DAILY_DIGEST_BODY;
+import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_TITLE;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.GOOGLE_CHAT;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.MS_TEAMS;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.SLACK;
@@ -17,9 +19,14 @@ public class SubscriptionServices {
     public static final String ERRATA_APP_NAME = "errata-notifications";
     static final String ERRATA_FOLDER_NAME = "Errata/";
 
+    public static final String SUBSCRIPTION_WATCH_APP_NAME = "subscription-watch";
+    static final String SUBSCRIPTION_WATCH_FOLDER_NAME = "SubscriptionWatch/";
+
     public static final String ERRATA_NEW_SUBSCRIPTION_BUGFIX_ERRATA = "new-subscription-bugfix-errata";
     public static final String ERRATA_NEW_SUBSCRIPTION_SECURITY_ERRATA = "new-subscription-security-errata";
     public static final String ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA = "new-subscription-enhancement-errata";
+
+    public static final String SUBSCRIPTION_WATCH_USAGE_THRESHOLD_EXCEEDED = "usage-threshold-exceeded";
 
     public static final Map<TemplateDefinition, String> templatesMap = Map.ofEntries(
 
@@ -41,6 +48,10 @@ public class SubscriptionServices {
         entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionEnhancementErrata.json"),
         entry(new TemplateDefinition(SLACK, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionEnhancementErrata.json"),
 
-        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, ERRATA_APP_NAME, null, true), ERRATA_FOLDER_NAME + "beta/dailyEmailBody.html")
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, ERRATA_APP_NAME, null, true), ERRATA_FOLDER_NAME + "beta/dailyEmailBody.html"),
+
+        // Subscription Watch
+        entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, SUBSCRIPTION_WATCH_APP_NAME, SUBSCRIPTION_WATCH_USAGE_THRESHOLD_EXCEEDED), SUBSCRIPTION_WATCH_FOLDER_NAME + "usageThresholdExceededEmailTitle.txt"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SUBSCRIPTION_WATCH_APP_NAME, SUBSCRIPTION_WATCH_USAGE_THRESHOLD_EXCEEDED), SUBSCRIPTION_WATCH_FOLDER_NAME + "usageThresholdExceededEmailBody.html")
     );
 }
