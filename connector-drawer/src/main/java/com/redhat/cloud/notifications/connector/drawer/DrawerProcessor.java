@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.connector.drawer;
 
+import com.redhat.cloud.notifications.connector.drawer.config.DrawerConnectorConfig;
 import com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntry;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntryPayload;
@@ -55,6 +56,9 @@ public class DrawerProcessor implements Processor {
     @Inject
     TemplateService templateService;
 
+    @Inject
+    DrawerConnectorConfig drawerConnectorConfig;
+
     @Override
     public void process(final Exchange exchange) {
         // fetch recipients
@@ -65,20 +69,25 @@ public class DrawerProcessor implements Processor {
         } else {
             // send to kafka chrome service
             final DrawerEntryPayload entryPayloadModel = exchange.getProperty(ExchangeProperty.DRAWER_ENTRY_PAYLOAD, DrawerEntryPayload.class);
-            final Map<String, Object> eventDataMap = exchange.getProperty(ExchangeProperty.EVENT_DATA, Map.class);
 
-            String templatedEvent = null;
-            if (eventDataMap != null) {
-                TemplateDefinition templateDefinition = new TemplateDefinition(
-                    IntegrationType.DRAWER,
-                    eventDataMap.get("bundle").toString(),
-                    eventDataMap.get("application").toString(),
-                    eventDataMap.get("event_type").toString());
-                templatedEvent = templateService.renderTemplate(templateDefinition, eventDataMap);
-            }
+            if (drawerConnectorConfig.useCommonTemplateModule()) {
+                final Map<String, Object> eventDataMap = exchange.getProperty(ExchangeProperty.EVENT_DATA, Map.class);
 
-            if (!entryPayloadModel.getDescription().equals(templatedEvent)) {
-                Log.errorf("Legacy and new rendered messages are different: '%s' vs. '%s'", entryPayloadModel.getDescription(), templatedEvent);
+                String templatedEvent = null;
+                if (eventDataMap != null) {
+                    TemplateDefinition templateDefinition = new TemplateDefinition(
+                        IntegrationType.DRAWER,
+                        eventDataMap.get("bundle").toString(),
+                        eventDataMap.get("application").toString(),
+                        eventDataMap.get("event_type").toString());
+                    templatedEvent = templateService.renderTemplate(templateDefinition, eventDataMap);
+                }
+
+                if (!entryPayloadModel.getDescription().equals(templatedEvent)) {
+                    Log.errorf("Legacy and new rendered messages are different: '%s' vs. '%s'", entryPayloadModel.getDescription(), templatedEvent);
+                } else {
+                    Log.debugf("Legacy and new rendered messages are identical");
+                }
             }
             emitter.send(buildMessage(entryPayloadModel, recipientsList));
         }
