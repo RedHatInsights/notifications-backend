@@ -38,7 +38,7 @@ public class RecipientsResolverResource {
         } catch (StatusRuntimeException e) {
             throw new WebApplicationException(String.format("Kessel error: %s", e.getMessage()));
         } catch (Exception e) {
-            throw new WebApplicationException(e.getMessage());
+            throw new WebApplicationException(e);
         }
     }
 }
