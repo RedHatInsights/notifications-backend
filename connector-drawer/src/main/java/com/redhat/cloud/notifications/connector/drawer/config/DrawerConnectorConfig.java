@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.drawer.config;
 
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.util.Map;
@@ -17,19 +18,24 @@ public class DrawerConnectorConfig extends HttpConnectorConfig {
     @ConfigProperty(name = DRAWER_TOPIC)
     String outgoingDrawerTopic;
 
+    private String toggleUseCommonTemplateModule;
+
+    @PostConstruct
+    void drawerConnectorPostConstruct() {
+        toggleUseCommonTemplateModule = toggleRegistry.register("use-common-template-module", true);
+    }
+
     @Override
     protected Map<String, Object> getLoggedConfiguration() {
         Map<String, Object> config = super.getLoggedConfiguration();
         config.put(DRAWER_TOPIC, outgoingDrawerTopic);
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
+        config.put(toggleUseCommonTemplateModule, useCommonTemplateModule());
         return config;
     }
 
-    public String getOutgoingDrawerTopic() {
-        return outgoingDrawerTopic;
+    public boolean useCommonTemplateModule() {
+        return unleash.isEnabled(toggleUseCommonTemplateModule, false);
     }
 
-    public String getRecipientsResolverServiceURL() {
-        return recipientsResolverServiceURL;
-    }
 }
