@@ -21,7 +21,7 @@ public class DrawerConnectorConfig extends HttpConnectorConfig {
     private String toggleUseCommonTemplateModule;
 
     @PostConstruct
-    void emailConnectorPostConstruct() {
+    void drawerConnectorPostConstruct() {
         toggleUseCommonTemplateModule = toggleRegistry.register("use-common-template-module", true);
     }
 
