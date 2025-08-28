@@ -361,4 +361,49 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         }
         return payload;
     }
+
+    protected static Map<String, Object> getDefaultEventDataMap() {
+        String content = "{" +
+            "   \"account_id\":null," +
+            "   \"application\":\"policies\"," +
+            "   \"bundle\":\"rhel\"," +
+            "   \"context\":{" +
+            "      \"inventory_id\":\"6ad30f3e-0497-4e74-99f1-b3f9a6120a6f\"," +
+            "      \"display_name\":\"my-computer\"," +
+            "      \"environment_url\":\"https://localhost\"" +
+            "   }," +
+            "   \"event_type\":\"policy-triggered\"," +
+            "   \"events\":[" +
+            "      {" +
+            "         \"payload\":{" +
+            "            \"foo\":\"bar\"" +
+            "         }," +
+            "         \"metadata\":{" +
+            "            " +
+            "         }" +
+            "      }" +
+            "   ]," +
+            "   \"org_id\":\"default-org-id\"," +
+            "   \"timestamp\":\"2025-08-28T12:20:17.725486852\"," +
+            "   \"source\":{" +
+            "      \"application\":{" +
+            "         \"display_name\":\"Policies\"" +
+            "      }," +
+            "      \"bundle\":{" +
+            "         \"display_name\":\"Red Hat Enterprise Linux\"" +
+            "      }," +
+            "      \"event_type\":{" +
+            "         \"display_name\":null" +
+            "      }" +
+            "   }," +
+            "   \"inventory_url\":\"https://localhost/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f?from=notifications&integration=teams\"," +
+            "   \"application_url\":\"https://localhost/insights/policies?from=notifications&integration=teams\"" +
+            "}";
+
+        try {
+            return (new JsonObject(content)).getMap();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

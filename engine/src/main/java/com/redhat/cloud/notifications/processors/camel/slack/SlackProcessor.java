@@ -26,7 +26,9 @@ public class SlackProcessor extends CamelProcessor {
 
     @Override
     protected CamelNotification getCamelNotification(Event event, Endpoint endpoint) {
-        String message = buildNotificationMessage(event);
+        Map<String, Object> eventDataAsMap = convertEventAsDataMap(event);
+        String message = buildNotificationMessage(event, eventDataAsMap);
+
         CamelProperties properties = endpoint.getProperties(CamelProperties.class);
 
         SlackNotification notification = new SlackNotification();
@@ -38,6 +40,7 @@ public class SlackProcessor extends CamelProcessor {
         }
 
         notification.message = message;
+        notification.eventData = eventDataAsMap;
         return notification;
     }
 }

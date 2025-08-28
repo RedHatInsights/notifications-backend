@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.processors.camel;
+package com.redhat.cloud.notifications.connector.http;
 
 import java.util.Map;
 

@@ -60,6 +60,7 @@ public class EngineConfig {
     private String toggleUseDirectEndpointToEventTypeEnabled;
     private String toggleUseCommonTemplateModuleToRenderEmailsEnabled;
     private String toggleUseBetaTemplatesEnabled;
+    private String toggleIsConnectorTemplateTransformationEnabled;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -163,6 +164,7 @@ public class EngineConfig {
         toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
         toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
         toggleBlacklistedEventTypes = toggleRegistry.register("blacklisted-event-types", true);
+        toggleIsConnectorTemplateTransformationEnabled = toggleRegistry.register("connectors-template-transformation", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -353,6 +355,14 @@ public class EngineConfig {
                 unleashContextBuilder.addProperty("eventTypeId", eventTypeId.toString());
             }
             return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContextBuilder.build(), false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isConnectorTemplateTransformationEnabled(final String orgId) {
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleIsConnectorTemplateTransformationEnabled, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
         } else {
             return false;
         }
