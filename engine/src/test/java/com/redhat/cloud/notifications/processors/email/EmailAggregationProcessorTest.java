@@ -210,7 +210,6 @@ class EmailAggregationProcessorTest {
     void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipientsWithTwoApps(final boolean useCommonTemplateModuleToRenderEmails) {
         when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
         try {
-            when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(true);
             initData("patch", "new-advisory");
 
             // Because this test will use a real Payload Aggregator
@@ -273,7 +272,6 @@ class EmailAggregationProcessorTest {
     void shouldSuccessfullySendOneAggEmailWithOneAppHandlingAggregationError(final boolean useCommonTemplateModuleToRenderEmails) {
         when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
         try {
-            when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(true);
             initData("patch", "new-advisory");
 
             // Because this test will use a real Payload Aggregator
@@ -322,7 +320,6 @@ class EmailAggregationProcessorTest {
     void shouldSuccessfullySendOneAggEmailWithOneAppHandlingTemplateError(final boolean useCommonTemplateModuleToRenderEmails) {
         when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
         try {
-            when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(true);
             when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
 
             when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY)))
@@ -401,7 +398,6 @@ class EmailAggregationProcessorTest {
     @ValueSource(booleans = {true, false})
     void shouldNotSendAggEmailBecauseNoAppSucceedToRender(final boolean useCommonTemplateModuleToRenderEmails) {
         when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
-        when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(true);
         when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
 
         // Because this test will use a real Payload Aggregator
@@ -423,7 +419,6 @@ class EmailAggregationProcessorTest {
     @ValueSource(booleans = {true, false})
     void shouldNotSendAggregatedEmailBecausePatchAggIsEmpty(final boolean useCommonTemplateModuleToRenderEmails) {
         when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
-        when(engineConfig.isAggregationBasedOnEventEnabled(anyString())).thenReturn(true);
 
         try {
             initData("patch", "new-advisory");
