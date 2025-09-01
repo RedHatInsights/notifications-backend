@@ -85,7 +85,7 @@
         <quarkus.platform.version>3.25.4</quarkus.platform.version>
         <redhat.event-schemas.version>1.4.12</redhat.event-schemas.version>
 
-        <sonar.maven.plugin.version>5.1.0.4751</sonar.maven.plugin.version>
+        <sonar.maven.plugin.version>5.2.0.4988</sonar.maven.plugin.version>
         <jacoco.output.directory>${project.build.directory}/jacoco-report</jacoco.output.directory>
         <!-- Point the Sonar Qube Plugin always to the same JaCoCo report to aggregate sub-modules reports-->
         <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
