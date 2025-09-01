@@ -77,10 +77,10 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper {
         assertFalse(result.contains("Check these resources for more information"));
         assertTrue(result.contains("What should you do to minimize impact"));
 
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template", "doc_references", List.of("https://docs.openshift.com/rosa/ocm/ocm-overview.html", "https://console.redhat.com/openshift"))));
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template", "doc_references", List.of("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview", "https://console.redhat.com/openshift"))));
         result = generateEmailBody(CLUSTER_UPDATE, action);
         assertTrue(result.contains("Check these resources for more information"));
-        assertTrue(result.contains("https://docs.openshift.com/rosa/ocm/ocm-overview.html"));
+        assertTrue(result.contains("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview"));
         assertTrue(result.contains("https://console.redhat.com/openshift"));
 
         action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template-rosa-hcp")));
@@ -110,10 +110,10 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper {
         result = generateEmailBody(CLUSTER_UPDATE, action);
         assertFalse(result.contains("Check these resources for more information"));
 
-        action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> is ready to go", "Awesome subject", null, Optional.of(Map.of("template_sub_type", "osd-trial-deletion-template", "doc_references", List.of("https://docs.openshift.com/rosa/ocm/ocm-overview.html", "https://console.redhat.com/openshift"))));
+        action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> is ready to go", "Awesome subject", null, Optional.of(Map.of("template_sub_type", "osd-trial-deletion-template", "doc_references", List.of("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview", "https://console.redhat.com/openshift"))));
         result = generateEmailBody(CLUSTER_UPDATE, action);
         assertTrue(result.contains("Check these resources for more information"));
-        assertTrue(result.contains("https://docs.openshift.com/rosa/ocm/ocm-overview.html"));
+        assertTrue(result.contains("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview"));
         assertTrue(result.contains("https://console.redhat.com/openshift"));
     }
 
@@ -224,10 +224,10 @@ public class TestOcmTemplate extends EmailTemplatesInDbHelper {
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertFalse(result.contains("Check these resources for more information"));
 
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Trial delete", Optional.of(Map.of("template_sub_type", "osd-trial-deletion-template", "doc_references", List.of("https://docs.openshift.com/rosa/ocm/ocm-overview.html", "https://console.redhat.com/openshift"))));
+        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Trial delete", Optional.of(Map.of("template_sub_type", "osd-trial-deletion-template", "doc_references", List.of("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview", "https://console.redhat.com/openshift"))));
         result = generateEmailBody(CLUSTER_LIFECYCLE, action);
         assertTrue(result.contains("Check these resources for more information"));
-        assertTrue(result.contains("https://docs.openshift.com/rosa/ocm/ocm-overview.html"));
+        assertTrue(result.contains("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview"));
         assertTrue(result.contains("https://console.redhat.com/openshift"));
     }
 
