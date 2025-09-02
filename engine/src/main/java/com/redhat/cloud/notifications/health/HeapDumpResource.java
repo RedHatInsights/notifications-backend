@@ -14,9 +14,10 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 
-@Path("/heap_dump")
+@Path(API_INTERNAL + "/heap_dump")
 public class HeapDumpResource {
 
     @ConfigProperty(name = "quarkus.log.cloudwatch.log-stream-name", defaultValue = "localhost")
