@@ -91,7 +91,7 @@ class EventingTypeProcessorTest {
      * Camel endpoint fixtures for the {@link #buildCamelEndpoint(String)} function.
      */
     private static final String FIXTURE_CAMEL_URL = "https://redhat.com";
-    private static final Boolean FIXTURE_CAMEL_SSL_VERIFICATION = true;
+    private static final Boolean FIXTURE_CAMEL_SSL_VERIFICATION = false;
 
     @Inject
     @Any
