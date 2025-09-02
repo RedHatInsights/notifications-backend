@@ -206,7 +206,7 @@ public class EndpointRepositoryTest {
         final WebhookProperties webhookProperties = new WebhookProperties();
 
         webhookProperties.setId(UUID.randomUUID());
-        webhookProperties.setDisableSslVerification(true);
+        webhookProperties.setDisableSslVerification(false);
         webhookProperties.setMethod(HttpType.PUT);
         webhookProperties.setSecretTokenSourcesId(213L);
         webhookProperties.setUrl("https://example.org");
