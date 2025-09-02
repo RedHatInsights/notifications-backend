@@ -39,7 +39,7 @@ public class TestSubscriptionWatchTemplate extends EmailTemplatesRendererHelper 
     public void testUsageThresholdExceededEmailTitle() {
         eventTypeDisplayName = "Usage Threshold Exceeded";
         String result = generateEmailSubject(USAGE_THRESHOLD_EXCEEDED, ACTION);
-        assertEquals("RHEL Usage Alert - Org: 123456789", result);
+        assertEquals("Instant notification - Exceeded Utilization Threshold - Subscription Watch - Subscription Services", result);
     }
 
     @Test

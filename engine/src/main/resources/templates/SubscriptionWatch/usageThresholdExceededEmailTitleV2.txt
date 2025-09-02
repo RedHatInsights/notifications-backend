@@ -1,1 +1,1 @@
-RHEL Usage Alert - Org: {action.context.org_id}
+Instant notification - Exceeded Utilization Threshold - Subscription Watch - Subscription Services

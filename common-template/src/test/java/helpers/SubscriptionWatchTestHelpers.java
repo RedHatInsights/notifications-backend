@@ -21,20 +21,12 @@ public class SubscriptionWatchTestHelpers {
         emailActionMessage.setEventType("usage-threshold-exceeded");
         emailActionMessage.setRecipients(List.of());
 
-        emailActionMessage.setContext(
-                new Context.ContextBuilder()
-                        .withAdditionalProperty("org_id", "123456789")
-                        .withAdditionalProperty("product_tag", "RHEL for x86")
-                        .withAdditionalProperty("threshold_percentage", "85")
-                        .build()
-        );
 
         emailActionMessage.setEvents(List.of(
                 new Event.EventBuilder()
                         .withMetadata(new Metadata.MetadataBuilder().build())
                         .withPayload(
                                 new Payload.PayloadBuilder()
-                                        .withAdditionalProperty("org_id", "123456789")
                                         .withAdditionalProperty("product_tag", "RHEL for x86")
                                         .withAdditionalProperty("threshold_percentage", "85")
                                         .build()
