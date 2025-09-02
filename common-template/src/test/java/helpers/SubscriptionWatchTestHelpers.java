@@ -1,7 +1,6 @@
 package helpers;
 
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
@@ -20,7 +19,6 @@ public class SubscriptionWatchTestHelpers {
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         emailActionMessage.setEventType("usage-threshold-exceeded");
         emailActionMessage.setRecipients(List.of());
-
 
         emailActionMessage.setEvents(List.of(
                 new Event.EventBuilder()
