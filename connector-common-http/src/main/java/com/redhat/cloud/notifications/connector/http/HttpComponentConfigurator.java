@@ -6,6 +6,7 @@ import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 import org.apache.camel.CamelContext;
 import org.apache.camel.component.http.HttpComponent;
+import org.apache.hc.core5.util.Timeout;
 
 @Dependent
 public class HttpComponentConfigurator implements CamelComponentConfigurator {
@@ -17,10 +18,10 @@ public class HttpComponentConfigurator implements CamelComponentConfigurator {
     public void configure(CamelContext context) {
         for (String httpComponent : connectorConfig.getHttpComponents()) {
             HttpComponent component = context.getComponent(httpComponent, HttpComponent.class);
-            component.setConnectTimeout(connectorConfig.getHttpConnectTimeout());
+            component.setConnectTimeout(Timeout.ofMilliseconds(connectorConfig.getHttpConnectTimeout()));
             component.setConnectionsPerRoute(connectorConfig.getHttpConnectionsPerRoute());
             component.setMaxTotalConnections(connectorConfig.getHttpMaxTotalConnections());
-            component.setSoTimeout(connectorConfig.getHttpSocketTimeout());
+            component.setSoTimeout(Timeout.ofMilliseconds(connectorConfig.getHttpSocketTimeout()));
             Log.debugf("Configured %s component", httpComponent);
         }
     }
