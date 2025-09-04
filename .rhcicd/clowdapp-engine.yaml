@@ -201,12 +201,17 @@ objects:
         maxReplicaCount: 6
         externalHPA: true
         triggers:
-          - metadata:
-              serverAddress: http://prometheus-app-sre.openshift-customer-monitoring.svc.cluster.local:9090
-              query: sum by(topic) (aws_kafka_sum_offset_lag_sum{topic=~".*platform.notifications.ingress"})
-              threshold: "25"
-            type: prometheus
+          - type: prometheus
             metricType: Value
+            metadata:
+              serverAddress: https://prometheus.external-resources.${ENV_NAME}.devshift.net/
+              metricName: aws_kafka_sum_offset_lag_sum
+              threshold: "25"
+              query: sum by(topic) (aws_kafka_sum_offset_lag_sum{topic=~".*platform.notifications.ingress"})
+              authModes: bearer
+            authenticationRef:
+              name: cma-prometheus-trigger-auth
+              kind: TriggerAuthentication
         advanced:
           horizontalPodAutoscalerConfig:
             behavior:
@@ -221,6 +226,15 @@ objects:
                   - type: Pods
                     value: 2
                     periodSeconds: 30
+- apiVersion: keda.sh/v1alpha1
+  kind: TriggerAuthentication
+  metadata:
+    name: cma-prometheus-trigger-auth
+  spec:
+    secretTargetRef:
+    - parameter: bearerToken
+      name: ${CMA_TOKEN_CLUSTER}-app-sre-observability-per-cluster-integrations-cma
+      key: token
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -262,6 +276,8 @@ parameters:
   value: 250Mi
 - name: MIN_REPLICAS
   value: "3"
+- name: CMA_TOKEN_CLUSTER
+  value: ""
 - name: MP_MESSAGING_INCOMING_FROMCAMEL_ENABLED
   value: "true"
 - name: MP_MESSAGING_INCOMING_INGRESS_ENABLED
