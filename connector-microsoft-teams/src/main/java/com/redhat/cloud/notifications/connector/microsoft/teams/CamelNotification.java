@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.http;
+package com.redhat.cloud.notifications.connector.microsoft.teams;
 
 import java.util.Map;
 
