@@ -83,7 +83,7 @@ public class SlackConnectorRoutesTest extends ConnectorRoutesTest {
     }
 
     @Test
-    protected void testSuccessfulNotificationWithChannel() throws Exception {
+    protected void testSuccessfulNotificationWithoutChannel() throws Exception {
         try {
             testWithoutChannel = true;
             testSuccessfulNotification();

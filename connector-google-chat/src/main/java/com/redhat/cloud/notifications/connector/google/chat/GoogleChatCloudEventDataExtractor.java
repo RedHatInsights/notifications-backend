@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.connector.google.chat;
 
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
-import com.redhat.cloud.notifications.connector.http.CamelNotification;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
