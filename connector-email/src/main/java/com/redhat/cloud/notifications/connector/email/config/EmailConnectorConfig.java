@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.connector.email.config;
 
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
-import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.quarkus.runtime.LaunchMode;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -184,11 +183,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     }
 
     public boolean useSimplifiedEmailRoute(String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(toggleUseSimplifiedEmailRoute, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return false;
-        }
+        return true;
     }
 
     /**
