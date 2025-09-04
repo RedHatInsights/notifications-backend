@@ -83,8 +83,14 @@ public class DailyEmailAggregationJob {
             Log.infof("found %s commands", aggregationCommands.size());
             Log.debugf("Aggregation commands: %s", aggregationCommands);
 
-            aggregationCommands.stream().collect(Collectors.groupingBy(AggregationCommand::getOrgId))
-                .values().forEach(this::sendIt);
+            aggregationCommands.stream()
+                .collect(Collectors.groupingBy(
+                    AggregationCommand::getOrgId,
+                    Collectors.groupingBy(AggregationCommand::getBundleId)
+                )) // Map<OrgId, Map<BundleId, List<AggregationCommand>>>
+                .values().stream() // Map<BundleId, List<AggregationCommand>>
+                .flatMap(map -> map.values().stream()) // One List<AggregationCommand> for each OrgId/BundleId couple
+                .forEach(this::sendIt);
 
             List<String> orgIdsToUpdate = aggregationCommands.stream().map(aggregationCommand -> aggregationCommand.getOrgId()).collect(Collectors.toList());
             Log.debugf("Found following org IDs to update: %s", orgIdsToUpdate);
@@ -151,7 +157,6 @@ public class DailyEmailAggregationJob {
     }
 
     private void sendIt(List<AggregationCommand> aggregationCommands) {
-
         List<Event> eventList = new ArrayList<>();
         aggregationCommands.stream().forEach(aggregationCommand -> {
             Payload.PayloadBuilder payloadBuilder = new Payload.PayloadBuilder();
