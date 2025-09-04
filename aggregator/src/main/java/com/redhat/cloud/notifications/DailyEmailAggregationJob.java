@@ -84,12 +84,13 @@ public class DailyEmailAggregationJob {
             Log.debugf("Aggregation commands: %s", aggregationCommands);
 
             aggregationCommands.stream()
-                .collect(Collectors.groupingBy(AggregationCommand::getOrgId))
-                .values()
-                .forEach(val -> val.stream()
-                    .collect(Collectors.groupingBy(AggregationCommand::getBundleId))
-                    .values()
-                    .forEach(this::sendIt));
+                .collect(Collectors.groupingBy(
+                    AggregationCommand::getOrgId,
+                    Collectors.groupingBy(AggregationCommand::getBundleId)
+                )) // Map<OrgId, Map<BundleId, List<AggregationCommand>>>
+                .values().stream() // Map<BundleId, List<AggregationCommand>>
+                .flatMap(map -> map.values().stream()) // One List<AggregationCommand> for each OrgId/BundleId couple
+                .forEach(this::sendIt);
 
             List<String> orgIdsToUpdate = aggregationCommands.stream().map(aggregationCommand -> aggregationCommand.getOrgId()).collect(Collectors.toList());
             Log.debugf("Found following org IDs to update: %s", orgIdsToUpdate);
