@@ -186,12 +186,13 @@ public class ConnectorSender {
     }
 
     private void recordMetrics(Event event, String connector, int payloadSize) {
-        DistributionSummary ds = DistributionSummary.builder("notifications.tocamel.payload.content.size")
+        Log.debugf("Recording payload size metric: %d bytes for connector: %s", payloadSize, connector);
+        DistributionSummary.builder("notifications.tocamel.payload.content.size")
             .baseUnit("bytes")
             .tags(TAG_KEY_CONNECTOR, connector)
             .tags(TAG_KEY_APPLICATION, event.getApplicationDisplayName())
-            .tags(TAG_KEY_EVENT_TYPE, event.getEventType().getName())
-            .register(registry);
-        ds.record(payloadSize);
+            .tags(TAG_KEY_EVENT_TYPE, event.getEventTypeDisplayName())
+            .register(registry)
+            .record(payloadSize);
     }
 }
