@@ -286,7 +286,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
             Map<String, DailyDigestSection> dataMap  = new HashMap<>();
             for (ApplicationAggregatedData applicationAggregatedData : listApplicationWithUserCollection.getKey()) {
                 try {
-                    dataMap.put(applicationAggregatedData.appName, generateAggregatedEmailBody(bundleName, applicationAggregatedData.appName, applicationAggregatedData.aggregatedData));
+                    dataMap.put(applicationAggregatedData.appName, generateAggregatedEmailBody(bundleName, applicationAggregatedData.appName, applicationAggregatedData.aggregatedData, aggregatorEvent.getOrgId()));
                 } catch (Exception ex) {
                     Log.error("Error rendering application template for " + applicationAggregatedData.appName, ex);
                 }
@@ -372,7 +372,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         return additionalContext;
     }
 
-    protected DailyDigestSection generateAggregatedEmailBody(String bundle, String app, Map<String, Object> context) {
+    protected DailyDigestSection generateAggregatedEmailBody(String bundle, String app, Map<String, Object> context, String orgId) {
         context.put("application", app);
 
         Map<String, Object> action =  Map.of("context", context, "bundle", bundle);
@@ -381,7 +381,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
         if (engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()) {
             try {
-                TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, bundle, app, null);
+                TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, bundle, app, null, engineConfig.isUseBetaTemplatesEnabled(orgId, null));
                 Map<String, Object> additionalContext = buildFullTemplateContext(action);
 
                 result = commonQuteTemplateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
