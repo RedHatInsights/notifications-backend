@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
+import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
 import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
