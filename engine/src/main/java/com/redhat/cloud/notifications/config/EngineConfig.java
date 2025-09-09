@@ -347,11 +347,12 @@ public class EngineConfig {
 
     public boolean isUseBetaTemplatesEnabled(final String orgId, final UUID eventTypeId) {
         if (unleashEnabled) {
-            UnleashContext unleashContext = UnleashContext.builder()
-                .addProperty("orgId", orgId)
-                .addProperty("eventTypeId", eventTypeId.toString())
-                .build();
-            return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContext, false);
+            UnleashContext.Builder unleashContextBuilder = UnleashContext.builder()
+                .addProperty("orgId", orgId);
+            if (eventTypeId != null) {
+                unleashContextBuilder.addProperty("eventTypeId", eventTypeId.toString());
+            }
+            return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContextBuilder.build(), false);
         } else {
             return false;
         }
