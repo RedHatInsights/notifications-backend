@@ -20,6 +20,7 @@ objects:
     - export-service
     database:
       sharedDbAppName: notifications-backend
+    inMemoryDb: ${{IN_MEMORY_DB_ENABLED}}
     featureFlags: true
     kafkaTopics:
     - topicName: platform.notifications.connector.email.high.volume
@@ -257,6 +258,9 @@ parameters:
 - name: IMAGE
   description: Image URL
   value: quay.io/cloudservices/notifications-engine
+- name: IN_MEMORY_DB_ENABLED
+  description: If inMemoryDb is set to true, Clowder will pass configuration of an In Memory Database to the pods in the ClowdApp. This single instance will be shared between all apps.
+  value: "false"
 - name: IMAGE_TAG
   value: latest
 - name: KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED
