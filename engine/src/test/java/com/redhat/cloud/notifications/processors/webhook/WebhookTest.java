@@ -106,6 +106,7 @@ public class WebhookTest {
         eventType.setName("policy-triggered");
         event.setEventType(eventType);
         event.setOrgId(DEFAULT_ORG_ID);
+        event.setEventTypeDisplayName("Policy triggered");
         Endpoint ep = buildWebhookEndpoint("https://my.webhook.connector.com");
 
         webhookTypeProcessor.process(event, List.of(ep));

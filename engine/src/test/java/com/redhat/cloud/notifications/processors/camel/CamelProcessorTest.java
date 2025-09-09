@@ -170,6 +170,7 @@ public abstract class CamelProcessorTest {
         eventType.setApplication(application);
         eventType.setName("policy-triggered");
         event.setEventType(eventType);
+        event.setEventTypeDisplayName("Policy triggered");
 
         return event;
     }
