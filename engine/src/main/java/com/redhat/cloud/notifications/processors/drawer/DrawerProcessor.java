@@ -19,7 +19,9 @@ import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
+import com.redhat.cloud.notifications.transformers.SeverityTransformer;
 import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -33,12 +35,16 @@ import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
 import static com.redhat.cloud.notifications.transformers.BaseTransformer.APPLICATION;
 import static com.redhat.cloud.notifications.transformers.BaseTransformer.BUNDLE;
 import static com.redhat.cloud.notifications.transformers.BaseTransformer.EVENT_TYPE;
+import static com.redhat.cloud.notifications.transformers.BaseTransformer.SEVERITY;
 
 @ApplicationScoped
 public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     BaseTransformer baseTransformer;
+
+    @Inject
+    SeverityTransformer severityTransformer;
 
     @Inject
     ObjectMapper objectMapper;
@@ -84,6 +90,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
         // build event thought qute template
         JsonObject data = baseTransformer.toJsonObject(event);
+        data.put(SEVERITY, Json.encode(severityTransformer.getSeverity(data)));
 
         Map<String, Object> dataAsMap;
         try {

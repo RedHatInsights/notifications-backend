@@ -8,9 +8,11 @@ import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
+import com.redhat.cloud.notifications.transformers.SeverityTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -22,6 +24,7 @@ import java.util.Optional;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.processors.AuthenticationType.BEARER;
 import static com.redhat.cloud.notifications.processors.AuthenticationType.SECRET_TOKEN;
+import static com.redhat.cloud.notifications.transformers.BaseTransformer.SEVERITY;
 
 @ApplicationScoped
 public class WebhookTypeProcessor extends EndpointTypeProcessor {
@@ -30,6 +33,9 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
     @Inject
     BaseTransformer transformer;
+
+    @Inject
+    SeverityTransformer severityTransformer;
 
     @Inject
     EngineConfig engineConfig;
@@ -70,6 +76,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
         WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
 
         final JsonObject payload = transformer.toJsonObject(event);
+        payload.put(SEVERITY, Json.encode(severityTransformer.getSeverity(payload)));
 
         final JsonObject connectorData = new JsonObject();
 

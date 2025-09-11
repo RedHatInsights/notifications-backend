@@ -59,11 +59,11 @@ public class SeverityTransformer {
                     ((JsonObject) event).getJsonObject(PAYLOAD).getString(SEVERITY).toUpperCase()
             )).toList());
             case "cluster-manager" -> new ArrayList<>(events.stream().map(event -> OcmServiceLogSeverity.valueOf(
-                    ((JsonObject) event).getJsonObject("global_vars").getString(SEVERITY).toUpperCase())
+                    ((JsonObject) event).getJsonObject(PAYLOAD).getJsonObject("global_vars").getString(SEVERITY).toUpperCase())
                     .mapToSeverity()
             ).toList());
             case "inventory" -> new ArrayList<>(events.stream().map(event -> {
-                JsonObject error = ((JsonObject) event).getJsonObject("error");
+                JsonObject error = ((JsonObject) event).getJsonObject(PAYLOAD).getJsonObject("error");
                 // Inventory payloads only send a severity of "error", if present
                 if (error != null && error.containsKey("severity") && error.getString("severity").equalsIgnoreCase("ERROR")) {
                     return Severity.IMPORTANT;

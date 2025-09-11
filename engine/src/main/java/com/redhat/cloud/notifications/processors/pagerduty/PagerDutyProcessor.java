@@ -22,6 +22,7 @@ import java.util.List;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.processors.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.transformers.BaseTransformer.PAYLOAD;
+import static com.redhat.cloud.notifications.transformers.BaseTransformer.SEVERITY;
 
 @ApplicationScoped
 public class PagerDutyProcessor extends EndpointTypeProcessor {
@@ -75,7 +76,8 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
         JsonObject transformedEvent = transformer.toJsonObject(event);
         insightsUrlsBuilder.buildInventoryUrl(transformedEvent, endpoint.getType().name()).ifPresent(url -> transformedEvent.put("inventory_url", url));
         transformedEvent.put("application_url", insightsUrlsBuilder.buildApplicationUrl(transformedEvent, endpoint.getType().name()));
-        transformedEvent.put("severity", properties.getSeverity());
+        // TODO replace this with tenant-provided severity levels (see RHCLOUD-41561)
+        transformedEvent.put(SEVERITY, properties.getSeverity());
 
         connectorData.put(PAYLOAD, transformedEvent);
 
