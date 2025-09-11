@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.transformers;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.redhat.cloud.notifications.transformers.BaseTransformer.SEVERITY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -41,6 +43,7 @@ class BaseTransformerTest {
     private static final String FIXTURE_ORG_ID = "org-id-test";
     private static final String FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY = "event-payload-additional-property";
     private static final String FIXTURE_PAYLOAD_ADDITIONAL_PROPERTY_VALUE = "event-payload-additional-property-value";
+    private static final String FIXTURE_SEVERITY = Severity.LOW.name();
     private static final LocalDateTime FIXTURE_TIMESTAMP = LocalDateTime.of(2022, 1, 1, 0, 0, 0);
 
     /**
@@ -83,6 +86,7 @@ class BaseTransformerTest {
         action.setEventType(FIXTURE_EVENT_TYPE);
         action.setEvents(FIXTURE_EVENTS);
         action.setOrgId(FIXTURE_ORG_ID);
+        action.setSeverity(FIXTURE_SEVERITY);
         action.setTimestamp(FIXTURE_TIMESTAMP);
 
         // Create an event for the "toJsonObject" function.
@@ -102,6 +106,7 @@ class BaseTransformerTest {
         assertEquals(action.getBundle(), result.getString(BaseTransformer.BUNDLE), "the bundle isn't the same");
         assertEquals(action.getEventType(), result.getString(BaseTransformer.EVENT_TYPE), "the event type isn't the same");
         assertEquals(action.getOrgId(), result.getString(BaseTransformer.ORG_ID), "the org id isn't the same");
+        assertEquals(action.getSeverity(), result.getString(SEVERITY), "the severity isn't the same");
         assertEquals(action.getTimestamp(), LocalDateTime.parse(result.getString(BaseTransformer.TIMESTAMP)), "the timestamp isn't the same");
 
         // Assert the display names in the "source" key.

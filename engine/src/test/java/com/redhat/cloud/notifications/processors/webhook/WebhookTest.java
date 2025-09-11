@@ -20,6 +20,7 @@ import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
+import com.redhat.cloud.notifications.transformers.SeverityTransformer;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -42,6 +43,7 @@ import java.util.List;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.webhooks.WebhookTypeProcessor.PROCESSED_WEBHOOK_COUNTER;
+import static com.redhat.cloud.notifications.transformers.BaseTransformer.SEVERITY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.times;
@@ -72,6 +74,9 @@ public class WebhookTest {
 
     @Inject
     BaseTransformer transformer;
+
+    @Inject
+    SeverityTransformer severityTransformer;
 
     @PostConstruct
     void postConstruct() {
@@ -125,6 +130,7 @@ public class WebhookTest {
         assertEquals(testUrl, payload.getJsonObject("endpoint_properties").getString("url"));
 
         final JsonObject payloadToSent = transformer.toJsonObject(event);
+        payloadToSent.mergeIn(JsonObject.of(SEVERITY, severityTransformer.getSeverity(payloadToSent)));
         assertEquals(payloadToSent, payload.getJsonObject("payload"));
 
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_WEBHOOK_COUNTER, 1);
@@ -149,6 +155,7 @@ public class WebhookTest {
         webhookActionMessage.setEventType("testWebhook");
         webhookActionMessage.setAccountId("tenant");
         webhookActionMessage.setOrgId(DEFAULT_ORG_ID);
+        webhookActionMessage.setSeverity("Important"); // Should capitalize as needed
 
         Payload payload1 = new Payload.PayloadBuilder()
                 .withAdditionalProperty("any", "thing")

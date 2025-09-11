@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.transformers;
 
 import com.redhat.cloud.notifications.Severity;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -28,18 +27,18 @@ public class SeverityTransformer {
      * </ol>
      *
      * @param data the transformed payload
-     * @return the determined severity level
+     * @return the determined severity level as a String
      */
-    public Severity getSeverity(JsonObject data) {
+    public String getSeverity(JsonObject data) {
         String severityField = data.getString(SEVERITY);
         if (severityField != null && !severityField.isEmpty()) {
             try {
-                return Severity.valueOf(severityField.toUpperCase());
+                return Severity.valueOf(severityField.toUpperCase()).name();
             } catch (IllegalArgumentException e) {
-                return Severity.UNDEFINED;
+                return Severity.UNDEFINED.name();
             }
         } else {
-            return extractLegacySeverity(data);
+            return extractLegacySeverity(data).name();
         }
     }
 

@@ -12,7 +12,6 @@ import com.redhat.cloud.notifications.transformers.SeverityTransformer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -76,7 +75,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
         WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
 
         final JsonObject payload = transformer.toJsonObject(event);
-        payload.put(SEVERITY, Json.encode(severityTransformer.getSeverity(payload)));
+        payload.mergeIn(JsonObject.of(SEVERITY, severityTransformer.getSeverity(payload)));
 
         final JsonObject connectorData = new JsonObject();
 

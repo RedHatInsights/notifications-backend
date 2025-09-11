@@ -13,7 +13,6 @@ import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import com.redhat.cloud.notifications.transformers.SeverityTransformer;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -93,7 +92,7 @@ public class EventingProcessor extends EndpointTypeProcessor {
         }
 
         final JsonObject payload = baseTransformer.toJsonObject(event);
-        payload.put(SEVERITY, Json.encode(severityTransformer.getSeverity(payload)));
+        payload.mergeIn(JsonObject.of(SEVERITY, severityTransformer.getSeverity(payload)));
         insightsUrlsBuilder.buildInventoryUrl(payload, endpoint.getSubType()).ifPresent(url -> payload.put("inventory_url", url));
         payload.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payload, endpoint.getSubType()));
         if (endpoint.getSubType().equals("splunk")) {

@@ -16,7 +16,6 @@ import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import com.redhat.cloud.notifications.transformers.SeverityTransformer;
 import io.quarkus.logging.Log;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 
@@ -93,7 +92,7 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
 
     protected Map<String, Object> convertEventAsDataMap(Event event) {
         JsonObject data = baseTransformer.toJsonObject(event);
-        data.put(SEVERITY, Json.encode(severityTransformer.getSeverity(data)));
+        data.mergeIn(JsonObject.of(SEVERITY, severityTransformer.getSeverity(data)));
         insightsUrlsBuilder.buildInventoryUrl(data, getIntegrationType()).ifPresent(url -> data.put("inventory_url", url));
         data.put("application_url", insightsUrlsBuilder.buildApplicationUrl(data, getIntegrationType()));
 

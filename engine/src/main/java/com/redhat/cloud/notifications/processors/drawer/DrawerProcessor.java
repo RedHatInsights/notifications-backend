@@ -21,7 +21,6 @@ import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import com.redhat.cloud.notifications.transformers.SeverityTransformer;
 import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -90,7 +89,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
         // build event thought qute template
         JsonObject data = baseTransformer.toJsonObject(event);
-        data.put(SEVERITY, Json.encode(severityTransformer.getSeverity(data)));
+        data.mergeIn(JsonObject.of(SEVERITY, severityTransformer.getSeverity(data)));
 
         Map<String, Object> dataAsMap;
         try {
