@@ -1,29 +1,25 @@
 package com.redhat.cloud.notifications.connector.email;
 
-import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
     @Override
     public Map<String, String> start() {
-        System.out.println("++++ TestLifecycleManager starting +++");
-        MockServerLifecycleManager.start();
+        System.out.println("++++ Email TestLifecycleManager starting +++");
         Map<String, String> properties = new HashMap<>();
-        properties.put("notifications.connector.recipients-resolver.url", getMockServerUrl());
-        properties.put("quarkus.rest-client.recipients-resolver.url", getMockServerUrl());
-        properties.put("notifications.connector.user-provider.bop.url", getMockServerUrl());
-        properties.put("quarkus.rest-client.bop.url", getMockServerUrl());
+        // Set dummy URLs for BOP and recipients resolver since we're using mocks
+        properties.put("notifications.connector.recipients-resolver.url", "http://localhost:8080");
+        properties.put("quarkus.rest-client.recipients-resolver.url", "http://localhost:8080");
+        properties.put("notifications.connector.user-provider.bop.url", "http://localhost:8080");
+        properties.put("quarkus.rest-client.bop.url", "http://localhost:8080");
         return properties;
     }
 
     @Override
     public void stop() {
-        MockServerLifecycleManager.stop();
-        System.out.println("++++ TestLifecycleManager stopped +++");
+        System.out.println("++++ Email TestLifecycleManager stopped +++");
     }
 }

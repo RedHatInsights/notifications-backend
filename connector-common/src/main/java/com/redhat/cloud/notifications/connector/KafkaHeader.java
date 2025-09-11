@@ -7,3 +7,4 @@ public class KafkaHeader {
      */
     public static final String REINJECTION_COUNT = "x-rh-notifications-connector-reinjections-count";
 }
+

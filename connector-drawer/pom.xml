@@ -93,12 +93,6 @@
         <!-- Scope: test -->
         <!-- Some test dependencies are declared in the "profiles" section of this POM. -->
 
-        <!-- Camel -->
-        <dependency>
-            <groupId>org.apache.camel.quarkus</groupId>
-            <artifactId>camel-quarkus-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
 
         <!-- MockServer -->
         <dependency>

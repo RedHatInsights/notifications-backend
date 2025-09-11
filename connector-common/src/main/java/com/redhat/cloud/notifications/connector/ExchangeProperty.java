@@ -26,3 +26,4 @@ public class ExchangeProperty {
     public static final String TARGET_URL = "targetUrl";
     public static final String TYPE = "type";
 }
+

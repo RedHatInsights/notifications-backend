@@ -76,12 +76,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Camel -->
-        <dependency>
-            <groupId>org.apache.camel.quarkus</groupId>
-            <artifactId>camel-quarkus-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
 
         <!-- MockServer -->
         <dependency>
