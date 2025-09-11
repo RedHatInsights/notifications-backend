@@ -10,8 +10,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class AuthenticationProcessor {
 
-    public static final String X_INSIGHT_TOKEN_HEADER = "x-rh-insights-request-id";
-
     /**
      * Process authentication for webhook requests.
      *
