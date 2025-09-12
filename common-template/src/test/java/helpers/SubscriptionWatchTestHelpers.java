@@ -15,9 +15,9 @@ public class SubscriptionWatchTestHelpers {
     public static Action createSubscriptionWatchAction() {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle("subscription-services");
-        emailActionMessage.setApplication("subscription-watch");
+        emailActionMessage.setApplication("subscriptions");
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
-        emailActionMessage.setEventType("usage-threshold-exceeded");
+        emailActionMessage.setEventType("exceeded-utilization-threshold");
         emailActionMessage.setRecipients(List.of());
 
         emailActionMessage.setEvents(List.of(

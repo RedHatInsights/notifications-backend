@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class TestSubscriptionWatchTemplate extends EmailTemplatesRendererHelper {
 
-    static final String USAGE_THRESHOLD_EXCEEDED = "usage-threshold-exceeded";
+    static final String EXCEEDED_UTILIZATION_THRESHOLD = "exceeded-utilization-threshold";
 
     private static final Action ACTION = SubscriptionWatchTestHelpers.createSubscriptionWatchAction();
 
@@ -22,7 +22,7 @@ public class TestSubscriptionWatchTemplate extends EmailTemplatesRendererHelper 
 
     @Override
     protected String getApp() {
-        return "subscription-watch";
+        return "subscriptions";
     }
 
     @Override
@@ -38,13 +38,13 @@ public class TestSubscriptionWatchTemplate extends EmailTemplatesRendererHelper 
     @Test
     public void testUsageThresholdExceededEmailTitle() {
         eventTypeDisplayName = "Usage Threshold Exceeded";
-        String result = generateEmailSubject(USAGE_THRESHOLD_EXCEEDED, ACTION);
+        String result = generateEmailSubject(EXCEEDED_UTILIZATION_THRESHOLD, ACTION);
         assertEquals("Instant notification - Exceeded Utilization Threshold - Subscription Watch - Subscription Services", result);
     }
 
     @Test
     public void testUsageThresholdExceededEmailBody() {
-        String result = generateEmailBody(USAGE_THRESHOLD_EXCEEDED, ACTION);
+        String result = generateEmailBody(EXCEEDED_UTILIZATION_THRESHOLD, ACTION);
         assertTrue(result.contains("Subscription Watch - Subscription Services"));
         assertTrue(result.contains("Usage Threshold Exceeded"));
         assertTrue(result.contains("Your <b>RHEL for x86</b> subscription usage has exceeded <b>85%</b> of capacity."));

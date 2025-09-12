@@ -479,7 +479,7 @@ public class EmailTemplateMigrationService {
              * Former src/main/resources/templates/SubscriptionWatch folder.
              */
             createInstantEmailTemplate(
-                    warnings, "subscription-services", "subscription-watch", List.of("usage-threshold-exceeded"),
+                    warnings, "subscription-services", "subscriptions", List.of("exceeded-utilization-threshold"),
                     "SubscriptionWatch/usageThresholdExceededEmailTitle", "txt", "SubscriptionWatch usage threshold exceeded email title",
                     "SubscriptionWatch/usageThresholdExceededEmailBody", "html", "SubscriptionWatch usage threshold exceeded email body"
             );

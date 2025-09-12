@@ -19,14 +19,14 @@ public class SubscriptionServices {
     public static final String ERRATA_APP_NAME = "errata-notifications";
     static final String ERRATA_FOLDER_NAME = "Errata/";
 
-    public static final String SUBSCRIPTION_WATCH_APP_NAME = "subscription-watch";
+    public static final String SUBSCRIPTION_WATCH_APP_NAME = "subscriptions";
     static final String SUBSCRIPTION_WATCH_FOLDER_NAME = "SubscriptionWatch/";
 
     public static final String ERRATA_NEW_SUBSCRIPTION_BUGFIX_ERRATA = "new-subscription-bugfix-errata";
     public static final String ERRATA_NEW_SUBSCRIPTION_SECURITY_ERRATA = "new-subscription-security-errata";
     public static final String ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA = "new-subscription-enhancement-errata";
 
-    public static final String SUBSCRIPTION_WATCH_USAGE_THRESHOLD_EXCEEDED = "usage-threshold-exceeded";
+    public static final String SUBSCRIPTION_WATCH_EXCEEDED_UTILIZATION_THRESHOLD = "exceeded-utilization-threshold";
 
     public static final Map<TemplateDefinition, String> templatesMap = Map.ofEntries(
 
@@ -51,7 +51,7 @@ public class SubscriptionServices {
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, ERRATA_APP_NAME, null, true), ERRATA_FOLDER_NAME + "beta/dailyEmailBody.html"),
 
         // Subscription Watch
-        entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, SUBSCRIPTION_WATCH_APP_NAME, SUBSCRIPTION_WATCH_USAGE_THRESHOLD_EXCEEDED), SUBSCRIPTION_WATCH_FOLDER_NAME + "usageThresholdExceededEmailTitle.txt"),
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SUBSCRIPTION_WATCH_APP_NAME, SUBSCRIPTION_WATCH_USAGE_THRESHOLD_EXCEEDED), SUBSCRIPTION_WATCH_FOLDER_NAME + "usageThresholdExceededEmailBody.html")
+        entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, SUBSCRIPTION_WATCH_APP_NAME, SUBSCRIPTION_WATCH_EXCEEDED_UTILIZATION_THRESHOLD), SUBSCRIPTION_WATCH_FOLDER_NAME + "usageThresholdExceededEmailTitle.txt"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SUBSCRIPTION_WATCH_APP_NAME, SUBSCRIPTION_WATCH_EXCEEDED_UTILIZATION_THRESHOLD), SUBSCRIPTION_WATCH_FOLDER_NAME + "usageThresholdExceededEmailBody.html")
     );
 }
