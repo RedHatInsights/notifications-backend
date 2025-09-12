@@ -314,7 +314,7 @@ public class EndpointRepositoryTest {
         final Random random = new Random();
         for (int i = 0; i < regularEndpointsToCreate; i++) {
             final WebhookProperties webhookProperties = new WebhookProperties();
-            webhookProperties.setDisableSslVerification(random.nextBoolean());
+            webhookProperties.setDisableSslVerification(false);
             webhookProperties.setMethod(HttpType.GET);
             webhookProperties.setUrl("https://redhat.com");
 
@@ -336,7 +336,7 @@ public class EndpointRepositoryTest {
         // Create some integrations in a different organization.
         for (int i = 0; i < regularEndpointsToCreate; i++) {
             final WebhookProperties webhookProperties = new WebhookProperties();
-            webhookProperties.setDisableSslVerification(random.nextBoolean());
+            webhookProperties.setDisableSslVerification(false);
             webhookProperties.setMethod(HttpType.GET);
             webhookProperties.setUrl("https://redhat.com");
 
