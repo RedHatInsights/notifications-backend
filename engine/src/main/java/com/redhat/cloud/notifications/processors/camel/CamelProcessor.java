@@ -71,7 +71,21 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
         connectorSender.send(event, endpoint, payload);
     }
 
-    protected String buildNotificationMessage(Event event) {
+    protected String buildNotificationMessage(Event event, Map<String, Object> dataAsMap) {
+
+        boolean shouldUseBetaVersion = engineConfig.isUseBetaTemplatesEnabled(event.getOrgId(), event.getEventType().getId());
+
+        TemplateDefinition templateDefinition = new TemplateDefinition(
+            getQuteIntegrationType(),
+            event.getEventType().getApplication().getBundle().getName(),
+            event.getEventType().getApplication().getName(),
+            event.getEventType().getName(),
+            shouldUseBetaVersion);
+
+        return quteTemplateService.renderTemplate(templateDefinition, dataAsMap);
+    }
+
+    protected Map<String, Object> convertEventAsDataMap(Event event) {
         JsonObject data = baseTransformer.toJsonObject(event);
         insightsUrlsBuilder.buildInventoryUrl(data, getIntegrationType()).ifPresent(url -> data.put("inventory_url", url));
         data.put("application_url", insightsUrlsBuilder.buildApplicationUrl(data, getIntegrationType()));
@@ -90,26 +104,20 @@ public abstract class CamelProcessor extends EndpointTypeProcessor {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(getIntegrationName() + " notification data transformation failed", e);
         }
-
-        boolean shouldUseBetaVersion = engineConfig.isUseBetaTemplatesEnabled(event.getOrgId(), event.getEventType().getId());
-
-        TemplateDefinition templateDefinition = new TemplateDefinition(
-            getQuteIntegrationType(),
-            event.getEventType().getApplication().getBundle().getName(),
-            event.getEventType().getApplication().getName(),
-            event.getEventType().getName(),
-            shouldUseBetaVersion);
-
-        return quteTemplateService.renderTemplate(templateDefinition, dataAsMap);
+        return dataAsMap;
     }
 
     protected CamelNotification getCamelNotification(Event event, Endpoint endpoint) {
-        String message = buildNotificationMessage(event);
+        Map<String, Object> eventDataAsMap = convertEventAsDataMap(event);
+        String message = buildNotificationMessage(event, eventDataAsMap);
         CamelProperties properties = endpoint.getProperties(CamelProperties.class);
 
         CamelNotification notification = new CamelNotification();
         notification.webhookUrl = properties.getUrl();
         notification.message = message;
+        if (engineConfig.isConnectorTemplateTransformationEnabled(event.getOrgId())) {
+            notification.eventData = eventDataAsMap;
+        }
         return notification;
     }
 
