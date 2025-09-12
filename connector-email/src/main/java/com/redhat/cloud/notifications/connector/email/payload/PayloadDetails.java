@@ -7,9 +7,4 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param contents the received payload contents.
  */
 public record PayloadDetails(@JsonProperty("contents") String contents) {
-    /**
-     * The key for the identifier of the payload which will go in the JSON
-     * payload that we send over Kafka.
-     */
-    public static final String PAYLOAD_DETAILS_ID_KEY = "payload_details_id";
 }

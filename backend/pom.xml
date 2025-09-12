@@ -15,6 +15,7 @@
 
     <properties>
         <json-schema-validator-tests.version>5.5.6</json-schema-validator-tests.version>
+        <io-swagger-parser-v3-swagger-parser.version>2.1.33</io-swagger-parser-v3-swagger-parser.version>
     </properties>
 
     <dependencies>
@@ -249,6 +250,7 @@
         <dependency>
             <groupId>io.swagger.parser.v3</groupId>
             <artifactId>swagger-parser</artifactId>
+            <version>${io-swagger-parser-v3-swagger-parser.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

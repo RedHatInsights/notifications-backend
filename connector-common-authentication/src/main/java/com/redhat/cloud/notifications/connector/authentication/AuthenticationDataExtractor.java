@@ -2,15 +2,19 @@ package com.redhat.cloud.notifications.connector.authentication;
 
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.apache.camel.Exchange;
 
-import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
-import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
-
+/**
+ * Extractor for authentication data from payloads.
+ * Updated for Quarkus implementation without Camel dependencies.
+ */
 @ApplicationScoped
 public class AuthenticationDataExtractor {
 
-    public void extract(Exchange exchange, JsonObject authentication) {
+    /**
+     * Extract authentication data from a payload.
+     * This replaces the Camel-based extract method.
+     */
+    public void extract(JsonObject payload, JsonObject authentication) {
         /*
          * The authentication data extraction is optional.
          * Each connector has its own logic which makes the authentication mandatory or not.
@@ -18,26 +22,52 @@ public class AuthenticationDataExtractor {
         if (authentication != null) {
 
             // If the authentication data is available, an exception is thrown if anything is wrong with it.
+            validateAuthenticationData(authentication);
 
-            String type = authentication.getString("type");
-            if (type == null) {
-                throw new IllegalStateException("Invalid payload: the authentication type is missing");
+            // Extract authentication type
+            String authType = authentication.getString("type");
+            if (authType != null) {
+                payload.put("authentication_type", authType);
             }
 
-            AuthenticationType authenticationType;
-            try {
-                authenticationType = AuthenticationType.valueOf(type);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalStateException("Invalid payload: the authentication type is unknown (" + type + ")", e);
+            // Extract secret ID if present
+            String secretId = authentication.getString("secret_id");
+            if (secretId != null && !secretId.isEmpty()) {
+                payload.put("secret_id", secretId);
             }
 
-            Long secretId = authentication.getLong("secretId");
-            if (secretId == null) {
-                throw new IllegalStateException("Invalid payload: the secret ID is missing");
+            // Extract other authentication properties
+            String username = authentication.getString("username");
+            if (username != null) {
+                payload.put("secret_username", username);
             }
 
-            exchange.setProperty(AUTHENTICATION_TYPE, authenticationType);
-            exchange.setProperty(SECRET_ID, secretId);
+            String password = authentication.getString("password");
+            if (password != null) {
+                payload.put("secret_password", password);
+            }
+        }
+    }
+
+    /**
+     * Validate authentication data.
+     */
+    private void validateAuthenticationData(JsonObject authentication) {
+        if (authentication == null) {
+            throw new IllegalArgumentException("Authentication data cannot be null");
+        }
+
+        String authType = authentication.getString("type");
+        if (authType == null || authType.isEmpty()) {
+            throw new IllegalArgumentException("Authentication type is required");
+        }
+
+        // Validate authentication type
+        try {
+            AuthenticationType.valueOf(authType.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid authentication type: " + authType, e);
         }
     }
 }
+
