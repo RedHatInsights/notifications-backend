@@ -103,6 +103,7 @@ public class PagerDutyProcessorTest {
         eventType.setName("policy-triggered");
         event.setEventType(eventType);
         event.setOrgId(DEFAULT_ORG_ID);
+        event.setEventTypeDisplayName("Policy triggered");
         Endpoint ep = buildPagerDutyEndpoint();
 
         pagerDutyProcessor.process(event, List.of(ep));
@@ -162,6 +163,7 @@ public class PagerDutyProcessorTest {
         eventType.setName("new-system-registered");
         eventType.setDisplayName("New system registered");
         event.setEventType(eventType);
+        event.setEventTypeDisplayName("Policy triggered");
 
         Endpoint ep = buildPagerDutyEndpoint();
 

@@ -2,10 +2,10 @@ package com.redhat.cloud.notifications.unleash;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.getunleash.FeatureDefinition;
 import io.getunleash.Unleash;
-import io.getunleash.Variant;
-import io.getunleash.repository.ToggleCollection;
 import io.getunleash.variant.Payload;
+import io.getunleash.variant.Variant;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -14,6 +14,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -44,7 +45,7 @@ public class LogLevelManager {
 
     private final Map<String, Level> originalLoggerLevels = new HashMap<>();
 
-    public void process(@Observes ToggleCollection toggleCollection) {
+    public void process(@Observes List<FeatureDefinition> featureDefinitions) {
         LogConfig[] logConfigs = getLogConfigs();
         for (LogConfig logConfig : logConfigs) {
             try {

@@ -4,8 +4,8 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
-import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
@@ -406,7 +406,7 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
                 "display_name",
                 query -> behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ORG_ID, eventType.getId(), query),
                 behaviorGroups -> behaviorGroups.stream().map(BehaviorGroup::getDisplayName).collect(Collectors.toList()),
-                Query.Sort.Order.ASC,
+                Sort.Order.ASC,
                 IntStream.range(0, 10).boxed().map(Object::toString).collect(Collectors.toList())
         );
     }

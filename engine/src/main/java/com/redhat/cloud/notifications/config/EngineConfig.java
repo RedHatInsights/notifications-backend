@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
-import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
 import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
@@ -54,7 +53,6 @@ public class EngineConfig {
     private String asyncEventProcessingToggle;
     private String drawerToggle;
     private String kafkaConsumedTotalCheckerToggle;
-    private String fetchAggregationBasedOnEvents;
     private String toggleBlacklistedEndpoints;
     private String toggleBlacklistedEventTypes;
     private String toggleKafkaOutgoingHighVolumeTopic;
@@ -158,7 +156,6 @@ public class EngineConfig {
         asyncEventProcessingToggle = toggleRegistry.register("async-event-processing", true);
         drawerToggle = toggleRegistry.register("drawer", true);
         kafkaConsumedTotalCheckerToggle = toggleRegistry.register("kafka-consumed-total-checker", true);
-        fetchAggregationBasedOnEvents = toggleRegistry.register("fetch-aggregation-based-on-events", true);
         toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
         toggleDirectEndpointToEventTypeDryRunEnabled = toggleRegistry.register("endpoint-to-event-type-dry-run", true);
         toggleUseDirectEndpointToEventTypeEnabled = toggleRegistry.register("use-endpoint-to-event-type", true);
@@ -260,14 +257,6 @@ public class EngineConfig {
         return useSecuredEmailTemplates;
     }
 
-    public boolean isAggregationBasedOnEventEnabled(final String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(fetchAggregationBasedOnEvents, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return false;
-        }
-    }
-
     public boolean isBlacklistedEndpoint(final UUID endpointId) {
         if (unleashEnabled && null != endpointId) {
             UnleashContext unleashContext = UnleashContext.builder()
@@ -358,11 +347,12 @@ public class EngineConfig {
 
     public boolean isUseBetaTemplatesEnabled(final String orgId, final UUID eventTypeId) {
         if (unleashEnabled) {
-            UnleashContext unleashContext = UnleashContext.builder()
-                .addProperty("orgId", orgId)
-                .addProperty("eventTypeId", eventTypeId.toString())
-                .build();
-            return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContext, false);
+            UnleashContext.Builder unleashContextBuilder = UnleashContext.builder()
+                .addProperty("orgId", orgId);
+            if (eventTypeId != null) {
+                unleashContextBuilder.addProperty("eventTypeId", eventTypeId.toString());
+            }
+            return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContextBuilder.build(), false);
         } else {
             return false;
         }

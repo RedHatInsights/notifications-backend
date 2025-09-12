@@ -2,10 +2,10 @@ package com.redhat.cloud.notifications.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.getunleash.FeatureDefinition;
 import io.getunleash.Unleash;
-import io.getunleash.Variant;
-import io.getunleash.repository.ToggleCollection;
 import io.getunleash.variant.Payload;
+import io.getunleash.variant.Variant;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.ChannelRegistry;
 import io.smallrye.reactive.messaging.PausableChannel;
@@ -14,6 +14,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.util.List;
 import java.util.Optional;
 
 import static java.lang.Boolean.TRUE;
@@ -35,7 +36,7 @@ public class KafkaChannelManager {
     @Inject
     ChannelRegistry channelRegistry;
 
-    public void process(@Observes ToggleCollection toggleCollection) {
+    public void process(@Observes List<FeatureDefinition> featureDefinitions) {
         KafkaChannelConfig[] kafkaChannelConfigs = getKafkaChannelConfigs();
         for (KafkaChannelConfig kafkaChannelConfig : kafkaChannelConfigs) {
             try {

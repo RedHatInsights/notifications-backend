@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
 import com.redhat.cloud.notifications.models.DrawerNotification;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -38,9 +39,9 @@ public class DrawerNotificationRepository {
 
     public List<DrawerEntryPayload> getNotifications(String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
                                               LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus, Query query) {
-        query.setSortFields(DrawerNotification.SORT_FIELDS);
-        query.setDefaultSortBy("created:DESC");
-        Optional<Query.Sort> sort = query.getSort();
+
+        Optional<Sort> sort = Sort.getSort(query, "created:DESC", DrawerNotification.SORT_FIELDS);
+
         String hql = "SELECT dn.id.eventId, dn.read, " +
             "dn.event.bundleDisplayName, dn.event.applicationDisplayName, dn.event.eventTypeDisplayName, dn.created, dn.event.renderedDrawerNotification, bundle.name "
             + "FROM DrawerNotification dn join Bundle bundle on dn.event.bundleId = bundle.id where dn.id.orgId = :orgId and dn.id.userId = :userid";
@@ -139,7 +140,7 @@ public class DrawerNotificationRepository {
         }
     }
 
-    private String getOrderBy(Query.Sort sort) {
+    private String getOrderBy(Sort sort) {
         if (!sort.getSortColumn().equals("dn.created")) {
             return " " + sort.getSortQuery() + ", dn.created DESC";
         } else {

@@ -44,8 +44,7 @@ public class QueryTest {
     @Test
     public void testEmptySort() {
         // Sort is empty if nothing is provided
-        Query query = new Query();
-        assertTrue(query.getSort().isEmpty());
+        assertTrue(Sort.getSort(new Query(), null, null).isEmpty());
     }
 
     @Test
@@ -53,15 +52,14 @@ public class QueryTest {
         // Throws InternalServerError if sortBy* is provided without sort fields
         Query query = new Query();
         query.sortBy = "foo:desc";
-        assertThrows(InternalServerErrorException.class, query::getSort);
+        assertThrows(InternalServerErrorException.class, () -> Sort.getSort(query, null, null));
     }
 
     @Test
     public void testUnknownSort() {
         Query query = new Query();
         query.sortBy = "foo:desc";
-        query.setSortFields(Map.of("bar", "e.bar"));
-        assertThrows(BadRequestException.class, query::getSort);
+        assertThrows(BadRequestException.class, () -> Sort.getSort(query, null, Map.of("bar", "e.bar")));
     }
 
     @Test
@@ -69,8 +67,7 @@ public class QueryTest {
         // Throws BadRequest if sortBy* has a wrong syntax
         Query query = new Query();
         query.sortBy = "i am not a valid sortby::";
-        query.setSortFields(Map.of("bar", "e.bar"));
-        assertThrows(BadRequestException.class, query::getSort);
+        assertThrows(BadRequestException.class, () -> Sort.getSort(query, null, Map.of("bar", "e.bar")));
     }
 
     @Test
@@ -78,10 +75,9 @@ public class QueryTest {
         // sortBy defaults to order asc if not specified
         Query query = new Query();
         query.sortBy = "bar";
-        query.setSortFields(Map.of("bar", "e.bar"));
-        Query.Sort sort = query.getSort().get();
+        Sort sort = Sort.getSort(query, null, Map.of("bar", "e.bar")).get();
         assertEquals("e.bar", sort.getSortColumn());
-        assertEquals(Query.Sort.Order.ASC, sort.getSortOrder());
+        assertEquals(Sort.Order.ASC, sort.getSortOrder());
     }
 
     @Test
@@ -89,8 +85,7 @@ public class QueryTest {
         // throws BadRequest if the order is not valid
         Query query = new Query();
         query.sortBy = "bar:foo";
-        query.setSortFields(Map.of("bar", "e.bar"));
-        assertThrows(BadRequestException.class, query::getSort);
+        assertThrows(BadRequestException.class, () -> Sort.getSort(query, null, Map.of("bar", "e.bar")));
     }
 
     @Test
@@ -98,7 +93,7 @@ public class QueryTest {
         // sortBy (sortByDeprecated) is used if sort_by is not specified
         Query query = new Query();
         query.sortByDeprecated = "foo";
-        assertEquals("foo", query.getSortBy());
+        assertEquals("foo", Sort.getSortBy(query, null));
     }
 
     @Test
@@ -107,22 +102,19 @@ public class QueryTest {
         Query query = new Query();
         query.sortBy = "foo";
         query.sortByDeprecated = "bar";
-        assertEquals("foo", query.getSortBy());
+        assertEquals("foo", Sort.getSortBy(query, null));
     }
 
     @Test
     void testDefaultSortBy() {
         // default sortBy is used if none of the sortBy* were specified
-        Query query = new Query();
-        query.setDefaultSortBy("foo");
-        assertEquals("foo", query.getSortBy());
+        assertEquals("foo", Sort.getSortBy(new Query(), "foo"));
     }
 
     @Test
     void testNoDefaultAndNothingProvided() {
         // null if provided if no default or any sortBy* is used
-        Query query = new Query();
-        assertNull(query.getSortBy());
+        assertNull(Sort.getSortBy(new Query(), null));
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
@@ -31,8 +32,7 @@ public class NotificationRepository {
         query += ") FROM NotificationHistory nh WHERE nh.endpoint.id = :endpointId AND nh.event.orgId = :orgId";
 
         if (limiter != null) {
-            limiter.setSortFields(NotificationHistory.SORT_FIELDS);
-            query = limiter.getModifiedQuery(query);
+            query = Sort.getModifiedQuery(query, limiter, NotificationHistory.SORT_FIELDS, null);
         }
 
         TypedQuery<NotificationHistory> historyQuery = entityManager.createQuery(query, NotificationHistory.class)

@@ -13,10 +13,10 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @QuarkusTestResource(TestLifecycleManager.class)
 class EmailAggregationRepositoryTest {
 
-    private static final ZoneId UTC = ZoneId.of("UTC");
     private static final String ORG_ID = "987654321";
     private static final String BUNDLE_NAME = "best-bundle";
     private static final String APP_NAME = "awesome-app";
@@ -55,16 +54,46 @@ class EmailAggregationRepositoryTest {
     @AfterEach
     void afterEach() {
         resourceHelpers.purgeAggregationOrgConfig();
+        resourceHelpers.purgeEndpoints();
     }
 
-    @Test
-    void testApplicationsWithPendingAggregationAccordingOrgPref() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testApplicationsWithPendingAggregationAccordingOrgPref(boolean useSystemEndpoint) {
         configureTimePref(dailyEmailAggregationJob.computeScheduleExecutionTime());
-        Event event1 = resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD1.toString());
-        Event event2 = resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString());
-        resourceHelpers.addEventEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString());
-        resourceHelpers.addEventEmailAggregation(ORG_ID, "other-bundle", APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString());
-        resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString());
+        Event event1 = resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD1.toString(), useSystemEndpoint);
+        Event event2 = resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
+        resourceHelpers.addEventEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
+        resourceHelpers.addEventEmailAggregation(ORG_ID, "other-bundle", APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
+        resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
+
+        List<AggregationCommand> keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime());
+        assertEquals(4, keys.size());
+        Application application = resourceHelpers.findApp(BUNDLE_NAME, APP_NAME);
+
+        List<AggregationCommand> matchedKeys = keys.stream().filter(k -> ORG_ID.equals(k.getOrgId())).filter(k -> (((EventAggregationCriterion) k.getAggregationKey()).getApplicationId().equals(application.getId()))).collect(Collectors.toList());
+        assertEquals(1, matchedKeys.size());
+        assertEquals(BUNDLE_NAME,  matchedKeys.get(0).getAggregationKey().getBundle());
+        assertEquals(APP_NAME, matchedKeys.get(0).getAggregationKey().getApplication());
+
+        resourceHelpers.deleteEvent(event1);
+        resourceHelpers.deleteEvent(event2);
+
+        keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime());
+        assertEquals(3, keys.size());
+        matchedKeys = keys.stream().filter(k -> ORG_ID.equals(k.getOrgId())).filter(k -> (((EventAggregationCriterion) k.getAggregationKey()).getApplicationId().equals(application.getId()))).collect(Collectors.toList());
+        assertEquals(0, matchedKeys.size());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testApplicationsWithPendingAggregationUsingDefaultSystemIntegration(boolean useSystemEndpoint) {
+        configureTimePref(dailyEmailAggregationJob.computeScheduleExecutionTime());
+        Event event1 = resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD1.toString(), useSystemEndpoint);
+        Event event2 = resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
+        resourceHelpers.addEventEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
+        resourceHelpers.addEventEmailAggregation(ORG_ID, "other-bundle", APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
+        resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
 
         List<AggregationCommand> keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime());
         assertEquals(4, keys.size());

@@ -45,7 +45,7 @@
     <properties>
         <mapstruct.version>1.6.3</mapstruct.version>
         <kessel.inventory-client.version>0.9</kessel.inventory-client.version>
-        <kessel.oauth-client.version>11.27.1</kessel.oauth-client.version>
+        <kessel.oauth-client.version>11.28</kessel.oauth-client.version>
         <kessel.relationships-client.version>0.12</kessel.relationships-client.version>
 
         <enforcer-plugin.version>3.6.1</enforcer-plugin.version>
@@ -62,7 +62,7 @@
         <checkstyle-plugin.version>3.6.0</checkstyle-plugin.version>
         <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
         <jacoco-plugin.version>0.8.13</jacoco-plugin.version>
-        <checkstyle.version>11.0.0</checkstyle.version>
+        <checkstyle.version>11.0.1</checkstyle.version>
 
         <testcontainers.version>1.21.3</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
@@ -73,19 +73,19 @@
         <mockserver-netty-no-dependencies.version>5.15.0</mockserver-netty-no-dependencies.version>
         <mockserver-netty.version>5.15.0</mockserver-netty.version>
 
-        <insights-notification-schemas-java.version>0.23</insights-notification-schemas-java.version>
+        <insights-notification-schemas-java.version>1.0.1</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>2.7.1</clowder-quarkus-config-source.version>
 
         <quarkus-logging-cloudwatch.version>6.14.2</quarkus-logging-cloudwatch.version>
-        <quarkus-logging-sentry.version>2.1.7</quarkus-logging-sentry.version>
-        <quarkus-unleash.version>1.10.0</quarkus-unleash.version>
+        <quarkus-logging-sentry.version>2.1.8</quarkus-logging-sentry.version>
+        <quarkus-unleash.version>1.11.0</quarkus-unleash.version>
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.25.4</quarkus.platform.version>
+        <quarkus.platform.version>3.26.3</quarkus.platform.version>
         <redhat.event-schemas.version>1.4.12</redhat.event-schemas.version>
 
-        <sonar.maven.plugin.version>5.1.0.4751</sonar.maven.plugin.version>
+        <sonar.maven.plugin.version>5.2.0.4988</sonar.maven.plugin.version>
         <jacoco.output.directory>${project.build.directory}/jacoco-report</jacoco.output.directory>
         <!-- Point the Sonar Qube Plugin always to the same JaCoCo report to aggregate sub-modules reports-->
         <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
