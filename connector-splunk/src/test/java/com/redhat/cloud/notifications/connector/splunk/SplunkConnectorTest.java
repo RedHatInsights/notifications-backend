@@ -307,17 +307,46 @@ class SplunkConnectorTest {
         private JsonObject originalCloudEvent;
         private final java.util.Map<String, Object> additionalProperties = new java.util.HashMap<>();
 
-        public void setId(String id) { this.id = id; }
-        public String getId() { return id; }
-        public void setOrgId(String orgId) { this.orgId = orgId; }
-        public String getOrgId() { return orgId; }
-        public void setTargetUrl(String targetUrl) { this.targetUrl = targetUrl; }
-        public String getTargetUrl() { return targetUrl; }
-        public void setOriginalCloudEvent(JsonObject originalCloudEvent) { this.originalCloudEvent = originalCloudEvent; }
-        public JsonObject getOriginalCloudEvent() { return originalCloudEvent; }
-        public void setAdditionalProperty(String key, Object value) { additionalProperties.put(key, value); }
+        void setId(String id) {
+            this.id = id;
+        }
+
+        String getId() {
+            return id;
+        }
+
+        void setOrgId(String orgId) {
+            this.orgId = orgId;
+        }
+
+        String getOrgId() {
+            return orgId;
+        }
+
+        void setTargetUrl(String targetUrl) {
+            this.targetUrl = targetUrl;
+        }
+
+        String getTargetUrl() {
+            return targetUrl;
+        }
+
+        void setOriginalCloudEvent(JsonObject originalCloudEvent) {
+            this.originalCloudEvent = originalCloudEvent;
+        }
+
+        JsonObject getOriginalCloudEvent() {
+            return originalCloudEvent;
+        }
+
+        void setAdditionalProperty(String key, Object value) {
+            additionalProperties.put(key, value);
+        }
+
         @SuppressWarnings("unchecked")
-        public <T> T getAdditionalProperty(String key, Class<T> type) { return (T) additionalProperties.get(key); }
+        <T> T getAdditionalProperty(String key, Class<T> type) {
+            return (T) additionalProperties.get(key);
+        }
     }
 
     // Simple test result to avoid dependency on complex injection
@@ -328,7 +357,7 @@ class SplunkConnectorTest {
         private final String orgId;
         private final JsonObject originalCloudEvent;
 
-        public TestConnectorResult(boolean successful, String outcome, String id, String orgId, JsonObject originalCloudEvent) {
+        TestConnectorResult(boolean successful, String outcome, String id, String orgId, JsonObject originalCloudEvent) {
             this.successful = successful;
             this.outcome = outcome;
             this.id = id;
@@ -336,10 +365,24 @@ class SplunkConnectorTest {
             this.originalCloudEvent = originalCloudEvent;
         }
 
-        public boolean isSuccessful() { return successful; }
-        public String getOutcome() { return outcome; }
-        public String getId() { return id; }
-        public String getOrgId() { return orgId; }
-        public JsonObject getOriginalCloudEvent() { return originalCloudEvent; }
+        boolean isSuccessful() {
+            return successful;
+        }
+
+        String getOutcome() {
+            return outcome;
+        }
+
+        String getId() {
+            return id;
+        }
+
+        String getOrgId() {
+            return orgId;
+        }
+
+        JsonObject getOriginalCloudEvent() {
+            return originalCloudEvent;
+        }
     }
 }
