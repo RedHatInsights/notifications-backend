@@ -1,179 +1,97 @@
 package com.redhat.cloud.notifications.connector.pagerduty;
 
-import io.quarkus.logging.Log;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
 
-import java.time.DateTimeException;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 
 /**
- * Constructs a <a href="https://support.pagerduty.com/main/docs/pd-cef">PD-CEF</a> alert event.
- * <br>
- * The severity is set to {@link PagerDutySeverity#WARNING}, and the action to {@link PagerDutyEventAction#TRIGGER} for
- * now. The following optional fields are not set (in jq format): <code>.payload.component, .payload.class, .dedup_key, .links[], .trigger[]</code>
- * <br>
+ * Utility class for transforming PagerDuty payloads.
+ * Contains constants and helper methods for PagerDuty integration.
+ * This version removes Camel dependencies from the original implementation.
  */
 @ApplicationScoped
-public class PagerDutyTransformer implements Processor {
+public class PagerDutyTransformer {
 
-    public static final String PAYLOAD = "payload";
-
+    // CloudEvent payload field names
     public static final String ACCOUNT_ID = "account_id";
+    public static final String AUTHENTICATION = "authentication";
     public static final String APPLICATION = "application";
     public static final String APPLICATION_URL = "application_url";
     public static final String BUNDLE = "bundle";
-    public static final String CLIENT = "client";
-    public static final String CLIENT_URL = "client_url";
     public static final String CONTEXT = "context";
     public static final String CUSTOM_DETAILS = "custom_details";
     public static final String DISPLAY_NAME = "display_name";
+    public static final String EVENTS = "events";
     public static final String EVENT_ACTION = "event_action";
     public static final String EVENT_TYPE = "event_type";
-    public static final String EVENTS = "events";
     public static final String GROUP = "group";
-    public static final String HREF = "href";
     public static final String INVENTORY_URL = "inventory_url";
-    public static final String LINKS = "links";
     public static final String ORG_ID = "org_id";
+    public static final String PAYLOAD = "payload";
     public static final String SEVERITY = "severity";
     public static final String SOURCE = "source";
     public static final String SOURCE_NAMES = "source_names";
     public static final String SUMMARY = "summary";
     public static final String TIMESTAMP = "timestamp";
-    public static final String TEXT = "text";
 
-    public static final DateTimeFormatter PD_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS+0000");
+    // PagerDuty-specific date time formatter
+    public static final DateTimeFormatter PD_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-    @Override
-    public void process(Exchange exchange) {
-        JsonObject cloudEventPayload = exchange.getIn().getBody(JsonObject.class);
-        validatePayload(cloudEventPayload);
+    /**
+     * Extracts client links from the payload for PagerDuty integration.
+     *
+     * @param payload The input payload containing link information
+     * @return JsonObject containing client links
+     */
+    public static JsonObject getClientLinks(JsonObject payload) {
+        JsonObject links = new JsonObject();
 
-        JsonObject message = new JsonObject();
-        message.put(EVENT_ACTION, PagerDutyEventAction.TRIGGER);
-        message.mergeIn(getClientLinks(cloudEventPayload));
+        if (payload != null) {
+            // Extract application URL if available
+            String appUrl = payload.getString(APPLICATION_URL);
+            if (appUrl != null) {
+                links.put("application", appUrl);
+            }
 
-        JsonObject messagePayload = new JsonObject();
-        messagePayload.put(SUMMARY, cloudEventPayload.getString(EVENT_TYPE));
-
-        String timestamp = cloudEventPayload.getString(TIMESTAMP);
-        try {
-            messagePayload.put(TIMESTAMP, LocalDateTime.parse(timestamp).format(PD_DATE_TIME_FORMATTER));
-        } catch (DateTimeParseException e) {
-            Log.warnf(e, "Unable to parse timestamp %s, dropped from payload", timestamp);
-        } catch (DateTimeException e) {
-            Log.warnf(e, "Timestamp %s was successfully parsed, but could not be reformatted for PagerDuty, dropped from payload", timestamp);
+            // Extract inventory URL if available
+            String inventoryUrl = payload.getString(INVENTORY_URL);
+            if (inventoryUrl != null) {
+                links.put("inventory", inventoryUrl);
+            }
         }
 
-        messagePayload.put(SEVERITY, PagerDutySeverity.fromJson(cloudEventPayload.getString(SEVERITY)));
-        messagePayload.put(SOURCE, cloudEventPayload.getString(APPLICATION));
-        messagePayload.put(GROUP, cloudEventPayload.getString(BUNDLE));
-
-        JsonObject customDetails = new JsonObject();
-        customDetails.put(ACCOUNT_ID, cloudEventPayload.getString(ACCOUNT_ID));
-        customDetails.put(ORG_ID, cloudEventPayload.getString(ORG_ID));
-        customDetails.put(CONTEXT, cloudEventPayload.getJsonObject(CONTEXT));
-
-        // Add source names, if provided
-        JsonObject cloudSource = getSourceNames(cloudEventPayload.getJsonObject(SOURCE));
-        if (cloudSource != null) {
-            customDetails.put(SOURCE_NAMES, cloudSource);
-        }
-
-        // Keep events, if provided
-        if (cloudEventPayload.containsKey(EVENTS)) {
-            customDetails.put(EVENTS, cloudEventPayload.getJsonArray(EVENTS));
-        }
-
-        messagePayload.put(CUSTOM_DETAILS, customDetails);
-        message.put(PAYLOAD, messagePayload);
-
-        exchange.getIn().setBody(message.encode());
+        return links;
     }
 
     /**
-     * Validates that the inputs for the required Alert Event fields are present
+     * Extracts source names from the source object.
+     *
+     * @param source The source object containing name information
+     * @return JsonObject containing source names, or null if no valid names found
      */
-    private void validatePayload(final JsonObject cloudEventPayload) {
-        String summary = cloudEventPayload.getString(EVENT_TYPE);
-        if (summary == null || summary.isEmpty()) {
-            throw new IllegalArgumentException("Event type must be specified for PagerDuty payload summary");
+    public static JsonObject getSourceNames(JsonObject source) {
+        if (source == null) {
+            return null;
         }
 
-        String source = cloudEventPayload.getString(APPLICATION);
-        if (source == null || source.isEmpty()) {
-            throw new IllegalArgumentException("Application must be specified for PagerDuty payload source");
+        JsonObject sourceNames = new JsonObject();
+        boolean hasValidNames = false;
+
+        // Extract display name if available
+        String displayName = source.getString(DISPLAY_NAME);
+        if (displayName != null && !displayName.trim().isEmpty()) {
+            sourceNames.put("display_name", displayName);
+            hasValidNames = true;
         }
 
-        String severity = cloudEventPayload.getString(SEVERITY);
-        if (severity == null || severity.isEmpty()) {
-            throw new IllegalArgumentException("Severity must be specified for PagerDuty payload");
-        } else {
-            try {
-                PagerDutySeverity.fromJson(severity);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid severity value provided for PagerDuty payload: " + severity);
-            }
-        }
-    }
-
-    /**
-     * Performs the following link conversions:
-     * <ul>
-     *     <li>{@link #APPLICATION} integrated into {@link #CLIENT}</li>
-     *     <li>{@link #APPLICATION_URL} becomes {@link #CLIENT_URL}</li>
-     *     <li>{@link #INVENTORY_URL}, if present, creates an entry in the {@link #LINKS} object</li>
-     * </ul>
-     * <p>
-     * The result is similar to the links provided in Microsoft Teams notifications.
-     */
-    static JsonObject getClientLinks(final JsonObject cloudEventPayload) {
-        JsonObject clientLinks = new JsonObject();
-
-        clientLinks.put(CLIENT, String.format("%s", cloudEventPayload.getString(APPLICATION)));
-        clientLinks.put(CLIENT_URL, cloudEventPayload.getString(APPLICATION_URL));
-
-        String inventoryUrl = cloudEventPayload.getString(INVENTORY_URL, "");
-        if (!inventoryUrl.isEmpty()) {
-            clientLinks.put(LINKS, JsonArray.of(
-                    JsonObject.of(
-                            HREF, inventoryUrl,
-                            TEXT, "Host"
-                    )
-            ));
+        // Extract other common source name fields
+        String name = source.getString("name");
+        if (name != null && !name.trim().isEmpty()) {
+            sourceNames.put("name", name);
+            hasValidNames = true;
         }
 
-        return clientLinks;
-    }
-
-    static JsonObject getSourceNames(final JsonObject cloudSource) {
-        if (cloudSource != null) {
-            JsonObject sourceNames = new JsonObject();
-
-            JsonObject application = cloudSource.getJsonObject(APPLICATION);
-            if (application != null) {
-                sourceNames.put(APPLICATION, application.getString(DISPLAY_NAME));
-            }
-            JsonObject bundle = cloudSource.getJsonObject(BUNDLE);
-            if (bundle != null) {
-                sourceNames.put(BUNDLE, bundle.getString(DISPLAY_NAME));
-            }
-            JsonObject eventType = cloudSource.getJsonObject(EVENT_TYPE);
-            if (eventType != null) {
-                sourceNames.put(EVENT_TYPE, eventType.getString(DISPLAY_NAME));
-            }
-
-            if (!sourceNames.isEmpty()) {
-                return sourceNames;
-            }
-        }
-
-        return null;
+        return hasValidNames ? sourceNames : null;
     }
 }

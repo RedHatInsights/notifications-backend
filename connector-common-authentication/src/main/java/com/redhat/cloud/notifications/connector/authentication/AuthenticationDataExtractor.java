@@ -1,16 +1,17 @@
 package com.redhat.cloud.notifications.connector.authentication;
 
+import com.redhat.cloud.notifications.connector.ExceptionProcessor;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.apache.camel.Exchange;
 
-import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
-import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_ID;
-
+/**
+ * Extracts authentication data from CloudEvent data and stores it in the processing context.
+ * This is the new version that replaces the Camel-based AuthenticationDataExtractor.
+ */
 @ApplicationScoped
 public class AuthenticationDataExtractor {
 
-    public void extract(Exchange exchange, JsonObject authentication) {
+    public void extract(ExceptionProcessor.ProcessingContext context, JsonObject authentication) {
         /*
          * The authentication data extraction is optional.
          * Each connector has its own logic which makes the authentication mandatory or not.
@@ -36,8 +37,8 @@ public class AuthenticationDataExtractor {
                 throw new IllegalStateException("Invalid payload: the secret ID is missing");
             }
 
-            exchange.setProperty(AUTHENTICATION_TYPE, authenticationType);
-            exchange.setProperty(SECRET_ID, secretId);
+            context.setAdditionalProperty("AUTHENTICATION_TYPE", authenticationType);
+            context.setAdditionalProperty("SECRET_ID", secretId);
         }
     }
 }

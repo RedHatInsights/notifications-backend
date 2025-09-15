@@ -4,3 +4,4 @@ public class ExchangeProperty {
 
     public static final String CHANNEL = "channel";
 }
+

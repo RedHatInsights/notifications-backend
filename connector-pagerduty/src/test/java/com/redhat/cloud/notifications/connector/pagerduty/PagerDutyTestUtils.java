@@ -9,10 +9,10 @@ import java.time.LocalDateTime;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyCloudEventDataExtractor.AUTHENTICATION;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.APPLICATION;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.APPLICATION_URL;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.AUTHENTICATION;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.BUNDLE;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CONTEXT;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CUSTOM_DETAILS;
@@ -90,7 +90,7 @@ public class PagerDutyTestUtils {
 
     static JsonObject buildExpectedOutgoingPayload(final JsonObject incoming) {
         JsonObject expected = incoming.copy();
-        expected.remove(PagerDutyCloudEventDataExtractor.AUTHENTICATION);
+        expected.remove(AUTHENTICATION);
 
         JsonObject oldInnerPayload = expected.getJsonObject(PAYLOAD);
         expected.put(EVENT_ACTION, PagerDutyEventAction.TRIGGER);

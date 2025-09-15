@@ -1,25 +1,26 @@
 package com.redhat.cloud.notifications.connector.splunk;
 
+import com.redhat.cloud.notifications.connector.ExceptionProcessor;
 import com.redhat.cloud.notifications.connector.authentication.AuthenticationType;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
 
-import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.AUTHENTICATION_TYPE;
-import static com.redhat.cloud.notifications.connector.authentication.AuthenticationExchangeProperty.SECRET_PASSWORD;
-
+/**
+ * Processes authentication for Splunk connector.
+ * This is the new version that replaces the Camel-based AuthenticationProcessor.
+ */
 @ApplicationScoped
-public class AuthenticationProcessor implements Processor {
+public class AuthenticationProcessor {
 
-    @Override
-    public void process(Exchange exchange) {
+    public Uni<Void> processAuthentication(ExceptionProcessor.ProcessingContext context) {
 
-        // TODO: Is it possible to send a request to Splunk with no authentication? If not, make the secret mandatory everywhere (frontend and backend) and throw an exception here.
+        // TODO: Is it possible to send a request to Splunk with no authentication?
+        // If not, make the secret mandatory everywhere (frontend and backend) and throw an exception here.
 
-        AuthenticationType authType = exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class);
+        AuthenticationType authType = context.getAdditionalProperty("AUTHENTICATION_TYPE", AuthenticationType.class);
         if (authType != null) {
 
-            String secretPassword = exchange.getProperty(SECRET_PASSWORD, String.class);
+            String secretPassword = context.getAdditionalProperty("SECRET_PASSWORD", String.class);
 
             switch (authType) {
                 case BEARER -> {
@@ -28,7 +29,7 @@ public class AuthenticationProcessor implements Processor {
                 case SECRET_TOKEN -> {
                     if (secretPassword != null) {
                         String headerValue = "Splunk " + secretPassword;
-                        exchange.getIn().setHeader("Authorization", headerValue);
+                        context.setAdditionalProperty("AUTHORIZATION_HEADER", headerValue);
                     }
                 }
                 default -> {
@@ -36,5 +37,7 @@ public class AuthenticationProcessor implements Processor {
                 }
             }
         }
+
+        return Uni.createFrom().voidItem();
     }
 }

@@ -7,7 +7,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import org.apache.camel.Body;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 /**
@@ -25,5 +24,5 @@ public interface BOPService {
         @HeaderParam(Constants.BOP_API_TOKEN_HEADER)    String apiToken,
         @HeaderParam(Constants.BOP_CLIENT_ID_HEADER)    String clientId,
         @HeaderParam(Constants.BOP_ENV_HEADER)          String environment,
-        @Body SendEmailsRequest sendEmailsRequest);
+        SendEmailsRequest sendEmailsRequest);
 }

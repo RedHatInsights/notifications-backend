@@ -26,3 +26,4 @@ public class PagerDutyConnectorConfig extends HttpConnectorConfig {
         return pagerDutyUrl;
     }
 }
+

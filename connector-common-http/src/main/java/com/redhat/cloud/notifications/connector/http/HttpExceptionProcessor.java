@@ -4,22 +4,16 @@ import com.redhat.cloud.notifications.connector.ExceptionProcessor;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.apache.camel.Exchange;
-import org.apache.camel.http.base.HttpOperationFailedException;
-import org.apache.hc.client5.http.ConnectTimeoutException;
-import org.apache.hc.client5.http.HttpHostConnectException;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
+import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
-import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTTP_ERROR_TYPE;
-import static com.redhat.cloud.notifications.connector.http.ExchangeProperty.HTTP_STATUS_CODE;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.CONNECTION_REFUSED;
-import static com.redhat.cloud.notifications.connector.http.HttpErrorType.CONNECT_TIMEOUT;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_3XX;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_4XX;
 import static com.redhat.cloud.notifications.connector.http.HttpErrorType.HTTP_5XX;
@@ -30,6 +24,11 @@ import static com.redhat.cloud.notifications.connector.http.HttpErrorType.UNSUPP
 import static org.apache.http.HttpStatus.SC_TOO_MANY_REQUESTS;
 import static org.jboss.logging.Logger.Level.ERROR;
 
+/**
+ * HTTP-specific exception processor that extends the base exception processor
+ * to handle HTTP-specific errors and set appropriate error types.
+ * This is the new version that replaces the Camel-based HttpExceptionProcessor.
+ */
 @ApplicationScoped
 public class HttpExceptionProcessor extends ExceptionProcessor {
 
@@ -39,54 +38,75 @@ public class HttpExceptionProcessor extends ExceptionProcessor {
     HttpConnectorConfig connectorConfig;
 
     @Override
-    protected void process(Throwable t, Exchange exchange) {
+    protected void process(Throwable t, ProcessingContext context) {
         if (t instanceof ClientWebApplicationException e) {
-            manageReturnedStatusCode(exchange, e.getResponse().getStatus(), e.getResponse().readEntity(String.class));
-        } else if (t instanceof HttpOperationFailedException e) {
-            manageReturnedStatusCode(exchange, e.getStatusCode(), e.getResponseBody());
-        } else if (t instanceof ConnectTimeoutException) {
-            exchange.setProperty(HTTP_ERROR_TYPE, CONNECT_TIMEOUT);
+            String responseBody = null;
+            try {
+                responseBody = e.getResponse().readEntity(String.class);
+            } catch (Exception ex) {
+                responseBody = "Unable to read response body";
+            }
+            manageReturnedStatusCode(context, e.getResponse().getStatus(), responseBody);
+        } else if (t instanceof ConnectException) {
+            context.setAdditionalProperty("HTTP_ERROR_TYPE", CONNECTION_REFUSED);
         } else if (t instanceof SocketTimeoutException) {
-            exchange.setProperty(HTTP_ERROR_TYPE, SOCKET_TIMEOUT);
-        } else if (t instanceof HttpHostConnectException) {
-            exchange.setProperty(HTTP_ERROR_TYPE, CONNECTION_REFUSED);
+            context.setAdditionalProperty("HTTP_ERROR_TYPE", SOCKET_TIMEOUT);
         } else if (t instanceof SSLHandshakeException) {
-            exchange.setProperty(HTTP_ERROR_TYPE, SSL_HANDSHAKE);
+            context.setAdditionalProperty("HTTP_ERROR_TYPE", SSL_HANDSHAKE);
         } else if (t instanceof UnknownHostException) {
-            exchange.setProperty(HTTP_ERROR_TYPE, UNKNOWN_HOST);
+            context.setAdditionalProperty("HTTP_ERROR_TYPE", UNKNOWN_HOST);
         } else if (t instanceof SSLException) {
-            exchange.setProperty(HTTP_ERROR_TYPE, UNSUPPORTED_SSL_MESSAGE);
+            context.setAdditionalProperty("HTTP_ERROR_TYPE", UNSUPPORTED_SSL_MESSAGE);
         } else {
-            logDefault(t, exchange);
+            // Handle other HTTP-related exceptions
+            handleGenericHttpException(t, context);
         }
     }
 
-    private void manageReturnedStatusCode(Exchange exchange, int statusCode, String responseBody) {
-        exchange.setProperty(HTTP_STATUS_CODE, statusCode);
+    private void manageReturnedStatusCode(ProcessingContext context, int statusCode, String responseBody) {
+        context.setAdditionalProperty("HTTP_STATUS_CODE", statusCode);
+
         if (statusCode >= 300 && statusCode < 400) {
-            exchange.setProperty(HTTP_ERROR_TYPE, HTTP_3XX);
-            logHttpError(connectorConfig.getServerErrorLogLevel(), statusCode, responseBody, exchange);
+            context.setAdditionalProperty("HTTP_ERROR_TYPE", HTTP_3XX);
+            logHttpError(connectorConfig.getServerErrorLogLevel(), statusCode, responseBody, context);
         } else if (statusCode >= 400 && statusCode < 500 && statusCode != SC_TOO_MANY_REQUESTS) {
-            exchange.setProperty(HTTP_ERROR_TYPE, HTTP_4XX);
-            logHttpError(connectorConfig.getClientErrorLogLevel(), statusCode, responseBody, exchange);
+            context.setAdditionalProperty("HTTP_ERROR_TYPE", HTTP_4XX);
+            logHttpError(connectorConfig.getClientErrorLogLevel(), statusCode, responseBody, context);
         } else if (statusCode == SC_TOO_MANY_REQUESTS || statusCode >= 500) {
-            exchange.setProperty(HTTP_ERROR_TYPE, HTTP_5XX);
-            logHttpError(connectorConfig.getServerErrorLogLevel(), statusCode, responseBody, exchange);
+            context.setAdditionalProperty("HTTP_ERROR_TYPE", HTTP_5XX);
+            logHttpError(connectorConfig.getServerErrorLogLevel(), statusCode, responseBody, context);
         } else {
-            logHttpError(ERROR, statusCode, responseBody, exchange);
+            logHttpError(ERROR, statusCode, responseBody, context);
         }
     }
 
-    private void logHttpError(Logger.Level level, int statusCode, String responseBody, Exchange exchange) {
+    private void logHttpError(Logger.Level level, int statusCode, String responseBody, ProcessingContext context) {
         Log.logf(
                 level,
                 HTTP_ERROR_LOG_MSG,
-                getRouteId(exchange),
-                getOrgId(exchange),
-                getExchangeId(exchange),
-                getTargetUrl(exchange),
+                context.getRouteId(),
+                context.getOrgId(),
+                context.getId(),
+                context.getTargetUrl(),
                 statusCode,
                 responseBody
         );
+    }
+
+    private void handleGenericHttpException(Throwable t, ProcessingContext context) {
+        // Check if it's a wrapped HTTP exception or other HTTP-related error
+        Throwable cause = t.getCause();
+        if (cause instanceof ClientWebApplicationException e) {
+            String responseBody = null;
+            try {
+                responseBody = e.getResponse().readEntity(String.class);
+            } catch (Exception ex) {
+                responseBody = "Unable to read response body";
+            }
+            manageReturnedStatusCode(context, e.getResponse().getStatus(), responseBody);
+        } else {
+            // Fall back to default logging
+            logDefault(t, context);
+        }
     }
 }

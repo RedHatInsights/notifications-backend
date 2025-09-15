@@ -1,18 +1,17 @@
 package com.redhat.cloud.notifications.connector.splunk;
 
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
+import com.redhat.cloud.notifications.connector.ExceptionProcessor;
 import com.redhat.cloud.notifications.connector.authentication.AuthenticationDataExtractor;
 import com.redhat.cloud.notifications.connector.http.UrlValidator;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.apache.camel.Exchange;
 
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
-import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.ACCOUNT_ID;
-import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TARGET_URL_NO_SCHEME;
-import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TRUST_ALL;
-
+/**
+ * Splunk-specific CloudEvent data extractor.
+ * This is the new version that replaces the Camel-based SplunkCloudEventDataExtractor.
+ */
 @ApplicationScoped
 public class SplunkCloudEventDataExtractor extends CloudEventDataExtractor {
 
@@ -26,29 +25,47 @@ public class SplunkCloudEventDataExtractor extends CloudEventDataExtractor {
     @Inject
     AuthenticationDataExtractor authenticationDataExtractor;
 
-    @Override
-    public void extract(Exchange exchange, JsonObject cloudEventData) throws Exception {
+    @Inject
+    UrlValidator urlValidator;
 
-        exchange.setProperty(ACCOUNT_ID, cloudEventData.getString("account_id"));
+    @Override
+    public void extract(ExceptionProcessor.ProcessingContext context, JsonObject cloudEventData) throws Exception {
+
+        context.setAdditionalProperty("ACCOUNT_ID", cloudEventData.getString("account_id"));
 
         JsonObject metadata = cloudEventData.getJsonObject(NOTIF_METADATA);
-        exchange.setProperty(TARGET_URL, metadata.getString("url"));
-        exchange.setProperty(TRUST_ALL, Boolean.valueOf(metadata.getString("trustAll")));
+        if (metadata != null) {
+            String targetUrl = metadata.getString("url");
+            context.setTargetUrl(targetUrl);
+            context.setAdditionalProperty("TRUST_ALL", Boolean.valueOf(metadata.getString("trustAll")));
 
-        JsonObject authentication = metadata.getJsonObject("authentication");
-        authenticationDataExtractor.extract(exchange, authentication);
+            JsonObject authentication = metadata.getJsonObject("authentication");
+            authenticationDataExtractor.extract(context, authentication);
 
-        cloudEventData.remove(NOTIF_METADATA);
+            // Remove metadata from the data so it's not sent to Splunk
+            cloudEventData.remove(NOTIF_METADATA);
+        }
 
-        UrlValidator.validateTargetUrl(exchange);
-        fixTargetUrlPathIfNeeded(exchange);
-        exchange.setProperty(TARGET_URL_NO_SCHEME, exchange.getProperty(TARGET_URL, String.class).replace("https://", ""));
+        // Validate and fix the target URL
+        urlValidator.validateTargetUrl(context);
+        fixTargetUrlPathIfNeeded(context);
 
-        exchange.getIn().setBody(cloudEventData);
+        String targetUrlNoScheme = context.getTargetUrl().replace("https://", "");
+        context.setAdditionalProperty("TARGET_URL_NO_SCHEME", targetUrlNoScheme);
+
+        // Store the processed cloud event data
+        JsonObject originalCloudEvent = context.getOriginalCloudEvent();
+        if (originalCloudEvent != null) {
+            originalCloudEvent.put("data", cloudEventData);
+        }
     }
 
-    private void fixTargetUrlPathIfNeeded(Exchange exchange) {
-        String targetUrl = exchange.getProperty(TARGET_URL, String.class);
+    private void fixTargetUrlPathIfNeeded(ExceptionProcessor.ProcessingContext context) {
+        String targetUrl = context.getTargetUrl();
+        if (targetUrl == null) {
+            return;
+        }
+
         if (targetUrl.endsWith("/")) {
             targetUrl = targetUrl.substring(0, targetUrl.length() - 1);
         }
@@ -60,7 +77,7 @@ public class SplunkCloudEventDataExtractor extends CloudEventDataExtractor {
             } else {
                 targetUrl += SERVICES_COLLECTOR_EVENT;
             }
-            exchange.setProperty(TARGET_URL, targetUrl);
+            context.setTargetUrl(targetUrl);
         }
     }
 }

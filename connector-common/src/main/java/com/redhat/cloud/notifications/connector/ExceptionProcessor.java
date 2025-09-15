@@ -2,34 +2,22 @@ package com.redhat.cloud.notifications.connector;
 
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.logging.Log;
+import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
-import org.apache.camel.ProducerTemplate;
-
-import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
-import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.KAFKA_REINJECTION;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.KAFKA_REINJECTION_COUNT;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.OUTCOME;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.SUCCESSFUL;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
-import static org.apache.camel.Exchange.ERRORHANDLER_BRIDGE;
-import static org.apache.camel.Exchange.EXCEPTION_CAUGHT;
-import static org.apache.camel.Exchange.FAILURE_ENDPOINT;
-import static org.apache.camel.Exchange.FAILURE_ROUTE_ID;
-import static org.apache.camel.Exchange.FATAL_FALLBACK_ERROR_HANDLER;
+import org.eclipse.microprofile.reactive.messaging.Message;
 
 /**
  * Extend this class in an {@link ApplicationScoped} bean from a connector Maven module to change the
  * behavior of the connector in case of failure while calling an external service (e.g. Slack, Splunk...).
  * If this class is not extended, then the default implementation below will be used.
+ *
+ * This is the new version that replaces the Camel-based ExceptionProcessor.
  */
 @DefaultBean
 @ApplicationScoped
-public class ExceptionProcessor implements Processor {
+public class ExceptionProcessor {
 
     private static final String DEFAULT_LOG_MSG = "Message sending failed on %s: [orgId=%s, historyId=%s, targetUrl=%s]";
 
@@ -37,71 +25,151 @@ public class ExceptionProcessor implements Processor {
     ConnectorConfig connectorConfig;
 
     @Inject
-    ProducerTemplate producerTemplate;
+    ConnectorMessagingService messagingService;
 
-    @Override
-    public void process(Exchange exchange) {
+    public Uni<Void> process(Throwable failure, Message<String> originalMessage, ProcessingContext context) {
 
-        Throwable t = exchange.getProperty(EXCEPTION_CAUGHT, Throwable.class);
+        context.setSuccessful(false);
+        context.setOutcome(failure.getMessage());
 
-        exchange.setProperty(SUCCESSFUL, false);
-        exchange.setProperty(OUTCOME, t.getMessage());
+        process(failure, context);
 
-        process(t, exchange);
-
-        /*
-         * There is currently a bug in Camel that will cause a NullPointerException throw when SEDA is used and the
-         * exchange is passed to producerTemplate#send. To work around that bug, we're cloning the current exchange
-         * and removing all Camel internal properties related to the exception that is being processed.
-         */
-        Exchange exchangeCopy = exchange.copy();
-        exchangeCopy.removeProperty(ERRORHANDLER_BRIDGE);
-        exchangeCopy.removeProperty(EXCEPTION_CAUGHT);
-        exchangeCopy.removeProperty(FAILURE_ENDPOINT);
-        exchangeCopy.removeProperty(FAILURE_ROUTE_ID);
-        exchangeCopy.removeProperty(FATAL_FALLBACK_ERROR_HANDLER);
-
-        // Attempt reinjecting the message to the incoming Kafka queue as a way
-        // of improving our fault tolerance. After a few attempts we should
-        // give up and acknowledge the failure.
-        final String route;
-        if (exchange.getProperty(KAFKA_REINJECTION_COUNT, 0, int.class) < this.connectorConfig.getKafkaMaximumReinjections()) {
-            route = String.format("direct:%s", KAFKA_REINJECTION);
+        // Handle reinjection logic (replaces Camel's redelivery mechanism)
+        if (context.getKafkaReinjectionCount() < connectorConfig.getKafkaMaximumReinjections()) {
+            // Reinject to Kafka for retry
+            return messagingService.reinjectMessage(originalMessage, context)
+                    .onFailure().invoke(t -> Log.error("Failed to reinject message", t))
+                    .replaceWithVoid();
         } else {
-            route = String.format("direct:%s", CONNECTOR_TO_ENGINE);
+            // Send failure result to engine
+            ConnectorProcessor.ConnectorResult result = new ConnectorProcessor.ConnectorResult(
+                    false,
+                    failure.getMessage(),
+                    context.getId(),
+                    context.getOrgId(),
+                    context.getOriginalCloudEvent()
+            );
+            return messagingService.sendToEngine(result)
+                    .onFailure().invoke(t -> Log.error("Failed to send failure result to engine", t))
+                    .replaceWithVoid();
         }
-
-        this.producerTemplate.send(route, exchangeCopy);
     }
 
-    protected final void logDefault(Throwable t, Exchange exchange) {
+    protected final void logDefault(Throwable t, ProcessingContext context) {
         Log.errorf(
                 t,
                 DEFAULT_LOG_MSG,
-                getRouteId(exchange),
-                getOrgId(exchange),
-                getExchangeId(exchange),
-                getTargetUrl(exchange)
+                context.getRouteId(),
+                context.getOrgId(),
+                context.getId(),
+                context.getTargetUrl()
         );
     }
 
-    protected final String getRouteId(Exchange exchange) {
-        return exchange.getFromRouteId();
+    protected void process(Throwable t, ProcessingContext context) {
+        logDefault(t, context);
     }
 
-    protected final String getExchangeId(Exchange exchange) {
-        return exchange.getProperty(ID, String.class);
-    }
+    /**
+     * Context object that holds processing state, replacing Camel Exchange properties
+     */
+    public static class ProcessingContext {
+        private String id;
+        private String orgId;
+        private String targetUrl;
+        private String routeId;
+        private boolean successful = true;
+        private String outcome;
+        private int kafkaReinjectionCount = 0;
+        private JsonObject originalCloudEvent;
+        private long startTime = System.currentTimeMillis();
+        private java.util.Map<String, Object> additionalProperties = new java.util.HashMap<>();
 
-    protected final String getOrgId(Exchange exchange) {
-        return exchange.getProperty(ORG_ID, String.class);
-    }
+        // Getters and setters
+        public String getId() {
+            return id;
+        }
 
-    protected final String getTargetUrl(Exchange exchange) {
-        return exchange.getProperty(TARGET_URL, String.class);
-    }
+        public void setId(String id) {
+            this.id = id;
+        }
 
-    protected void process(Throwable t, Exchange exchange) {
-        logDefault(t, exchange);
+        public String getOrgId() {
+            return orgId;
+        }
+
+        public void setOrgId(String orgId) {
+            this.orgId = orgId;
+        }
+
+        public String getTargetUrl() {
+            return targetUrl;
+        }
+
+        public void setTargetUrl(String targetUrl) {
+            this.targetUrl = targetUrl;
+        }
+
+        public String getRouteId() {
+            return routeId;
+        }
+
+        public void setRouteId(String routeId) {
+            this.routeId = routeId;
+        }
+
+        public boolean isSuccessful() {
+            return successful;
+        }
+
+        public void setSuccessful(boolean successful) {
+            this.successful = successful;
+        }
+
+        public String getOutcome() {
+            return outcome;
+        }
+
+        public void setOutcome(String outcome) {
+            this.outcome = outcome;
+        }
+
+        public int getKafkaReinjectionCount() {
+            return kafkaReinjectionCount;
+        }
+
+        public void setKafkaReinjectionCount(int kafkaReinjectionCount) {
+            this.kafkaReinjectionCount = kafkaReinjectionCount;
+        }
+
+        public JsonObject getOriginalCloudEvent() {
+            return originalCloudEvent;
+        }
+
+        public void setOriginalCloudEvent(JsonObject originalCloudEvent) {
+            this.originalCloudEvent = originalCloudEvent;
+        }
+
+        public long getStartTime() {
+            return startTime;
+        }
+
+        public void setStartTime(long startTime) {
+            this.startTime = startTime;
+        }
+
+        // Additional properties for connector-specific data
+        public void setAdditionalProperty(String key, Object value) {
+            additionalProperties.put(key, value);
+        }
+
+        public Object getAdditionalProperty(String key) {
+            return additionalProperties.get(key);
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> T getAdditionalProperty(String key, Class<T> type) {
+            return (T) additionalProperties.get(key);
+        }
     }
 }
