@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.processors.camel;
+package com.redhat.cloud.notifications.connector.microsoft.teams;
 
 import java.util.Map;
 
