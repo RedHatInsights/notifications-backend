@@ -99,7 +99,7 @@ class EmailAggregatorTest {
     @Test
     void shouldTestRecipientsFromSubscription() {
         // init test environment
-        application = resourceHelpers.findApp("rhel", "policies");
+        application = resourceHelpers.findOrCreateApplication("rhel", "policies");
         eventType1 = resourceHelpers.findOrCreateEventType(application.getId(), TestHelpers.eventType);
         eventType2 = resourceHelpers.findOrCreateEventType(application.getId(), "not-used");
         resourceHelpers.findOrCreateEventType(application.getId(), "event-type-2");

@@ -27,8 +27,6 @@ import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import com.redhat.cloud.notifications.qute.templates.TemplateService;
-import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -107,12 +105,9 @@ public class LifecycleITest {
     @InjectSpy
     EngineConfig engineConfig;
 
-    @InjectMock
-    TemplateService templateService;
-
-    String bundleName;
-    String applicationName;
-    String eventTypeName;
+    final String bundleName = "rhel";
+    final String applicationName = "patch";
+    final String eventTypeName = "new-advisory";
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
@@ -121,15 +116,12 @@ public class LifecycleITest {
         final String username = "user";
 
         when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
-        bundleName = RandomStringUtils.randomAlphabetic(10).toLowerCase();
-        applicationName = RandomStringUtils.randomAlphabetic(10).toLowerCase();
-        eventTypeName = RandomStringUtils.randomAlphabetic(10).toLowerCase();
+        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(true);
 
         // First, we need a bundle, an app and an event type. Let's create them!
-        Bundle bundle = resourceHelpers.createBundle(bundleName);
-        Application app = resourceHelpers.createApp(bundle.getId(), applicationName);
-        EventType eventType = resourceHelpers.createEventType(app.getId(), eventTypeName);
-        setupEmailMock();
+        Bundle bundle = resourceHelpers.findOrCreateBundle(bundleName);
+        Application app = resourceHelpers.findOrCreateApplication(bundleName, applicationName);
+        EventType eventType = resourceHelpers.findOrCreateEventType(app.getId(), eventTypeName);
 
         // We also need behavior groups.
         BehaviorGroup behaviorGroup1 = createBehaviorGroup(accountId, bundle);

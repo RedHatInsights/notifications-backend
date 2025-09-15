@@ -142,11 +142,16 @@ class EmailAggregationProcessorTest {
         mockUsers(user1, user2, user3);
         when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
         resourceHelpers.clearEvents();
+        resourceHelpers.deleteBundle("rhel");
+        resourceHelpers.createBundle("rhel", "Red Hat Enterprise Linux");
+        initData("patch", "new-advisory");
+        initData("policies", "policy-triggered");
     }
 
     @AfterEach
     void afterEach() {
         resourceHelpers.deleteApp("rhel", "patch");
+        resourceHelpers.deleteApp("rhel", "policies");
         resourceHelpers.clearEvents();
     }
 

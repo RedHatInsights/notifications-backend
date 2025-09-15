@@ -14,7 +14,6 @@ import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotifi
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
-import com.redhat.cloud.notifications.qute.templates.TemplateNotFoundException;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
@@ -78,10 +77,6 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         // Fetch the template that will be used to hydrate it with the data.
         final Optional<InstantEmailTemplate> instantEmailTemplateMaybe = this.templateRepository.findInstantEmailTemplate(event.getEventType().getId());
-        if (instantEmailTemplateMaybe.isEmpty()) {
-            Log.infof("[event_uuid: %s] The event was skipped because there were no suitable templates for its event type %s", event.getId(), event.getEventType().getName());
-            return;
-        }
 
         final TemplateDefinition bodyTemplateDefinition = new TemplateDefinition(
             IntegrationType.EMAIL_BODY,
@@ -95,10 +90,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             event.getEventType().getApplication().getName(),
             event.getEventType().getName());
 
-        try {
-            quteTemplateService.getTemplateId(subjectTemplateDefinition);
-            quteTemplateService.getTemplateId(bodyTemplateDefinition);
-        } catch (TemplateNotFoundException e) {
+        if (!quteTemplateService.isValidTemplateDefinition(subjectTemplateDefinition) ||
+            !quteTemplateService.isValidTemplateDefinition(bodyTemplateDefinition)) {
             Log.infof("[event_uuid: %s] The event was skipped because there were no suitable templates for its event type %s", event.getId(), event.getEventType().getName());
             return;
         }
@@ -151,11 +144,19 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
                 body = quteTemplateService.renderTemplateWithCustomDataMap(bodyTemplateDefinition, additionalContext);
             } catch (Exception e) {
                 Log.error("Error rendering email template for event type " + event.getEventType().getName(), e);
+                if (instantEmailTemplateMaybe.isEmpty()) {
+                    Log.infof("[event_uuid: %s] The event was skipped because there were no suitable templates for its event type %s", event.getId(), event.getEventType().getName());
+                    return;
+                }
                 subject = renderEmailSubjectFromDbTemplates(instantEmailTemplateMaybe.get(), event.getEventWrapper().getEvent());
                 body = renderEmailBodyFromDbTemplates(instantEmailTemplateMaybe.get(), event.getEventWrapper().getEvent());
             }
         } else {
             // Render the subject and the body of the email.
+            if (instantEmailTemplateMaybe.isEmpty()) {
+                Log.infof("[event_uuid: %s] The event was skipped because there were no suitable templates for its event type %s", event.getId(), event.getEventType().getName());
+                return;
+            }
             subject = renderEmailSubjectFromDbTemplates(instantEmailTemplateMaybe.get(), event.getEventWrapper().getEvent());
             body = renderEmailBodyFromDbTemplates(instantEmailTemplateMaybe.get(), event.getEventWrapper().getEvent());
         }
