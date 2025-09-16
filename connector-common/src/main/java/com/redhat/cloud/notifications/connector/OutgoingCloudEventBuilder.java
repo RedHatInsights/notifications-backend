@@ -10,6 +10,7 @@ import org.apache.camel.util.json.JsonObject;
 
 import java.time.LocalDateTime;
 
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.ENDPOINT_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.OUTCOME;
@@ -48,8 +49,9 @@ public class OutgoingCloudEventBuilder implements Processor {
         data.put("duration", System.currentTimeMillis() - exchange.getProperty(START_TIME, Long.class));
         data.put("details", details);
 
-        Log.infof("Notification sent [orgId=%s, type=%s, historyId=%s, duration=%d, successful=%b]",
+        Log.infof("Notification sent [orgId=%s, EndpointId=%s, type=%s, historyId=%s, duration=%d, successful=%b]",
             exchange.getProperty(ORG_ID, String.class),
+            exchange.getProperty(ENDPOINT_ID, String.class),
             exchange.getProperty(RETURN_SOURCE, String.class),
             exchange.getProperty(ID, String.class),
             data.get("duration"),

@@ -6,6 +6,7 @@ import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.ENDPOINT_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORIGINAL_CLOUD_EVENT;
@@ -44,6 +45,7 @@ public class IncomingCloudEventProcessor implements Processor {
         JsonObject data = cloudEvent.getJsonObject(CLOUD_EVENT_DATA);
 
         exchange.setProperty(ORG_ID, data.getString("org_id"));
+        exchange.setProperty(ENDPOINT_ID, data.getString("endpoint_id"));
 
         cloudEventDataExtractor.extract(exchange, data);
     }
