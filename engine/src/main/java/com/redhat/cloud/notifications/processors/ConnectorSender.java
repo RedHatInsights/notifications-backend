@@ -77,6 +77,7 @@ public class ConnectorSender {
 
     public void send(Event event, Endpoint endpoint, JsonObject payload) {
         payload.put("org_id", event.getOrgId());
+        payload.put("endpoint_id", endpoint.getId());
 
         String connector = getConnector(endpoint);
 

@@ -13,6 +13,7 @@ public class ExchangeProperty {
      */
     public static final String KAFKA_REINJECTION_DELAY = "kafkaReinjectionDelay";
     public static final String ORG_ID = "orgId";
+    public static final String ENDPOINT_ID = "endpointId";
     /**
      * Holds the original Cloud Event as received from the "incoming" Kafka
      * topic.
