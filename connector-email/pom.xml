@@ -69,6 +69,11 @@
             <artifactId>notifications-connector-common-http</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.redhat.cloud.notifications</groupId>
+            <artifactId>notifications-common-template</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Quarkus -->
         <dependency>
@@ -111,10 +116,10 @@
             <version>${mockserver-netty-no-dependencies.version}</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-junit5-mockito</artifactId>
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>${com.networknt.json-schema-validator.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

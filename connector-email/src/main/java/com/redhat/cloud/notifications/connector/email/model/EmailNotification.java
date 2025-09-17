@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
 import io.vertx.core.json.JsonObject;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Represents the data structure that the email connector is expecting.
@@ -23,6 +24,7 @@ import java.util.Collection;
  * @param subscribedByDefault   true if the event type is subscribed by
  *                              default.
  * @param recipientsAuthorizationCriterion   forward received authorization criterion.
+ * @param eventData                         the event details.
  *
  */
 public record EmailNotification(
@@ -34,6 +36,7 @@ public record EmailNotification(
     @JsonProperty("subscribers")            Collection<String> subscribers,
     @JsonProperty("unsubscribers")          Collection<String> unsubscribers,
     @JsonProperty("subscribed_by_default")  boolean subscribedByDefault,
-    @JsonProperty("recipients_authorization_criterion") JsonObject recipientsAuthorizationCriterion
+    @JsonProperty("recipients_authorization_criterion") JsonObject recipientsAuthorizationCriterion,
+    @JsonProperty("event_data") Map<String, Object> eventData
 )  { }
 
