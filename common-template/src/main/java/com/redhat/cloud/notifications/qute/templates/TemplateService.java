@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.qute.templates.mapping.SecureEmailTemplate
 import com.redhat.cloud.notifications.qute.templates.mapping.SubscriptionServices;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.Engine;
+import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 import io.quarkus.runtime.Startup;
 import jakarta.annotation.PostConstruct;
@@ -108,7 +109,7 @@ public class TemplateService {
      *
      * @throws TemplateNotFoundException
      */
-    private TemplateInstance compileTemplate(final TemplateDefinition originalTemplateDefinition) throws TemplateNotFoundException {
+    private Template compileTemplate(final TemplateDefinition originalTemplateDefinition) throws TemplateNotFoundException {
 
         // try to find template path with full config parameters
         String path = templatesConfigMap.get(originalTemplateDefinition);
@@ -155,7 +156,7 @@ public class TemplateService {
         }
         final String filePath = buildTemplateFilePath(templateDefinition, templatesConfigMap.get(templateDefinition));
         // ask Qute to load the template instance from its file path, such as drawer/Policies/policyTriggeredBody.md
-        return engine.getTemplate(filePath).instance();
+        return engine.getTemplate(filePath);
     }
 
     public String renderTemplate(final TemplateDefinition config, final Action action) {
@@ -179,7 +180,7 @@ public class TemplateService {
     }
 
     public String getTemplateId(final TemplateDefinition config) {
-        return compileTemplate(config).getTemplate().getId();
+        return compileTemplate(config).getId();
     }
 
     public Map<String, Object> convertActionToContextMap(final Action action) {

@@ -77,9 +77,13 @@ public class ResourceHelpers {
             .executeUpdate();
     }
 
-    @Transactional
     public Bundle createBundle(String bundleName) {
-        Bundle bundle = new Bundle(bundleName, "A bundle");
+        return createBundle(bundleName, "A bundle");
+    }
+
+    @Transactional
+    public Bundle createBundle(String bundleName, String bundleDisplayName) {
+        Bundle bundle = new Bundle(bundleName, bundleDisplayName);
         entityManager.persist(bundle);
         return bundle;
     }
@@ -266,31 +270,30 @@ public class ResourceHelpers {
         return createInstantEmailTemplate(eventType.getId(), blankTemplate.getId(), blankTemplate.getId(), true);
     }
 
-    public Application findOrCreateApplication(String bundleName, String appName) {
-        Bundle bundle = null;
+    public Bundle findOrCreateBundle(String bundleName) {
         try {
-            bundle = findBundle(bundleName);
+            return findBundle(bundleName);
         } catch (NoResultException nre) {
-            bundle = createBundle(bundleName);
+            return createBundle(bundleName);
         }
+    }
 
-        Application app = null;
+    public Application findOrCreateApplication(String bundleName, String appName) {
+        Bundle bundle = findOrCreateBundle(bundleName);
+
         try {
-            app = findApp(bundleName, appName);
+            return findApp(bundleName, appName);
         } catch (NoResultException nre) {
-            app = createApp(bundle.getId(), appName);
+            return createApp(bundle.getId(), appName);
         }
-        return app;
     }
 
     public EventType findOrCreateEventType(UUID applicationId, String eventTypeName) {
-        EventType eventType = null;
         try {
-            eventType = findEventType(applicationId, eventTypeName);
+            return findEventType(applicationId, eventTypeName);
         } catch (NoResultException nre) {
-            eventType = createEventType(applicationId, eventTypeName);
+            return createEventType(applicationId, eventTypeName);
         }
-        return eventType;
     }
 
     @Transactional
