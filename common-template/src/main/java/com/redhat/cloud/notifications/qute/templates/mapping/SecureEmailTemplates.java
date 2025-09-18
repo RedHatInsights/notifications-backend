@@ -48,6 +48,7 @@ public class SecureEmailTemplates {
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, Rhel.BUNDLE_NAME, RESOURCE_OPTIMIZATION_APP_NAME, null), SECURE_FOLDER_NAME + RESOURCE_OPTIMIZATION_FOLDER_NAME + "dailyEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, Rhel.BUNDLE_NAME, VULNERABILITY_APP_NAME, null), SECURE_FOLDER_NAME + VULNERABILITY_FOLDER_NAME + "dailyEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null), SECURE_FOLDER_NAME + "Common/insightsDailyEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE, null, null, null), "Common/insightsDailyEmailTitle.txt"),
 
         // Cluster manager
         entry(new TemplateDefinition(EMAIL_TITLE, OpenShift.BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), SECURE_FOLDER_NAME + CLUSTER_MANAGER_FOLDER_NAME + "instantEmailTitle.txt"),

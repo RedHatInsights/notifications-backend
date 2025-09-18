@@ -5,6 +5,7 @@ import java.util.Map;
 
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.DRAWER;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY;
+import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_TITLE;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.GOOGLE_CHAT;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.MS_TEAMS;
@@ -20,6 +21,7 @@ public class DefaultTemplates {
         entry(new TemplateDefinition(GOOGLE_CHAT, null, null, null), "Default/default.json"),
         entry(new TemplateDefinition(SLACK, null, null, null), "Default/default.md"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null), "Common/insightsDailyEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE, null, null, null), "Common/insightsDailyEmailTitle.txt"),
         entry(new TemplateDefinition(EMAIL_TITLE, null, null, null), "Common/insightsEmailTitle.txt")
     );
 }

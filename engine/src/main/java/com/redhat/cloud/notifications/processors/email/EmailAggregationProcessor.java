@@ -279,7 +279,9 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
         Log.debugf("Users with same aggregated data: %s", usersWithSameAggregatedData);
 
-        String emailTitle = "Daily digest - " + bundle.getDisplayName();
+        Map<String, Object> mapDataTitle = Map.of("source", Map.of("bundle", Map.of("display_name", bundle.getDisplayName())));
+        TemplateDefinition templateTitleDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE, null, null, null);
+        String emailTitle = commonQuteTemplateService.renderTemplateWithCustomDataMap(templateTitleDefinition, mapDataTitle);
 
         // for each set of users, generate email subject + body and send it to email connector
         usersWithSameAggregatedData.entrySet().stream().forEach(listApplicationWithUserCollection -> {
