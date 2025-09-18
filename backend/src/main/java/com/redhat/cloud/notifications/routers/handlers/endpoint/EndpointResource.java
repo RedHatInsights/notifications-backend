@@ -31,6 +31,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
+import com.redhat.cloud.notifications.models.WebhookProperties;
 import com.redhat.cloud.notifications.models.dto.v1.ApplicationDTO;
 import com.redhat.cloud.notifications.models.dto.v1.BundleDTO;
 import com.redhat.cloud.notifications.models.dto.v1.CommonMapper;
@@ -96,9 +97,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
+import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
+import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
@@ -373,6 +376,7 @@ public class EndpointResource {
         }
 
         if (endpoint.getType() == CAMEL) {
+            checkSslDisabledEndpoint(endpoint);
             String subType = endpoint.getSubType();
 
             if (subType.equals("slack")) {
@@ -380,6 +384,8 @@ public class EndpointResource {
             } else if (subType.equals("servicenow") || subType.equals("splunk")) {
                 checkHttpsEndpoint(endpoint.getProperties(CamelProperties.class));
             }
+        } else if (endpoint.getType() == WEBHOOK || endpoint.getType() == ANSIBLE) {
+            checkSslDisabledEndpoint(endpoint);
         }
 
         endpoint.setStatus(EndpointStatus.READY);
@@ -592,6 +598,9 @@ public class EndpointResource {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
         checkSystemEndpoint(endpointType);
+        if (endpointType == CAMEL || endpointType == WEBHOOK || endpointType == ANSIBLE) {
+            checkSslDisabledEndpoint(endpointType, orgId, id);
+        }
         endpointRepository.enableEndpoint(orgId, id);
         return Response.ok().build();
     }
@@ -650,11 +659,35 @@ public class EndpointResource {
 
         if (endpoint.getType() == CAMEL) {
             String subType = endpoint.getSubType();
+            checkSslDisabledEndpoint(endpoint);
+
+            // If SSL verification is disabled on the existing endpoint, only permit updates which re-enable verification.
+            try {
+                if (endpointType == CAMEL) {
+                    checkSslDisabledEndpoint(dbEndpoint);
+                }
+            } catch (BadRequestException e) {
+                if (endpoint.getProperties(CamelProperties.class).getDisableSslVerification()) {
+                    throw e;
+                }
+            }
 
             if (subType.equals("slack")) {
                 checkSlackChannel(endpoint.getProperties(CamelProperties.class), dbEndpoint.getProperties(CamelProperties.class));
             } else if (subType.equals("servicenow") || subType.equals("splunk")) {
                 checkHttpsEndpoint(endpoint.getProperties(CamelProperties.class));
+            }
+        } else if (endpoint.getType() == WEBHOOK || endpoint.getType() == ANSIBLE) {
+            checkSslDisabledEndpoint(endpoint);
+            // If SSL verification is disabled on the existing endpoint, only permit updates which re-enable verification.
+            try {
+                if (endpointType == WEBHOOK || endpointType == ANSIBLE) {
+                    checkSslDisabledEndpoint(dbEndpoint);
+                }
+            } catch (BadRequestException e) {
+                if (endpoint.getProperties(WebhookProperties.class).getDisableSslVerification()) {
+                    throw e;
+                }
             }
         }
 
@@ -728,6 +761,10 @@ public class EndpointResource {
         if (!this.endpointRepository.existsByUuidAndOrgId(uuid, getOrgId(sec))) {
             throw new NotFoundException("integration not found");
         }
+        EndpointType endpointType = endpointRepository.getEndpointTypeById(getOrgId(sec), uuid);
+        if (endpointType == CAMEL || endpointType == WEBHOOK || endpointType == ANSIBLE) {
+            checkSslDisabledEndpoint(endpointType, getOrgId(sec), uuid);
+        }
 
         final InternalEndpointTestRequest internalEndpointTestRequest = new InternalEndpointTestRequest();
         internalEndpointTestRequest.endpointUuid = uuid;
@@ -746,6 +783,33 @@ public class EndpointResource {
                     endpointType
             ));
         }
+    }
+
+    /** @deprecated to be removed once all endpoints with {@code disableSslVerification = true} are deleted. */
+    @Deprecated(forRemoval = true)
+    private void checkSslDisabledEndpoint(EndpointType endpointType, String orgId, UUID id) {
+        checkSslDisabledEndpoint(endpointRepository.getEndpoint(orgId, id));
+    }
+
+    /**
+     * @param endpoint A {@link EndpointType#CAMEL}, {@link EndpointType#WEBHOOK}, or {@link EndpointType#ANSIBLE} endpoint.
+     * @deprecated to be removed once all endpoints with {@code disableSslVerification = true} are deleted.
+     */
+    @Deprecated(forRemoval = true)
+    private void checkSslDisabledEndpoint(Endpoint endpoint) {
+        // Early return to simplify error message
+        if (endpoint.getType() == CAMEL) {
+            if (endpoint.getProperties() == null || !endpoint.getProperties(CamelProperties.class).getDisableSslVerification()) {
+                return;
+            }
+        } else {
+            if (endpoint.getProperties() == null || !endpoint.getProperties(WebhookProperties.class).getDisableSslVerification()) {
+                return;
+            }
+        }
+
+        throw new BadRequestException("Endpoints are no longer permitted to disable SSL/TLS verification, and existing integrations which have disabled " +
+                "verification will be removed soon. Please enable SSL/TLS verification to continue using this integration, or contact Red Hat Support for assistance.");
     }
 
     private boolean isEndpointTypeAllowed(EndpointType endpointType) {

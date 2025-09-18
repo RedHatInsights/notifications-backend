@@ -258,7 +258,7 @@ public class LifecycleITest {
     private Endpoint createWebhookEndpoint(String accountId, String secretToken) {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(HttpType.POST);
-        properties.setDisableSslVerification(true);
+        properties.setDisableSslVerification(false);
         properties.setSecretToken(secretToken);
         properties.setUrl(getMockServerUrl() + WEBHOOK_MOCK_PATH);
         return createEndpoint(accountId, WEBHOOK, UUID.randomUUID().toString(), "Endpoint", properties);
