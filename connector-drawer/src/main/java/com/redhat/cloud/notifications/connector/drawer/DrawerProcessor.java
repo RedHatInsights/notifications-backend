@@ -89,7 +89,10 @@ public class DrawerProcessor implements Processor {
                     Log.debugf("Legacy and new rendered messages are identical");
                 }
             }
-            emitter.send(buildMessage(entryPayloadModel, recipientsList));
+            Message<JsonObject> builtKafkaMessage = buildMessage(entryPayloadModel, recipientsList);
+            if (drawerConnectorConfig.pushNotificationsToKafka()) {
+                emitter.send(builtKafkaMessage);
+            }
         }
     }
 
