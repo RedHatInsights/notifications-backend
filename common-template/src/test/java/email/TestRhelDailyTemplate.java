@@ -22,6 +22,7 @@ import static email.TestResourceOptimizationTemplate.JSON_RESOURCE_OPTIMIZATION_
 import static email.pojo.EmailPendo.GENERAL_PENDO_MESSAGE;
 import static email.pojo.EmailPendo.GENERAL_PENDO_TITLE;
 import static helpers.TestHelpers.DEFAULT_ORG_ID;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -66,10 +67,16 @@ public class TestRhelDailyTemplate extends EmailTemplatesRendererHelper {
             .toList();
 
         TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null);
-
-        Map<String, Object> mapData = Map.of("title", "Daily digest - Red Hat Enterprise Linux", "items", result, "orgId", DEFAULT_ORG_ID);
+        TemplateDefinition globalDailyTitleTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE, null, null, null);
 
         EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url()));
+
+        Map<String, Object> mapDataTitle = Map.of("source", Map.of("bundle", Map.of("display_name", "Red Hat Enterprise Linux")));
+
+        String templateTitleResult = templateService.renderTemplateWithCustomDataMap(globalDailyTitleTemplateDefinition, mapDataTitle);
+        assertEquals("Daily digest - Red Hat Enterprise Linux", templateTitleResult);
+
+        Map<String, Object> mapData = Map.of("title", templateTitleResult, "items", result, "orgId", DEFAULT_ORG_ID);
 
         String templateResult = generateEmailFromContextMap(globalDailyTemplateDefinition, mapData, null);
         templateResultChecks(templateResult);
