@@ -24,7 +24,7 @@ public class DrawerConnectorConfig extends HttpConnectorConfig {
     @PostConstruct
     void drawerConnectorPostConstruct() {
         toggleUseCommonTemplateModule = toggleRegistry.register("use-common-template-module", true);
-        toggleUseCommonTemplateModule = toggleRegistry.register("push-notifications-to-kafka", true);
+        togglePushNotificationsToKafka = toggleRegistry.register("push-notifications-to-kafka", true);
     }
 
     @Override
