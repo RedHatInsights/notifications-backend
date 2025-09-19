@@ -19,10 +19,12 @@ public class DrawerConnectorConfig extends HttpConnectorConfig {
     String outgoingDrawerTopic;
 
     private String toggleUseCommonTemplateModule;
+    private String togglePushNotificationsToKafka;
 
     @PostConstruct
     void drawerConnectorPostConstruct() {
         toggleUseCommonTemplateModule = toggleRegistry.register("use-common-template-module", true);
+        togglePushNotificationsToKafka = toggleRegistry.register("push-notifications-to-kafka", true);
     }
 
     @Override
@@ -31,11 +33,16 @@ public class DrawerConnectorConfig extends HttpConnectorConfig {
         config.put(DRAWER_TOPIC, outgoingDrawerTopic);
         config.put(RECIPIENTS_RESOLVER_USER_SERVICE_URL, recipientsResolverServiceURL);
         config.put(toggleUseCommonTemplateModule, useCommonTemplateModule());
+        config.put(togglePushNotificationsToKafka, pushNotificationsToKafka());
         return config;
     }
 
     public boolean useCommonTemplateModule() {
         return unleash.isEnabled(toggleUseCommonTemplateModule, false);
+    }
+
+    public boolean pushNotificationsToKafka() {
+        return unleash.isEnabled(togglePushNotificationsToKafka, true);
     }
 
 }
