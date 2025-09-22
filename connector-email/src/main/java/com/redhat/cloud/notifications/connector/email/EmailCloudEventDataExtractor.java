@@ -100,7 +100,7 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
                     return templatedEvent;
                 }
             } catch (Exception ex) {
-                Log.errorf(String.format("Error rendering data with common-template module for %s (history Id %s)", integrationType, historyId), ex);
+                Log.errorf(ex, "Error rendering data with common-template module for %s (history Id %s)", integrationType, historyId);
             }
         }
         return renderedContentFromEngine;
