@@ -340,8 +340,8 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                     Collections.emptySet(),
                     false,
                     // because recipient list has already been computed using authz constraints, we don't need it for the aggregated email
-                    null
-                );
+                    null,
+                    null);
 
                 connectorSender.send(aggregatorEvent, endpoint, JsonObject.mapFrom(emailNotification));
 

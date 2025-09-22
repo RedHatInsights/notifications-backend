@@ -58,4 +58,6 @@ public class ExchangeProperty {
     public static final String ADDITIONAL_ERROR_DETAILS = "additionalErrorDetails";
 
     public static final String USE_SIMPLIFIED_EMAIL_ROUTE = "use_simplified_email_route";
+
+    public static final String EVENT_DATA = "event_data";
 }

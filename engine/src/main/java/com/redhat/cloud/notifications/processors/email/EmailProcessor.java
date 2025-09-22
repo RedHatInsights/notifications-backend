@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
@@ -67,6 +69,12 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     EngineConfig engineConfig;
+
+    @Inject
+    BaseTransformer baseTransformer;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
@@ -161,6 +169,11 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             body = renderEmailBodyFromDbTemplates(instantEmailTemplateMaybe.get(), event.getEventWrapper().getEvent());
         }
 
+        Map<String, Object> eventData = null;
+        if (engineConfig.isConnectorTemplateTransformationEnabled(event.getOrgId())) {
+            eventData = convertEventAsDataMap(event, pendoMessage, ignoreUserPreferences);
+        }
+
         // Prepare all the data to be sent to the connector.
         final EmailNotification emailNotification = new EmailNotification(
             body,
@@ -171,7 +184,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             subscribers,
             unsubscribers,
             event.getEventType().isSubscribedByDefault(),
-            recipientsAuthorizationCriterionExtractor.extract(event)
+            recipientsAuthorizationCriterionExtractor.extract(event),
+            eventData
         );
 
         Log.debugf("[org_id: %s] Sending email notification to connector", emailNotification);
@@ -181,6 +195,22 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         final Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EMAIL_SUBSCRIPTION);
 
         connectorSender.send(event, endpoint, payload);
+    }
+
+    protected Map<String, Object> convertEventAsDataMap(Event event, EmailPendo pendoMessage, boolean ignoreUserPreferences) {
+        JsonObject data = baseTransformer.toJsonObject(event);
+        data.put("environment", JsonObject.mapFrom(environment));
+        data.put("pendo_message", pendoMessage);
+        data.put("ignore_user_preferences", ignoreUserPreferences);
+        data.put("orgId", event.getOrgId());
+
+        Map<String, Object> dataAsMap;
+        try {
+            dataAsMap = objectMapper.readValue(data.encode(), Map.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Instant email notification data transformation failed", e);
+        }
+        return dataAsMap;
     }
 
     private String renderEmailSubjectFromDbTemplates(final InstantEmailTemplate instantEmailTemplate, final Object wrappedEvent) {
