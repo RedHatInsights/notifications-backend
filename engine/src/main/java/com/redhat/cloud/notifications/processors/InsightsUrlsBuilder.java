@@ -102,7 +102,6 @@ public class InsightsUrlsBuilder {
         path = switch (application) {
             // Hard override
             case "rbac" -> "iam/user-access/users";
-            case "edge-management" -> "edge";
             // Settings paths
             case "integrations", "notifications" -> path + "settings/" + application;
             // OpenShift path override

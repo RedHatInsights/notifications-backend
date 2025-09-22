@@ -72,10 +72,6 @@ public class EmailTemplateMigrationServiceTest {
         Application compliance = resourceHelpers.createApp(rhel.getId(), "compliance");
         EventType complianceBelowThreshold = resourceHelpers.createEventType(compliance.getId(), "compliance-below-threshold");
         EventType reportUploadFailed = resourceHelpers.createEventType(compliance.getId(), "report-upload-failed");
-        // App: edge-management
-        Application edgeManagement = resourceHelpers.createApp(rhel.getId(), "edge-management");
-        EventType imageCreation = resourceHelpers.createEventType(edgeManagement.getId(), "image-creation");
-        EventType updateDevices = resourceHelpers.createEventType(edgeManagement.getId(), "update-devices");
         // App: inventory
         Application inventory = resourceHelpers.createApp(rhel.getId(), "inventory");
         EventType inventoryValidationError = resourceHelpers.createEventType(inventory.getId(), "validation-error");
@@ -171,9 +167,6 @@ public class EmailTemplateMigrationServiceTest {
         findAndCompileInstantEmailTemplate(complianceBelowThreshold.getId());
         findAndCompileInstantEmailTemplate(reportUploadFailed.getId());
         findAndCompileAggregationEmailTemplate(rhel.getName(), compliance.getName(), DAILY);
-        // App: edge-management
-        findAndCompileInstantEmailTemplate(imageCreation.getId());
-        findAndCompileInstantEmailTemplate(updateDevices.getId());
         // App: inventory
         findAndCompileInstantEmailTemplate(inventoryValidationError.getId());
         findAndCompileAggregationEmailTemplate(rhel.getName(), inventory.getName(), DAILY);

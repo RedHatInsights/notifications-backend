@@ -530,40 +530,6 @@ public class TestHelpers {
         return emailActionMessage;
     }
 
-    public static Action createEdgeManagementAction() {
-        Action emailActionMessage = new Action();
-        emailActionMessage.setBundle(StringUtils.EMPTY);
-        emailActionMessage.setApplication(StringUtils.EMPTY);
-        emailActionMessage.setTimestamp(LocalDateTime.of(2022, 10, 3, 15, 22, 13, 25));
-        emailActionMessage.setEventType(eventType);
-        emailActionMessage.setRecipients(List.of());
-
-        emailActionMessage.setContext(
-            new Context.ContextBuilder()
-                .withAdditionalProperty("system_check_in", "2022-08-03T15:22:42.199046")
-                .withAdditionalProperty("ImageName", "Test name")
-                .build()
-        );
-
-        emailActionMessage.setEvents(List.of(
-            new Event.EventBuilder()
-                .withMetadata(new Metadata.MetadataBuilder().build())
-                .withPayload(
-                    new Payload.PayloadBuilder()
-                        .withAdditionalProperty("ImageSetID", "1234")
-                        .withAdditionalProperty("ImageId", "5678")
-                        .withAdditionalProperty("ID", "DEVICE-9012")
-                        .build()
-                )
-                .build()
-        ));
-
-        emailActionMessage.setAccountId(StringUtils.EMPTY);
-        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
-
-        return emailActionMessage;
-    }
-
     public static EmailAggregation createImageBuilderAggregation(String eventType) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName("rhel");
