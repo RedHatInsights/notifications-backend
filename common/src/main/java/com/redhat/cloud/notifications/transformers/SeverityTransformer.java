@@ -71,14 +71,29 @@ public class SeverityTransformer {
                 }
             }).toList());
             // Both OpenShift Advisor and RHEL Advisor use the same layout here
-            case "advisor" -> new ArrayList<>(events.stream().map(event -> mapAdvisorTotalRiskToSeverity(
-                    Integer.parseInt(((JsonObject) event).getJsonObject(PAYLOAD).getString("total_risk")))
+            case "advisor" -> new ArrayList<>(events.stream().map(
+                    event -> mapAdvisorTotalRiskToSeverity(parseAdvisorTotalRisk((JsonObject) event))
             ).toList());
             default -> new ArrayList<>(List.of(Severity.UNDEFINED));
         };
 
         severities.sort(null);
         return severities.getFirst();
+    }
+
+    private Integer parseAdvisorTotalRisk(JsonObject event) {
+        Object totalRisk = event.getJsonObject(PAYLOAD).getValue("total_risk");
+        if (totalRisk instanceof Integer) {
+            return (Integer) totalRisk;
+        } else if (totalRisk instanceof String) {
+            try {
+                return Integer.parseInt((String) totalRisk);
+            } catch (NumberFormatException ignored) {
+                return 0;
+            }
+        } else {
+            return 0;
+        }
     }
 
     private Severity mapAdvisorTotalRiskToSeverity(int risk) {
@@ -91,7 +106,7 @@ public class SeverityTransformer {
         };
     }
 
-    private enum OcmServiceLogSeverity {
+    enum OcmServiceLogSeverity {
         CRITICAL,
         MAJOR,
         WARNING,
