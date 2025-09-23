@@ -17,9 +17,6 @@ public class Rhel {
     public static final String COMPLIANCE_APP_NAME = "compliance";
     public static final String COMPLIANCE_FOLDER_NAME = "Compliance/";
 
-    public static final String EDGE_APP_NAME = "edge-management";
-    public static final String EDGE_FOLDER_NAME = "EdgeManagement/";
-
     public static final String IMAGE_BUILDER_APP_NAME = "image-builder";
     public static final String IMAGE_BUILDER_FOLDER_NAME = "ImageBuilder/";
 
@@ -50,9 +47,6 @@ public class Rhel {
 
     public static final String COMPLIANCE_COMPLIANCE_BELOW_THRESHOLD = "compliance-below-threshold";
     public static final String COMPLIANCE_REPORT_UPLOAD_FAILED = "report-upload-failed";
-
-    public static final String EDGE_IMAGE_CREATION = "image-creation";
-    public static final String EDGE_UPDATE_DEVICES = "update-devices";
 
     public static final String IMAGE_BUILDER_LAUNCH_SUCCESS = "launch-success";
     public static final String IMAGE_BUILDER_LAUNCH_FAILED = "launch-failed";
@@ -92,12 +86,6 @@ public class Rhel {
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_REPORT_UPLOAD_FAILED), COMPLIANCE_FOLDER_NAME + "reportUploadFailedBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_REPORT_UPLOAD_FAILED), COMPLIANCE_FOLDER_NAME + "reportUploadFailedEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, null), COMPLIANCE_FOLDER_NAME + "dailyEmailBody.html"),
-
-        // Edge management
-        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, EDGE_APP_NAME, EDGE_IMAGE_CREATION), EDGE_FOLDER_NAME + "imageCreationBody.md"),
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, EDGE_APP_NAME, EDGE_IMAGE_CREATION), EDGE_FOLDER_NAME + "imageCreationEmailBody.html"),
-        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, EDGE_APP_NAME, EDGE_UPDATE_DEVICES), EDGE_FOLDER_NAME + "updateDeviceBody.md"),
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, EDGE_APP_NAME, EDGE_UPDATE_DEVICES), EDGE_FOLDER_NAME + "updateDeviceEmailBody.html"),
 
         // Image builder
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, IMAGE_BUILDER_APP_NAME, IMAGE_BUILDER_LAUNCH_SUCCESS), IMAGE_BUILDER_FOLDER_NAME + "launchSuccessInstantEmailBody.html"),

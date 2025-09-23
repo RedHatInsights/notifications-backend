@@ -199,20 +199,6 @@ public class EmailTemplateMigrationService {
             );
 
             /*
-             * Former src/main/resources/templates/EdgeManagement folder.
-             */
-            createInstantEmailTemplate(
-                warnings, "rhel", "edge-management", List.of("image-creation"),
-                "EdgeManagement/imageCreationEmailTitle", "txt", "EdgeManagement image creation email title",
-                "EdgeManagement/imageCreationEmailBody", "html", "EdgeManagement image creation email body"
-            );
-            createInstantEmailTemplate(
-                warnings, "rhel", "edge-management", List.of("update-devices"),
-                "EdgeManagement/updateDeviceEmailTitle", "txt", "EdgeManagement update devices email title",
-                "EdgeManagement/updateDeviceEmailBody", "html", "EdgeManagement update devices email body"
-            );
-
-            /*
              * Former src/main/resources/templates/Errata folder.
              */
             createInstantEmailTemplate(
