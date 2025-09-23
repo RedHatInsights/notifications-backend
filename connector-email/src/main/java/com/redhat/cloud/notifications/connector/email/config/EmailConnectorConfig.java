@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector.email.config;
 
 import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
 import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
+import io.getunleash.UnleashContext;
 import io.quarkus.runtime.LaunchMode;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -9,6 +10,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 @ApplicationScoped
 public class EmailConnectorConfig extends HttpConnectorConfig {
@@ -77,11 +79,13 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
     private String toggleKafkaIncomingHighVolumeTopic;
     private String toggleUseSimplifiedEmailRoute;
+    private String toggleUseBetaTemplatesEnabled;
 
     @PostConstruct
     void emailConnectorPostConstruct() {
         toggleKafkaIncomingHighVolumeTopic = toggleRegistry.register("kafka-incoming-high-volume-topic", true);
         toggleUseSimplifiedEmailRoute = toggleRegistry.register("use-simplified-email-route", true);
+        toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
     }
 
     @Override
@@ -105,7 +109,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
         config.put(toggleUseSimplifiedEmailRoute, useSimplifiedEmailRoute(null));
         config.put(toggleKafkaIncomingHighVolumeTopic, isIncomingKafkaHighVolumeTopicEnabled());
-
+        config.put(toggleUseBetaTemplatesEnabled, isUseBetaTemplatesEnabled(null, null));
         /*
          * /!\ WARNING /!\
          * DO NOT log config values that come from OpenShift secrets.
@@ -186,6 +190,19 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     public boolean useSimplifiedEmailRoute(String orgId) {
         if (unleashEnabled) {
             return unleash.isEnabled(toggleUseSimplifiedEmailRoute, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isUseBetaTemplatesEnabled(final String orgId, final UUID eventTypeId) {
+        if (unleashEnabled) {
+            UnleashContext.Builder unleashContextBuilder = UnleashContext.builder()
+                .addProperty("orgId", orgId);
+            if (eventTypeId != null) {
+                unleashContextBuilder.addProperty("eventTypeId", eventTypeId.toString());
+            }
+            return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContextBuilder.build(), false);
         } else {
             return false;
         }

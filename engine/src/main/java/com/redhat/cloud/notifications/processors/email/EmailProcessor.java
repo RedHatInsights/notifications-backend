@@ -185,7 +185,8 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             unsubscribers,
             event.getEventType().isSubscribedByDefault(),
             recipientsAuthorizationCriterionExtractor.extract(event),
-            eventData
+            eventData,
+            false
         );
 
         Log.debugf("[org_id: %s] Sending email notification to connector", emailNotification);
