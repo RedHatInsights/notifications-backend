@@ -18,6 +18,7 @@ import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
+import com.redhat.cloud.notifications.transformers.SeverityTransformer;
 import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateInstance;
@@ -34,6 +35,7 @@ import java.util.Set;
 
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.transformers.BaseTransformer.SEVERITY;
 
 @ApplicationScoped
 public class EmailProcessor extends SystemEndpointTypeProcessor {
@@ -72,6 +74,9 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     BaseTransformer baseTransformer;
+
+    @Inject
+    SeverityTransformer severityTransformer;
 
     @Inject
     ObjectMapper objectMapper;
@@ -199,6 +204,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
     protected Map<String, Object> convertEventAsDataMap(Event event, EmailPendo pendoMessage, boolean ignoreUserPreferences) {
         JsonObject data = baseTransformer.toJsonObject(event);
+        data.mergeIn(JsonObject.of(SEVERITY, severityTransformer.getSeverity(data)));
         data.put("environment", JsonObject.mapFrom(environment));
         data.put("pendo_message", pendoMessage);
         data.put("ignore_user_preferences", ignoreUserPreferences);
