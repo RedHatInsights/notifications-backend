@@ -62,7 +62,9 @@ public class BaseTransformer {
             );
             message.put(ORG_ID, action.getOrgId());
             message.put(TIMESTAMP, action.getTimestamp().toString());
-            message.put(SEVERITY, action.getSeverity());
+            if (action.getSeverity() != null) {
+                message.put(SEVERITY, action.getSeverity());
+            }
 
             final JsonObject source = getEventSource(event);
 
