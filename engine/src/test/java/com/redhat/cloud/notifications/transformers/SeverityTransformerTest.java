@@ -166,4 +166,17 @@ class SeverityTransformerTest {
         JsonObject multipleData = baseTransformer.toJsonObject(multipleEvent);
         assertEquals(Severity.MODERATE.name(), severityTransformer.getSeverity(multipleData));
     }
+
+    /** This is not an expected case, but it should still be handled gracefully. */
+    @Test
+    public void testOcmPayloadWithInvalidLegacySeverity() {
+        Optional<Map<String, Object>> legacySeverity = Optional.of(Map.of(SEVERITY, "this is not a valid severity level"));
+        Action action = OcmTestHelpers.createOcmAction("test-cluster-name", "Premium", "System rebooting",
+                "System reboot in progress", "test-title", legacySeverity);
+        Event event = new Event();
+        event.setEventWrapper(new EventWrapperAction(action));
+
+        JsonObject data = baseTransformer.toJsonObject(event);
+        assertEquals(Severity.UNDEFINED.name(), severityTransformer.getSeverity(data));
+    }
 }
