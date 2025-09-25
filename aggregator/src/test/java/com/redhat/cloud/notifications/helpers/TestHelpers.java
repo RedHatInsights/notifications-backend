@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
-import com.redhat.cloud.notifications.models.EmailAggregation;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
@@ -15,19 +14,6 @@ import java.util.List;
 public class TestHelpers {
 
     public static BaseTransformer baseTransformer = new BaseTransformer();
-
-    static EmailAggregation createEmailAggregation(String orgId, String bundle, String application, String policyId, String inventoryId, LocalDateTime localDateTime) {
-        EmailAggregation aggregation = new EmailAggregation();
-        aggregation.setBundleName(bundle);
-        aggregation.setApplicationName(application);
-        aggregation.setOrgId(orgId);
-        aggregation.setCreated(localDateTime.minusHours(5L));
-
-        JsonObject payload = generatePayloadContent(orgId, bundle, application, policyId, inventoryId);
-        aggregation.setPayload(payload);
-
-        return aggregation;
-    }
 
     public static JsonObject generatePayloadContent(String orgId, String bundle, String application, String policyId, String inventoryId) {
         Action emailActionMessage = new Action();
@@ -61,8 +47,7 @@ public class TestHelpers {
 
         emailActionMessage.setOrgId(orgId);
 
-        JsonObject payload = baseTransformer.transform(emailActionMessage);
-        return payload;
+        return baseTransformer.transform(emailActionMessage);
     }
 
 }
