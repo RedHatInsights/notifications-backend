@@ -196,6 +196,9 @@ public class FetchUsersFromExternalServices {
         int firstResult = 0;
 
         do {
+            if (firstResult > 0) {
+                Log.infof("Fetching page %d for orgId: %s", (firstResult / recipientsResolverConfig.getMaxResultsPerPage()) + 1, orgId);
+            }
             ITUserRequest itRequest = new ITUserRequest(orgId, adminsOnly, firstResult, recipientsResolverConfig.getMaxResultsPerPage());
             final LocalDateTime startTime = LocalDateTime.now();
             usersPaging = retryOnError(() -> itUserService.getUsers(itRequest));
