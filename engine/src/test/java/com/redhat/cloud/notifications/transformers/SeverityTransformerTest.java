@@ -8,8 +8,6 @@ import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Metadata;
-import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.Event;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
@@ -107,39 +105,12 @@ class SeverityTransformerTest {
 
     @Test
     public void testInventoryPayloadWithLegacySeverity() {
-        String tenant = "test-tenant";
-
-        // Single event with error severity
-        Action action = InventoryTestHelpers.createInventoryAction(tenant, "rhel", "inventory", "validation-error");
+        Action action = InventoryTestHelpers.createInventoryAction("test-tenant", "rhel", "inventory", "validation-error");
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(action));
 
         JsonObject data = baseTransformer.toJsonObject(event);
         assertEquals(Severity.IMPORTANT.name(), severityTransformer.getSeverity(data));
-
-        // Multiple events, only one with an error
-        Map<String, String> secondEventErrorMap = Map.of(
-                "code", "AA001",
-                "message", "empty message",
-                "stack_trace", ""
-        );
-
-        action.setEvents(List.of(
-                new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
-                        .withMetadata(new Metadata.MetadataBuilder().build())
-                        .withPayload(
-                                new Payload.PayloadBuilder()
-                                        .withAdditionalProperty("host_id", tenant)
-                                        .withAdditionalProperty("display_name", InventoryTestHelpers.displayName1)
-                                        .withAdditionalProperty("error", secondEventErrorMap)
-                                        .build()
-                        )
-                        .build(),
-                action.getEvents().getFirst()
-        ));
-
-        JsonObject multipleEventData = baseTransformer.toJsonObject(event);
-        assertEquals(Severity.IMPORTANT.name(), severityTransformer.getSeverity(multipleEventData));
     }
 
     @Test

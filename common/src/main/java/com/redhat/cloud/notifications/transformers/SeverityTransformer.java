@@ -10,6 +10,7 @@ import java.util.List;
 
 import static com.redhat.cloud.notifications.transformers.BaseTransformer.APPLICATION;
 import static com.redhat.cloud.notifications.transformers.BaseTransformer.EVENTS;
+import static com.redhat.cloud.notifications.transformers.BaseTransformer.EVENT_TYPE;
 import static com.redhat.cloud.notifications.transformers.BaseTransformer.PAYLOAD;
 import static com.redhat.cloud.notifications.transformers.BaseTransformer.SEVERITY;
 
@@ -54,36 +55,6 @@ public class SeverityTransformer {
         }
 
         ArrayList<Severity> severities = switch (data.getString(APPLICATION)) {
-            case "errata-notifications" -> new ArrayList<>(events.stream().map(event -> {
-                try {
-                    return Severity.valueOf(
-                            ((JsonObject) event).getJsonObject(PAYLOAD).getString(SEVERITY).toUpperCase()
-                    );
-                } catch (Exception ignored) {
-                    return Severity.UNDEFINED;
-                }
-            }).toList());
-            case "cluster-manager" -> new ArrayList<>(events.stream().map(event -> {
-                try {
-                    return OcmServiceLogSeverity.valueOf(
-                                    ((JsonObject) event).getJsonObject(PAYLOAD).getJsonObject("global_vars").getString(SEVERITY).toUpperCase())
-                            .mapToSeverity();
-                } catch (Exception ignored) {
-                    return Severity.UNDEFINED;
-                }
-            }).toList());
-            case "inventory" -> new ArrayList<>(events.stream().map(event -> {
-                try {
-                    // Inventory payloads only send a severity of "error", if present
-                    if (((JsonObject) event).getJsonObject(PAYLOAD).getJsonObject("error").getString("severity").equalsIgnoreCase("ERROR")) {
-                        return Severity.IMPORTANT;
-                    } else {
-                        return Severity.UNDEFINED;
-                    }
-                } catch (Exception e) {
-                    return Severity.UNDEFINED;
-                }
-            }).toList());
             // Both OpenShift Advisor and RHEL Advisor use the same layout here
             case "advisor" -> new ArrayList<>(events.stream().map(
                     event -> {
@@ -94,6 +65,31 @@ public class SeverityTransformer {
                         }
                     }
             ).toList());
+            case "cluster-manager" -> new ArrayList<>(events.stream().map(event -> {
+                try {
+                    return OcmServiceLogSeverity.valueOf(
+                                    ((JsonObject) event).getJsonObject(PAYLOAD).getJsonObject("global_vars").getString(SEVERITY).toUpperCase())
+                            .mapToSeverity();
+                } catch (Exception ignored) {
+                    return Severity.UNDEFINED;
+                }
+            }).toList());
+            case "errata-notifications" -> new ArrayList<>(events.stream().map(event -> {
+                try {
+                    return Severity.valueOf(
+                            ((JsonObject) event).getJsonObject(PAYLOAD).getString(SEVERITY).toUpperCase()
+                    );
+                } catch (Exception ignored) {
+                    return Severity.UNDEFINED;
+                }
+            }).toList());
+            case "inventory" -> {
+                if (data.getString(EVENT_TYPE).equals("validation-error")) {
+                    yield new ArrayList<>(List.of(Severity.IMPORTANT));
+                } else {
+                    yield new ArrayList<>(List.of(Severity.UNDEFINED));
+                }
+            }
             default -> new ArrayList<>(List.of(Severity.UNDEFINED));
         };
 
