@@ -30,10 +30,12 @@ public record EmailNotification(
     @JsonProperty("email_body")             String emailBody,
     @JsonProperty("email_subject")          String emailSubject,
     @JsonProperty("email_sender")           String emailSender,
-    @JsonProperty("orgId")                  String orgId,
+    @JsonProperty("org_id")                 String orgId,
     @JsonProperty("recipient_settings")     Collection<RecipientSettings> recipientSettings,
     @JsonProperty("subscribers")            Collection<String> subscribers,
     @JsonProperty("unsubscribers")          Collection<String> unsubscribers,
     @JsonProperty("subscribed_by_default")  boolean subscribedByDefault,
     @JsonProperty("recipients_authorization_criterion") RecipientsAuthorizationCriterion recipientsAuthorizationCriterion,
-    @JsonProperty("event_data") Map<String, Object> eventData)  { }
+    @JsonProperty("event_data") Map<String, Object> eventData,
+    @JsonProperty("id_daily_digest")        boolean isDailyDigest
+) { }

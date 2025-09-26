@@ -364,12 +364,14 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             "test email subject",
             "Not used",
             "123456",
+            "123456",
             List.of(recipientSettings),
             new ArrayList<>(),
             new ArrayList<>(),
             false,
             null,
-            new HashMap<>()
+            new HashMap<>(),
+            false
         );
         final JsonObject payload = JsonObject.mapFrom(emailNotification);
 
