@@ -152,6 +152,8 @@ objects:
           value: ${ENV_NAME}
         - name: QUARKUS_UNLEASH_ACTIVE
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
+        - name: QUARKUS_REST_CLIENT_RECIPIENTS_RESOLVER_READ_TIMEOUT
+          value: ${RECIPIENTS_RESOLVER_READ_TIMEOUT}
 parameters:
 - name: BACKOFFICE_CLIENT_ENV
   description: Back-office client environment
@@ -270,3 +272,7 @@ parameters:
   value: "40"
 - name: LIVENESS_INITIAL_DELAY
   value: "40"
+- name: RECIPIENTS_RESOLVER_READ_TIMEOUT
+  description: Delay in milliseconds before a recipients resolver query is interrupted
+  value: "180000"
+  

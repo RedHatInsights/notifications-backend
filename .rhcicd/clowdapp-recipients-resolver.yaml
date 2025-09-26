@@ -279,7 +279,7 @@ parameters:
   value: PT10M
 - name: IT_S2S_READ_TIMEOUT
   description: Delay in milliseconds before an IT S2S query is interrupted
-  value: "90000"
+  value: "120000"
 - name: SENTRY_DSN
   description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED
