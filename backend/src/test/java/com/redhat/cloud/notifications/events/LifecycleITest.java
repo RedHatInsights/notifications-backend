@@ -538,7 +538,7 @@ public class LifecycleITest extends DbIsolatedTest {
     private String createWebhookEndpoint(Header identityHeader, String secretToken) {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(HttpType.POST);
-        properties.setDisableSslVerification(true);
+        properties.setDisableSslVerification(false);
         properties.setSecretToken(secretToken);
         properties.setUrl(getMockServerUrl() + WEBHOOK_MOCK_PATH);
 
