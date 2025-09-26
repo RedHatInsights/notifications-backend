@@ -68,10 +68,10 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
 
         final String historyId = exchange.getProperty(ID, String.class);
 
-        exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, emailNotification.emailSubject());
-        exchange.setProperty(ExchangeProperty.RENDERED_BODY, emailNotification.emailBody());
 
         if (emailNotification.isDailyDigest()) {
+            exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, emailNotification.emailSubject());
+            exchange.setProperty(ExchangeProperty.RENDERED_BODY, emailNotification.emailBody());
             renderDailyDigestFromCommonModule(exchange, emailNotification, historyId);
         } else {
             exchange.setProperty(ExchangeProperty.RENDERED_BODY,
