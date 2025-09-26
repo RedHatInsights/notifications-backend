@@ -273,5 +273,6 @@ parameters:
 - name: LIVENESS_INITIAL_DELAY
   value: "40"
 - name: RECIPIENTS_RESOLVER_READ_TIMEOUT
-  description: Delay in milliseconds before an recipients resolver query is interrupted
+  description: Delay in milliseconds before a recipients resolver query is interrupted
   value: "180000"
+  
