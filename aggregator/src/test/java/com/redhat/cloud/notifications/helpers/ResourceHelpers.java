@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.helpers;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
-import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -18,7 +17,6 @@ import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -32,15 +30,6 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
     @Override
     protected EntityManager getEntityManager() {
         return entityManager;
-    }
-
-    public void addEmailAggregation(String orgId, String bundle, String application, String policyId, String insightsId) {
-        addEmailAggregation(orgId, bundle, application, policyId, insightsId, LocalDateTime.now(ZoneOffset.UTC));
-    }
-
-    public void addEmailAggregation(String orgId, String bundle, String application, String policyId, String insightsId, LocalDateTime localDateTime) {
-        EmailAggregation aggregation = TestHelpers.createEmailAggregation(orgId, bundle, application, policyId, insightsId, localDateTime);
-        addEmailAggregation(aggregation);
     }
 
     @Transactional
@@ -65,16 +54,6 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
     public void purgeEndpoints() {
         entityManager.createQuery("DELETE FROM Endpoint").executeUpdate();
         entityManager.clear();
-    }
-
-    @Transactional
-    public void addEmailAggregation(EmailAggregation aggregation) {
-        entityManager.persist(aggregation);
-    }
-
-    @Transactional
-    public void purgeEmailAggregations() {
-        entityManager.createQuery("DELETE FROM EmailAggregation").executeUpdate();
     }
 
     @Transactional
