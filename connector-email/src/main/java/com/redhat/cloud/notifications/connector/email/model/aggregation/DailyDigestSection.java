@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.email.model;
+package com.redhat.cloud.notifications.connector.email.model.aggregation;
 
 import java.util.List;
 

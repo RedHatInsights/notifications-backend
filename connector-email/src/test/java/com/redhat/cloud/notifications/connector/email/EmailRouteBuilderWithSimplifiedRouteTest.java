@@ -391,36 +391,36 @@ class EmailRouteBuilderWithSimplifiedRouteTest extends CamelQuarkusTestSupport {
         List<ApplicationAggregatedData> applicationAggregatedDataList = new ArrayList<>();
         try {
             applicationAggregatedDataList.add(new ApplicationAggregatedData(
-                objectMapper.readValue(JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT, typeRef),
-                "advisor"
+                "advisor",
+                objectMapper.readValue(JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT, typeRef)
             ));
             applicationAggregatedDataList.add(new ApplicationAggregatedData(
-                templateService.convertActionToContextMap(TestHelpers.createComplianceAction()),
-                "compliance"
+                "Compliance",
+                templateService.convertActionToContextMap(TestHelpers.createComplianceAction())
             ));
             applicationAggregatedDataList.add(new ApplicationAggregatedData(
-                objectMapper.readValue(JSON_IMAGE_BUILDER_DEFAULT_AGGREGATION_CONTEXT, typeRef),
-                "image-builder"
+                "image-builder",
+                objectMapper.readValue(JSON_IMAGE_BUILDER_DEFAULT_AGGREGATION_CONTEXT, typeRef)
             ));
             applicationAggregatedDataList.add(new ApplicationAggregatedData(
-                objectMapper.readValue(JSON_INVENTORY_DEFAULT_AGGREGATION_CONTEXT, typeRef),
-                "inventory"
+                "inventory",
+                objectMapper.readValue(JSON_INVENTORY_DEFAULT_AGGREGATION_CONTEXT, typeRef)
             ));
             applicationAggregatedDataList.add(new ApplicationAggregatedData(
-                objectMapper.readValue(JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT, typeRef),
-                "patch"
+                "patch",
+                objectMapper.readValue(JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT, typeRef)
             ));
             applicationAggregatedDataList.add(new ApplicationAggregatedData(
-                TestPoliciesTemplate.buildPoliciesAggregatedPayload(),
-                "policies"
+                "policies",
+                TestPoliciesTemplate.buildPoliciesAggregatedPayload()
             ));
             applicationAggregatedDataList.add(new ApplicationAggregatedData(
-                objectMapper.readValue(JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT, typeRef),
-                "resource-optimization"
+                "resource-optimization",
+                objectMapper.readValue(JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT, typeRef)
             ));
             applicationAggregatedDataList.add(new ApplicationAggregatedData(
-                templateService.convertActionToContextMap(TestHelpers.createVulnerabilityAction()),
-                "vulnerability"
+                "vulnerability",
+                templateService.convertActionToContextMap(TestHelpers.createVulnerabilityAction())
             ));
         } catch (JsonProcessingException e) {
             fail(e);

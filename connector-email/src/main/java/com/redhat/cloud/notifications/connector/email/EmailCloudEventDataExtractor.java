@@ -1,9 +1,11 @@
 package com.redhat.cloud.notifications.connector.email;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.engine.InternalEngine;
+import com.redhat.cloud.notifications.connector.email.model.EmailAggregation;
 import com.redhat.cloud.notifications.connector.email.model.EmailNotification;
 import com.redhat.cloud.notifications.connector.email.payload.PayloadDetails;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
@@ -40,6 +42,9 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
     @Inject
     EmailAggregationProcessor emailAggregationProcessor;
 
+    @Inject
+    ObjectMapper objectMapper;
+
     /**
      * Extracts the relevant information for the email connector from the
      * received message from the engine.
@@ -68,7 +73,6 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
 
         final String historyId = exchange.getProperty(ID, String.class);
 
-
         if (emailNotification.isDailyDigest()) {
             exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, emailNotification.emailSubject());
             exchange.setProperty(ExchangeProperty.RENDERED_BODY, emailNotification.emailBody());
@@ -90,15 +94,17 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
     }
 
     private void renderDailyDigestFromCommonModule(Exchange exchange, EmailNotification emailNotification, String historyId) {
-        if (null != emailNotification.eventData()) {
+        EmailAggregation emailAggregation  = objectMapper.convertValue(emailNotification.eventData(), EmailAggregation.class);
+
+        if (null != emailAggregation) {
             try {
-                String emailTitle = renderEmailAggregationTitleTemplateFromCommonModule(emailNotification.eventData().get("bundle_display_name").toString());
+                String emailTitle = renderEmailAggregationTitleTemplateFromCommonModule(emailAggregation.bundleDisplayName());
                 exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, emailTitle);
 
                 if (exchange.getProperty(ORG_ID) == null) {
                     exchange.setProperty(ORG_ID, emailNotification.oldOrgId());
                 }
-                String builtAggregatedEmailBody = emailAggregationProcessor.aggregate(emailNotification, exchange.getProperty(ORG_ID, String.class), emailTitle);
+                String builtAggregatedEmailBody = emailAggregationProcessor.aggregate(emailAggregation, exchange.getProperty(ORG_ID, String.class), emailTitle);
                 if (!emailNotification.emailBody().equals(builtAggregatedEmailBody)) {
                     Log.errorf("Legacy and new rendered messages are different for daily digest (history Id %s): '%s' vs. '%s'", historyId, emailNotification.emailBody(), builtAggregatedEmailBody);
                 } else {

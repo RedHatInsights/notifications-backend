@@ -1,8 +1,12 @@
 package com.redhat.cloud.notifications.connector.email;
 
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
-import com.redhat.cloud.notifications.connector.email.model.DailyDigestSection;
-import com.redhat.cloud.notifications.connector.email.model.EmailNotification;
+import com.redhat.cloud.notifications.connector.email.model.EmailAggregation;
+import com.redhat.cloud.notifications.connector.email.model.aggregation.AggregationAction;
+import com.redhat.cloud.notifications.connector.email.model.aggregation.AggregationActionContext;
+import com.redhat.cloud.notifications.connector.email.model.aggregation.ApplicationAggregatedData;
+import com.redhat.cloud.notifications.connector.email.model.aggregation.DailyDigestSection;
+import com.redhat.cloud.notifications.connector.email.model.aggregation.Environment;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
@@ -25,20 +29,17 @@ public class EmailAggregationProcessor {
     @Inject
     EmailConnectorConfig emailConnectorConfig;
 
-    public String aggregate(final EmailNotification emailNotification, final String orgId, String emailTitle) {
-        Map<String, Object> environment = (Map<String, Object>) emailNotification.eventData().get("environment");
-        String bundleName = emailNotification.eventData().get("bundle_name").toString();
-
-        List<Map<String, Object>> listApplicationAggregatedData = (List<Map<String, Object>>) emailNotification.eventData().get("application_aggregated_data_list");
-
-        Log.info("Starting aggregation for bundleName: " + bundleName);
+    public String aggregate(final EmailAggregation emailAggregation, final String orgId, String emailTitle) {
+        Log.info("Starting aggregation for bundleName: " + emailAggregation.bundleName());
         Map<String, DailyDigestSection> dataMap  = new HashMap<>();
-        for (Map<String, Object> applicationAggregatedDataAsMap : listApplicationAggregatedData) {
-            String appName =  (String) applicationAggregatedDataAsMap.get("appName");
+        for (ApplicationAggregatedData applicationAggregatedData : emailAggregation.applicationAggregatedDataList()) {
             try {
-                dataMap.put(appName, renderApplicationDailyDigestBody(bundleName, appName, (Map<String, Object>) applicationAggregatedDataAsMap.get("aggregatedData"), orgId, environment));
+                dataMap.put(
+                    applicationAggregatedData.appName(),
+                    renderApplicationDailyDigestBody(emailAggregation.bundleName(), applicationAggregatedData.appName(), applicationAggregatedData.aggregatedData(), orgId, emailAggregation.environment())
+                );
             } catch (Exception ex) {
-                Log.error("Error rendering application template for " + appName, ex);
+                Log.error("Error rendering application template for " + applicationAggregatedData.appName(), ex);
             }
         }
 
@@ -49,33 +50,30 @@ public class EmailAggregationProcessor {
                 .map(Map.Entry::getValue)
                 .toList();
 
-            Map<String, Object> actionContext = new HashMap<>(Map.of("title", emailTitle, "items", result, "orgId", orgId));
-            Map<String, Object> action = Map.of("context", actionContext, "bundle", bundleName);
+            AggregationAction action = new AggregationAction(emailAggregation.bundleName(), new AggregationActionContext(emailTitle, result, orgId));
 
             try {
                 TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null);
-                Map<String, Object> additionalContext = buildFullTemplateContext(action, environment);
 
+                Map<String, Object> additionalContext = buildFullTemplateContext(action, emailAggregation.environment());
                 return templateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
             } catch (Exception e) {
-                Log.error(String.format("Error rendering daily digest email template for %s", bundleName), e);
+                Log.error(String.format("Error rendering daily digest email template for %s", emailAggregation.bundleName()), e);
                 throw e;
             }
         }
         return null;
     }
 
-    private DailyDigestSection renderApplicationDailyDigestBody(String bundle, String app, Map<String, Object> context, String orgId, final Map<String, Object> environment) {
+    private DailyDigestSection renderApplicationDailyDigestBody(String bundle, String app, Map<String, Object> context, String orgId, final Environment environment) {
         context.put("application", app);
-
         Map<String, Object> action =  Map.of("context", context, "bundle", bundle);
+        Map<String, Object> additionalContext = buildFullTemplateContext(action, environment);
 
         DailyDigestSection builtSection = null;
 
         try {
             TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, bundle, app, null, emailConnectorConfig.isUseBetaTemplatesEnabled(orgId, null));
-            Map<String, Object> additionalContext = buildFullTemplateContext(action, environment);
-
             String renderedAppTemplate = templateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
             builtSection = addItem(renderedAppTemplate);
         } catch (Exception e) {
@@ -93,7 +91,7 @@ public class EmailAggregationProcessor {
         return new DailyDigestSection(bodyData, Arrays.stream(sections).filter(e -> !e.isBlank()).collect(Collectors.toList()));
     }
 
-    private Map<String, Object> buildFullTemplateContext(final Map<String, Object> action, final Map<String, Object> environment) {
+    private Map<String, Object> buildFullTemplateContext(final Object action, final Environment environment) {
         Map<String, Object> additionalContext = new HashMap<>();
         additionalContext.put("environment", environment);
         additionalContext.put("ignore_user_preferences", false);

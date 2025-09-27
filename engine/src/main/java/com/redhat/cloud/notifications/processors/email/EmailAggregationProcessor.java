@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
@@ -432,7 +433,11 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
     }
 
     public class ApplicationAggregatedData {
+
+        @JsonProperty("aggregated_data")
         Map<String, Object> aggregatedData;
+
+        @JsonProperty("app_name")
         String appName;
 
         public ApplicationAggregatedData(Map<String, Object> aggregatedData, String appName) {

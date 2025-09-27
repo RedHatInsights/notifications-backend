@@ -33,12 +33,15 @@ public record EmailNotification(
     @JsonProperty("email_sender")           String emailSender,
     @JsonProperty("org_id")                 String orgId,
     @JsonProperty("orgId")                  String oldOrgId,
+    // This was a typo that was introduced a long time ago;
+    // the cloud event extractor in common-connector expects a property named org_id.
+    // We need to keep both for the next production rollout.
     @JsonProperty("recipient_settings")     Collection<RecipientSettings> recipientSettings,
     @JsonProperty("subscribers")            Collection<String> subscribers,
     @JsonProperty("unsubscribers")          Collection<String> unsubscribers,
     @JsonProperty("subscribed_by_default")  boolean subscribedByDefault,
     @JsonProperty("recipients_authorization_criterion") JsonObject recipientsAuthorizationCriterion,
-    @JsonProperty("event_data") Map<String, Object> eventData,
+    @JsonProperty("event_data")             Map<String, Object> eventData,
     @JsonProperty("id_daily_digest")        boolean isDailyDigest
 ) { }
 
