@@ -10,7 +10,6 @@ import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.EndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.InsightsUrlsBuilder;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
-import com.redhat.cloud.notifications.transformers.SeverityTransformer;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
@@ -21,7 +20,6 @@ import java.util.List;
 
 import static com.redhat.cloud.notifications.events.EndpointProcessor.DELAYED_EXCEPTION_MSG;
 import static com.redhat.cloud.notifications.processors.AuthenticationType.SECRET_TOKEN;
-import static com.redhat.cloud.notifications.transformers.BaseTransformer.SEVERITY;
 
 @ApplicationScoped
 public class EventingProcessor extends EndpointTypeProcessor {
@@ -34,9 +32,6 @@ public class EventingProcessor extends EndpointTypeProcessor {
 
     @Inject
     BaseTransformer baseTransformer;
-
-    @Inject
-    SeverityTransformer severityTransformer;
 
     @Inject
     InsightsUrlsBuilder insightsUrlsBuilder;
@@ -92,7 +87,6 @@ public class EventingProcessor extends EndpointTypeProcessor {
         }
 
         final JsonObject payload = baseTransformer.toJsonObject(event);
-        payload.mergeIn(JsonObject.of(SEVERITY, severityTransformer.getSeverity(payload)));
         insightsUrlsBuilder.buildInventoryUrl(payload, endpoint.getSubType()).ifPresent(url -> payload.put("inventory_url", url));
         payload.put("application_url", insightsUrlsBuilder.buildApplicationUrl(payload, endpoint.getSubType()));
         if (endpoint.getSubType().equals("splunk")) {

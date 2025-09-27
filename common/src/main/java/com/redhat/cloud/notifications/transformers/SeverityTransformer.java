@@ -1,9 +1,20 @@
 package com.redhat.cloud.notifications.transformers;
 
+import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
+import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
 import com.redhat.cloud.notifications.Severity;
+import com.redhat.cloud.notifications.events.EventWrapper;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
+import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
+import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
+import com.redhat.cloud.notifications.utils.ActionParser;
+import com.redhat.cloud.notifications.utils.ActionParsingException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +28,31 @@ import static com.redhat.cloud.notifications.transformers.BaseTransformer.SEVERI
 @ApplicationScoped
 public class SeverityTransformer {
 
+    @Inject
+    BaseTransformer baseTransformer;
+
+    @Inject
+    ActionParser actionParser;
+
+    ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
+
+    /**
+     * Retrieves the severity level of the notification.
+     * <br>
+     * Priority:
+     * <ol>
+     *     <li>Top-level {@link com.redhat.cloud.notifications.ingress.Action#severity severity} value</li>
+     *     <li>Migration from field of existing tenant</li>
+     *     <li>Default value of {@link Severity#UNDEFINED}</li>
+     * </ol>
+     */
+    public Severity getSeverity(Event event) {
+        if (event.getEventWrapper() == null) {
+            event.setEventWrapper(getEventWrapper(event.getPayload()));
+        }
+        return getSeverity(baseTransformer.toJsonObject(event));
+    }
+
     /**
      * Retrieves the severity level of the notification.
      * <br>
@@ -27,19 +63,18 @@ public class SeverityTransformer {
      *     <li>Default value of {@link Severity#UNDEFINED}</li>
      * </ol>
      *
-     * @param data the transformed payload
-     * @return the determined severity level as a String
+     * @param data a payload processed by {@link BaseTransformer}
      */
-    public String getSeverity(JsonObject data) {
+    public Severity getSeverity(JsonObject data) {
         String severityField = data.getString(SEVERITY);
         if (severityField != null && !severityField.isEmpty()) {
             try {
-                return Severity.valueOf(severityField.toUpperCase()).name();
+                return Severity.valueOf(severityField);
             } catch (IllegalArgumentException e) {
-                return Severity.UNDEFINED.name();
+                return Severity.UNDEFINED;
             }
         } else {
-            return extractLegacySeverity(data).name();
+            return extractLegacySeverity(data);
         }
     }
 
@@ -95,6 +130,21 @@ public class SeverityTransformer {
 
         severities.sort(null);
         return severities.getFirst();
+    }
+
+    private EventWrapper<?, ?> getEventWrapper(String payload) {
+        try {
+            Action action = actionParser.fromJsonString(payload);
+            return new EventWrapperAction(action);
+        } catch (ActionParsingException actionParseException) {
+            // Try to load it as a CloudEvent
+            try {
+                return new EventWrapperCloudEvent(cloudEventParser.fromJsonString(payload, NotificationsConsoleCloudEvent.class));
+            } catch (ConsoleCloudEventParsingException cloudEventParseException) {
+                actionParseException.addSuppressed(cloudEventParseException);
+                throw actionParseException;
+            }
+        }
     }
 
     private Integer parseAdvisorTotalRisk(JsonObject event) {
