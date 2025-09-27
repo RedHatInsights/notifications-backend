@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
+import com.redhat.cloud.notifications.transformers.SeverityTransformer;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import com.redhat.cloud.notifications.utils.ActionParsingException;
 import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
@@ -89,6 +90,9 @@ public class EventConsumer {
 
     @Inject
     RecipientsAuthorizationCriterionExtractor recipientsAuthorizationCriterionExtractor;
+
+    @Inject
+    SeverityTransformer severityTransformer;
 
     ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
@@ -263,6 +267,7 @@ public class EventConsumer {
                 Optional<String> sourceEnvironmentHeader = kafkaHeaders.get(SOURCE_ENVIRONMENT_HEADER);
                 Event event = new Event(eventType, payload, eventWrapperToProcess, sourceEnvironmentHeader);
                 event.setHasAuthorizationCriterion(null != recipientsAuthorizationCriterionExtractor.extract(event));
+                event.setSeverity(severityTransformer.getSeverity(event));
                 if (event.getId() == null) {
                     // NOTIF-499 If there is no ID provided whatsoever we create one.
                     event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));

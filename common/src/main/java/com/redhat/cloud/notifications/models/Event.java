@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.events.EventWrapper;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -79,6 +80,9 @@ public class Event {
     private String renderedDrawerNotification;
 
     private String sourceEnvironment;
+
+    @Transient
+    private Severity severity;
 
     @Transient
     private EventWrapper<?, ?> eventWrapper;
@@ -251,6 +255,14 @@ public class Event {
 
     public void setSourceEnvironment(String sourceEnvironment) {
         this.sourceEnvironment = sourceEnvironment;
+    }
+
+    public Severity getSeverity() {
+        return severity;
+    }
+
+    public void setSeverity(Severity severity) {
+        this.severity = severity;
     }
 
     @NotNull

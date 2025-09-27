@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.webhook;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
@@ -149,6 +150,7 @@ public class WebhookTest {
         webhookActionMessage.setEventType("testWebhook");
         webhookActionMessage.setAccountId("tenant");
         webhookActionMessage.setOrgId(DEFAULT_ORG_ID);
+        webhookActionMessage.setSeverity(Severity.IMPORTANT.name());
 
         Payload payload1 = new Payload.PayloadBuilder()
                 .withAdditionalProperty("any", "thing")

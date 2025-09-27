@@ -74,7 +74,7 @@ public class AdvisorTestHelpers {
         return aggregation;
     }
 
-    private static Action createAction(String eventType, Map<String, String> rule) {
+    public static Action createAction(String eventType, Map<String, String> rule) {
         return new Action.ActionBuilder()
                 .withBundle("rhel")
                 .withApplication("advisor")

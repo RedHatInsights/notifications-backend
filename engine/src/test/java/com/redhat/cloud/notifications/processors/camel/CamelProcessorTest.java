@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.camel;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -145,6 +146,7 @@ public abstract class CamelProcessorTest {
                 .withEventType("policy-triggered")
                 .withOrgId(DEFAULT_ORG_ID)
                 .withTimestamp(LocalDateTime.now(UTC))
+                .withSeverity(Severity.MODERATE.name())
                 .withContext(contextBuilder.build())
                 .withEvents(List.of(
                         new com.redhat.cloud.notifications.ingress.Event.EventBuilder()

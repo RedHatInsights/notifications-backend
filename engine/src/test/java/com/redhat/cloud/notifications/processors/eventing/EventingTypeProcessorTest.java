@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.eventing;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -46,6 +47,7 @@ import static com.redhat.cloud.notifications.processors.AuthenticationType.SECRE
 import static com.redhat.cloud.notifications.processors.ConnectorSender.CLOUD_EVENT_TYPE_PREFIX;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.processors.eventing.EventingProcessor.NOTIF_METADATA_KEY;
+import static com.redhat.cloud.notifications.transformers.BaseTransformer.SEVERITY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -172,6 +174,7 @@ class EventingTypeProcessorTest {
         JsonObject payload = message.getPayload();
         assertNotNull(payload.getJsonArray("events").getJsonObject(0).getString("payload"));
         assertEquals("https://localhost/insights/app?from=notifications&integration=sub-type", payload.getString("application_url"));
+        assertEquals(Severity.IMPORTANT.name(), payload.getString(SEVERITY));
 
         // The processor added a 'notif-metadata' field to the payload, let's have a look at it.
         JsonObject notifMetadata = payload.getJsonObject(NOTIF_METADATA_KEY);
@@ -247,6 +250,7 @@ class EventingTypeProcessorTest {
         action.setAccountId(FIXTURE_ACTION_ACCOUNT_ID);
         action.setOrgId(FIXTURE_ACTION_ORG_ID);
         action.setRecipients(FIXTURE_ACTION_RECIPIENTS);
+        action.setSeverity(Severity.IMPORTANT.name());
 
         Context context = new Context.ContextBuilder().build();
         context.setAdditionalProperty(FIXTURE_ACTION_CONTEXT, FIXTURE_ACTION_CONTEXT_VALUE);

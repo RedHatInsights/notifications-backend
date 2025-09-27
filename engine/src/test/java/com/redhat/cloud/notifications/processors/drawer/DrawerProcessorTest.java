@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.drawer;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
@@ -161,6 +162,7 @@ class DrawerProcessorTest {
                 .withApplication("policies")
                 .withBundle("rhel")
                 .withTimestamp(LocalDateTime.of(2022, 8, 24, 13, 30, 0, 0))
+                .withSeverity(Severity.CRITICAL.name())
                 .withContext(
                     new Context.ContextBuilder()
                         .withAdditionalProperty("foo", "im foo")
