@@ -1,1 +1,1 @@
-Instant notification - {source.event_type.display_name} - {source.application.display_name} - {source.bundle.display_name}
+{#if action.severity?? && action.severity != "UNDEFINED" && action.severity != "NONE"}[{action.severity}] {/if}Instant notification - {source.event_type.display_name} - {source.application.display_name} - {source.bundle.display_name}

@@ -1,1 +1,1 @@
-{source.event_type.display_name} - {action.events[0].payload.subject}
+{#if action.severity?? && action.severity != "UNDEFINED" && action.severity != "NONE"}[{action.severity}] {/if}{source.event_type.display_name} - {action.events[0].payload.subject}

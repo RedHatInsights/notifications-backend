@@ -1,1 +1,1 @@
-Environment is ready - Ansible Automation Platform Service on AWS
+{#if action.severity?? && action.severity != "UNDEFINED" && action.severity != "NONE"}[{action.severity}] {/if}Environment is ready - Ansible Automation Platform Service on AWS
