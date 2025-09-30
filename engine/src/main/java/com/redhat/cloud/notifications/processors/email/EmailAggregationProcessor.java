@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
@@ -34,6 +35,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateInstance;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -323,6 +325,11 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                 Set<String> recipientsUsernames = listApplicationWithUserCollection.getValue().stream().map(User::getUsername).collect(Collectors.toSet());
                 Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(aggregatorEvent, List.of(endpoint));
 
+                Map<String, Object> aggregatedDataToRenderOnConnector = null;
+                if (engineConfig.isConnectorTemplateTransformationEnabled(aggregatorEvent.getOrgId())) {
+                    aggregatedDataToRenderOnConnector = buildFullConnectorTemplateContext(listApplicationWithUserCollection.getKey(), bundle);
+                }
+
                 // Prepare all the data to be sent to the connector.
                 final EmailNotification emailNotification = new EmailNotification(
                     bodyStr,
@@ -341,13 +348,24 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                     false,
                     // because recipient list has already been computed using authz constraints, we don't need it for the aggregated email
                     null,
-                    null);
+                    aggregatedDataToRenderOnConnector,
+                    true
+                );
 
                 connectorSender.send(aggregatorEvent, endpoint, JsonObject.mapFrom(emailNotification));
 
                 Log.debugf("Sent email notification to connector: %s", emailNotification);
             }
         });
+    }
+
+    private Map<String, Object> buildFullConnectorTemplateContext(List<ApplicationAggregatedData> action, Bundle bundle) {
+        Map<String, Object> additionalContext = new HashMap<>();
+        additionalContext.put("environment", environment);
+        additionalContext.put("bundle_name", bundle.getName());
+        additionalContext.put("bundle_display_name", bundle.getDisplayName());
+        additionalContext.put("application_aggregated_data_list", new JsonArray(objectMapper.convertValue(action, List.class)));
+        return additionalContext;
     }
 
     private String renderEmailFromTemplatesInDb(Map<String, Object> action) {
@@ -415,12 +433,24 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
     }
 
     public class ApplicationAggregatedData {
+
+        @JsonProperty("aggregated_data")
         Map<String, Object> aggregatedData;
+
+        @JsonProperty("app_name")
         String appName;
 
         public ApplicationAggregatedData(Map<String, Object> aggregatedData, String appName) {
             this.aggregatedData = aggregatedData;
             this.appName = appName;
+        }
+
+        public Map<String, Object> getAggregatedData() {
+            return aggregatedData;
+        }
+
+        public String getAppName() {
+            return appName;
         }
 
         @Override

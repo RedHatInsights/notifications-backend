@@ -1,15 +1,22 @@
 package com.redhat.cloud.notifications.connector.email;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.model.EmailNotification;
+import com.redhat.cloud.notifications.connector.email.model.aggregation.ApplicationAggregatedData;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
 import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPManager;
+import com.redhat.cloud.notifications.qute.templates.TemplateService;
+import email.TestPoliciesTemplate;
+import helpers.TestHelpers;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
@@ -39,6 +46,11 @@ import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBui
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventFilter.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.*;
 import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
+import static email.TestAdvisorTemplate.JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT;
+import static email.TestImageBuilderTemplate.JSON_IMAGE_BUILDER_DEFAULT_AGGREGATION_CONTEXT;
+import static email.TestInventoryTemplate.JSON_INVENTORY_DEFAULT_AGGREGATION_CONTEXT;
+import static email.TestPatchTemplate.JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT;
+import static email.TestResourceOptimizationTemplate.JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT;
 import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -51,6 +63,8 @@ import static org.mockserver.model.HttpResponse.response;
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 class EmailRouteBuilderWithSimplifiedRouteTest extends CamelQuarkusTestSupport {
+    private static final String PATCH_TEST_EVENT = "{\"account_id\":\"\",\"application\":\"patch\",\"bundle\":\"rhel\",\"context\":{\"system_check_in\":\"2022-08-03T15:22:42.199046\",\"start_time\":\"2022-08-03T15:22:42.199046\",\"patch\":{\"Alpha\":[\"advA\",\"advB\",\"advC\"],\"Roman\":[\"advI\",\"advII\",\"advIII\"],\"Numerical\":[\"adv1\",\"adv2\"]}},\"event_type\":\"new-advisory\",\"events\":[{\"metadata\":{},\"payload\":{\"advisory_name\":\"name 1\",\"synopsis\":\"synopsis 1\"}},{\"metadata\":{},\"payload\":{\"advisory_name\":\"name 2\",\"synopsis\":\"synopsis 2\"}}],\"orgId\":\"default-org-id\",\"timestamp\":\"2022-10-03T15:22:13.000000025\",\"source\":{\"application\":{\"display_name\":\"Patch\"},\"bundle\":{\"display_name\":\"Red Hat Enterprise Linux\"},\"event_type\":{\"display_name\":\"New Advisory\"}},\"environment\":{\"url\":\"https://localhost\",\"ocmUrl\":\"https://localhost\"},\"pendo_message\":null,\"ignore_user_preferences\":true}";
+
     @InjectSpy
     EmailConnectorConfig emailConnectorConfig;
 
@@ -65,9 +79,17 @@ class EmailRouteBuilderWithSimplifiedRouteTest extends CamelQuarkusTestSupport {
     @InjectSpy
     BOPManager bopManager;
 
+    @Inject
+    TemplateService templateService;
+
+    Map<String, Object> eventData;
+    boolean isDailyDigest = false;
+
     @BeforeEach
     void beforeEach() {
         when(emailConnectorConfig.useSimplifiedEmailRoute(anyString())).thenReturn(true);
+        eventData = buildInstantEmailContext();
+        isDailyDigest = false;
     }
 
     void initCamelRoutes() throws Exception {
@@ -128,6 +150,38 @@ class EmailRouteBuilderWithSimplifiedRouteTest extends CamelQuarkusTestSupport {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testWithRecipients(boolean emailsInternalOnlyEnabled) throws Exception {
+        try {
+            emailConnectorConfig.setEmailsInternalOnlyEnabled(emailsInternalOnlyEnabled);
+            Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
+            String strUsers = objectMapper.writeValueAsString(users);
+            ExpectationResponseCallback recipientsResolverResponse = req -> response().withContentType(MediaType.APPLICATION_JSON).withBody(strUsers).withStatusCode(200);
+            ExpectationResponseCallback bopResponse = req -> response().withContentType(MediaType.APPLICATION_JSON).withStatusCode(200);
+            initMocks(recipientsResolverResponse, bopResponse);
+
+            Set<String> additionalEmails = Set.of("redhat_user@redhat.com", "external_user@noway.com");
+            int usersAndRecipientsTotalNumber = users.size() + additionalEmails.size();
+
+            kafkaConnectorToEngine.expectedMessageCount(1);
+
+            buildCloudEventAndSendIt(additionalEmails);
+
+            kafkaConnectorToEngine.assertIsSatisfied(2000);
+
+            final ArgumentCaptor<List<String>> listCaptor = ArgumentCaptor.forClass((Class) List.class);
+            verify(bopManager, times(3))
+                .sendToBop(listCaptor.capture(), anyString(), anyString(), anyString());
+
+            checkRecipientsAndHistory(usersAndRecipientsTotalNumber, listCaptor.getAllValues(), kafkaConnectorToEngine, emailsInternalOnlyEnabled, "external_user@noway.com");
+        } finally {
+            emailConnectorConfig.setEmailsInternalOnlyEnabled(false);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testWithRecipientsForDailyDigest(boolean emailsInternalOnlyEnabled) throws Exception {
+        eventData = buildRhelDailyDigestEmailContext();
+        isDailyDigest = true;
         try {
             emailConnectorConfig.setEmailsInternalOnlyEnabled(emailsInternalOnlyEnabled);
             Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
@@ -311,12 +365,14 @@ class EmailRouteBuilderWithSimplifiedRouteTest extends CamelQuarkusTestSupport {
             "test email subject",
             "Not used",
             "123456",
+            "123456",
             List.of(recipientSettings),
             new ArrayList<>(),
             new ArrayList<>(),
             false,
             null,
-            new HashMap<>()
+            eventData,
+            isDailyDigest
         );
         final JsonObject payload = JsonObject.mapFrom(emailNotification);
 
@@ -327,5 +383,66 @@ class EmailRouteBuilderWithSimplifiedRouteTest extends CamelQuarkusTestSupport {
         cloudEvent.put(CLOUD_EVENT_TYPE, "com.redhat.console.notification.toCamel." + emailConnectorConfig.getConnectorName());
         cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(payload));
         return cloudEvent;
+    }
+
+    private Map<String, Object> buildRhelDailyDigestEmailContext() {
+        TypeReference<HashMap<String, Object>> typeRef = new TypeReference<>() { };
+
+        List<ApplicationAggregatedData> applicationAggregatedDataList = new ArrayList<>();
+        try {
+            applicationAggregatedDataList.add(new ApplicationAggregatedData(
+                "advisor",
+                objectMapper.readValue(JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT, typeRef)
+            ));
+            applicationAggregatedDataList.add(new ApplicationAggregatedData(
+                "Compliance",
+                templateService.convertActionToContextMap(TestHelpers.createComplianceAction())
+            ));
+            applicationAggregatedDataList.add(new ApplicationAggregatedData(
+                "image-builder",
+                objectMapper.readValue(JSON_IMAGE_BUILDER_DEFAULT_AGGREGATION_CONTEXT, typeRef)
+            ));
+            applicationAggregatedDataList.add(new ApplicationAggregatedData(
+                "inventory",
+                objectMapper.readValue(JSON_INVENTORY_DEFAULT_AGGREGATION_CONTEXT, typeRef)
+            ));
+            applicationAggregatedDataList.add(new ApplicationAggregatedData(
+                "patch",
+                objectMapper.readValue(JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT, typeRef)
+            ));
+            applicationAggregatedDataList.add(new ApplicationAggregatedData(
+                "policies",
+                TestPoliciesTemplate.buildPoliciesAggregatedPayload()
+            ));
+            applicationAggregatedDataList.add(new ApplicationAggregatedData(
+                "resource-optimization",
+                objectMapper.readValue(JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT, typeRef)
+            ));
+            applicationAggregatedDataList.add(new ApplicationAggregatedData(
+                "vulnerability",
+                templateService.convertActionToContextMap(TestHelpers.createVulnerabilityAction())
+            ));
+        } catch (JsonProcessingException e) {
+            fail(e);
+        }
+
+        Map<String, Object> additionalContext = new HashMap<>();
+        additionalContext.put("environment", Map.of("url", "https://root.env.url.com"));
+        additionalContext.put("bundle_name", "rhel");
+        additionalContext.put("bundle_display_name", "Red Hat Enterprise Linux");
+        additionalContext.put("pendo_message", null);
+        additionalContext.put("application_aggregated_data_list", new JsonArray(objectMapper.convertValue(applicationAggregatedDataList, List.class)));
+
+        return additionalContext;
+    }
+
+    private Map<String, Object> buildInstantEmailContext() {
+        TypeReference<HashMap<String, Object>> typeRef = new TypeReference<>() { };
+        try {
+            return objectMapper.readValue(PATCH_TEST_EVENT, typeRef);
+        } catch (JsonProcessingException e) {
+            fail(e);
+            return null;
+        }
     }
 }

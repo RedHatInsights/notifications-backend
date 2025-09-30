@@ -1,9 +1,11 @@
 package com.redhat.cloud.notifications.connector.email;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.connector.CloudEventDataExtractor;
 import com.redhat.cloud.notifications.connector.email.config.EmailConnectorConfig;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.engine.InternalEngine;
+import com.redhat.cloud.notifications.connector.email.model.EmailAggregation;
 import com.redhat.cloud.notifications.connector.email.model.EmailNotification;
 import com.redhat.cloud.notifications.connector.email.payload.PayloadDetails;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
@@ -21,6 +23,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
+import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE;
 import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
@@ -34,6 +38,12 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
 
     @Inject
     TemplateService templateService;
+
+    @Inject
+    EmailAggregationProcessor emailAggregationProcessor;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     /**
      * Extracts the relevant information for the email connector from the
@@ -62,10 +72,17 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
                 .collect(toSet());
 
         final String historyId = exchange.getProperty(ID, String.class);
-        exchange.setProperty(ExchangeProperty.RENDERED_BODY,
-            renderEmailTemplateFromCommonModule(emailNotification, IntegrationType.EMAIL_BODY, emailNotification.emailBody(), historyId));
-        exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT,
-            renderEmailTemplateFromCommonModule(emailNotification, IntegrationType.EMAIL_TITLE, emailNotification.emailSubject(), historyId));
+
+        if (emailNotification.isDailyDigest()) {
+            exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, emailNotification.emailSubject());
+            exchange.setProperty(ExchangeProperty.RENDERED_BODY, emailNotification.emailBody());
+            renderDailyDigestFromCommonModule(exchange, emailNotification, historyId);
+        } else {
+            exchange.setProperty(ExchangeProperty.RENDERED_BODY,
+                renderInstantEmailFromCommonModule(emailNotification, IntegrationType.EMAIL_BODY, emailNotification.emailBody(), historyId));
+            exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT,
+                renderInstantEmailFromCommonModule(emailNotification, IntegrationType.EMAIL_TITLE, emailNotification.emailSubject(), historyId));
+        }
         exchange.setProperty(ExchangeProperty.RECIPIENT_SETTINGS, emailNotification.recipientSettings());
         exchange.setProperty(ExchangeProperty.SUBSCRIBED_BY_DEFAULT, emailNotification.subscribedByDefault());
         exchange.setProperty(ExchangeProperty.SUBSCRIBERS, emailNotification.subscribers());
@@ -76,7 +93,31 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
         exchange.setProperty(ExchangeProperty.USE_SIMPLIFIED_EMAIL_ROUTE, emailConnectorConfig.useSimplifiedEmailRoute(emailNotification.orgId()));
     }
 
-    private String renderEmailTemplateFromCommonModule(EmailNotification emailNotification, IntegrationType integrationType, final String renderedContentFromEngine, String historyId) {
+    private void renderDailyDigestFromCommonModule(Exchange exchange, EmailNotification emailNotification, String historyId) {
+        EmailAggregation emailAggregation  = objectMapper.convertValue(emailNotification.eventData(), EmailAggregation.class);
+
+        if (null != emailAggregation) {
+            try {
+                String emailTitle = renderEmailAggregationTitleTemplateFromCommonModule(emailAggregation.bundleDisplayName());
+                exchange.setProperty(ExchangeProperty.RENDERED_SUBJECT, emailTitle);
+
+                if (exchange.getProperty(ORG_ID) == null) {
+                    exchange.setProperty(ORG_ID, emailNotification.oldOrgId());
+                }
+                String builtAggregatedEmailBody = emailAggregationProcessor.aggregate(emailAggregation, exchange.getProperty(ORG_ID, String.class), emailTitle);
+                if (!emailNotification.emailBody().equals(builtAggregatedEmailBody)) {
+                    Log.errorf("Legacy and new rendered messages are different for daily digest (history Id %s): '%s' vs. '%s'", historyId, emailNotification.emailBody(), builtAggregatedEmailBody);
+                } else {
+                    Log.infof("Legacy and new rendered messages are identical for daily digest");
+                    exchange.setProperty(ExchangeProperty.RENDERED_BODY, builtAggregatedEmailBody);
+                }
+            } catch (Exception ex) {
+                Log.errorf(ex, "Error rendering data with common-template module for daily digest (history Id %s)", historyId);
+            }
+        }
+    }
+
+    private String renderInstantEmailFromCommonModule(EmailNotification emailNotification, IntegrationType integrationType, final String renderedContentFromEngine, String historyId) {
         if (null != emailNotification.eventData()) {
             try {
                 Map<String, Object> additionalContext = new HashMap<>();
@@ -104,5 +145,13 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
             }
         }
         return renderedContentFromEngine;
+    }
+
+    private String renderEmailAggregationTitleTemplateFromCommonModule(String bundleDisplayName) {
+        TemplateDefinition templateDefinition = new TemplateDefinition(
+            EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE, null, null, null
+        );
+        Map<String, Object> mapDataTitle = Map.of("source", Map.of("bundle", Map.of("display_name", bundleDisplayName)));
+        return templateService.renderTemplateWithCustomDataMap(templateDefinition, mapDataTitle);
     }
 }

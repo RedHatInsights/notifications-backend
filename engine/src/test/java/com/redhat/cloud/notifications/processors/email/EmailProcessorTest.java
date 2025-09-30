@@ -371,7 +371,7 @@ public class EmailProcessorTest {
         final JsonObject payload = capturedPayload.getValue();
         final String resultEmailBody = payload.getString("email_body");
         final String resultEmailSubject = payload.getString("email_subject");
-        final String resultOrgId = payload.getString("orgId");
+        final String resultOrgId = payload.getString("org_id");
         final String resultEmailSender = payload.getString("email_sender");
         final Set<String> resultSubscribers = payload.getJsonArray("subscribers").stream().map(String.class::cast).collect(toSet());
         final Set<RecipientSettings> resultRecipientSettings = payload.getJsonArray("recipient_settings")
