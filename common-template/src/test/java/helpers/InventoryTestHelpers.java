@@ -5,6 +5,8 @@ import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
+import com.redhat.cloud.notifications.qute.templates.Severity;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,7 @@ public class InventoryTestHelpers {
         emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.now());
         emailActionMessage.setEventType("validation-error");
+        emailActionMessage.setSeverity(Severity.IMPORTANT.name());
 
         emailActionMessage.setContext(
                 new Context.ContextBuilder()

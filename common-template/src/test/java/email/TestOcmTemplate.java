@@ -1,6 +1,7 @@
 package email;
 
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.qute.templates.Severity;
 import helpers.OcmTestHelpers;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
@@ -55,6 +56,36 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
         eventTypeDisplayName = "Cluster Update";
         String result = generateEmailSubject(CLUSTER_UPDATE, action);
         assertEquals("Cluster Update - Awesome subject", result);
+
+        // Test with Critical severity level (OCM severity Critical)
+        action.setSeverity(Severity.CRITICAL.name());
+        String criticalResult = generateEmailSubject(CLUSTER_UPDATE, action);
+        assertEquals("[CRITICAL] Cluster Update - Awesome subject", criticalResult);
+
+        // Test with Important severity level (OCM severity Major)
+        action.setSeverity(Severity.IMPORTANT.name());
+        String majorResult = generateEmailSubject(CLUSTER_UPDATE, action);
+        assertEquals("[IMPORTANT] Cluster Update - Awesome subject", majorResult);
+
+        // Test with Moderate severity level (OCM severity Warning)
+        action.setSeverity(Severity.MODERATE.name());
+        String warningResult = generateEmailSubject(CLUSTER_UPDATE, action);
+        assertEquals("[MODERATE] Cluster Update - Awesome subject", warningResult);
+
+        // Test with Low severity level (OCM severity Info)
+        action.setSeverity(Severity.LOW.name());
+        String infoResult = generateEmailSubject(CLUSTER_UPDATE, action);
+        assertEquals("[LOW] Cluster Update - Awesome subject", infoResult);
+
+        // Test with None severity level (OCM severity Debug)
+        action.setSeverity(Severity.NONE.name());
+        String debugResult = generateEmailSubject(CLUSTER_UPDATE, action);
+        assertEquals("Cluster Update - Awesome subject", debugResult);
+
+        // Test with Undefined severity level (should never be sent)
+        action.setSeverity(Severity.UNDEFINED.name());
+        String undefinedResult = generateEmailSubject(CLUSTER_UPDATE, action);
+        assertEquals("Cluster Update - Awesome subject", undefinedResult);
     }
 
     @Test

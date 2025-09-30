@@ -1,6 +1,7 @@
 package email;
 
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.qute.templates.Severity;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -30,6 +31,11 @@ public class TestAnsibleServiceOnAwsTemplate extends EmailTemplatesRendererHelpe
 
         String result = generateEmailSubject(NOTIFY_CUSTOMER_PROVISION_SUCCESS, action);
         assertEquals("Environment is ready - Ansible Automation Platform Service on AWS", result);
+
+        // Test with Moderate severity level
+        action.setSeverity(Severity.MODERATE.name());
+        String moderateResult = generateEmailSubject(NOTIFY_CUSTOMER_PROVISION_SUCCESS, action);
+        assertEquals("[MODERATE] Environment is ready - Ansible Automation Platform Service on AWS", moderateResult);
     }
 
     @Test

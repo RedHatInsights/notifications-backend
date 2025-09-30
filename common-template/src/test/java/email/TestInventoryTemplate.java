@@ -62,12 +62,13 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
         return "Inventory";
     }
 
+    /** validation-error emails are mapped to a severity level of IMPORTANT. */
     @Test
     public void testInstantEmailTitle() {
         Action action = InventoryTestHelpers.createInventoryAction("123456", "rhel", "inventory", "Host Validation Error");
         eventTypeDisplayName = "Validation error";
         String result = generateEmailSubject(EVENT_TYPE_VALIDATION_ERROR, action);
-        assertEquals("Instant notification - Validation error - Inventory - Red Hat Enterprise Linux", result);
+        assertEquals("[IMPORTANT] Instant notification - Validation error - Inventory - Red Hat Enterprise Linux", result);
     }
 
     @Test
