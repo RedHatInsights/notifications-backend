@@ -1,80 +1,44 @@
 package com.redhat.cloud.notifications.transformers;
 
-import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
-import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
 import com.redhat.cloud.notifications.Severity;
-import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
-import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
-import com.redhat.cloud.notifications.utils.ActionParser;
-import com.redhat.cloud.notifications.utils.ActionParsingException;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
+import com.redhat.cloud.notifications.ingress.Event;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-import static com.redhat.cloud.notifications.transformers.BaseTransformer.APPLICATION;
-import static com.redhat.cloud.notifications.transformers.BaseTransformer.EVENTS;
-import static com.redhat.cloud.notifications.transformers.BaseTransformer.EVENT_TYPE;
-import static com.redhat.cloud.notifications.transformers.BaseTransformer.PAYLOAD;
 import static com.redhat.cloud.notifications.transformers.BaseTransformer.SEVERITY;
 
 @ApplicationScoped
 public class SeverityTransformer {
 
-    @Inject
-    BaseTransformer baseTransformer;
-
-    @Inject
-    ActionParser actionParser;
-
-    ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
-
-    /**
+        /**
      * Retrieves the severity level of the notification.
      * <br>
      * Priority:
      * <ol>
-     *     <li>Top-level {@link com.redhat.cloud.notifications.ingress.Action#severity severity} value</li>
+     *     <li>Top-level {@link Action#severity severity} value</li>
      *     <li>Migration from field of existing tenant</li>
      *     <li>Default value of {@link Severity#UNDEFINED}</li>
      * </ol>
      */
-    public Severity getSeverity(Event event) {
-        if (event.getEventWrapper() == null) {
-            event.setEventWrapper(getEventWrapper(event.getPayload()));
+    public Severity getSeverity(com.redhat.cloud.notifications.models.Event event) {
+        if (!(event.getEventWrapper() instanceof EventWrapperAction)) {
+            return Severity.UNDEFINED;
         }
-        return getSeverity(baseTransformer.toJsonObject(event));
-    }
+        Action action = ((EventWrapperAction) event.getEventWrapper()).getEvent();
 
-    /**
-     * Retrieves the severity level of the notification.
-     * <br>
-     * Priority:
-     * <ol>
-     *     <li>Top-level {@link com.redhat.cloud.notifications.ingress.Action#severity severity} value</li>
-     *     <li>Migration from field of existing tenant</li>
-     *     <li>Default value of {@link Severity#UNDEFINED}</li>
-     * </ol>
-     *
-     * @param data a payload processed by {@link BaseTransformer}
-     */
-    public Severity getSeverity(JsonObject data) {
-        String severityField = data.getString(SEVERITY);
-        if (severityField != null && !severityField.isEmpty()) {
+        if (action.getSeverity() != null) {
             try {
-                return Severity.valueOf(severityField);
+                return Severity.valueOf(action.getSeverity().toUpperCase());
             } catch (IllegalArgumentException e) {
                 return Severity.UNDEFINED;
             }
         } else {
-            return extractLegacySeverity(data);
+            return extractLegacySeverity(action);
         }
     }
 
@@ -83,18 +47,18 @@ public class SeverityTransformer {
      *
      * @return The highest severity within the payload events.
      */
-    private Severity extractLegacySeverity(final JsonObject data) {
-        JsonArray events = data.getJsonArray(EVENTS);
-        if (events == null || events.isEmpty()) {
+    private Severity extractLegacySeverity(final Action action) {
+        List<Event> events = action.getEvents();
+        if (events.isEmpty()) {
             return Severity.UNDEFINED;
         }
 
-        ArrayList<Severity> severities = switch (data.getString(APPLICATION)) {
+        ArrayList<Severity> severities = switch (action.getApplication()) {
             // Both OpenShift Advisor and RHEL Advisor use the same layout here
             case "advisor" -> new ArrayList<>(events.stream().map(
                     event -> {
                         try {
-                            return mapAdvisorTotalRiskToSeverity(parseAdvisorTotalRisk((JsonObject) event));
+                            return AdvisorTotalRisk.fromEvent(event).mapToSeverity();
                         } catch (Exception e) {
                             return Severity.UNDEFINED;
                         }
@@ -103,8 +67,9 @@ public class SeverityTransformer {
             case "cluster-manager" -> new ArrayList<>(events.stream().map(event -> {
                 try {
                     return OcmServiceLogSeverity.valueOf(
-                                    ((JsonObject) event).getJsonObject(PAYLOAD).getJsonObject("global_vars").getString(SEVERITY).toUpperCase())
-                            .mapToSeverity();
+                            ((Map<String, Object>) event.getPayload().getAdditionalProperties().get("global_vars"))
+                                    .get(SEVERITY).toString().toUpperCase()
+                    ).mapToSeverity();
                 } catch (Exception ignored) {
                     return Severity.UNDEFINED;
                 }
@@ -112,14 +77,14 @@ public class SeverityTransformer {
             case "errata-notifications" -> new ArrayList<>(events.stream().map(event -> {
                 try {
                     return Severity.valueOf(
-                            ((JsonObject) event).getJsonObject(PAYLOAD).getString(SEVERITY).toUpperCase()
+                            event.getPayload().getAdditionalProperties().get(SEVERITY).toString().toUpperCase()
                     );
                 } catch (Exception ignored) {
                     return Severity.UNDEFINED;
                 }
             }).toList());
             case "inventory" -> {
-                if (data.getString(EVENT_TYPE).equals("validation-error")) {
+                if (action.getEventType().equals("validation-error")) {
                     yield new ArrayList<>(List.of(Severity.IMPORTANT));
                 } else {
                     yield new ArrayList<>(List.of(Severity.UNDEFINED));
@@ -132,44 +97,49 @@ public class SeverityTransformer {
         return severities.getFirst();
     }
 
-    private EventWrapper<?, ?> getEventWrapper(String payload) {
-        try {
-            Action action = actionParser.fromJsonString(payload);
-            return new EventWrapperAction(action);
-        } catch (ActionParsingException actionParseException) {
-            // Try to load it as a CloudEvent
-            try {
-                return new EventWrapperCloudEvent(cloudEventParser.fromJsonString(payload, NotificationsConsoleCloudEvent.class));
-            } catch (ConsoleCloudEventParsingException cloudEventParseException) {
-                actionParseException.addSuppressed(cloudEventParseException);
-                throw actionParseException;
-            }
-        }
-    }
+    enum AdvisorTotalRisk {
+        CRITICAL_RISK, // 4
+        HIGH_RISK, // 3
+        MEDIUM_RISK, // 2
+        LOW_RISK, // 1
+        NOTHING, // 0
+        UNKNOWN; // < 0 or > 4
 
-    private Integer parseAdvisorTotalRisk(JsonObject event) {
-        Object totalRisk = event.getJsonObject(PAYLOAD).getValue("total_risk");
-        if (totalRisk instanceof Integer) {
-            return (Integer) totalRisk;
-        } else if (totalRisk instanceof String) {
-            try {
-                return Integer.parseInt((String) totalRisk);
-            } catch (NumberFormatException ignored) {
-                return 0;
+        static AdvisorTotalRisk fromEvent(Event event) {
+            Object totalRisk = event.getPayload().getAdditionalProperties().get("total_risk");
+            int totalRiskInt;
+            if (totalRisk instanceof Integer) {
+                totalRiskInt = (Integer) totalRisk;
+            } else if (totalRisk instanceof String) {
+                try {
+                    totalRiskInt = Integer.parseInt((String) totalRisk);
+                } catch (NumberFormatException ignored) {
+                    return UNKNOWN;
+                }
+            } else {
+                return UNKNOWN;
             }
-        } else {
-            return 0;
-        }
-    }
 
-    private Severity mapAdvisorTotalRiskToSeverity(int risk) {
-        return switch (risk) {
-            case 1 -> Severity.LOW;
-            case 2 -> Severity.MODERATE;
-            case 3 -> Severity.IMPORTANT;
-            case 4 -> Severity.CRITICAL;
-            default -> Severity.UNDEFINED;
-        };
+            return switch (totalRiskInt) {
+                case 4 -> CRITICAL_RISK;
+                case 3 -> HIGH_RISK;
+                case 2 -> MEDIUM_RISK;
+                case 1 -> LOW_RISK;
+                case 0 -> NOTHING;
+                default -> UNKNOWN;
+            };
+        }
+
+        Severity mapToSeverity() {
+            return switch (this) {
+                case CRITICAL_RISK -> Severity.CRITICAL;
+                case HIGH_RISK -> Severity.IMPORTANT;
+                case MEDIUM_RISK -> Severity.MODERATE;
+                case LOW_RISK -> Severity.LOW;
+                case NOTHING -> Severity.NONE;
+                case UNKNOWN -> Severity.UNDEFINED;
+            };
+        }
     }
 
     enum OcmServiceLogSeverity {

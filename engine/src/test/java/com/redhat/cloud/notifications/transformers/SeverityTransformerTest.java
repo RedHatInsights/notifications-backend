@@ -8,10 +8,8 @@ import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.models.Event;
 import io.quarkus.test.junit.QuarkusTest;
-import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
@@ -28,9 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class SeverityTransformerTest {
 
     @Inject
-    BaseTransformer baseTransformer;
-
-    @Inject
     SeverityTransformer severityTransformer;
 
     @Test
@@ -40,15 +35,14 @@ class SeverityTransformerTest {
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(action));
 
-        JsonObject data = baseTransformer.toJsonObject(event);
-        assertEquals(Severity.MODERATE, severityTransformer.getSeverity(data));
+        assertEquals(Severity.MODERATE, severityTransformer.getSeverity(event));
 
         // Check mixed case severity string, and transform payload
         action.setSeverity("iMpOrTaNt");
-        Event dataMixed = new Event();
-        dataMixed.setPayload(Parser.encode(action));
+        Event eventMixed = new Event();
+        eventMixed.setEventWrapper(new EventWrapperAction(action));
 
-        assertEquals(Severity.IMPORTANT, severityTransformer.getSeverity(dataMixed));
+        assertEquals(Severity.IMPORTANT, severityTransformer.getSeverity(eventMixed));
     }
 
     @Test
@@ -58,8 +52,7 @@ class SeverityTransformerTest {
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(action));
 
-        JsonObject data = baseTransformer.toJsonObject(event);
-        assertEquals(Severity.UNDEFINED, severityTransformer.getSeverity(data));
+        assertEquals(Severity.UNDEFINED, severityTransformer.getSeverity(event));
     }
 
     @Test
@@ -68,8 +61,7 @@ class SeverityTransformerTest {
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(action));
 
-        JsonObject data = baseTransformer.toJsonObject(event);
-        assertEquals(Severity.UNDEFINED, severityTransformer.getSeverity(data));
+        assertEquals(Severity.UNDEFINED, severityTransformer.getSeverity(event));
     }
 
     @Test
@@ -82,16 +74,14 @@ class SeverityTransformerTest {
         Event singleEvent = new Event();
         singleEvent.setEventWrapper(new EventWrapperAction(singleEventAction));
 
-        JsonObject singleEventData = baseTransformer.toJsonObject(singleEvent);
-        assertEquals(Severity.MODERATE, severityTransformer.getSeverity(singleEventData));
+        assertEquals(Severity.MODERATE, severityTransformer.getSeverity(singleEvent));
 
         // Multiple events, selects the highest severity found
         Action multipleEventAction = ErrataTestHelpers.createErrataAction();
         Event multipleEvent = new Event();
         multipleEvent.setEventWrapper(new EventWrapperAction(multipleEventAction));
 
-        JsonObject multipleEventData = baseTransformer.toJsonObject(multipleEvent);
-        assertEquals(Severity.IMPORTANT, severityTransformer.getSeverity(multipleEventData));
+        assertEquals(Severity.IMPORTANT, severityTransformer.getSeverity(multipleEvent));
     }
 
     @Test
@@ -102,8 +92,7 @@ class SeverityTransformerTest {
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(action));
 
-        JsonObject data = baseTransformer.toJsonObject(event);
-        assertEquals(Severity.LOW, severityTransformer.getSeverity(data));
+        assertEquals(Severity.LOW, severityTransformer.getSeverity(event));
     }
 
     @Test
@@ -112,8 +101,7 @@ class SeverityTransformerTest {
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(action));
 
-        JsonObject data = baseTransformer.toJsonObject(event);
-        assertEquals(Severity.IMPORTANT, severityTransformer.getSeverity(data));
+        assertEquals(Severity.IMPORTANT, severityTransformer.getSeverity(event));
     }
 
     @Test
@@ -129,16 +117,14 @@ class SeverityTransformerTest {
         Event singleEvent = new Event();
         singleEvent.setEventWrapper(new EventWrapperAction(singleAction));
 
-        JsonObject singleData = baseTransformer.toJsonObject(singleEvent);
-        assertEquals(Severity.CRITICAL, severityTransformer.getSeverity(singleData));
+        assertEquals(Severity.CRITICAL, severityTransformer.getSeverity(singleEvent));
 
         // Multiple events, risk as integer
         Action multipleAction = TestHelpers.createAdvisorAction("test-account-id", "deactivated-recommendation");
         Event multipleEvent = new Event();
         multipleEvent.setEventWrapper(new EventWrapperAction(multipleAction));
 
-        JsonObject multipleData = baseTransformer.toJsonObject(multipleEvent);
-        assertEquals(Severity.MODERATE, severityTransformer.getSeverity(multipleData));
+        assertEquals(Severity.MODERATE, severityTransformer.getSeverity(multipleEvent));
     }
 
     /** This is not an expected case, but it should still be handled gracefully. */
@@ -150,7 +136,6 @@ class SeverityTransformerTest {
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(action));
 
-        JsonObject data = baseTransformer.toJsonObject(event);
-        assertEquals(Severity.UNDEFINED, severityTransformer.getSeverity(data));
+        assertEquals(Severity.UNDEFINED, severityTransformer.getSeverity(event));
     }
 }
