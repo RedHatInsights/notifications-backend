@@ -1,0 +1,26 @@
+[
+  {
+    "user_name": "a",
+    "org_id": "12345",
+    "account_id": "645878",
+    "preferences": ["daily"]
+  },
+  {
+    "user_name": "b",
+    "org_id": "12345",
+    "account_id": "645878",
+    "preferences": ["instant"]
+  },
+  {
+    "user_name": "c",
+    "org_id": "12345",
+    "account_id": "645878",
+    "preferences": ["instant", "daily"]
+  },
+  {
+    "user_name": "d",
+    "org_id": "12345",
+    "account_id": "645878",
+    "preferences": ["instant"]
+  }
+]
