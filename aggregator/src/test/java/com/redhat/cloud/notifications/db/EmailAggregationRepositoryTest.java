@@ -94,9 +94,7 @@ class EmailAggregationRepositoryTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testAggregationWithSubscribersOnly(boolean useSystemEndpoint) {
-        when(aggregatorConfig.isFetchAggregationsWithAtLeastOneSubscriber()).thenReturn(useSystemEndpoint);
-        testApplicationsWithPendingAggregationUsingDefaultSystemIntegration(true);
-        afterEach();
-        testApplicationsWithPendingAggregationUsingDefaultSystemIntegration(false);
+        when(aggregatorConfig.isFetchAggregationsWithAtLeastOneSubscriber()).thenReturn(true);
+        testApplicationsWithPendingAggregationUsingDefaultSystemIntegration(useSystemEndpoint);
     }
 }
