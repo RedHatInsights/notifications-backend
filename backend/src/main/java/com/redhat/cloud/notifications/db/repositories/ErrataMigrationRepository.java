@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.routers.internal.errata.ErrataSubscription;
+import com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataSubscription;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
