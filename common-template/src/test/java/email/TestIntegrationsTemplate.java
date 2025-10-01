@@ -40,7 +40,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
     void testIntegrationDisabledTitle() {
         Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
         String result = generateEmailSubject(INTEGRATIONS_INTEGRATION_DISABLED, action);
-        assertEquals("[IMPORTANT] Instant notification - Integration disabled - Integrations - Console", result);
+        assertEquals("Instant notification - Integration disabled - Integrations - Console", result);
     }
 
 
@@ -129,7 +129,6 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
             "   \"event_type\":\"integration-disabled\"," +
             "   \"timestamp\":\"2025-07-25T08:25:09.119379869\"," +
             "   \"org_id\":\"default-org-id\"," +
-            "   \"severity\":\"IMPORTANT\"," +
             "   \"context\":{" +
             "      \"error_type\":\"%s\"," +
             "      \"error_details\":\"%s\"," +

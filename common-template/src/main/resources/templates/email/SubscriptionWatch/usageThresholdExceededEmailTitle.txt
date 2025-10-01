@@ -1,1 +1,1 @@
-{#if action.severity?? && action.severity != "UNDEFINED" && action.severity != "NONE"}[{action.severity}] {/if}Instant notification - Exceeded Utilization Threshold - Subscription Watch - Subscription Services
+{action.severityAsEmailTitle}Instant notification - Exceeded Utilization Threshold - Subscription Watch - Subscription Services
