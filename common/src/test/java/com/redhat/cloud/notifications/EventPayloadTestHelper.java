@@ -30,6 +30,7 @@ public class EventPayloadTestHelper {
         action.setApplication(application);
         action.setEventType(eventType);
         action.setTimestamp(LocalDateTime.now());
+        action.setSeverity(Severity.LOW.name());
 
         action.setOrgId(orgId);
         action.setRecipients(List.of());

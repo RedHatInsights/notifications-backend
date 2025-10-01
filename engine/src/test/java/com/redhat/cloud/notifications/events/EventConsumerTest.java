@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.EventPayloadTestHelper;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
@@ -125,10 +126,11 @@ public class EventConsumerTest {
 
     @Test
     void testValidPayloadWithMessageId() {
-        EventType eventType = mockGetEventTypeAndCreateEvent(true);
+        EventType eventType = mockGetEventTypeAndCreateEvent(true, true);
         Action action = buildValidAction(true);
         RecipientsAuthorizationCriterion authorizationCriterion = EventPayloadTestHelper.buildRecipientsAuthorizationCriterion();
         action.setRecipientsAuthorizationCriterion(authorizationCriterion);
+        action.setSeverity(Severity.LOW.name());
         String payload = serializeAction(action);
         UUID messageId = UUID.randomUUID();
         Message<String> message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
@@ -152,7 +154,7 @@ public class EventConsumerTest {
 
     @Test
     void testValidPayloadWithBlacklistedEventType() {
-        EventType eventType = mockGetEventTypeAndCreateEvent(true);
+        EventType eventType = mockGetEventTypeAndCreateEvent(true, false);
         Action action = buildValidAction(true);
         RecipientsAuthorizationCriterion authorizationCriterion = EventPayloadTestHelper.buildRecipientsAuthorizationCriterion();
         action.setRecipientsAuthorizationCriterion(authorizationCriterion);
@@ -354,10 +356,10 @@ public class EventConsumerTest {
     }
 
     private EventType mockGetEventTypeAndCreateEvent() {
-        return mockGetEventTypeAndCreateEvent(false);
+        return mockGetEventTypeAndCreateEvent(false, true);
     }
 
-    private EventType mockGetEventTypeAndCreateEvent(final boolean shouldHaveAuthorizationCriterion) {
+    private EventType mockGetEventTypeAndCreateEvent(final boolean shouldHaveAuthorizationCriterion, final boolean shouldHaveSeverity) {
         Bundle bundle = new Bundle();
         bundle.setDisplayName("Bundle");
 
@@ -371,6 +373,10 @@ public class EventConsumerTest {
         when(eventTypeRepository.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(eventType);
         when(eventRepository.create(any(Event.class))).thenAnswer(invocation -> {
             assertEquals(shouldHaveAuthorizationCriterion, ((Event) invocation.getArgument(0)).hasAuthorizationCriterion());
+            return invocation.getArgument(0);
+        });
+        when(eventRepository.create(any(Event.class))).thenAnswer(invocation -> {
+            assertEquals(shouldHaveSeverity, ((Event) invocation.getArgument(0)).getSeverity() != null);
             return invocation.getArgument(0);
         });
         return eventType;
