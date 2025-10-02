@@ -30,6 +30,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static java.time.ZoneOffset.UTC;
@@ -169,6 +170,7 @@ public class DailyEmailAggregationJob {
         });
 
         Action action = new Action.ActionBuilder()
+            .withId(UUID.randomUUID())
             .withBundle(BUNDLE_NAME)
             .withApplication(APP_NAME)
             .withEventType(EVENT_TYPE_NAME)
