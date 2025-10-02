@@ -11,7 +11,6 @@ import org.apache.camel.Exchange;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TARGET_URL_NO_SCHEME;
-import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TRUST_ALL;
 
 @ApplicationScoped
 public class ServiceNowCloudEventDataExtractor extends CloudEventDataExtractor {
@@ -28,7 +27,6 @@ public class ServiceNowCloudEventDataExtractor extends CloudEventDataExtractor {
 
         JsonObject metadata = cloudEventData.getJsonObject(NOTIF_METADATA);
         exchange.setProperty(TARGET_URL, metadata.getString("url"));
-        exchange.setProperty(TRUST_ALL, Boolean.valueOf(metadata.getString("trustAll")));
 
         JsonObject authentication = metadata.getJsonObject("authentication");
         authenticationDataExtractor.extract(exchange, authentication);

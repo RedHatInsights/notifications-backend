@@ -178,7 +178,6 @@ class EventingTypeProcessorTest {
 
         // The processor added a 'notif-metadata' field to the payload, let's have a look at it.
         JsonObject notifMetadata = payload.getJsonObject(NOTIF_METADATA_KEY);
-        assertEquals(properties1.getDisableSslVerification().toString(), notifMetadata.getString("trustAll"));
         assertEquals(properties1.getUrl(), notifMetadata.getString("url"));
         assertEquals(endpoint1.getSubType(), notifMetadata.getString("type"));
 

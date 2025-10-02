@@ -504,7 +504,7 @@ public class EndpointResource extends EndpointResourceCommon {
         }
         checkSystemEndpoint(endpointType);
         if (endpointType == CAMEL || endpointType == WEBHOOK || endpointType == ANSIBLE) {
-            checkSslDisabledEndpoint(endpointType, orgId, id);
+            checkSslDisabledEndpoint(orgId, id);
         }
         endpointRepository.enableEndpoint(orgId, id);
         return Response.ok().build();
@@ -668,7 +668,7 @@ public class EndpointResource extends EndpointResourceCommon {
         }
         EndpointType endpointType = endpointRepository.getEndpointTypeById(getOrgId(sec), uuid);
         if (endpointType == CAMEL || endpointType == WEBHOOK || endpointType == ANSIBLE) {
-            checkSslDisabledEndpoint(endpointType, getOrgId(sec), uuid);
+            checkSslDisabledEndpoint(getOrgId(sec), uuid);
         }
 
         final InternalEndpointTestRequest internalEndpointTestRequest = new InternalEndpointTestRequest();
@@ -692,7 +692,7 @@ public class EndpointResource extends EndpointResourceCommon {
 
     /** @deprecated to be removed once all endpoints with {@code disableSslVerification = true} are deleted. */
     @Deprecated(forRemoval = true)
-    private void checkSslDisabledEndpoint(EndpointType endpointType, String orgId, UUID id) {
+    private void checkSslDisabledEndpoint(String orgId, UUID id) {
         checkSslDisabledEndpoint(endpointRepository.getEndpoint(orgId, id));
     }
 

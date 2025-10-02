@@ -74,7 +74,6 @@ public class EventingProcessor extends EndpointTypeProcessor {
         CamelProperties properties = endpoint.getProperties(CamelProperties.class);
 
         JsonObject metaData = new JsonObject();
-        metaData.put("trustAll", String.valueOf(properties.getDisableSslVerification()));
         metaData.put("url", properties.getUrl());
         metaData.put("type", endpoint.getSubType());
 

@@ -1,12 +1,7 @@
-UPDATE endpoints
-SET enabled = false
-WHERE id IN (SELECT id
-             FROM endpoint_webhooks
-             WHERE disable_ssl_verification = true);
+UPDATE endpoint_webhooks
+SET disable_ssl_verification = false
+WHERE disable_ssl_verification = true;
 
-UPDATE endpoints
-SET enabled = false
-WHERE id IN (SELECT id
-             FROM camel_properties
-             WHERE disable_ssl_verification = true);
-
+UPDATE camel_properties
+SET disable_ssl_verification = false
+WHERE disable_ssl_verification = true;

@@ -21,7 +21,6 @@ import static com.redhat.cloud.notifications.connector.authentication.Authentica
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TARGET_URL_NO_SCHEME;
-import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TRUST_ALL;
 import static com.redhat.cloud.notifications.connector.splunk.SplunkCloudEventDataExtractor.NOTIF_METADATA;
 import static com.redhat.cloud.notifications.connector.splunk.SplunkCloudEventDataExtractor.SERVICES_COLLECTOR_EVENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -57,7 +56,6 @@ public class SplunkConnectorRoutesTest extends ConnectorRoutesTest {
 
         JsonObject metadata = new JsonObject();
         metadata.put("url", targetUrl);
-        metadata.put("trustAll", "true");
         metadata.put("authentication", authentication);
 
         JsonObject payload = new JsonObject();
@@ -79,7 +77,6 @@ public class SplunkConnectorRoutesTest extends ConnectorRoutesTest {
 
             assertEquals(DEFAULT_ORG_ID, exchange.getProperty(ORG_ID, String.class));
             assertEquals(DEFAULT_ACCOUNT_ID, exchange.getProperty(ACCOUNT_ID, String.class));
-            assertTrue(exchange.getProperty(TRUST_ALL, Boolean.class));
             assertNotNull(exchange.getProperty(TARGET_URL, String.class));
             assertNotNull(exchange.getProperty(TARGET_URL_NO_SCHEME, String.class));
             assertTrue(exchange.getProperty(TARGET_URL, String.class).endsWith("/services/collector/event"));
