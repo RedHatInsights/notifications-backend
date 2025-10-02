@@ -22,7 +22,7 @@ public enum Severity {
     LOW,
     @JsonProperty("NONE")
     NONE,
-    /** A severity level was not provided, or could not be parsed. */
+    /** A severity level was not provided, or could not be parsed. Do not display this value in outgoing notifications. */
     @JsonProperty("UNDEFINED")
     UNDEFINED
 }

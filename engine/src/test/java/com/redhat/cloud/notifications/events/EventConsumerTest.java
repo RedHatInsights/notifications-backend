@@ -14,6 +14,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeKey;
+import com.redhat.cloud.notifications.transformers.SeverityTransformer;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -55,8 +56,10 @@ import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MES
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.AdditionalMatchers.or;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -95,6 +98,9 @@ public class EventConsumerTest {
 
     @InjectSpy
     EngineConfig config;
+
+    @InjectSpy
+    SeverityTransformer severityTransformer;
 
     @Inject
     EntityManager entityManager;
@@ -148,7 +154,9 @@ public class EventConsumerTest {
                 MESSAGE_ID_MISSING_COUNTER_NAME,
                 PROCESSING_BLACKLISTED_COUNTER_NAME
         );
+
         verifyExactlyOneProcessing(eventType, payload, action, true);
+        verifySeverity(action, false);
         verify(kafkaMessageDeduplicator, times(1)).isNew(messageId);
     }
 
@@ -170,20 +178,20 @@ public class EventConsumerTest {
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 1);
 
         assertEquals(1L,
-            registry.counter(PROCESSING_BLACKLISTED_COUNTER_NAME,
-            TAG_KEY_BUNDLE, action.getBundle(),
-            TAG_KEY_APPLICATION, action.getApplication(),
-            TAG_KEY_EVENT_TYPE, action.getEventType(),
-            TAG_KEY_EVENT_TYPE_FQN, ""
-        ).count());
+                registry.counter(PROCESSING_BLACKLISTED_COUNTER_NAME,
+                        TAG_KEY_BUNDLE, action.getBundle(),
+                        TAG_KEY_APPLICATION, action.getApplication(),
+                        TAG_KEY_EVENT_TYPE, action.getEventType(),
+                        TAG_KEY_EVENT_TYPE_FQN, ""
+                ).count());
 
         assertNoCounterIncrement(
-            REJECTED_COUNTER_NAME,
-            PROCESSING_ERROR_COUNTER_NAME,
-            PROCESSING_EXCEPTION_COUNTER_NAME,
-            DUPLICATE_COUNTER_NAME,
-            MESSAGE_ID_INVALID_COUNTER_NAME,
-            MESSAGE_ID_MISSING_COUNTER_NAME
+                REJECTED_COUNTER_NAME,
+                PROCESSING_ERROR_COUNTER_NAME,
+                PROCESSING_EXCEPTION_COUNTER_NAME,
+                DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                MESSAGE_ID_MISSING_COUNTER_NAME
         );
 
         verify(endpointProcessor, never()).process(any(Event.class));
@@ -212,6 +220,35 @@ public class EventConsumerTest {
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
+    }
+
+    @Test
+    void testValidPayloadWithIgnoredSeverityForApplication() {
+        boolean severityIgnored = true;
+        when(config.isIgnoreSeverityForApplicationsEnabled(or(any(UUID.class), isNull())))
+                .thenReturn(severityIgnored);
+
+        EventType eventType = mockGetEventTypeAndCreateEvent();
+        Action action = buildValidAction(false);
+        action.setSeverity(Severity.CRITICAL.name());
+        String payload = serializeAction(action);
+        UUID messageId = UUID.randomUUID();
+        Message<String> message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
+        inMemoryConnector.source(INGRESS_CHANNEL).send(message);
+
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 1);
+        assertEquals(1L, getTimerCount(action.getBundle(), action.getApplication(), action.getEventType()));
+        micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 1);
+        assertNoCounterIncrement(
+                REJECTED_COUNTER_NAME,
+                PROCESSING_ERROR_COUNTER_NAME,
+                PROCESSING_EXCEPTION_COUNTER_NAME,
+                DUPLICATE_COUNTER_NAME,
+                MESSAGE_ID_INVALID_COUNTER_NAME,
+                MESSAGE_ID_MISSING_COUNTER_NAME,
+                PROCESSING_BLACKLISTED_COUNTER_NAME
+        );
+        verifySeverity(action, severityIgnored);
     }
 
     @Test
@@ -407,6 +444,18 @@ public class EventConsumerTest {
         assertEquals(action, argumentCaptor.getValue().getEventWrapper().getEvent());
     }
 
+    private void verifySeverity(Action action, boolean severityIgnored) {
+        ArgumentCaptor<Event> argumentCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(endpointProcessor, times(1)).process(argumentCaptor.capture());
+        if (severityIgnored) {
+            assertEquals(Severity.UNDEFINED, argumentCaptor.getValue().getSeverity());
+            assertEquals(Severity.UNDEFINED.name(), ((Action) argumentCaptor.getValue().getEventWrapper().getEvent()).getSeverity());
+        } else {
+            assertEquals(action.getSeverity(), argumentCaptor.getValue().getSeverity().name());
+            assertEquals(action.getSeverity(), ((Action) argumentCaptor.getValue().getEventWrapper().getEvent()).getSeverity());
+        }
+    }
+
     private void assertNoCounterIncrement(String... counterNames) {
         for (String counterName : counterNames) {
             micrometerAssertionHelper.assertCounterIncrement(counterName, 0);
@@ -432,10 +481,10 @@ public class EventConsumerTest {
 
     private long getTimerCount(final String bundle, final String application, final String eventType) {
         return registry.timer(CONSUMED_TIMER_NAME,
-            TAG_KEY_BUNDLE, bundle,
-            TAG_KEY_APPLICATION, application,
-            TAG_KEY_EVENT_TYPE, eventType,
-            TAG_KEY_EVENT_TYPE_FQN, ""
+                TAG_KEY_BUNDLE, bundle,
+                TAG_KEY_APPLICATION, application,
+                TAG_KEY_EVENT_TYPE, eventType,
+                TAG_KEY_EVENT_TYPE_FQN, ""
         ).count();
     }
 }

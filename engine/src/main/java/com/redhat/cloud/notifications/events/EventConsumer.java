@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransformer;
 import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransformerFactory;
 import com.redhat.cloud.notifications.config.EngineConfig;
@@ -251,6 +252,13 @@ public class EventConsumer {
                             TAG_KEY_EVENT_TYPE_FQN, tags.getOrDefault(TAG_KEY_EVENT_TYPE_FQN, ""))
                             .increment();
                         return;
+                    }
+                    if (config.isIgnoreSeverityForApplicationsEnabled(eventType.getApplicationId())) {
+                        Log.debugf("Ignoring provided severity level for [bundle=%s, application=%s]",
+                                eventType.getApplication().getBundle().getName(), eventType.getApplication().getName());
+                        if (eventWrapper instanceof EventWrapperAction) {
+                            ((Action) eventWrapper.getEvent()).setSeverity(Severity.UNDEFINED.name());
+                        }
                     }
                 } catch (NoResultException | IllegalArgumentException e) {
                     /*
