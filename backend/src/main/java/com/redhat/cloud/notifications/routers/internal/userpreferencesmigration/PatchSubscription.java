@@ -1,7 +1,6 @@
-package com.redhat.cloud.notifications.routers.internal.errata;
+package com.redhat.cloud.notifications.routers.internal.userpreferencesmigration;
 
-import com.redhat.cloud.notifications.models.EventType;
-
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import java.util.Set;
 
 /**
@@ -10,5 +9,5 @@ import java.util.Set;
  * @param org_id the org ID the user belongs to.
  * @param eventTypeSubscriptions the event types the user is subscribed to.
  */
-public record ErrataSubscription(String username, String org_id, Set<EventType> eventTypeSubscriptions) {
+public record PatchSubscription(String username, String org_id, Set<SubscriptionType> eventTypeSubscriptions) {
 }
