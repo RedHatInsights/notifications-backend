@@ -73,7 +73,7 @@ public class WebhookTypeProcessor extends EndpointTypeProcessor {
 
         final JsonObject connectorData = new JsonObject();
 
-        // TODO RHCLOUD-24930 Stop sending all properties while only "method", "url" and "disable_ssl_verification" are needed in the connector.
+        // TODO RHCLOUD-24930 Stop sending all properties while only "method" and "url" are needed in the connector.
         connectorData.put("endpoint_properties", JsonObject.mapFrom(properties));
         connectorData.put("payload", payload);
 

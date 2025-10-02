@@ -18,7 +18,6 @@ import static com.redhat.cloud.notifications.connector.authentication.Authentica
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TARGET_URL_NO_SCHEME;
-import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TRUST_ALL;
 import static com.redhat.cloud.notifications.connector.splunk.SplunkCloudEventDataExtractor.NOTIF_METADATA;
 import static com.redhat.cloud.notifications.connector.splunk.SplunkCloudEventDataExtractor.SERVICES_COLLECTOR_EVENT;
 import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
@@ -97,44 +96,44 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
 
     @Test
     void testExtractWithWrongTargetUrlPath() throws Exception {
-        testExtract("https://foo.bar", true);
+        testExtract("https://foo.bar");
     }
 
     @Test
     void testExtractWithTrailingSlashInTargetUrlPath() throws Exception {
-        testExtract("https://foo.bar/", false);
+        testExtract("https://foo.bar/");
     }
 
     @Test
     void testExtractWithAnoherWrongTargetUrlPath() throws Exception {
-        testExtract("https://foo.bar/services/collector", false);
+        testExtract("https://foo.bar/services/collector");
     }
 
     @Test
     void testExtractWithValidTargetUrlPath() throws Exception {
-        testExtract("https://foo.bar/services/collector/event", false);
+        testExtract("https://foo.bar/services/collector/event");
     }
 
     @Test
     void testExtractWithRawTargetUrlPath() throws Exception {
-        testExtract("https://foo.bar/services/collector/raw", false);
+        testExtract("https://foo.bar/services/collector/raw");
     }
 
     private void assertValidTargetUrl(String url) {
         Exchange exchange = createExchangeWithBody(context, "I am not used!");
-        JsonObject cloudEventData = createCloudEventData(url, false);
+        JsonObject cloudEventData = createCloudEventData(url);
         assertDoesNotThrow(() -> splunkCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 
     private void assertInvalidTargetUrl(String url, Class<? extends Exception> expectedException) {
         Exchange exchange = createExchangeWithBody(context, "I am not used!");
-        JsonObject cloudEventData = createCloudEventData(url, false);
+        JsonObject cloudEventData = createCloudEventData(url);
         assertThrows(expectedException, () -> splunkCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 
-    private void testExtract(String url, boolean trustAll) throws Exception {
+    private void testExtract(String url) throws Exception {
         Exchange exchange = createExchangeWithBody(context, "I am not used!");
-        JsonObject cloudEventData = createCloudEventData(url, trustAll);
+        JsonObject cloudEventData = createCloudEventData(url);
         /*
          * The 'extract' method will modify 'cloudEventData'.
          * We need to run assertions on the original JsonObject, so we're making a copy of it.
@@ -149,21 +148,19 @@ public class SplunkCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         assertTrue(exchange.getProperty(TARGET_URL_NO_SCHEME, String.class).endsWith(SERVICES_COLLECTOR_EVENT));
 
         JsonObject expectedMetadata = cloudEventDataCopy.getJsonObject(NOTIF_METADATA);
-        assertEquals(expectedMetadata.getString("trustAll"), exchange.getProperty(TRUST_ALL, Boolean.class).toString());
 
         JsonObject expectedAuthentication = expectedMetadata.getJsonObject("authentication");
         assertEquals(expectedAuthentication.getString("type"), exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class).name());
         assertEquals(expectedAuthentication.getLong("secretId"), exchange.getProperty(SECRET_ID, Long.class));
     }
 
-    private JsonObject createCloudEventData(String url, boolean trustAll) {
+    private JsonObject createCloudEventData(String url) {
         JsonObject authentication = new JsonObject();
         authentication.put("type", SECRET_TOKEN);
         authentication.put("secretId", 123L);
 
         JsonObject metadata = new JsonObject();
         metadata.put("url", url);
-        metadata.put("trustAll", Boolean.toString(trustAll));
         metadata.put("authentication", authentication);
 
         JsonObject cloudEventData = new JsonObject();

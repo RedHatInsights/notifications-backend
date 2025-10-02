@@ -14,7 +14,6 @@ import java.util.MissingResourceException;
 
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.TARGET_URL_NO_SCHEME;
-import static com.redhat.cloud.notifications.connector.webhook.ExchangeProperty.TRUST_ALL;
 
 @ApplicationScoped
 public class WebhookCloudEventDataExtractor extends CloudEventDataExtractor {
@@ -30,10 +29,6 @@ public class WebhookCloudEventDataExtractor extends CloudEventDataExtractor {
         checkPayload(cloudEventData);
         JsonObject endpointProperties = cloudEventData.getJsonObject(ENDPOINT_PROPERTIES);
         exchange.setProperty(TARGET_URL, endpointProperties.getString("url"));
-        if (Boolean.TRUE == endpointProperties.getBoolean("disable_ssl_verification") &&
-            exchange.getProperty(TARGET_URL, String.class).startsWith("https://")) {
-            exchange.setProperty(TRUST_ALL, Boolean.TRUE);
-        }
         exchange.setProperty(TARGET_URL_NO_SCHEME, exchange.getProperty(TARGET_URL, String.class).replace("https://", ""));
 
         JsonObject authentication = cloudEventData.getJsonObject("authentication");

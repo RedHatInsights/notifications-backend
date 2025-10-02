@@ -11,7 +11,6 @@ import org.apache.camel.Exchange;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.TARGET_URL;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TARGET_URL_NO_SCHEME;
-import static com.redhat.cloud.notifications.connector.splunk.ExchangeProperty.TRUST_ALL;
 
 @ApplicationScoped
 public class SplunkCloudEventDataExtractor extends CloudEventDataExtractor {
@@ -33,7 +32,6 @@ public class SplunkCloudEventDataExtractor extends CloudEventDataExtractor {
 
         JsonObject metadata = cloudEventData.getJsonObject(NOTIF_METADATA);
         exchange.setProperty(TARGET_URL, metadata.getString("url"));
-        exchange.setProperty(TRUST_ALL, Boolean.valueOf(metadata.getString("trustAll")));
 
         JsonObject authentication = metadata.getJsonObject("authentication");
         authenticationDataExtractor.extract(exchange, authentication);
