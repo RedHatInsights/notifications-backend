@@ -1,6 +1,7 @@
 package email;
 
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.qute.templates.Severity;
 import helpers.SubscriptionWatchTestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,12 @@ public class TestSubscriptionWatchTemplate extends EmailTemplatesRendererHelper 
         eventTypeDisplayName = "Usage Threshold Exceeded";
         String result = generateEmailSubject(EXCEEDED_UTILIZATION_THRESHOLD, ACTION);
         assertEquals("Instant notification - Exceeded Utilization Threshold - Subscription Watch - Subscription Services", result);
+
+        // Test with Low severity level
+        Action lowAction = ACTION;
+        lowAction.setSeverity(Severity.LOW.name());
+        String lowResult = generateEmailSubject(EXCEEDED_UTILIZATION_THRESHOLD, lowAction);
+        assertEquals("[LOW] Instant notification - Exceeded Utilization Threshold - Subscription Watch - Subscription Services", lowResult);
     }
 
     @Test

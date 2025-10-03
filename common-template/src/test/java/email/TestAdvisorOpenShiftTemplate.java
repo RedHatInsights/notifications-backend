@@ -1,6 +1,7 @@
 package email;
 
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.qute.templates.Severity;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,11 @@ public class TestAdvisorOpenShiftTemplate extends EmailTemplatesRendererHelper {
 
         String result = generateEmailSubject(NEW_RECOMMENDATION, action);
         assertEquals("Instant notification - New Recommendation - Advisor - OpenShift", result);
+
+        // Test with Low severity level
+        action.setSeverity(Severity.LOW.name());
+        String lowResult = generateEmailSubject(NEW_RECOMMENDATION, action);
+        assertEquals("[LOW] Instant notification - New Recommendation - Advisor - OpenShift", lowResult);
     }
 
     @Test

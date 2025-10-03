@@ -3,6 +3,7 @@ package email;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.Severity;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import email.pojo.NotificationsConsoleCloudEvent;
@@ -83,6 +84,21 @@ public class TestDefaultTemplate extends EmailTemplatesRendererHelper {
 
         String result = generateEmailSubject(EVENT_TYPE_NAME, action);
         assertEquals("Instant notification - Policy Triggered - Policies - Red Hat Enterprise Linux", result);
+
+        // Test with Moderate severity level
+        action.setSeverity(Severity.MODERATE.name());
+        String moderateResult = generateEmailSubject(EVENT_TYPE_NAME, action);
+        assertEquals("[MODERATE] Instant notification - Policy Triggered - Policies - Red Hat Enterprise Linux", moderateResult);
+
+        // Test with None severity level
+        action.setSeverity(Severity.NONE.name());
+        String noneResult = generateEmailSubject(EVENT_TYPE_NAME, action);
+        assertEquals("Instant notification - Policy Triggered - Policies - Red Hat Enterprise Linux", noneResult);
+
+        // Test with Undefined severity level
+        action.setSeverity(Severity.UNDEFINED.name());
+        String undefinedResult = generateEmailSubject(EVENT_TYPE_NAME, action);
+        assertEquals("Instant notification - Policy Triggered - Policies - Red Hat Enterprise Linux", undefinedResult);
     }
 
     @Test
