@@ -1,1 +1,1 @@
-{source.event_type.display_name} - {action.events[0].payload.subject}
+{action.severityAsEmailTitle}{source.event_type.display_name} - {action.events[0].payload.subject}

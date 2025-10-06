@@ -2,6 +2,7 @@ package email;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.qute.templates.Severity;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
@@ -175,6 +176,11 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
 
         String result = generateEmailSubject(ADVISOR_RESOLVED_RECOMMENDATION, action);
         assertEquals("Instant notification - Resolved recommendation - Advisor - Red Hat Enterprise Linux", result);
+
+        // Test with Critical severity level
+        action.setSeverity(Severity.CRITICAL.name());
+        String criticalResult = generateEmailSubject(ADVISOR_RESOLVED_RECOMMENDATION, action);
+        assertEquals("[CRITICAL] Instant notification - Resolved recommendation - Advisor - Red Hat Enterprise Linux", criticalResult);
     }
 
     @Test

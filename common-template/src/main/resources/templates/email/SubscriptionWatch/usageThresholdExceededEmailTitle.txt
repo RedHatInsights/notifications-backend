@@ -1,1 +1,1 @@
-Instant notification - Exceeded Utilization Threshold - Subscription Watch - Subscription Services
+{action.severityAsEmailTitle}Instant notification - Exceeded Utilization Threshold - Subscription Watch - Subscription Services
