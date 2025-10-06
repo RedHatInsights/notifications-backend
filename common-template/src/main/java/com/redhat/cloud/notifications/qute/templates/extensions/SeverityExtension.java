@@ -8,12 +8,12 @@ public class SeverityExtension {
 
     /** Cloud events do not support the severity field */
     @TemplateExtension
-    static String severityAsEmailTitle(ConsoleCloudEvent event) {
+    public static String severityAsEmailTitle(ConsoleCloudEvent event) {
         return "";
     }
 
     @TemplateExtension
-    static String severityAsEmailTitle(Action action) {
+    public static String severityAsEmailTitle(Action action) {
         String severity = action.getSeverity();
         if (severity == null || "UNDEFINED".equals(severity) || "NONE".equals(severity)) {
             return "";

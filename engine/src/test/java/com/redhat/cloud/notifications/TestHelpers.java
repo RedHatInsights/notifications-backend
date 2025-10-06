@@ -116,7 +116,7 @@ public class TestHelpers {
         emailActionMessage.setApplication(application);
         emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
         emailActionMessage.setEventType(eventType);
-        emailActionMessage.setSeverity(Severity.NONE.name());
+        emailActionMessage.setSeverity(Severity.MODERATE.name());
         emailActionMessage.setRecipients(List.of());
 
         emailActionMessage.setContext(

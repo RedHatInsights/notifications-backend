@@ -46,7 +46,7 @@ public class TestDefaultTemplate extends EmailTemplatesRendererHelper {
         eventTypeDisplayName = "Policy Triggered";
 
         String result = generateEmailSubject(EVENT_TYPE_NAME, action);
-        assertEquals("Instant notification - Policy Triggered - Policies - Red Hat Enterprise Linux", result);
+        assertEquals("[MODERATE] Instant notification - Policy Triggered - Policies - Red Hat Enterprise Linux", result);
     }
 
     @Test
