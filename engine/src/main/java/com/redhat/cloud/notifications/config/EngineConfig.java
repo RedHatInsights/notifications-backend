@@ -62,6 +62,7 @@ public class EngineConfig {
     private String toggleUseCommonTemplateModuleToRenderEmailsEnabled;
     private String toggleUseBetaTemplatesEnabled;
     private String toggleIsConnectorTemplateTransformationEnabled;
+    private String toggleIgnoreSeverityForApplications;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -166,6 +167,7 @@ public class EngineConfig {
         toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
         toggleBlacklistedEventTypes = toggleRegistry.register("blacklisted-event-types", true);
         toggleIsConnectorTemplateTransformationEnabled = toggleRegistry.register("connectors-template-transformation", true);
+        toggleIgnoreSeverityForApplications = toggleRegistry.register("ignore-severity-for-applications", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -364,6 +366,17 @@ public class EngineConfig {
     public boolean isConnectorTemplateTransformationEnabled(final String orgId) {
         if (unleashEnabled) {
             return unleash.isEnabled(toggleIsConnectorTemplateTransformationEnabled, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isIgnoreSeverityForApplicationsEnabled(final UUID application) {
+        if (unleashEnabled && application != null) {
+            UnleashContext unleashContext = UnleashContext.builder()
+                    .addProperty("application", application.toString())
+                    .build();
+            return unleash.isEnabled(toggleIgnoreSeverityForApplications, unleashContext, false);
         } else {
             return false;
         }
