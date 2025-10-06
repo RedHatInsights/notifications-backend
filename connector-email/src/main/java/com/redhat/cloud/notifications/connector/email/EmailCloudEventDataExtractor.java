@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static com.redhat.cloud.notifications.connector.ExchangeProperty.ENDPOINT_ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
 import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE;
@@ -60,9 +61,11 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
         JsonObject dataToProcess = cloudEventData;
         if (null != payloadId) {
             final PayloadDetails payloadDetails = this.internalEngine.getPayloadDetails(payloadId);
-
+            Log.debugf("Received payload from engine %s", payloadDetails);
             dataToProcess = new JsonObject(payloadDetails.contents());
             exchange.setProperty(ExchangeProperty.PAYLOAD_ID, payloadId);
+            exchange.setProperty(ORG_ID, dataToProcess.getString("org_id"));
+            exchange.setProperty(ENDPOINT_ID, dataToProcess.getString("endpoint_id"));
         }
 
         EmailNotification emailNotification = dataToProcess.mapTo(EmailNotification.class);
