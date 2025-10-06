@@ -374,7 +374,7 @@ public class EngineConfig {
     public boolean isIgnoreSeverityForApplicationsEnabled(final UUID application) {
         if (unleashEnabled && application != null) {
             UnleashContext unleashContext = UnleashContext.builder()
-                    .addProperty("application", application.toString())
+                    .addProperty("appId", application.toString())
                     .build();
             return unleash.isEnabled(toggleIgnoreSeverityForApplications, unleashContext, false);
         } else {
