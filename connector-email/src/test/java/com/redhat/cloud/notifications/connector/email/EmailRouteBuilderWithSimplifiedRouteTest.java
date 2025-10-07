@@ -63,7 +63,7 @@ import static org.mockserver.model.HttpResponse.response;
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 class EmailRouteBuilderWithSimplifiedRouteTest extends CamelQuarkusTestSupport {
-    private static final String PATCH_TEST_EVENT = "{\"account_id\":\"\",\"application\":\"patch\",\"bundle\":\"rhel\",\"context\":{\"system_check_in\":\"2022-08-03T15:22:42.199046\",\"start_time\":\"2022-08-03T15:22:42.199046\",\"patch\":{\"Alpha\":[\"advA\",\"advB\",\"advC\"],\"Roman\":[\"advI\",\"advII\",\"advIII\"],\"Numerical\":[\"adv1\",\"adv2\"]}},\"event_type\":\"new-advisory\",\"events\":[{\"metadata\":{},\"payload\":{\"advisory_name\":\"name 1\",\"synopsis\":\"synopsis 1\"}},{\"metadata\":{},\"payload\":{\"advisory_name\":\"name 2\",\"synopsis\":\"synopsis 2\"}}],\"orgId\":\"default-org-id\",\"timestamp\":\"2022-10-03T15:22:13.000000025\",\"source\":{\"application\":{\"display_name\":\"Patch\"},\"bundle\":{\"display_name\":\"Red Hat Enterprise Linux\"},\"event_type\":{\"display_name\":\"New Advisory\"}},\"environment\":{\"url\":\"https://localhost\",\"ocmUrl\":\"https://localhost\"},\"pendo_message\":null,\"ignore_user_preferences\":true}";
+    private static final String PATCH_TEST_EVENT = "{\"account_id\":\"\",\"application\":\"patch\",\"bundle\":\"rhel\",\"context\":{\"system_check_in\":\"2022-08-03T15:22:42.199046\",\"start_time\":\"2022-08-03T15:22:42.199046\",\"patch\":{\"Alpha\":[\"advA\",\"advB\",\"advC\"],\"Roman\":[\"advI\",\"advII\",\"advIII\"],\"Numerical\":[\"adv1\",\"adv2\"]}},\"event_type\":\"new-advisory\",\"events\":[{\"metadata\":{},\"payload\":{\"advisory_name\":\"name 1\",\"synopsis\":\"synopsis 1\"}},{\"metadata\":{},\"payload\":{\"advisory_name\":\"name 2\",\"synopsis\":\"synopsis 2\"}}],\"orgId\":\"default-org-id\",\"timestamp\":\"2022-10-03T15:22:13.000000025\",\"severity\":\"MODERATE\",\"source\":{\"application\":{\"display_name\":\"Patch\"},\"bundle\":{\"display_name\":\"Red Hat Enterprise Linux\"},\"event_type\":{\"display_name\":\"New Advisory\"}},\"environment\":{\"url\":\"https://localhost\",\"ocmUrl\":\"https://localhost\"},\"pendo_message\":null,\"ignore_user_preferences\":true}";
 
     @InjectSpy
     EmailConnectorConfig emailConnectorConfig;
@@ -362,7 +362,7 @@ class EmailRouteBuilderWithSimplifiedRouteTest extends CamelQuarkusTestSupport {
 
         final EmailNotification emailNotification = new EmailNotification(
             "test email body",
-            "test email subject",
+            "[MODERATE] test email subject",
             "Not used",
             "123456",
             "123456",

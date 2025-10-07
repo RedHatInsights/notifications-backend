@@ -391,7 +391,7 @@ public class EmailProcessorTest {
 
         Assertions.assertTrue(resultEmailBody.contains("<p>You are receiving this email because the email template associated with this event type is not configured properly.</p>"), "the rendered email's body from the email notification does not match with expectation");
         if (useCommonQuteTemplateModule) {
-            Assertions.assertTrue(resultEmailSubject.contains("Instant notification - Policy triggered - Policies - Red Hat Enterprise Linux"), "the rendered email's subject from the email notification does not match with expectation ");
+            Assertions.assertTrue(resultEmailSubject.contains("[MODERATE] Instant notification - Policy triggered - Policies - Red Hat Enterprise Linux"), "the rendered email's subject from the email notification does not match with expectation ");
         } else {
             Assertions.assertTrue(resultEmailSubject.contains("rhel/policies/policy-triggered triggered"), "the rendered email's subject from the email notification does not match with expectation ");
         }
