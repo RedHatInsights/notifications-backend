@@ -253,13 +253,6 @@ public class EventConsumer {
                             .increment();
                         return;
                     }
-                    if (config.isIgnoreSeverityForApplicationsEnabled(eventType.getApplicationId())) {
-                        Log.debugf("Ignoring provided severity level for [bundle=%s, application=%s]",
-                                eventType.getApplication().getBundle().getName(), eventType.getApplication().getName());
-                        if (eventWrapper instanceof EventWrapperAction) {
-                            ((Action) eventWrapper.getEvent()).setSeverity(Severity.UNDEFINED.name());
-                        }
-                    }
                 } catch (NoResultException | IllegalArgumentException e) {
                     /*
                      * A NoResultException was thrown because no EventType was found. The message is therefore
@@ -275,7 +268,8 @@ public class EventConsumer {
                 Optional<String> sourceEnvironmentHeader = kafkaHeaders.get(SOURCE_ENVIRONMENT_HEADER);
                 Event event = new Event(eventType, payload, eventWrapperToProcess, sourceEnvironmentHeader);
                 event.setHasAuthorizationCriterion(null != recipientsAuthorizationCriterionExtractor.extract(event));
-                event.setSeverity(severityTransformer.getSeverity(event));
+                updateSeverity(event, eventType);
+
                 if (event.getId() == null) {
                     // NOTIF-499 If there is no ID provided whatsoever we create one.
                     event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));
@@ -310,6 +304,21 @@ public class EventConsumer {
                     TAG_KEY_EVENT_TYPE, tags.getOrDefault(TAG_KEY_EVENT_TYPE, ""),
                     TAG_KEY_EVENT_TYPE_FQN, tags.getOrDefault(TAG_KEY_EVENT_TYPE_FQN, "")
             ));
+        }
+    }
+
+    private void updateSeverity(Event event, EventType eventType) {
+        Severity severity = Severity.UNDEFINED;
+        if (config.isIgnoreSeverityForApplicationsEnabled(event.getApplicationId())) {
+            Log.debugf("Ignoring provided severity level for [bundle=%s, application=%s]",
+                eventType.getApplication().getBundle().getName(), eventType.getApplication().getName());
+        } else {
+            severity = severityTransformer.getSeverity(event);
+        }
+
+        event.setSeverity(severity);
+        if (event.getEventWrapper() instanceof EventWrapperAction evtAction) {
+            evtAction.getEvent().setSeverity(severity.name());
         }
     }
 
