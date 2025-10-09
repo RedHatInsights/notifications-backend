@@ -31,21 +31,20 @@ class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
 
     private final Set<String> uniqueHosts = new HashSet<>();
     private final Map<String, HashSet<String>> uniqueHostPerPolicy = new HashMap<>();
+    private final Map<String, JsonObject> policies = new HashMap<>();
 
     PoliciesEmailPayloadAggregator() {
-        context.put(POLICIES_KEY, new JsonObject());
     }
 
     void processEmailAggregation(EmailAggregation notification) {
         JsonObject notificationJson = notification.getPayload();
 
-        JsonObject policies = context.getJsonObject(POLICIES_KEY);
-        JsonObject context = notificationJson.getJsonObject(CONTEXT_KEY);
+        JsonObject notifContext = notificationJson.getJsonObject(CONTEXT_KEY);
 
         JsonObject host = new JsonObject();
-        this.copyStringField(host, context, DISPLAY_NAME);
-        this.copyStringField(host, context, INVENTORY_ID);
-        host.put(TAGS, context.getJsonArray(TAGS));
+        this.copyStringField(host, notifContext, DISPLAY_NAME);
+        this.copyStringField(host, notifContext, INVENTORY_ID);
+        host.put(TAGS, notifContext.getJsonArray(TAGS));
 
         notificationJson.getJsonArray(EVENTS_KEY).stream().forEach(eventObject -> {
             JsonObject event = (JsonObject) eventObject;
@@ -65,19 +64,33 @@ class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
                 uniqueHostPerPolicy.put(policyId, new HashSet<>());
             }
 
-            JsonObject policy = policies.getJsonObject(policyId);
+            JsonObject policy = policies.get(policyId);
             String insightsId = host.getString(INVENTORY_ID);
             policy.getJsonArray(HOST_KEY).add(host);
             uniqueHostPerPolicy.get(policyId).add(insightsId);
-            policy.put(UNIQUE_SYSTEM_COUNT, this.uniqueHostPerPolicy.get(policyId).size());
         });
 
         String insightsId = host.getString(INVENTORY_ID);
         uniqueHosts.add(insightsId);
-        this.context.put(UNIQUE_SYSTEM_COUNT, this.uniqueHosts.size());
     }
 
     Integer getUniqueHostCount() {
         return this.uniqueHosts.size();
+    }
+
+    @Override
+    public Map<String, Object> getContext() {
+        // Populate the context with the final aggregated data
+        JsonObject policiesJson = new JsonObject();
+        for (Map.Entry<String, JsonObject> entry : policies.entrySet()) {
+            JsonObject policy = entry.getValue();
+            String policyId = entry.getKey();
+            policy.put(UNIQUE_SYSTEM_COUNT, uniqueHostPerPolicy.get(policyId).size());
+            policiesJson.put(policyId, policy);
+        }
+        context.put(POLICIES_KEY, policiesJson);
+        context.put(UNIQUE_SYSTEM_COUNT, uniqueHosts.size());
+
+        return super.getContext();
     }
 }

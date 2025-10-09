@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
 
@@ -42,20 +43,16 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
 
     public static final String INVENTORY_ID_KEY = "inventory_id";
 
+    private final JsonArray deletedSystems = new JsonArray();
+    private final JsonArray errors = new JsonArray();
+    private final JsonArray newSystems = new JsonArray();
+    private final JsonArray staleSystems = new JsonArray();
+
     public InventoryEmailAggregator() {
-        JsonObject inventory = new JsonObject();
-
-        inventory.put(DELETED_SYSTEMS, new JsonArray());
-        inventory.put(ERRORS, new JsonArray());
-        inventory.put(NEW_SYSTEMS, new JsonArray());
-        inventory.put(STALE_SYSTEMS, new JsonArray());
-
-        context.put(INVENTORY_KEY, inventory);
     }
 
     @Override
     void processEmailAggregation(EmailAggregation notification) {
-        JsonObject inventory = context.getJsonObject(INVENTORY_KEY);
         JsonObject notificationJson = notification.getPayload();
         String eventType = notificationJson.getString(EVENT_TYPE);
 
@@ -72,25 +69,39 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
                 error.put("message", errorMessage);
                 error.put("display_name", displayName);
 
-                inventory.getJsonArray(ERRORS).add(error);
+                errors.add(error);
             });
         } else if (NEW_EVENT_TYPES.contains(eventType)) {
             final JsonArray systemsList;
             if (EVENT_TYPE_NEW_SYSTEM_REGISTERED.equals(eventType)) {
-                systemsList = inventory.getJsonArray(NEW_SYSTEMS);
+                systemsList = newSystems;
             } else if (EVENT_TYPE_SYSTEM_BECAME_STALE.equals(eventType)) {
-                systemsList = inventory.getJsonArray(STALE_SYSTEMS);
+                systemsList = staleSystems;
             } else {
-                systemsList = inventory.getJsonArray(DELETED_SYSTEMS);
+                systemsList = deletedSystems;
             }
 
-            final JsonObject context = notificationJson.getJsonObject(CONTEXT_KEY);
+            final JsonObject notifContext = notificationJson.getJsonObject(CONTEXT_KEY);
 
             final JsonObject system = new JsonObject();
-            system.put(INVENTORY_ID_KEY, context.getString(INVENTORY_ID_KEY));
-            system.put(DISPLAY_NAME_KEY, context.getString(DISPLAY_NAME_KEY));
+            system.put(INVENTORY_ID_KEY, notifContext.getString(INVENTORY_ID_KEY));
+            system.put(DISPLAY_NAME_KEY, notifContext.getString(DISPLAY_NAME_KEY));
 
             systemsList.add(system);
         }
+    }
+
+    @Override
+    public Map<String, Object> getContext() {
+        // Populate the context with the final aggregated data
+        JsonObject inventory = new JsonObject();
+        inventory.put(DELETED_SYSTEMS, deletedSystems);
+        inventory.put(ERRORS, errors);
+        inventory.put(NEW_SYSTEMS, newSystems);
+        inventory.put(STALE_SYSTEMS, staleSystems);
+
+        context.put(INVENTORY_KEY, inventory);
+
+        return super.getContext();
     }
 }

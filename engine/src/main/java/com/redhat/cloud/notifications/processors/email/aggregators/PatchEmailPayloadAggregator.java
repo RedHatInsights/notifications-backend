@@ -1,11 +1,13 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
@@ -36,16 +38,12 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
     private static final String TOTAL_ADVISORIES = "total_advisories";
     private final AtomicInteger totalAdvisories = new AtomicInteger(0);
 
+    private final JsonArray securityAdvisories = new JsonArray();
+    private final JsonArray bugfixAdvisories = new JsonArray();
+    private final JsonArray enhancementAdvisories = new JsonArray();
+    private final JsonArray otherAdvisories = new JsonArray();
+
     public PatchEmailPayloadAggregator() {
-        JsonObject patch = new JsonObject();
-
-        patch.put(SECURITY_TYPE, new JsonArray());
-        patch.put(BUGFIX_TYPE, new JsonArray());
-        patch.put(ENHANCEMENT_TYPE, new JsonArray());
-        patch.put(OTHER_TYPE, new JsonArray());
-
-        context.put(PATCH_KEY, patch);
-        context.put(TOTAL_ADVISORIES, totalAdvisories);
     }
 
     @Override
@@ -55,7 +53,6 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
 
     @Override
     void processEmailAggregation(EmailAggregation notification) {
-        JsonObject patch = context.getJsonObject(PATCH_KEY);
         JsonObject notificationPayload = notification.getPayload();
         String eventType = notificationPayload.getString(EVENT_TYPE_KEY);
 
@@ -75,15 +72,48 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
             }
 
             String advisoryName = payload.getString(ADVISORY_NAME);
+            String synopsis = payload.getString(SYNOPSIS);
+            JsonObject advisory = new JsonObject().put("name", advisoryName).put("synopsis", synopsis);
 
             // Group unspecified advisories under other type
             if (advisoryType.equals(UNSPECIFIED_TYPE)) {
-                advisoryType = OTHER_TYPE.toString();
+                advisoryType = OTHER_TYPE;
             }
 
-            String synopsis = payload.getString(SYNOPSIS);
-            patch.getJsonArray(advisoryType).add(new JsonObject().put("name", advisoryName).put("synopsis", synopsis));
+            switch (advisoryType) {
+                case SECURITY_TYPE:
+                    securityAdvisories.add(advisory);
+                    break;
+                case BUGFIX_TYPE:
+                    bugfixAdvisories.add(advisory);
+                    break;
+                case ENHANCEMENT_TYPE:
+                    enhancementAdvisories.add(advisory);
+                    break;
+                case OTHER_TYPE:
+                    otherAdvisories.add(advisory);
+                    break;
+                default:
+                    Log.debugf("Unknown advisory type: %s", advisoryType);
+                    break;
+            }
+
             totalAdvisories.incrementAndGet();
         });
+    }
+
+    @Override
+    public Map<String, Object> getContext() {
+        // Populate the context with the final aggregated data
+        JsonObject patch = new JsonObject();
+        patch.put(SECURITY_TYPE, securityAdvisories);
+        patch.put(BUGFIX_TYPE, bugfixAdvisories);
+        patch.put(ENHANCEMENT_TYPE, enhancementAdvisories);
+        patch.put(OTHER_TYPE, otherAdvisories);
+
+        context.put(PATCH_KEY, patch);
+        context.put(TOTAL_ADVISORIES, totalAdvisories);
+
+        return super.getContext();
     }
 }
