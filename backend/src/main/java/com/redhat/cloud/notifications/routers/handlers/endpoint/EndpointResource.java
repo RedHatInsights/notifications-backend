@@ -280,13 +280,12 @@ public class EndpointResource extends EndpointResourceCommon {
     @Transactional
     protected Endpoint internalCreateEndpoint(
         final SecurityContext sec,
-        final  Endpoint endpoint,
+        final Endpoint endpoint,
         final Set<UUID> eventTypes
     ) {
-        if (!isEndpointTypeAllowed(endpoint.getType())) {
+        if (!isEndpointTypeAllowed()) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
-        checkSystemEndpoint(endpoint.getType());
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
@@ -419,6 +418,19 @@ public class EndpointResource extends EndpointResourceCommon {
         }
     }
 
+    private void getOrCreateInternalEndpointCommonChecks(SystemSubscriptionProperties requestProps, RhIdPrincipal principal) {
+        if (requestProps.getGroupId() != null && requestProps.isOnlyAdmins()) {
+            throw new BadRequestException("Cannot use RBAC groups and only admins in the same endpoint");
+        }
+
+        if (requestProps.getGroupId() != null) {
+            boolean isValid = rbacGroupValidator.validate(requestProps.getGroupId(), principal.getIdentity().rawIdentity);
+            if (!isValid) {
+                throw new BadRequestException(String.format("Invalid RBAC group identified with id %s", requestProps.getGroupId()));
+            }
+        }
+    }
+
     @GET
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
@@ -436,15 +448,16 @@ public class EndpointResource extends EndpointResourceCommon {
     @Transactional
     public Response deleteEndpoint(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
-        EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
-        if (!isEndpointTypeAllowed(endpointType)) {
+        if (!isEndpointTypeAllowed()) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
-        checkSystemEndpoint(endpointType);
 
         // Clean up the secrets in Sources.
         final Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
 
+        if (endpoint == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
         endpointRepository.deleteEndpoint(orgId, id);
 
         if (this.backendConfig.isKesselInventoryEnabled(orgId)) {
@@ -492,11 +505,13 @@ public class EndpointResource extends EndpointResourceCommon {
     @Transactional
     public Response enableEndpoint(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
-        EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
-        if (!isEndpointTypeAllowed(endpointType)) {
+
+        // Check it endpoint exists, if not it throw an NotFoundException
+        endpointRepository.getEndpointTypeById(orgId, id);
+
+        if (!isEndpointTypeAllowed()) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
-        checkSystemEndpoint(endpointType);
         endpointRepository.enableEndpoint(orgId, id);
         return Response.ok().build();
     }
@@ -509,11 +524,13 @@ public class EndpointResource extends EndpointResourceCommon {
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.DISABLE})
     public Response disableEndpoint(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
-        EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
-        if (!isEndpointTypeAllowed(endpointType)) {
+
+        // Check it endpoint exists, if not it throw an NotFoundException
+        endpointRepository.getEndpointTypeById(orgId, id);
+
+        if (!isEndpointTypeAllowed()) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
-        checkSystemEndpoint(endpointType);
         endpointRepository.disableEndpoint(orgId, id);
         return Response.noContent().build();
     }
@@ -532,12 +549,13 @@ public class EndpointResource extends EndpointResourceCommon {
         @RequestBody(required = true) @NotNull @Valid   EndpointDTO endpointDTO
     ) {
         final Endpoint endpoint = this.endpointMapper.toEntity(endpointDTO);
-
-        if (!isEndpointTypeAllowed(endpoint.getType())) {
+        if (endpoint == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        if (!isEndpointTypeAllowed()) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
-        // This prevents from updating an endpoint from whatever EndpointType to a system EndpointType
-        checkSystemEndpoint(endpoint.getType());
+        RhIdPrincipal principal = (RhIdPrincipal) securityContext.getUserPrincipal();
         String accountId = getAccountId(securityContext);
         String orgId = getOrgId(securityContext);
         endpoint.setAccountId(accountId);
@@ -550,9 +568,6 @@ public class EndpointResource extends EndpointResourceCommon {
         }
         EndpointType endpointType = dbEndpoint.getType();
 
-        // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
-        checkSystemEndpoint(endpointType);
-
         if (endpoint.getType() == CAMEL) {
             String subType = endpoint.getSubType();
 
@@ -561,6 +576,8 @@ public class EndpointResource extends EndpointResourceCommon {
             } else if (subType.equals("servicenow") || subType.equals("splunk")) {
                 checkHttpsEndpoint(endpoint.getProperties(CamelProperties.class));
             }
+        } else if (endpoint.getType() == EMAIL_SUBSCRIPTION || endpoint.getType() == DRAWER) {
+            getOrCreateInternalEndpointCommonChecks(endpoint.getProperties(SystemSubscriptionProperties.class), principal);
         }
 
         endpointRepository.updateEndpoint(endpoint);
@@ -644,17 +661,8 @@ public class EndpointResource extends EndpointResourceCommon {
         this.endpointTestService.testEndpoint(internalEndpointTestRequest);
     }
 
-    private static void checkSystemEndpoint(EndpointType endpointType) {
-        if (endpointType.isSystemEndpointType) {
-            throw new BadRequestException(String.format(
-                    "Is not possible to create or alter endpoint with type %s, check API for alternatives",
-                    endpointType
-            ));
-        }
-    }
-
-    private boolean isEndpointTypeAllowed(EndpointType endpointType) {
-        return !backendConfig.isEmailsOnlyModeEnabled() || endpointType.isSystemEndpointType;
+    private boolean isEndpointTypeAllowed() {
+        return !backendConfig.isEmailsOnlyModeEnabled();
     }
 
     @DELETE
