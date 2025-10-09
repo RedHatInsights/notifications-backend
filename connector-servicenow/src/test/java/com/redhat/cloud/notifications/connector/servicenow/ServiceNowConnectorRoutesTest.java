@@ -21,10 +21,8 @@ import static com.redhat.cloud.notifications.connector.authentication.Authentica
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TARGET_URL_NO_SCHEME;
-import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TRUST_ALL;
 import static com.redhat.cloud.notifications.connector.servicenow.ServiceNowCloudEventDataExtractor.NOTIF_METADATA;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -55,7 +53,6 @@ public class ServiceNowConnectorRoutesTest extends ConnectorRoutesTest {
 
         JsonObject metadata = new JsonObject();
         metadata.put("url", targetUrl);
-        metadata.put("trustAll", "true");
         metadata.put("authentication", authentication);
 
         JsonObject payload = new JsonObject();
@@ -80,7 +77,6 @@ public class ServiceNowConnectorRoutesTest extends ConnectorRoutesTest {
 
             assertEquals(DEFAULT_ORG_ID, exchange.getProperty(ORG_ID, String.class));
             assertEquals(DEFAULT_ACCOUNT_ID, exchange.getProperty(ACCOUNT_ID, String.class));
-            assertTrue(exchange.getProperty(TRUST_ALL, Boolean.class));
             assertEquals(exchange.getProperty(TARGET_URL, String.class), "https://" + exchange.getProperty(TARGET_URL_NO_SCHEME, String.class));
             assertEquals(expectedPayload.encode(), outgoingPayload);
             assertEquals(123L, exchange.getProperty(SECRET_ID, Long.class));

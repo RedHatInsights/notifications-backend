@@ -408,7 +408,7 @@ public class ResourceHelpers {
                 endpoint.setSubType("dromedary");
 
                 final CamelProperties camelProperties = new CamelProperties();
-                camelProperties.setDisableSslVerification(random.nextBoolean());
+                camelProperties.setDisableSslVerification(false);
                 camelProperties.setUrl("https://redhat.com");
 
                 // Maybe set a secret token, maybe not...
@@ -423,7 +423,7 @@ public class ResourceHelpers {
                 endpoint.setType(EndpointType.WEBHOOK);
 
                 final WebhookProperties webhookProperties = new WebhookProperties();
-                webhookProperties.setDisableSslVerification(random.nextBoolean());
+                webhookProperties.setDisableSslVerification(false);
                 webhookProperties.setMethod(HttpType.GET);
                 webhookProperties.setUrl("https://redhat.com");
 
@@ -461,7 +461,7 @@ public class ResourceHelpers {
         // Create five endpoints with camel properties.
         for (int i = 0; i < 5; i++) {
             final CamelProperties camelProperties = new CamelProperties();
-            camelProperties.setDisableSslVerification(random.nextBoolean());
+            camelProperties.setDisableSslVerification(false);
             camelProperties.setUrl("https://redhat.com");
 
             camelProperties.setSecretToken(UUID.randomUUID().toString());
@@ -482,7 +482,7 @@ public class ResourceHelpers {
         // Create another five endpoints with webhook properties.
         for (int i = 0; i < 5; i++) {
             final WebhookProperties webhookProperties = new WebhookProperties();
-            webhookProperties.setDisableSslVerification(random.nextBoolean());
+            webhookProperties.setDisableSslVerification(false);
             webhookProperties.setMethod(HttpType.GET);
             webhookProperties.setUrl("https://redhat.com");
 

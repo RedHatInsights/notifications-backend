@@ -18,7 +18,6 @@ import static com.redhat.cloud.notifications.connector.authentication.Authentica
 import static com.redhat.cloud.notifications.connector.authentication.AuthenticationType.SECRET_TOKEN;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.ACCOUNT_ID;
 import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TARGET_URL_NO_SCHEME;
-import static com.redhat.cloud.notifications.connector.servicenow.ExchangeProperty.TRUST_ALL;
 import static com.redhat.cloud.notifications.connector.servicenow.ServiceNowCloudEventDataExtractor.NOTIF_METADATA;
 import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -95,24 +94,24 @@ public class ServiceNowCloudEventDataExtractorTest extends CamelQuarkusTestSuppo
 
     @Test
     void testExtractWithValidTargetUrlPath() throws Exception {
-        testExtract("https://foo.bar", true);
+        testExtract("https://foo.bar");
     }
 
     private void assertValidTargetUrl(String url) {
         Exchange exchange = createExchangeWithBody(context, "I am not used!");
-        JsonObject cloudEventData = createCloudEventData(url, false);
+        JsonObject cloudEventData = createCloudEventData(url);
         assertDoesNotThrow(() -> serviceNowCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 
     private void assertInvalidTargetUrl(String url, Class<? extends Exception> expectedException) {
         Exchange exchange = createExchangeWithBody(context, "I am not used!");
-        JsonObject cloudEventData = createCloudEventData(url, false);
+        JsonObject cloudEventData = createCloudEventData(url);
         assertThrows(expectedException, () -> serviceNowCloudEventDataExtractor.extract(exchange, cloudEventData));
     }
 
-    private void testExtract(String url, boolean trustAll) throws Exception {
+    private void testExtract(String url) throws Exception {
         Exchange exchange = createExchangeWithBody(context, "I am not used!");
-        JsonObject cloudEventData = createCloudEventData(url, trustAll);
+        JsonObject cloudEventData = createCloudEventData(url);
         /*
          * The 'extract' method will modify 'cloudEventData'.
          * We need to run assertions on the original JsonObject, so we're making a copy of it.
@@ -125,21 +124,19 @@ public class ServiceNowCloudEventDataExtractorTest extends CamelQuarkusTestSuppo
         JsonObject expectedMetadata = cloudEventDataCopy.getJsonObject(NOTIF_METADATA);
         assertEquals(expectedMetadata.getString("url"), exchange.getProperty(TARGET_URL, String.class));
         assertTrue(expectedMetadata.getString("url").endsWith(exchange.getProperty(TARGET_URL_NO_SCHEME, String.class)));
-        assertEquals(expectedMetadata.getString("trustAll"), exchange.getProperty(TRUST_ALL, Boolean.class).toString());
 
         JsonObject expectedAuthentication = expectedMetadata.getJsonObject("authentication");
         assertEquals(expectedAuthentication.getString("type"), exchange.getProperty(AUTHENTICATION_TYPE, AuthenticationType.class).name());
         assertEquals(expectedAuthentication.getLong("secretId"), exchange.getProperty(SECRET_ID, Long.class));
     }
 
-    private JsonObject createCloudEventData(String url, boolean trustAll) {
+    private JsonObject createCloudEventData(String url) {
         JsonObject authentication = new JsonObject();
         authentication.put("type", SECRET_TOKEN);
         authentication.put("secretId", 123L);
 
         JsonObject metadata = new JsonObject();
         metadata.put("url", url);
-        metadata.put("trustAll", Boolean.toString(trustAll));
         metadata.put("authentication", authentication);
 
         JsonObject cloudEventData = new JsonObject();

@@ -689,6 +689,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setType(EndpointType.CAMEL);
         ep.setSubType("something-longer-than-20-chars");
         expectReturn400(DEFAULT_USER, identityHeader, ep);
+
+        // Test with SSL verification disabled
+        properties.setDisableSslVerification(true);
+        ep.setType(ANSIBLE);
+        ep.setName("endpoint with disabled SSL verification");
+        expectReturn400(DEFAULT_USER, identityHeader, ep);
     }
 
     /**
@@ -2840,6 +2846,49 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         Assertions.assertEquals("testEndpoint.requestBody.message", constraintViolation.getString("field"), "unexpected field validated when sending a blank test message");
         Assertions.assertEquals("must not be blank", constraintViolation.getString("message"), "unexpected error message received when sending a blank custom message for testing the endpoint");
+    }
+
+    /**
+     * Tests that when an endpoint has SSL verification disabled, testing it returns a bad request.
+     */
+    @ParameterizedTest
+    @MethodSource("kesselFlags")
+    void testEndpointTestDisableSslVerification(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
+
+        CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setUrl("https://webhook.site/b6179849-b71a-4388-9d0e-0184619b231e");
+        camelProperties.setDisableSslVerification(true);
+
+        final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL, "slack", "disabledSSL", "description", camelProperties, true);
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        final EndpointTestRequest endpointTestRequest = new EndpointTestRequest();
+        endpointTestRequest.message = "should not send because SSL verification is disabled";
+
+        // Call the endpoint under test.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.TEST, ResourceType.INTEGRATION, createdEndpoint.getId().toString());
+
+        final String rawResponse = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .pathParam("id", createdEndpoint.getId())
+            .body(Json.encode(endpointTestRequest))
+            .post("/endpoints/{id}/test")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract()
+            .asString();
+
+        Assertions.assertEquals("Endpoints are no longer permitted to disable SSL/TLS verification, and existing integrations which have disabled " +
+                "verification will be removed soon. Please enable SSL/TLS verification to continue using this integration, or contact Red Hat Support for assistance.",
+                rawResponse,
+                "unexpected error message received when testing endpoint with SSL verification disabled");
     }
 
     /**
