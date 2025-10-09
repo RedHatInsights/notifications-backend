@@ -33,7 +33,7 @@
             <dependencies>
                 <dependency>
                     <groupId>com.redhat.cloud.notifications</groupId>
-                    <artifactId>notifications-connector-common</artifactId>
+                    <artifactId>notifications-connector-common-v2</artifactId>
                     <version>${project.version}</version>
                     <type>test-jar</type>
                     <scope>test</scope>
@@ -57,17 +57,6 @@
 
     </profiles>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>${quarkus.platform.group-id}</groupId>
-                <artifactId>quarkus-camel-bom</artifactId>
-                <version>${quarkus.platform.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
 
@@ -76,7 +65,7 @@
         <!-- Notifications module -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
-            <artifactId>notifications-connector-common-http</artifactId>
+            <artifactId>notifications-connector-common-http-v2</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -112,12 +101,6 @@
         <!-- Scope: test -->
         <!-- Some test dependencies are declared in the "profiles" section of this POM. -->
 
-        <!-- Camel -->
-        <dependency>
-            <groupId>org.apache.camel.quarkus</groupId>
-            <artifactId>camel-quarkus-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
 
         <!-- WireMock -->
         <dependency>

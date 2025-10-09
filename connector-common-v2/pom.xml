@@ -1,0 +1,172 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>notifications-connector-common-v2</artifactId>
+
+    <parent>
+        <groupId>com.redhat.cloud.notifications</groupId>
+        <artifactId>notifications-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <profiles>
+
+        <!--
+        When Maven compiles a project with the "-Dmaven.test.skip" option, the tests compilation and execution are skipped
+        but Maven still resolves the dependencies from the "test" scope and fails if these dependencies cannot be found.
+        This is considered a Maven bug by many users and even though it was reported as such several years ago, it's never
+        been fixed. The following profile works around that limitation and makes the compilation successful when tests are
+        skipped even if the listed test dependencies are not available.
+        -->
+        <profile>
+            <id>resolve-test-jars-if-tests-are-not-skipped</id>
+            <activation>
+                <property>
+                    <name>maven.test.skip</name>
+                    <value>!true</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.redhat.cloud.notifications</groupId>
+                    <artifactId>notifications-common</artifactId>
+                    <version>${project.version}</version>
+                    <type>test-jar</type>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+
+    </profiles>
+
+
+    <dependencies>
+
+        <!-- Scope: compile -->
+
+        <!-- notifications modules -->
+        <dependency>
+            <groupId>com.redhat.cloud.notifications</groupId>
+            <artifactId>notifications-common-unleash</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Quarkus messaging -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-messaging-kafka</artifactId>
+        </dependency>
+
+        <!-- Quarkus -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest</artifactId>
+        </dependency>
+
+        <!-- Quarkiverse -->
+        <dependency>
+            <groupId>io.quarkiverse.logging.cloudwatch</groupId>
+            <artifactId>quarkus-logging-cloudwatch</artifactId>
+            <version>${quarkus-logging-cloudwatch.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.loggingsentry</groupId>
+            <artifactId>quarkus-logging-sentry</artifactId>
+            <version>${quarkus-logging-sentry.version}</version>
+        </dependency>
+
+        <!-- Clowder -->
+        <dependency>
+            <groupId>com.redhat.cloud.common</groupId>
+            <artifactId>clowder-quarkus-config-source</artifactId>
+            <version>${clowder-quarkus-config-source.version}</version>
+        </dependency>
+
+        <!-- Scope: test -->
+        <!-- Some test dependencies are declared in the "profiles" section of this POM. -->
+
+
+        <!-- Quarkus -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit5-mockito</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- MockServer -->
+        <dependency>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-netty-no-dependencies</artifactId>
+            <version>${mockserver-netty-no-dependencies.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- InMemory messaging for testing -->
+        <dependency>
+            <groupId>io.smallrye.reactive</groupId>
+            <artifactId>smallrye-reactive-messaging-in-memory</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Awaitility for async testing -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+
+            <!-- The following plugin is required to inject beans from this module into other modules. -->
+            <plugin>
+                <groupId>org.jboss.jandex</groupId>
+                <artifactId>jandex-maven-plugin</artifactId>
+                <version>1.2.3</version>
+                <executions>
+                    <execution>
+                        <id>make-index</id>
+                        <goals>
+                            <goal>jandex</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- This module provides test classes to other modules. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven-jar-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler-plugin.version}</version>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire-plugin.version}</version>
+            </plugin>
+
+        </plugins>
+    </build>
+</project>
