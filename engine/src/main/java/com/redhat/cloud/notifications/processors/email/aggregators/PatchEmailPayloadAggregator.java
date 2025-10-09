@@ -38,6 +38,9 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
     private static final String TOTAL_ADVISORIES = "total_advisories";
     private final AtomicInteger totalAdvisories = new AtomicInteger(0);
 
+    // Maximum number of advisories to keep per type to prevent memory issues
+    public static final int MAXIMUM_ADVISORIES_PER_TYPE = 500;
+
     private final JsonArray securityAdvisories = new JsonArray();
     private final JsonArray bugfixAdvisories = new JsonArray();
     private final JsonArray enhancementAdvisories = new JsonArray();
@@ -82,16 +85,24 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
 
             switch (advisoryType) {
                 case SECURITY_TYPE:
-                    securityAdvisories.add(advisory);
+                    if (securityAdvisories.size() < MAXIMUM_ADVISORIES_PER_TYPE) {
+                        securityAdvisories.add(advisory);
+                    }
                     break;
                 case BUGFIX_TYPE:
-                    bugfixAdvisories.add(advisory);
+                    if (bugfixAdvisories.size() < MAXIMUM_ADVISORIES_PER_TYPE) {
+                        bugfixAdvisories.add(advisory);
+                    }
                     break;
                 case ENHANCEMENT_TYPE:
-                    enhancementAdvisories.add(advisory);
+                    if (enhancementAdvisories.size() < MAXIMUM_ADVISORIES_PER_TYPE) {
+                        enhancementAdvisories.add(advisory);
+                    }
                     break;
                 case OTHER_TYPE:
-                    otherAdvisories.add(advisory);
+                    if (otherAdvisories.size() < MAXIMUM_ADVISORIES_PER_TYPE) {
+                        otherAdvisories.add(advisory);
+                    }
                     break;
                 default:
                     Log.debugf("Unknown advisory type: %s", advisoryType);

@@ -43,6 +43,10 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
 
     public static final String INVENTORY_ID_KEY = "inventory_id";
 
+    // Maximum number of systems/errors to keep per category to prevent memory issues
+    public static final int MAXIMUM_SYSTEMS_PER_CATEGORY = 500;
+    public static final int MAXIMUM_ERRORS = 500;
+
     private final JsonArray deletedSystems = new JsonArray();
     private final JsonArray errors = new JsonArray();
     private final JsonArray newSystems = new JsonArray();
@@ -58,6 +62,10 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
 
         if (VALIDATION_ERROR.equals(eventType)) {
             notificationJson.getJsonArray(EVENTS_KEY).stream().forEach(eventObject -> {
+                if (errors.size() >= MAXIMUM_ERRORS) {
+                    return;
+                }
+
                 JsonObject event = (JsonObject) eventObject;
                 JsonObject payload = event.getJsonObject(PAYLOAD_KEY);
                 JsonObject receivedErrorObject = payload.getJsonObject(ERROR_KEY);
@@ -81,13 +89,16 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
                 systemsList = deletedSystems;
             }
 
-            final JsonObject notifContext = notificationJson.getJsonObject(CONTEXT_KEY);
+            // Check size limit before adding
+            if (systemsList.size() < MAXIMUM_SYSTEMS_PER_CATEGORY) {
+                final JsonObject notifContext = notificationJson.getJsonObject(CONTEXT_KEY);
 
-            final JsonObject system = new JsonObject();
-            system.put(INVENTORY_ID_KEY, notifContext.getString(INVENTORY_ID_KEY));
-            system.put(DISPLAY_NAME_KEY, notifContext.getString(DISPLAY_NAME_KEY));
+                final JsonObject system = new JsonObject();
+                system.put(INVENTORY_ID_KEY, notifContext.getString(INVENTORY_ID_KEY));
+                system.put(DISPLAY_NAME_KEY, notifContext.getString(DISPLAY_NAME_KEY));
 
-            systemsList.add(system);
+                systemsList.add(system);
+            }
         }
     }
 
