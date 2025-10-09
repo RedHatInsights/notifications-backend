@@ -1,43 +1,36 @@
 package com.redhat.cloud.notifications.connector.drawer;
 
 import com.redhat.cloud.notifications.connector.drawer.config.DrawerConnectorConfig;
-import com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty;
-import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntry;
-import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntryPayload;
+import com.redhat.cloud.notifications.connector.drawer.model.DrawerNotificationToConnector;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerUser;
 import com.redhat.cloud.notifications.connector.drawer.model.RecipientSettings;
 import com.redhat.cloud.notifications.connector.drawer.recipients.recipientsresolver.ExternalRecipientsResolver;
+import com.redhat.cloud.notifications.connector.v2.MessageContext;
+import com.redhat.cloud.notifications.connector.v2.MessageHandler;
+import com.redhat.cloud.notifications.connector.v2.OutgoingMessageSender;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
-import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import java.net.URI;
-import java.time.ZonedDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.ID;
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.ORG_ID;
 import static com.redhat.cloud.notifications.connector.drawer.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
-import static com.redhat.cloud.notifications.connector.drawer.DrawerPayloadBuilder.CE_SPEC_VERSION;
-import static com.redhat.cloud.notifications.connector.drawer.DrawerPayloadBuilder.CE_TYPE;
-import static java.time.ZoneOffset.UTC;
+import static com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty.RESOLVED_RECIPIENT_LIST;
 import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
-public class DrawerProcessor implements Processor {
+public class DrawerProcessor implements MessageHandler {
 
     static final String RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC = "email.recipients_resolver.response.time";
 
@@ -59,19 +52,25 @@ public class DrawerProcessor implements Processor {
     @Inject
     DrawerConnectorConfig drawerConnectorConfig;
 
+    @Inject
+    OutgoingMessageSender outgoingMessageSender;
+
     @Override
-    public void process(final Exchange exchange) {
+    public void handle(final MessageContext context) throws Exception {
+        DrawerNotificationToConnector notification =  context.getTypedBody(DrawerNotificationToConnector.class);
+
         // fetch recipients
-        Set<String> recipientsList = fetchRecipients(exchange);
+        Set<String> recipientsList = fetchRecipients(notification);
+        context.setProperty(RESOLVED_RECIPIENT_LIST, recipientsList);
+        context.setProperty(TOTAL_RECIPIENTS_KEY, recipientsList.size());
 
         if (recipientsList.isEmpty()) {
-            Log.infof("Skipped Email notification because the recipients list was empty [orgId=$%s, historyId=%s]", exchange.getProperty(ORG_ID, String.class), exchange.getProperty(ID, String.class));
+            Log.infof("Skipped Email notification because the recipients list was empty [orgId=$%s, historyId=%s]",
+                notification.getOrgId(),
+                context.getIncomingCloudEventMetadata().getId());
         } else {
-            // send to kafka chrome service
-            final DrawerEntryPayload entryPayloadModel = exchange.getProperty(ExchangeProperty.DRAWER_ENTRY_PAYLOAD, DrawerEntryPayload.class);
-
             if (drawerConnectorConfig.useCommonTemplateModule()) {
-                final Map<String, Object> eventDataMap = exchange.getProperty(ExchangeProperty.EVENT_DATA, Map.class);
+                final Map<String, Object> eventDataMap = notification.getEventData();
 
                 String templatedEvent = null;
                 if (eventDataMap != null) {
@@ -83,24 +82,27 @@ public class DrawerProcessor implements Processor {
                     templatedEvent = templateService.renderTemplate(templateDefinition, eventDataMap);
                 }
 
-                if (!entryPayloadModel.getDescription().equals(templatedEvent)) {
-                    Log.errorf("Legacy and new rendered messages are different: '%s' vs. '%s'", entryPayloadModel.getDescription(), templatedEvent);
+                if (!notification.getDrawerEntryPayload().getDescription().equals(templatedEvent)) {
+                    Log.errorf("Legacy and new rendered messages are different: '%s' vs. '%s'", notification.getDrawerEntryPayload().getDescription(), templatedEvent);
                 } else {
                     Log.debugf("Legacy and new rendered messages are identical");
                 }
             }
-            Message<JsonObject> builtKafkaMessage = buildMessage(entryPayloadModel, recipientsList);
+            Message<JsonObject> builtKafkaMessage = DrawerPayloadBuilder.buildDrawerMessage(notification.getDrawerEntryPayload(), recipientsList);
             if (drawerConnectorConfig.pushNotificationsToKafka()) {
                 emitter.send(builtKafkaMessage);
             }
         }
+
+        // Send success response back to engine
+        outgoingMessageSender.sendSuccess(context);
     }
 
-    private Set<String> fetchRecipients(Exchange exchange) {
-        List<RecipientSettings> recipientSettings = exchange.getProperty(ExchangeProperty.RECIPIENT_SETTINGS, List.class);
-        Set<String> unsubscribers = exchange.getProperty(ExchangeProperty.UNSUBSCRIBERS, Set.class);
-        final String orgId = exchange.getProperty(ORG_ID, String.class);
-        JsonObject authorizationCriterion = exchange.getProperty(ExchangeProperty.AUTHORIZATION_CRITERIA, JsonObject.class);
+    private Set<String> fetchRecipients(DrawerNotificationToConnector drawerNotification) {
+        List<RecipientSettings> recipientSettings = drawerNotification.getRecipientSettings().stream().toList();
+        Set<String> unsubscribers = new HashSet<>(drawerNotification.getUnsubscribers());
+        final String orgId = drawerNotification.getOrgId();
+        JsonObject authorizationCriterion = drawerNotification.getAuthorizationCriteria();
 
         boolean subscribedByDefault = true;
         final Timer.Sample recipientsResolverResponseTimeMetric = Timer.start(meterRegistry);
@@ -113,28 +115,6 @@ public class DrawerProcessor implements Processor {
             .stream().map(DrawerUser::getUsername).filter(username -> username != null && !username.isBlank()).collect(toSet());
         recipientsResolverResponseTimeMetric.stop(meterRegistry.timer(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC));
 
-        exchange.setProperty(TOTAL_RECIPIENTS_KEY, recipientsList.size());
         return recipientsList;
-    }
-
-    public static Message<JsonObject> buildMessage(final DrawerEntryPayload entryPayloadModel, final Set<String> recipients) {
-        DrawerEntry drawerEntry = new DrawerEntry();
-        drawerEntry.setPayload(entryPayloadModel);
-        drawerEntry.setUsernames(recipients);
-        JsonObject myPayload = JsonObject.mapFrom(drawerEntry);
-
-        OutgoingCloudEventMetadata<JsonObject> cloudEventMetadata = OutgoingCloudEventMetadata.<JsonObject>builder()
-            .withId(entryPayloadModel.getEventId().toString())
-            .withType(CE_TYPE)
-            .withSpecVersion(CE_SPEC_VERSION)
-            .withDataContentType("application/json")
-            .withSource(URI.create("urn:redhat:source:notifications:drawer"))
-            .withTimestamp(ZonedDateTime.now(UTC))
-            .build();
-
-        Log.debugf("Built message %s", myPayload);
-
-        return Message.of(myPayload)
-            .addMetadata(cloudEventMetadata);
     }
 }
