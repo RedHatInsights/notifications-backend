@@ -46,6 +46,11 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
     private final JsonArray enhancementAdvisories = new JsonArray();
     private final JsonArray otherAdvisories = new JsonArray();
 
+    private boolean securityLimitWarned = false;
+    private boolean bugfixLimitWarned = false;
+    private boolean enhancementLimitWarned = false;
+    private boolean otherLimitWarned = false;
+
     public PatchEmailPayloadAggregator() {
     }
 
@@ -87,21 +92,37 @@ public class PatchEmailPayloadAggregator extends AbstractEmailPayloadAggregator 
                 case SECURITY_TYPE:
                     if (securityAdvisories.size() < MAXIMUM_ADVISORIES_PER_TYPE) {
                         securityAdvisories.add(advisory);
+                    } else if (!securityLimitWarned) {
+                        Log.warnf("Security advisories limit reached (%d) for org_id=%s, additional advisories will be dropped",
+                                  MAXIMUM_ADVISORIES_PER_TYPE, getOrgId());
+                        securityLimitWarned = true;
                     }
                     break;
                 case BUGFIX_TYPE:
                     if (bugfixAdvisories.size() < MAXIMUM_ADVISORIES_PER_TYPE) {
                         bugfixAdvisories.add(advisory);
+                    } else if (!bugfixLimitWarned) {
+                        Log.warnf("Bugfix advisories limit reached (%d) for org_id=%s, additional advisories will be dropped",
+                                  MAXIMUM_ADVISORIES_PER_TYPE, getOrgId());
+                        bugfixLimitWarned = true;
                     }
                     break;
                 case ENHANCEMENT_TYPE:
                     if (enhancementAdvisories.size() < MAXIMUM_ADVISORIES_PER_TYPE) {
                         enhancementAdvisories.add(advisory);
+                    } else if (!enhancementLimitWarned) {
+                        Log.warnf("Enhancement advisories limit reached (%d) for org_id=%s, additional advisories will be dropped",
+                                  MAXIMUM_ADVISORIES_PER_TYPE, getOrgId());
+                        enhancementLimitWarned = true;
                     }
                     break;
                 case OTHER_TYPE:
                     if (otherAdvisories.size() < MAXIMUM_ADVISORIES_PER_TYPE) {
                         otherAdvisories.add(advisory);
+                    } else if (!otherLimitWarned) {
+                        Log.warnf("Other advisories limit reached (%d) for org_id=%s, additional advisories will be dropped",
+                                  MAXIMUM_ADVISORIES_PER_TYPE, getOrgId());
+                        otherLimitWarned = true;
                     }
                     break;
                 default:

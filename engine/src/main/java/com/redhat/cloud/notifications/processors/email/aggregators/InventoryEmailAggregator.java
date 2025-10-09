@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -52,6 +53,11 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
     private final JsonArray newSystems = new JsonArray();
     private final JsonArray staleSystems = new JsonArray();
 
+    private boolean errorsLimitWarned = false;
+    private boolean newSystemsLimitWarned = false;
+    private boolean staleSystemsLimitWarned = false;
+    private boolean deletedSystemsLimitWarned = false;
+
     public InventoryEmailAggregator() {
     }
 
@@ -63,6 +69,11 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
         if (VALIDATION_ERROR.equals(eventType)) {
             notificationJson.getJsonArray(EVENTS_KEY).stream().forEach(eventObject -> {
                 if (errors.size() >= MAXIMUM_ERRORS) {
+                    if (!errorsLimitWarned) {
+                        Log.warnf("Validation errors limit reached (%d) for org_id=%s, additional errors will be dropped",
+                                  MAXIMUM_ERRORS, getOrgId());
+                        errorsLimitWarned = true;
+                    }
                     return;
                 }
 
@@ -81,12 +92,21 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
             });
         } else if (NEW_EVENT_TYPES.contains(eventType)) {
             final JsonArray systemsList;
+            final String categoryName;
+            boolean limitWarned;
+
             if (EVENT_TYPE_NEW_SYSTEM_REGISTERED.equals(eventType)) {
                 systemsList = newSystems;
+                categoryName = "new systems";
+                limitWarned = newSystemsLimitWarned;
             } else if (EVENT_TYPE_SYSTEM_BECAME_STALE.equals(eventType)) {
                 systemsList = staleSystems;
+                categoryName = "stale systems";
+                limitWarned = staleSystemsLimitWarned;
             } else {
                 systemsList = deletedSystems;
+                categoryName = "deleted systems";
+                limitWarned = deletedSystemsLimitWarned;
             }
 
             // Check size limit before adding
@@ -98,6 +118,16 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
                 system.put(DISPLAY_NAME_KEY, notifContext.getString(DISPLAY_NAME_KEY));
 
                 systemsList.add(system);
+            } else if (!limitWarned) {
+                Log.warnf("%s limit reached (%d) for org_id=%s, additional systems will be dropped",
+                          categoryName, MAXIMUM_SYSTEMS_PER_CATEGORY, getOrgId());
+                if (EVENT_TYPE_NEW_SYSTEM_REGISTERED.equals(eventType)) {
+                    newSystemsLimitWarned = true;
+                } else if (EVENT_TYPE_SYSTEM_BECAME_STALE.equals(eventType)) {
+                    staleSystemsLimitWarned = true;
+                } else {
+                    deletedSystemsLimitWarned = true;
+                }
             }
         }
     }
