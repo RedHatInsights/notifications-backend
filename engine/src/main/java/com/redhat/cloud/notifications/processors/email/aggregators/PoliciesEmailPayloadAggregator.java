@@ -66,8 +66,12 @@ class PoliciesEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
 
             JsonObject policy = policies.get(policyId);
             String insightsId = host.getString(INVENTORY_ID);
-            policy.getJsonArray(HOST_KEY).add(host);
-            uniqueHostPerPolicy.get(policyId).add(insightsId);
+
+            // Only add host if it hasn't been added to this policy yet (deduplication)
+            if (!uniqueHostPerPolicy.get(policyId).contains(insightsId)) {
+                policy.getJsonArray(HOST_KEY).add(host);
+                uniqueHostPerPolicy.get(policyId).add(insightsId);
+            }
         });
 
         String insightsId = host.getString(INVENTORY_ID);
