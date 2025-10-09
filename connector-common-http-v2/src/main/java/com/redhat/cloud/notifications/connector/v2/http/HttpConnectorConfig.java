@@ -66,20 +66,8 @@ public class HttpConnectorConfig extends ConnectorConfig {
         return clientErrorLogLevel;
     }
 
-    public List<String> getHttpComponents() {
-        return httpComponents;
-    }
-
     public int getHttpConnectTimeout() {
         return httpConnectTimeout;
-    }
-
-    public int getHttpConnectionsPerRoute() {
-        return httpConnectionsPerRoute;
-    }
-
-    public int getHttpMaxTotalConnections() {
-        return httpMaxTotalConnections;
     }
 
     public Level getServerErrorLogLevel() {
