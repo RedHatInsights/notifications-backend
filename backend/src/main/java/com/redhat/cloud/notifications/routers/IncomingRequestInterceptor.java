@@ -29,6 +29,7 @@ public class IncomingRequestInterceptor implements ContainerRequestFilter {
     private static final Pattern patternNotificationsBgV2 = Pattern.compile("notifications/eventTypes/(.*)/behaviorGroups");
     private static final Pattern patternIntegrationEndpointsV2 = Pattern.compile("endpoints(.*)");
     private static final Pattern patternIntegrationEndpointsDetailsV2 = Pattern.compile("endpoints/(.*)/details");
+    private static final Pattern patternOpenApi = Pattern.compile("openapi.json");
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -100,13 +101,16 @@ public class IncomingRequestInterceptor implements ContainerRequestFilter {
             if ("GET".equals(requestContext.getMethod())) {
                 if (matcherUrlV2.group(1).equals("notifications")) {
                     Matcher notificationsBG = patternNotificationsBgV2.matcher(matcherUrlV2.group(2));
-                    if (notificationsBG.matches()) {
+                    Matcher openApi = patternOpenApi.matcher(matcherUrlV2.group(2));
+                    if (notificationsBG.matches() || openApi.matches()) {
                         rewriteToV1 = false;
                     }
                 } else if (matcherUrlV2.group(1).equals("integrations")) {
                     Matcher integrationsEndpoints = patternIntegrationEndpointsV2.matcher(matcherUrlV2.group(2));
                     Matcher integrationsEndpointsHistoryDetails = patternIntegrationEndpointsDetailsV2.matcher(matcherUrlV2.group(2));
-                    if (integrationsEndpoints.matches() && !integrationsEndpointsHistoryDetails.matches()) {
+                    Matcher openApi = patternOpenApi.matcher(matcherUrlV2.group(2));
+                    if ((integrationsEndpoints.matches() && !integrationsEndpointsHistoryDetails.matches())
+                        || openApi.matches()) {
                         rewriteToV1 = false;
                     }
                 }
