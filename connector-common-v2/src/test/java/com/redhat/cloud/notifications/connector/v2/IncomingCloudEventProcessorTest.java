@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.ENDPOINT_ID;
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.ORG_ID;
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.RETURN_SOURCE;
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.START_TIME;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.ENDPOINT_ID;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.ORG_ID;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.RETURN_SOURCE;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.START_TIME;
 import static com.redhat.cloud.notifications.connector.v2.IncomingCloudEventProcessor.CLOUD_EVENT_DATA;
 import static com.redhat.cloud.notifications.connector.v2.IncomingCloudEventProcessor.CLOUD_EVENT_ID;
 import static com.redhat.cloud.notifications.connector.v2.IncomingCloudEventProcessor.CLOUD_EVENT_TYPE;
