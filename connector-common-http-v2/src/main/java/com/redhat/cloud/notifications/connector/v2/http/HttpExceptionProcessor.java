@@ -13,8 +13,8 @@ import javax.net.ssl.SSLHandshakeException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
-import static com.redhat.cloud.notifications.connector.v2.http.ExchangeProperty.HTTP_ERROR_TYPE;
-import static com.redhat.cloud.notifications.connector.v2.http.ExchangeProperty.HTTP_STATUS_CODE;
+import static com.redhat.cloud.notifications.connector.v2.http.CommonHttpConstants.HTTP_ERROR_TYPE;
+import static com.redhat.cloud.notifications.connector.v2.http.CommonHttpConstants.HTTP_STATUS_CODE;
 import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTTP_3XX;
 import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTTP_4XX;
 import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTTP_5XX;

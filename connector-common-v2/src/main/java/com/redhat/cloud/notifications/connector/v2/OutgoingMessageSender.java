@@ -6,8 +6,8 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.OUTCOME;
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.SUCCESSFUL;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.OUTCOME;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.SUCCESSFUL;
 
 @ApplicationScoped
 public class OutgoingMessageSender {
