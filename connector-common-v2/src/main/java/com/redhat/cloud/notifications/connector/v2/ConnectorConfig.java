@@ -25,7 +25,6 @@ public class ConnectorConfig {
 
     public static final int BASE_CONFIG_PRIORITY = 0;
 
-    private static final String ENDPOINT_CACHE_MAX_SIZE = "notifications.connector.endpoint-cache-max-size";
     private static final String NAME = "notifications.connector.name";
     private static final String SUPPORTED_CONNECTOR_HEADERS = "notifications.connector.supported-connector-headers";
     private static final String UNLEASH = "notifications.unleash.enabled";
@@ -49,9 +48,6 @@ public class ConnectorConfig {
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     protected boolean unleashEnabled;
-
-    @ConfigProperty(name = ENDPOINT_CACHE_MAX_SIZE, defaultValue = "100")
-    int endpointCacheMaxSize;
 
     @ConfigProperty(name = NAME)
     String connectorName;
@@ -79,16 +75,11 @@ public class ConnectorConfig {
 
     protected Map<String, Object> getLoggedConfiguration() {
         Map<String, Object> config = new TreeMap<>();
-        config.put(ENDPOINT_CACHE_MAX_SIZE, endpointCacheMaxSize);
         config.put(NAME, connectorName);
         config.put(SUPPORTED_CONNECTOR_HEADERS, supportedConnectorHeaders);
         config.put(UNLEASH, unleashEnabled);
         config.put(sourcesOidcAuthToggle, isSourcesOidcAuthEnabled(null));
         return config;
-    }
-
-    public int getEndpointCacheMaxSize() {
-        return endpointCacheMaxSize;
     }
 
     public String getConnectorName() {

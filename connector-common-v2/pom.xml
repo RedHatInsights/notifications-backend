@@ -43,10 +43,7 @@
 
     </profiles>
 
-
     <dependencies>
-
-        <!-- Scope: compile -->
 
         <!-- notifications modules -->
         <dependency>

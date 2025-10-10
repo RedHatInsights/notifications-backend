@@ -43,11 +43,7 @@
 
     </profiles>
 
-
     <dependencies>
-
-        <!-- Scope: compile -->
-
         <!-- notifications modules -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>

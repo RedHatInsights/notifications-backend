@@ -53,7 +53,6 @@ public abstract class BaseConnectorIntegrationTest {
     @Inject
     protected MicrometerAssertionHelper micrometerAssertionHelper;
 
-
     @Inject
     @Any
     protected InMemoryConnector inMemoryConnector;
