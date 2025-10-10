@@ -5,8 +5,8 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.ORG_ID;
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.TARGET_URL;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.ORG_ID;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.TARGET_URL;
 
 /**
  * Extend this class in an {@link ApplicationScoped} bean from a connector Maven module to change the
@@ -18,9 +18,6 @@ import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.TARGE
 public class ExceptionProcessor {
 
     private static final String DEFAULT_LOG_MSG = "Message sending failed: [orgId=%s, historyId=%s, targetUrl=%s]";
-
-    @Inject
-    ConnectorConfig connectorConfig;
 
     @Inject
     OutgoingMessageSender outgoingMessageSender;

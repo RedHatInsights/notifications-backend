@@ -7,13 +7,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import java.time.LocalDateTime;
 
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.ENDPOINT_ID;
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.ORG_ID;
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.OUTCOME;
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.RETURN_SOURCE;
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.START_TIME;
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.SUCCESSFUL;
-import static com.redhat.cloud.notifications.connector.v2.ExchangeProperty.TARGET_URL;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.ENDPOINT_ID;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.ORG_ID;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.OUTCOME;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.RETURN_SOURCE;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.START_TIME;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.SUCCESSFUL;
+import static com.redhat.cloud.notifications.connector.v2.CommonConstants.TARGET_URL;
 import static java.time.ZoneOffset.UTC;
 
 @DefaultBean
