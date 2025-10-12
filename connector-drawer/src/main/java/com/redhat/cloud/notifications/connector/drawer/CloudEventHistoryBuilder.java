@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonObject;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
+import org.eclipse.microprofile.reactive.messaging.Message;
 
 import static com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty.ADDITIONAL_ERROR_DETAILS;
 import static com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty.RESOLVED_RECIPIENT_LIST;
@@ -18,22 +19,23 @@ public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
     public static final String TOTAL_RECIPIENTS_KEY = "total_recipients";
 
     @Override
-    public JsonObject build(MessageContext context) throws Exception {
-        JsonObject cloudEvent = super.build(context);
+    public Message<String> build(MessageContext context) throws Exception {
+        Message<String> cloudEventMessage = super.build(context);
         Integer totalRecipients = context.getProperty(TOTAL_RECIPIENTS_KEY, Integer.class);
         if (totalRecipients == null) {
             totalRecipients = 0;
         }
 
-        JsonObject data = new JsonObject(cloudEvent.getString("data"));
+        // Extract the current payload and add drawer-specific information
+        JsonObject data = new JsonObject(cloudEventMessage.getPayload());
         data.getJsonObject("details").put(RESOLVED_RECIPIENT_LIST, context.getProperty(RESOLVED_RECIPIENT_LIST));
         data.getJsonObject("details").put(TOTAL_RECIPIENTS_KEY, totalRecipients);
         if (context.getProperties().containsKey(ADDITIONAL_ERROR_DETAILS)) {
             data.getJsonObject("details").put(ADDITIONAL_ERROR_DETAILS, getErrorDetail(context));
         }
 
-        cloudEvent.put("data", data.encode());
-        return cloudEvent;
+        // Create a new message with the updated payload, preserving the CloudEvent metadata
+        return cloudEventMessage.withPayload(data.encode());
     }
 
     private Object getErrorDetail(final MessageContext context) {

@@ -45,13 +45,6 @@
                     <type>test-jar</type>
                     <scope>test</scope>
                 </dependency>
-                <dependency>
-                    <groupId>com.redhat.cloud.notifications</groupId>
-                    <artifactId>notifications-connector-common-http</artifactId>
-                    <version>${project.version}</version>
-                    <type>test-jar</type>
-                    <scope>test</scope>
-                </dependency>
             </dependencies>
         </profile>
 
