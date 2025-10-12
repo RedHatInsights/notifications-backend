@@ -94,7 +94,6 @@
         <!-- Scope: test -->
         <!-- Some test dependencies are declared in the "profiles" section of this POM. -->
 
-
         <!-- MockServer -->
         <dependency>
             <groupId>org.mock-server</groupId>

@@ -1,19 +1,16 @@
 package com.redhat.cloud.notifications.connector.v2;
 
-import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
+import org.eclipse.microprofile.reactive.messaging.Message;
 
 import static com.redhat.cloud.notifications.connector.v2.CommonConstants.OUTCOME;
 import static com.redhat.cloud.notifications.connector.v2.CommonConstants.SUCCESSFUL;
 
 @ApplicationScoped
 public class OutgoingMessageSender {
-
-    @Inject
-    ConnectorConfig connectorConfig;
 
     @Inject
     OutgoingCloudEventBuilder outgoingCloudEventBuilder;
@@ -36,8 +33,8 @@ public class OutgoingMessageSender {
 
     private void sendResponse(MessageContext context) {
         try {
-            JsonObject cloudEvent = outgoingCloudEventBuilder.build(context);
-            emitter.send(cloudEvent.encode());
+            Message<String> cloudEventMessage = outgoingCloudEventBuilder.build(context);
+            emitter.send(cloudEventMessage);
         } catch (Exception e) {
             throw new RuntimeException("Failed to send response to engine", e);
         }
