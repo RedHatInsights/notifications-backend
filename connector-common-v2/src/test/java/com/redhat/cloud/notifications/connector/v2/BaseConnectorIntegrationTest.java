@@ -28,9 +28,6 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
 import static com.redhat.cloud.notifications.connector.v2.IncomingCloudEventFilter.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
-import static com.redhat.cloud.notifications.connector.v2.IncomingCloudEventProcessor.CLOUD_EVENT_DATA;
-import static com.redhat.cloud.notifications.connector.v2.IncomingCloudEventProcessor.CLOUD_EVENT_ID;
-import static com.redhat.cloud.notifications.connector.v2.IncomingCloudEventProcessor.CLOUD_EVENT_TYPE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -98,17 +95,6 @@ public abstract class BaseConnectorIntegrationTest {
     protected String sendCloudEventMessage(JsonObject payload) {
         String cloudEventId = UUID.randomUUID().toString();
 
-        JsonObject cloudEvent = new JsonObject();
-        cloudEvent.put(CLOUD_EVENT_ID, cloudEventId);
-        cloudEvent.put(CLOUD_EVENT_TYPE, "com.redhat.console.notification.toCamel." + connectorConfig.getConnectorName());
-        cloudEvent.put(CLOUD_EVENT_DATA, payload);
-
-        OutgoingCloudEventMetadata<String> outgoingCloudEventMetadata = OutgoingCloudEventMetadata.<String>builder()
-            .withId(cloudEventId)
-            .withType("com.redhat.console.notification.toCamel." + connectorConfig.getConnectorName())
-            .withDataContentType("application/json")
-            .build();
-
         IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = buildIncomingCloudEvent(cloudEventId, "com.redhat.console.notification.toCamel." + connectorConfig.getConnectorName(), payload);
 
         Headers headers = new RecordHeaders()
@@ -149,27 +135,30 @@ public abstract class BaseConnectorIntegrationTest {
     }
 
     /**
-     * Waits for and returns the response message from the outgoing channel
+     * Waits for and returns the response message payload from the outgoing channel
      */
-    protected JsonObject waitForOutgoingMessage() {
-        Awaitility.await().until(() -> outgoingMessageSink.received().size() > 0);
-        String messagePayload = outgoingMessageSink.received().get(0).getPayload();
-        return new JsonObject(messagePayload);
+    protected JsonObject waitForOutgoingMessage(String expectedCloudEventId) {
+        Awaitility.await().until(() -> !outgoingMessageSink.received().isEmpty());
+        Message<String> message = outgoingMessageSink.received().getFirst();
+
+        OutgoingCloudEventMetadata<?> outgoingMessage = message.getMetadata(OutgoingCloudEventMetadata.class)
+            .orElseThrow(() -> new IllegalArgumentException("Expected a Cloud Event"));
+
+        assertEquals("com.redhat.console.notifications.history", outgoingMessage.getType());
+        assertEquals("1.0", outgoingMessage.getSpecVersion());
+        assertEquals(expectedCloudEventId, outgoingMessage.getId());
+        assertNotNull(outgoingMessage.getSource());
+        assertNotNull(outgoingMessage.getTimeStamp());
+
+        return new JsonObject(message.getPayload());
     }
 
     /**
      * Asserts that the outgoing message matches expected patterns
      */
     protected void assertSuccessfulOutgoingMessage(String expectedCloudEventId, String expectedTargetUrl) {
-        JsonObject outgoingMessage = waitForOutgoingMessage();
+        JsonObject data = waitForOutgoingMessage(expectedCloudEventId);
 
-        assertEquals("com.redhat.console.notifications.history", outgoingMessage.getString("type"));
-        assertEquals("1.0", outgoingMessage.getString("specversion"));
-        assertEquals(expectedCloudEventId, outgoingMessage.getString("id"));
-        assertNotNull(outgoingMessage.getString("source"));
-        assertNotNull(outgoingMessage.getString("time"));
-
-        JsonObject data = new JsonObject(outgoingMessage.getString("data"));
         assertEquals(true, data.getBoolean("successful"));
         assertNotNull(data.getString("duration"));
 
@@ -184,12 +173,8 @@ public abstract class BaseConnectorIntegrationTest {
      * Asserts that the outgoing message indicates failure
      */
     protected void assertFailedOutgoingMessage(String expectedCloudEventId, String... expectedErrorSubstrings) {
-        JsonObject outgoingMessage = waitForOutgoingMessage();
+        JsonObject data = waitForOutgoingMessage(expectedCloudEventId);
 
-        assertEquals("com.redhat.console.notifications.history", outgoingMessage.getString("type"));
-        assertEquals(expectedCloudEventId, outgoingMessage.getString("id"));
-
-        JsonObject data = new JsonObject(outgoingMessage.getString("data"));
         assertEquals(false, data.getBoolean("successful"));
 
         String outcome = data.getJsonObject("details").getString("outcome");
@@ -251,7 +236,7 @@ public abstract class BaseConnectorIntegrationTest {
     }
 
     public static IncomingCloudEventMetadata<JsonObject> buildIncomingCloudEvent(String cloudEventId, String cloudEventType, JsonObject cloudEventData) {
-        return new DefaultIncomingCloudEventMetadata(
+        return new DefaultIncomingCloudEventMetadata<JsonObject>(
             "1.0.0",
             cloudEventId,
             URI.create("notification"),
