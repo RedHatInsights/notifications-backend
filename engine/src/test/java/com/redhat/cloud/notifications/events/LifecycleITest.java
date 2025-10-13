@@ -116,7 +116,6 @@ public class LifecycleITest {
         final String username = "user";
 
         when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
-        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(true);
 
         // First, we need a bundle, an app and an event type. Let's create them!
         Bundle bundle = resourceHelpers.findOrCreateBundle(bundleName);
