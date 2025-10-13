@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -9,7 +8,6 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
-import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import jakarta.persistence.NoResultException;
 import org.junit.jupiter.api.AfterEach;
@@ -26,9 +24,6 @@ public abstract class IntegrationTemplatesInDbHelper {
 
     @Inject
     protected ResourceHelpers resourceHelpers;
-
-    @InjectSpy
-    protected TemplateRepository templateRepository;
 
     protected final Map<String, UUID> eventTypes = new HashMap<>();
 

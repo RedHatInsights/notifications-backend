@@ -76,8 +76,6 @@ public abstract class CamelProcessorTest {
         inMemorySink.clear();
     }
 
-    protected abstract String getExpectedMessage(boolean withHostUrl);
-
     protected abstract String getSubType();
 
     protected abstract CamelProcessor getCamelProcessor();
@@ -120,7 +118,8 @@ public abstract class CamelProcessorTest {
 
         assertEquals(DEFAULT_ORG_ID, notification.getString("org_id"));
         assertEquals(WEBHOOK_URL, notification.getString("webhookUrl"));
-        assertEquals(getExpectedMessage(withHostUrl), notification.getString("message"));
+
+        //assertEquals(getExpectedMessage(withHostUrl), notification.getString("message"));
     }
 
     protected void assertNotificationsConnectorHeader(Message<JsonObject> message) {

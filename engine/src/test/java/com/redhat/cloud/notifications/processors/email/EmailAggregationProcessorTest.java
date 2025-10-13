@@ -3,16 +3,13 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.PatchTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
-import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
-import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -20,14 +17,10 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
-import com.redhat.cloud.notifications.qute.templates.IntegrationType;
-import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
-import com.redhat.cloud.notifications.qute.templates.TemplateNotFoundException;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
-import com.redhat.cloud.notifications.templates.EmailTemplateMigrationService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -41,11 +34,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -53,7 +43,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
@@ -64,16 +53,13 @@ import static com.redhat.cloud.notifications.processors.email.EmailAggregationPr
 import static com.redhat.cloud.notifications.processors.email.EmailAggregationProcessor.AGGREGATION_CONSUMED_TIMER_NAME;
 import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -105,15 +91,6 @@ class EmailAggregationProcessorTest {
     @Inject
     ResourceHelpers resourceHelpers;
 
-    @Inject
-    EmailTemplateMigrationService emailTemplateMigrationService;
-
-    @InjectSpy
-    TemplateRepository templateRepository;
-
-    @InjectSpy
-    EngineConfig engineConfig;
-
     @InjectSpy
     TemplateService templateService;
 
@@ -140,7 +117,6 @@ class EmailAggregationProcessorTest {
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AGGREGATION_COMMAND_REJECTED_COUNTER_NAME, AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, AGGREGATION_COMMAND_ERROR_COUNTER_NAME);
         createAggregatorEventTypeIfNeeded();
         mockUsers(user1, user2, user3);
-        when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
         resourceHelpers.clearEvents();
         resourceHelpers.deleteBundle("rhel");
         resourceHelpers.createBundle("rhel", "Red Hat Enterprise Linux");
@@ -160,10 +136,8 @@ class EmailAggregationProcessorTest {
         return new EventAggregationCriterion(orgId, app.getBundleId(), app.getId(), bundleName, appName);
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients(final boolean useCommonTemplateModuleToRenderEmails) {
-        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
+    @Test
+    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients() {
 
         resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
 
@@ -201,19 +175,15 @@ class EmailAggregationProcessorTest {
 
         capturedPayloads.stream().forEach(capturedPayload -> {
             EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
-            assertEquals("Daily digest - Red Hat Enterprise Linux", capturedEmailRequest.emailSubject());
-            assertTrue(capturedEmailRequest.emailBody().contains("(Org ID: " + ORG_ID_1 + ")"));
-            assertTrue(capturedEmailRequest.emailBody().contains("Daily digest - Red Hat Enterprise Linux"));
-            assertTrue(capturedEmailRequest.emailBody().contains("Jump to details"));
+            Map<String, Object> map = capturedEmailRequest.eventData();
+            assertEquals("rhel", map.get("bundle_name"));
         });
 
         resourceHelpers.deleteBundle("bundle-2");
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipientsWithTwoApps(final boolean useCommonTemplateModuleToRenderEmails) {
-        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
+    @Test
+    void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipientsWithTwoApps() {
         try {
             initData("patch", "new-advisory");
 
@@ -252,17 +222,18 @@ class EmailAggregationProcessorTest {
 
             capturedPayloads.stream().forEach(capturedPayload -> {
                 EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
-                assertEquals("Daily digest - Red Hat Enterprise Linux", capturedEmailRequest.emailSubject());
-                assertTrue(capturedEmailRequest.emailBody().contains("Daily digest - Red Hat Enterprise Linux"));
-                assertTrue(capturedEmailRequest.emailBody().contains("(Org ID: " + DEFAULT_ORG_ID + ")"));
-                assertTrue(capturedEmailRequest.emailBody().contains("Jump to details"));
-                assertTrue(capturedEmailRequest.emailBody().contains("id=\"policies-section1\""));
+                Map<String, Object> map = capturedEmailRequest.eventData();
+                assertEquals("rhel", map.get("bundle_name"));
+                List<Map<String, Object>> listApplications = (ArrayList) map.get("application_aggregated_data_list");
+                assertTrue(listApplications.stream().anyMatch(application -> "policies".equals(application.get("app_name"))));
             });
 
             long nbEmailWithPoliciesAndPatchApps = capturedPayloads.stream().filter(capturedPayload -> {
                 EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
-                return capturedEmailRequest.emailBody().contains("id=\"policies-section1\"")
-                    && capturedEmailRequest.emailBody().contains("id=\"patch-section1\"");
+                Map<String, Object> map = capturedEmailRequest.eventData();
+                List<Map<String, Object>> listApplications = (ArrayList) map.get("application_aggregated_data_list");
+                return listApplications.stream().anyMatch(application -> "policies".equals(application.get("app_name")))
+                    && listApplications.stream().anyMatch(application -> "patch".equals(application.get("app_name")));
             }).count();
             assertEquals(1, nbEmailWithPoliciesAndPatchApps);
 
@@ -272,10 +243,8 @@ class EmailAggregationProcessorTest {
         }
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void shouldSuccessfullySendOneAggEmailWithOneAppHandlingAggregationError(final boolean useCommonTemplateModuleToRenderEmails) {
-        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
+    @Test
+    void shouldSuccessfullySendOneAggEmailWithOneAppHandlingAggregationError() {
         try {
             initData("patch", "new-advisory");
 
@@ -309,8 +278,11 @@ class EmailAggregationProcessorTest {
 
             long nbEmailWithPoliciesAndPatchApps = capturedPayloads.stream().filter(capturedPayload -> {
                 EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
-                return !capturedEmailRequest.emailBody().contains("id=\"policies-section1\"")
-                    && capturedEmailRequest.emailBody().contains("id=\"patch-section1\"");
+
+                Map<String, Object> map = capturedEmailRequest.eventData();
+                List<Map<String, Object>> listApplications = (ArrayList) map.get("application_aggregated_data_list");
+                return listApplications.stream().noneMatch(application -> "policies".equals(application.get("app_name")))
+                    && listApplications.stream().anyMatch(application -> "patch".equals(application.get("app_name")));
             }).count();
             assertEquals(1, nbEmailWithPoliciesAndPatchApps);
 
@@ -320,90 +292,8 @@ class EmailAggregationProcessorTest {
         }
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void shouldSuccessfullySendOneAggEmailWithOneAppHandlingTemplateError(final boolean useCommonTemplateModuleToRenderEmails) {
-        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
-        try {
-            when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
-
-            when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY)))
-                .thenAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        Object[] args = invocation.getArguments();
-                        // Process or modify the arguments as needed
-                        String application = (String) args[1];
-
-                        // Call the real method with the modified arguments
-                        Optional<AggregationEmailTemplate> optTemplate = (Optional<AggregationEmailTemplate>) invocation.callRealMethod();
-                        if ("patch".equals(application)) {
-                            optTemplate.get().getBodyTemplate().setData("{errorTemplate}");
-                        }
-
-                        // Perform any additional processing if necessary
-                        return optTemplate;
-                    }
-                });
-
-            final TemplateDefinition patchTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, "rhel", "patch", null);
-            doThrow(new TemplateNotFoundException(patchTemplateDefinition))
-                .when(templateService).renderTemplateWithCustomDataMap(eq(patchTemplateDefinition), anyMap());
-
-            initData("patch", "new-advisory");
-
-            // Because this test will use a real Payload Aggregator
-            EventAggregationCriterion aggregationKey1 = buildEmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
-            EventAggregationCriterion aggregationKey2 = buildEmailAggregationKey(DEFAULT_ORG_ID, "rhel", "patch");
-
-            List<EmailAggregation> eventToAggregate = List.of(
-                TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)),
-                TestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), "user3"),
-                PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_1", "test synopsis", "security", "host-01"),
-                PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_2", "test synopsis", "enhancement", "host-01"),
-                PatchTestHelpers.createEmailAggregation(DEFAULT_ORG_ID, "rhel", "patch", "advisory_3", "test synopsis", "enhancement", "host-02")
-            );
-
-            createAggregationsAndSendAggregationKeysToIngress(eventToAggregate, aggregationKey1, aggregationKey2);
-
-            ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
-            verify(connectorSender, timeout(5000L).times(2)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
-            List<JsonObject> capturedPayloads = argumentCaptor.getAllValues();
-            assertTrue(
-                capturedPayloads.stream().anyMatch(capturedPayload -> {
-                    EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
-                    Collection<String> subscribers = capturedEmailRequest.subscribers();
-                    return subscribers.size() == 2 && subscribers.contains(user1.getUsername()) && subscribers.contains(user2.getUsername());
-                })
-            );
-            assertTrue(
-                capturedPayloads.stream().anyMatch(capturedPayload -> {
-                    EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
-                    Collection<String> subscribers = capturedEmailRequest.subscribers();
-                    return subscribers.size() == 1 && subscribers.contains(user3.getUsername());
-                })
-            );
-
-            capturedPayloads.stream().forEach(capturedPayload -> {
-                EmailNotification capturedEmailRequest = capturedPayload.mapTo(EmailNotification.class);
-                assertEquals("Daily digest - Red Hat Enterprise Linux", capturedEmailRequest.emailSubject());
-                assertTrue(capturedEmailRequest.emailBody().contains("Daily digest - Red Hat Enterprise Linux"));
-                assertTrue(capturedEmailRequest.emailBody().contains("Jump to details"));
-                assertTrue(capturedEmailRequest.emailBody().contains("id=\"policies-section1\""));
-                assertFalse(capturedEmailRequest.emailBody().contains("id=\"patch-section1\""));
-            });
-
-            micrometerAssertionHelper.clearSavedValues();
-        } finally {
-            resourceHelpers.deleteApp("rhel", "patch");
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void shouldNotSendAggEmailBecauseNoAppSucceedToRender(final boolean useCommonTemplateModuleToRenderEmails) {
-        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
-        when(templateRepository.findAggregationEmailTemplate(anyString(), anyString(), eq(DAILY))).thenCallRealMethod();
+    @Test
+    void shouldNotSendAggEmailBecauseNoAppSucceedToRender() {
 
         // Because this test will use a real Payload Aggregator
         EventAggregationCriterion aggregationKey1 = buildEmailAggregationKey(DEFAULT_ORG_ID, "rhel", "policies");
@@ -420,10 +310,8 @@ class EmailAggregationProcessorTest {
         verifyNoInteractions(connectorSender);
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void shouldNotSendAggregatedEmailBecausePatchAggIsEmpty(final boolean useCommonTemplateModuleToRenderEmails) {
-        when(engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonTemplateModuleToRenderEmails);
+    @Test
+    void shouldNotSendAggregatedEmailBecausePatchAggIsEmpty() {
 
         try {
             initData("patch", "new-advisory");
@@ -514,9 +402,6 @@ class EmailAggregationProcessorTest {
 
         Application application = resourceHelpers.findOrCreateApplication("rhel", app);
         resourceHelpers.findOrCreateEventType(application.getId(), eventTypeToCreate);
-
-        emailTemplateMigrationService.deleteAllTemplates();
-        emailTemplateMigrationService.migrate();
     }
 
     private void validateCommonAssertions(EventAggregationCriterion... aggregationKeys) {

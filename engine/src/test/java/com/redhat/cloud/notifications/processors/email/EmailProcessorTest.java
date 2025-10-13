@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.processors.email;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
-import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -15,14 +14,11 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeKeyBundleAppEventTriplet;
-import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
-import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
-import com.redhat.cloud.notifications.templates.TemplateService;
-import io.quarkus.qute.TemplateInstance;
+import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -30,10 +26,7 @@ import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
@@ -45,8 +38,6 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.TestHelpers.createPoliciesAction;
 import static java.util.stream.Collectors.toSet;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 
 @QuarkusTest
@@ -67,13 +58,7 @@ public class EmailProcessorTest {
     EndpointRepository endpointRepository;
 
     @InjectSpy
-    TemplateRepository templateRepository;
-
-    @InjectSpy
-    TemplateService templateService;
-
-    @InjectSpy
-    com.redhat.cloud.notifications.qute.templates.TemplateService quteTemplateService;
+    TemplateService quteTemplateService;
 
     @InjectSpy
     EngineConfig engineConfig;
@@ -165,23 +150,6 @@ public class EmailProcessorTest {
     }
 
     /**
-     * The common elements to all tests that need to be taken care of. In this
-     * particular case:
-     *
-     * <ul>
-     *     <li>The {@link TemplateRepository#isEmailAggregationSupported(UUID)}
-     *     always returns {code false}, because we do not want to hit the
-     *     database, and the goal of this tests class is not to test that class'
-     *     function.
-     *     </li>
-     * </ul>
-     */
-    @BeforeEach
-    void beforeEachTest() {
-        Mockito.when(this.templateRepository.isEmailAggregationSupported(any(UUID.class))).thenReturn(false);
-    }
-
-    /**
      * Tests that the function under test is able to extract the recipient
      * settings from the stubbed event and endpoints' list.
      */
@@ -240,16 +208,11 @@ public class EmailProcessorTest {
         final Event event = this.setUpStubEvent();
         final List<Endpoint> endpoints = this.setUpStubEndpoints();
 
-        // Simulate that there is no email template available for the event.
-        Mockito.when(this.templateRepository.findInstantEmailTemplate(event.getEventType().getId())).thenReturn(Optional.empty());
-
         // Call the processor under test.
         this.emailProcessor.process(event, endpoints);
 
         // Verify that the processor returned without calling any further
         // dependencies in the code.
-        Mockito.verify(this.templateService, Mockito.times(0)).compileTemplate(Mockito.anyString(), Mockito.anyString());
-        Mockito.verify(this.templateService, Mockito.times(0)).renderTemplate(any(), any(TemplateInstance.class));
         Mockito.verify(this.endpointRepository, Mockito.times(0)).getOrCreateDefaultSystemSubscription(Mockito.anyString(), Mockito.anyString(), eq(EndpointType.EMAIL_SUBSCRIPTION));
         Mockito.verify(this.connectorSender, Mockito.times(0)).send(any(Event.class), any(Endpoint.class), any(JsonObject.class));
     }
@@ -286,11 +249,7 @@ public class EmailProcessorTest {
             properties.setIgnorePreferences(false);
         }
 
-        // Return a non-empty instant email template to simulate that there
-        // exists one for the event, in order to keep going with the execution.
-        Mockito.when(this.templateRepository.findInstantEmailTemplate(event.getEventType().getId())).thenReturn(Optional.of(new InstantEmailTemplate()));
-
-        // Do not return any subscribers for this test, so that the other
+                // Do not return any subscribers for this test, so that the other
         // condition to remove the resulting recipient settings from the set
         // in the email processor is met.
         Mockito.when(this.subscriptionRepository.getSubscribers(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT)).thenReturn(List.of());
@@ -300,8 +259,6 @@ public class EmailProcessorTest {
 
         // Verify that the processor returned without calling any further
         // dependencies in the code.
-        Mockito.verify(this.templateService, Mockito.times(0)).compileTemplate(Mockito.anyString(), Mockito.anyString());
-        Mockito.verify(this.templateService, Mockito.times(0)).renderTemplate(any(), any(TemplateInstance.class));
         Mockito.verify(this.endpointRepository, Mockito.times(0)).getOrCreateDefaultSystemSubscription(Mockito.anyString(), Mockito.anyString(), eq(EndpointType.EMAIL_SUBSCRIPTION));
         Mockito.verify(this.connectorSender, Mockito.times(0)).send(any(Event.class), any(Endpoint.class), any(JsonObject.class));
     }
@@ -310,10 +267,8 @@ public class EmailProcessorTest {
      * Tests that when everything goes right, then the connector receives the
      * correct payload.
      */
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testSuccess(final boolean useCommonQuteTemplateModule) {
-        Mockito.when(this.engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()).thenReturn(useCommonQuteTemplateModule);
+    @Test
+    void testSuccess() {
         Mockito.when(this.engineConfig.isDefaultTemplateEnabled()).thenReturn(true);
         Mockito.when(this.quteTemplateService.isDefaultEmailTemplateEnabled()).thenReturn(true);
         quteTemplateService.init();
@@ -321,8 +276,6 @@ public class EmailProcessorTest {
         // Prepare the required stubs.
         final Event event = this.setUpStubEvent();
         final List<Endpoint> endpoints = this.setUpStubEndpoints();
-
-        Mockito.when(this.templateRepository.findInstantEmailTemplate(event.getEventType().getId())).thenCallRealMethod();
 
         // Mock a list of subscribers that simulate the ones that should be
         // notified for the event.
@@ -342,19 +295,6 @@ public class EmailProcessorTest {
         // Call the processor under test.
         this.emailProcessor.process(event, endpoints);
 
-        if (useCommonQuteTemplateModule) {
-            Mockito.verify(this.quteTemplateService, Mockito.times(2)).renderTemplateWithCustomDataMap(any(TemplateDefinition.class), anyMap());
-        } else {
-            Mockito.verify(this.quteTemplateService, Mockito.never()).renderTemplateWithCustomDataMap(any(TemplateDefinition.class), anyMap());
-            // Verify that the compilation functions were called.
-            Mockito.verify(this.templateService, Mockito.times(1)).compileTemplate(anyString(), eq("subject"));
-            Mockito.verify(this.templateService, Mockito.times(1)).compileTemplate(anyString(), eq("body"));
-
-            // Verify that the rendering functions were called.
-            Mockito.verify(this.templateService, Mockito.times(2)).renderTemplate(eq(event.getEventWrapper().getEvent()), any(TemplateInstance.class));
-            Mockito.verify(this.templateService, Mockito.times(2)).renderEmailBodyTemplate(eq(event.getEventWrapper().getEvent()), any(TemplateInstance.class), Mockito.isNull(), Mockito.anyBoolean());
-        }
-
         // Verify that the endpoint repository was called to fetch the result
         // endpoint.
         Mockito.verify(this.endpointRepository, Mockito.times(1)).getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
@@ -369,8 +309,6 @@ public class EmailProcessorTest {
         Assertions.assertEquals(endpoint, capturedEndpoint.getValue(), "the captured endpoint does not match with the stubbed one");
 
         final JsonObject payload = capturedPayload.getValue();
-        final String resultEmailBody = payload.getString("email_body");
-        final String resultEmailSubject = payload.getString("email_subject");
         final String resultOrgId = payload.getString("org_id");
         final String resultEmailSender = payload.getString("email_sender");
         final Set<String> resultSubscribers = payload.getJsonArray("subscribers").stream().map(String.class::cast).collect(toSet());
@@ -389,12 +327,8 @@ public class EmailProcessorTest {
                 );
             }).collect(toSet());
 
-        Assertions.assertTrue(resultEmailBody.contains("<p>You are receiving this email because the email template associated with this event type is not configured properly.</p>"), "the rendered email's body from the email notification does not match with expectation");
-        if (useCommonQuteTemplateModule) {
-            Assertions.assertTrue(resultEmailSubject.contains("[MODERATE] Instant notification - Policy triggered - Policies - Red Hat Enterprise Linux"), "the rendered email's subject from the email notification does not match with expectation ");
-        } else {
-            Assertions.assertTrue(resultEmailSubject.contains("rhel/policies/policy-triggered triggered"), "the rendered email's subject from the email notification does not match with expectation ");
-        }
+        Assertions.assertTrue(resultRecipientSettings.stream().anyMatch(RecipientSettings::isIgnoreUserPreferences), "at least one recipient setting should ignore user preferences");
+        Assertions.assertEquals("MODERATE", payload.getJsonObject("event_data").getString("severity"), "the severity does not match with expectation ");
         Assertions.assertEquals(stubbedSender, resultEmailSender, "the rendered email's sender from the email notification does not match the stubbed sender");
         Assertions.assertEquals(event.getOrgId(), resultOrgId, "the organization ID from the email notification does not match the one set in the stubbed event");
         Assertions.assertEquals(Set.copyOf(subscribers), resultSubscribers, "the subscribers set in the email notification do not match the stubbed ones");
