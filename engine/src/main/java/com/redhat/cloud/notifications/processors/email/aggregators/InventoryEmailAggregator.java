@@ -1,11 +1,13 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
 
@@ -42,25 +44,39 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
 
     public static final String INVENTORY_ID_KEY = "inventory_id";
 
+    // Maximum number of systems/errors to keep per category to prevent memory issues
+    public static final int MAXIMUM_SYSTEMS_PER_CATEGORY = 500;
+    public static final int MAXIMUM_ERRORS = 500;
+
+    private final JsonArray deletedSystems = new JsonArray();
+    private final JsonArray errors = new JsonArray();
+    private final JsonArray newSystems = new JsonArray();
+    private final JsonArray staleSystems = new JsonArray();
+
+    private boolean errorsLimitWarned = false;
+    private boolean newSystemsLimitWarned = false;
+    private boolean staleSystemsLimitWarned = false;
+    private boolean deletedSystemsLimitWarned = false;
+
     public InventoryEmailAggregator() {
-        JsonObject inventory = new JsonObject();
-
-        inventory.put(DELETED_SYSTEMS, new JsonArray());
-        inventory.put(ERRORS, new JsonArray());
-        inventory.put(NEW_SYSTEMS, new JsonArray());
-        inventory.put(STALE_SYSTEMS, new JsonArray());
-
-        context.put(INVENTORY_KEY, inventory);
     }
 
     @Override
     void processEmailAggregation(EmailAggregation notification) {
-        JsonObject inventory = context.getJsonObject(INVENTORY_KEY);
         JsonObject notificationJson = notification.getPayload();
         String eventType = notificationJson.getString(EVENT_TYPE);
 
         if (VALIDATION_ERROR.equals(eventType)) {
             notificationJson.getJsonArray(EVENTS_KEY).stream().forEach(eventObject -> {
+                if (errors.size() >= MAXIMUM_ERRORS) {
+                    if (!errorsLimitWarned) {
+                        Log.warnf("Validation errors limit reached (%d) for org_id=%s, additional errors will be dropped",
+                                  MAXIMUM_ERRORS, getOrgId());
+                        errorsLimitWarned = true;
+                    }
+                    return;
+                }
+
                 JsonObject event = (JsonObject) eventObject;
                 JsonObject payload = event.getJsonObject(PAYLOAD_KEY);
                 JsonObject receivedErrorObject = payload.getJsonObject(ERROR_KEY);
@@ -72,25 +88,61 @@ public class InventoryEmailAggregator extends AbstractEmailPayloadAggregator {
                 error.put("message", errorMessage);
                 error.put("display_name", displayName);
 
-                inventory.getJsonArray(ERRORS).add(error);
+                errors.add(error);
             });
         } else if (NEW_EVENT_TYPES.contains(eventType)) {
             final JsonArray systemsList;
+            final String categoryName;
+            boolean limitWarned;
+
             if (EVENT_TYPE_NEW_SYSTEM_REGISTERED.equals(eventType)) {
-                systemsList = inventory.getJsonArray(NEW_SYSTEMS);
+                systemsList = newSystems;
+                categoryName = "new systems";
+                limitWarned = newSystemsLimitWarned;
             } else if (EVENT_TYPE_SYSTEM_BECAME_STALE.equals(eventType)) {
-                systemsList = inventory.getJsonArray(STALE_SYSTEMS);
+                systemsList = staleSystems;
+                categoryName = "stale systems";
+                limitWarned = staleSystemsLimitWarned;
             } else {
-                systemsList = inventory.getJsonArray(DELETED_SYSTEMS);
+                systemsList = deletedSystems;
+                categoryName = "deleted systems";
+                limitWarned = deletedSystemsLimitWarned;
             }
 
-            final JsonObject context = notificationJson.getJsonObject(CONTEXT_KEY);
+            // Check size limit before adding
+            if (systemsList.size() < MAXIMUM_SYSTEMS_PER_CATEGORY) {
+                final JsonObject notifContext = notificationJson.getJsonObject(CONTEXT_KEY);
 
-            final JsonObject system = new JsonObject();
-            system.put(INVENTORY_ID_KEY, context.getString(INVENTORY_ID_KEY));
-            system.put(DISPLAY_NAME_KEY, context.getString(DISPLAY_NAME_KEY));
+                final JsonObject system = new JsonObject();
+                system.put(INVENTORY_ID_KEY, notifContext.getString(INVENTORY_ID_KEY));
+                system.put(DISPLAY_NAME_KEY, notifContext.getString(DISPLAY_NAME_KEY));
 
-            systemsList.add(system);
+                systemsList.add(system);
+            } else if (!limitWarned) {
+                Log.warnf("%s limit reached (%d) for org_id=%s, additional systems will be dropped",
+                          categoryName, MAXIMUM_SYSTEMS_PER_CATEGORY, getOrgId());
+                if (EVENT_TYPE_NEW_SYSTEM_REGISTERED.equals(eventType)) {
+                    newSystemsLimitWarned = true;
+                } else if (EVENT_TYPE_SYSTEM_BECAME_STALE.equals(eventType)) {
+                    staleSystemsLimitWarned = true;
+                } else {
+                    deletedSystemsLimitWarned = true;
+                }
+            }
         }
+    }
+
+    @Override
+    public Map<String, Object> getContext() {
+        // Populate the context with the final aggregated data
+        JsonObject inventory = new JsonObject();
+        inventory.put(DELETED_SYSTEMS, deletedSystems);
+        inventory.put(ERRORS, errors);
+        inventory.put(NEW_SYSTEMS, newSystems);
+        inventory.put(STALE_SYSTEMS, staleSystems);
+
+        context.put(INVENTORY_KEY, inventory);
+
+        return super.getContext();
     }
 }

@@ -128,19 +128,11 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
     private Map<String, Map<String, Object>> resolvedRecommendations = new LinkedHashMap<>();
     private Map<String, Map<String, Object>> deactivatedRecommendations = new LinkedHashMap<>();
 
-    // The updatable JSON object that is set in the context.
-    private final JsonObject advisorJson;
-
     private final AtomicInteger incidentCounter = new AtomicInteger(0);
 
     private final AtomicInteger recommendationCounter = new AtomicInteger(0);
 
     public AdvisorEmailAggregator() {
-        this.advisorJson = new JsonObject();
-        this.advisorJson.put(TOTAL_INCIDENT, incidentCounter);
-        this.advisorJson.put(TOTAL_RECOMMENDATION, recommendationCounter);
-
-        context.put(ADVISOR_KEY, this.advisorJson);
     }
 
     @Override
@@ -187,9 +179,8 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
                         CONTENT_SYSTEM_COUNT, (Integer) ruleData.get(CONTENT_SYSTEM_COUNT) + 1
                     );
 
-                    // Sort the map and then update it in the JSON object.
+                    // Sort and limit the map after processing
                     this.newRecommendations = this.sortAndLimitMapByRisk(this.newRecommendations);
-                    this.advisorJson.put(NEW_RECOMMENDATIONS, newRecommendations);
 
                     break;
                 case RESOLVED_RECOMMENDATION:
@@ -209,9 +200,8 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
                         CONTENT_SYSTEM_COUNT, (Integer) ruleData.get(CONTENT_SYSTEM_COUNT) + 1
                     );
 
-                    // Sort the map and then update it in the JSON object.
+                    // Sort and limit the map after processing
                     this.resolvedRecommendations = this.sortAndLimitMapByRisk(this.resolvedRecommendations);
-                    this.advisorJson.put(RESOLVED_RECOMMENDATIONS, this.resolvedRecommendations);
 
                     break;
                 case DEACTIVATED_RECOMMENDATION:
@@ -227,9 +217,8 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
                         }
                     );
 
-                    // Sort the map and then update it in the JSON object.
+                    // Sort and limit the map after processing
                     this.deactivatedRecommendations = this.sortAndLimitMapByRisk(this.deactivatedRecommendations);
-                    this.advisorJson.put(DEACTIVATED_RECOMMENDATIONS, this.deactivatedRecommendations);
 
                     break;
                 default:
@@ -286,5 +275,20 @@ public class AdvisorEmailAggregator extends AbstractEmailPayloadAggregator {
         }
 
         return resultMap;
+    }
+
+    @Override
+    public Map<String, Object> getContext() {
+        // Populate the context with the final aggregated data
+        JsonObject advisorJson = new JsonObject();
+        advisorJson.put(TOTAL_INCIDENT, incidentCounter);
+        advisorJson.put(TOTAL_RECOMMENDATION, recommendationCounter);
+        advisorJson.put(NEW_RECOMMENDATIONS, newRecommendations);
+        advisorJson.put(RESOLVED_RECOMMENDATIONS, resolvedRecommendations);
+        advisorJson.put(DEACTIVATED_RECOMMENDATIONS, deactivatedRecommendations);
+
+        context.put(ADVISOR_KEY, advisorJson);
+
+        return super.getContext();
     }
 }
