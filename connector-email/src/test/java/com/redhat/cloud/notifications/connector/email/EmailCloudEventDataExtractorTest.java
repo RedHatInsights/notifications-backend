@@ -1,9 +1,11 @@
 package com.redhat.cloud.notifications.connector.email;
 
+import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
 import com.redhat.cloud.notifications.connector.email.engine.InternalEngine;
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
 import com.redhat.cloud.notifications.connector.email.payload.PayloadDetails;
+import com.redhat.cloud.notifications.qute.templates.mapping.Rhel;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
@@ -14,7 +16,9 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -98,6 +102,7 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         payload.put("email_subject", emailSubject);
         payload.put("email_sender", emailSender);
         payload.put("subscribed_by_default", true);
+        payload.put("event_data", generateDefaultPatchEventData());
 
         final Exchange exchange = createExchangeWithBody(context, "");
 
@@ -107,8 +112,8 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         this.emailCloudEventDataExtractor.extract(exchange, new JsonObject(payload.encode()));
 
         // Assert that the extracted data is correct.
-        assertEquals(emailBody, exchange.getProperty(RENDERED_BODY, String.class));
-        assertEquals(emailSubject, exchange.getProperty(RENDERED_SUBJECT, String.class));
+        assertTrue(exchange.getProperty(RENDERED_BODY, String.class).startsWith("<!DOCTYPE html PUBLIC"));
+        assertTrue(exchange.getProperty(RENDERED_SUBJECT, String.class).startsWith("Instant notification"));
         assertIterableEquals(recipientSettingsList, exchange.getProperty(RECIPIENT_SETTINGS, List.class));
         assertEquals(subscribers, exchange.getProperty(SUBSCRIBERS, Set.class));
         assertEquals(unsubscribers, exchange.getProperty(UNSUBSCRIBERS, Set.class));
@@ -132,7 +137,8 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         JsonObject mockedPayload = JsonObject.of(
             "email_subject", emailSubject,
             "email_body", emailBody,
-            "recipient_settings", new ArrayList<>()
+            "recipient_settings", new ArrayList<>(),
+            "event_data", generateDefaultPatchEventData()
         );
         when(internalEngine.getPayloadDetails(payloadId)).thenReturn(new PayloadDetails(mockedPayload.encode()));
 
@@ -146,7 +152,24 @@ public class EmailCloudEventDataExtractorTest extends CamelQuarkusTestSupport {
         verify(internalEngine, times(1)).getPayloadDetails(payloadId);
 
         assertEquals(payloadId, exchange.getProperty(ExchangeProperty.PAYLOAD_ID, String.class));
-        assertEquals(emailSubject, exchange.getProperty(RENDERED_SUBJECT, String.class));
-        assertEquals(emailBody, exchange.getProperty(RENDERED_BODY, String.class));
+        assertTrue(exchange.getProperty(RENDERED_BODY, String.class).startsWith("<!DOCTYPE html PUBLIC"));
+        assertTrue(exchange.getProperty(RENDERED_SUBJECT, String.class).startsWith("Instant notification"));
+    }
+
+    public static Map<String, Object> generateDefaultPatchEventData() {
+        Map<String, Object> source = new HashMap<>();
+        source.put("event_type", Map.of("display_name", Rhel.PATCH_NEW_ADVISORY));
+        source.put("application", Map.of("display_name", Rhel.PATCH_APP_NAME));
+        source.put("bundle", Map.of("display_name", Rhel.BUNDLE_NAME));
+
+        Map<String, Object> eventData = new HashMap<>();
+        eventData.put("bundle", Rhel.BUNDLE_NAME);
+        eventData.put("application", Rhel.PATCH_APP_NAME);
+        eventData.put("event_type", Rhel.PATCH_NEW_ADVISORY);
+        eventData.put("events", new ArrayList<>());
+        eventData.put("environment", Map.of("url", new ArrayList<>()));
+        eventData.put("orgId", TestConstants.DEFAULT_ORG_ID);
+        eventData.put("source", source);
+        return eventData;
     }
 }

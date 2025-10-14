@@ -17,7 +17,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -25,10 +24,6 @@ public class SlackConnectorRoutesTest extends ConnectorRoutesTest {
 
     @InjectSpy
     TemplateService templateService;
-
-    private boolean testWithEventDataMap = false;
-
-    private static final String EXPECTED_MESSAGE = "<https://localhost/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f?from=notifications&integration=teams|my-computer> triggered 1 event from Policies - Red Hat Enterprise Linux. <https://localhost/insights/policies?from=notifications&integration=teams|Open Policies>";
 
     // The randomness of this field helps avoid side-effects between tests.
     private String SLACK_CHANNEL = "#notifications-" + UUID.randomUUID();
@@ -55,12 +50,8 @@ public class SlackConnectorRoutesTest extends ConnectorRoutesTest {
         } else {
             payload.put("channel", null);
         }
+        payload.put("eventData", getDefaultEventDataMap());
 
-        if (testWithEventDataMap) {
-            payload.put("eventData", getDefaultEventDataMap());
-        }
-
-        payload.put("message", EXPECTED_MESSAGE);
         return payload;
     }
 
@@ -68,13 +59,9 @@ public class SlackConnectorRoutesTest extends ConnectorRoutesTest {
     protected Predicate checkOutgoingPayload(JsonObject incomingPayload) {
         return exchange -> {
             JsonObject outgoingPayload = new JsonObject(exchange.getIn().getBody(String.class));
-            if (testWithEventDataMap) {
-                verify(templateService, times(1)).renderTemplate(any(TemplateDefinition.class), anyMap());
-            } else {
-                verifyNoInteractions(templateService);
-            }
+            verify(templateService, times(1)).renderTemplate(any(TemplateDefinition.class), anyMap());
 
-            boolean textMessageMatch = outgoingPayload.getString("text").equals(incomingPayload.getString("message"));
+            boolean textMessageMatch = !outgoingPayload.getString("text").isEmpty();
             if (!testWithoutChannel) {
                 return textMessageMatch && outgoingPayload.getString(ExchangeProperty.CHANNEL).equals(incomingPayload.getString(ExchangeProperty.CHANNEL));
             }
@@ -89,16 +76,6 @@ public class SlackConnectorRoutesTest extends ConnectorRoutesTest {
             testSuccessfulNotification();
         } finally {
             testWithoutChannel = false;
-        }
-    }
-
-    @Test
-    protected void testSuccessfulNotificationWithEventDataMap() throws Exception {
-        try {
-            testWithEventDataMap = true;
-            testSuccessfulNotification();
-        } finally {
-            testWithEventDataMap = false;
         }
     }
 }
