@@ -2,14 +2,30 @@
 {@boolean renderButtonSection1=false}
 {#include Common/insightsEmailBody}
 {#content-title}
-    Subscription Watch - Subscription Services
+    Subscriptions Usage - Subscription Services
 {/content-title}
 {#content-title-section1}
-    Usage Threshold Exceeded
+    <b>{action.events[0].payload.product_tag}</b> subscription threshold exceeded: Organization <b>{action.events[0].payload.org_id}</b>
 {/content-title-section1}
 {#content-body-section1}
+    <p><b>Usage information</b></p>
     <p>
-        Your <b>{action.events[0].payload.product_tag}</b> subscription usage has exceeded <b>{action.events[0].payload.threshold_percentage}%</b> of capacity.
+    The <b>{action.events[0].payload.product_tag}</b> subscription usage for your organization has exceeded your
+subscription threshold. The subscription threshold is the maximum capacity of
+usage for all active subscriptions of that product variant. Your current subscription
+usage is shown as a utilization percentage.
+    </p>
+    <p>Usage metric: <b>{action.events[0].payload.metric}</b></p>
+    <p>Subscription threshold utilization: <b>{action.events[0].payload.usage_percentage}</b></p>
+    <p>
+        Find out more.
+    </p>
+    <p>
+        View your subscription usage data in the Subscriptions Usage service.
+        To learn more about how subscription usage is calculated, see the Getting Started with the
+Subscriptions Usage Service guide.
+        For additional help, contact your Red Hat
+account team.
     </p>
 {/content-body-section1}
 {/include}
