@@ -15,8 +15,21 @@ subscription threshold. The subscription threshold is the maximum capacity of
 usage for all active subscriptions of that product variant. Your current subscription
 usage is shown as a utilization percentage.
     </p>
-    <p>Usage metric: <b>{action.events[0].payload.metric}</b></p>
-    <p>Subscription threshold utilization: <b>{action.events[0].payload.usage_percentage}</b></p>
+    <table class="rh-data-table-bordered">
+        <thead>
+            <tr>
+                <th style="width: 30%">Usage metric</th>
+                <th style="width: 60%">Subscription threshold utilization</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="font-size: 14px;">
+                <td>{action.events[0].payload.metric}</td>
+                <td>{action.events[0].payload.utilization_percentage}</td>
+            </tr>
+        </tbody>
+    </table>
+    <br>
     <p>
         Find out more.
     </p>
