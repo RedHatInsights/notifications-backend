@@ -1,10 +1,6 @@
 package com.redhat.cloud.notifications.routers.internal.userpreferencesmigration;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
@@ -18,13 +14,13 @@ import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.POST;
@@ -45,10 +41,6 @@ import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 @Path(Constants.API_INTERNAL + "/patch")
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 public class PatchUserPreferencesMigrationResource {
-    private static final String JSON_KEY_ORG_ID = "org_id";
-    private static final String JSON_KEY_ACCOUNT_ID = "ebs_account_number";
-    private static final String JSON_KEY_SUBSCRIPTION_PREFERENCES = "subscription";
-    private static final String JSON_KEY_USERNAME = "principal";
     public static final String PATCH_NEW_ADVISORY_EVENT_TYPE = "new-advisory";
 
     @Inject
@@ -78,7 +70,6 @@ public class PatchUserPreferencesMigrationResource {
     @Transactional
     public void migratePatchUserPreferencesJSON(@NotNull @RestForm("jsonFile") InputStream jsonFile) throws IOException {
         Log.info("Start migratePatchUserPreferencesJSON");
-        final byte[] contents = jsonFile.readAllBytes();
 
         // Match the event types to the preference values that we will find
         // in the JSON file.
@@ -96,21 +87,20 @@ public class PatchUserPreferencesMigrationResource {
 
         long totalInsertedElements = 0L;
         long totalInsertedIntegrationElements = 0L;
-        try (JsonParser jsonParser = objectMapper.createParser(contents)) {
-            if (JsonToken.START_ARRAY != jsonParser.nextToken()) {
-                throw new BadRequestException("array of objects expected");
-            }
+        try {
+            // Deserialize JSON array to List<PatchSubscription>
+            List<PatchSubscription> subscriptions = objectMapper.readValue(
+                jsonFile.readAllBytes(),
+                objectMapper.getTypeFactory().constructCollectionType(List.class, PatchSubscription.class)
+            );
 
             final Set<String> alreadyProcessedOrgIds = new HashSet<>();
 
-            while (JsonToken.START_OBJECT == jsonParser.nextToken()) {
-                final ObjectNode node = objectMapper.readTree(jsonParser);
-
-                // Extract the top level elements.
-                final String username = node.get(JSON_KEY_USERNAME).asText().toLowerCase();
-                final String orgId = node.get(JSON_KEY_ORG_ID).asText();
-                final String accountId = node.get(JSON_KEY_ACCOUNT_ID).asText();
-                final JsonNode preferences = node.get(JSON_KEY_SUBSCRIPTION_PREFERENCES);
+            for (PatchSubscription subscription : subscriptions) {
+                final String username = subscription.username().toLowerCase();
+                final String orgId = subscription.orgId();
+                final String accountId = subscription.accountId();
+                final Set<SubscriptionType> preferences = subscription.subscriptionPreferences();
 
                 Log.infof("Processing org: %s, user: %s", orgId, username);
                 // check if user didn't already set preferences in notifications
@@ -119,19 +109,18 @@ public class PatchUserPreferencesMigrationResource {
                 } else {
                     // Extract the user preferences.
                     boolean subscriptionUpdated = false;
-                    if (preferences != null && preferences.isArray()) {
-                        for (final JsonNode preference : preferences) {
-                            final String userPreference = preference.asText();
-                            if (userPreference.equalsIgnoreCase(INSTANT.name())) {
+                    if (preferences != null && !preferences.isEmpty()) {
+                        for (SubscriptionType subscriptionType : preferences) {
+                            if (subscriptionType == INSTANT) {
                                 subscriptionRepository.subscribe(orgId, username, patchNewAdvisoryEventType.get().getId(), INSTANT);
                                 subscriptionUpdated = true;
                                 totalInsertedElements++;
-                            } else if (userPreference.equalsIgnoreCase(DAILY.name())) {
+                            } else if (subscriptionType == DAILY) {
                                 subscriptionRepository.subscribe(orgId, username, patchNewAdvisoryEventType.get().getId(), DAILY);
                                 subscriptionUpdated = true;
                                 totalInsertedElements++;
                             } else {
-                                Log.error("Invalid subscription preference: " + userPreference);
+                                Log.error("Invalid subscription preference: " + subscriptionType);
                             }
                         }
                     }

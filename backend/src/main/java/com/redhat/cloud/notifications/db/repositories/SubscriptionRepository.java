@@ -107,7 +107,7 @@ public class SubscriptionRepository {
         }
     }
 
-    public Map<String /* Org ID */, List<String> /* List of usernames */> getEmailSubscribersByEventType(UUID eventType) {
+    public Map<String /* Org ID */, List<String>/* List of usernames */> getEmailSubscribersByEventType(UUID eventType) {
         String query = "SELECT org_id, string_agg(DISTINCT user_id, ',') FROM email_subscriptions " +
             "WHERE event_type_id = :eventType " +
             "group by org_id";
