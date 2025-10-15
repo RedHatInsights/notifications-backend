@@ -46,9 +46,9 @@ import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 public class PatchUserPreferencesMigrationResource {
     private static final String JSON_KEY_ORG_ID = "org_id";
-    private static final String JSON_KEY_ACCOUNT_ID = "account_id";
-    private static final String JSON_KEY_SUBSCRIPTION_PREFERENCES = "preferences";
-    private static final String JSON_KEY_USERNAME = "user_name";
+    private static final String JSON_KEY_ACCOUNT_ID = "ebs_account_number";
+    private static final String JSON_KEY_SUBSCRIPTION_PREFERENCES = "subscription";
+    private static final String JSON_KEY_USERNAME = "principal";
     public static final String PATCH_NEW_ADVISORY_EVENT_TYPE = "new-advisory";
 
     @Inject
@@ -77,6 +77,7 @@ public class PatchUserPreferencesMigrationResource {
     @POST
     @Transactional
     public void migratePatchUserPreferencesJSON(@NotNull @RestForm("jsonFile") InputStream jsonFile) throws IOException {
+        Log.info("Start migratePatchUserPreferencesJSON");
         final byte[] contents = jsonFile.readAllBytes();
 
         // Match the event types to the preference values that we will find
@@ -106,11 +107,12 @@ public class PatchUserPreferencesMigrationResource {
                 final ObjectNode node = objectMapper.readTree(jsonParser);
 
                 // Extract the top level elements.
-                final String username = node.get(JSON_KEY_USERNAME).asText();
+                final String username = node.get(JSON_KEY_USERNAME).asText().toLowerCase();
                 final String orgId = node.get(JSON_KEY_ORG_ID).asText();
                 final String accountId = node.get(JSON_KEY_ACCOUNT_ID).asText();
                 final JsonNode preferences = node.get(JSON_KEY_SUBSCRIPTION_PREFERENCES);
 
+                Log.infof("Processing org: %s, user: %s", orgId, username);
                 // check if user didn't already set preferences in notifications
                 if (mapSubscribersByOrg.containsKey(orgId) && mapSubscribersByOrg.get(orgId).contains(username)) {
                     Log.infof("User %s from org %s already subscribed to patch, skip", username, orgId);

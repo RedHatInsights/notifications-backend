@@ -1,26 +1,26 @@
 [
   {
-    "user_name": "a",
+    "principal": "a",
     "org_id": "12345",
-    "account_id": "645878",
-    "preferences": ["daily"]
+    "ebs_account_number": "645878",
+    "subscription": ["daily"]
   },
   {
-    "user_name": "b",
+    "principal": "b",
     "org_id": "12345",
-    "account_id": "645878",
-    "preferences": ["instant"]
+    "ebs_account_number": "645878",
+    "subscription": ["instant"]
   },
   {
-    "user_name": "c",
+    "principal": "c",
     "org_id": "12345",
-    "account_id": "645878",
-    "preferences": ["instant", "daily"]
+    "ebs_account_number": "645878",
+    "subscription": ["instant", "daily"]
   },
   {
-    "user_name": "d",
+    "principal": "d",
     "org_id": "12345",
-    "account_id": "645878",
-    "preferences": ["instant"]
+    "ebs_account_number": "645878",
+    "subscription": ["instant"]
   }
 ]
