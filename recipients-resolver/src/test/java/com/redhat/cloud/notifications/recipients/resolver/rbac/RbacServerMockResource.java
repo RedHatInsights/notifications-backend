@@ -1,188 +1,172 @@
 package com.redhat.cloud.notifications.recipients.resolver.rbac;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.MediaType;
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.mockserver.integration.ClientAndServer.startClientAndServer;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
-
 public class RbacServerMockResource implements QuarkusTestResourceLifecycleManager {
 
-    private static final String LOG_LEVEL_KEY = "mockserver.logLevel";
-    private static ClientAndServer clientAndServer;
+    private static MockWebServer mockWebServer;
 
     @Override
     public Map<String, String> start() {
+        mockWebServer = new MockWebServer();
 
-        setMockServerLogLevel();
+        // Set up dispatcher to handle different endpoints
+        mockWebServer.setDispatcher(new Dispatcher() {
+            @Override
+            public MockResponse dispatch(RecordedRequest request) {
+                String path = request.getPath();
+                String authHeader = request.getHeader("Authorization");
+                String expectedAuth = "Bearer " + OidcServerMockResource.TEST_ACCESS_TOKEN;
 
-        clientAndServer = startClientAndServer();
-        String serverUrl = "http://localhost:" + clientAndServer.getPort();
+                // Extract path without query parameters for pattern matching
+                String pathWithoutQuery = path != null && path.contains("?") ? path.substring(0, path.indexOf('?')) : path;
 
-        setupMockExpectations();
+                if (pathWithoutQuery != null && pathWithoutQuery.equals("/api/rbac/v1/principals/")) {
+                    return handleGetUsers(authHeader, expectedAuth);
+                } else if (pathWithoutQuery != null && pathWithoutQuery.matches("/api/rbac/v1/groups/[^/]+/")) {
+                    return handleGetGroup(authHeader, expectedAuth);
+                } else if (pathWithoutQuery != null && pathWithoutQuery.matches("/api/rbac/v1/groups/[^/]+/principals/")) {
+                    return handleGetGroupUsers(authHeader, expectedAuth);
+                }
+
+                return new MockResponse().setResponseCode(404);
+            }
+        });
+
+        try {
+            mockWebServer.start();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to start MockWebServer", e);
+        }
+
+        String serverUrl = mockWebServer.url("").toString().replaceAll("/$", "");
 
         Map<String, String> config = new HashMap<>();
         config.put("quarkus.rest-client.rbac-s2s-oidc.url", serverUrl);
 
-        System.out.println("RBAC server mock started");
+        System.out.println("RBAC server mock started on port " + mockWebServer.getPort());
 
         return config;
     }
 
-    private static void setMockServerLogLevel() {
-        if (System.getProperty(LOG_LEVEL_KEY) == null) {
-            System.setProperty(LOG_LEVEL_KEY, "OFF");
-            System.out.println("MockServer log is disabled. Use '-D" + LOG_LEVEL_KEY + "=WARN|INFO|DEBUG|TRACE' to enable it.");
+    private MockResponse handleGetUsers(String authHeader, String expectedAuth) {
+        if (expectedAuth.equals(authHeader)) {
+            String body = """
+                {
+                  "meta": {
+                    "count": 2,
+                    "limit": 50,
+                    "offset": 0
+                  },
+                  "data": [
+                    {
+                      "username": "test-user-1",
+                      "email": "user1@example.com",
+                      "first_name": "Test",
+                      "last_name": "User1"
+                    },
+                    {
+                      "username": "test-user-2",
+                      "email": "user2@example.com",
+                      "first_name": "Test",
+                      "last_name": "User2"
+                    }
+                  ]
+                }
+                """;
+
+            return new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "application/json")
+                    .setBody(body);
+        } else {
+            return unauthorizedResponse();
         }
     }
 
-    private static void setupMockExpectations() {
+    private MockResponse handleGetGroup(String authHeader, String expectedAuth) {
+        if (expectedAuth.equals(authHeader)) {
+            String body = """
+                {
+                  "name": "test-group",
+                  "description": "Test group for integration testing",
+                  "principalCount": 3,
+                  "roleCount": 2
+                }
+                """;
 
-        // Mock RBAC endpoints - Return 200 for correct Authorization header, 401 otherwise
+            return new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "application/json")
+                    .setBody(body);
+        } else {
+            return unauthorizedResponse();
+        }
+    }
 
-        // Mock RBAC getUsers endpoint - Success case
-        clientAndServer.when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/rbac/v1/principals/")
-                .withHeader("Authorization", "Bearer " + OidcServerMockResource.TEST_ACCESS_TOKEN)
-        ).respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody("""
+    private MockResponse handleGetGroupUsers(String authHeader, String expectedAuth) {
+        if (expectedAuth.equals(authHeader)) {
+            String body = """
+                {
+                  "meta": {
+                    "count": 1,
+                    "limit": 50,
+                    "offset": 0
+                  },
+                  "data": [
                     {
-                      "meta": {
-                        "count": 2,
-                        "limit": 50,
-                        "offset": 0
-                      },
-                      "data": [
-                        {
-                          "username": "test-user-1",
-                          "email": "user1@example.com",
-                          "first_name": "Test",
-                          "last_name": "User1"
-                        },
-                        {
-                          "username": "test-user-2",
-                          "email": "user2@example.com",
-                          "first_name": "Test",
-                          "last_name": "User2"
-                        }
-                      ]
+                      "username": "group-admin",
+                      "email": "admin@example.com",
+                      "first_name": "Group",
+                      "last_name": "Admin"
                     }
-                    """));
+                  ]
+                }
+                """;
 
-        // Mock RBAC getUsers endpoint - Unauthorized case
-        clientAndServer.when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/rbac/v1/principals/")
-        ).respond(
-            response()
-                .withStatusCode(401)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody("""
-                    {
-                      "error": "Unauthorized - missing or invalid Authorization header"
-                    }
-                    """));
+            return new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "application/json")
+                    .setBody(body);
+        } else {
+            return unauthorizedResponse();
+        }
+    }
 
-        // Mock RBAC getGroup endpoint - Success case
-        clientAndServer.when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/rbac/v1/groups/[^/]+/$")
-                .withHeader("Authorization", "Bearer " + OidcServerMockResource.TEST_ACCESS_TOKEN)
-        ).respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody("""
-                    {
-                      "name": "test-group",
-                      "description": "Test group for integration testing",
-                      "principalCount": 3,
-                      "roleCount": 2
-                    }
-                    """));
+    private MockResponse unauthorizedResponse() {
+        String body = """
+            {
+              "error": "Unauthorized - missing or invalid Authorization header"
+            }
+            """;
 
-        // Mock RBAC getGroup endpoint - Unauthorized case
-        clientAndServer.when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/rbac/v1/groups/[^/]+/$")
-        ).respond(
-            response()
-                .withStatusCode(401)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody("""
-                    {
-                      "error": "Unauthorized - missing or invalid Authorization header"
-                    }
-                    """));
-
-        // Mock RBAC getGroupUsers endpoint - Success case
-        clientAndServer.when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/rbac/v1/groups/[^/]+/principals/")
-                .withHeader("Authorization", "Bearer " + OidcServerMockResource.TEST_ACCESS_TOKEN)
-        ).respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody("""
-                    {
-                      "meta": {
-                        "count": 1,
-                        "limit": 50,
-                        "offset": 0
-                      },
-                      "data": [
-                        {
-                          "username": "group-admin",
-                          "email": "admin@example.com",
-                          "first_name": "Group",
-                          "last_name": "Admin"
-                        }
-                      ]
-                    }
-                    """));
-
-        // Mock RBAC getGroupUsers endpoint - Unauthorized case
-        clientAndServer.when(
-            request()
-                .withMethod("GET")
-                .withPath("/api/rbac/v1/groups/[^/]+/principals/")
-        ).respond(
-            response()
-                .withStatusCode(401)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody("""
-                    {
-                      "error": "Unauthorized - missing or invalid Authorization header"
-                    }
-                    """));
-
-        System.out.println("Mock expectations configured successfully for RBAC endpoints");
+        return new MockResponse()
+                .setResponseCode(401)
+                .setHeader("Content-Type", "application/json")
+                .setBody(body);
     }
 
     @Override
     public void stop() {
-        if (clientAndServer != null) {
-            clientAndServer.stop();
-            System.out.println("RBAC server mock stopped");
+        if (mockWebServer != null) {
+            try {
+                mockWebServer.shutdown();
+                System.out.println("RBAC server mock stopped");
+            } catch (IOException e) {
+                System.err.println("Error stopping MockWebServer: " + e.getMessage());
+            }
         }
     }
 
-    public static MockServerClient getMockServerClient() {
-        return clientAndServer;
+    public static MockWebServer getMockWebServer() {
+        return mockWebServer;
     }
 }
