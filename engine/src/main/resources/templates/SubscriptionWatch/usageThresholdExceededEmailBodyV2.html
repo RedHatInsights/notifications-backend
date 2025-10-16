@@ -15,7 +15,9 @@
         Organization: <b>{action.orgId}</b>
     </p>
 
-    <p><b>Usage information</b></p>
+    <h3>
+        Usage information
+    </h3>
 
     <p>
         The subscription usage for your organization has exceeded your subscription threshold. The subscription threshold is the maximum capacity of usage for all active subscriptions of that product variant. Your current subscription usage is shown as a utilization percentage.
@@ -31,17 +33,17 @@
         <tbody>
             <tr style="font-size: 14px;">
                 <td>{action.events[0].payload.metric}</td>
-                <td>{action.events[0].payload.utilization_percentage}</td>
+                <td>{action.events[0].payload.utilization_percentage}%</td>
             </tr>
         </tbody>
     </table>
     <br>
-    <p>
-        <b>Find out more</b>
-    </p>
+    <h3>
+        Find out more
+    </h3>
     <p>
         View your subscription usage data in the Subscriptions Usage service.
-        To learn more about how subscription usage is calculated, see the <a href="https://docs.redhat.com/en/documentation/subscription_central/1-latest/html/getting_started_with_the_subscriptions_service/index">Getting Started with the
+        To learn more about how subscription usage is calculated, see the <a href="https://docs.redhat.com/en/documentation/subscription_central/1-latest/html/getting_started_with_the_subscriptions_service/index" target="_blank">Getting Started with the
 Subscriptions Usage Service guide</a>.
         For additional help, contact your Red Hat
 account team.
