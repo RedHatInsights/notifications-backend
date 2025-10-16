@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.Template;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
+import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
 import com.redhat.cloud.notifications.templates.TemplateEngineClient;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -19,11 +20,9 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.ws.rs.BadRequestException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.util.UUID;
 
@@ -49,7 +48,6 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -376,11 +374,6 @@ public class TemplateResourceTest extends DbIsolatedTest {
         request.setPayload("I am invalid!");
         request.setTemplate(new String[]{"", ""}); // Not important, won't be used.
 
-        JsonObject exceptionMessage = new JsonObject();
-        exceptionMessage.put("message", "Action parsing failed for payload: I am invalid!");
-        BadRequestException badRequest = new BadRequestException(exceptionMessage.toString());
-        when(templateEngineClient.render(Mockito.any(RenderEmailTemplateRequest.class))).thenThrow(badRequest);
-
         String responseBody = given()
                 .basePath(API_INTERNAL)
                 .header(identity)
@@ -394,6 +387,45 @@ public class TemplateResourceTest extends DbIsolatedTest {
                 .extract().asString();
 
         assertEquals("Action parsing failed for payload: I am invalid!", new JsonObject(responseBody).getString("message"));
+    }
+
+    @Test
+    void testValidEmailTemplateRendering() {
+        Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+
+        final String EXPECTED_RESULT = "<h1>Hello this test is awesome!</h1>";
+
+        String testAction = "{" +
+            "    \"version\":\"v1.1.0\"," +
+            "    \"bundle\":\"subscription-services\"," +
+            "    \"application\":\"errata-notifications\"," +
+            "    \"event_type\":\"new-subscription-security-errata\"," +
+            "    \"timestamp\": \"2024-01-03T14:43:37.371481666\"," +
+            "    \"account_id\":\"000001\"," +
+            "    \"org_id\":\"18939404\"," +
+            "    \"context\":{\"test_status\":\"awesome\"}," +
+            "    \"events\":[]," +
+            "    \"recipients\":[]" +
+            "}";
+
+        RenderEmailTemplateRequest request = new RenderEmailTemplateRequest();
+        request.setPayload(testAction);
+
+        request.setTemplate(new String[]{"{#include email/Common/insightsEmailBody}{#content-title}Hello this test is {action.context.test_status}!{/content-title}"});
+
+        RenderEmailTemplateResponse.Success response = given()
+            .basePath(API_INTERNAL)
+            .header(identity)
+            .contentType(JSON)
+            .body(Json.encode(request))
+            .when()
+            .post("/templates/email/render")
+            .then()
+            .contentType(JSON)
+            .statusCode(200)
+            .extract().as(RenderEmailTemplateResponse.Success.class);
+
+        assertTrue(response.getResult()[0].contains(EXPECTED_RESULT));
     }
 
     Integer getNumberOfDefaultTemplates() {
