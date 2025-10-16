@@ -121,17 +121,20 @@ public class PatchUserPreferencesMigrationResourceTest extends DbIsolatedTest {
 
         // Assert that the email subscriptions got created.
         final List<EventTypeEmailSubscription> userACreatedSubscriptions = subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(DEFAULT_ORG_ID, "a");
-        assertEmailSubscriptionDataIsCorrect(Set.of(DAILY), "a", userACreatedSubscriptions, eventTypeNewAdvisory.getId());
+        assertEmailSubscriptionDataIsCorrect(Set.of(DAILY), "a", userACreatedSubscriptions, eventTypeNewAdvisory.getId(), DEFAULT_ORG_ID);
 
         final List<EventTypeEmailSubscription> userBCreatedSubscriptions = subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(DEFAULT_ORG_ID, "b");
-        assertEmailSubscriptionDataIsCorrect(Set.of(INSTANT), "b", userBCreatedSubscriptions, eventTypeNewAdvisory.getId());
+        assertEmailSubscriptionDataIsCorrect(Set.of(INSTANT), "b", userBCreatedSubscriptions, eventTypeNewAdvisory.getId(), DEFAULT_ORG_ID);
 
         final List<EventTypeEmailSubscription> userCCreatedSubscriptions = subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(DEFAULT_ORG_ID, "c");
-        assertEmailSubscriptionDataIsCorrect(Set.of(INSTANT, DAILY), "c", userCCreatedSubscriptions, eventTypeNewAdvisory.getId());
+        assertEmailSubscriptionDataIsCorrect(Set.of(INSTANT, DAILY), "c", userCCreatedSubscriptions, eventTypeNewAdvisory.getId(), DEFAULT_ORG_ID);
 
         // because user d already has some user preferences for Patch, we ignored preferences from migration file for him
         final List<EventTypeEmailSubscription> userDCreatedSubscriptions = subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(DEFAULT_ORG_ID, "d");
-        assertEmailSubscriptionDataIsCorrect(Set.of(DAILY), "d", userDCreatedSubscriptions, eventTypeNewAdvisory.getId());
+        assertEmailSubscriptionDataIsCorrect(Set.of(DAILY), "d", userDCreatedSubscriptions, eventTypeNewAdvisory.getId(), DEFAULT_ORG_ID);
+
+        final List<EventTypeEmailSubscription> userECreatedSubscriptions = subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser("54321", "e");
+        assertEmailSubscriptionDataIsCorrect(Set.of(INSTANT, DAILY), "e", userECreatedSubscriptions, eventTypeNewAdvisory.getId(), "54321");
 
         endpointAssociatedToEventTypeList = endpointEventTypeRepository.findEndpointsByEventTypeId(DEFAULT_ORG_ID, eventTypeNewAdvisory.getId(), null, Optional.empty());
         assertEquals(1, endpointAssociatedToEventTypeList.size());
@@ -146,14 +149,14 @@ public class PatchUserPreferencesMigrationResourceTest extends DbIsolatedTest {
     }
 
 
-    private void assertEmailSubscriptionDataIsCorrect(final Set<SubscriptionType> subscriptions, final String expectedUsername, List<EventTypeEmailSubscription> createdEmailSubscriptions, UUID patchNewAdvisoryId) {
+    private void assertEmailSubscriptionDataIsCorrect(final Set<SubscriptionType> subscriptions, final String expectedUsername, List<EventTypeEmailSubscription> createdEmailSubscriptions, UUID patchNewAdvisoryId, String expectedOrgId) {
         assertEquals(
             subscriptions.size(),
             createdEmailSubscriptions.size());
 
         for (final EventTypeEmailSubscription emailSubscription : createdEmailSubscriptions) {
             assertEquals(expectedUsername, emailSubscription.getUserId());
-            assertEquals(DEFAULT_ORG_ID, emailSubscription.getOrgId());
+            assertEquals(expectedOrgId, emailSubscription.getOrgId());
 
             assertTrue(
                 subscriptions.contains(emailSubscription.getSubscriptionType()));
