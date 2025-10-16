@@ -1,93 +1,97 @@
 package com.redhat.cloud.notifications.recipients.resolver.rbac;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.MediaType;
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.mockserver.integration.ClientAndServer.startClientAndServer;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
 public class OidcServerMockResource implements QuarkusTestResourceLifecycleManager {
 
     public static final String TEST_ACCESS_TOKEN = "test-access-token-12345";
 
-    private static final String LOG_LEVEL_KEY = "mockserver.logLevel";
-    private static ClientAndServer clientAndServer;
+    private static MockWebServer mockWebServer;
 
     @Override
     public Map<String, String> start() {
+        mockWebServer = new MockWebServer();
 
-        setMockServerLogLevel();
+        // Set up dispatcher to handle different endpoints
+        mockWebServer.setDispatcher(new Dispatcher() {
+            @Override
+            public MockResponse dispatch(RecordedRequest request) {
+                String path = request.getPath();
 
-        clientAndServer = startClientAndServer();
-        String serverUrl = "http://localhost:" + clientAndServer.getPort();
+                if (path != null && path.equals("/.well-known/openid-configuration")) {
+                    return handleOidcDiscovery();
+                } else if (path != null && path.equals("/token")) {
+                    return handleTokenEndpoint();
+                }
 
-        setupMockExpectations(serverUrl);
+                return new MockResponse().setResponseCode(404);
+            }
+        });
+
+        try {
+            mockWebServer.start();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to start MockWebServer", e);
+        }
+
+        String serverUrl = mockWebServer.url("").toString().replaceAll("/$", "");
 
         Map<String, String> config = new HashMap<>();
         config.put("quarkus.oidc-client.auth-server-url", serverUrl);
 
-        System.out.println("OIDC server mock started");
+        System.out.println("OIDC server mock started on port " + mockWebServer.getPort());
 
         return config;
     }
 
-    private static void setMockServerLogLevel() {
-        if (System.getProperty(LOG_LEVEL_KEY) == null) {
-            System.setProperty(LOG_LEVEL_KEY, "OFF");
-            System.out.println("MockServer log is disabled. Use '-D" + LOG_LEVEL_KEY + "=WARN|INFO|DEBUG|TRACE' to enable it.");
-        }
+    private MockResponse handleOidcDiscovery() {
+        String serverUrl = mockWebServer.url("").toString().replaceAll("/$", "");
+        String body = String.format("""
+            {
+              "issuer": "%s",
+              "token_endpoint": "%s/token",
+              "grant_types_supported": ["client_credentials"]
+            }
+            """, serverUrl, serverUrl);
+
+        return new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(body);
     }
 
-    private static void setupMockExpectations(String serverUrl) {
+    private MockResponse handleTokenEndpoint() {
+        String body = String.format("""
+            {
+              "access_token": "%s",
+              "token_type": "Bearer",
+              "expires_in": 3600
+            }
+            """, TEST_ACCESS_TOKEN);
 
-        // Mock OIDC server endpoints
-
-        // Mock OIDC discovery endpoint
-        clientAndServer.when(
-            request()
-                .withMethod("GET")
-                .withPath("/.well-known/openid-configuration")
-        ).respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody(String.format("""
-                    {
-                      "issuer": "%s",
-                      "token_endpoint": "%s/token",
-                      "grant_types_supported": ["client_credentials"]
-                    }
-                    """, serverUrl, serverUrl))
-        );
-
-        // Mock OIDC token endpoint
-        clientAndServer.when(
-            request()
-                .withMethod("POST")
-                .withPath("/token")
-        ).respond(
-            response()
-                .withStatusCode(200)
-                .withContentType(MediaType.APPLICATION_JSON)
-                .withBody(String.format("""
-                    {
-                      "access_token": "%s",
-                      "token_type": "Bearer",
-                      "expires_in": 3600
-                    }
-                    """, TEST_ACCESS_TOKEN))
-        );
+        return new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(body);
     }
 
     @Override
     public void stop() {
-        if (clientAndServer != null) {
-            clientAndServer.stop();
-            System.out.println("OIDC server mock stopped");
+        if (mockWebServer != null) {
+            try {
+                mockWebServer.shutdown();
+                System.out.println("OIDC server mock stopped");
+            } catch (IOException e) {
+                System.err.println("Error stopping MockWebServer: " + e.getMessage());
+            }
         }
     }
 }
