@@ -1,22 +1,17 @@
 package com.redhat.cloud.notifications.connector.v2;
 
+import com.redhat.cloud.notifications.connector.v2.pojo.HandledExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
 import io.quarkus.test.junit.QuarkusTest;
+import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.ENDPOINT_ID;
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.ORG_ID;
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.OUTCOME;
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.RETURN_SOURCE;
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.START_TIME;
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.SUCCESSFUL;
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.TARGET_URL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,35 +22,22 @@ class OutgoingCloudEventBuilderTest {
     @Inject
     OutgoingCloudEventBuilder outgoingCloudEventBuilder;
 
-    private MessageContext context;
-
-    @BeforeEach
-    void setUp() {
-        context = new MessageContext();
-
-        // Set up incoming CloudEvent metadata
-        context.setIncomingCloudEventMetadata(
-            BaseConnectorIntegrationTest.buildIncomingCloudEvent(
-                "test-cloud-event-id",
-                "com.redhat.console.notification.toCamel.test",
-                new JsonObject().put("test", "data")
-            )
-        );
-
-        // Set required properties
-        context.setProperty(ORG_ID, "test-org-123");
-        context.setProperty(ENDPOINT_ID, "endpoint-456");
-        context.setProperty(RETURN_SOURCE, "notifications-connector-test");
-        context.setProperty(TARGET_URL, "https://example.com/webhook");
-        context.setProperty(START_TIME, System.currentTimeMillis());
-        context.setProperty(SUCCESSFUL, true);
-        context.setProperty(OUTCOME, "Event sent successfully");
-    }
+    @Inject
+    ConnectorConfig connectorConfig;
 
     @Test
-    void testBuildSuccessfulCloudEvent() throws Exception {
+    void testBuildSuccessfulCloudEvent() {
+
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = BaseConnectorIntegrationTest.buildIncomingCloudEvent(
+            "test-cloud-event-id",
+            "com.redhat.console.notification.toCamel.test",
+            new JsonObject().put("test", "data")
+        );
+
+        HandledMessageDetails processedMessageDetails = new HandledMessageDetails(true, "Event sent successfully");
+
         // When
-        Message<String> cloudEventMessage = outgoingCloudEventBuilder.build(context);
+        Message<String> cloudEventMessage = outgoingCloudEventBuilder.buildSuccess(incomingCloudEvent, processedMessageDetails, System.currentTimeMillis());
 
         // Then - verify message exists
         assertNotNull(cloudEventMessage);
@@ -68,7 +50,7 @@ class OutgoingCloudEventBuilderTest {
         assertEquals("test-cloud-event-id", metadata.getId());
         assertEquals(OutgoingCloudEventBuilder.CE_TYPE, metadata.getType());
         assertEquals(OutgoingCloudEventBuilder.CE_SPEC_VERSION, metadata.getSpecVersion());
-        assertEquals(URI.create("notifications-connector-test"), metadata.getSource());
+        assertEquals(URI.create(connectorConfig.getConnectorName()), metadata.getSource());
         assertEquals("application/json", metadata.getDataContentType().orElse(null));
         assertNotNull(metadata.getTimeStamp());
 
@@ -81,18 +63,22 @@ class OutgoingCloudEventBuilderTest {
         JsonObject details = data.getJsonObject("details");
         assertNotNull(details);
         assertEquals("com.redhat.console.notification.toCamel.test", details.getString("type"));
-        assertEquals("https://example.com/webhook", details.getString("target"));
         assertEquals("Event sent successfully", details.getString("outcome"));
     }
 
     @Test
-    void testBuildFailedCloudEvent() throws Exception {
+    void testBuildFailedCloudEvent() {
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = BaseConnectorIntegrationTest.buildIncomingCloudEvent(
+            "test-cloud-event-id",
+            "com.redhat.console.notification.toCamel.test",
+            new JsonObject().put("test", "data")
+        );
+
         // Given - set failure properties
-        context.setProperty(SUCCESSFUL, false);
-        context.setProperty(OUTCOME, "Connection refused");
+        HandledExceptionDetails processedMessageDetails = new HandledExceptionDetails(false, "Connection refused");
 
         // When
-        Message<String> cloudEventMessage = outgoingCloudEventBuilder.build(context);
+        Message<String> cloudEventMessage = outgoingCloudEventBuilder.buildFailure(incomingCloudEvent, processedMessageDetails, System.currentTimeMillis());
 
         // Then - verify message exists
         assertNotNull(cloudEventMessage);
@@ -113,19 +99,19 @@ class OutgoingCloudEventBuilderTest {
     }
 
     @Test
-    void testPreservesIncomingCloudEventId() throws Exception {
+    void testPreservesIncomingCloudEventId() {
         // Given - different cloud event ID
         String expectedId = "unique-event-12345";
-        context.setIncomingCloudEventMetadata(
-            BaseConnectorIntegrationTest.buildIncomingCloudEvent(
-                expectedId,
-                "com.redhat.console.notification.toCamel.test",
-                new JsonObject()
-            )
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = BaseConnectorIntegrationTest.buildIncomingCloudEvent(
+            expectedId,
+            "com.redhat.console.notification.toCamel.test",
+            new JsonObject().put("test", "data")
         );
 
+        HandledMessageDetails processedMessageDetails = new HandledMessageDetails(true, "Event sent successfully");
+
         // When
-        Message<String> cloudEventMessage = outgoingCloudEventBuilder.build(context);
+        Message<String> cloudEventMessage = outgoingCloudEventBuilder.buildSuccess(incomingCloudEvent, processedMessageDetails, System.currentTimeMillis());
 
         // Then - verify the ID is preserved
         OutgoingCloudEventMetadata<?> metadata = cloudEventMessage.getMetadata(OutgoingCloudEventMetadata.class)
@@ -135,13 +121,21 @@ class OutgoingCloudEventBuilderTest {
     }
 
     @Test
-    void testCalculatesDuration() throws Exception {
+    void testCalculatesDuration() {
+
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = BaseConnectorIntegrationTest.buildIncomingCloudEvent(
+            "test-cloud-event-id",
+            "com.redhat.console.notification.toCamel.test",
+            new JsonObject().put("test", "data")
+        );
+
         // Given - set start time 100ms in the past
         long startTime = System.currentTimeMillis() - 100;
-        context.setProperty(START_TIME, startTime);
+
+        HandledMessageDetails processedMessageDetails = new HandledMessageDetails(true, "Event sent successfully");
 
         // When
-        Message<String> cloudEventMessage = outgoingCloudEventBuilder.build(context);
+        Message<String> cloudEventMessage = outgoingCloudEventBuilder.buildSuccess(incomingCloudEvent, processedMessageDetails, startTime);
 
         // Then - verify duration is calculated
         JsonObject data = new JsonObject(cloudEventMessage.getPayload());

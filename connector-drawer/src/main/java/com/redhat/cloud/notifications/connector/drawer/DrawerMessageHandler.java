@@ -3,17 +3,18 @@ package com.redhat.cloud.notifications.connector.drawer;
 import com.redhat.cloud.notifications.connector.drawer.config.DrawerConnectorConfig;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerNotificationToConnector;
 import com.redhat.cloud.notifications.connector.drawer.model.DrawerUser;
+import com.redhat.cloud.notifications.connector.drawer.model.HandledDrawerMessageDetails;
 import com.redhat.cloud.notifications.connector.drawer.model.RecipientSettings;
 import com.redhat.cloud.notifications.connector.drawer.recipients.recipientsresolver.ExternalRecipientsResolver;
-import com.redhat.cloud.notifications.connector.v2.MessageContext;
 import com.redhat.cloud.notifications.connector.v2.MessageHandler;
-import com.redhat.cloud.notifications.connector.v2.OutgoingMessageSender;
+import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
+import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -25,12 +26,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.redhat.cloud.notifications.connector.drawer.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
-import static com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty.RESOLVED_RECIPIENT_LIST;
 import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
-public class DrawerProcessor implements MessageHandler {
+public class DrawerMessageHandler extends MessageHandler {
 
     static final String RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC = "email.recipients_resolver.response.time";
 
@@ -52,22 +51,17 @@ public class DrawerProcessor implements MessageHandler {
     @Inject
     DrawerConnectorConfig drawerConnectorConfig;
 
-    @Inject
-    OutgoingMessageSender outgoingMessageSender;
-
     @Override
-    public void handle(final MessageContext context) throws Exception {
-        DrawerNotificationToConnector notification =  context.getTypedBody(DrawerNotificationToConnector.class);
+    public HandledMessageDetails handle(final IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
+        DrawerNotificationToConnector notification = incomingCloudEvent.getData().mapTo(DrawerNotificationToConnector.class);
 
         // fetch recipients
         Set<String> recipientsList = fetchRecipients(notification);
-        context.setProperty(RESOLVED_RECIPIENT_LIST, recipientsList);
-        context.setProperty(TOTAL_RECIPIENTS_KEY, recipientsList.size());
 
         if (recipientsList.isEmpty()) {
             Log.infof("Skipped Email notification because the recipients list was empty [orgId=$%s, historyId=%s]",
                 notification.getOrgId(),
-                context.getIncomingCloudEventMetadata().getId());
+                incomingCloudEvent.getId());
         } else {
             if (drawerConnectorConfig.useCommonTemplateModule()) {
                 final Map<String, Object> eventDataMap = notification.getEventData();
@@ -94,8 +88,7 @@ public class DrawerProcessor implements MessageHandler {
             }
         }
 
-        // Send success response back to engine
-        outgoingMessageSender.sendSuccess(context);
+        return new HandledDrawerMessageDetails(recipientsList);
     }
 
     private Set<String> fetchRecipients(DrawerNotificationToConnector drawerNotification) {
