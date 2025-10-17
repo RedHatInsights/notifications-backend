@@ -1,15 +1,17 @@
 package com.redhat.cloud.notifications.connector.drawer;
 
-import com.redhat.cloud.notifications.connector.v2.MessageContext;
+import com.redhat.cloud.notifications.connector.drawer.model.HandledDrawerExceptionDetails;
+import com.redhat.cloud.notifications.connector.drawer.model.HandledDrawerMessageDetails;
 import com.redhat.cloud.notifications.connector.v2.OutgoingCloudEventBuilder;
+import com.redhat.cloud.notifications.connector.v2.pojo.HandledExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
-import org.eclipse.microprofile.reactive.messaging.Message;
 
-import static com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty.ADDITIONAL_ERROR_DETAILS;
-import static com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty.RESOLVED_RECIPIENT_LIST;
+import static com.redhat.cloud.notifications.connector.drawer.constant.Constants.ADDITIONAL_ERROR_DETAILS;
+import static com.redhat.cloud.notifications.connector.drawer.constant.Constants.RESOLVED_RECIPIENT_LIST;
 
 @ApplicationScoped
 @Alternative
@@ -19,30 +21,35 @@ public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
     public static final String TOTAL_RECIPIENTS_KEY = "total_recipients";
 
     @Override
-    public Message<String> build(MessageContext context) throws Exception {
-        Message<String> cloudEventMessage = super.build(context);
-        Integer totalRecipients = context.getProperty(TOTAL_RECIPIENTS_KEY, Integer.class);
-        if (totalRecipients == null) {
-            totalRecipients = 0;
-        }
+    public JsonObject buildSuccess(HandledMessageDetails processedMessageDetails) {
+        JsonObject data = new JsonObject();
 
-        // Extract the current payload and add drawer-specific information
-        JsonObject data = new JsonObject(cloudEventMessage.getPayload());
-        data.getJsonObject("details").put(RESOLVED_RECIPIENT_LIST, context.getProperty(RESOLVED_RECIPIENT_LIST));
-        data.getJsonObject("details").put(TOTAL_RECIPIENTS_KEY, totalRecipients);
-        if (context.getProperties().containsKey(ADDITIONAL_ERROR_DETAILS)) {
-            data.getJsonObject("details").put(ADDITIONAL_ERROR_DETAILS, getErrorDetail(context));
-        }
+        if (processedMessageDetails instanceof HandledDrawerMessageDetails processedDrawerMessageDetails) {
+            data.put("details", new JsonObject());
 
-        // Create a new message with the updated payload, preserving the CloudEvent metadata
-        return cloudEventMessage.withPayload(data.encode());
+            data.getJsonObject("details").put(RESOLVED_RECIPIENT_LIST, processedDrawerMessageDetails.recipientsList);
+            data.getJsonObject("details").put(TOTAL_RECIPIENTS_KEY, processedDrawerMessageDetails.recipientsList.size());
+        }
+        return data;
     }
 
-    private Object getErrorDetail(final MessageContext context) {
-        try {
-            return new JsonObject(context.getProperty(ADDITIONAL_ERROR_DETAILS, String.class));
-        } catch (Exception e) {
-            return context.getProperty(ADDITIONAL_ERROR_DETAILS, String.class);
+    @Override
+    public JsonObject buildFailure(HandledExceptionDetails processedExceptionDetails) {
+        JsonObject data = new JsonObject();
+
+        if (processedExceptionDetails instanceof HandledDrawerExceptionDetails processedDrawerExceptionDetails) {
+            data.put("details", new JsonObject());
+
+            if (null != processedDrawerExceptionDetails.additionalErrorDetails) {
+                try {
+                    data.getJsonObject("details").put(ADDITIONAL_ERROR_DETAILS,
+                        new JsonObject(processedDrawerExceptionDetails.additionalErrorDetails));
+                } catch (Exception e) {
+                    data.getJsonObject("details").put(ADDITIONAL_ERROR_DETAILS,
+                        processedDrawerExceptionDetails.additionalErrorDetails);
+                }
+            }
         }
+        return data;
     }
 }

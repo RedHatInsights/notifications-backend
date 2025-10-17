@@ -1,13 +1,16 @@
 package com.redhat.cloud.notifications.connector.v2.http;
 
-import com.redhat.cloud.notifications.connector.v2.MessageContext;
+
 import com.redhat.cloud.notifications.connector.v2.OutgoingCloudEventBuilder;
+import com.redhat.cloud.notifications.connector.v2.http.pojo.HandledHttpExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.http.pojo.HandledHttpMessageDetails;
+import com.redhat.cloud.notifications.connector.v2.pojo.HandledExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.reactive.messaging.Message;
 
-import static com.redhat.cloud.notifications.connector.v2.http.CommonHttpConstants.HTTP_ERROR_TYPE;
-import static com.redhat.cloud.notifications.connector.v2.http.CommonHttpConstants.HTTP_STATUS_CODE;
+import java.util.List;
+
 import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTTP_3XX;
 import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTTP_4XX;
 import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTTP_5XX;
@@ -16,24 +19,33 @@ import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTT
 public class HttpOutgoingCloudEventBuilder extends OutgoingCloudEventBuilder {
 
     @Override
-    public Message<String> build(MessageContext context) throws Exception {
-        Message<String> cloudEventMessage = super.build(context);
-
-        HttpErrorType httpErrorType = context.getProperty(HTTP_ERROR_TYPE, HttpErrorType.class);
-        if (httpErrorType != null) {
-            // Extract the current payload and add error information
-            JsonObject data = new JsonObject(cloudEventMessage.getPayload());
-            JsonObject error = new JsonObject();
-            error.put("error_type", httpErrorType);
-            if (httpErrorType == HTTP_3XX || httpErrorType == HTTP_4XX || httpErrorType == HTTP_5XX) {
-                error.put("http_status_code", context.getProperty(HTTP_STATUS_CODE));
+    public JsonObject buildFailure(HandledExceptionDetails processedExceptionDetails) {
+        JsonObject data = new JsonObject();
+        if (processedExceptionDetails instanceof HandledHttpExceptionDetails processedExceptionDetailsHttp) {
+            if (null != processedExceptionDetailsHttp.targetUrl) {
+                data.put("target_url", processedExceptionDetailsHttp.targetUrl);
             }
-            data.put("error", error);
 
-            // Create a new message with the updated payload, preserving the CloudEvent metadata
-            return cloudEventMessage.withPayload(data.encode());
+            if (processedExceptionDetailsHttp.httpErrorType != null) {
+                JsonObject error = new JsonObject();
+                error.put("error_type", processedExceptionDetailsHttp.httpErrorType);
+                if (List.of(HTTP_3XX, HTTP_4XX, HTTP_5XX).contains(processedExceptionDetailsHttp.httpErrorType)) {
+                    error.put("http_status_code", processedExceptionDetailsHttp.httpStatusCode);
+                }
+                data.put("error", error);
+            }
         }
+        return data;
+    }
 
-        return cloudEventMessage;
+    @Override
+    public JsonObject buildSuccess(HandledMessageDetails processedMessageDetails) {
+        JsonObject data = new JsonObject();
+        if (processedMessageDetails instanceof HandledHttpMessageDetails processedHttpMessageDetails) {
+            if (null != processedHttpMessageDetails.targetUrl) {
+                data.put("target_url", processedHttpMessageDetails.targetUrl);
+            }
+        }
+        return data;
     }
 }

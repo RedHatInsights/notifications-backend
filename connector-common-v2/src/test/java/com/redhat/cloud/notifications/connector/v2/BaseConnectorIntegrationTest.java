@@ -22,12 +22,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.mockserver.model.HttpResponse;
 
 import java.net.URI;
-import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
-import static com.redhat.cloud.notifications.connector.v2.IncomingCloudEventFilter.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
+import static com.redhat.cloud.notifications.connector.v2.MessageConsumer.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -112,26 +110,6 @@ public abstract class BaseConnectorIntegrationTest {
         );
 
         return cloudEventId;
-    }
-
-    /**
-     * Creates a MessageContext for testing connector components directly
-     */
-    protected MessageContext createTestMessageContext(JsonObject payload) {
-        MessageContext context = new MessageContext();
-
-        String cloudEventId = UUID.randomUUID().toString();
-
-        context.setIncomingCloudEventMetadata(buildIncomingCloudEvent(
-            cloudEventId,
-            "com.redhat.console.notification.toCamel." + connectorConfig.getConnectorName(),
-            payload
-        ));
-
-        // Set up headers
-        context.setHeaders(Map.of(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, Optional.of(connectorConfig.getConnectorName())));
-
-        return context;
     }
 
     /**

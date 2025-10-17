@@ -21,7 +21,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         // Configure InMemory connectors for reactive messaging channels
         properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory("incoming-messages"));
         properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory("outgoing-messages"));
-        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(DrawerProcessor.DRAWER_CHANNEL));
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(DrawerMessageHandler.DRAWER_CHANNEL));
         return properties;
     }
 

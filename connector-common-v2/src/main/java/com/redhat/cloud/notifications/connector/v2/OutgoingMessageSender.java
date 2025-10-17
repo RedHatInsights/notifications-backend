@@ -1,13 +1,14 @@
 package com.redhat.cloud.notifications.connector.v2;
 
+import com.redhat.cloud.notifications.connector.v2.pojo.HandledExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
+import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
+import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
-
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.OUTCOME;
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.SUCCESSFUL;
 
 @ApplicationScoped
 public class OutgoingMessageSender {
@@ -19,24 +20,26 @@ public class OutgoingMessageSender {
     @Channel("outgoing-messages")
     Emitter<String> emitter;
 
-    public void sendSuccess(MessageContext context) {
-        context.setProperty(SUCCESSFUL, true);
-        context.setProperty(OUTCOME, String.format("Event %s sent successfully", context.getIncomingCloudEventMetadata().getId()));
-        sendResponse(context);
+
+    public void sendSuccess(IncomingCloudEventMetadata<JsonObject> cloudEventMetadata, HandledMessageDetails processedMessageDetails, long startTime) {
+        processedMessageDetails.outcomeMessage = String.format("Event %s sent successfully", cloudEventMetadata.getId());
+        Message<String> cloudEventMessage = outgoingCloudEventBuilder.buildSuccess(cloudEventMetadata, processedMessageDetails, startTime);
+
+        sendResponse(cloudEventMessage);
     }
 
-    public void sendFailure(MessageContext context, String errorMessage) {
-        context.setProperty(SUCCESSFUL, false);
-        context.setProperty(OUTCOME, errorMessage);
-        sendResponse(context);
+    public void sendFailure(IncomingCloudEventMetadata<JsonObject> cloudEventMetadata, HandledExceptionDetails processedExceptionDetails, long startTime) {
+        Message<String> cloudEventMessage = outgoingCloudEventBuilder.buildFailure(cloudEventMetadata, processedExceptionDetails, startTime);
+
+        sendResponse(cloudEventMessage);
     }
 
-    private void sendResponse(MessageContext context) {
+    private void sendResponse(Message<String> cloudEventMessage) {
         try {
-            Message<String> cloudEventMessage = outgoingCloudEventBuilder.build(context);
             emitter.send(cloudEventMessage);
         } catch (Exception e) {
             throw new RuntimeException("Failed to send response to engine", e);
         }
     }
+
 }
