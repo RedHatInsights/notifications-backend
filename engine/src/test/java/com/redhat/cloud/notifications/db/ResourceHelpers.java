@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.TestHelpers;
-import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -10,9 +9,7 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscriptionId;
-import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.SubscriptionType;
-import com.redhat.cloud.notifications.models.Template;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -20,17 +17,14 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
-import org.apache.commons.lang3.StringUtils;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static java.time.ZoneOffset.UTC;
 
 @ApplicationScoped
@@ -43,16 +37,6 @@ public class ResourceHelpers {
         return entityManager.createQuery("FROM Bundle WHERE name = :name", Bundle.class)
             .setParameter("name", name)
             .getSingleResult();
-    }
-
-    /**
-     * Delete created bundles and applications except for rhel-policies
-     * because too many tests expect it to be present as part of initial data set
-     */
-    @Transactional
-    public void cleanBundleAndApps() {
-        entityManager.createQuery("DELETE FROM Bundle WHERE name != \"rhel\"").executeUpdate();
-        entityManager.createQuery("DELETE FROM Application WHERE name != \"policies\"").executeUpdate();
     }
 
     public Application findApp(String bundleName, String appName) {
@@ -180,43 +164,6 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    public Template createTemplate(String name, String description, String data) {
-        Template template = new Template();
-        template.setName(name);
-        template.setDescription(description);
-        template.setData(data);
-        entityManager.persist(template);
-        return template;
-    }
-
-    @Transactional
-    public InstantEmailTemplate createInstantEmailTemplate(UUID eventTypeId, UUID subjectTemplateId, UUID bodyTemplateId, boolean enabled) {
-        InstantEmailTemplate instantEmailTemplate = new InstantEmailTemplate();
-        instantEmailTemplate.setEventType(entityManager.find(EventType.class, eventTypeId));
-        instantEmailTemplate.setEventTypeId(eventTypeId);
-        instantEmailTemplate.setSubjectTemplate(entityManager.find(Template.class, subjectTemplateId));
-        instantEmailTemplate.setSubjectTemplateId(subjectTemplateId);
-        instantEmailTemplate.setBodyTemplate(entityManager.find(Template.class, bodyTemplateId));
-        instantEmailTemplate.setBodyTemplateId(bodyTemplateId);
-        entityManager.persist(instantEmailTemplate);
-        return instantEmailTemplate;
-    }
-
-    @Transactional
-    public AggregationEmailTemplate createAggregationEmailTemplate(UUID appId, UUID subjectTemplateId, UUID bodyTemplateId, boolean enabled) {
-        AggregationEmailTemplate aggregationEmailTemplate = new AggregationEmailTemplate();
-        aggregationEmailTemplate.setApplication(entityManager.find(Application.class, appId));
-        aggregationEmailTemplate.setApplicationId(appId);
-        aggregationEmailTemplate.setSubjectTemplate(entityManager.find(Template.class, subjectTemplateId));
-        aggregationEmailTemplate.setSubjectTemplateId(subjectTemplateId);
-        aggregationEmailTemplate.setBodyTemplate(entityManager.find(Template.class, bodyTemplateId));
-        aggregationEmailTemplate.setBodyTemplateId(bodyTemplateId);
-        aggregationEmailTemplate.setSubscriptionType(DAILY);
-        entityManager.persist(aggregationEmailTemplate);
-        return aggregationEmailTemplate;
-    }
-
-    @Transactional
     public EventTypeEmailSubscription createEventTypeEmailSubscription(String orgId, String userId, EventType eventType, SubscriptionType subscriptionType) {
         EventTypeEmailSubscription eventTypeEmailSubscription = new EventTypeEmailSubscription();
         eventTypeEmailSubscription.setId(
@@ -235,39 +182,10 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    public void deleteEmailTemplatesById(UUID templateId) {
-        entityManager.createQuery("DELETE FROM InstantEmailTemplate WHERE id = :id").setParameter("id", templateId).executeUpdate();
-        entityManager.createQuery("DELETE FROM AggregationEmailTemplate WHERE id = :id").setParameter("id", templateId).executeUpdate();
-    }
-
-    @Transactional
     public void deleteEndpoint(UUID id) {
         entityManager.createQuery("DELETE FROM Endpoint WHERE id = :id")
                 .setParameter("id", id)
                 .executeUpdate();
-    }
-
-    public AggregationEmailTemplate createBlankAggregationEmailTemplate(String bundleName, String appName) {
-        Application app = findOrCreateApplication(bundleName, appName);
-
-        Template blankTemplate = createTemplate("blank_" + UUID.randomUUID(), "test blank template", StringUtils.EMPTY);
-
-        return createAggregationEmailTemplate(app.getId(), blankTemplate.getId(), blankTemplate.getId(), true);
-    }
-
-    public InstantEmailTemplate createBlankInstantEmailTemplate(String bundleName, String appName, String eventTypeName) {
-        Application app = findOrCreateApplication(bundleName, appName);
-
-        EventType eventType = null;
-        try {
-            eventType = findEventType(app.getId(), eventTypeName);
-        } catch (NoResultException nre) {
-            eventType = createEventType(app.getId(), eventTypeName);
-        }
-
-        Template blankTemplate = createTemplate("blank_" + UUID.randomUUID(), "test blank template", StringUtils.EMPTY);
-
-        return createInstantEmailTemplate(eventType.getId(), blankTemplate.getId(), blankTemplate.getId(), true);
     }
 
     public Bundle findOrCreateBundle(String bundleName) {
@@ -388,15 +306,6 @@ public class ResourceHelpers {
     @Transactional
     public void clearEvents() {
         entityManager.createQuery("DELETE FROM Event")
-            .executeUpdate();
-    }
-
-    @Transactional
-    public void updateTemplates(Optional<InstantEmailTemplate> instantTemplateToUpdate, Optional<InstantEmailTemplate> instantTemplateToCopy) {
-        entityManager.createQuery("UPDATE InstantEmailTemplate SET subjectTemplate = :subjectTemplate, bodyTemplate = :bodyTemplate WHERE id = :id")
-            .setParameter("subjectTemplate", entityManager.find(Template.class, instantTemplateToCopy.get().getSubjectTemplate().getId()))
-            .setParameter("bodyTemplate", entityManager.find(Template.class, instantTemplateToCopy.get().getBodyTemplate().getId()))
-            .setParameter("id", instantTemplateToUpdate.get().getId())
             .executeUpdate();
     }
 }

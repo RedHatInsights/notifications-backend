@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.templates.drawer;
 
-import com.redhat.cloud.notifications.IntegrationTemplatesInDbHelper;
+import com.redhat.cloud.notifications.DrawerTemplatesHelper;
 import com.redhat.cloud.notifications.RbacTestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
@@ -11,7 +11,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-class TestRbacTemplate extends IntegrationTemplatesInDbHelper {
+class TestRbacTemplate extends DrawerTemplatesHelper {
 
 
     static final String RH_NEW_ROLE_AVAILABLE = "rh-new-role-available";

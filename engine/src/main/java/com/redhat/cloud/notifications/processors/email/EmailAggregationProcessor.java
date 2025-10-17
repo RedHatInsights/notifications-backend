@@ -281,8 +281,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
             // Prepare all the data to be sent to the connector.
             final EmailNotification emailNotification = new EmailNotification(
-                null,
-                null,
                 this.emailActorsResolver.getEmailSender(aggregatorEvent),
                 aggregatorEvent.getOrgId(),
                 recipientSettings,

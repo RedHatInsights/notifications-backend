@@ -380,10 +380,6 @@ public class LifecycleITest {
         inMemoryConnector.source("ingress").send(serializedAction);
     }
 
-    private void setupEmailMock() {
-        resourceHelpers.createBlankInstantEmailTemplate(bundleName, applicationName, eventTypeName);
-    }
-
     @Transactional
     void addEventTypeBehavior(UUID eventTypeId, UUID behaviorGroupId) {
         EventType eventType = entityManager.find(EventType.class, eventTypeId);

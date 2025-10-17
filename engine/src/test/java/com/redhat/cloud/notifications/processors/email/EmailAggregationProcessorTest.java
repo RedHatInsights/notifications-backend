@@ -17,7 +17,6 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
-import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
@@ -91,9 +90,6 @@ class EmailAggregationProcessorTest {
     @Inject
     ResourceHelpers resourceHelpers;
 
-    @InjectSpy
-    TemplateService templateService;
-
     static User user1 = new User();
     static User user2 = new User();
     static User user3 = new User();
@@ -132,14 +128,12 @@ class EmailAggregationProcessorTest {
     }
 
     private EventAggregationCriterion buildEmailAggregationKey(String orgId, String bundleName, String appName) {
-        Application app = resourceHelpers.findApp(bundleName, appName);
+        Application app = resourceHelpers.findOrCreateApplication(bundleName, appName);
         return new EventAggregationCriterion(orgId, app.getBundleId(), app.getId(), bundleName, appName);
     }
 
     @Test
     void shouldSuccessfullySendOneAggregatedEmailWithTwoRecipients() {
-
-        resourceHelpers.createBlankAggregationEmailTemplate("bundle-2", "app-2");
 
         final String ORG_ID_1 = RandomStringUtils.secure().nextAlphanumeric(6);
         final String ORG_ID_2 = RandomStringUtils.secure().nextAlphanumeric(6);

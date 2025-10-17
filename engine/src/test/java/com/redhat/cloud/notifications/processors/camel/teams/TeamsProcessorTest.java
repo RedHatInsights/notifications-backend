@@ -23,11 +23,11 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.events.EndpointProcessor.TEAMS_ENDPOINT_SUBTYPE;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -50,25 +50,6 @@ public class TeamsProcessorTest extends CamelProcessorTest {
     protected String getExpectedConnectorHeader() {
         return TEAMS_ENDPOINT_SUBTYPE;
     }
-
-    protected void verifyKafkaMessage(boolean withHostUrl) {
-
-        await().until(() -> inMemorySink.received().size() == 1);
-        Message<JsonObject> message = inMemorySink.received().get(0);
-
-        assertNotificationsConnectorHeader(message);
-
-        CloudEventMetadata cloudEventMetadata = message.getMetadata(CloudEventMetadata.class).get();
-        assertNotNull(cloudEventMetadata.getId());
-        assertEquals(getExpectedCloudEventType(), cloudEventMetadata.getType());
-
-        JsonObject notification = message.getPayload();
-
-        assertEquals(DEFAULT_ORG_ID, notification.getString("org_id"));
-        assertEquals(WEBHOOK_URL, notification.getString("webhookUrl"));
-        //assertTrue(notification.getString("message").contains(getExpectedMessage(withHostUrl)));
-    }
-
 
     /**
      * An additional test to validate that a {@code application_url} will use the provided {@code subscription_id}, if
@@ -93,7 +74,7 @@ public class TeamsProcessorTest extends CamelProcessorTest {
 
         // Retrieve the OCM notification and validate that the correct URL is provided.
         JsonObject notification = message.getPayload();
-        //assertTrue(notification.getString("message").contains(TEAMS_EXPECTED_OCM_MSG_WITH_SUBSCRIPTION_ID));
+        assertTrue(notification.getJsonObject("eventData").getString("application_url").contains("/openshift/details/s/64503ec1-a365-4a1b-8c8b-0a6c519ec5fb"));
     }
 
     private static Event buildOCMEvent() {
