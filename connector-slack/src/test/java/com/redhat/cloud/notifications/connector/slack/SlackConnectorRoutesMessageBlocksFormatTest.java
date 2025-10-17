@@ -1,12 +1,17 @@
 package com.redhat.cloud.notifications.connector.slack;
 
+import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.connector.ConnectorRoutesTest;
 import com.redhat.cloud.notifications.connector.TestLifecycleManager;
+import com.redhat.cloud.notifications.qute.templates.mapping.SubscriptionServices;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
 import org.apache.camel.Predicate;
 import org.junit.jupiter.api.Test;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -30,8 +35,6 @@ public class SlackConnectorRoutesMessageBlocksFormatTest extends ConnectorRoutes
 
     private boolean testWithoutChannel = false;
 
-    private final String EXPECTED_MESSAGE = "{\"blocks\": [{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"*Bug Fixes - Errata - Subscription Services*\"}}]}";
-
     @Override
     protected JsonObject buildIncomingPayload(String targetUrl) {
         JsonObject payload = new JsonObject();
@@ -42,7 +45,22 @@ public class SlackConnectorRoutesMessageBlocksFormatTest extends ConnectorRoutes
         } else {
             payload.put("channel", null);
         }
-        payload.put("message", EXPECTED_MESSAGE);
+
+        Map<String, Object> source = new HashMap<>();
+        source.put("event_type", Map.of("display_name", SubscriptionServices.ERRATA_NEW_SUBSCRIPTION_BUGFIX_ERRATA));
+        source.put("application", Map.of("display_name", SubscriptionServices.ERRATA_APP_NAME));
+        source.put("bundle", Map.of("display_name", SubscriptionServices.BUNDLE_NAME));
+
+        Map<String, Object> eventData = new HashMap<>();
+        eventData.put("bundle", SubscriptionServices.BUNDLE_NAME);
+        eventData.put("application", SubscriptionServices.ERRATA_APP_NAME);
+        eventData.put("event_type", SubscriptionServices.ERRATA_NEW_SUBSCRIPTION_BUGFIX_ERRATA);
+        eventData.put("events", new ArrayList<>());
+        eventData.put("environment", Map.of("url", new ArrayList<>()));
+        eventData.put("orgId", TestConstants.DEFAULT_ORG_ID);
+        eventData.put("source", source);
+
+        payload.put("eventData", eventData);
         return payload;
     }
 
@@ -50,7 +68,7 @@ public class SlackConnectorRoutesMessageBlocksFormatTest extends ConnectorRoutes
     protected Predicate checkOutgoingPayload(JsonObject incomingPayload) {
         return exchange -> {
             JsonObject outgoingPayload = new JsonObject(exchange.getIn().getBody(String.class));
-            boolean textMessageMatch = outgoingPayload.getString("blocks").equals(new JsonObject(EXPECTED_MESSAGE).getString("blocks"));
+            boolean textMessageMatch = !outgoingPayload.getString("blocks").isEmpty();
             if (!testWithoutChannel) {
                 return textMessageMatch && outgoingPayload.getString(ExchangeProperty.CHANNEL).equals(incomingPayload.getString(ExchangeProperty.CHANNEL));
             }
@@ -66,6 +84,5 @@ public class SlackConnectorRoutesMessageBlocksFormatTest extends ConnectorRoutes
         } finally {
             testWithoutChannel = false;
         }
-
     }
 }

@@ -8,8 +8,6 @@ import java.util.Map;
 
 /**
  * Represents the data structure that the email connector is expecting.
- * @param emailBody             the rendered body of the email to be sent.
- * @param emailSubject          the rendered subject of the email to be sent.
  * @param emailSender           the sender that will appear in the email when
  *                              the user receives it.
  * @param orgId                 the organization ID associated with the
@@ -28,8 +26,6 @@ import java.util.Map;
  *
  */
 public record EmailNotification(
-    @JsonProperty("email_body")             String emailBody,
-    @JsonProperty("email_subject")          String emailSubject,
     @JsonProperty("email_sender")           String emailSender,
     @JsonProperty("org_id")                 String orgId,
     @JsonProperty("orgId")                  String oldOrgId,
