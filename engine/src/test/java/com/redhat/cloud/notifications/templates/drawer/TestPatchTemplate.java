@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.templates.drawer;
 
-import com.redhat.cloud.notifications.IntegrationTemplatesInDbHelper;
+import com.redhat.cloud.notifications.DrawerTemplatesHelper;
 import com.redhat.cloud.notifications.PatchTestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-class TestPatchTemplate extends IntegrationTemplatesInDbHelper {
+class TestPatchTemplate extends DrawerTemplatesHelper {
 
 
     static final String NEW_ADVISORY = "new-advisory";

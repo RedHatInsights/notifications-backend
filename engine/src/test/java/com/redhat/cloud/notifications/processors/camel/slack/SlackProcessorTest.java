@@ -41,24 +41,8 @@ public class SlackProcessorTest extends CamelProcessorTest {
         return slackProcessor;
     }
 
-    @Override
-    protected void verifyKafkaMessage(boolean withHostUrl) {
-
-        await().until(() -> inMemorySink.received().size() == 1);
-        Message<JsonObject> message = inMemorySink.received().get(0);
-
-        assertNotificationsConnectorHeader(message);
-
-        CloudEventMetadata cloudEventMetadata = message.getMetadata(CloudEventMetadata.class).get();
-        assertNotNull(cloudEventMetadata.getId());
-        assertEquals(getExpectedCloudEventType(), cloudEventMetadata.getType());
-
-        JsonObject notification = message.getPayload();
-
-        assertEquals(DEFAULT_ORG_ID, notification.getString("org_id"));
-        assertEquals(WEBHOOK_URL, notification.getString("webhookUrl"));
+    protected void verifyKafkaMessageProcessorSpecificChecks(final JsonObject notification) {
         assertEquals(CHANNEL, notification.getString("channel"));
-        //assertEquals(getExpectedMessage(withHostUrl), notification.getString("message"));
     }
 
     @Override
@@ -107,6 +91,5 @@ public class SlackProcessorTest extends CamelProcessorTest {
         // The channel should be null in this case, since we removed the
         // "extras" object.
         assertNull(notification.getString("channel"), "the channel should be null since the endpoint's camel properties did not contain an \"extras\" object");
-        //assertEquals(SLACK_EXPECTED_MSG, notification.getString("message"));
     }
 }

@@ -118,8 +118,6 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         // Prepare all the data to be sent to the connector.
         final EmailNotification emailNotification = new EmailNotification(
-            null,
-            null,
             emailActorsResolver.getEmailSender(event),
             event.getOrgId(),
             recipientSettings,
