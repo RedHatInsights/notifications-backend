@@ -1,27 +1,16 @@
 package com.redhat.cloud.notifications.connector.v2.http;
 
-import com.redhat.cloud.notifications.connector.v2.MessageContext;
+import com.redhat.cloud.notifications.connector.v2.BaseConnectorIntegrationTest;
+import com.redhat.cloud.notifications.connector.v2.http.pojo.HandledHttpExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
-import io.smallrye.reactive.messaging.ce.impl.DefaultIncomingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.net.URI;
-
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.ENDPOINT_ID;
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.ORG_ID;
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.OUTCOME;
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.RETURN_SOURCE;
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.START_TIME;
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.SUCCESSFUL;
-import static com.redhat.cloud.notifications.connector.v2.CommonConstants.TARGET_URL;
-import static com.redhat.cloud.notifications.connector.v2.http.CommonHttpConstants.HTTP_ERROR_TYPE;
-import static com.redhat.cloud.notifications.connector.v2.http.CommonHttpConstants.HTTP_STATUS_CODE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -31,39 +20,10 @@ class HttpOutgoingCloudEventBuilderTest {
     @Inject
     HttpOutgoingCloudEventBuilder httpOutgoingCloudEventBuilder;
 
-    private MessageContext context;
-
-    @BeforeEach
-    void setUp() {
-        context = new MessageContext();
-
-        // Set up incoming CloudEvent metadata
-        context.setIncomingCloudEventMetadata(
-            buildIncomingCloudEvent(
-                "test-http-event-id",
-                "com.redhat.console.notification.toCamel.http",
-                new JsonObject().put("test", "data")
-            )
-        );
-
-        // Set required properties
-        context.setProperty(ORG_ID, "test-org-123");
-        context.setProperty(ENDPOINT_ID, "endpoint-456");
-        context.setProperty(RETURN_SOURCE, "notifications-connector-http");
-        context.setProperty(TARGET_URL, "https://example.com/webhook");
-        context.setProperty(START_TIME, System.currentTimeMillis());
-        context.setProperty(SUCCESSFUL, false);
-        context.setProperty(OUTCOME, "HTTP request failed");
-    }
-
     @Test
-    void testBuildWithHttpError() throws Exception {
+    void testBuildWithHttpError() {
         // Given - HTTP error context
-        context.setProperty(HTTP_ERROR_TYPE, HttpErrorType.HTTP_5XX);
-        context.setProperty(HTTP_STATUS_CODE, 500);
-
-        // When
-        Message<String> cloudEventMessage = httpOutgoingCloudEventBuilder.build(context);
+        Message<String> cloudEventMessage = getOutgoingCloudEventMessage(HttpErrorType.HTTP_5XX, 500);
 
         // Then - verify message exists
         assertNotNull(cloudEventMessage);
@@ -85,13 +45,9 @@ class HttpOutgoingCloudEventBuilderTest {
     }
 
     @Test
-    void testBuildWith4xxError() throws Exception {
+    void testBuildWith4xxError() {
         // Given - HTTP 4xx error
-        context.setProperty(HTTP_ERROR_TYPE, HttpErrorType.HTTP_4XX);
-        context.setProperty(HTTP_STATUS_CODE, 404);
-
-        // When
-        Message<String> cloudEventMessage = httpOutgoingCloudEventBuilder.build(context);
+        Message<String> cloudEventMessage = getOutgoingCloudEventMessage(HttpErrorType.HTTP_4XX, 404);
 
         // Then
         JsonObject data = new JsonObject(cloudEventMessage.getPayload());
@@ -103,13 +59,10 @@ class HttpOutgoingCloudEventBuilderTest {
     }
 
     @Test
-    void testBuildWith3xxError() throws Exception {
-        // Given - HTTP 3xx redirect treated as error
-        context.setProperty(HTTP_ERROR_TYPE, HttpErrorType.HTTP_3XX);
-        context.setProperty(HTTP_STATUS_CODE, 301);
-
-        // When
-        Message<String> cloudEventMessage = httpOutgoingCloudEventBuilder.build(context);
+    void testBuildWith3xxError() {
+        // Given - HTTP 3xx error
+        Message<String> cloudEventMessage = getOutgoingCloudEventMessage(HttpErrorType.HTTP_3XX, 301);
+        // {"successful":false,"duration":1,"details":{"type":"com.redhat.console.notification.toCamel.test","outcome":null}}
 
         // Then
         JsonObject data = new JsonObject(cloudEventMessage.getPayload());
@@ -121,12 +74,9 @@ class HttpOutgoingCloudEventBuilderTest {
     }
 
     @Test
-    void testBuildWithConnectionError() throws Exception {
+    void testBuildWithConnectionError() {
         // Given - Connection error (no HTTP status code)
-        context.setProperty(HTTP_ERROR_TYPE, HttpErrorType.CONNECTION_REFUSED);
-
-        // When
-        Message<String> cloudEventMessage = httpOutgoingCloudEventBuilder.build(context);
+        Message<String> cloudEventMessage = getOutgoingCloudEventMessage(HttpErrorType.CONNECTION_REFUSED, null);
 
         // Then
         JsonObject data = new JsonObject(cloudEventMessage.getPayload());
@@ -139,14 +89,19 @@ class HttpOutgoingCloudEventBuilderTest {
     }
 
     @Test
-    void testBuildWithoutHttpError() throws Exception {
+    void testBuildWithoutHttpError() {
         // Given - No HTTP error (should behave like base class)
-        context.setProperty(SUCCESSFUL, true);
-        context.setProperty(OUTCOME, "Success");
-        // Don't set HTTP_ERROR_TYPE
+
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = BaseConnectorIntegrationTest.buildIncomingCloudEvent(
+            "test-http-event-id",
+            "com.redhat.console.notification.toCamel.http",
+            new JsonObject().put("test", "data").put("target_url", "https://example.com/webhook")
+        );
+
+        HandledMessageDetails processedMessageDetails = new HandledMessageDetails(true, "Success");
 
         // When
-        Message<String> cloudEventMessage = httpOutgoingCloudEventBuilder.build(context);
+        Message<String> cloudEventMessage = httpOutgoingCloudEventBuilder.buildSuccess(incomingCloudEvent, processedMessageDetails, System.currentTimeMillis());
 
         // Then - should not have error object
         JsonObject data = new JsonObject(cloudEventMessage.getPayload());
@@ -155,13 +110,9 @@ class HttpOutgoingCloudEventBuilderTest {
     }
 
     @Test
-    void testPreservesCloudEventMetadata() throws Exception {
+    void testPreservesCloudEventMetadata() {
         // Given - HTTP error
-        context.setProperty(HTTP_ERROR_TYPE, HttpErrorType.HTTP_5XX);
-        context.setProperty(HTTP_STATUS_CODE, 503);
-
-        // When
-        Message<String> cloudEventMessage = httpOutgoingCloudEventBuilder.build(context);
+        Message<String> cloudEventMessage = getOutgoingCloudEventMessage(HttpErrorType.HTTP_5XX, 503);
 
         // Then - CloudEvent metadata should be preserved
         OutgoingCloudEventMetadata<?> metadata = cloudEventMessage.getMetadata(OutgoingCloudEventMetadata.class)
@@ -173,17 +124,18 @@ class HttpOutgoingCloudEventBuilderTest {
         assertNotNull(metadata.getTimeStamp());
     }
 
-    private static IncomingCloudEventMetadata<JsonObject> buildIncomingCloudEvent(String cloudEventId, String cloudEventType, JsonObject cloudEventData) {
-        return new DefaultIncomingCloudEventMetadata(
-            "1.0.0",
-            cloudEventId,
-            URI.create("notification"),
-            cloudEventType,
-            "application/json",
-            null,
-            null,
-            null,
-            null,
-            cloudEventData);
+    private Message<String> getOutgoingCloudEventMessage(HttpErrorType httpErrorType, Integer httpStatusCode) {
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = BaseConnectorIntegrationTest.buildIncomingCloudEvent(
+            "test-http-event-id",
+            "com.redhat.console.notification.toCamel.http",
+            new JsonObject().put("test", "data").put("target_url", "https://example.com/webhook")
+        );
+
+        HandledHttpExceptionDetails processedExceptionDetailsHttp = new HandledHttpExceptionDetails();
+        processedExceptionDetailsHttp.httpErrorType = httpErrorType;
+        processedExceptionDetailsHttp.httpStatusCode = httpStatusCode;
+
+        // When
+        return httpOutgoingCloudEventBuilder.buildFailure(incomingCloudEvent, processedExceptionDetailsHttp, System.currentTimeMillis());
     }
 }

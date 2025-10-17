@@ -33,7 +33,7 @@ import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-class DrawerConnectorRoutesTest extends BaseConnectorIntegrationTest {
+class DrawerConnectorIntegrationTest extends BaseConnectorIntegrationTest {
 
     @Inject
     @Any
@@ -43,7 +43,7 @@ class DrawerConnectorRoutesTest extends BaseConnectorIntegrationTest {
 
     @PostConstruct
     void postConstruct() {
-        inMemoryDrawerSink = inMemoryConnector.sink(DrawerProcessor.DRAWER_CHANNEL);
+        inMemoryDrawerSink = inMemoryConnector.sink(DrawerMessageHandler.DRAWER_CHANNEL);
 
         // Initialize the InMemory sources and sinks for reactive messaging
         incomingMessageSource = inMemoryConnector.source("incoming-messages");

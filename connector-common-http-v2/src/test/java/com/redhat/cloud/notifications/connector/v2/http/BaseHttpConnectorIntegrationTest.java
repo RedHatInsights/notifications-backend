@@ -1,5 +1,6 @@
-package com.redhat.cloud.notifications.connector.v2;
+package com.redhat.cloud.notifications.connector.v2.http;
 
+import com.redhat.cloud.notifications.connector.v2.BaseConnectorIntegrationTest;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
@@ -7,7 +8,7 @@ import org.junit.jupiter.api.Test;
  * Base class for connector integration tests using the new Quarkus-based architecture.
  * Replaces the old Camel-based ConnectorRoutesTest.
  */
-public abstract class ConnectorRoutesTest extends BaseConnectorIntegrationTest {
+public abstract class BaseHttpConnectorIntegrationTest extends BaseConnectorIntegrationTest {
 
     // Abstract methods for connector-specific implementation
     protected abstract JsonObject buildIncomingPayload(String targetUrl);
