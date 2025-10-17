@@ -107,6 +107,22 @@ public class SubscriptionRepository {
         }
     }
 
+    public Map<String /* Org ID */, List<String>/* List of usernames */> getEmailSubscribersByEventType(UUID eventType) {
+        String query = "SELECT org_id, string_agg(DISTINCT user_id, ',') FROM email_subscriptions " +
+            "WHERE event_type_id = :eventType " +
+            "group by org_id";
+
+        List<Object[]> records = entityManager.createNativeQuery(query)
+            .setParameter("eventType", eventType)
+            .getResultList();
+
+        return records.stream()
+            .collect(Collectors
+                .toMap(e -> e[0].toString(),
+                    e -> List.of(e[1].toString().split(","))
+                ));
+    }
+
     public List<EventTypeEmailSubscription> getEmailSubscriptionByEventType(String orgId, String username, String bundleName, String applicationName) {
         String query = "SELECT es FROM EventTypeEmailSubscription es LEFT JOIN FETCH es.eventType ev LEFT JOIN FETCH ev.application a LEFT JOIN FETCH a.bundle b " +
             "WHERE es.id.orgId = :orgId AND es.id.userId = :userId and es.id.subscriptionType in (:subscriptionTypes) " +

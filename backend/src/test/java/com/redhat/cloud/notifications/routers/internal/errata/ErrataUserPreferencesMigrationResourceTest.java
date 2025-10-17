@@ -30,9 +30,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 
-import static com.redhat.cloud.notifications.routers.internal.errata.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_BUGFIX;
-import static com.redhat.cloud.notifications.routers.internal.errata.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_ENHANCEMENT;
-import static com.redhat.cloud.notifications.routers.internal.errata.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_SECURITY;
+import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_BUGFIX;
+import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_ENHANCEMENT;
+import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_SECURITY;
 import static io.restassured.RestAssured.given;
 
 @QuarkusTest

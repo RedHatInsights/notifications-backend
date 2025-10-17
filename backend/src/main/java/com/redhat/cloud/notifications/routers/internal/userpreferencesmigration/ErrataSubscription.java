@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers.internal.errata;
+package com.redhat.cloud.notifications.routers.internal.userpreferencesmigration;
 
 import com.redhat.cloud.notifications.models.EventType;
 
