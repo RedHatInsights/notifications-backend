@@ -15,7 +15,6 @@ import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.templates.models.EnvironmentTest;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.InjectMock;
 import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
 import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
@@ -57,9 +56,6 @@ public abstract class CamelProcessorTest {
     NotificationHistoryRepository notificationHistoryRepository;
 
     @Inject
-    MeterRegistry registry;
-
-    @Inject
     @Any
     InMemoryConnector inMemoryConnector;
 
@@ -75,8 +71,6 @@ public abstract class CamelProcessorTest {
     void clearInMemorySink() {
         inMemorySink.clear();
     }
-
-    protected abstract String getExpectedMessage(boolean withHostUrl);
 
     protected abstract String getSubType();
 
@@ -120,7 +114,14 @@ public abstract class CamelProcessorTest {
 
         assertEquals(DEFAULT_ORG_ID, notification.getString("org_id"));
         assertEquals(WEBHOOK_URL, notification.getString("webhookUrl"));
-        assertEquals(getExpectedMessage(withHostUrl), notification.getString("message"));
+
+        verifyKafkaMessageProcessorSpecificChecks(notification);
+
+        assertEquals(withHostUrl, notification.getJsonObject("eventData").getString("inventory_url").contains(CONTEXT_HOST_URL));
+    }
+
+    protected void verifyKafkaMessageProcessorSpecificChecks(final JsonObject notification) {
+        // to be override by processor tests if needed
     }
 
     protected void assertNotificationsConnectorHeader(Message<JsonObject> message) {

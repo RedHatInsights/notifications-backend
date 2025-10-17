@@ -1,1 +1,0 @@
-Environment is ready - Ansible Automation Platform Service on AWS
