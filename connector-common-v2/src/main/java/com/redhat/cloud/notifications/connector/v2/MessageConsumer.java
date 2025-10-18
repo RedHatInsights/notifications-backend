@@ -54,7 +54,7 @@ public class MessageConsumer {
         }
 
         try {
-            Log.infof("Processing %s", message.getPayload());
+            Log.debugf("Processing %s", message.getPayload());
 
             // Handle the message using the connector-specific handler
             HandledMessageDetails additionalConnectorDetails = messageHandler.handle(cloudEventMetadata);
