@@ -1,14 +1,49 @@
 {@boolean renderSection1=true}
+{@boolean renderSection2=true}
 {@boolean renderButtonSection1=false}
-{#include email/Common/insightsEmailBody}
+{#include Common/insightsEmailBody}
 {#content-title}
-    Subscriptions Usage - Subscription Services
+    Subscriptions Usage - Subscription Services 
 {/content-title}
 {#content-title-section1}
-    Usage Threshold Exceeded
+    Subscription threshold exceeded
 {/content-title-section1}
 {#content-body-section1}
     <p>
-        Your <b>{action.events[0].payload.product_tag}</b> subscription usage has exceeded <b>{action.events[0].payload.threshold_percentage}%</b> of capacity.
+        Product variant: <b>{action.events[0].payload.product_tag}</b>
     </p>
+    <p>
+        Organization: <b>{action.orgId}</b>
+    </p>
+
+    <h3>
+        Usage information
+    </h3>
+
+    <p>
+        The subscription usage for your organization has exceeded your subscription threshold. The subscription threshold is the maximum capacity of usage for all active subscriptions of that product variant. Your current subscription usage is shown as a utilization percentage.
+    </p>
+
+    <table class="rh-data-table-bordered">
+        <thead>
+            <tr>
+                <th style="width: 30%">Usage metric</th>
+                <th style="width: 60%">Subscription threshold utilization</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="font-size: 14px;">
+                <td>{action.events[0].payload.metric}</td>
+                <td>{action.events[0].payload.utilization_percentage}%</td>
+            </tr>
+        </tbody>
+    </table>
+    <br>
 {/content-body-section1}
+{#content-title-section2}
+    Find out more
+{/content-title-section2}
+{#content-body-section2}
+    View your subscription usage data in the Subscriptions Usage service. To learn more about how subscription usage is calculated, see <a href="https://docs.redhat.com/en/documentation/subscription_central/1-latest/html/getting_started_with_the_subscriptions_service/index" target="_blank">Getting Started with the Subscriptions Usage Service</a>. For additional help, contact your Red Hat account team.
+{/content-body-section2}
+{/include}
