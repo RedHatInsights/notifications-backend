@@ -367,7 +367,7 @@ public class EngineConfig {
         if (unleashEnabled) {
             return unleash.isEnabled(toggleIsConnectorTemplateTransformationEnabled, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
         } else {
-            return true;
+            return false;
         }
     }
 
