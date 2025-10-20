@@ -39,7 +39,7 @@ public class TestSubscriptionsUsageTemplate extends EmailTemplatesRendererHelper
 
     @Test
     public void testUsageThresholdExceededEmailTitle() {
-        eventTypeDisplayName = "Usage Threshold Exceeded";
+        eventTypeDisplayName = "Subscription threshold exceeded";
         String result = generateEmailSubject(EXCEEDED_UTILIZATION_THRESHOLD, ACTION);
         assertEquals("Instant notification - Subscription threshold exceeded - Subscriptions usage - Subscription services", result);
 
