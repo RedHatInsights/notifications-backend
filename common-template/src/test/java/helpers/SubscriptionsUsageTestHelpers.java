@@ -27,6 +27,8 @@ public class SubscriptionsUsageTestHelpers {
                                 new Payload.PayloadBuilder()
                                         .withAdditionalProperty("product_tag", "RHEL for x86")
                                         .withAdditionalProperty("threshold_percentage", "85")
+                                        .withAdditionalProperty("metric", "sockets")
+                                        .withAdditionalProperty("utilization_percentage", "105")
                                         .build()
                         )
                         .build()
