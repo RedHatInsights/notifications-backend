@@ -1,0 +1,1 @@
+{action.severity.or('').severityAsEmailTitle}Instant notification - Subscription threshold exceeded - Subscriptions usage - Subscription services
