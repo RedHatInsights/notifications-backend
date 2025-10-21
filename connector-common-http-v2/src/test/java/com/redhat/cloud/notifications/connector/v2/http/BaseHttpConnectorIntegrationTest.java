@@ -86,7 +86,7 @@ public abstract class BaseHttpConnectorIntegrationTest extends BaseConnectorInte
         String cloudEventId = sendCloudEventMessage(incomingPayload);
 
         // Assert failed response
-        assertFailedOutgoingMessage(cloudEventId, "connection", "failed");
+        assertFailedOutgoingMessage(cloudEventId, "Connection", "closed");
 
         // Assert metrics
         assertMetricsIncrement(1, 0, 1);

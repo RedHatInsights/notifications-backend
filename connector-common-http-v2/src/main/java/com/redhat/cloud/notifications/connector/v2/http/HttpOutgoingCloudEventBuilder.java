@@ -23,7 +23,7 @@ public class HttpOutgoingCloudEventBuilder extends OutgoingCloudEventBuilder {
         JsonObject data = new JsonObject();
         if (processedExceptionDetails instanceof HandledHttpExceptionDetails processedExceptionDetailsHttp) {
             if (null != processedExceptionDetailsHttp.targetUrl) {
-                data.put("target_url", processedExceptionDetailsHttp.targetUrl);
+                data.put("details", new JsonObject().put("target", processedExceptionDetailsHttp.targetUrl));
             }
 
             if (processedExceptionDetailsHttp.httpErrorType != null) {
@@ -40,12 +40,12 @@ public class HttpOutgoingCloudEventBuilder extends OutgoingCloudEventBuilder {
 
     @Override
     public JsonObject buildSuccess(HandledMessageDetails processedMessageDetails) {
-        JsonObject data = new JsonObject();
+        JsonObject details = new JsonObject();
         if (processedMessageDetails instanceof HandledHttpMessageDetails processedHttpMessageDetails) {
             if (null != processedHttpMessageDetails.targetUrl) {
-                data.put("target_url", processedHttpMessageDetails.targetUrl);
+                details.put("details", new JsonObject().put("target", processedHttpMessageDetails.targetUrl));
             }
         }
-        return data;
+        return details;
     }
 }
