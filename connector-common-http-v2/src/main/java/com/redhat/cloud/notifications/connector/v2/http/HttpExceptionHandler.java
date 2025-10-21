@@ -51,6 +51,8 @@ public class HttpExceptionHandler extends ExceptionHandler {
         } else {
             logDefault(t, incomingCloudEvent);
         }
+        NotificationToConnectorHttp notificationToConnector = incomingCloudEvent.getData().mapTo(NotificationToConnectorHttp.class);
+        details.targetUrl = getTargetUrl(notificationToConnector);
         return details;
     }
 
@@ -74,15 +76,23 @@ public class HttpExceptionHandler extends ExceptionHandler {
 
     private void logHttpError(Logger.Level level, int statusCode, String responseBody, IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
         NotificationToConnectorHttp notificationToConnector = incomingCloudEvent.getData().mapTo(NotificationToConnectorHttp.class);
-
+        String targetUrl = getTargetUrl(notificationToConnector);
         Log.logf(
                 level,
                 HTTP_ERROR_LOG_MSG,
                 notificationToConnector.getOrgId(),
                 incomingCloudEvent.getId(),
-                notificationToConnector.getTargetUrl(),
+                targetUrl,
                 statusCode,
                 responseBody
         );
+    }
+
+    private static String getTargetUrl(NotificationToConnectorHttp notificationToConnector) {
+        String targetUrl = null;
+        if (notificationToConnector.getEndpointProperties() != null) {
+            targetUrl = notificationToConnector.getEndpointProperties().getTargetUrl();
+        }
+        return targetUrl;
     }
 }
