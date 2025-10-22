@@ -153,7 +153,8 @@ public class EndpointProcessor {
                             if (!event.getEventType().isRestrictToRecipientsIntegrations()) {
                                 Map<String, List<Endpoint>> endpointsBySubType = endpointsByTypeEntry.getValue().stream().collect(Collectors.groupingBy(Endpoint::getSubType));
                                 for (Map.Entry<String, List<Endpoint>> endpointsBySubTypeEntry : endpointsBySubType.entrySet()) {
-                                    if (replayOnly && !endpointSubTypeToReplay.equals(endpointsBySubTypeEntry.getKey())) {
+                                    if (replayOnly &&
+                                        (endpointSubTypeToReplay == null || !endpointSubTypeToReplay.equals(endpointsBySubTypeEntry.getKey()))) {
                                         continue;
                                     }
                                     try {

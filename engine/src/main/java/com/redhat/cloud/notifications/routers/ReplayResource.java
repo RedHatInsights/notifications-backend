@@ -21,6 +21,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -86,6 +87,11 @@ public class ReplayResource {
     @POST
     @Consumes(APPLICATION_JSON)
     public void replay(@NotNull @Valid EventsReplayRequest eventsReplayRequest) {
+
+        if (eventsReplayRequest.endpointType == EndpointType.CAMEL && (eventsReplayRequest.endpointSubType == null || eventsReplayRequest.endpointSubType.isEmpty())) {
+            throw new BadRequestException("endpointSubType cannot be null or empty with CAMEL endpointType");
+        }
+
         Log.infof("Replay endpoint was called for events from %s to %s for type %s (subtype %s)",
             eventsReplayRequest.startDate,
             eventsReplayRequest.endDate,
