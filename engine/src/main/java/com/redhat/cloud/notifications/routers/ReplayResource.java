@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import com.redhat.cloud.notifications.routers.replay.EventsReplayRequest;
@@ -20,6 +21,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -29,7 +31,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.NotificationStatus.FAILED_EXTERNAL;
 import static com.redhat.cloud.notifications.models.NotificationStatus.SUCCESS;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -53,14 +54,14 @@ public class ReplayResource {
 
     ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
-    public List<Event> getEvents(String orgId,  LocalDateTime startDate, LocalDateTime endDate, int firstResult, int maxResults) {
+    public List<Event> getEvents(String orgId, LocalDateTime startDate, LocalDateTime endDate, EndpointType endpointType, String endpointSubType, int firstResult, int maxResults) {
 
         String hql = "FROM Event e JOIN FETCH e.eventType " +
                 "WHERE e.created > :start AND e.created <= :end " +
                 "AND EXISTS (SELECT 1 FROM NotificationHistory " +
-                "WHERE e = event AND compositeEndpointType.type = :endpointType AND status = :failed) " +
+                "WHERE e = event AND compositeEndpointType.type = :endpointType AND (compositeEndpointType.subType is null or compositeEndpointType.subType = :endpointSubType) AND status = :failed) " +
                 "AND NOT EXISTS (SELECT 1 FROM NotificationHistory " +
-                "WHERE e = event AND compositeEndpointType.type = :endpointType AND status = :success)";
+                "WHERE e = event AND compositeEndpointType.type = :endpointType AND (compositeEndpointType.subType is null or compositeEndpointType.subType = :endpointSubType) AND status = :success)";
 
         if (orgId != null) {
             hql += " AND orgId = :orgId";
@@ -69,7 +70,8 @@ public class ReplayResource {
         TypedQuery<Event> typedQuery = entityManager.createQuery(hql, Event.class)
                 .setParameter("start", startDate)
                 .setParameter("end", endDate)
-                .setParameter("endpointType", EMAIL_SUBSCRIPTION)
+                .setParameter("endpointType", endpointType)
+                .setParameter("endpointSubType", endpointSubType)
                 .setParameter("failed", FAILED_EXTERNAL)
                 .setParameter("success", SUCCESS)
                 .setFirstResult(firstResult)
@@ -85,13 +87,29 @@ public class ReplayResource {
     @POST
     @Consumes(APPLICATION_JSON)
     public void replay(@NotNull @Valid EventsReplayRequest eventsReplayRequest) {
-        Log.infof("Replay endpoint was called for events from %s to %s", eventsReplayRequest.startDate, eventsReplayRequest.endDate);
+
+        if (eventsReplayRequest.endpointType == EndpointType.CAMEL && (eventsReplayRequest.endpointSubType == null || eventsReplayRequest.endpointSubType.isEmpty())) {
+            throw new BadRequestException("endpointSubType cannot be null or empty with CAMEL endpointType");
+        }
+
+        Log.infof("Replay endpoint was called for events from %s to %s for type %s (subtype %s)",
+            eventsReplayRequest.startDate,
+            eventsReplayRequest.endDate,
+            eventsReplayRequest.endpointType,
+            eventsReplayRequest.endpointSubType);
         int firstResult = 0;
         List<Event> events;
         long processedEvents = 0;
         do {
             Log.infof("Processing events from index %d", firstResult);
-            events = getEvents(eventsReplayRequest.orgId, eventsReplayRequest.startDate, eventsReplayRequest.endDate, firstResult, MAX_RESULTS);
+            events = getEvents(
+                eventsReplayRequest.orgId,
+                eventsReplayRequest.startDate,
+                eventsReplayRequest.endDate,
+                eventsReplayRequest.endpointType,
+                eventsReplayRequest.endpointSubType,
+                firstResult,
+                MAX_RESULTS);
             firstResult += MAX_RESULTS;
             for (Event event : events) {
                 try {
@@ -115,7 +133,7 @@ public class ReplayResource {
 
                     event.setEventWrapper(eventWrapper);
 
-                    endpointProcessor.process(event, true);
+                    endpointProcessor.process(event, true, eventsReplayRequest.endpointType, eventsReplayRequest.endpointSubType);
                     processedEvents++;
                 } catch (Exception e) {
                     Log.error("Event replay failed", e);

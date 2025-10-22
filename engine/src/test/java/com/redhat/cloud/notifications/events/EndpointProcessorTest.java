@@ -38,7 +38,6 @@ import static com.redhat.cloud.notifications.events.EndpointProcessor.SLACK_ENDP
 import static com.redhat.cloud.notifications.events.EndpointProcessor.TEAMS_ENDPOINT_SUBTYPE;
 import static java.time.ZoneOffset.UTC;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 
 @QuarkusTest
@@ -263,7 +262,7 @@ public class EndpointProcessorTest {
         endpointProcessor.process(event);
 
         Mockito.verify(drawerProcessor, Mockito.times(1)).process(any(), any());
-        Mockito.verify(emailConnectorProcessor, Mockito.times(1)).process(any(), any(), anyBoolean());
+        Mockito.verify(emailConnectorProcessor, Mockito.times(1)).process(any(), any());
 
         if (isEventTypeRestrictedToRecipientsIntegrations) {
             Mockito.verifyNoInteractions(webhookProcessor);
@@ -331,7 +330,7 @@ public class EndpointProcessorTest {
 
         Mockito.verify(this.endpointRepository, Mockito.times(0)).findByUuidAndOrgId(endpointUuid, orgId);
         Mockito.verify(this.webhookProcessor, Mockito.times(1)).process(eq(event), Mockito.anyList());
-        Mockito.verify(this.emailConnectorProcessor, Mockito.times(1)).process(eq(event), Mockito.anyList(), anyBoolean());
+        Mockito.verify(this.emailConnectorProcessor, Mockito.times(1)).process(eq(event), Mockito.anyList());
         Mockito.verify(this.engineConfig, Mockito.times(2)).isBlacklistedEndpoint(any(UUID.class));
 
         if (useEndpointToEventTypeDirectLink) {
@@ -355,7 +354,7 @@ public class EndpointProcessorTest {
         this.endpointProcessor.process(event);
 
         Mockito.verify(this.webhookProcessor, Mockito.times(0)).process(eq(event), Mockito.anyList());
-        Mockito.verify(this.emailConnectorProcessor, Mockito.times(0)).process(eq(event), Mockito.anyList(), anyBoolean());
+        Mockito.verify(this.emailConnectorProcessor, Mockito.times(0)).process(eq(event), Mockito.anyList());
         Mockito.verify(this.engineConfig, Mockito.times(2)).isBlacklistedEndpoint(any(UUID.class));
     }
 
