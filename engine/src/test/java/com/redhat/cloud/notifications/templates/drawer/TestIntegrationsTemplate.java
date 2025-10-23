@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.templates.drawer;
 
-import com.redhat.cloud.notifications.IntegrationTemplatesInDbHelper;
+import com.redhat.cloud.notifications.DrawerTemplatesHelper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Endpoint;
 import io.quarkus.test.junit.QuarkusTest;
@@ -16,7 +16,7 @@ import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-class TestIntegrationsTemplate extends IntegrationTemplatesInDbHelper {
+class TestIntegrationsTemplate extends DrawerTemplatesHelper {
 
     @Override
     protected String getBundle() {

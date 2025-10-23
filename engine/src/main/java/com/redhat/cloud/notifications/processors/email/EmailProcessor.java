@@ -2,34 +2,28 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
-import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
-import com.redhat.cloud.notifications.templates.TemplateService;
+import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
 import io.quarkus.logging.Log;
-import io.quarkus.qute.TemplateInstance;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -50,13 +44,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     EmailPendoResolver emailPendoResolver;
 
     @Inject
-    TemplateRepository templateRepository;
-
-    @Inject
-    TemplateService templateService;
-
-    @Inject
-    com.redhat.cloud.notifications.qute.templates.TemplateService quteTemplateService;
+    TemplateService quteTemplateService;
 
     @Inject
     SubscriptionRepository subscriptionRepository;
@@ -68,9 +56,6 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     Environment environment;
 
     @Inject
-    EngineConfig engineConfig;
-
-    @Inject
     BaseTransformer baseTransformer;
 
     @Inject
@@ -78,9 +63,6 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
-
-        // Fetch the template that will be used to hydrate it with the data.
-        final Optional<InstantEmailTemplate> instantEmailTemplateMaybe = this.templateRepository.findInstantEmailTemplate(event.getEventType().getId());
 
         final TemplateDefinition bodyTemplateDefinition = new TemplateDefinition(
             IntegrationType.EMAIL_BODY,
@@ -131,49 +113,11 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         // we don't want to include outage pendo message this time
         EmailPendo pendoMessage = emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, false);
-        String subject;
-        String body;
 
-        if (engineConfig.isUseCommonTemplateModuleToRenderEmailsEnabled()) {
-            Log.debug("Uses common template module to render emails");
-            try {
-                Map<String, Object> additionalContext = new HashMap<>();
-                additionalContext.put("environment", environment);
-                additionalContext.put("pendo_message", pendoMessage);
-                additionalContext.put("ignore_user_preferences", ignoreUserPreferences);
-                additionalContext.put("action", event.getEventWrapper().getEvent());
-                additionalContext.put(BaseTransformer.SOURCE, BaseTransformer.getEventSource(event));
-
-                subject = quteTemplateService.renderTemplateWithCustomDataMap(subjectTemplateDefinition, additionalContext);
-                body = quteTemplateService.renderTemplateWithCustomDataMap(bodyTemplateDefinition, additionalContext);
-            } catch (Exception e) {
-                Log.error("Error rendering email template for event type " + event.getEventType().getName(), e);
-                if (instantEmailTemplateMaybe.isEmpty()) {
-                    Log.infof("[event_uuid: %s] The event was skipped because there were no suitable templates for its event type %s", event.getId(), event.getEventType().getName());
-                    return;
-                }
-                subject = renderEmailSubjectFromDbTemplates(instantEmailTemplateMaybe.get(), event.getEventWrapper().getEvent());
-                body = renderEmailBodyFromDbTemplates(instantEmailTemplateMaybe.get(), event.getEventWrapper().getEvent());
-            }
-        } else {
-            // Render the subject and the body of the email.
-            if (instantEmailTemplateMaybe.isEmpty()) {
-                Log.infof("[event_uuid: %s] The event was skipped because there were no suitable templates for its event type %s", event.getId(), event.getEventType().getName());
-                return;
-            }
-            subject = renderEmailSubjectFromDbTemplates(instantEmailTemplateMaybe.get(), event.getEventWrapper().getEvent());
-            body = renderEmailBodyFromDbTemplates(instantEmailTemplateMaybe.get(), event.getEventWrapper().getEvent());
-        }
-
-        Map<String, Object> eventData = null;
-        if (engineConfig.isConnectorTemplateTransformationEnabled(event.getOrgId())) {
-            eventData = convertEventAsDataMap(event, pendoMessage, ignoreUserPreferences);
-        }
+        Map<String, Object> eventData = convertEventAsDataMap(event, pendoMessage, ignoreUserPreferences);
 
         // Prepare all the data to be sent to the connector.
         final EmailNotification emailNotification = new EmailNotification(
-            body,
-            subject,
             emailActorsResolver.getEmailSender(event),
             event.getOrgId(),
             recipientSettings,
@@ -208,17 +152,5 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             throw new RuntimeException("Instant email notification data transformation failed", e);
         }
         return dataAsMap;
-    }
-
-    private String renderEmailSubjectFromDbTemplates(final InstantEmailTemplate instantEmailTemplate, final Object wrappedEvent) {
-        final String subjectData = instantEmailTemplate.getSubjectTemplate().getData();
-        final TemplateInstance subjectTemplate = this.templateService.compileTemplate(subjectData, "subject");
-        return templateService.renderTemplate(wrappedEvent, subjectTemplate);
-    }
-
-    private String renderEmailBodyFromDbTemplates(final InstantEmailTemplate instantEmailTemplate, final Object wrappedEvent) {
-        final String bodyData = instantEmailTemplate.getBodyTemplate().getData();
-        final TemplateInstance bodyTemplate = this.templateService.compileTemplate(bodyData, "body");
-        return templateService.renderTemplate(wrappedEvent, bodyTemplate);
     }
 }

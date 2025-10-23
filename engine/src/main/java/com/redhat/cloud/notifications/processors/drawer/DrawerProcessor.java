@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
-import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
@@ -69,9 +68,6 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     TemplateService templateService;
-
-    @Inject
-    EventTypeRepository eventTypeRepository;
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
