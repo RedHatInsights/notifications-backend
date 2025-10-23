@@ -5,11 +5,11 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import org.jetbrains.annotations.NotNull;
 
 public class RbacServerMockResource implements QuarkusTestResourceLifecycleManager {
 
@@ -19,14 +19,13 @@ public class RbacServerMockResource implements QuarkusTestResourceLifecycleManag
     public Map<String, String> start() {
         mockWebServer = new MockWebServer();
 
-        final Dispatcher dispatcher = new Dispatcher () {
+        final Dispatcher dispatcher = new Dispatcher() {
             @Override
-            public @NotNull MockResponse dispatch (RecordedRequest request) {
+            public @NotNull MockResponse dispatch(RecordedRequest request) {
                 assert request.getRequestUrl() != null;
                 String path = request.getRequestUrl().encodedPath();
                 String authHeader = request.getHeader("Authorization");
                 String expectedAuth = "Bearer " + OidcServerMockResource.TEST_ACCESS_TOKEN;
-
 
                 if (path.equals("/api/rbac/v1/principals/")) {
                     return handleGetUsers(authHeader, expectedAuth);

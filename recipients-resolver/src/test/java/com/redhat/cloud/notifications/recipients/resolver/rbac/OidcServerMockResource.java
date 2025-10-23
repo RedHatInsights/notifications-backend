@@ -21,9 +21,9 @@ public class OidcServerMockResource implements QuarkusTestResourceLifecycleManag
     public Map<String, String> start() {
         mockWebServer = new MockWebServer();
 
-        final Dispatcher dispatcher = new Dispatcher () {
+        final Dispatcher dispatcher = new Dispatcher() {
             @Override
-            public @NotNull MockResponse dispatch (RecordedRequest request) {
+            public @NotNull MockResponse dispatch(RecordedRequest request) {
                 assert request.getRequestUrl() != null;
                 return switch (request.getRequestUrl().encodedPath()) {
                     case "/.well-known/openid-configuration" -> handleOidcDiscovery();
