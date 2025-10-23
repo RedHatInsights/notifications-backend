@@ -9,6 +9,7 @@ import okhttp3.mockwebserver.RecordedRequest;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
 
 public class RbacServerMockResource implements QuarkusTestResourceLifecycleManager {
 
@@ -18,28 +19,29 @@ public class RbacServerMockResource implements QuarkusTestResourceLifecycleManag
     public Map<String, String> start() {
         mockWebServer = new MockWebServer();
 
-        // Set up dispatcher to handle different endpoints
-        mockWebServer.setDispatcher(new Dispatcher() {
+        final Dispatcher dispatcher = new Dispatcher () {
             @Override
-            public MockResponse dispatch(RecordedRequest request) {
-                String path = request.getPath();
+            public @NotNull MockResponse dispatch (RecordedRequest request) {
+                assert request.getRequestUrl() != null;
+                String path = request.getRequestUrl().encodedPath();
                 String authHeader = request.getHeader("Authorization");
                 String expectedAuth = "Bearer " + OidcServerMockResource.TEST_ACCESS_TOKEN;
 
-                // Extract path without query parameters for pattern matching
-                String pathWithoutQuery = path != null && path.contains("?") ? path.substring(0, path.indexOf('?')) : path;
 
-                if (pathWithoutQuery != null && pathWithoutQuery.equals("/api/rbac/v1/principals/")) {
+                if (path.equals("/api/rbac/v1/principals/")) {
                     return handleGetUsers(authHeader, expectedAuth);
-                } else if (pathWithoutQuery != null && pathWithoutQuery.matches("/api/rbac/v1/groups/[^/]+/")) {
+                } else if (path.matches("/api/rbac/v1/groups/[^/]+/")) {
                     return handleGetGroup(authHeader, expectedAuth);
-                } else if (pathWithoutQuery != null && pathWithoutQuery.matches("/api/rbac/v1/groups/[^/]+/principals/")) {
+                } else if (path.matches("/api/rbac/v1/groups/[^/]+/principals/")) {
                     return handleGetGroupUsers(authHeader, expectedAuth);
                 }
 
                 return new MockResponse().setResponseCode(404);
             }
-        });
+        };
+
+        // Set up dispatcher to handle different endpoints
+        mockWebServer.setDispatcher(dispatcher);
 
         try {
             mockWebServer.start();

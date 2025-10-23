@@ -5,6 +5,7 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -20,21 +21,20 @@ public class OidcServerMockResource implements QuarkusTestResourceLifecycleManag
     public Map<String, String> start() {
         mockWebServer = new MockWebServer();
 
-        // Set up dispatcher to handle different endpoints
-        mockWebServer.setDispatcher(new Dispatcher() {
+        final Dispatcher dispatcher = new Dispatcher () {
             @Override
-            public MockResponse dispatch(RecordedRequest request) {
-                String path = request.getPath();
-
-                if (path != null && path.equals("/.well-known/openid-configuration")) {
-                    return handleOidcDiscovery();
-                } else if (path != null && path.equals("/token")) {
-                    return handleTokenEndpoint();
-                }
-
-                return new MockResponse().setResponseCode(404);
+            public @NotNull MockResponse dispatch (RecordedRequest request) {
+                assert request.getRequestUrl() != null;
+                return switch (request.getRequestUrl().encodedPath()) {
+                    case "/.well-known/openid-configuration" -> handleOidcDiscovery();
+                    case "/token" -> handleTokenEndpoint();
+                    default -> new MockResponse().setResponseCode(404);
+                };
             }
-        });
+        };
+
+        // Set up dispatcher to handle different endpoints
+        mockWebServer.setDispatcher(dispatcher);
 
         try {
             mockWebServer.start();
