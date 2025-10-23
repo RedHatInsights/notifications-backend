@@ -48,7 +48,7 @@
     "eslint-plugin-react-hooks": "^4.3.0",
     "openapi2typescript-cli": "0.7.1",
     "react-scripts": "5.0.1",
-    "typescript": "4.7.4"
+    "typescript": "4.9.5"
   },
   "scripts": {
     "start": "react-scripts start",
