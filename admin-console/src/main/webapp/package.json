@@ -22,7 +22,7 @@
     "react-monaco-editor": "0.41.2",
     "react-router": "5.3.3",
     "react-router-dom": "5.3.3",
-    "react-use": "17.4.0",
+    "react-use": "17.6.0",
     "typestyle": "2.3.0",
     "zod": "3.22.3"
   },
