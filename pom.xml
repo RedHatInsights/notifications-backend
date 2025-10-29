@@ -10,6 +10,9 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>aggregator</module>
+        <module>backend</module>
+        <module>checkstyle</module>
         <module>common</module>
         <module>common-template</module>
         <module>common-unleash</module>
