@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.connector;
 
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import io.vertx.core.json.JsonObject;
@@ -285,7 +286,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         String path = normalizeRemoteServerPath();
         getClient().stubFor(
             post(urlEqualTo(path))
-                .willReturn(aResponse().withFault(com.github.tomakehurst.wiremock.http.Fault.CONNECTION_RESET_BY_PEER))
+                .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER))
         );
     }
 
