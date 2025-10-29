@@ -1,43 +1,73 @@
 package com.redhat.cloud.notifications;
 
-import org.mockserver.configuration.Configuration;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.logging.MockServerLogger;
-import org.mockserver.socket.tls.KeyStoreFactory;
-import javax.net.ssl.HttpsURLConnection;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 
-import static org.mockserver.integration.ClientAndServer.startClientAndServer;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.security.cert.X509Certificate;
 
 public class MockServerLifecycleManager {
 
-    private static final String LOG_LEVEL_KEY = "mockserver.logLevel";
-
-    private static ClientAndServer mockServer;
+    private static WireMockServer wireMockServer;
     private static String mockServerUrl;
+    private static String mockServerHttpsUrl;
 
     public static void start() {
-        if (System.getProperty(LOG_LEVEL_KEY) == null) {
-            System.setProperty(LOG_LEVEL_KEY, "OFF");
-            System.out.println("MockServer log is disabled. Use '-D" + LOG_LEVEL_KEY + "=WARN|INFO|DEBUG|TRACE' to enable it.");
+        WireMockConfiguration config = WireMockConfiguration.wireMockConfig()
+            .dynamicPort()
+            .dynamicHttpsPort();
+
+        wireMockServer = new WireMockServer(config);
+        wireMockServer.start();
+
+        // Configure WireMock client to use the server
+        WireMock.configureFor("localhost", wireMockServer.port());
+
+        // Set up SSL trust for HTTPS connections - trust all certificates for testing
+        try {
+            TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
+                public X509Certificate[] getAcceptedIssuers() {
+                    return new X509Certificate[0];
+                }
+
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                }
+
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                }
+            } };
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+        } catch (Exception e) {
+            System.err.println("Failed to set up SSL context: " + e.getMessage());
         }
-        // Thanks to the addition of MockServer KeyStoreFactory into default ssl context,
-        // MockServer ssl certificate issuer will be recognized
-        HttpsURLConnection.setDefaultSSLSocketFactory(new KeyStoreFactory(Configuration.configuration(), new MockServerLogger()).sslContext().getSocketFactory());
-        mockServer = startClientAndServer();
-        mockServerUrl = "http://localhost:" + mockServer.getPort();
+
+        mockServerUrl = "http://localhost:" + wireMockServer.port();
+        mockServerHttpsUrl = "https://localhost:" + wireMockServer.httpsPort();
+        System.out.println("WireMock server started on HTTP port: " + wireMockServer.port() + " and HTTPS port: " + wireMockServer.httpsPort());
     }
 
     public static String getMockServerUrl() {
         return mockServerUrl;
     }
 
-    public static ClientAndServer getClient() {
-        return mockServer;
+    public static String getMockServerHttpsUrl() {
+        return mockServerHttpsUrl;
+    }
+
+    public static WireMockServer getClient() {
+        return wireMockServer;
     }
 
     public static void stop() {
-        if (mockServer != null) {
-            mockServer.stop();
+        if (wireMockServer != null) {
+            wireMockServer.stop();
+            System.out.println("WireMock server stopped");
         }
     }
 }
