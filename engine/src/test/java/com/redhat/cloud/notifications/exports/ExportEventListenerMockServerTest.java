@@ -1,5 +1,8 @@
 package com.redhat.cloud.notifications.exports;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.http.Request;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import com.redhat.cloud.event.apps.exportservice.v1.Format;
 import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequest;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
@@ -22,19 +25,17 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.MediaType;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.exports.ExportEventListener.EXPORT_CHANNEL;
 import static org.awaitility.Awaitility.await;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
 /**
  * While {@link ExportEventListenerTest} uses mocks to test the whole logic of
@@ -59,11 +60,13 @@ public class ExportEventListenerMockServerTest {
      */
     @BeforeEach
     void setUpMockServerRoutes() {
-        final ClientAndServer mockServer = MockServerLifecycleManager.getClient();
+        final WireMockServer mockServer = MockServerLifecycleManager.getClient();
 
-        mockServer
-            .when(request().withPath(".*/upload"))
-            .respond(response().withStatusCode(200));
+        mockServer.stubFor(
+            post(urlPathMatching(".*/upload"))
+                .willReturn(aResponse()
+                    .withStatus(200))
+        );
     }
 
     /**
@@ -71,7 +74,7 @@ public class ExportEventListenerMockServerTest {
      */
     @AfterEach
     void clearMockServer() {
-        MockServerLifecycleManager.getClient().reset();
+        MockServerLifecycleManager.getClient().resetAll();
     }
 
     /**
@@ -102,7 +105,7 @@ public class ExportEventListenerMockServerTest {
         testCases.add(
             new TestCase(
                 ExportEventTestHelper.createExportCloudEventFixture(Format.JSON),
-                MediaType.APPLICATION_JSON.toString()
+                "application/json"
             )
         );
 
@@ -121,18 +124,18 @@ public class ExportEventListenerMockServerTest {
             // Wait until the handler sends an error to the export service.
             await()
                 .atMost(Duration.ofSeconds(10))
-                .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/upload")).length != 0);
+                .until(() -> !MockServerLifecycleManager.getClient().getAllServeEvents().isEmpty());
 
             // Assert that only one request was received.
-            final HttpRequest[] requests = MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/upload"));
-            Assertions.assertEquals(1, requests.length, "unexpected number of requests received in the upload endpoint");
+            final List<ServeEvent> serveEvents = MockServerLifecycleManager.getClient().getAllServeEvents();
+            Assertions.assertEquals(1, serveEvents.size(), "unexpected number of requests received in the upload endpoint");
 
-            final HttpRequest request = requests[0];
+            final Request request = serveEvents.get(0).getRequest();
 
             // Assert that the "Content-Type" header contains the expected
             // value.
             Assertions.assertEquals(
-                request.getFirstHeader("Content-Type"),
+                request.getHeader("Content-Type"),
                 testCase.expectedMediaType(),
                 "unexpected content type header sent to the export service"
             );
@@ -170,10 +173,12 @@ public class ExportEventListenerMockServerTest {
         Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any())).thenReturn(TransformersHelpers.getFixtureEvents());
 
         // Reset the mock server since we need it to return a specific response.
-        MockServerLifecycleManager.getClient().reset();
-        MockServerLifecycleManager.getClient()
-            .when(request().withPath(".*/upload"))
-            .respond(response().withStatusCode(HttpStatus.SC_BAD_REQUEST));
+        MockServerLifecycleManager.getClient().resetAll();
+        MockServerLifecycleManager.getClient().stubFor(
+            post(urlPathMatching(".*/upload"))
+                .willReturn(aResponse()
+                    .withStatus(HttpStatus.SC_BAD_REQUEST))
+        );
 
         // Send the JSON payload.
         exportIn.send(consoleCloudEventParser.toJson(cce));
@@ -214,10 +219,12 @@ public class ExportEventListenerMockServerTest {
         Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any())).thenReturn(TransformersHelpers.getFixtureEvents());
 
         // Reset the mock server since we need it to return a specific response.
-        MockServerLifecycleManager.getClient().reset();
-        MockServerLifecycleManager.getClient()
-            .when(request().withPath(".*/upload"))
-            .respond(response().withStatusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR));
+        MockServerLifecycleManager.getClient().resetAll();
+        MockServerLifecycleManager.getClient().stubFor(
+            post(urlPathMatching(".*/upload"))
+                .willReturn(aResponse()
+                    .withStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR))
+        );
 
         // Send the JSON payload.
         exportIn.send(consoleCloudEventParser.toJson(cce));
@@ -225,7 +232,7 @@ public class ExportEventListenerMockServerTest {
         // Wait until the handler sends the payload to the export service.
         await()
             .atMost(Duration.ofSeconds(10))
-            .until(() -> MockServerLifecycleManager.getClient().retrieveRecordedRequests(request().withPath(".*/upload")).length != 0);
+            .until(() -> !MockServerLifecycleManager.getClient().getAllServeEvents().isEmpty());
 
         // Assert that only the failures counter increased their value.
         this.micrometerAssertionHelper.awaitAndAssertCounterIncrementFilteredByTags(
