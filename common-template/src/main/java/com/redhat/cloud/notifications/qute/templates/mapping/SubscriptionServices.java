@@ -48,7 +48,7 @@ public class SubscriptionServices {
         entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionEnhancementErrata.json"),
         entry(new TemplateDefinition(SLACK, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionEnhancementErrata.json"),
 
-        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, ERRATA_APP_NAME, null, true), ERRATA_FOLDER_NAME + "beta/dailyEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, ERRATA_APP_NAME, null), ERRATA_FOLDER_NAME + "beta/dailyEmailBody.html"),
 
         // Subscriptions Usage
         entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, SUBSCRIPTIONS_USAGE_APP_NAME, SUBSCRIPTIONS_USAGE_EXCEEDED_UTILIZATION_THRESHOLD), SUBSCRIPTIONS_USAGE_FOLDER_NAME + "usageThresholdExceededEmailTitle.txt"),
