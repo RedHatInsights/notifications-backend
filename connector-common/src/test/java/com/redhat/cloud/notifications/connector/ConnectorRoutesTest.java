@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.connector;
 
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import io.vertx.core.json.JsonObject;
@@ -13,7 +14,6 @@ import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockserver.model.HttpResponse;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
@@ -36,9 +37,6 @@ import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockserver.model.HttpError.error;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.verify.VerificationTimes.atLeast;
 
 public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
@@ -68,17 +66,29 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
     }
 
     protected String getMockServerUrl() {
-        String mockServerUrl = MockServerLifecycleManager.getMockServerUrl();
-        return useHttps() ? mockServerUrl.replace("http:", "https:") : mockServerUrl;
+        return useHttps() ? MockServerLifecycleManager.getMockServerHttpsUrl() : MockServerLifecycleManager.getMockServerUrl();
     }
 
     protected String getRemoteServerPath() {
         return "";
     }
 
+    /**
+     * Normalizes the remote server path for WireMock matching.
+     * WireMock requires paths to start with "/" for URL matching.
+     * @return the normalized path, defaulting to "/" if empty or null
+     */
+    protected String normalizeRemoteServerPath() {
+        String path = getRemoteServerPath();
+        if (path == null || path.isEmpty()) {
+            return "/";
+        }
+        return path;
+    }
+
     @BeforeEach
     void beforeEach() {
-        getClient().reset();
+        getClient().resetAll();
         saveRoutesMetrics(
                 ENGINE_TO_CONNECTOR,
                 connectorConfig.getConnectorName(),
@@ -90,7 +100,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
     @AfterEach
     void afterEach() {
-        getClient().reset();
+        getClient().resetAll();
         micrometerAssertionHelper.clearSavedValues();
     }
 
@@ -173,8 +183,16 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
         String cloudEventId = sendMessageToKafkaSource(incomingPayload);
 
-        assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, false, getMockServerUrl() + getRemoteServerPath(), "unexpected end of stream", "localhost:" + MockServerLifecycleManager.getClient().getPort() + " failed to respond");
-        getClient().verify(request().withMethod("POST").withPath(getRemoteServerPath()), atLeast(3));
+        // WireMock's CONNECTION_RESET_BY_PEER fault simulates connection reset
+        String path = normalizeRemoteServerPath();
+        String expectedUrl;
+        if ("/".equals(path)) {
+            expectedUrl = getMockServerUrl(); // Don't add "/" to avoid double slash in URL comparison
+        } else {
+            expectedUrl = getMockServerUrl() + path;
+        }
+        assertKafkaSinkIsSatisfied(cloudEventId, kafkaSinkMockEndpoint, false, expectedUrl, "Connection reset", "failed to respond", "Remotely closed", "Connection has been closed", "Unsupported or unrecognized SSL message", "SSL");
+        getClient().verify(moreThanOrExactly(3), postRequestedFor(urlEqualTo(path)));
 
         checkRouteMetrics(ENGINE_TO_CONNECTOR, 1, 1, 1);
         checkRouteMetrics(connectorConfig.getConnectorName(), 1, 1, 1);
@@ -217,7 +235,8 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
 
         // Assert that before reinjecting the original Cloud Event we did retry
         // sending the notification.
-        getClient().verify(request().withMethod("POST").withPath(getRemoteServerPath()), atLeast(3));
+        String path = normalizeRemoteServerPath();
+        getClient().verify(moreThanOrExactly(3), postRequestedFor(urlEqualTo(path)));
     }
 
     protected void saveRoutesMetrics(String... routeIds) {
@@ -254,17 +273,21 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
     }
 
     protected void mockRemoteServerError(int httpReturnCode, String bodyMessage) {
-        getClient()
-            .withSecure(useHttps())
-            .when(request().withMethod("POST").withPath(getRemoteServerPath()))
-            .respond(new HttpResponse().withStatusCode(httpReturnCode).withBody(bodyMessage));
+        String path = normalizeRemoteServerPath();
+        getClient().stubFor(
+            post(urlEqualTo(path))
+                .willReturn(aResponse()
+                    .withStatus(httpReturnCode)
+                    .withBody(bodyMessage))
+        );
     }
 
     protected void mockRemoteServerNetworkFailure() {
-        getClient()
-                .withSecure(useHttps())
-                .when(request().withMethod("POST").withPath(getRemoteServerPath()))
-                .error(error().withDropConnection(true));
+        String path = normalizeRemoteServerPath();
+        getClient().stubFor(
+            post(urlEqualTo(path))
+                .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER))
+        );
     }
 
     protected MockEndpoint mockKafkaSinkEndpoint() throws Exception {

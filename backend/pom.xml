@@ -211,24 +211,11 @@
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- WireMock -->
         <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>mockserver</artifactId>
-            <version>${testcontainers.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mock-server</groupId>
-            <artifactId>mockserver-netty</artifactId>
-            <version>${mockserver-netty.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <!-- io.netty:netty-codec-http2 is a transitive dependency of org.mock-server:mockserver-netty -->
-        <!-- do not remove unless RHCLOUD-41812 has been addressed -->
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-codec-http2</artifactId>
-            <version>4.2.6.Final</version>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock-standalone</artifactId>
+            <version>${wiremock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

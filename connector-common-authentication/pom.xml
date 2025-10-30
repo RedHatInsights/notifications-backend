@@ -56,11 +56,11 @@
 
         <!-- Scope: test -->
 
-        <!-- MockServer -->
+        <!-- WireMock -->
         <dependency>
-            <groupId>org.mock-server</groupId>
-            <artifactId>mockserver-netty-no-dependencies</artifactId>
-            <version>${mockserver-netty-no-dependencies.version}</version>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock-standalone</artifactId>
+            <version>${wiremock.version}</version>
             <scope>test</scope>
         </dependency>
 
