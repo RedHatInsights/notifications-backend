@@ -13,6 +13,8 @@ import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.WIRE_MOCK_CERT_CN;
+
 /**
  * Test-only override of HttpComponentConfigurator that configures HTTPS components
  * to trust localhost self-signed certificates and our custom WireMock test certificate.
@@ -66,13 +68,10 @@ public class TestHttpComponentConfigurator extends HttpComponentConfigurator {
                     String dn = cert.getSubjectX500Principal().getName();
 
                     // Check if it's a localhost certificate or our custom Notifications WireMock test certificate
-                    boolean isValidTestCert = dn.contains("CN=localhost") ||
-                                             dn.contains("CN=127.0.0.1") ||
-                                             dn.contains("CN=::1") ||
-                                             dn.contains("CN=Notifications WireMock cert");
+                    boolean isValidTestCert = dn.contains(WIRE_MOCK_CERT_CN);
 
                     if (!isValidTestCert) {
-                        throw new CertificateException("Certificate not issued for localhost or Notifications WireMock. DN: " + dn);
+                        throw new CertificateException("Certificate not issued for Notifications WireMock. DN: " + dn);
                     }
                 }
 
@@ -84,13 +83,6 @@ public class TestHttpComponentConfigurator extends HttpComponentConfigurator {
 
             sslContextParameters.setTrustManagers(trustManagersParameters);
             component.setSslContextParameters(sslContextParameters);
-
-            // Only accept localhost hostnames for testing with self-signed certificates
-            component.setX509HostnameVerifier((hostname, session) ->
-                "localhost".equals(hostname) ||
-                "127.0.0.1".equals(hostname) ||
-                "::1".equals(hostname)
-            );
 
             Log.debugf("Test mode: HTTPS component configured to trust localhost certificates only");
         } catch (Exception e) {
