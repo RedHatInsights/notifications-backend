@@ -14,6 +14,9 @@ su -l postgres -c /usr/pgsql-16/bin/initdb
 su -l postgres -c "/usr/pgsql-16/bin/pg_ctl -D /var/lib/pgsql/16/data -l /tmp/pg_logfile start"
 createdb -U postgres notifications
 
+# Start Redis
+su -c "redis-server --daemonize yes" redis
+
 #
 # On the master branch there is no need to give the pull request details.
 #
@@ -27,6 +30,8 @@ if [ -n "${GIT_BRANCH:-}" ] && [ "${GIT_BRANCH}" == "origin/master" ]; then
     -Dsonar.token="${SONARQUBE_TOKEN}" \
     -Dquarkus.devservices.enabled=false \
     -Dquarkus.datasource.devservices.enabled=false \
+    -Dquarkus.redis.devservices.enabled=false \
+    -Dquarkus.redis.hosts=redis://localhost/ \
     --no-transfer-progress
 else
   ./mvnw clean verify sonar:sonar \
@@ -41,5 +46,7 @@ else
     -Dsonar.token="${SONARQUBE_TOKEN}" \
     -Dquarkus.devservices.enabled=false \
     -Dquarkus.datasource.devservices.enabled=false \
+    -Dquarkus.redis.devservices.enabled=false \
+    -Dquarkus.redis.hosts=redis://localhost/ \
     --no-transfer-progress
 fi
