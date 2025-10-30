@@ -396,7 +396,9 @@ public class EndpointResource extends EndpointResourceCommon {
         SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
         properties.setOnlyAdmins(requestProps.isOnlyAdmins());
         properties.setGroupId(requestProps.getGroupId());
-
+        if (null != requestProps.getGroupId()) {
+            properties.setGroupIds(Set.of(requestProps.getGroupId()));
+        }
         Optional<Endpoint> getEndpoint = endpointRepository.getSystemSubscriptionEndpoint(orgId, properties, endpointType);
         if (getEndpoint.isPresent()) {
             return getEndpoint.get();
