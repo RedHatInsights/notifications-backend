@@ -15,7 +15,7 @@ su -l postgres -c "/usr/pgsql-16/bin/pg_ctl -D /var/lib/pgsql/16/data -l /tmp/pg
 createdb -U postgres notifications
 
 # Start Redis
-su -c "redis-server --daemonize yes" redis
+redis-server --daemonize yes
 
 #
 # On the master branch there is no need to give the pull request details.
