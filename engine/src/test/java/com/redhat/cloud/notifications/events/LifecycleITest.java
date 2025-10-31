@@ -40,8 +40,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -70,7 +69,6 @@ import static com.redhat.cloud.notifications.processors.ConnectorSender.X_RH_NOT
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -109,13 +107,10 @@ public class LifecycleITest {
     final String applicationName = "patch";
     final String eventTypeName = "new-advisory";
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void test(final boolean useEndpointToEventTypeDirectLink) {
+    @Test
+    void test() {
         final String accountId = "tenant";
         final String username = "user";
-
-        when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
 
         // First, we need a bundle, an app and an event type. Let's create them!
         Bundle bundle = resourceHelpers.findOrCreateBundle(bundleName);

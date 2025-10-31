@@ -120,7 +120,7 @@ public class EndpointProcessorTest {
         this.endpointProcessor.process(event);
 
         Mockito.verify(this.endpointRepository, Mockito.times(1)).findByUuidAndOrgId(endpointUuid, orgId);
-        Mockito.verify(this.endpointRepository, Mockito.times(0)).getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class));
+        Mockito.verify(this.endpointRepository, Mockito.times(0)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
     }
 
     /**
@@ -151,19 +151,17 @@ public class EndpointProcessorTest {
         this.endpointProcessor.process(event);
 
         Mockito.verify(this.endpointRepository, Mockito.times(0)).findByUuidAndOrgId(Mockito.any(), Mockito.anyString());
-        Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpoints(orgId, eventType);
+        Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpointsWithoutUsingBgs(orgId, eventType);
     }
 
     /**
      * Tests Event-Driven Ansible endpoint type being aliased to a WebHook processor.
      */
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testTestEndpointAnsibleAliasToWebhook(final boolean useEndpointToEventTypeDirectLink) {
+    @Test
+    void testTestEndpointAnsibleAliasToWebhook() {
         // Create an Endpoint which will be simulated to be fetched from the database.
         final String orgId = "test-org-id";
         final UUID endpointUuid = UUID.randomUUID();
-        Mockito.when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
 
         final Endpoint endpointFixture = new Endpoint();
         endpointFixture.setId(endpointUuid);
@@ -181,7 +179,6 @@ public class EndpointProcessorTest {
         event.setEventType(eventType);
         event.setOrgId(orgId);
 
-        Mockito.when(this.endpointRepository.getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(endpointFixture));
         Mockito.when(this.endpointRepository.getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(endpointFixture));
 
         Mockito.doNothing().when(this.webhookProcessor).process(Mockito.any(Event.class), Mockito.anyList());
@@ -190,21 +187,13 @@ public class EndpointProcessorTest {
 
         Mockito.verify(this.endpointRepository, Mockito.times(0)).findByUuidAndOrgId(endpointUuid, orgId);
         Mockito.verify(this.webhookProcessor, Mockito.times(1)).process(eq(event), Mockito.anyList());
-
-        if (useEndpointToEventTypeDirectLink) {
-            Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
-            Mockito.verify(this.endpointRepository, Mockito.times(0)).getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class));
-        } else {
-            Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class));
-            Mockito.verify(this.endpointRepository, Mockito.times(0)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
-        }
+        Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testEndpointRestrictionAccordingEventType(final boolean isEventTypeRestrictedToRecipientsIntegrations) {
         Mockito.when(engineConfig.isEmailsOnlyModeEnabled()).thenReturn(Boolean.FALSE);
-        Mockito.when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(Boolean.TRUE);
 
         // Create an Endpoint which will be simulated to be fetched from the database.
         final String orgId = "test-org-id";
@@ -284,15 +273,13 @@ public class EndpointProcessorTest {
     /**
      * Tests Event-Driven Ansible endpoint type being aliased to a WebHook processor.
      */
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testBlacklistedEndpoints(final boolean useEndpointToEventTypeDirectLink) {
+    @Test
+    void testBlacklistedEndpoints() {
         // Create an Endpoint which will be simulated to be fetched from the database.
         final String orgId = "test-org-id";
         final UUID endpointUuid = UUID.randomUUID();
         final UUID endpointUuid2 = UUID.randomUUID();
         final UUID endpointUuid3 = UUID.randomUUID();
-        Mockito.when(engineConfig.isUseDirectEndpointToEventTypeEnabled()).thenReturn(useEndpointToEventTypeDirectLink);
 
         final Endpoint blacklistedEndpoint = new Endpoint();
         blacklistedEndpoint.setId(endpointUuid);
@@ -319,7 +306,6 @@ public class EndpointProcessorTest {
         event.setEventType(eventType);
         event.setOrgId(orgId);
 
-        Mockito.when(this.endpointRepository.getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(regularEndpoint, blacklistedEndpoint, systemEndpoint));
         Mockito.when(this.endpointRepository.getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(regularEndpoint, blacklistedEndpoint, systemEndpoint));
 
         Mockito.when(engineConfig.isBlacklistedEndpoint(eq(endpointUuid))).thenReturn(true);
@@ -332,21 +318,13 @@ public class EndpointProcessorTest {
         Mockito.verify(this.webhookProcessor, Mockito.times(1)).process(eq(event), Mockito.anyList());
         Mockito.verify(this.emailConnectorProcessor, Mockito.times(1)).process(eq(event), Mockito.anyList());
         Mockito.verify(this.engineConfig, Mockito.times(2)).isBlacklistedEndpoint(any(UUID.class));
-
-        if (useEndpointToEventTypeDirectLink) {
-            Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
-            Mockito.verify(this.endpointRepository, Mockito.times(0)).getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class));
-        } else {
-            Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class));
-            Mockito.verify(this.endpointRepository, Mockito.times(0)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
-        }
+        Mockito.verify(this.endpointRepository, Mockito.times(1)).getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class));
 
         // all endpoints blacklisted
         Mockito.reset(this.webhookProcessor);
         Mockito.reset(this.emailConnectorProcessor);
         Mockito.reset(this.engineConfig);
 
-        Mockito.when(this.endpointRepository.getTargetEndpoints(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(regularEndpoint, blacklistedEndpoint));
         Mockito.when(this.endpointRepository.getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any(EventType.class))).thenReturn(List.of(regularEndpoint, blacklistedEndpoint));
 
         Mockito.when(engineConfig.isBlacklistedEndpoint(any(UUID.class))).thenReturn(true);
