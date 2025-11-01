@@ -1,23 +1,27 @@
 package com.redhat.cloud.notifications.connector.drawer;
 
-import com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty;
-import com.redhat.cloud.notifications.connector.http.HttpExceptionProcessor;
+import com.redhat.cloud.notifications.connector.drawer.model.HandledDrawerExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.http.HttpExceptionHandler;
+import com.redhat.cloud.notifications.connector.v2.pojo.HandledExceptionDetails;
+import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
+import io.vertx.core.json.JsonObject;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
-import org.apache.camel.Exchange;
-import org.apache.camel.http.base.HttpOperationFailedException;
+import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 @ApplicationScoped
 @Alternative
 @Priority(0) // The value doesn't matter.
-public class DrawerExceptionProcessor extends HttpExceptionProcessor {
+public class DrawerExceptionProcessor extends HttpExceptionHandler {
 
     @Override
-    protected void process(Throwable t, Exchange exchange) {
-        super.process(t, exchange);
-        if (t instanceof HttpOperationFailedException e) {
-            exchange.setProperty(ExchangeProperty.ADDITIONAL_ERROR_DETAILS, e.getResponseBody());
+    protected HandledExceptionDetails process(Throwable t, IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
+        HandledExceptionDetails processedExceptionDetails = super.process(t, incomingCloudEvent);
+        HandledDrawerExceptionDetails processedDrawerExceptionDetails = new HandledDrawerExceptionDetails(processedExceptionDetails);
+        if (t instanceof ClientWebApplicationException e) {
+            processedDrawerExceptionDetails.additionalErrorDetails = e.getResponse().readEntity(String.class);
         }
+        return processedDrawerExceptionDetails;
     }
 }
