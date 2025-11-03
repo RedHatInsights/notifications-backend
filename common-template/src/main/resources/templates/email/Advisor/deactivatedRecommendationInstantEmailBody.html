@@ -11,15 +11,15 @@
     <a href="{environment.url}/insights/advisor?{query_params}" target="_blank">{action.events.size()}</a>
 {/content-title-right-part-section1}
 {#content-button-section1}
-    <a target="_blank" href="{environment.url}/insights/advisor?{query_params}">Go to Insights Advisor</a>
+    <a target="_blank" href="{environment.url}/insights/advisor?{query_params}">Go to Lightspeed Advisor</a>
 {/content-button-section1}
 {#content-body-section1}
 {#let recs=action.events.size()}
 <p>
     {#if recs > 1}
-    These recommendations have recently been deactivated by Red Hat Insights and are no longer affecting your systems.
+    These recommendations have recently been deactivated by Red Hat Lightspeed and are no longer affecting your systems.
     {#else}
-    This recommendation has recently been deactivated by Red Hat Insights and is no longer affecting your systems.
+    This recommendation has recently been deactivated by Red Hat Lightspeed and is no longer affecting your systems.
     {/if}
 </p>
 
