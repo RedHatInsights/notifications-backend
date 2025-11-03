@@ -76,6 +76,4 @@ class TestSubscriptionServicesDailyTemplate extends EmailTemplatesRendererHelper
         assertTrue(templateResult.contains("\"#errata-notifications-section1-2\""));
         assertTrue(templateResult.contains("\"#errata-notifications-section1-3\""));
     }
-
-
 }
