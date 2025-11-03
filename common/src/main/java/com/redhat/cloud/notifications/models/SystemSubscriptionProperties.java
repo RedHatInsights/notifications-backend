@@ -2,10 +2,14 @@ package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.redhat.cloud.notifications.db.converters.UuidSetConverter;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -18,6 +22,10 @@ public class SystemSubscriptionProperties extends EndpointProperties {
     private boolean ignorePreferences;
 
     private UUID groupId;
+
+    @Convert(converter = UuidSetConverter.class)
+    @Column(name = "group_ids")
+    private Set<UUID> groupIds;
 
     public boolean isOnlyAdmins() {
         return onlyAdmins;
@@ -43,6 +51,14 @@ public class SystemSubscriptionProperties extends EndpointProperties {
         this.groupId = groupId;
     }
 
+    public Set<UUID> getGroupIds() {
+        return groupIds;
+    }
+
+    public void setGroupIds(Set<UUID> groupIds) {
+        this.groupIds = groupIds;
+    }
+
     public boolean hasSameProperties(SystemSubscriptionProperties otherProps) {
         if (otherProps == null) {
             return false;
@@ -52,7 +68,13 @@ public class SystemSubscriptionProperties extends EndpointProperties {
             return true;
         }
 
+        boolean groupIdsEqual = false;
+        if (groupIds != null && groupIds.equals(otherProps.groupIds)) {
+            groupIdsEqual = true;
+        } else if (groupIds == null || groupIds.isEmpty() && otherProps.groupIds == null || otherProps.groupIds.isEmpty()) {
+            groupIdsEqual = true;
+        }
         return onlyAdmins == otherProps.onlyAdmins && ignorePreferences == otherProps.ignorePreferences
-                && Objects.equals(groupId, otherProps.groupId);
+                && Objects.equals(groupId, otherProps.groupId) && groupIdsEqual;
     }
 }
