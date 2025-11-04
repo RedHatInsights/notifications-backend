@@ -57,7 +57,7 @@ public class TestComplianceTemplate extends EmailTemplatesRendererHelper {
     @Test
     public void testDailyReportEmailBody() {
         String result = generateAggregatedEmailBody(Map.of());
-        assertTrue(result.contains("Red Hat Insights has identified one or more systems"));
+        assertTrue(result.contains("Red Hat Lightspeed has identified one or more systems"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }
