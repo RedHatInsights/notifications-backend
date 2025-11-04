@@ -1,14 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.notification;
 
-import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
-import com.redhat.cloud.notifications.auth.annotation.IntegrationId;
-import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
-import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
-import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
-import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
-import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
-import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
@@ -32,8 +24,6 @@ import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.UpdateBehaviorGroupRequest;
-import io.quarkus.logging.Log;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -77,10 +67,18 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
+import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS;
+import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.APPLICATIONS_VIEW;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.BEHAVIOR_GROUPS_EDIT;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.BEHAVIOR_GROUPS_VIEW;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.BUNDLES_VIEW;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.EVENT_TYPES_VIEW;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_CREATE;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_VIEW;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
-import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
@@ -105,18 +103,6 @@ public class NotificationResource {
     EndpointMapper endpointMapper;
 
     @Inject
-    KesselAuthorization kesselAuthorization;
-
-    @Inject
-    KesselInventoryAuthorization kesselInventoryAuthorization;
-
-    @Inject
-    BackendConfig backendConfig;
-
-    @Inject
-    WorkspaceUtils workspaceUtils;
-
-    @Inject
     EventTypeRepository eventTypeRepository;
 
     @Path(API_NOTIFICATIONS_V_1_0 + "/notifications")
@@ -133,7 +119,7 @@ public class NotificationResource {
         description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
         schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
     )
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BEHAVIOR_GROUPS_VIEW, WorkspacePermission.EVENT_TYPES_VIEW})
+    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = {BEHAVIOR_GROUPS_VIEW, EVENT_TYPES_VIEW})
     public List<BehaviorGroup> getLinkedBehaviorGroups(
         @Context SecurityContext sec,
         @PathParam("eventTypeId") UUID eventTypeId,
@@ -154,7 +140,7 @@ public class NotificationResource {
         description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
         schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
     )
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.EVENT_TYPES_VIEW})
+    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = EVENT_TYPES_VIEW)
     public Page<EventType> getEventTypes(
         @Context SecurityContext securityContext, @Context UriInfo uriInfo, @BeanParam @Valid Query query, @QueryParam("applicationIds") Set<UUID> applicationIds,
         @QueryParam("bundleId") UUID bundleId, @QueryParam("eventTypeName") String eventTypeName, @QueryParam("excludeMutedTypes") boolean excludeMutedTypes
@@ -176,7 +162,7 @@ public class NotificationResource {
     @Path("/bundles/{bundleName}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve a bundle by name", description = "Retrieves the details of a bundle by searching by its name.")
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BUNDLES_VIEW})
+    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = BUNDLES_VIEW)
     public Bundle getBundleByName(@Context final SecurityContext securityContext, @PathParam("bundleName") String bundleName) {
         Bundle bundle = bundleRepository.getBundle(bundleName);
         if (bundle == null) {
@@ -190,7 +176,7 @@ public class NotificationResource {
     @Path("/bundles/{bundleName}/applications/{applicationName}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve an application by bundle and application names", description = "Retrieves an application by bundle and application names. Use this endpoint to  find an application by searching for the bundle that the application is part of. This is useful if you do not know the UUID of the bundle or application.")
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BUNDLES_VIEW, WorkspacePermission.APPLICATIONS_VIEW})
+    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = {BUNDLES_VIEW, APPLICATIONS_VIEW})
     public Application getApplicationByNameAndBundleName(
         @Context SecurityContext securityContext,
         @PathParam("bundleName") String bundleName,
@@ -208,7 +194,7 @@ public class NotificationResource {
     @Path("/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve an event type by bundle, application and event type names", description = "Retrieves the details of an event type by specifying the bundle name, the application name, and the event type name.")
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BUNDLES_VIEW, WorkspacePermission.APPLICATIONS_VIEW, WorkspacePermission.EVENT_TYPES_VIEW})
+    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = {BUNDLES_VIEW, APPLICATIONS_VIEW, EVENT_TYPES_VIEW})
     public EventType getEventTypesByNameAndBundleAndApplicationName(
         @Context SecurityContext securityContext,
         @PathParam("bundleName") String bundleName,
@@ -232,7 +218,7 @@ public class NotificationResource {
     @Path("/eventTypes/affectedByRemovalOfBehaviorGroup/{behaviorGroupId}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "List the event types affected by the removal of a behavior group", description = "Lists the event types that will be affected by the removal of a behavior group. Use this endpoint to see which event types will be removed if you delete a behavior group.")
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BEHAVIOR_GROUPS_VIEW, WorkspacePermission.EVENT_TYPES_VIEW})
+    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = {BEHAVIOR_GROUPS_VIEW, EVENT_TYPES_VIEW})
     public List<EventType> getEventTypesAffectedByRemovalOfBehaviorGroup(@Context SecurityContext sec,
                                                                          @Parameter(description = "The UUID of the behavior group to check") @PathParam("behaviorGroupId") UUID behaviorGroupId) {
         String orgId = getOrgId(sec);
@@ -247,8 +233,8 @@ public class NotificationResource {
     @Path("/behaviorGroups/affectedByRemovalOfEndpoint/{endpointId}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "List the behavior groups affected by the removal of an endpoint", description = "Lists the behavior groups that are affected by the removal of an endpoint. Use this endpoint to understand how removing an endpoint affects existing behavior groups.")
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, integrationPermissions = {IntegrationPermission.VIEW}, workspacePermissions = {WorkspacePermission.BEHAVIOR_GROUPS_VIEW})
-    public List<BehaviorGroup> getBehaviorGroupsAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @IntegrationId @PathParam("endpointId") UUID endpointId) {
+    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = {INTEGRATIONS_VIEW, BEHAVIOR_GROUPS_VIEW})
+    public List<BehaviorGroup> getBehaviorGroupsAffectedByRemovalOfEndpoint(@Context SecurityContext sec, @PathParam("endpointId") UUID endpointId) {
         String orgId = getOrgId(sec);
         return behaviorGroupRepository.findBehaviorGroupsByEndpointId(orgId, endpointId);
     }
@@ -304,7 +290,7 @@ public class NotificationResource {
         @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)), description = "Bad or no content passed.")
     })
     @Transactional
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BEHAVIOR_GROUPS_EDIT})
+    @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = BEHAVIOR_GROUPS_EDIT)
     public CreateBehaviorGroupResponse createBehaviorGroup(
         @Context final SecurityContext sec,
         @NotNull @Valid @RequestBody(required = true) final CreateBehaviorGroupRequest request
@@ -365,7 +351,7 @@ public class NotificationResource {
     })
     @Operation(summary = "Update a behavior group", description = "Updates the details of a behavior group. Use this endpoint to update the list of related endpoints and event types associated with this behavior group.")
     @Transactional
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BEHAVIOR_GROUPS_EDIT})
+    @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = BEHAVIOR_GROUPS_EDIT)
     public Response updateBehaviorGroup(@Context SecurityContext sec,
                                         @Parameter(description = "The UUID of the behavior group to update") @PathParam("id") UUID id,
                                         @NotNull @RequestBody(description = "New parameters", required = true) @Valid UpdateBehaviorGroupRequest request) {
@@ -401,7 +387,7 @@ public class NotificationResource {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Delete a behavior group", description = "Deletes a behavior group and all of its configured actions. Use this endpoint when you no longer need a behavior group.")
     @Transactional
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BEHAVIOR_GROUPS_EDIT})
+    @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = BEHAVIOR_GROUPS_EDIT)
     public Boolean deleteBehaviorGroup(@Context SecurityContext sec,
                                        @Parameter(description = "The UUID of the behavior group to delete") @PathParam("id") UUID behaviorGroupId) {
         String orgId = getOrgId(sec);
@@ -418,7 +404,7 @@ public class NotificationResource {
     @Operation(summary = "Update the list of behavior group actions", description = "Updates the list of actions to be executed in that particular behavior group after an event is received.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BEHAVIOR_GROUPS_EDIT})
+    @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = BEHAVIOR_GROUPS_EDIT)
     public Response updateBehaviorGroupActions(@Context SecurityContext sec,
                                                @Parameter(description = "The UUID of the behavior group to update") @PathParam("behaviorGroupId") UUID behaviorGroupId,
                                                @Parameter(description = "List of endpoint ids of the actions") List<UUID> endpointIds) {
@@ -449,7 +435,7 @@ public class NotificationResource {
     @Operation(summary = "Update the list of behavior groups for an event type", description = "Updates the list of behavior groups associated with an event type.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BEHAVIOR_GROUPS_EDIT, WorkspacePermission.EVENT_TYPES_VIEW})
+    @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = {BEHAVIOR_GROUPS_EDIT, EVENT_TYPES_VIEW})
     public Response updateEventTypeBehaviors(@Context SecurityContext sec,
                                              @Parameter(description = "UUID of the eventType to associate with the behavior group(s)") @PathParam("eventTypeId") UUID eventTypeId,
                                              @Parameter(description = "Set of behavior group ids to associate") Set<UUID> behaviorGroupIds) {
@@ -478,7 +464,7 @@ public class NotificationResource {
     @Path("/eventTypes/{eventTypeUuid}/behaviorGroups/{behaviorGroupUuid}")
     @Operation(summary = "Add a behavior group to the given event type.")
     @APIResponse(responseCode = "204")
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BEHAVIOR_GROUPS_EDIT, WorkspacePermission.EVENT_TYPES_VIEW})
+    @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = {BEHAVIOR_GROUPS_EDIT, EVENT_TYPES_VIEW})
     public void appendBehaviorGroupToEventType(
         @Context final SecurityContext securityContext,
         @RestPath final UUID behaviorGroupUuid,
@@ -496,7 +482,7 @@ public class NotificationResource {
     @Path("/eventTypes/{eventTypeId}/behaviorGroups/{behaviorGroupId}")
     @Operation(summary = "Delete a behavior group from an event type", description = "Delete a behavior group from the specified event type.")
     @APIResponse(responseCode = "204")
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BEHAVIOR_GROUPS_EDIT, WorkspacePermission.EVENT_TYPES_VIEW})
+    @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = {BEHAVIOR_GROUPS_EDIT, EVENT_TYPES_VIEW})
     public void deleteBehaviorGroupFromEventType(
         @Context final SecurityContext securityContext,
         @RestPath final UUID eventTypeId,
@@ -514,7 +500,7 @@ public class NotificationResource {
     @Path("/bundles/{bundleId}/behaviorGroups")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "List behavior groups in a bundle", description = "Lists the behavior groups associated with a bundle. Use this endpoint to see the behavior groups that are configured for a particular bundle for a particular tenant.")
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = {WorkspacePermission.BUNDLES_VIEW, WorkspacePermission.BEHAVIOR_GROUPS_VIEW})
+    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = {BUNDLES_VIEW, BEHAVIOR_GROUPS_VIEW})
     public List<BehaviorGroup> findBehaviorGroupsByBundleId(@Context SecurityContext sec,
                                                             @Parameter(description = "UUID of the bundle to retrieve the behavior groups for.") @PathParam("bundleId") UUID bundleId) {
         String orgId = getOrgId(sec);
@@ -541,41 +527,11 @@ public class NotificationResource {
             description = "No event type found with the passed id.")
     })
     @Tag(name = OApiFilter.PRIVATE)
+    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = {EVENT_TYPES_VIEW, INTEGRATIONS_VIEW})
     public Page<EndpointDTO> getLinkedEndpoints(@Context final SecurityContext sec, @RestPath("eventTypeId") final UUID eventTypeId, @BeanParam @Valid final Query query, @Context final UriInfo uriInfo) {
-        if (backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
-            final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-            Set<UUID> authorizedIds;
-            if (backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(getOrgId(sec))) {
-                this.kesselInventoryAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
-                // Fetch the set of integration IDs the user is authorized to view.
-                authorizedIds = kesselInventoryAuthorization.lookupAuthorizedIntegrations(sec, workspaceId, IntegrationPermission.VIEW);
-            } else {
-                this.kesselAuthorization.hasPermissionOnWorkspace(sec, WorkspacePermission.EVENT_TYPES_VIEW, workspaceId);
-                // Fetch the set of integration IDs the user is authorized to view.
-                authorizedIds = kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
-            }
-
-            // Fetch the set of integration IDs the user is authorized to view.
-            if (authorizedIds.isEmpty()) {
-                Log.infof("[org_id: %s][username: %s] Kessel did not return any integration IDs for the request", getOrgId(sec), getUsername(sec));
-                return Page.EMPTY_PAGE;
-            }
-
-            return internalGetLinkedEndpoints(sec, eventTypeId, query, uriInfo, Optional.of(authorizedIds));
-        } else {
-            return legacyRBACGetLinkedEndpoints(sec, eventTypeId, query, uriInfo);
-        }
-    }
-
-    @RolesAllowed(ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS)
-    protected Page<EndpointDTO> legacyRBACGetLinkedEndpoints(final SecurityContext sec, final UUID eventTypeId, final Query query, UriInfo uriInfo) {
-        return internalGetLinkedEndpoints(sec, eventTypeId, query, uriInfo, Optional.empty());
-    }
-
-    private Page<EndpointDTO> internalGetLinkedEndpoints(final SecurityContext sec, final UUID eventTypeId, Query query, final UriInfo uriInfo, final Optional<Set<UUID>> authorizedIds) {
         String orgId = getOrgId(sec);
 
-        final List<Endpoint> endpoints = endpointEventTypeRepository.findEndpointsByEventTypeId(orgId, eventTypeId, query, authorizedIds);
+        final List<Endpoint> endpoints = endpointEventTypeRepository.findEndpointsByEventTypeId(orgId, eventTypeId, query);
 
         List<EndpointDTO> endpointDTOS = endpoints.stream().map(endpoint -> endpointMapper.toDTO(endpoint)).toList();
         return new Page<>(
@@ -592,7 +548,7 @@ public class NotificationResource {
     @Operation(summary = "Update the list of endpoints for an event type", description = "Updates the list of endpoints associated with an event type.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS)
+    @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = INTEGRATIONS_CREATE)
     public Response updateEventTypeEndpoints(@Context SecurityContext securityContext,
                                              @Parameter(description = "UUID of the eventType to associate with the endpoint(s)") @PathParam("eventTypeId") UUID eventTypeId,
                                              @Parameter(description = "Set of endpoint ids to associate") Set<UUID> endpointsIds) {
@@ -602,20 +558,6 @@ public class NotificationResource {
         // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
         if (endpointsIds.contains(null)) {
             throw new BadRequestException("The endpoints identifiers list should not contain empty values");
-        }
-
-        // When Kessel is enabled we need to make sure that the principal has
-        // edit access to all the integrations.
-        if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
-            if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(getOrgId(securityContext))) {
-                for (final UUID endpointId : endpointsIds) {
-                    kesselInventoryAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpointId);
-                }
-            } else {
-                for (final UUID endpointId : endpointsIds) {
-                    kesselAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpointId);
-                }
-            }
         }
 
         String orgId = getOrgId(securityContext);

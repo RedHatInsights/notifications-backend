@@ -1,10 +1,8 @@
 package com.redhat.cloud.notifications.auth.annotation;
 
-import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.KesselCheckClient;
 import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
-import com.redhat.cloud.notifications.auth.kessel.ResourceType;
-import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
@@ -16,21 +14,22 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.interceptor.InvocationContext;
 import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.SecurityContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.project_kessel.api.relations.v1beta1.CheckResponse;
-import org.project_kessel.inventory.client.KesselCheckClient;
-import org.project_kessel.relations.client.CheckClient;
+import org.project_kessel.api.inventory.v1beta2.Allowed;
 
 import java.lang.reflect.Method;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_FALSE;
+import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_TRUE;
 
 @QuarkusTest
 public class AuthorizationInterceptorTest {
@@ -38,23 +37,11 @@ public class AuthorizationInterceptorTest {
     KesselTestHelper kesselTestHelper;
 
     @Inject
-    KesselAuthorization kesselAuthorization;
-
-    @Inject
     KesselInventoryAuthorization kesselInventoryAuthorization;
 
     @InjectMock
     BackendConfig backendConfig;
 
-    /**
-     * Required for the {@link KesselTestHelper}.
-     */
-    @InjectMock
-    CheckClient checkClient;
-
-    /**
-     * Required for the {@link KesselTestHelper}.
-     */
     @InjectMock
     KesselCheckClient kesselCheckClient;
 
@@ -106,7 +93,8 @@ public class AuthorizationInterceptorTest {
      */
     @BeforeEach
     public void setUp() {
-        this.authorizationInterceptor = new AuthorizationInterceptor(this.backendConfig, this.kesselAuthorization, this.workspaceUtils, this.kesselInventoryAuthorization);
+        this.authorizationInterceptor = new AuthorizationInterceptor(this.backendConfig, this.workspaceUtils, this.kesselInventoryAuthorization);
+        when(workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID);
     }
 
     /**
@@ -168,7 +156,7 @@ public class AuthorizationInterceptorTest {
 
     /**
      * Tests that the function under test throws a {@link ForbiddenException}
-     * when the principal does hot havethe expected legacy RBAC role.
+     * when the principal does hot have the expected legacy RBAC role.
      *
      * @throws NoSuchMethodException when the method's specification is not
      * properly defined, and therefore we cannot get it to perform the tests.
@@ -182,8 +170,8 @@ public class AuthorizationInterceptorTest {
         final Method methodUnderTest = AuthorizationInterceptorHelper.class.getMethod("testMethodWithRBACRole", SecurityContext.class, String.class, UUID.class);
         Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
 
-        // Make sure that Kessel relations is disabled for this test.
-        this.kesselTestHelper.mockKesselRelations(false, false);
+        // Make sure that Kessel is disabled for this test.
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(false);
 
         // Mock the returned parameters by the context, to be able to provide
         // whichever security context we want to the interceptor.
@@ -199,14 +187,14 @@ public class AuthorizationInterceptorTest {
 
     /**
      * Tests that the function under test throws an exception when Kessel is
-     * enabled as the authorization back end, and no {@link IntegrationPermission}
-     * or {@link WorkspacePermission} elements were defined in the annotation.
+     * enabled as the authorization back end, and no {@link WorkspacePermission}
+     * elements were defined in the annotation.
      *
      * @throws NoSuchMethodException when the method's specification is not
      * properly defined, and therefore we cannot get it to perform the tests.
      */
     @Test
-    void testMissingIntegrationWorkspacePermissions() throws NoSuchMethodException {
+    void testMissingWorkspacePermissions() throws NoSuchMethodException {
         // Mock the invocation context and make it return one of our defined
         // methods in this class, for simplicity.
         final InvocationContext invocationContext = Mockito.mock(InvocationContext.class);
@@ -214,8 +202,8 @@ public class AuthorizationInterceptorTest {
         final Method methodUnderTest = AuthorizationInterceptorHelper.class.getMethod("testMethodWithRBACRole", SecurityContext.class, String.class, UUID.class);
         Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
 
-        // Make sure that Kessel relations is enabled for this test.
-        this.kesselTestHelper.mockKesselRelations(true, false);
+        // Make sure that Kessel is enabled for this test.
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
 
         // Mock the returned parameters by the context, to be able to provide
         // whichever security context we want to the interceptor.
@@ -232,7 +220,7 @@ public class AuthorizationInterceptorTest {
 
         // Assert that the expected exception was thrown.
         Assertions.assertEquals(
-            String.format("No integration or workspace permissions were set for method \"%s\", and at least one of them is required for the \"KesselRequiredPermission\" annotation to work", methodUnderTest.getName()),
+            String.format("No workspace permissions were set for method \"%s\", and at least one of them is required for the \"KesselRequiredPermission\" annotation to work", methodUnderTest.getName()),
             exception.getMessage()
         );
     }
@@ -255,8 +243,8 @@ public class AuthorizationInterceptorTest {
         final Method methodUnderTest = AuthorizationInterceptorHelper.class.getMethod("testMethodWithWorkspacePermissions", SecurityContext.class, String.class, UUID.class);
         Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
 
-        // Make sure that Kessel relations is enabled for this test.
-        this.kesselTestHelper.mockKesselRelations(true, false);
+        // Make sure that Kessel is enabled for this test.
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
 
         // Mock the returned parameters by the context, to be able to provide
         // whichever security context we want to the interceptor.
@@ -265,10 +253,10 @@ public class AuthorizationInterceptorTest {
 
         // Mock the Kessel checks to simulate that the principal has the
         // required workspace permissions.
-        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BUNDLES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.APPLICATIONS_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        when(workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID);
+        mockKesselPermission(WorkspacePermission.BUNDLES_VIEW, ALLOWED_TRUE);
+        mockKesselPermission(WorkspacePermission.APPLICATIONS_VIEW, ALLOWED_TRUE);
+        mockKesselPermission(WorkspacePermission.EVENT_TYPES_VIEW, ALLOWED_TRUE);
 
         // Call the function under test which should not throw any exceptions.
         this.authorizationInterceptor.aroundInvoke(invocationContext);
@@ -292,8 +280,8 @@ public class AuthorizationInterceptorTest {
         final Method methodUnderTest = AuthorizationInterceptorHelper.class.getMethod("testMethodWithWorkspacePermissions", SecurityContext.class, String.class, UUID.class);
         Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
 
-        // Make sure that Kessel relations is enabled for this test.
-        this.kesselTestHelper.mockKesselRelations(true, false);
+        // Make sure that Kessel is enabled for this test.
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
 
         // Mock the returned parameters by the context, to be able to provide
         // whichever security context we want to the interceptor.
@@ -302,10 +290,10 @@ public class AuthorizationInterceptorTest {
 
         // Mock the Kessel checks to simulate that the principal has the
         // required workspace permissions.
-        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BUNDLES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.APPLICATIONS_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString(), CheckResponse.Allowed.ALLOWED_FALSE);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        when(workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID);
+        mockKesselPermission(WorkspacePermission.BUNDLES_VIEW, ALLOWED_TRUE);
+        mockKesselPermission(WorkspacePermission.APPLICATIONS_VIEW, ALLOWED_FALSE);
+        mockKesselPermission(WorkspacePermission.EVENT_TYPES_VIEW, ALLOWED_TRUE);
 
         // Call the function under test which should throw a ForbiddenException.
         Assertions.assertThrows(
@@ -314,151 +302,9 @@ public class AuthorizationInterceptorTest {
         );
     }
 
-    /**
-     * Tests that the function under test throws an exception when an
-     * {@link IntegrationPermission} is specified, but the {@link IntegrationId}
-     * annotation has not been set in the method.
-     *
-     * @throws Exception when an unexpected error occurs.
-     * @throws NoSuchMethodException when the method's specification is not
-     * properly defined, and therefore we cannot get it to perform the tests.
-     */
-    @Test
-    void testMissingIntegrationIdAnnotation() throws Exception, NoSuchMethodException {
-        // Mock the invocation context and make it return one of our defined
-        // methods in this class, for simplicity.
-        final InvocationContext invocationContext = Mockito.mock(InvocationContext.class);
-
-        final Method methodUnderTest = AuthorizationInterceptorHelper.class.getMethod("testMethodWithWorkspaceAndIntegrationPermissionsMissingIntegrationId", SecurityContext.class, String.class, UUID.class);
-        Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
-
-        // Make sure that Kessel relations is enabled for this test.
-        this.kesselTestHelper.mockKesselRelations(true, false);
-
-        // Mock the returned parameters by the context, to be able to provide
-        // whichever security context and integration ID we want to the
-        // interceptor.
-        final SecurityContext securityContext = this.mockSecurityContext();
-        final String secondIgnoredParameter = "second-ignored-parameter";
-        final UUID integrationId = UUID.randomUUID();
-        Mockito.when(invocationContext.getParameters()).thenReturn(new Object[]{securityContext, secondIgnoredParameter, integrationId});
-
-        // Mock the Kessel checks to simulate that the principal has the
-        // required workspace permissions.
-        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BUNDLES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.APPLICATIONS_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-
-        // Mock the Kessel checks to simulate that the principal has the
-        // required integration permissions.
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW, ResourceType.INTEGRATION, integrationId.toString());
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW_HISTORY, ResourceType.INTEGRATION, integrationId.toString());
-
-        // Call the function under test which should throw an exception that
-        // signals that the method is missing a parameter annotated with the
-        // "IntegrationId" annotation.
-        final IllegalStateException exception = Assertions.assertThrows(
-            IllegalStateException.class,
-            () -> this.authorizationInterceptor.aroundInvoke(invocationContext)
-        );
-
-        // Assert that the expected exception was thrown.
-        Assertions.assertEquals(
-            String.format("The integration ID is not annotated on the method \"%s\", which is needed for the \"KesselRequiredPermission\" annotation to work", methodUnderTest.getName()),
-            exception.getMessage()
-        );
-    }
-
-    /**
-     * Tests that the function under test throws a {@link jakarta.ws.rs.NotFoundException}
-     * when the principal does not have authorization with one of the
-     * {@link IntegrationPermission}s.
-     *
-     * @throws Exception when an unexpected error occurs.
-     * @throws NoSuchMethodException when the method's specification is not
-     * properly defined, and therefore we cannot get it to perform the tests.
-     */
-    @Test
-    void testIntegrationPermissionDenied() throws Exception, NoSuchMethodException {
-        // Mock the invocation context and make it return one of our defined
-        // methods in this class, for simplicity.
-        final InvocationContext invocationContext = Mockito.mock(InvocationContext.class);
-
-        final Method methodUnderTest = AuthorizationInterceptorHelper.class.getMethod("testMethodWithWorkspaceAndIntegrationPermissions", SecurityContext.class, String.class, UUID.class);
-        Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
-
-        // Make sure that Kessel relations is enabled for this test.
-        this.kesselTestHelper.mockKesselRelations(true, false);
-
-        // Mock the returned parameters by the context, to be able to provide
-        // whichever security context and integration ID we want to the
-        // interceptor.
-        final SecurityContext securityContext = this.mockSecurityContext();
-        final String secondIgnoredParameter = "second-ignored-parameter";
-        final UUID integrationId = UUID.randomUUID();
-        Mockito.when(invocationContext.getParameters()).thenReturn(new Object[]{securityContext, secondIgnoredParameter, integrationId});
-
-        // Mock the Kessel checks to simulate that the principal has the
-        // required workspace permissions.
-        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BUNDLES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.APPLICATIONS_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-
-        // Mock the Kessel checks to simulate that the principal does not have
-        // all the required integration permissions.
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW, ResourceType.INTEGRATION, integrationId.toString());
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW_HISTORY, ResourceType.INTEGRATION, integrationId.toString(), CheckResponse.Allowed.ALLOWED_FALSE);
-
-        // Call the function under test which should throw a ForbiddenException.
-        Assertions.assertThrows(
-            NotFoundException.class,
-            () -> this.authorizationInterceptor.aroundInvoke(invocationContext)
-        );
-    }
-
-    /**
-     * Tests that the function under test does not throw an exception when
-     * the principal has the specified {@link WorkspacePermission} and {@link IntegrationPermission}.
-     *
-     * @throws Exception when an unexpected error occurs.
-     * @throws NoSuchMethodException when the method's specification is not
-     * properly defined, and therefore we cannot get it to perform the tests.
-     */
-    @Test
-    void testIntegrationPermissionGranted() throws Exception, NoSuchMethodException {
-        // Mock the invocation context and make it return one of our defined
-        // methods in this class, for simplicity.
-        final InvocationContext invocationContext = Mockito.mock(InvocationContext.class);
-
-        final Method methodUnderTest = AuthorizationInterceptorHelper.class.getMethod("testMethodWithWorkspaceAndIntegrationPermissions", SecurityContext.class, String.class, UUID.class);
-        Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
-
-        // Make sure that Kessel relations is enabled for this test.
-        this.kesselTestHelper.mockKesselRelations(true, false);
-
-        // Mock the returned parameters by the context, to be able to provide
-        // whichever security context and integration ID we want to the
-        // interceptor.
-        final SecurityContext securityContext = this.mockSecurityContext();
-        final String secondIgnoredParameter = "second-ignored-parameter";
-        final UUID integrationId = UUID.randomUUID();
-        Mockito.when(invocationContext.getParameters()).thenReturn(new Object[]{securityContext, secondIgnoredParameter, integrationId});
-
-        // Mock the Kessel checks to simulate that the principal has the
-        // required workspace permissions.
-        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.BUNDLES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.APPLICATIONS_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_TYPES_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-
-        // Mock the Kessel checks to simulate that the principal has the
-        // required integration permissions.
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW, ResourceType.INTEGRATION, integrationId.toString());
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW_HISTORY, ResourceType.INTEGRATION, integrationId.toString());
-
-        // Call the function under test which should not throw any exceptions.
-        this.authorizationInterceptor.aroundInvoke(invocationContext);
+    private void mockKesselPermission(WorkspacePermission permission, Allowed allowed) {
+        when(kesselCheckClient
+            .check(kesselTestHelper.buildCheckRequest(DEFAULT_USER, permission)))
+            .thenReturn(kesselTestHelper.buildCheckResponse(allowed));
     }
 }

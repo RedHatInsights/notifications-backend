@@ -2,11 +2,6 @@ package com.redhat.cloud.notifications.routers.handlers.endpoint;
 
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
-import com.redhat.cloud.notifications.auth.annotation.IntegrationId;
-import com.redhat.cloud.notifications.auth.kessel.KesselAssets;
-import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
-import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
-import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
@@ -36,7 +31,6 @@ import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
 import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
 import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
-import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
 import io.quarkus.logging.Log;
@@ -49,7 +43,6 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -76,7 +69,6 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -86,6 +78,12 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTEGRATIONS_V_1_0;
+import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS;
+import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.CREATE_DRAWER_INTEGRATION;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_CREATE;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_VIEW;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
@@ -94,7 +92,6 @@ import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPT
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
-import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
@@ -119,12 +116,6 @@ public class EndpointResource extends EndpointResourceCommon {
     @Inject
     @RestClient
     EndpointTestService endpointTestService;
-
-    @Inject
-    KesselAssets kesselAssets;
-
-    @Inject
-    KesselInventoryAuthorization kesselInventoryAuthorization;
 
     @Inject
     NotificationRepository notificationRepository;
@@ -179,8 +170,8 @@ public class EndpointResource extends EndpointResourceCommon {
             schema = @Schema(type = SchemaType.BOOLEAN)
             )
     })
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.VIEW_HISTORY})
-    public List<NotificationHistoryDTO> getEndpointHistory(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @Valid @BeanParam Query query) {
+    @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
+    public List<NotificationHistoryDTO> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @Valid @BeanParam Query query) {
         if (!this.endpointRepository.existsByUuidAndOrgId(id, getOrgId(sec))) {
             throw new NotFoundException("Endpoint not found");
         }
@@ -208,6 +199,7 @@ public class EndpointResource extends EndpointResourceCommon {
                 schema = @Schema(type = SchemaType.INTEGER)
             )
     })
+    @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
     public EndpointPage getEndpoints(
         @Context                SecurityContext sec,
         @BeanParam @Valid       Query query,
@@ -215,29 +207,7 @@ public class EndpointResource extends EndpointResourceCommon {
         @QueryParam("active")   Boolean activeOnly,
         @QueryParam("name")     String name
     ) {
-        Set<UUID> authorizedIds = null;
-        if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
-            // Fetch the set of integration IDs the user is authorized to view.
-            if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(getOrgId(sec))) {
-                final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-                authorizedIds = this.kesselInventoryAuthorization.lookupAuthorizedIntegrations(sec, workspaceId, IntegrationPermission.VIEW);
-            } else {
-                authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
-            }
-            if (authorizedIds.isEmpty()) {
-                Log.infof("[org_id: %s][username: %s] Kessel did not return any integration IDs for the request", getOrgId(sec), getUsername(sec));
-
-                return new EndpointPage(new ArrayList<>(), new HashMap<>(), new Meta(0L));
-            }
-        } else {
-            // Legacy RBAC permission checking. The permission will have been
-            // prefetched and processed by the "ConsoleIdentityProvider".
-            if (!sec.isUserInRole(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)) {
-                throw new ForbiddenException();
-            }
-        }
-
-        return internalGetEndpoints(sec, query, targetType, activeOnly, name, authorizedIds, false);
+        return internalGetEndpoints(sec, query, targetType, activeOnly, name, false);
     }
 
     @POST
@@ -248,7 +218,7 @@ public class EndpointResource extends EndpointResourceCommon {
         @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = EndpointDTO.class))),
         @APIResponse(responseCode = "400", description = "Bad data passed, that does not correspond to the definition or Endpoint.properties are empty")
     })
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = {WorkspacePermission.INTEGRATIONS_CREATE})
+    @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_CREATE)
     public EndpointDTO createEndpoint(
         @Context                        final SecurityContext sec,
         @NotNull @Valid @RequestBody    final EndpointDTO endpointDTO
@@ -323,15 +293,6 @@ public class EndpointResource extends EndpointResourceCommon {
 
         final Endpoint createdEndpoint = this.endpointRepository.createEndpoint(endpoint);
 
-        if (this.backendConfig.isKesselInventoryEnabled(orgId)) {
-            // Attempt creating the integration in Kessel's inventory. Any
-            // exception here would roll back the operation and our integration
-            // would not be created in our database either.
-            final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-
-            this.kesselAssets.createIntegration(sec, workspaceId.toString(), createdEndpoint.getId().toString());
-        }
-
         // Sync behavior group model
         if (null != eventTypes && !eventTypes.isEmpty()) {
             createOrUpdateLinkedBehaviorGroup(eventTypes, createdEndpoint.getId(), createdEndpoint.getName(), orgId, accountId);
@@ -368,7 +329,7 @@ public class EndpointResource extends EndpointResourceCommon {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Create an email subscription endpoint", description = "Adds the email subscription endpoint into the system and specifies the role-based access control (RBAC) group that will receive email notifications. Use this endpoint in behavior groups to send emails when an action linked to the behavior group is triggered.")
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = {WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION})
+    @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = CREATE_EMAIL_SUBSCRIPTION_INTEGRATION)
     @Transactional
     public EndpointDTO getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid @RequestBody(required = true) RequestSystemSubscriptionProperties requestProps) {
         return this.endpointMapper.toDTO(getOrCreateSystemSubscriptionEndpoint(sec, requestProps, EMAIL_SUBSCRIPTION));
@@ -379,7 +340,7 @@ public class EndpointResource extends EndpointResourceCommon {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Add a drawer endpoint", description = "Adds the drawer system endpoint into the system and specifies the role-based access control (RBAC) group that will receive notifications. Use this endpoint to add an animation as a notification in the UI.")
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = {WorkspacePermission.CREATE_DRAWER_INTEGRATION})
+    @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = CREATE_DRAWER_INTEGRATION)
     @Transactional
     public EndpointDTO getOrCreateDrawerSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid @RequestBody(required = true) RequestSystemSubscriptionProperties requestProps) {
         return this.endpointMapper.toDTO(this.getOrCreateSystemSubscriptionEndpoint(sec, requestProps, DRAWER));
@@ -401,16 +362,7 @@ public class EndpointResource extends EndpointResourceCommon {
         if (getEndpoint.isPresent()) {
             return getEndpoint.get();
         } else {
-            Endpoint createdEndpoint =  endpointRepository.createSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType);
-            if (this.backendConfig.isKesselInventoryEnabled(orgId)) {
-                // Attempt creating the integration in Kessel's inventory. Any
-                // exception here would roll back the operation and our integration
-                // would not be created in our database either.
-                final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-
-                this.kesselAssets.createIntegration(sec, workspaceId.toString(), createdEndpoint.getId().toString());
-            }
-            return createdEndpoint;
+            return endpointRepository.createSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType);
         }
     }
 
@@ -444,8 +396,8 @@ public class EndpointResource extends EndpointResourceCommon {
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.VIEW})
-    public EndpointDTO getEndpoint(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID id) {
+    @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
+    public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         return internalGetEndpoint(sec, id, false);
     }
 
@@ -453,9 +405,9 @@ public class EndpointResource extends EndpointResourceCommon {
     @Path("/{id}")
     @Operation(summary = "Delete an endpoint", description = "Deletes an endpoint. Use this endpoint to delete an endpoint that is no longer needed. Deleting an endpoint that is already linked to a behavior group will unlink it from the behavior group. You cannot delete system endpoints.")
     @APIResponse(responseCode = "204", description = "The integration has been deleted", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.DELETE})
+    @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_CREATE)
     @Transactional
-    public Response deleteEndpoint(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID id) {
+    public Response deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
         EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
         if (!isEndpointTypeAllowed(endpointType)) {
@@ -466,15 +418,6 @@ public class EndpointResource extends EndpointResourceCommon {
         final Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
 
         endpointRepository.deleteEndpoint(orgId, id);
-
-        if (this.backendConfig.isKesselInventoryEnabled(orgId)) {
-            // Attempt deleting the integration from Kessel. If any exception
-            // is thrown the whole transaction will be rolled back and the
-            // integration will not be deleted from our database.
-            final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(orgId);
-
-            this.kesselAssets.deleteIntegration(sec, workspaceId.toString(), id.toString());
-        }
 
         // Attempt deleting the secrets for the given endpoint. In the case
         // that the secrets deletion goes wrong:
@@ -490,12 +433,6 @@ public class EndpointResource extends EndpointResourceCommon {
             if (this.backendConfig.isIgnoreSourcesErrorOnEndpointDelete(orgId)) {
                 Log.errorf(e, "Sources error deleting endpoint %s", endpoint);
             } else {
-                if (this.backendConfig.isKesselInventoryEnabled(orgId)) {
-                    final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(orgId);
-
-                    this.kesselAssets.createIntegration(sec, workspaceId.toString(), id.toString());
-                }
-
                 throw e;
             }
         }
@@ -508,9 +445,9 @@ public class EndpointResource extends EndpointResourceCommon {
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Enable an endpoint", description = "Enables an endpoint that is disabled so that the endpoint will be executed on the following operations that use the endpoint. An operation must be restarted to use the enabled endpoint.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.ENABLE})
+    @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_CREATE)
     @Transactional
-    public Response enableEndpoint(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID id) {
+    public Response enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
         EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
         if (!isEndpointTypeAllowed(endpointType)) {
@@ -529,8 +466,8 @@ public class EndpointResource extends EndpointResourceCommon {
     @Operation(summary = "Disable an endpoint", description = "Disables an endpoint so that the endpoint will not be executed after an operation that uses the endpoint is started. An operation that is already running can still execute the endpoint. Disable an endpoint when you want to stop it from running and might want to re-enable it in the future.")
     @APIResponse(responseCode = "204", description = "The integration has been disabled", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Transactional
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.DISABLE})
-    public Response disableEndpoint(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID id) {
+    @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_CREATE)
+    public Response disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
         EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
         if (!isEndpointTypeAllowed(endpointType)) {
@@ -547,10 +484,10 @@ public class EndpointResource extends EndpointResourceCommon {
     @Produces(TEXT_PLAIN)
     @PUT
     @Transactional
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.EDIT})
+    @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_CREATE)
     public Response updateEndpoint(
         @Context                                        SecurityContext securityContext,
-        @PathParam("id")              @IntegrationId    UUID id,
+        @PathParam("id")                                UUID id,
         @RequestBody(required = true) @NotNull @Valid   EndpointDTO endpointDTO
     ) {
         final Endpoint endpoint = this.endpointMapper.toEntity(endpointDTO);
@@ -639,8 +576,8 @@ public class EndpointResource extends EndpointResourceCommon {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve event notification details", description = "Retrieves extended information about the outcome of an event notification related to the specified endpoint. Use this endpoint to learn why an event delivery failed.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.VIEW_HISTORY})
-    public Response getDetailedEndpointHistory(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId) {
+    @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
+    public Response getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId) {
         String orgId = getOrgId(sec);
         JsonObject json = notificationRepository.getNotificationDetails(orgId, endpointId, historyId);
         if (json == null) {
@@ -672,8 +609,8 @@ public class EndpointResource extends EndpointResourceCommon {
                 schema = @Schema(type = SchemaType.STRING)
             )
     })
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.TEST})
-    public void testEndpoint(@Context SecurityContext sec, @IntegrationId @RestPath UUID uuid, @Valid @RequestBody final EndpointTestRequest requestBody) {
+    @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_CREATE)
+    public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid, @Valid @RequestBody final EndpointTestRequest requestBody) {
         if (!this.endpointRepository.existsByUuidAndOrgId(uuid, getOrgId(sec))) {
             throw new NotFoundException("integration not found");
         }
@@ -733,8 +670,8 @@ public class EndpointResource extends EndpointResourceCommon {
     })
     @Tag(name = OApiFilter.PRIVATE)
     @Transactional
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, integrationPermissions = {IntegrationPermission.EDIT})
-    public void deleteEventTypeFromEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @IntegrationId @RestPath final UUID endpointId) {
+    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = INTEGRATIONS_CREATE)
+    public void deleteEventTypeFromEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
         final String orgId = getOrgId(securityContext);
         endpointEventTypeRepository.deleteEndpointFromEventType(eventTypeId, endpointId, orgId);
 
@@ -761,8 +698,8 @@ public class EndpointResource extends EndpointResourceCommon {
     })
     @Tag(name = OApiFilter.PRIVATE)
     @Transactional
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, integrationPermissions = {IntegrationPermission.EDIT})
-    public void addEventTypeToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @IntegrationId @RestPath final UUID endpointId) {
+    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = INTEGRATIONS_CREATE)
+    public void addEventTypeToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
         final String orgId = getOrgId(securityContext);
         final String accountId = getAccountId(securityContext);
 
@@ -781,8 +718,8 @@ public class EndpointResource extends EndpointResourceCommon {
             description = "No event type or endpoint found with passed ids.")
     })
     @Transactional
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, integrationPermissions = {IntegrationPermission.EDIT})
-    public void updateEventTypesLinkedToEndpoint(@Context final SecurityContext securityContext, @IntegrationId @RestPath final UUID endpointId, @Parameter(description = "Set of event type ids to associate") Set<UUID> eventTypeIds) {
+    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = INTEGRATIONS_CREATE)
+    public void updateEventTypesLinkedToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID endpointId, @Parameter(description = "Set of event type ids to associate") Set<UUID> eventTypeIds) {
         internalUpdateEventTypesLinkedToEndpoint(securityContext, endpointId, eventTypeIds);
     }
 

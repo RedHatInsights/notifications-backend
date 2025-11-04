@@ -30,7 +30,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -91,7 +90,7 @@ public class PatchUserPreferencesMigrationResourceTest extends DbIsolatedTest {
         subscriptionRepository.subscribe(DEFAULT_ORG_ID, "d", eventTypeNewAdvisory.getId(), DAILY);
 
         // org id should not have any endpoint linked to patch event type
-        List<Endpoint> endpointAssociatedToEventTypeList = endpointEventTypeRepository.findEndpointsByEventTypeId(DEFAULT_ORG_ID, eventTypeNewAdvisory.getId(), null, Optional.empty());
+        List<Endpoint> endpointAssociatedToEventTypeList = endpointEventTypeRepository.findEndpointsByEventTypeId(DEFAULT_ORG_ID, eventTypeNewAdvisory.getId(), null);
         assertEquals(0, endpointAssociatedToEventTypeList.size());
 
         List<BehaviorGroup> behaviorGroupList = behaviorGroupRepository.findBehaviorGroupsByEventTypeId(DEFAULT_ORG_ID, eventTypeNewAdvisory.getId(), null);
@@ -136,7 +135,7 @@ public class PatchUserPreferencesMigrationResourceTest extends DbIsolatedTest {
         final List<EventTypeEmailSubscription> userECreatedSubscriptions = subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser("54321", "e");
         assertEmailSubscriptionDataIsCorrect(Set.of(INSTANT, DAILY), "e", userECreatedSubscriptions, eventTypeNewAdvisory.getId(), "54321");
 
-        endpointAssociatedToEventTypeList = endpointEventTypeRepository.findEndpointsByEventTypeId(DEFAULT_ORG_ID, eventTypeNewAdvisory.getId(), null, Optional.empty());
+        endpointAssociatedToEventTypeList = endpointEventTypeRepository.findEndpointsByEventTypeId(DEFAULT_ORG_ID, eventTypeNewAdvisory.getId(), null);
         assertEquals(1, endpointAssociatedToEventTypeList.size());
         assertEquals(EndpointType.EMAIL_SUBSCRIPTION, endpointAssociatedToEventTypeList.getFirst().getType());
 
