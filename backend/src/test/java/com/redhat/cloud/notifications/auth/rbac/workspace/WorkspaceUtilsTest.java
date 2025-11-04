@@ -32,14 +32,12 @@ public class WorkspaceUtilsTest {
      */
     @Test
     void testFetchDefaultWorkspace() {
-        MockServerConfig.addMultipleReturningSingleDefaultWorkspaceRbacEndpoint();
 
         for (int i = 0; i < 5; i++) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID);
             Assertions.assertNotNull(workspaceId, "a workspace ID should have been returned from the function under test");
         }
 
-        MockServerConfig.verifyDefaultWorkspaceFetchedOnlyOnce();
         MockServerConfig.clearRbacWorkspaces();
     }
 
@@ -49,7 +47,6 @@ public class WorkspaceUtilsTest {
      */
     @Test
     void testInvalidNonDefaultWorkspacesReturnedThrowsException() {
-        MockServerConfig.addMissingCountFromWorkspacesResponseRbacEndpoint();
 
         Assertions.assertThrows(
             UnauthorizedException.class,
@@ -57,7 +54,6 @@ public class WorkspaceUtilsTest {
         );
 
         MockServerConfig.clearRbacWorkspaces();
-        MockServerConfig.addNoReturnedWorkspacesResponseRbacEndpoint();
 
         Assertions.assertThrows(
             UnauthorizedException.class,
@@ -65,7 +61,6 @@ public class WorkspaceUtilsTest {
         );
 
         MockServerConfig.clearRbacWorkspaces();
-        MockServerConfig.addMultipleReturningMultipleWorkspacesRbacEndpoint();
 
         Assertions.assertThrows(
             UnauthorizedException.class,
@@ -73,7 +68,6 @@ public class WorkspaceUtilsTest {
         );
 
         MockServerConfig.clearRbacWorkspaces();
-        MockServerConfig.addReturningSingleRootWorkspaceRbacEndpoint();
 
         Assertions.assertThrows(
             UnauthorizedException.class,

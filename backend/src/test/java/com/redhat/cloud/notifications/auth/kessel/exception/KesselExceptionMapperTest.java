@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.auth.kessel.exception;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.auth.kessel.KesselCheckClient;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
@@ -15,7 +16,6 @@ import io.vertx.core.json.JsonObject;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.project_kessel.relations.client.CheckClient;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -29,7 +29,7 @@ public class KesselExceptionMapperTest {
     BackendConfig backendConfig;
 
     @InjectMock
-    CheckClient checkClient;
+    KesselCheckClient checkClient;
 
     /**
      * Tests that when a {@link io.grpc.StatusRuntimeException} is thrown in
@@ -39,7 +39,7 @@ public class KesselExceptionMapperTest {
     @Test
     void testInternalServerErrorReturned() {
         // Enable Kessel as the authorization back end.
-        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselEnabled(anyString())).thenReturn(true);
 
         // Simulate that an error occurred when calling Kessel.
         Mockito.when(this.checkClient.check(Mockito.any())).thenThrow(new StatusRuntimeException(Status.INVALID_ARGUMENT));
