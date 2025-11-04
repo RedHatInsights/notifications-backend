@@ -126,7 +126,7 @@ public class PatchUserPreferencesMigrationResource {
                     }
 
                     if (subscriptionUpdated && !alreadyProcessedOrgIds.contains(orgId)) {
-                        List<Endpoint> endpointsLinkedToPatchEventType = endpointEventTypeRepository.findEndpointsByEventTypeId(orgId, patchNewAdvisoryEventType.get().getId(), null, Optional.empty());
+                        List<Endpoint> endpointsLinkedToPatchEventType = endpointEventTypeRepository.findEndpointsByEventTypeId(orgId, patchNewAdvisoryEventType.get().getId(), null);
                         // Create and email endpoint + event type association if necessary
                         if (endpointsLinkedToPatchEventType.isEmpty() || endpointsLinkedToPatchEventType.stream().noneMatch(ep -> EndpointType.EMAIL_SUBSCRIPTION == ep.getType())) {
                             final Endpoint endpoint = getOrCreateSystemSubscriptionEndpoint(orgId, accountId);

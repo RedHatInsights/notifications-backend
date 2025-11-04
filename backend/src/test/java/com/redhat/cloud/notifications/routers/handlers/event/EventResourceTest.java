@@ -4,9 +4,10 @@ import com.redhat.cloud.notifications.EventPayloadTestHelper;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.KesselCheckClient;
+import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.KesselResourceType;
 import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
-import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -44,15 +45,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
-import org.project_kessel.api.relations.v1beta1.CheckRequest;
-import org.project_kessel.api.relations.v1beta1.CheckResponse;
-import org.project_kessel.inventory.client.KesselCheckClient;
-import org.project_kessel.inventory.client.NotificationsIntegrationClient;
-import org.project_kessel.relations.client.CheckClient;
-import org.project_kessel.relations.client.LookupClient;
+import org.project_kessel.api.inventory.v1beta2.Allowed;
+import org.project_kessel.api.inventory.v1beta2.CheckResponse;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -61,7 +57,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess;
@@ -120,13 +115,6 @@ public class EventResourceTest extends DbIsolatedTest {
      * be used.
      */
     @InjectMock
-    CheckClient checkClient;
-
-    /**
-     * Mocked Kessel's check client so that the {@link KesselTestHelper} can
-     * be used.
-     */
-    @InjectMock
     KesselCheckClient kesselCheckClient;
 
     @Inject
@@ -135,20 +123,6 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @Inject
     KesselTestHelper kesselTestHelper;
-
-    /**
-     * Mocked Kessel's lookup client so that the {@link KesselTestHelper} can
-     * be used.
-     */
-    @InjectMock
-    LookupClient lookupClient;
-
-    /**
-     * Mocked Kessel's lookup client so that the {@link KesselTestHelper} can
-     * be used.
-     */
-    @InjectMock
-    NotificationsIntegrationClient notificationsIntegrationClient;
 
     @Inject
     ResourceHelpers resourceHelpers;
@@ -164,7 +138,7 @@ public class EventResourceTest extends DbIsolatedTest {
     WorkspaceUtils workspaceUtils;
 
     @InjectSpy
-    KesselAuthorization kesselAuthorization;
+    KesselInventoryAuthorization kesselAuthorization;
 
     @BeforeEach
     void setUp() {
@@ -177,9 +151,9 @@ public class EventResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @MethodSource("kesselFlags")
-    void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
+    @ValueSource(booleans = {true, false})
+    void shouldNotBeAllowedTogetEventLogsWhenUserHasNotificationsAccessRightsOnly(boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKessel(isKesselEnabled);
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
 
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "non-default-user", NOTIFICATIONS_ACCESS_ONLY);
@@ -191,9 +165,9 @@ public class EventResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @MethodSource("kesselFlags")
-    void testAllQueryParams(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
+    @ValueSource(booleans = {true, false})
+    void testAllQueryParams(boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKessel(isKesselEnabled);
         /*
          * This method is very long, but splitting it into several smaller ones would mean we have to recreate lots of
          * database records for each test. To avoid doing that, the data is only persisted once and many tests are run
@@ -202,18 +176,18 @@ public class EventResourceTest extends DbIsolatedTest {
 
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, KesselResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Header otherIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, OTHER_ORG_ID, OTHER_USERNAME, FULL_ACCESS);
         Header emptyIdentityHeader = mockRbac(OTHER_ACCOUNT_ID, "none", OTHER_USERNAME, FULL_ACCESS);
 
         final UUID noneId = UUID.randomUUID();
         this.kesselTestHelper.mockDefaultWorkspaceId("none", noneId);
-        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, noneId.toString());
+        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, KesselResourceType.WORKSPACE, noneId.toString());
 
         final UUID otherWorkspaceId = UUID.randomUUID();
         this.kesselTestHelper.mockDefaultWorkspaceId(OTHER_ORG_ID, otherWorkspaceId);
-        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, otherWorkspaceId.toString());
+        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, KesselResourceType.WORKSPACE, otherWorkspaceId.toString());
 
         Bundle bundle1 = resourceHelpers.createBundle("bundle-1", "Bundle 1");
         Bundle bundle2 = resourceHelpers.createBundle("bundle-2", "Bundle 2");
@@ -709,9 +683,9 @@ public class EventResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @MethodSource("kesselFlags")
-    void testInsufficientPrivileges(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
+    @ValueSource(booleans = {true, false})
+    void testInsufficientPrivileges(boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKessel(isKesselEnabled);
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
 
         Header noAccessIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER + "no-access", NO_ACCESS);
@@ -723,13 +697,13 @@ public class EventResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @MethodSource("kesselFlags")
-    void testInvalidSortBy(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
+    @ValueSource(booleans = {true, false})
+    void testInvalidSortBy(boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKessel(isKesselEnabled);
 
         Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, KesselResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         given()
             .header(identityHeader)
@@ -741,13 +715,13 @@ public class EventResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @MethodSource("kesselFlags")
-    void testInvalidLimit(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
+    @ValueSource(booleans = {true, false})
+    void testInvalidLimit(boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKessel(isKesselEnabled);
 
         Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, KesselResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         given()
             .header(identityHeader)
@@ -766,13 +740,13 @@ public class EventResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @MethodSource("kesselFlags")
-    void shouldBeAllowedToGetEventLogs(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
+    @ValueSource(booleans = {true, false})
+    void shouldBeAllowedToGetEventLogs(boolean isKesselEnabled) {
+        this.kesselTestHelper.mockKessel(isKesselEnabled);
 
         Header readAccessIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, NOTIFICATIONS_READ_ACCESS_ONLY);
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, KesselResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         given()
             .header(readAccessIdentityHeader)
@@ -998,19 +972,19 @@ public class EventResourceTest extends DbIsolatedTest {
 
     @Test
     void testEventsWithKesselCriterion() {
-        when(backendConfig.isKesselChecksOnEventLogEnabled(anyString())).thenReturn(true);
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
 
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, KesselResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         final UUID noneId = UUID.randomUUID();
         this.kesselTestHelper.mockDefaultWorkspaceId("none", noneId);
-        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, noneId.toString());
+        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, KesselResourceType.WORKSPACE, noneId.toString());
 
         final UUID otherWorkspaceId = UUID.randomUUID();
         this.kesselTestHelper.mockDefaultWorkspaceId(OTHER_ORG_ID, otherWorkspaceId);
-        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, otherWorkspaceId.toString());
+        this.kesselTestHelper.mockKesselPermission(OTHER_USERNAME, WorkspacePermission.EVENT_LOG_VIEW, KesselResourceType.WORKSPACE, otherWorkspaceId.toString());
 
         Bundle bundle1 = resourceHelpers.createBundle("bundle-1", "Bundle 1");
         Bundle bundle2 = resourceHelpers.createBundle("bundle-2", "Bundle 2");
@@ -1062,10 +1036,8 @@ public class EventResourceTest extends DbIsolatedTest {
         verify(kesselAuthorization, times(1)).hasPermissionOnResource(any(SecurityContext.class), any(RecipientsAuthorizationCriterion.class));
 
         // Kessel client mock will return allowed status, event2K must be part of results
-        CheckResponse kesselCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build();
-        when(checkClient.check(any(CheckRequest.class))).thenReturn(kesselCheckResponse);
-        org.project_kessel.api.inventory.v1beta1.authz.CheckResponse kesselInventoryCheckResponse = org.project_kessel.api.inventory.v1beta1.authz.CheckResponse.newBuilder().setAllowed(org.project_kessel.api.inventory.v1beta1.authz.CheckResponse.Allowed.ALLOWED_TRUE).build();
-        when(kesselCheckClient.Check(any())).thenReturn(kesselInventoryCheckResponse);
+        CheckResponse kesselInventoryCheckResponse = CheckResponse.newBuilder().setAllowed(Allowed.ALLOWED_TRUE).build();
+        when(kesselCheckClient.check(any())).thenReturn(kesselInventoryCheckResponse);
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(5, page.getMeta().getCount());
         assertEquals(5, page.getData().size());
@@ -1078,10 +1050,8 @@ public class EventResourceTest extends DbIsolatedTest {
         assertLinks(page.getLinks(), "first", "last");
 
         // Kessel client mock will return not allowed status, event2K must be ignored
-        kesselCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_FALSE).build();
-        when(checkClient.check(any(CheckRequest.class))).thenReturn(kesselCheckResponse);
-        kesselInventoryCheckResponse = org.project_kessel.api.inventory.v1beta1.authz.CheckResponse.newBuilder().setAllowed(org.project_kessel.api.inventory.v1beta1.authz.CheckResponse.Allowed.ALLOWED_FALSE).build();
-        when(kesselCheckClient.Check(any())).thenReturn(kesselInventoryCheckResponse);
+        kesselInventoryCheckResponse = CheckResponse.newBuilder().setAllowed(Allowed.ALLOWED_FALSE).build();
+        when(kesselCheckClient.check(any())).thenReturn(kesselInventoryCheckResponse);
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
@@ -1092,8 +1062,7 @@ public class EventResourceTest extends DbIsolatedTest {
         assertLinks(page.getLinks(), "first", "last");
 
         // Kessel client mock will throw an exception, event2K must be ignored
-        when(checkClient.check(any(CheckRequest.class))).thenThrow(RuntimeException.class);
-        when(kesselCheckClient.Check(any())).thenThrow(RuntimeException.class);
+        when(kesselCheckClient.check(any())).thenThrow(RuntimeException.class);
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
@@ -1102,13 +1071,5 @@ public class EventResourceTest extends DbIsolatedTest {
         assertSameEvent(page.getData().get(2), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
-    }
-
-    private static Stream<Arguments> kesselFlags() {
-        return Stream.of(
-            Arguments.of(false, false), // Should use RBAC
-            Arguments.of(true, false), // Should use Kessel relations
-            Arguments.of(true, true) // Should use Kessel inventory
-        );
     }
 }

@@ -77,7 +77,7 @@ public class EndpointRepositoryTest {
                 CompositeEndpointType.fromString("pagerduty")
         );
 
-        Function<Query, List<Endpoint>> provider = query -> endpointRepository.getEndpointsPerCompositeType(orgId, null, compositeEndpointTypes, null, query, null);
+        Function<Query, List<Endpoint>> provider = query -> endpointRepository.getEndpointsPerCompositeType(orgId, null, compositeEndpointTypes, null, query);
         TestHelpers.testSorting(
                 "id",
                 provider,
@@ -131,7 +131,6 @@ public class EndpointRepositoryTest {
                         new CompositeEndpointType(EndpointType.WEBHOOK),
                         new CompositeEndpointType(EndpointType.CAMEL, "splunk")
                 ),
-                null,
                 null
         ).build((hql, endpointClass) -> {
             assertEquals("SELECT e FROM Endpoint e WHERE e.orgId IS NULL AND (e.compositeType.type IN (:endpointType) OR e.compositeType IN (:compositeTypes))", hql);
@@ -149,7 +148,6 @@ public class EndpointRepositoryTest {
                 Set.of(
                         new CompositeEndpointType(EndpointType.WEBHOOK)
                 ),
-                null,
                 null
         ).build((hql, endpointClass) -> {
             assertEquals("SELECT e FROM Endpoint e WHERE e.orgId IS NULL AND (e.compositeType.type IN (:endpointType))", hql);
@@ -167,7 +165,6 @@ public class EndpointRepositoryTest {
                 Set.of(
                         new CompositeEndpointType(EndpointType.CAMEL, "splunk")
                 ),
-                null,
                 null
         ).build((hql, endpointClass) -> {
             assertEquals("SELECT e FROM Endpoint e WHERE e.orgId IS NULL AND (e.compositeType IN (:compositeTypes))", hql);
@@ -232,8 +229,7 @@ public class EndpointRepositoryTest {
             null,
             Set.of(new CompositeEndpointType(EndpointType.WEBHOOK)),
             null,
-            null,
-            new HashSet<>()
+            null
         );
 
         // Call the count function under test.
@@ -241,8 +237,7 @@ public class EndpointRepositoryTest {
             DEFAULT_ORG_ID,
             null,
             Set.of(new CompositeEndpointType(EndpointType.WEBHOOK)),
-            null,
-            new HashSet<>()
+            null
         );
 
         // Assert that no endpoints were fetched.
@@ -277,8 +272,7 @@ public class EndpointRepositoryTest {
             null,
             Set.of(new CompositeEndpointType(EndpointType.WEBHOOK)),
             null,
-            null,
-            authorizedIds
+            null
         );
 
         // Call the "count" function to test it too, since we are at it.
@@ -286,8 +280,7 @@ public class EndpointRepositoryTest {
             DEFAULT_ORG_ID,
             null,
             Set.of(new CompositeEndpointType(EndpointType.WEBHOOK)),
-            null,
-            authorizedIds
+            null
         );
 
         // Assert that the count is correct both for the returned result from
