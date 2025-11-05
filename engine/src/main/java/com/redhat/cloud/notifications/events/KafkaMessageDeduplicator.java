@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.ValkeyService;
 import com.redhat.cloud.notifications.config.EngineConfig;
+import com.redhat.cloud.notifications.config.ValkeyService;
 import com.redhat.cloud.notifications.models.EventTypeKey;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
