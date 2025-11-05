@@ -14,7 +14,7 @@
     "buffer": "^6.0.3",
     "immer": "9.0.21",
     "monaco-editor": "0.21.3",
-    "monaco-editor-webpack-plugin": "2.1.0",
+    "monaco-editor-webpack-plugin": "7.1.1",
     "openapi2typescript": "0.2.1",
     "react": "17.0.2",
     "react-dom": "17.0.2",
