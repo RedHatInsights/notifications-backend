@@ -2,24 +2,6 @@ metadata:
   version: '1.0'
 artifacts:
 - type: maven
-  filename: notifications-connector-common-http-1.0.0-SNAPSHOT.jar
-  attributes:
-    repository_url: https://repo1.maven.org/maven2
-    group_id: com.redhat.cloud.notifications
-    artifact_id: notifications-connector-common-http
-    version: 1.0.0-SNAPSHOT
-    type: jar
-  checksum: sha256:49354ea6a4301e201b6f2d7389fcbeb8c16bf28f75677cb873b33bb8129fbbb0
-- type: maven
-  filename: notifications-connector-common-1.0.0-SNAPSHOT.jar
-  attributes:
-    repository_url: https://repo1.maven.org/maven2
-    group_id: com.redhat.cloud.notifications
-    artifact_id: notifications-connector-common
-    version: 1.0.0-SNAPSHOT
-    type: jar
-  checksum: sha256:d222f944f29fa894bcb23bc712b706a626005a892e75c4ed18a152db9a9ed028
-- type: maven
   filename: camel-quarkus-http-3.26.0.jar
   attributes:
     repository_url: https://repo1.maven.org/maven2
@@ -154,15 +136,6 @@ artifacts:
     version: 5.3.4
     type: jar
   checksum: sha256:1d8f535f8bc0e027f8a99c3fe02d277a546dfe4a2faa9400076267a6a223b349
-- type: maven
-  filename: notifications-common-template-1.0.0-SNAPSHOT.jar
-  attributes:
-    repository_url: https://repo1.maven.org/maven2
-    group_id: com.redhat.cloud.notifications
-    artifact_id: notifications-common-template
-    version: 1.0.0-SNAPSHOT
-    type: jar
-  checksum: sha256:e107f6f6c1b3f95a1ba5c654faa73518f8132a14cbd8ffa1e2fc4202e7b5bfe9
 - type: maven
   filename: quarkus-qute-3.26.4.jar
   attributes:
@@ -2468,25 +2441,6 @@ artifacts:
     type: jar
   checksum: sha256:af3f9aa297c5bcd2fcb913b8a37b675cb8fcb614f10168fcd6333d015c8e8dcd
 - type: maven
-  filename: notifications-connector-common-1.0.0-SNAPSHOT-tests.test-jar
-  attributes:
-    repository_url: https://repo1.maven.org/maven2
-    group_id: com.redhat.cloud.notifications
-    artifact_id: notifications-connector-common
-    version: 1.0.0-SNAPSHOT
-    type: test-jar
-    classifier: tests
-  checksum: sha256:d222f944f29fa894bcb23bc712b706a626005a892e75c4ed18a152db9a9ed028
-- type: maven
-  filename: notifications-common-unleash-1.0.0-SNAPSHOT.jar
-  attributes:
-    repository_url: https://repo1.maven.org/maven2
-    group_id: com.redhat.cloud.notifications
-    artifact_id: notifications-common-unleash
-    version: 1.0.0-SNAPSHOT
-    type: jar
-  checksum: sha256:9f25c42edb3740034a4586af120eda03c1bda39a9650c8618df0e30b300d46f6
-- type: maven
   filename: microprofile-config-api-3.1.jar
   attributes:
     repository_url: https://repo1.maven.org/maven2
@@ -3359,16 +3313,6 @@ artifacts:
     version: 3.13.4
     type: jar
   checksum: sha256:958e11ef43cc4911441cf3a21ecd23a88a3da8d4b52eaa6b454ca95a62c16be8
-- type: maven
-  filename: notifications-common-1.0.0-SNAPSHOT-tests.test-jar
-  attributes:
-    repository_url: https://repo1.maven.org/maven2
-    group_id: com.redhat.cloud.notifications
-    artifact_id: notifications-common
-    version: 1.0.0-SNAPSHOT
-    type: test-jar
-    classifier: tests
-  checksum: sha256:67577736c773fadaa69d5da5cf7ed537a927d606c20814a71b278cea26c7e6d1
 - type: maven
   filename: quarkus-hibernate-orm-3.26.4.jar
   attributes:
