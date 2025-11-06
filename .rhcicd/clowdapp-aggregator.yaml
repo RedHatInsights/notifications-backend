@@ -12,7 +12,7 @@ objects:
       app: notifications-aggregator
   spec:
     envName: ${ENV_NAME}
-    dependencies:
+    optionalDependencies:
     - notifications-backend
     database:
       sharedDbAppName: notifications-backend
