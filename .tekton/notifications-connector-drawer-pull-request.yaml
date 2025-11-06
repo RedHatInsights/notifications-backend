@@ -33,7 +33,7 @@ spec:
   - name: hermetic
     value: "true"
   - name: prefetch-input
-    value: '[{"type": "generic", "path": "./connector-drawer", "lockfile": "artifacts.lock.yaml"}]'
+    value: '[{"type": "generic", "path": "./connector-drawer"}]'
   pipelineRef:
     name: docker-build
   taskRunTemplate:
