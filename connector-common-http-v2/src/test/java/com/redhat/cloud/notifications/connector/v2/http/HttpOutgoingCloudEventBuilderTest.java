@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.connector.v2.http;
 
 import com.redhat.cloud.notifications.connector.v2.BaseConnectorIntegrationTest;
-import com.redhat.cloud.notifications.connector.v2.http.pojo.HandledHttpExceptionDetails;
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
+import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
@@ -98,7 +98,7 @@ class HttpOutgoingCloudEventBuilderTest {
             new JsonObject().put("test", "data").put("target_url", "https://example.com/webhook")
         );
 
-        HandledMessageDetails processedMessageDetails = new HandledMessageDetails(true, "Success");
+        HandledMessageDetails processedMessageDetails = new HandledMessageDetails("Success");
 
         // When
         Message<String> cloudEventMessage = httpOutgoingCloudEventBuilder.buildSuccess(incomingCloudEvent, processedMessageDetails, System.currentTimeMillis());

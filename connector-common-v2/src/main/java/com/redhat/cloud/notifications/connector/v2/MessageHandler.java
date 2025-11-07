@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.connector.v2;
 
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
@@ -17,6 +17,6 @@ public class MessageHandler {
 
     public HandledMessageDetails handle(IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
         Log.info("Test implementation of MessageHandler for unit testing");
-        return new HandledMessageDetails(true, "Ok");
+        return new HandledMessageDetails("Ok");
     }
 }

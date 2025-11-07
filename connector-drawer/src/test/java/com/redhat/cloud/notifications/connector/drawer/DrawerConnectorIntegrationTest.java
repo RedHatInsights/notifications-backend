@@ -96,7 +96,7 @@ class DrawerConnectorIntegrationTest extends BaseConnectorIntegrationTest {
 
         RecipientSettings recipientSettings = new RecipientSettings();
         return new DrawerNotificationToConnector(orgId, drawerEntryPayload, Set.of(recipientSettings),
-            List.of("user-1", "user-2"), new JsonObject(), ActionTemplateHelper.jsonActionToMap(ActionTemplateHelper.actionAsJson));
+            Set.of("user-1", "user-2"), new JsonObject(), ActionTemplateHelper.jsonActionToMap(ActionTemplateHelper.actionAsJson));
     }
 
     private void setupMockHttpRequest(String path, String responseBody, int statusCode) {

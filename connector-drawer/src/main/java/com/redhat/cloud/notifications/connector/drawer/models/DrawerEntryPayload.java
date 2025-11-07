@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.drawer.model;
+package com.redhat.cloud.notifications.connector.drawer.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;

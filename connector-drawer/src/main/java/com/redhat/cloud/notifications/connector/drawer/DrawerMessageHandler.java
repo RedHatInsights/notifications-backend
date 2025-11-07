@@ -1,13 +1,12 @@
 package com.redhat.cloud.notifications.connector.drawer;
 
 import com.redhat.cloud.notifications.connector.drawer.config.DrawerConnectorConfig;
-import com.redhat.cloud.notifications.connector.drawer.model.DrawerNotificationToConnector;
-import com.redhat.cloud.notifications.connector.drawer.model.DrawerUser;
-import com.redhat.cloud.notifications.connector.drawer.model.HandledDrawerMessageDetails;
-import com.redhat.cloud.notifications.connector.drawer.model.RecipientSettings;
+import com.redhat.cloud.notifications.connector.drawer.models.DrawerNotificationToConnector;
+import com.redhat.cloud.notifications.connector.drawer.models.DrawerUser;
+import com.redhat.cloud.notifications.connector.drawer.models.HandledDrawerMessageDetails;
 import com.redhat.cloud.notifications.connector.drawer.recipients.recipientsresolver.ExternalRecipientsResolver;
 import com.redhat.cloud.notifications.connector.v2.MessageHandler;
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
@@ -21,8 +20,6 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -92,19 +89,15 @@ public class DrawerMessageHandler extends MessageHandler {
     }
 
     private Set<String> fetchRecipients(DrawerNotificationToConnector drawerNotification) {
-        List<RecipientSettings> recipientSettings = drawerNotification.getRecipientSettings().stream().toList();
-        Set<String> unsubscribers = new HashSet<>(drawerNotification.getUnsubscribers());
-        final String orgId = drawerNotification.getOrgId();
-        JsonObject authorizationCriterion = drawerNotification.getAuthorizationCriteria();
 
         boolean subscribedByDefault = true;
         final Timer.Sample recipientsResolverResponseTimeMetric = Timer.start(meterRegistry);
         Set<String> recipientsList = externalRecipientsResolver.recipientUsers(
-                orgId,
-                Set.copyOf(recipientSettings),
-                unsubscribers,
+                drawerNotification.getOrgId(),
+                drawerNotification.getRecipientSettings(),
+                drawerNotification.getUnsubscribers(),
                 subscribedByDefault,
-                authorizationCriterion)
+                drawerNotification.getAuthorizationCriteria())
             .stream().map(DrawerUser::getUsername).filter(username -> username != null && !username.isBlank()).collect(toSet());
         recipientsResolverResponseTimeMetric.stop(meterRegistry.timer(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC));
 

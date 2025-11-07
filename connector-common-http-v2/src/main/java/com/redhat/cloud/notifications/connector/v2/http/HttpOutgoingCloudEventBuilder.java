@@ -2,10 +2,10 @@ package com.redhat.cloud.notifications.connector.v2.http;
 
 
 import com.redhat.cloud.notifications.connector.v2.OutgoingCloudEventBuilder;
-import com.redhat.cloud.notifications.connector.v2.http.pojo.HandledHttpExceptionDetails;
-import com.redhat.cloud.notifications.connector.v2.http.pojo.HandledHttpMessageDetails;
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledExceptionDetails;
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
+import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpMessageDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 

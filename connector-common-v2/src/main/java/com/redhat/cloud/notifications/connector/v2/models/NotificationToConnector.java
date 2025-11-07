@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.v2.pojo;
+package com.redhat.cloud.notifications.connector.v2.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

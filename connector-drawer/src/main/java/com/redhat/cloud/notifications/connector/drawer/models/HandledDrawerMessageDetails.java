@@ -1,6 +1,6 @@
-package com.redhat.cloud.notifications.connector.drawer.model;
+package com.redhat.cloud.notifications.connector.drawer.models;
 
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import java.util.Set;
 
 public class HandledDrawerMessageDetails extends HandledMessageDetails {

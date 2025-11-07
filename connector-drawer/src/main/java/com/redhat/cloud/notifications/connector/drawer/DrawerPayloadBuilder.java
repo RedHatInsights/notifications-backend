@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.connector.drawer;
 
-import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntry;
-import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntryPayload;
+import com.redhat.cloud.notifications.connector.drawer.models.DrawerEntry;
+import com.redhat.cloud.notifications.connector.drawer.models.DrawerEntryPayload;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;

@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.connector.v2;
 
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledExceptionDetails;
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
 import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
@@ -34,7 +34,7 @@ class OutgoingCloudEventBuilderTest {
             new JsonObject().put("test", "data")
         );
 
-        HandledMessageDetails processedMessageDetails = new HandledMessageDetails(true, "Event sent successfully");
+        HandledMessageDetails processedMessageDetails = new HandledMessageDetails("Event sent successfully");
 
         // When
         Message<String> cloudEventMessage = outgoingCloudEventBuilder.buildSuccess(incomingCloudEvent, processedMessageDetails, System.currentTimeMillis());
@@ -75,7 +75,7 @@ class OutgoingCloudEventBuilderTest {
         );
 
         // Given - set failure properties
-        HandledExceptionDetails processedMessageDetails = new HandledExceptionDetails(false, "Connection refused");
+        HandledExceptionDetails processedMessageDetails = new HandledExceptionDetails("Connection refused");
 
         // When
         Message<String> cloudEventMessage = outgoingCloudEventBuilder.buildFailure(incomingCloudEvent, processedMessageDetails, System.currentTimeMillis());
@@ -108,7 +108,7 @@ class OutgoingCloudEventBuilderTest {
             new JsonObject().put("test", "data")
         );
 
-        HandledMessageDetails processedMessageDetails = new HandledMessageDetails(true, "Event sent successfully");
+        HandledMessageDetails processedMessageDetails = new HandledMessageDetails("Event sent successfully");
 
         // When
         Message<String> cloudEventMessage = outgoingCloudEventBuilder.buildSuccess(incomingCloudEvent, processedMessageDetails, System.currentTimeMillis());
@@ -132,7 +132,7 @@ class OutgoingCloudEventBuilderTest {
         // Given - set start time 100ms in the past
         long startTime = System.currentTimeMillis() - 100;
 
-        HandledMessageDetails processedMessageDetails = new HandledMessageDetails(true, "Event sent successfully");
+        HandledMessageDetails processedMessageDetails = new HandledMessageDetails("Event sent successfully");
 
         // When
         Message<String> cloudEventMessage = outgoingCloudEventBuilder.buildSuccess(incomingCloudEvent, processedMessageDetails, startTime);

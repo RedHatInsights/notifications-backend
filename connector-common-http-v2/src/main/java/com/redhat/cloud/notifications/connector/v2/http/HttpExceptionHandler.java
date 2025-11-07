@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.connector.v2.http;
 
 import com.redhat.cloud.notifications.connector.v2.ExceptionHandler;
-import com.redhat.cloud.notifications.connector.v2.http.pojo.HandledHttpExceptionDetails;
-import com.redhat.cloud.notifications.connector.v2.http.pojo.NotificationToConnectorHttp;
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.http.models.NotificationToConnectorHttp;
+import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;

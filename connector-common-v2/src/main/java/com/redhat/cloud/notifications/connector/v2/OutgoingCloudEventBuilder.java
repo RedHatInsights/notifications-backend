@@ -1,8 +1,8 @@
 package com.redhat.cloud.notifications.connector.v2;
 
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledExceptionDetails;
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
-import com.redhat.cloud.notifications.connector.v2.pojo.NotificationToConnector;
+import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
+import com.redhat.cloud.notifications.connector.v2.models.NotificationToConnector;
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;

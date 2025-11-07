@@ -1,7 +1,7 @@
-package com.redhat.cloud.notifications.connector.v2.http.pojo;
+package com.redhat.cloud.notifications.connector.v2.http.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.redhat.cloud.notifications.connector.v2.pojo.NotificationToConnector;
+import com.redhat.cloud.notifications.connector.v2.models.NotificationToConnector;
 import io.vertx.core.json.JsonObject;
 
 public class NotificationToConnectorHttp extends NotificationToConnector {

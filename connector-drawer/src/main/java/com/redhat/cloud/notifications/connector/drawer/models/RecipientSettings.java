@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.drawer.model;
+package com.redhat.cloud.notifications.connector.drawer.models;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;

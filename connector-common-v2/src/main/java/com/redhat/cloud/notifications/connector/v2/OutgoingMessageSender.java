@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.connector.v2;
 
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledExceptionDetails;
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -19,7 +19,6 @@ public class OutgoingMessageSender {
     @Inject
     @Channel("outgoing-messages")
     Emitter<String> emitter;
-
 
     public void sendSuccess(IncomingCloudEventMetadata<JsonObject> cloudEventMetadata, HandledMessageDetails processedMessageDetails, long startTime) {
         processedMessageDetails.outcomeMessage = String.format("Event %s sent successfully", cloudEventMetadata.getId());

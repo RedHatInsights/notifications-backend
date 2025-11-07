@@ -1,10 +1,10 @@
 package com.redhat.cloud.notifications.connector.drawer;
 
-import com.redhat.cloud.notifications.connector.drawer.model.HandledDrawerExceptionDetails;
-import com.redhat.cloud.notifications.connector.drawer.model.HandledDrawerMessageDetails;
+import com.redhat.cloud.notifications.connector.drawer.models.HandledDrawerExceptionDetails;
+import com.redhat.cloud.notifications.connector.drawer.models.HandledDrawerMessageDetails;
 import com.redhat.cloud.notifications.connector.v2.OutgoingCloudEventBuilder;
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledExceptionDetails;
-import com.redhat.cloud.notifications.connector.v2.pojo.HandledMessageDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -38,16 +38,10 @@ public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
         JsonObject data = new JsonObject();
 
         if (processedExceptionDetails instanceof HandledDrawerExceptionDetails processedDrawerExceptionDetails) {
-            data.put("details", new JsonObject());
-
             if (null != processedDrawerExceptionDetails.additionalErrorDetails) {
-                try {
-                    data.getJsonObject("details").put(ADDITIONAL_ERROR_DETAILS,
-                        new JsonObject(processedDrawerExceptionDetails.additionalErrorDetails));
-                } catch (Exception e) {
-                    data.getJsonObject("details").put(ADDITIONAL_ERROR_DETAILS,
-                        processedDrawerExceptionDetails.additionalErrorDetails);
-                }
+                data.put("details", new JsonObject());
+                data.getJsonObject("details").put(ADDITIONAL_ERROR_DETAILS,
+                    processedDrawerExceptionDetails.additionalErrorDetails);
             }
         }
         return data;
