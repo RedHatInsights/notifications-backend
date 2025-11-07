@@ -22,10 +22,6 @@ public abstract class BaseHttpConnectorIntegrationTest extends BaseConnectorInte
         return useHttps() ? getMockServerUrl().replace("http:", "https:") : getMockServerUrl();
     }
 
-    protected String getRemoteServerPath() {
-        return "";
-    }
-
     @Test
     protected void testSuccessfulNotification() {
         // Mock successful HTTP response

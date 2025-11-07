@@ -38,8 +38,9 @@ public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
         JsonObject data = new JsonObject();
 
         if (processedExceptionDetails instanceof HandledDrawerExceptionDetails processedDrawerExceptionDetails) {
+            data.put("details", new JsonObject());
+            data.getJsonObject("details").put(TOTAL_RECIPIENTS_KEY, 0);
             if (null != processedDrawerExceptionDetails.additionalErrorDetails) {
-                data.put("details", new JsonObject());
                 data.getJsonObject("details").put(ADDITIONAL_ERROR_DETAILS,
                     processedDrawerExceptionDetails.additionalErrorDetails);
             }

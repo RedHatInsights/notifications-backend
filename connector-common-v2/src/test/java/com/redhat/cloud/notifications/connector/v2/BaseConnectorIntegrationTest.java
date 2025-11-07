@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.connector.v2;
 
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import io.quarkus.test.junit.QuarkusTest;
@@ -19,18 +20,18 @@ import org.awaitility.Awaitility;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.mockserver.model.HttpResponse;
 
 import java.net.URI;
 import java.util.UUID;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
 import static com.redhat.cloud.notifications.connector.v2.MessageConsumer.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockserver.model.HttpError.error;
-import static org.mockserver.model.HttpRequest.request;
 
 /**
  * Base class for connector integration tests that provides:
@@ -62,9 +63,13 @@ public abstract class BaseConnectorIntegrationTest {
 
     protected abstract String getConnectorSpecificTargetUrl();
 
+    protected String getRemoteServerPath() {
+        return "";
+    }
+
     @BeforeEach
     void setUp() {
-        getClient().reset();
+        getClient().resetAll();
 
         // Set up InMemory channels
         incomingMessageSource = inMemoryConnector.source("incoming-messages");
@@ -79,7 +84,7 @@ public abstract class BaseConnectorIntegrationTest {
 
     @AfterEach
     void tearDown() {
-        getClient().reset();
+        getClient().resetAll();
         micrometerAssertionHelper.clearSavedValues();
 
         if (outgoingMessageSink != null) {
@@ -165,10 +170,13 @@ public abstract class BaseConnectorIntegrationTest {
     /**
      * Mocks an HTTP server response
      */
-    protected void mockHttpResponse(String path, int statusCode, String body) {
-        getClient()
-            .when(request().withMethod("POST").withPath(path))
-            .respond(HttpResponse.response().withStatusCode(statusCode).withBody(body));
+    protected void mockHttpResponse(String path, int statusCode, String responseBody) {
+        getClient().stubFor(
+            post(urlEqualTo(path))
+                .willReturn(aResponse()
+                    .withStatus(statusCode)
+                    .withBody(responseBody))
+        );
     }
 
     /**
@@ -182,9 +190,10 @@ public abstract class BaseConnectorIntegrationTest {
      * Mocks a network failure
      */
     protected void mockNetworkFailure(String path) {
-        getClient()
-            .when(request().withMethod("POST").withPath(path))
-            .error(error().withDropConnection(true));
+        getClient().stubFor(
+            post(urlEqualTo(path))
+                .willReturn(aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER))
+        );
     }
 
     /**

@@ -3,10 +3,11 @@ package com.redhat.cloud.notifications.connector.drawer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
-import com.redhat.cloud.notifications.connector.drawer.model.DrawerEntryPayload;
-import com.redhat.cloud.notifications.connector.drawer.model.DrawerNotificationToConnector;
-import com.redhat.cloud.notifications.connector.drawer.model.DrawerUser;
-import com.redhat.cloud.notifications.connector.drawer.model.RecipientSettings;
+import com.redhat.cloud.notifications.connector.drawer.constant.Constants;
+import com.redhat.cloud.notifications.connector.drawer.models.DrawerEntryPayload;
+import com.redhat.cloud.notifications.connector.drawer.models.DrawerNotificationToConnector;
+import com.redhat.cloud.notifications.connector.drawer.models.DrawerUser;
+import com.redhat.cloud.notifications.connector.drawer.models.RecipientSettings;
 import com.redhat.cloud.notifications.connector.v2.BaseConnectorIntegrationTest;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -14,6 +15,7 @@ import io.smallrye.reactive.messaging.ce.OutgoingCloudEventMetadata;
 import io.smallrye.reactive.messaging.ce.impl.DefaultOutgoingCloudEventMetadata;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import io.smallrye.reactive.messaging.memory.InMemorySink;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.inject.Any;
@@ -72,18 +74,6 @@ class DrawerConnectorIntegrationTest extends BaseConnectorIntegrationTest {
     }
 
     private static final DrawerNotificationToConnector testNotification = buildTestDrawerNotificationToConnector();
-
-    private ExpectationResponseCallback createMockResponse(List<DrawerUser> users) {
-        return req -> {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                String responseBody = objectMapper.writeValueAsString(users);
-                return response().withBody(responseBody).withContentType(MediaType.APPLICATION_JSON).withStatusCode(200);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        };
-    }
 
     private static DrawerNotificationToConnector buildTestDrawerNotificationToConnector() {
         String orgId = "123456";
@@ -170,13 +160,20 @@ class DrawerConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         // Send message via InMemory messaging
         String cloudEventId = sendCloudEventMessage(incomingPayload);
 
+        JsonObject message = waitForOutgoingMessage(cloudEventId);
+
+        JsonObject details = message.getJsonObject("details");
+        JsonArray recipientsList = details.getJsonArray(Constants.RESOLVED_RECIPIENT_LIST);
+        assertNull(recipientsList);
+        Integer nbRecipients = details.getInteger(CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY);
+        assertEquals(0, nbRecipients);
+        String errorMessage = details.getString("outcome");
+
+        // Assert failed response
+        assertTrue(errorMessage.contains("500") || errorMessage.contains("Server Error"));
+
         // Verify no drawer messages sent due to failure
         assertEquals(0, inMemoryDrawerSink.received().size());
-
-        outgoingMessageSink.received().get(0);
-        // Assert failed response
-        // WireMock returns different error message format than MockServer
-        assertTrue(errorMessage.contains("500") || errorMessage.contains("Server Error"));
 
         // Check metrics
         assertMetricsIncrement(1, 0, 1);
