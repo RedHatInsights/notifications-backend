@@ -8,7 +8,6 @@ import java.util.Optional;
  */
 class ParameterIndexes {
     private Integer securityContextIndex;
-    private Integer integrationIdIndex;
 
     ParameterIndexes() { }
 
@@ -18,13 +17,5 @@ class ParameterIndexes {
 
     public void setSecurityContextIndex(final Integer securityContextIndex) {
         this.securityContextIndex = securityContextIndex;
-    }
-
-    public Optional<Integer> getIntegrationIdIndex() {
-        return Optional.ofNullable(this.integrationIdIndex);
-    }
-
-    public void setIntegrationIdIndex(final Integer integrationIdIndex) {
-        this.integrationIdIndex = integrationIdIndex;
     }
 }
