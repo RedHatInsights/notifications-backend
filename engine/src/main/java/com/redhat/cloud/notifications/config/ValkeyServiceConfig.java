@@ -1,5 +1,7 @@
-package com.redhat.cloud.notifications;
+package com.redhat.cloud.notifications.config;
 
+import io.quarkus.arc.DefaultBean;
+import io.quarkus.arc.properties.UnlessBuildProperty;
 import io.quarkus.redis.datasource.RedisDataSource;
 import io.quarkus.redis.datasource.value.ValueCommands;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -8,9 +10,25 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.time.Duration;
 import java.util.UUID;
 
-/** Stores and retrieves data from remote cache (i.e. Valkey). */
-@ApplicationScoped
-public class ValkeyService {
+public class ValkeyServiceConfig {
+
+    /**
+     * Created if {@code quarkus.redis.hosts} is created and not empty.
+     */
+    @UnlessBuildProperty(name = "quarkus.redis.hosts", stringValue = "")
+    @ApplicationScoped
+    public ValkeyService activeValkeyService(RedisDataSource ds) {
+        return new ActiveValkeyService(ds);
+    }
+
+    @DefaultBean
+    @ApplicationScoped
+    public ValkeyService noopValkeyService() {
+        return new NoopValkeyService();
+    }
+}
+
+class ActiveValkeyService implements ValkeyService {
 
     private static final String KAFKA_MESSAGE_KEY = "engine:kafka-message:";
     private static final String NOT_USED = "";
@@ -20,18 +38,11 @@ public class ValkeyService {
 
     private final ValueCommands<String, String> kafkaMessageCommands;
 
-    public ValkeyService(RedisDataSource ds) {
+    ActiveValkeyService(RedisDataSource ds) {
         kafkaMessageCommands = ds.value(String.class);
     }
 
-    /**
-     * Verifies that another Kafka consumer didn't already process the given message and then failed to commit its
-     * offset. Such failure can happen when a consumer is kicked out of its consumer group because it didn't poll new
-     * messages fast enough. We experienced that already in production.
-     *
-     * @param messageId ID of an incoming message
-     * @return true if the message has not been processed yet
-     */
+    @Override
     public boolean isNewMessageId(UUID messageId) {
         String key = KAFKA_MESSAGE_KEY + messageId;
         boolean isNew = kafkaMessageCommands.setnx(key, NOT_USED);
@@ -40,5 +51,13 @@ public class ValkeyService {
         }
 
         return isNew;
+    }
+}
+
+class NoopValkeyService implements ValkeyService {
+
+    @Override
+    public boolean isNewMessageId(UUID messageId) {
+        throw new RuntimeException("Valkey data source was not configured");
     }
 }
