@@ -46,8 +46,8 @@ class DrawerConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         inMemoryDrawerSink = inMemoryConnector.sink(DrawerMessageHandler.DRAWER_CHANNEL);
 
         // Initialize the InMemory sources and sinks for reactive messaging
-        incomingMessageSource = inMemoryConnector.source("incoming-messages");
-        outgoingMessageSink = inMemoryConnector.sink("outgoing-messages");
+        incomingMessageSource = inMemoryConnector.source("incomingmessages");
+        outgoingMessageSink = inMemoryConnector.sink("outgoingmessages");
     }
 
     @Override

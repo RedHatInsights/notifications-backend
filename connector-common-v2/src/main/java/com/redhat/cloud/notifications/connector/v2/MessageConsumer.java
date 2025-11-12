@@ -36,7 +36,7 @@ public class MessageConsumer {
 
     public static final String X_RH_NOTIFICATIONS_CONNECTOR_HEADER = "x-rh-notifications-connector";
 
-    @Incoming("incoming-messages")
+    @Incoming("incomingmessages")
     @Blocking("connector-thread-pool")
     @RunOnVirtualThread
     public CompletionStage<Void> processMessage(Message<JsonObject> message) {

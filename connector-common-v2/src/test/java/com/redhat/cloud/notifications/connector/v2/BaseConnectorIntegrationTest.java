@@ -70,8 +70,8 @@ public abstract class BaseConnectorIntegrationTest {
         getClient().resetAll();
 
         // Set up InMemory channels
-        incomingMessageSource = inMemoryConnector.source("incoming-messages");
-        outgoingMessageSink = inMemoryConnector.sink("outgoing-messages");
+        incomingMessageSource = inMemoryConnector.source("incomingmessages");
+        outgoingMessageSink = inMemoryConnector.sink("outgoingmessages");
 
         // Clear any previous messages
         outgoingMessageSink.clear();

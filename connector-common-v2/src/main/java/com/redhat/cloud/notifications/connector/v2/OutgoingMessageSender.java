@@ -17,7 +17,7 @@ public class OutgoingMessageSender {
     OutgoingCloudEventBuilder outgoingCloudEventBuilder;
 
     @Inject
-    @Channel("outgoing-messages")
+    @Channel("outgoingmessages")
     Emitter<String> emitter;
 
     public void sendSuccess(IncomingCloudEventMetadata<JsonObject> cloudEventMetadata, HandledMessageDetails processedMessageDetails, long startTime) {
