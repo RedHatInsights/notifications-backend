@@ -157,15 +157,15 @@ objects:
         - name: INVENTORY_API_AUTHN_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: kessel-authentication
-              key: inventory-api.client.id
+              name: oidc-authentication
+              key: client-id
         - name: INVENTORY_API_AUTHN_CLIENT_ISSUER
           value: ${NOTIFICATIONS_KESSEL_OIDC_ISSUER}
         - name: INVENTORY_API_AUTHN_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: kessel-authentication
-              key: inventory-api.client.secret
+              name: oidc-authentication
+              key: secret
         - name: INVENTORY_API_IS_SECURE_CLIENTS
           value: ${NOTIFICATIONS_KESSEL_INVENTORY_SECURE_CLIENTS}
         - name: NOTIFICATIONS_INSTANT_EMAILS_ENABLED
@@ -199,15 +199,15 @@ objects:
         - name: RELATIONS_API_AUTHN_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: kessel-authentication
-              key: relations-api.client.id
+              name: oidc-authentication
+              key: client-id
         - name: RELATIONS_API_AUTHN_CLIENT_ISSUER
           value: ${NOTIFICATIONS_KESSEL_OIDC_ISSUER}
         - name: RELATIONS_API_AUTHN_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: kessel-authentication
-              key: relations-api.client.secret
+              name: oidc-authentication
+              key: secret
         - name: RELATIONS_API_IS_SECURE_CLIENTS
           value: ${NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS}
         - name: SOURCES_PSK
@@ -225,13 +225,13 @@ objects:
         - name: QUARKUS_OIDC_CLIENT_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: kessel-authentication
-              key: relations-api.client.id
+              name: oidc-authentication
+              key: client-id
         - name: QUARKUS_OIDC_CLIENT_CREDENTIALS_SECRET
           valueFrom:
             secretKeyRef:
-              name: kessel-authentication
-              key: relations-api.client.secret
+              name: oidc-authentication
+              key: secret
 - apiVersion: v1
   kind: ConfigMap
   metadata:

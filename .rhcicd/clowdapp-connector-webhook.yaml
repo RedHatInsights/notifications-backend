@@ -128,13 +128,13 @@ objects:
         - name: QUARKUS_OIDC_CLIENT_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: kessel-authentication
-              key: relations-api.client.id
+              name: oidc-authentication
+              key: client-id
         - name: QUARKUS_OIDC_CLIENT_CREDENTIALS_SECRET
           valueFrom:
             secretKeyRef:
-              name: kessel-authentication
-              key: relations-api.client.secret
+              name: oidc-authentication
+              key: secret
         - name: QUARKUS_UNLEASH_ACTIVE
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
 parameters:
