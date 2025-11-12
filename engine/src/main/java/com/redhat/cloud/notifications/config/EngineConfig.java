@@ -58,6 +58,7 @@ public class EngineConfig {
     private String toggleBlacklistedEventTypes;
     private String toggleKafkaOutgoingHighVolumeTopic;
     private String toggleIgnoreSeverityForApplications;
+    private String toggleEventDeduplication;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -159,6 +160,7 @@ public class EngineConfig {
         toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
         toggleBlacklistedEventTypes = toggleRegistry.register("blacklisted-event-types", true);
         toggleIgnoreSeverityForApplications = toggleRegistry.register("ignore-severity-for-applications", true);
+        toggleEventDeduplication = toggleRegistry.register("event-deduplication", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -329,6 +331,17 @@ public class EngineConfig {
     public boolean isValkeyKafkaMessageDeduplicatorEnabled() {
         if (unleashEnabled) {
             return this.unleash.isEnabled(this.valkeyKafkaMessageDeduplicatorToggle, false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isEventDeduplicationEnabled(String orgId) {
+        if (unleashEnabled) {
+            UnleashContext unleashContext = UnleashContext.builder()
+                .addProperty("orgId", orgId)
+                .build();
+            return unleash.isEnabled(toggleEventDeduplication, unleashContext, false);
         } else {
             return false;
         }

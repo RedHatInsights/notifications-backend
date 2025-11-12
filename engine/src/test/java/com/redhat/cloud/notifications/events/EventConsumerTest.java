@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
+import com.redhat.cloud.notifications.events.deduplication.EventDeduplicator;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.Application;
@@ -42,6 +43,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static com.redhat.cloud.notifications.events.EventConsumer.CONSUMED_TIMER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.DUPLICATE_COUNTER_NAME;
+import static com.redhat.cloud.notifications.events.EventConsumer.DUPLICATE_EVENT_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_BLACKLISTED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_ERROR_COUNTER_NAME;
@@ -92,6 +94,9 @@ public class EventConsumerTest {
     @InjectSpy
     KafkaMessageDeduplicator kafkaMessageDeduplicator;
 
+    @InjectSpy
+    EventDeduplicator eventDeduplicator;
+
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
 
@@ -114,6 +119,7 @@ public class EventConsumerTest {
                 PROCESSING_ERROR_COUNTER_NAME,
                 PROCESSING_EXCEPTION_COUNTER_NAME,
                 DUPLICATE_COUNTER_NAME,
+                DUPLICATE_EVENT_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
                 MESSAGE_ID_MISSING_COUNTER_NAME,
@@ -160,6 +166,8 @@ public class EventConsumerTest {
         verifyExactlyOneProcessing(eventType, payload, action, true);
         verifySeverity(action, false);
         verify(kafkaMessageDeduplicator, times(1)).isNew(messageId);
+        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
+        verify(eventDeduplicator, never()).isNew(any(Event.class));
     }
 
     @Test
@@ -199,6 +207,8 @@ public class EventConsumerTest {
         verify(endpointProcessor, never()).process(any(Event.class));
 
         verify(kafkaMessageDeduplicator, times(1)).isNew(messageId);
+        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
+        verify(eventDeduplicator, never()).isNew(any(Event.class));
     }
 
     @Test
@@ -222,6 +232,8 @@ public class EventConsumerTest {
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
+        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
+        verify(eventDeduplicator, never()).isNew(any(Event.class));
     }
 
     @Test
@@ -272,6 +284,7 @@ public class EventConsumerTest {
         );
         verify(endpointProcessor, never()).process(any(Event.class));
         verify(kafkaMessageDeduplicator, never()).isNew(any(UUID.class));
+        verify(eventDeduplicator, never()).isNew(any(Event.class));
     }
 
     @Test
@@ -295,6 +308,8 @@ public class EventConsumerTest {
         );
         verify(endpointProcessor, never()).process(any(Event.class));
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
+        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
+        verify(eventDeduplicator, never()).isNew(any(Event.class));
     }
 
     @Test
@@ -318,6 +333,8 @@ public class EventConsumerTest {
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
+        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
+        verify(eventDeduplicator, never()).isNew(any(Event.class));
     }
 
     @ParameterizedTest
@@ -339,6 +356,8 @@ public class EventConsumerTest {
         assertEquals(2L, getTimerCount(action.getBundle(), action.getApplication(), action.getEventType()));
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 2);
         micrometerAssertionHelper.assertCounterIncrement(DUPLICATE_COUNTER_NAME, 1);
+        // TODO DUPLICATE_EVENT_COUNTER_NAME will be increased to 1 when kafkaMessageDeduplicator is removed.
+        micrometerAssertionHelper.assertCounterIncrement(DUPLICATE_EVENT_COUNTER_NAME, 0);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
@@ -349,6 +368,8 @@ public class EventConsumerTest {
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(2)).isNew(messageId);
+        // TODO eventDeduplicator will be called twice when kafkaMessageDeduplicator is removed.
+        verify(eventDeduplicator, never()).isNew(any(Event.class));
 
     }
 
@@ -374,6 +395,8 @@ public class EventConsumerTest {
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
+        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
+        verify(eventDeduplicator, never()).isNew(any(Event.class));
     }
 
     @Test
@@ -398,6 +421,8 @@ public class EventConsumerTest {
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
         verify(kafkaMessageDeduplicator, times(1)).isNew(null);
+        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
+        verify(eventDeduplicator, never()).isNew(any(Event.class));
     }
 
     private EventType mockGetEventTypeAndCreateEvent() {
