@@ -73,11 +73,10 @@ public class MessageConsumer {
     public Optional<String> extractConnectorHeader(Message<JsonObject> message) {
         Optional<KafkaMessageMetadata> metadata = message.getMetadata(KafkaMessageMetadata.class);
         if (metadata.isPresent()) {
-            return Optional.ofNullable(
-                StreamSupport.stream(metadata.get().getHeaders().headers(X_RH_NOTIFICATIONS_CONNECTOR_HEADER).spliterator(), false)
+            return StreamSupport.stream(metadata.get().getHeaders().headers(X_RH_NOTIFICATIONS_CONNECTOR_HEADER).spliterator(), false)
                 .filter(header -> header.key().equals(X_RH_NOTIFICATIONS_CONNECTOR_HEADER))
                 .findFirst()
-                .map(header -> new String(header.value(), UTF_8)).orElse(null));
+                .map(header -> new String(header.value(), UTF_8));
         }
         return Optional.empty();
     }

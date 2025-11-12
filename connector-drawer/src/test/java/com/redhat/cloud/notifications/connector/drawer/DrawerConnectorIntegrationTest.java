@@ -64,11 +64,6 @@ class DrawerConnectorIntegrationTest extends BaseConnectorIntegrationTest {
     }
 
     @Override
-    protected void assertOutgoingPayload(JsonObject incomingPayload, JsonObject outgoingPayload) {
-        // Drawer-specific payload verification can be added here
-    }
-
-    @Override
     protected String getConnectorSpecificTargetUrl() {
         return getMockServerUrl();
     }

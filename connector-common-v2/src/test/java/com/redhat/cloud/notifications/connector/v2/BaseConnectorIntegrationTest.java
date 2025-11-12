@@ -59,8 +59,6 @@ public abstract class BaseConnectorIntegrationTest {
     // Abstract methods for connector-specific implementation
     protected abstract JsonObject buildIncomingPayload(String targetUrl);
 
-    protected abstract void assertOutgoingPayload(JsonObject incomingPayload, JsonObject outgoingPayload);
-
     protected abstract String getConnectorSpecificTargetUrl();
 
     protected String getRemoteServerPath() {

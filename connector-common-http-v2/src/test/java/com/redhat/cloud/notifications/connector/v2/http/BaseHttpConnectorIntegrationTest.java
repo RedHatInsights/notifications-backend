@@ -92,11 +92,5 @@ public abstract class BaseHttpConnectorIntegrationTest extends BaseConnectorInte
     protected void afterSuccessfulNotification() {
         // Override in subclasses if needed
     }
-
-    @Override
-    protected void assertOutgoingPayload(JsonObject incomingPayload, JsonObject outgoingPayload) {
-        // Default implementation - can be overridden by subclasses
-        // This method is called by the base class when verification is needed
-    }
 }
 
