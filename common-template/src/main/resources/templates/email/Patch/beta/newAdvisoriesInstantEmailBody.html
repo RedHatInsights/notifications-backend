@@ -1,0 +1,46 @@
+
+{#include email/Common/insightsEmailBodyV2}
+{#content-header-title}
+    Patch - Red Hat Enterprise Linux
+{/content-header-title}
+{#content-title}
+    New advisories
+{/content-title}
+{#content-title-right-part}
+    {action.events.size()}
+{/content-title-right-part}
+{#content-body}
+    <p style="{body-section-p-style}">
+        Red Hat Lightspeed has just released new Advisories for your organization. Please review the
+        systems affected and all the details of each errata below.
+    </p>
+
+    {#if action.events.size() > 0}
+        <table style="{body-section-table-style}">
+            <thead>
+                <tr>
+                    <th style="{body-section-table-th-style} width: 30%">Advisory</th>
+                    <th style="{body-section-table-th-style} width: 70%">Synopsis</th>
+                </tr>
+            </thead>
+            <tbody style="{body-section-table-tbody-style}">
+            {#each action.events}
+                {#if it.payload != null}
+                    <tr style="{body-section-table-tr-style}">
+                        <td style="{body-section-table-td-style} width: 30%">
+                            <a style="{body-section-table-td-a-style}"
+                              href="{environment.url}/insights/patch/advisories/{it.payload.advisory_name}?{query_params}">{it.payload.advisory_name}</a>
+                        </td>
+                        <td style="{body-section-table-td-style} width: 70%">
+                            {it.payload.synopsis}
+                        </td>
+                    </tr>
+                {/if}
+                {/each}
+          </tbody>
+        </table>
+    {/if}
+{/content-body}
+{#content-button-href}{environment.url}/insights/patch/advisories?{query_params}{/content-button-href}
+{#content-button-service-name}Advisories - Patch{/content-button-service-name}
+{/include}
