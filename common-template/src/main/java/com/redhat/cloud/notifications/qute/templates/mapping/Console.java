@@ -99,6 +99,7 @@ public class Console {
 
         // Sources
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, SOURCES_APP_NAME, SOURCES_AVAILABILITY_STATUS), SOURCES_FOLDER_NAME + "availabilityStatusBody.md"),
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SOURCES_APP_NAME, SOURCES_AVAILABILITY_STATUS), SOURCES_FOLDER_NAME + "availabilityStatusEmailBody.html")
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SOURCES_APP_NAME, SOURCES_AVAILABILITY_STATUS), SOURCES_FOLDER_NAME + "availabilityStatusEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SOURCES_APP_NAME, SOURCES_AVAILABILITY_STATUS, true), SOURCES_FOLDER_NAME + "beta/availabilityStatusEmailBody.html")
     );
 }
