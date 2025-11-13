@@ -101,6 +101,7 @@ public class Rhel {
         // Malware detection
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, MALWARE_APP_NAME, MALWARE_DETECTED_MALWARE), MALWARE_FOLDER_NAME + "detectedMalwareBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, MALWARE_APP_NAME, MALWARE_DETECTED_MALWARE), MALWARE_FOLDER_NAME + "detectedMalwareInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, MALWARE_APP_NAME, MALWARE_DETECTED_MALWARE, true), MALWARE_FOLDER_NAME + "beta/detectedMalwareInstantEmailBody.html"),
 
         // Patch
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, PATCH_APP_NAME, PATCH_NEW_ADVISORY), PATCH_FOLDER_NAME + "newAdvisoriesBody.md"),
