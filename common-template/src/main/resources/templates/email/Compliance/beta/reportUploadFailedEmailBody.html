@@ -6,7 +6,7 @@
     Policy report failed to upload
 {/content-title}
 {#content-body}
-    <p style="{body-section-p-style}">Your system <a style="{body-section-underline-link-style}" class="rh-url" href="{environment.url}/insights/compliance/systems/{action.events[0].payload.host_id}"><b>{action.events[0].payload.host_name}</b></a> failed to upload a new compliance report. The error message returned by our system for the request <i>{action.events[0].payload.request_id}</i> was:</p>
+    <p style="{body-section-p-style}">Your system <a style="{body-section-underline-link-style}" href="{environment.url}/insights/compliance/systems/{action.events[0].payload.host_id}"><b>{action.events[0].payload.host_name}</b></a> failed to upload a new compliance report. The error message returned by our system for the request <i>{action.events[0].payload.request_id}</i> was:</p>
     <p style="{body-section-p-style} background-color: #ededed;">{action.events[0].payload.error}</p>
     <p style="{body-section-p-style}">
         To learn more about why reports can fail to upload and how to address this, refer to this <a style="{body-section-underline-link-style}" href="https://access.redhat.com/solutions/6675911">KCS article</a>.
