@@ -46,8 +46,10 @@ public class Console {
         // Integration
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, INTEGRATIONS_APP_NAME, INTEGRATIONS_INTEGRATION_DISABLED), INTEGRATIONS_FOLDER_NAME + "integrationDisabledBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INTEGRATIONS_APP_NAME, INTEGRATIONS_INTEGRATION_DISABLED), INTEGRATIONS_FOLDER_NAME + "integrationDisabledBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INTEGRATIONS_APP_NAME, INTEGRATIONS_INTEGRATION_DISABLED, true), INTEGRATIONS_FOLDER_NAME + "beta/integrationDisabledBody.html"),
         entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, INTEGRATIONS_APP_NAME, INTEGRATIONS_GENERAL_COMMUNICATION), INTEGRATIONS_FOLDER_NAME + "generalCommunicationTitle.txt"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INTEGRATIONS_APP_NAME, INTEGRATIONS_GENERAL_COMMUNICATION), INTEGRATIONS_FOLDER_NAME + "generalCommunicationBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INTEGRATIONS_APP_NAME, INTEGRATIONS_GENERAL_COMMUNICATION, true), INTEGRATIONS_FOLDER_NAME + "beta/generalCommunicationBody.html"),
 
         // Rbac
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, RBAC_APP_NAME, RBAC_RH_NEW_ROLE_AVAILABLE), RBAC_FOLDER_NAME + "systemRoleAvailableBody.md"),
