@@ -80,8 +80,10 @@ public class Rhel {
         // Compliance
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_COMPLIANCE_BELOW_THRESHOLD), COMPLIANCE_FOLDER_NAME + "belowThresholdBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_COMPLIANCE_BELOW_THRESHOLD), COMPLIANCE_FOLDER_NAME + "complianceBelowThresholdEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_COMPLIANCE_BELOW_THRESHOLD, true), COMPLIANCE_FOLDER_NAME + "beta/complianceBelowThresholdEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_REPORT_UPLOAD_FAILED), COMPLIANCE_FOLDER_NAME + "reportUploadFailedBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_REPORT_UPLOAD_FAILED), COMPLIANCE_FOLDER_NAME + "reportUploadFailedEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_REPORT_UPLOAD_FAILED, true), COMPLIANCE_FOLDER_NAME + "beta/reportUploadFailedEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, null), COMPLIANCE_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Inventory
