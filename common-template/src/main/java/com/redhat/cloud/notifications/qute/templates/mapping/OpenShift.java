@@ -92,6 +92,20 @@ public class OpenShift {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_NETWORKING), CLUSTER_MANAGER_FOLDER_NAME + "clusterNetworkingInstantEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_GENERAL_NOTIFICATION), CLUSTER_MANAGER_FOLDER_NAME + "generalNotificationInstantEmailBody.html"),
 
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_UPDATE, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterUpdateInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_LIFECYCLE, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterLifecycleInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_CONFIGURATION, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterConfigurationInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_SUBSCRIPTION, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterSubscriptionInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_OWNERSHIP, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterOwnershipInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_ACCESS, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterAccessInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_SCALING, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterScalingInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CAPACITY_MANAGEMENT, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/capacityManagementInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_SECURITY, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterSecurityInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_ADD_ON, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterAddOnInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CUSTOMER_SUPPORT, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/customerSupportInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_NETWORKING, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterNetworkingInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_GENERAL_NOTIFICATION, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/generalNotificationInstantEmailBody.html"),
+
         entry(new TemplateDefinition(GOOGLE_CHAT, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.json"),
         entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.json"),
         entry(new TemplateDefinition(SLACK, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.md")
