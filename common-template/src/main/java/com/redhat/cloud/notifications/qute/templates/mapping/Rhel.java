@@ -48,9 +48,6 @@ public class Rhel {
     public static final String COMPLIANCE_COMPLIANCE_BELOW_THRESHOLD = "compliance-below-threshold";
     public static final String COMPLIANCE_REPORT_UPLOAD_FAILED = "report-upload-failed";
 
-    public static final String IMAGE_BUILDER_LAUNCH_SUCCESS = "launch-success";
-    public static final String IMAGE_BUILDER_LAUNCH_FAILED = "launch-failed";
-
     public static final String INVENTORY_NEW_SYSTEM_REGISTERED = "new-system-registered";
     public static final String INVENTORY_SYSTEM_BECAME_STALE = "system-became-stale";
     public static final String INVENTORY_SYSTEM_DELETED = "system-deleted";
@@ -88,10 +85,6 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, null), COMPLIANCE_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Image builder
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, IMAGE_BUILDER_APP_NAME, IMAGE_BUILDER_LAUNCH_SUCCESS), IMAGE_BUILDER_FOLDER_NAME + "launchSuccessInstantEmailBody.html"),
-
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, IMAGE_BUILDER_APP_NAME, IMAGE_BUILDER_LAUNCH_FAILED), IMAGE_BUILDER_FOLDER_NAME + "launchFailedEmailBody.html"),
-
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, IMAGE_BUILDER_APP_NAME, null), IMAGE_BUILDER_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Inventory
