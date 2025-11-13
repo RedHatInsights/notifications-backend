@@ -29,7 +29,7 @@
     </p>
     <ul>
         {#each global_vars.doc_references}
-            <li><a style="{body-section-underline-link-style}" href="{it}" target="_blank">{it}</a></li>
+            <li><a style="{body-section-table-td-a-style}" href="{it}" target="_blank">{it}</a></li>
         {/each}
     </ul>
 {/if}
@@ -67,6 +67,6 @@
 </p>
 {/let}
 {/content-body}
-{#content-button-href}{environment.url}/subscriptions/inventory?{query_params}{/content-button-href}
+{#content-button-href}https://cloud.redhat.com/openshift/details/s/{action.events[0].payload.global_vars.subscription_id}#overview{/content-button-href}
 {#content-button-service-name}Cluster Manager{/content-button-service-name}
 {/include}
