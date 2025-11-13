@@ -13,7 +13,7 @@
     "@patternfly/react-table": "4.93.1",
     "buffer": "^6.0.3",
     "immer": "9.0.21",
-    "monaco-editor": "0.21.3",
+    "monaco-editor": "0.54.0",
     "monaco-editor-webpack-plugin": "2.1.0",
     "openapi2typescript": "0.2.1",
     "react": "17.0.2",
