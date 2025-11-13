@@ -72,6 +72,9 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_DEACTIVATED_RECOMMENDATION), ADVISOR_FOLDER_NAME + "deactivatedRecommendationInstantEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_NEW_RECOMMENDATION), ADVISOR_FOLDER_NAME + "newRecommendationInstantEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_RESOLVED_RECOMMENDATION), ADVISOR_FOLDER_NAME + "resolvedRecommendationInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_DEACTIVATED_RECOMMENDATION, true), ADVISOR_FOLDER_NAME + "beta/deactivatedRecommendationInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_NEW_RECOMMENDATION, true), ADVISOR_FOLDER_NAME + "beta/newRecommendationInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_RESOLVED_RECOMMENDATION, true), ADVISOR_FOLDER_NAME + "beta/resolvedRecommendationInstantEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, null), ADVISOR_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Compliance
