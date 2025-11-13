@@ -17,6 +17,7 @@ public class AnsibleAutomationPlatform {
     public static final Map<TemplateDefinition, String> templatesMap = Map.ofEntries(
         // Ansible service on AWS
         entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, ANSIBLE_SERVICE_ON_AWS_APP_NAME, ANSIBLE_SERVICE_NOTIFY_CUSTOMER_PROVISION_SUCCESS), ANSIBLE_SERVICE_ON_AWS_FOLDER_NAME + "notifyCustomerProvisionSuccessEmailTitle.txt"),
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ANSIBLE_SERVICE_ON_AWS_APP_NAME, ANSIBLE_SERVICE_NOTIFY_CUSTOMER_PROVISION_SUCCESS), ANSIBLE_SERVICE_ON_AWS_FOLDER_NAME + "notifyCustomerProvisionSuccessEmailBody.html")
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ANSIBLE_SERVICE_ON_AWS_APP_NAME, ANSIBLE_SERVICE_NOTIFY_CUSTOMER_PROVISION_SUCCESS), ANSIBLE_SERVICE_ON_AWS_FOLDER_NAME + "notifyCustomerProvisionSuccessEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ANSIBLE_SERVICE_ON_AWS_APP_NAME, ANSIBLE_SERVICE_NOTIFY_CUSTOMER_PROVISION_SUCCESS, true), ANSIBLE_SERVICE_ON_AWS_FOLDER_NAME + "beta/notifyCustomerProvisionSuccessEmailBody.html")
     );
 }
