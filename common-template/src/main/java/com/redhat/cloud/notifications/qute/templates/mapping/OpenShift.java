@@ -51,6 +51,7 @@ public class OpenShift {
         // Advisor
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_NEW_RECOMMENDATION), ADVISOR_FOLDER_NAME + "newRecommendationBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_NEW_RECOMMENDATION), ADVISOR_FOLDER_NAME + "newRecommendationInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_NEW_RECOMMENDATION, true), ADVISOR_FOLDER_NAME + "beta/newRecommendationInstantEmailBody.html"),
 
         // Cost Management
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_MISSING_COST_MODEL), COST_MANAGEMENT_FOLDER_NAME + "MissingCostModelBody.md"),
