@@ -88,14 +88,14 @@ public class Rhel {
 
         // Inventory
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_NEW_SYSTEM_REGISTERED), INVENTORY_FOLDER_NAME + "newSystemRegisteredEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_NEW_SYSTEM_REGISTERED, true), INVENTORY_FOLDER_NAME + "beta/newSystemRegisteredEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_SYSTEM_BECAME_STALE), INVENTORY_FOLDER_NAME + "systemBecameStaleBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_SYSTEM_BECAME_STALE, true), INVENTORY_FOLDER_NAME + "beta/systemBecameStaleBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_SYSTEM_DELETED), INVENTORY_FOLDER_NAME + "systemDeletedEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_SYSTEM_DELETED, true), INVENTORY_FOLDER_NAME + "beta/systemDeletedEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_VALIDATION_ERROR), INVENTORY_FOLDER_NAME + "validationErrorBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_VALIDATION_ERROR), INVENTORY_FOLDER_NAME + "validationErrorEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_VALIDATION_ERROR, true), INVENTORY_FOLDER_NAME + "beta/validationErrorEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, null), INVENTORY_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Malware detection
