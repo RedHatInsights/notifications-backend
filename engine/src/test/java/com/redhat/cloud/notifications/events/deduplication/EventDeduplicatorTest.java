@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.events.deduplication;
 
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
@@ -11,6 +12,7 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -42,6 +44,7 @@ class EventDeduplicatorTest {
         Event event1 = new Event();
         event1.setId(eventId1);
         event1.setEventType(eventType);
+        event1.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         assertTrue(eventDeduplicator.isNew(event1), "New event should return true");
 
@@ -49,12 +52,14 @@ class EventDeduplicatorTest {
         Event event2 = new Event();
         event2.setId(eventId2);
         event2.setEventType(eventType);
+        event2.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         assertTrue(eventDeduplicator.isNew(event2), "New event should return true");
 
         Event event3 = new Event();
         event3.setId(eventId2);
         event3.setEventType(eventType);
+        event3.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         assertFalse(eventDeduplicator.isNew(event3), "Duplicate event should return false");
     }

@@ -70,6 +70,7 @@ class SubscriptionsDeduplicationConfigTest {
 
         Event event1 = new Event();
         event1.setPayload(payload1.encode());
+        event1.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         SubscriptionsDeduplicationConfig deduplicationConfig1 = new SubscriptionsDeduplicationConfig(event1);
         String deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
@@ -82,6 +83,7 @@ class SubscriptionsDeduplicationConfigTest {
 
         Event event2 = new Event();
         event2.setPayload(payload2.encode());
+        event2.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         SubscriptionsDeduplicationConfig deduplicationConfig2 = new SubscriptionsDeduplicationConfig(event2);
         String deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
@@ -107,6 +109,7 @@ class SubscriptionsDeduplicationConfigTest {
 
         Event event1 = new Event();
         event1.setPayload(payload1.encode());
+        event1.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         SubscriptionsDeduplicationConfig deduplicationConfig1 = new SubscriptionsDeduplicationConfig(event1);
         String deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
@@ -119,6 +122,7 @@ class SubscriptionsDeduplicationConfigTest {
 
         Event event2 = new Event();
         event2.setPayload(payload2.encode());
+        event2.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         SubscriptionsDeduplicationConfig deduplicationConfig2 = new SubscriptionsDeduplicationConfig(event2);
         String deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
@@ -137,6 +141,7 @@ class SubscriptionsDeduplicationConfigTest {
 
         Event event = new Event();
         event.setPayload(payload.encode());
+        event.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         SubscriptionsDeduplicationConfig deduplicationConfig = new SubscriptionsDeduplicationConfig(event);
         String deduplicationKey = deduplicationConfig.getDeduplicationKey();
