@@ -1,13 +1,10 @@
 package com.redhat.cloud.notifications.events.deduplication;
 
-import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.models.Event;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
-import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
