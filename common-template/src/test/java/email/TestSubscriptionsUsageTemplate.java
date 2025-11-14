@@ -6,6 +6,8 @@ import helpers.SubscriptionsUsageTestHelpers;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -50,9 +52,10 @@ public class TestSubscriptionsUsageTemplate extends EmailTemplatesRendererHelper
         assertEquals("[LOW] Instant notification - Subscription threshold exceeded - Subscriptions usage - Subscription services", lowResult);
     }
 
-    @Test
-    public void testUsageThresholdExceededEmailBody() {
-        String result = generateEmailBody(EXCEEDED_UTILIZATION_THRESHOLD, ACTION);
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testUsageThresholdExceededEmailBody(boolean useBetaTemplate) {
+        String result = generateEmailBody(EXCEEDED_UTILIZATION_THRESHOLD, ACTION, useBetaTemplate);
         assertTrue(result.contains("Subscriptions Usage - Subscription Services"));
         assertTrue(result.contains("Subscription threshold exceeded"));
         assertTrue(result.contains("Product variant: <b>RHEL for x86</b>"));
@@ -66,9 +69,11 @@ public class TestSubscriptionsUsageTemplate extends EmailTemplatesRendererHelper
         // Table values
         assertTrue(result.contains(">sockets<") || result.contains("sockets</td>"));
         assertTrue(result.contains(">105%<") || result.contains("105%</td>"));
-        // Find out more section with link text
-        assertTrue(result.contains("Find out more"));
-        assertTrue(result.contains("Getting Started with the Subscriptions Usage Service"));
 
+        if (!useBetaTemplate) {
+            // Find out more section with link text
+            assertTrue(result.contains("Find out more"));
+        }
+        assertTrue(result.contains("Getting Started with the Subscriptions Usage Service"));
     }
 }
