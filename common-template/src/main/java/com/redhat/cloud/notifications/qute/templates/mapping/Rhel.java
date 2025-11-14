@@ -122,8 +122,9 @@ public class Rhel {
 
         // Task
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, TASK_APP_NAME, TASK_EXECUTED_TASK_COMPLETED), TASK_FOLDER_NAME + "executedTaskCompletedEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, TASK_APP_NAME, TASK_EXECUTED_TASK_COMPLETED, true), TASK_FOLDER_NAME + "beta/executedTaskCompletedEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, TASK_APP_NAME, TASK_JOB_FAILED), TASK_FOLDER_NAME + "jobFailedEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, TASK_APP_NAME, TASK_JOB_FAILED, true), TASK_FOLDER_NAME + "beta/jobFailedEmailBody.html"),
 
         // Vulnerability
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_ANY_CVE_KNOWN_EXPLOIT), VULNERABILITY_FOLDER_NAME + "anyCveKnownExploitBody.md"),
