@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.TreeMap;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
@@ -19,7 +20,7 @@ public class SubscriptionsDeduplicationConfig extends EventDeduplicationConfig {
     @Override
     public LocalDateTime getDeleteAfter() {
         // The event_deduplication entries will be purged from the DB on the first day of the next month, when the first purge cronjob runs after midnight UTC.
-        return getEventTimestamp().plusMonths(1).withDayOfMonth(1).truncatedTo(DAYS);
+        return event.getTimestamp().plusMonths(1).withDayOfMonth(1).truncatedTo(DAYS);
     }
 
     @Override
@@ -27,14 +28,15 @@ public class SubscriptionsDeduplicationConfig extends EventDeduplicationConfig {
 
         JsonObject eventPayload = new JsonObject(event.getPayload());
 
-        // TODO We could build a simpler String key with all field values concatenated. Check if the JsonObject has a significant impact on the query performances.
-        JsonObject deduplicationKey = new JsonObject();
+        // TODO We could build a simpler String key with all field values concatenated. Check if the JSON data structure has a significant impact on the query performances.
+        // Use TreeMap to ensure consistent alphabetical ordering of fields in the JSON output
+        TreeMap<String, Object> deduplicationKey = new TreeMap<>();
         deduplicationKey.put("orgId", eventPayload.getString("orgId"));
         deduplicationKey.put("productId", eventPayload.getString("productId"));
         deduplicationKey.put("metricId", eventPayload.getString("metricId"));
         deduplicationKey.put("billingAccountId", eventPayload.getString("billingAccountId"));
-        deduplicationKey.put("month", getEventTimestamp().format(MONTH_FORMATTER));
+        deduplicationKey.put("month", event.getTimestamp().format(MONTH_FORMATTER));
 
-        return deduplicationKey.encode();
+        return new JsonObject(deduplicationKey).encode();
     }
 }

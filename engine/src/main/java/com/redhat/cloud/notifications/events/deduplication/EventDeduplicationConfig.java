@@ -15,9 +15,4 @@ public abstract class EventDeduplicationConfig {
     public abstract LocalDateTime getDeleteAfter();
 
     public abstract String getDeduplicationKey();
-
-    protected LocalDateTime getEventTimestamp() {
-        // Timestamp of when the event occurred. This field is required in the JSON payload sent to the platform.ingress.notifications Kafka topic.
-        return event.getEventWrapper().getTimestamp();
-    }
 }

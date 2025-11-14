@@ -14,7 +14,7 @@ public class DefaultEventDeduplicationConfig extends EventDeduplicationConfig {
 
     @Override
     public LocalDateTime getDeleteAfter() {
-        return getEventTimestamp().plusDays(DEFAULT_RETENTION_DELAY_IN_DAYS);
+        return event.getTimestamp().plusDays(DEFAULT_RETENTION_DELAY_IN_DAYS);
     }
 
     @Override
