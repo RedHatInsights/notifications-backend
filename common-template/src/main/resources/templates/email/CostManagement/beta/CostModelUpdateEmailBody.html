@@ -1,0 +1,18 @@
+{#include email/Common/insightsEmailBodyV2}
+{#content-header-title}
+    Cost Management - OpenShift
+{/content-header-title}
+{#content-title}
+    Cost model update
+{/content-title}
+{#content-body}
+    <p style="{body-section-p-style}">
+        Cost model {action.context.cost_model_name} has been updated.
+    </p>
+    <p style="{body-section-p-style}">
+        To review changes visits: <a style="{body-section-underline-link-style}" href="{environment.url}/openshift/cost-management/cost-models/{action.context.cost_model_id}">{action.context.cost_model_name}</a>
+    </p>
+{/content-body}
+{#content-button-href}{environment.url}/openshift/cost-management?{query_params}{/content-button-href}
+{#content-button-service-name}Cost Management{/content-button-service-name}
+{/include}

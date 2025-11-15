@@ -4,6 +4,8 @@ import com.redhat.cloud.notifications.ingress.Action;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -26,9 +28,10 @@ public class TestComplianceTemplate extends EmailTemplatesRendererHelper {
         return "Compliance";
     }
 
-    @Test
-    public void testInstantComplianceBelowThresholdEmailBody() {
-        String result = generateEmailBody(COMPLIANCE_BELOW_THRESHOLD, ACTION);
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testInstantComplianceBelowThresholdEmailBody(boolean useBetaTemplate) {
+        String result = generateEmailBody(COMPLIANCE_BELOW_THRESHOLD, ACTION, useBetaTemplate);
         assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("policy_id").toString()));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
@@ -40,9 +43,10 @@ public class TestComplianceTemplate extends EmailTemplatesRendererHelper {
         assertEquals("Instant notification - System is non compliant to SCAP policy - Compliance - Red Hat Enterprise Linux", result);
     }
 
-    @Test
-    public void testInstantReportUploadFailedEmailBody() {
-        String result = generateEmailBody(REPORT_UPLOAD_FAILED, ACTION);
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testInstantReportUploadFailedEmailBody(boolean useBetaTemplate) {
+        String result = generateEmailBody(REPORT_UPLOAD_FAILED, ACTION, useBetaTemplate);
         assertTrue(result.contains(ACTION.getEvents().get(0).getPayload().getAdditionalProperties().get("error").toString()));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }

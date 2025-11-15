@@ -34,7 +34,7 @@ public class TestHelpers {
     public static final String expectedTestEnvUrlValue = "https://localhost";
 
     public static final String HCC_LOGO_TARGET = "Logo-Red_Hat-Hybrid_Cloud_Console-A-Reverse-RGB.png";
-    public static final String DEFAULT_ORG_ID = "default-org-id";
+    public static final String DEFAULT_ORG_ID = "123456";
     public static final String POLICY_ID_1 = "abcd-efghi-jkl-lmn";
     public static final String POLICY_NAME_1 = "Foobar";
     public static final String POLICY_ID_2 = "0123-456-789-5721f";

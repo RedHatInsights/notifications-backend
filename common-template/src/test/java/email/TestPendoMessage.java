@@ -5,7 +5,8 @@ import email.pojo.EmailPendo;
 import helpers.PatchTestHelpers;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static email.pojo.EmailPendo.GENERAL_PENDO_MESSAGE;
 import static email.pojo.EmailPendo.GENERAL_PENDO_TITLE;
@@ -22,17 +23,18 @@ public class TestPendoMessage extends EmailTemplatesRendererHelper {
         return "patch";
     }
 
-    @Test
-    public void testInstantEmailBody() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testInstantEmailBody(boolean useBetaTemplate) {
         EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url()));
 
         Action action = PatchTestHelpers.createPatchAction();
-        String result = generateEmailBody(EVENT_TYPE_NAME, action);
+        String result = generateEmailBody(EVENT_TYPE_NAME, action, useBetaTemplate);
         commonValidations(result);
         assertFalse(result.contains(emailPendo.getPendoTitle()));
         assertFalse(result.contains(emailPendo.getPendoMessage()));
 
-        result = generateEmailBody(EVENT_TYPE_NAME, action, emailPendo, false);
+        result = generateEmailBody(EVENT_TYPE_NAME, action, emailPendo, false, useBetaTemplate);
         commonValidations(result);
         assertTrue(result.contains(emailPendo.getPendoTitle()));
         assertTrue(result.contains(emailPendo.getPendoMessage()));
