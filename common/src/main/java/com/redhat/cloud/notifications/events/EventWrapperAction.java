@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.EventTypeKeyBundleAppEventTriplet;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class EventWrapperAction implements EventWrapper<Action, EventTypeKeyBundleAppEventTriplet> {
@@ -42,5 +43,10 @@ public class EventWrapperAction implements EventWrapper<Action, EventTypeKeyBund
     @Override
     public String getAccountId() {
         return action.getAccountId();
+    }
+
+    @Override
+    public LocalDateTime getTimestamp() {
+        return action.getTimestamp();
     }
 }

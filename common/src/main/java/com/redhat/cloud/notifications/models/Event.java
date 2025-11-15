@@ -274,6 +274,11 @@ public class Event {
         this.hasAuthorizationCriterion = hasAuthorizationCriterion;
     }
 
+    public LocalDateTime getTimestamp() {
+        // Timestamp of when the event occurred. This field is required in the JSON payload sent to the platform.ingress.notifications Kafka topic.
+        return eventWrapper.getTimestamp();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
