@@ -513,13 +513,13 @@ public class EndpointResource extends EndpointResourceCommon {
         String orgId = getOrgId(sec);
 
         // Check it endpoint exists, if not it throw an NotFoundException
-        endpointRepository.getEndpointTypeById(orgId, id);
+        EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
 
         if (!isEndpointTypeAllowed()) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
 
-        if (endpointType == CAMEL || endpointType == WEBHOOK || endpointType == ANSIBLE) {
+        if (List.of(CAMEL, WEBHOOK, ANSIBLE).contains(endpointType)) {
             checkSslDisabledEndpoint(orgId, id);
         }
         endpointRepository.enableEndpoint(orgId, id);
