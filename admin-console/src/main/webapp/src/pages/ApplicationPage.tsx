@@ -9,7 +9,7 @@ import {
 import * as React from 'react';
 import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
-import { useParams } from 'react-router';
+import { useParams } from 'react-router-dom';
 
 import { useUserPermissions } from '../app/PermissionContext';
 import { AggregationTemplateCard } from '../components/EmailTemplates/EmailTemplateCard';
@@ -38,12 +38,12 @@ type ApplicationPageParams = {
 export const ApplicationPage: React.FunctionComponent = () => {
     const { hasPermission, isAdmin } = useUserPermissions();
     const { applicationId } = useParams<ApplicationPageParams>();
-    const eventTypesQuery = useEventTypes(applicationId);
-    const applicationTypesQuery = useApplicationTypes(applicationId);
+    const eventTypesQuery = useEventTypes(applicationId!);
+    const applicationTypesQuery = useApplicationTypes(applicationId!);
     const deleteEventTypeMutation = useDeleteEventType();
     const newEvent = useCreateEventType();
 
-    const aggregationTemplates = useAggregationTemplates(applicationId);
+    const aggregationTemplates = useAggregationTemplates(applicationId!);
     const getAllTemplates = useGetTemplates();
     const newInstantTemplate = useCreateInstantEmailTemplate();
 
@@ -119,7 +119,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
             name: eventType.name ?? '',
             description: eventType.description ?? '',
             fullyQualifiedName: eventType.fullyQualifiedName ?? '',
-            applicationId,
+            applicationId: applicationId!,
             subscribedByDefault: eventType.subscribedByDefault,
             subscriptionLocked: eventType.subscriptionLocked,
             visible: eventType.visible
@@ -196,7 +196,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     Event types
                 </Title>
                 <EventTypeTable
-                    hasPermissions={ hasPermission(applicationId) }
+                    hasPermissions={ hasPermission(applicationId!) }
                     onCreateEventType={ createEventType }
                     onEditEventType={ editEventType }
                     onDeleteEventTypeModal={ deleteEventTypeModal }

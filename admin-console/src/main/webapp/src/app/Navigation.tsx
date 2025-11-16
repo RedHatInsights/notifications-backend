@@ -1,6 +1,6 @@
 import { Nav, NavExpandable, NavItem, NavList } from '@patternfly/react-core';
 import * as React from 'react';
-import { Link, useRouteMatch } from 'react-router-dom';
+import { Link, useMatch } from 'react-router-dom';
 
 import { linkTo } from '../Routes';
 import { Bundle } from '../types/Notifications';
@@ -10,10 +10,7 @@ type EnhancedNavItemProps = {
 }
 
 const EnhancedNavItem: React.FunctionComponent<EnhancedNavItemProps> = props => {
-    const match = useRouteMatch({
-        path: props.to,
-        exact: true
-    });
+    const match = useMatch(props.to);
 
     return (
         <NavItem isActive={ !!match }>

@@ -26,8 +26,8 @@ type BundlePageParams = {
 export const BundlePage: React.FunctionComponent = () => {
     const { hasPermission, refresh, isAdmin } = useUserPermissions();
     const { bundleId } = useParams<BundlePageParams>();
-    const getBundles = useBundleTypes(bundleId);
-    const getApplications = useApplications(bundleId);
+    const getBundles = useBundleTypes(bundleId!);
+    const getApplications = useApplications(bundleId!);
     const newApplication = useCreateApplication();
     const deleteApplicationMutation = useDeleteApplication();
 
@@ -66,7 +66,7 @@ export const BundlePage: React.FunctionComponent = () => {
             id: application.id,
             displayName: application.displayName ?? '',
             name: application.name ?? '',
-            bundleId,
+            bundleId: bundleId!,
             ownerRole: application.ownerRole
         })
         .then(r => {
@@ -197,7 +197,7 @@ export const BundlePage: React.FunctionComponent = () => {
                 </TableComposable>
             </PageSection>
             <BehaviorGroupsTable
-                bundleId={ bundleId }
+                bundleId={ bundleId! }
                 bundle={ bundle?.displayName } />
         </React.Fragment>
 
