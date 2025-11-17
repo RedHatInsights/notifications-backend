@@ -10,7 +10,7 @@ import {
 } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon, CheckCircleIcon, TimesIcon } from '@patternfly/react-icons';
 import { ExpandableRowContent, OnCollapse, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import produce from 'immer';
+import { produce } from 'immer';
 import * as React from 'react';
 import { useEffect } from 'react';
 

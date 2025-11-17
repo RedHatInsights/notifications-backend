@@ -115,7 +115,7 @@ export const RenderEmailTemplateForm: React.FunctionComponent<EmailTemplateFormP
         renderedProps = {
             isLoading: false,
             succeeded: false,
-            error: `Failed to render template: ${emailTemplate.payload.value.message}` ?? 'Unknown error'
+            error: `Failed to render template: ${emailTemplate.payload.value.message ?? 'Unknown error'}`
         };
     } else {
         renderedProps = {

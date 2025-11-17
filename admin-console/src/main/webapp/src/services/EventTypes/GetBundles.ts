@@ -1,4 +1,4 @@
-import produce from 'immer';
+import { produce } from 'immer';
 import { useCallback, useEffect, useState } from 'react';
 import { QueryResponse, useClient } from 'react-fetching-library';
 import { useUnmountPromise } from 'react-use';

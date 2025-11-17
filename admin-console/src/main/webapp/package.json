@@ -12,9 +12,9 @@
     "@patternfly/react-icons": "6.4.0",
     "@patternfly/react-table": "6.4.0",
     "buffer": "^6.0.3",
-    "immer": "9.0.21",
+    "immer": "10.2.0",
     "monaco-editor": "0.54.0",
-    "monaco-editor-webpack-plugin": "2.1.0",
+    "monaco-editor-webpack-plugin": "7.1.1",
     "openapi2typescript": "0.2.1",
     "react": "17.0.2",
     "react-dom": "17.0.2",
@@ -31,7 +31,7 @@
     "@testing-library/jest-dom": "5.17.0",
     "@testing-library/react": "12.1.5",
     "@testing-library/user-event": "14.6.1",
-    "@types/jest": "28.1.8",
+    "@types/jest": "30.0.0",
     "@types/node": "16.18.126",
     "@types/react": "17.0.89",
     "@types/react-dom": "17.0.26",
@@ -45,7 +45,7 @@
     "eslint-plugin-react-hooks": "^4.3.0",
     "openapi2typescript-cli": "0.7.1",
     "react-scripts": "5.0.1",
-    "typescript": "4.9.5"
+    "typescript": "5.9.3"
   },
   "scripts": {
     "start": "react-scripts start",
