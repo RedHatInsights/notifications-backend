@@ -6,7 +6,10 @@ const spawn = require('child_process').spawn;
 const build = spawn('react-scripts', ['build'], {
     stdio: ['inherit', 'pipe', 'pipe'],
     shell: true,
-    env: { ...process.env, DISABLE_ESLINT_PLUGIN: 'true' }
+    env: {
+        ...process.env,
+        DISABLE_ESLINT_PLUGIN: 'true'
+    }
 });
 
 let allOutput = '';
@@ -34,6 +37,12 @@ build.on('close', (code) => {
             if (filtered.length > 0 && filtered[filtered.length - 1].trim() === 'Warning') {
                 filtered.pop();
             }
+            i++;
+            continue;
+        }
+
+        // Filter out DEP0169 deprecation warning about url.parse()
+        if (line.includes('DEP0169') && line.includes('url.parse()')) {
             i++;
             continue;
         }
