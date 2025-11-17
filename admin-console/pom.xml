@@ -28,7 +28,7 @@
                             <goal>install-node-and-yarn</goal>
                         </goals>
                         <configuration>
-                            <nodeVersion>v22.11.0</nodeVersion>
+                            <nodeVersion>v22.20.0</nodeVersion>
                             <yarnVersion>v1.22.22</yarnVersion>
                         </configuration>
                     </execution>
@@ -39,9 +39,6 @@
                         </goals>
                         <configuration>
                             <arguments>install</arguments>
-                            <environmentVariables>
-                                <NODE_OPTIONS>--no-deprecation</NODE_OPTIONS>
-                            </environmentVariables>
                         </configuration>
                     </execution>
                     <execution>
@@ -51,9 +48,6 @@
                         </goals>
                         <configuration>
                             <arguments>lint</arguments>
-                            <environmentVariables>
-                                <NODE_OPTIONS>--no-deprecation</NODE_OPTIONS>
-                            </environmentVariables>
                         </configuration>
                     </execution>
                     <execution>
@@ -64,7 +58,7 @@
                         <configuration>
                             <arguments>build</arguments>
                             <environmentVariables>
-                                <NODE_OPTIONS>--max-old-space-size=8192 --no-deprecation</NODE_OPTIONS>
+                                <NODE_OPTIONS>--max-old-space-size=8192</NODE_OPTIONS>
                             </environmentVariables>
                         </configuration>
                     </execution>
