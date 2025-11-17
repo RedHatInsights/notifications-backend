@@ -9,8 +9,8 @@ import {
     ToolbarItem
 } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon, CheckCircleIcon, TimesIcon } from '@patternfly/react-icons';
-import { ExpandableRowContent, OnCollapse, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import produce from 'immer';
+import { ExpandableRowContent, OnCollapse, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { produce } from 'immer';
 import * as React from 'react';
 import { useEffect } from 'react';
 
@@ -60,7 +60,7 @@ const EventTypeTableLayout: React.FunctionComponent<EventTypeTableLayoutProps> =
                 </ToolbarItem>
             </ToolbarContent>
         </Toolbar>
-        <TableComposable aria-label="Event types table">
+        <Table aria-label="Event types table">
             <Thead>
                 <Th />
                 <Th>Event Type</Th>
@@ -74,7 +74,7 @@ const EventTypeTableLayout: React.FunctionComponent<EventTypeTableLayoutProps> =
             <Tbody>
                 { props.children }
             </Tbody>
-        </TableComposable>
+        </Table>
     </>;
 };
 
@@ -106,25 +106,26 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                     />
                     <Td>{ eventType.displayName }</Td>
                     <Td>{ eventType.name }</Td>
-                    <Td><InstantEmailCell eventType={ eventType }
-                        onClick={ () =>
-                            !eventType.instantEmail.isLoading && props.onUpdateInstantTemplate(eventType.instantEmail) }
-                    />
+                    <Td>
+                        <InstantEmailCell
+                            eventType={ eventType }
+                            onClick={ () => !eventType.instantEmail.isLoading && props.onUpdateInstantTemplate(eventType.instantEmail) }
+                        />
                     </Td>
                     <Td>
-                        {eventType.subscribedByDefault ? <CheckCircleIcon /> : <TimesIcon />}
+                        { eventType.subscribedByDefault ? <CheckCircleIcon /> : <TimesIcon /> }
                     </Td>
                     <Td>
-                        {eventType.subscriptionLocked ? <CheckCircleIcon /> : <TimesIcon />}
+                        { eventType.subscriptionLocked ? <CheckCircleIcon /> : <TimesIcon /> }
                     </Td>
                     <Td>
-                        {eventType.visible ? <CheckCircleIcon /> : <TimesIcon />}
+                        { eventType.visible ? <CheckCircleIcon /> : <TimesIcon /> }
                     </Td>
                     <Td>
                         <ActionList isIconList>
                             <ActionListItem>
                                 <Button
-                                    className='edit'
+                                    className="edit"
                                     variant={ ButtonVariant.plain }
                                     isDisabled={ !props.hasPermissions }
                                     onClick={ () => props.onEditEventType(eventType) }
@@ -134,7 +135,7 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                             </ActionListItem>
                             <ActionListItem>
                                 <Button
-                                    className='delete'
+                                    className="delete"
                                     variant={ ButtonVariant.plain }
                                     isDisabled={ !props.hasPermissions }
                                     onClick={ () => props.onDeleteEventTypeModal(eventType) }
@@ -222,6 +223,6 @@ export const EventTypeTable: React.FunctionComponent<EventTypeTableProps> = prop
             onExpandToggle={ onExpandedToggle }
             tableData={ tableData }
             createEventTypeButton={ createEventTypeButton }
-        /> : <EventTypeTableSkeleton { ...props } />}
+        /> : <EventTypeTableSkeleton { ...props } /> }
     </EventTypeTableLayout>;
 };

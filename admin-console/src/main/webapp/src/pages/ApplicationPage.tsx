@@ -9,7 +9,7 @@ import {
 import * as React from 'react';
 import { useMemo } from 'react';
 import { useParameterizedQuery } from 'react-fetching-library';
-import { useParams } from 'react-router';
+import { useParams } from 'react-router-dom';
 
 import { useUserPermissions } from '../app/PermissionContext';
 import { AggregationTemplateCard } from '../components/EmailTemplates/EmailTemplateCard';
@@ -38,12 +38,12 @@ type ApplicationPageParams = {
 export const ApplicationPage: React.FunctionComponent = () => {
     const { hasPermission, isAdmin } = useUserPermissions();
     const { applicationId } = useParams<ApplicationPageParams>();
-    const eventTypesQuery = useEventTypes(applicationId);
-    const applicationTypesQuery = useApplicationTypes(applicationId);
+    const eventTypesQuery = useEventTypes(applicationId!);
+    const applicationTypesQuery = useApplicationTypes(applicationId!);
     const deleteEventTypeMutation = useDeleteEventType();
     const newEvent = useCreateEventType();
 
-    const aggregationTemplates = useAggregationTemplates(applicationId);
+    const aggregationTemplates = useAggregationTemplates(applicationId!);
     const getAllTemplates = useGetTemplates();
     const newInstantTemplate = useCreateInstantEmailTemplate();
 
@@ -107,10 +107,10 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
-        setEventTypes({visible:true});
+        setEventTypes({ visible: true });
     };
 
-    const handleSubmit = React.useCallback((eventType) => {
+    const handleSubmit = React.useCallback(eventType => {
         setShowModal(false);
         const mutate = newEvent.mutate;
         mutate({
@@ -119,12 +119,12 @@ export const ApplicationPage: React.FunctionComponent = () => {
             name: eventType.name ?? '',
             description: eventType.description ?? '',
             fullyQualifiedName: eventType.fullyQualifiedName ?? '',
-            applicationId,
+            applicationId: applicationId!,
             subscribedByDefault: eventType.subscribedByDefault,
             subscriptionLocked: eventType.subscriptionLocked,
             visible: eventType.visible
 
-        }).then (eventTypesQuery.reload);
+        }).then(eventTypesQuery.reload);
 
     }, [ applicationId, eventTypesQuery.reload, newEvent.mutate ]);
 
@@ -148,7 +148,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
         templateSaveModal.open(instantTemplate, !!instantTemplate.id);
     };
 
-    const handleDelete = React.useCallback(async () => {
+    const handleDelete = React.useCallback(async() => {
         setShowDeleteModal(false);
         const deleteEventType = deleteEventTypeMutation.mutate;
         const response = await deleteEventType(eventTypes.id);
@@ -175,18 +175,23 @@ export const ApplicationPage: React.FunctionComponent = () => {
     };
 
     if (eventTypesQuery.error) {
-        return <span>Error while loading eventtypes: {eventTypesQuery.error.toString()}</span>;
+        return <span>
+            Error while loading eventtypes:
+            { eventTypesQuery.error.toString() }
+        </span>;
     }
 
     return (
-        <React.Fragment>
+        <>
             <PageSection type={ PageSectionTypes.breadcrumb }>
                 <Breadcrumb>
                     <BreadcrumbItem> Bundles </BreadcrumbItem>
                     <BreadcrumbLinkItem to={ linkTo.bundle(getBundleId ?? '') }>
                         { bundle ? bundle.display_name : <Skeleton width="60px" /> }
                     </BreadcrumbLinkItem>
-                    <BreadcrumbItem isActive> { (applicationTypesQuery.loading
+                    <BreadcrumbItem isActive>
+                        { ' ' }
+                        { (applicationTypesQuery.loading
                         || applicationTypesQuery.payload?.status !== 200) ? <Skeleton width="60px" /> : applicationTypesQuery.payload.value.displayName }
                     </BreadcrumbItem>
                 </Breadcrumb>
@@ -196,7 +201,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     Event types
                 </Title>
                 <EventTypeTable
-                    hasPermissions={ hasPermission(applicationId) }
+                    hasPermissions={ hasPermission(applicationId!) }
                     onCreateEventType={ createEventType }
                     onEditEventType={ editEventType }
                     onDeleteEventTypeModal={ deleteEventTypeModal }
@@ -207,7 +212,8 @@ export const ApplicationPage: React.FunctionComponent = () => {
             <AggregationTemplateCard
                 applicationName={ application?.displayName }
                 bundleName={ bundle?.display_name }
-                templateName={ aggregationEmailTemplates?.map(a => a.body_template?.name) } />
+                templateName={ aggregationEmailTemplates?.map(a => a.body_template?.name) }
+            />
             { isAdmin && application && <EmailTemplateTable application={ application } /> }
             <CreateEditModal
                 isEdit={ isEdit }
@@ -234,6 +240,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
                 onSubmit={ handleInstantTemplateSubmit }
                 initialInstantTemplate={ templateSaveModal.template }
             />
-        </React.Fragment>
+        </>
     );
 };

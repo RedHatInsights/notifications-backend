@@ -9,7 +9,6 @@ import {
     Title
 } from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons';
-import { global_palette_green_400 } from '@patternfly/react-tokens';
 import * as React from 'react';
 
 const defaultPayload = JSON.stringify({}, null, 2);
@@ -35,11 +34,11 @@ interface ValidatorProps {
     validate: (jsonMessage: string) => Promise<ValidationResult['errors']>;
 }
 
-export const Validator: React.FunctionComponent<ValidatorProps> = ({validate}) => {
+export const Validator: React.FunctionComponent<ValidatorProps> = ({ validate }) => {
     const [ message, setMessage ] = React.useState<string>(defaultPayload);
     const [ validationResult, setValidationResult ] = React.useState<ValidationResult>();
 
-    const runValidation = React.useCallback(async () => {
+    const runValidation = React.useCallback(async() => {
 
         let jsonMessage;
         try {
@@ -49,7 +48,7 @@ export const Validator: React.FunctionComponent<ValidatorProps> = ({validate}) =
             setValidationResult({
                 errors: {
                     $: [
-                        'Not a valid json: ' + e.message
+                        `Not a valid json: ${e.message}`
                     ]
                 },
                 code: message
@@ -66,8 +65,8 @@ export const Validator: React.FunctionComponent<ValidatorProps> = ({validate}) =
     }, [ validate, message ]);
 
     const validatePayloadButton = <CodeEditorControl
-        icon={ <CheckCircleIcon color={ global_palette_green_400.value } /> }
-        toolTipText="Validates the message"
+        icon={ <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" /> }
+        aria-label="Validates the message"
         onClick={ runValidation }
     />;
 
@@ -82,7 +81,7 @@ export const Validator: React.FunctionComponent<ValidatorProps> = ({validate}) =
             validationStatus = AlertVariant.danger;
             validationMessage = <>
                 <div>Message is invalid:</div>
-                {renderErrors(validationResult.errors)}
+                { renderErrors(validationResult.errors) }
             </>;
         }
     } else {
@@ -103,7 +102,7 @@ export const Validator: React.FunctionComponent<ValidatorProps> = ({validate}) =
             <PageSection>
                 <Stack>
                     <StackItem isFilled>
-                        <Title headingLevel="h1" >Notification validator</Title>
+                        <Title headingLevel="h1">Notification validator</Title>
                     </StackItem>
                     <StackItem>
                         <span>You can use this utility to verify the notification you are sending is valid and tweak as needed.</span>
@@ -113,7 +112,7 @@ export const Validator: React.FunctionComponent<ValidatorProps> = ({validate}) =
             <PageSection>
                 <Alert isInline title={ validationMessage } variant={ validationStatus }  />
                 <CodeEditor
-                    showEditor={ true }
+                    showEditor
                     isUploadEnabled
                     isDownloadEnabled
                     isCopyEnabled

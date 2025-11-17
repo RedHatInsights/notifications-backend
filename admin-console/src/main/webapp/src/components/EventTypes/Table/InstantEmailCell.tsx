@@ -15,22 +15,20 @@ export const InstantEmailCell: React.FunctionComponent<InstantEmailCellProps> = 
     }
 
     return <>
-        { props.eventType.instantEmail.id ?
-            <Button
-                variant='link'
-                type='button'
+        { props.eventType.instantEmail.id
+            ? <Button
+                variant="link"
+                type="button"
                 onClick={ props.onClick }
             >
-             Edit instant template
+                Edit instant template
             </Button>
-            :
-            <Button
-                variant='primary'
-                type='button'
+            : <Button
+                variant="primary"
+                type="button"
                 onClick={ props.onClick }
             >
-                    Create instant template
-            </Button>
-        }
+                Create instant template
+            </Button> }
     </>;
 };
