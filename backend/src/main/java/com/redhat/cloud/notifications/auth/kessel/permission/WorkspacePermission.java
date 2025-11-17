@@ -9,6 +9,7 @@ public enum WorkspacePermission implements KesselPermission {
     CREATE_EMAIL_SUBSCRIPTION_INTEGRATION("notifications_integration_subscribe_email"),
     EVENT_LOG_VIEW("notifications_event_log_view"),
     EVENT_TYPES_VIEW("notifications_event_types_view"),
+    // TODO Replace with INTEGRATIONS_EDIT("notifications_integration_edit") - This requires a schema update in Kessel
     INTEGRATIONS_CREATE("notifications_integration_create"),
     INTEGRATIONS_VIEW("notifications_integration_view"),
     DAILY_DIGEST_PREFERENCE_EDIT("notifications_daily_digest_preference_edit"),

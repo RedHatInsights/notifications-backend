@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.routers.handlers.endpoint;
 
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
-import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
-import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
+import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
+import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -55,7 +55,7 @@ public class EndpointResourceCommon {
     CommonMapper commonMapper;
 
     @Inject
-    KesselAuthorization kesselAuthorization;
+    WorkspaceUtils workspaceUtils;
 
     @Inject
     KesselInventoryAuthorization kesselInventoryAuthorization;
@@ -96,8 +96,6 @@ public class EndpointResourceCommon {
      * @param targetType the types of the endpoints to fetch.
      * @param activeOnly should only the active endpoints be fetched?
      * @param name filter endpoints by name.
-     * @param authorizedIds set of authorized integrations that we are allowed
-     *                      to fetch.
      * @return a page containing the requested endpoints.
      */
     protected EndpointPage internalGetEndpoints(
@@ -106,7 +104,6 @@ public class EndpointResourceCommon {
         final List<String> targetType,
         final Boolean activeOnly,
         final String name,
-        final Set<UUID> authorizedIds,
         final boolean includeLinkedEventTypes
     ) {
         String orgId = getOrgId(sec);
@@ -128,8 +125,8 @@ public class EndpointResourceCommon {
             compositeType = Set.of();
         }
 
-        endpoints = endpointRepository.getEndpointsPerCompositeType(orgId, name, compositeType, activeOnly, query, authorizedIds);
-        count = endpointRepository.getEndpointsCountPerCompositeType(orgId, name, compositeType, activeOnly, authorizedIds);
+        endpoints = endpointRepository.getEndpointsPerCompositeType(orgId, name, compositeType, activeOnly, query);
+        count = endpointRepository.getEndpointsCountPerCompositeType(orgId, name, compositeType, activeOnly);
 
         final List<EndpointDTO> endpointDTOS = new ArrayList<>(endpoints.size());
         for (Endpoint endpoint: endpoints) {
@@ -164,13 +161,10 @@ public class EndpointResourceCommon {
         // Users with just read permissions will get the secrets redacted for
         // them.
         boolean shouldRedactSecrets;
-        if (this.backendConfig.isKesselRelationsEnabled(getOrgId(securityContext))) {
+        if (this.backendConfig.isKesselEnabled(getOrgId(securityContext))) {
+            final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(securityContext));
             try {
-                if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(getOrgId(securityContext))) {
-                    this.kesselInventoryAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpoint.getId());
-                } else {
-                    this.kesselAuthorization.hasPermissionOnIntegration(securityContext, IntegrationPermission.EDIT, endpoint.getId());
-                }
+                this.kesselInventoryAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.INTEGRATIONS_CREATE, workspaceId);
                 shouldRedactSecrets = false;
             } catch (final ForbiddenException | NotFoundException e) {
                 shouldRedactSecrets = true;

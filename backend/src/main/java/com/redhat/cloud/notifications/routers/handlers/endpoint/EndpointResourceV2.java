@@ -1,10 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.endpoint;
 
-import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
-import com.redhat.cloud.notifications.auth.annotation.IntegrationId;
-import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
-import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import com.redhat.cloud.notifications.models.NotificationHistory;
@@ -14,11 +10,9 @@ import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
-import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BeanParam;
-import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -35,25 +29,20 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTEGRATIONS_V_2_0;
+import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_VIEW;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
-import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class EndpointResourceV2 extends EndpointResourceCommon {
 
     @Inject
     NotificationRepository notificationRepository;
-
-    @Inject
-    WorkspaceUtils workspaceUtils;
 
     @Path(API_INTEGRATIONS_V_2_0 + "/endpoints")
     public static class V2 extends EndpointResourceV2 {
@@ -83,11 +72,11 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
             )
         }
     )
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.VIEW_HISTORY})
+    @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
     public Page<NotificationHistoryDTO> getEndpointHistory(
         @Context SecurityContext sec,
         @Context UriInfo uriInfo,
-        @IntegrationId @PathParam("id") UUID id,
+        @PathParam("id") UUID id,
         @QueryParam("includeDetail") Boolean includeDetail,
         @Valid @BeanParam Query query
     ) {
@@ -112,8 +101,8 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.VIEW})
-    public EndpointDTO getEndpoint(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID id) {
+    @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
+    public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         return internalGetEndpoint(sec, id, true);
     }
 
@@ -136,6 +125,7 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
             )
         }
     )
+    @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
     public EndpointPage getEndpoints(
         @Context                SecurityContext sec,
         @BeanParam @Valid       Query query,
@@ -143,28 +133,6 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
         @QueryParam("active")   Boolean activeOnly,
         @QueryParam("name")     String name
     ) {
-        Set<UUID> authorizedIds = null;
-        if (this.backendConfig.isKesselRelationsEnabled(getOrgId(sec))) {
-            // Fetch the set of integration IDs the user is authorized to view.
-            if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(getOrgId(sec))) {
-                final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(sec));
-                authorizedIds = this.kesselInventoryAuthorization.lookupAuthorizedIntegrations(sec, workspaceId, IntegrationPermission.VIEW);
-            } else {
-                authorizedIds = this.kesselAuthorization.lookupAuthorizedIntegrations(sec, IntegrationPermission.VIEW);
-            }
-            if (authorizedIds.isEmpty()) {
-                Log.infof("[org_id: %s][username: %s] Kessel did not return any integration IDs for the request", getOrgId(sec), getUsername(sec));
-
-                return new EndpointPage(new ArrayList<>(), new HashMap<>(), new Meta(0L));
-            }
-        } else {
-            // Legacy RBAC permission checking. The permission will have been
-            // prefetched and processed by the "ConsoleIdentityProvider".
-            if (!sec.isUserInRole(ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS)) {
-                throw new ForbiddenException();
-            }
-        }
-
-        return internalGetEndpoints(sec, query, targetType, activeOnly, name, authorizedIds, true);
+        return internalGetEndpoints(sec, query, targetType, activeOnly, name, true);
     }
 }
