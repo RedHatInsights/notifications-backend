@@ -52,7 +52,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "node scripts/build.js",
     "openapi": "openapi2typescript -i http://localhost:8085/internal/openapi.json -o src/generated/OpenapiInternal.ts -a react-fetching-library -ed --no-strict --explicit-types --api-base-path '.'",
     "lint": "eslint config src config-overrides.js",
     "test": "react-scripts test"
