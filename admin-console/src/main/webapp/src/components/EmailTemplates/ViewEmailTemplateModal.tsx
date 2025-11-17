@@ -7,27 +7,30 @@ interface ViewTemplateModalProps {
     onClose: () => void;
 }
 
-export const ViewTemplateModal: React.FunctionComponent<ViewTemplateModalProps> = (props) => {
+export const ViewTemplateModal: React.FunctionComponent<ViewTemplateModalProps> = props => {
 
     return (
-        <React.Fragment>
-            <Modal
-                variant={ ModalVariant.medium }
-                isOpen={ props.showModal }
-                onClose={ props.onClose }
-            >
-                <ModalHeader title={ ` Email Template for ${ props.applicationName }` } />
-                <ModalBody>
-                    <Form isHorizontal>
-                        Viewing modal for existing templates
-                    </Form>
-                </ModalBody>
-                <ModalFooter>
-                    <Button variant='primary' type='reset'
-                        onClick={ props.onClose }>Close</Button>
-                </ModalFooter>
-            </Modal>
-        </React.Fragment>
+        <Modal
+            variant={ ModalVariant.medium }
+            isOpen={ props.showModal }
+            onClose={ props.onClose }
+        >
+            <ModalHeader title={ ` Email Template for ${props.applicationName}` } />
+            <ModalBody>
+                <Form isHorizontal>
+                    Viewing modal for existing templates
+                </Form>
+            </ModalBody>
+            <ModalFooter>
+                <Button
+                    variant="primary"
+                    type="reset"
+                    onClick={ props.onClose }
+                >
+                    Close
+                </Button>
+            </ModalFooter>
+        </Modal>
     );
 };
 

@@ -8,9 +8,8 @@ import {
     SplitItem,
     Stack,
     StackItem,
-    Title
-} from '@patternfly/react-core';
-import { Button } from '@patternfly/react-core/';
+    Title,
+    Button } from '@patternfly/react-core';
 import * as React from 'react';
 
 import { useRenderEmailRequest } from '../services/RenderEmailRequest';
@@ -47,7 +46,7 @@ const defaultPayload = JSON.stringify({
     event_type: 'policy-triggered',
     timestamp: '2021-08-05T16:21:14.243',
     org_id: '5758117',
-     
+
     context: '{"inventory_id":"80f7e57d-a16a-4189-82af-1d68a747c8b3","system_check_in":"2021-08-05T16:21:12.953036","display_name":"cool display name"}',
     events: [
         {
@@ -87,13 +86,17 @@ const RenderedTemplate: React.FunctionComponent<RenderedTemplateProps> = props =
         return (
             <>
                 <StackItem>
-                    <span><strong>Subject:</strong> { props.subject }</span>
+                    <span>
+                        <strong>Subject:</strong>
+                        { ' ' }
+                        { props.subject }
+                    </span>
                 </StackItem>
                 <StackItem>
                     <strong>Body:</strong>
                 </StackItem>
                 <StackItem>
-                    <iframe width="100%" style={{ resize: 'both' }} srcDoc={ props.body } />
+                    <iframe width="100%" style={ { resize: 'both' } } srcDoc={ props.body } />
                 </StackItem>
             </>
         );
@@ -122,7 +125,6 @@ export const RenderEmailPage: React.FunctionComponent = () => {
             payload: payload ?? ''
         });
         // We only want to activate this once
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ ]);
 
     let renderedProps: RenderedTemplateProps;
@@ -166,7 +168,7 @@ export const RenderEmailPage: React.FunctionComponent = () => {
             <PageSection>
                 <Split>
                     <SplitItem isFilled>
-                        <Title headingLevel="h1" >Email templates</Title>
+                        <Title headingLevel="h1">Email templates</Title>
                     </SplitItem>
                     <SplitItem>
                         <Button onClick={ onRender }>Render</Button>

@@ -1,6 +1,6 @@
 import * as React from 'react';
-import {Button, Form, FormGroup, HelperText, HelperTextItem, PageSection, Skeleton, SkeletonProps, Spinner, Split, SplitItem, StackItem, TextInput, Title} from '@patternfly/react-core';
-import {CodeEditor, Language} from '@patternfly/react-code-editor';
+import { Button, Form, FormGroup, HelperText, HelperTextItem, PageSection, Skeleton, SkeletonProps, Spinner, Split, SplitItem, StackItem, TextInput, Title } from '@patternfly/react-core';
+import { CodeEditor, Language } from '@patternfly/react-code-editor';
 import { useRenderEmailRequest } from '../../services/RenderEmailRequest';
 import { Template } from '../../types/Notifications';
 
@@ -16,7 +16,11 @@ interface SkeletonIfLoading extends SkeletonProps {
 }
 
 const SkeletonIfLoading: React.FunctionComponent<SkeletonIfLoading> = props => (
-    props.isLoading ? <Skeleton { ...props } /> : <> { props.children } </>
+    props.isLoading ? <Skeleton { ...props } /> : <>
+        { ' ' }
+        { props.children }
+        { ' ' }
+    </>
 );
 
 const defaultPayload = JSON.stringify({
@@ -25,7 +29,7 @@ const defaultPayload = JSON.stringify({
     event_type: 'policy-triggered',
     timestamp: '2021-08-05T16:21:14.243',
     org_id: '5758117',
-     
+
     context: '{"inventory_id":"80f7e57d-a16a-4189-82af-1d68a747c8b3","system_check_in":"2021-08-05T16:21:12.953036","display_name":"cool display name"}',
     events: [
         {
@@ -67,9 +71,8 @@ const RenderedTemplate: React.FunctionComponent<RenderedTemplateProps> = props =
                     <strong>Content:</strong>
                 </StackItem>
                 <StackItem>
-                    {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment*/}
-                    {/* @ts-ignore */}
-                    <iframe width="100%" style={{ resize: 'both' }} srcDoc={ props.template } />
+                    { /* @ts-ignore */ }
+                    <iframe width="100%" style={ { resize: 'both' } } srcDoc={ props.template } />
                 </StackItem>
             </>
         );
@@ -96,7 +99,6 @@ export const RenderEmailTemplateForm: React.FunctionComponent<EmailTemplateFormP
             payload: payload ?? ''
         });
         // We only want to activate this once
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ ]);
 
     let renderedProps: RenderedTemplateProps;
@@ -149,16 +151,16 @@ export const RenderEmailTemplateForm: React.FunctionComponent<EmailTemplateFormP
             </PageSection>
             <Form>
                 <FormGroup
-                    label='Name'
+                    label="Name"
                     isRequired
                 >
                     <SkeletonIfLoading isLoading={ props.isLoading }>
                         <TextInput
-                            type='text'
-                            id='name'
+                            type="text"
+                            id="name"
                             name="name"
                             value={ props.template?.name ?? '' }
-                            onChange={ (_event, name) => props.updateTemplate({ name })}
+                            onChange={ (_event, name) => props.updateTemplate({ name }) }
                         />
                     </SkeletonIfLoading>
                     <HelperText>
@@ -168,16 +170,16 @@ export const RenderEmailTemplateForm: React.FunctionComponent<EmailTemplateFormP
                     </HelperText>
                 </FormGroup>
                 <FormGroup
-                    label='Description'
+                    label="Description"
                     isRequired
                 >
-                    <SkeletonIfLoading isLoading={props.isLoading}>
+                    <SkeletonIfLoading isLoading={ props.isLoading }>
                         <TextInput
-                            type='text'
-                            id='description'
+                            type="text"
+                            id="description"
                             name="description"
                             value={ props.template?.description ?? '' }
-                            onChange={ (_event, description) => props.updateTemplate({ description })}
+                            onChange={ (_event, description) => props.updateTemplate({ description }) }
                         />
                     </SkeletonIfLoading>
                     <HelperText>
@@ -190,7 +192,7 @@ export const RenderEmailTemplateForm: React.FunctionComponent<EmailTemplateFormP
                     label="Content"
                     isRequired
                 >
-                    <SkeletonIfLoading isLoading={props.isLoading} height="300px">
+                    <SkeletonIfLoading isLoading={ props.isLoading } height="300px">
                         <CodeEditor
                             isLineNumbersVisible
                             code={ props.template?.data ?? '' }
@@ -204,7 +206,7 @@ export const RenderEmailTemplateForm: React.FunctionComponent<EmailTemplateFormP
                     label="Template parameters"
                     isRequired
                 >
-                    <SkeletonIfLoading isLoading={props.isLoading} height="200px">
+                    <SkeletonIfLoading isLoading={ props.isLoading } height="200px">
                         <CodeEditor
                             isLineNumbersVisible
                             isMinimapVisible={ false }

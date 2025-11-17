@@ -69,14 +69,14 @@ export const BundlePage: React.FunctionComponent = () => {
             bundleId: bundleId!,
             ownerRole: application.ownerRole
         })
-        .then(r => {
-            if (r.payload?.status === 200 && !isAdmin) {
-                refresh();
-            }
+            .then(r => {
+                if (r.payload?.status === 200 && !isAdmin) {
+                    refresh();
+                }
 
-            return r;
-        })
-        .then(getApplications.query);
+                return r;
+            })
+            .then(getApplications.query);
 
     }, [ bundleId, getApplications.query, newApplication.mutate, isAdmin, refresh ]);
 
@@ -86,7 +86,7 @@ export const BundlePage: React.FunctionComponent = () => {
         getApplications.query();
     };
 
-    const handleDelete = React.useCallback(async () => {
+    const handleDelete = React.useCallback(async() => {
         setShowDeleteModal(false);
         const deleteApplication = deleteApplicationMutation.mutate;
         const response = await deleteApplication(application.id);
@@ -112,21 +112,25 @@ export const BundlePage: React.FunctionComponent = () => {
     }
 
     if (getApplications.payload?.status !== 200) {
-        return <span>Error while loading applications: {getApplications.errorObject.toString()}</span>;
+        return <span>
+            Error while loading applications:
+            { getApplications.errorObject.toString() }
+        </span>;
     }
 
     return (
-        <React.Fragment>
+        <>
             <PageSection type={ PageSectionTypes.breadcrumb }>
                 <Breadcrumb>
                     <BreadcrumbItem> Bundles </BreadcrumbItem>
-                    <BreadcrumbItem>{ (getBundles.loading || getBundles.payload?.status !== 200)
-                        ? <Skeleton width="60px" /> : getBundles.payload.value.displayName }
+                    <BreadcrumbItem>
+                        { (getBundles.loading || getBundles.payload?.status !== 200)
+                            ? <Skeleton width="60px" /> : getBundles.payload.value.displayName }
                     </BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
             <PageSection>
-                <Title headingLevel='h3'>
+                <Title headingLevel="h3">
                     Applications
                 </Title>
                 <Table aria-label="Applications table">
@@ -134,8 +138,8 @@ export const BundlePage: React.FunctionComponent = () => {
                         <Toolbar>
                             <ToolbarContent>
                                 <ToolbarItem>
-                                    <Button variant='primary' type='button' onClick={ createApplication }> Create Application </Button>
-                                    {showModal && <CreateEditApplicationModal
+                                    <Button variant="primary" type="button" onClick={ createApplication }> Create Application </Button>
+                                    { showModal && <CreateEditApplicationModal
                                         isEdit={ isEdit }
                                         bundleName={ bundle?.displayName }
                                         initialApplication={ application }
@@ -145,9 +149,8 @@ export const BundlePage: React.FunctionComponent = () => {
                                         onSubmit={ handleSubmit }
                                         isLoading={ getApplications.loading }
 
-                                    />
-                                    }
-                                    <React.Fragment>
+                                    /> }
+                                    <>
                                         <DeleteApplicationModal
                                             onDelete={ handleDelete }
                                             isOpen={ showDeleteModal }
@@ -156,50 +159,68 @@ export const BundlePage: React.FunctionComponent = () => {
                                             bundleName={ bundle?.displayName }
 
                                         />
-                                    </React.Fragment>
+                                    </>
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
                         <Tr>
-                            {columns.map((column, columnIndex) => (
-                                <Th key={ columnIndex }>{column}</Th>
-                            ))}
+                            { columns.map((column, columnIndex) => (
+                                <Th key={ columnIndex }>{ column }</Th>
+                            )) }
                         </Tr>
                     </Thead>
                     <Tbody>
-                        { getApplications.payload.value.map(a =>
-                            <Tr key={ a.id }>
-                                <Td>
-                                    <Button variant="link" component={ (props: any) =>
-                                        <Link { ...props } to={ linkTo.application(a.id) } /> }>{ a.displayName }</Button>
-                                </Td>
-                                <Td>{ a.name}</Td>
-                                <Td>
-                                    <ListEventTypes
-                                        appId={ a.id }
-                                    />
-                                </Td>
-                                <Td>{ a.id }</Td>
-                                <Td>
-                                    <Button className='edit' type='button' variant='plain'
-                                        isDisabled={ !hasPermission(a.id) }
-                                        onClick={ () => editApplication(a) }
-                                    > { <PencilAltIcon /> } </Button></Td>
-                                <Td>
-                                    <Button className='delete' type='button' variant='plain'
-                                        isDisabled={ !isAdmin }
-                                        onClick={ () => deleteApplicationModal(a) }
+                        { getApplications.payload.value.map(a => <Tr key={ a.id }>
+                            <Td>
+                                <Button
+                                    variant="link"
+                                    component={ (props: any) => <Link { ...props } to={ linkTo.application(a.id) } /> }
+                                >
+                                    { a.displayName }
+                                </Button>
+                            </Td>
+                            <Td>{ a.name }</Td>
+                            <Td>
+                                <ListEventTypes
+                                    appId={ a.id }
+                                />
+                            </Td>
+                            <Td>{ a.id }</Td>
+                            <Td>
+                                <Button
+                                    className="edit"
+                                    type="button"
+                                    variant="plain"
+                                    isDisabled={ !hasPermission(a.id) }
+                                    onClick={ () => editApplication(a) }
+                                >
+                                    { ' ' }
+                                    <PencilAltIcon />
+                                    { ' ' }
+                                </Button>
+                            </Td>
+                            <Td>
+                                <Button
+                                    className="delete"
+                                    type="button"
+                                    variant="plain"
+                                    isDisabled={ !isAdmin }
+                                    onClick={ () => deleteApplicationModal(a) }
 
-                                    >{ <TrashIcon /> } </Button></Td>
-                            </Tr>
-                        )}
+                                >
+                                    <TrashIcon />
+                                    { ' ' }
+                                </Button>
+                            </Td>
+                        </Tr>) }
                     </Tbody>
                 </Table>
             </PageSection>
             <BehaviorGroupsTable
                 bundleId={ bundleId! }
-                bundle={ bundle?.displayName } />
-        </React.Fragment>
+                bundle={ bundle?.displayName }
+            />
+        </>
 
     );
 };

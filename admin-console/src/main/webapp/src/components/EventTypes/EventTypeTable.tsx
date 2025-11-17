@@ -106,25 +106,26 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                     />
                     <Td>{ eventType.displayName }</Td>
                     <Td>{ eventType.name }</Td>
-                    <Td><InstantEmailCell eventType={ eventType }
-                        onClick={ () =>
-                            !eventType.instantEmail.isLoading && props.onUpdateInstantTemplate(eventType.instantEmail) }
-                    />
+                    <Td>
+                        <InstantEmailCell
+                            eventType={ eventType }
+                            onClick={ () => !eventType.instantEmail.isLoading && props.onUpdateInstantTemplate(eventType.instantEmail) }
+                        />
                     </Td>
                     <Td>
-                        {eventType.subscribedByDefault ? <CheckCircleIcon /> : <TimesIcon />}
+                        { eventType.subscribedByDefault ? <CheckCircleIcon /> : <TimesIcon /> }
                     </Td>
                     <Td>
-                        {eventType.subscriptionLocked ? <CheckCircleIcon /> : <TimesIcon />}
+                        { eventType.subscriptionLocked ? <CheckCircleIcon /> : <TimesIcon /> }
                     </Td>
                     <Td>
-                        {eventType.visible ? <CheckCircleIcon /> : <TimesIcon />}
+                        { eventType.visible ? <CheckCircleIcon /> : <TimesIcon /> }
                     </Td>
                     <Td>
                         <ActionList isIconList>
                             <ActionListItem>
                                 <Button
-                                    className='edit'
+                                    className="edit"
                                     variant={ ButtonVariant.plain }
                                     isDisabled={ !props.hasPermissions }
                                     onClick={ () => props.onEditEventType(eventType) }
@@ -134,7 +135,7 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                             </ActionListItem>
                             <ActionListItem>
                                 <Button
-                                    className='delete'
+                                    className="delete"
                                     variant={ ButtonVariant.plain }
                                     isDisabled={ !props.hasPermissions }
                                     onClick={ () => props.onDeleteEventTypeModal(eventType) }
@@ -222,6 +223,6 @@ export const EventTypeTable: React.FunctionComponent<EventTypeTableProps> = prop
             onExpandToggle={ onExpandedToggle }
             tableData={ tableData }
             createEventTypeButton={ createEventTypeButton }
-        /> : <EventTypeTableSkeleton { ...props } />}
+        /> : <EventTypeTableSkeleton { ...props } /> }
     </EventTypeTableLayout>;
 };

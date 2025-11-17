@@ -6,7 +6,7 @@ import {
     Operations
 } from '../../generated/OpenapiInternal';
 import { useEventTypes as useGetEventTypes } from '../../services/EventTypes/GetEventTypes';
-import {EventTypeRow, InstantTemplate} from '../../types/Notifications';
+import { EventTypeRow, InstantTemplate } from '../../types/Notifications';
 
 interface EventTypesController {
     payload: any;
@@ -41,30 +41,30 @@ export const useEventTypes = (applicationId: string): EventTypesController => {
                 query(Operations.TemplateResourceGetInstantEmailTemplateByEventType.actionCreator({
                     eventTypeId: row.id
                 }))
-                .then(result => {
-                    if (result.payload?.status === 200 || result.payload?.status === 404) {
-                        const value: Partial<InstantTemplate> = result.payload.status === 200 ? {
-                            id: result.payload.value.id ?? undefined,
-                            bodyTemplateId: result.payload.value.body_template_id ?? undefined,
-                            subjectTemplateId: result.payload.value.subject_template_id ?? undefined,
-                            eventTypeId: result.payload.value.event_type_id ?? row.id
-                        } : {
-                            eventTypeId: row.id
-                        };
-                        setEventTypeRows(produce(draft => {
-                            const originalValue = original(draft);
-                            if (draft && originalValue) {
-                                const index = originalValue.findIndex(r => r.id === row.id);
-                                if (index !== -1) {
-                                    draft[index].instantEmail = {
-                                        isLoading: false,
-                                        ...value
-                                    };
+                    .then(result => {
+                        if (result.payload?.status === 200 || result.payload?.status === 404) {
+                            const value: Partial<InstantTemplate> = result.payload.status === 200 ? {
+                                id: result.payload.value.id ?? undefined,
+                                bodyTemplateId: result.payload.value.body_template_id ?? undefined,
+                                subjectTemplateId: result.payload.value.subject_template_id ?? undefined,
+                                eventTypeId: result.payload.value.event_type_id ?? row.id
+                            } : {
+                                eventTypeId: row.id
+                            };
+                            setEventTypeRows(produce(draft => {
+                                const originalValue = original(draft);
+                                if (draft && originalValue) {
+                                    const index = originalValue.findIndex(r => r.id === row.id);
+                                    if (index !== -1) {
+                                        draft[index].instantEmail = {
+                                            isLoading: false,
+                                            ...value
+                                        };
+                                    }
                                 }
-                            }
-                        }));
-                    }
-                });
+                            }));
+                        }
+                    });
             });
         }
     }, [ eventTypesQuery.payload, eventTypesQuery.loading, query ]);

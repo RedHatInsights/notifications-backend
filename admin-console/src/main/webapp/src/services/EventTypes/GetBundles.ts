@@ -14,7 +14,7 @@ export const useBundles = () => {
 
     const [ isLoading, setLoading ] = useState<boolean>();
 
-    const query = useCallback(async () => {
+    const query = useCallback(async() => {
         const cQuery = client.query;
         setLoading(true);
 

@@ -117,12 +117,13 @@ export const App: React.FunctionComponent<unknown> = () => {
         <PermissionContext.Provider value={ permission }>
             <Page
                 sidebar={ appSidebar }
-                masthead={ appHeader }>
+                masthead={ appHeader }
+            >
                 { message.show && (
                     <PageSection>
                         <Alert variant={ AlertVariant.warning } title={ message.content } />
                     </PageSection>
-                )}
+                ) }
                 <Routes />
             </Page>
         </PermissionContext.Provider>

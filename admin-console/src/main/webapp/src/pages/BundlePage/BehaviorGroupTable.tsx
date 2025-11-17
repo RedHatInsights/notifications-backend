@@ -17,7 +17,7 @@ interface BundlePageProps {
     bundle: string | undefined;
 }
 
-export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (props) => {
+export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = props => {
     const getBehaviorGroups = useSystemBehaviorGroups(props.bundleId);
     const newBehaviorGroup = useCreateSystemBehaviorGroup();
     const deleteBehaviorGroupMutation = useDeleteBehaviorGroup();
@@ -50,7 +50,7 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
         setSystemBehaviorGroup(b);
     };
 
-    const handleSubmit = React.useCallback((systemBehaviorGroup) => {
+    const handleSubmit = React.useCallback(systemBehaviorGroup => {
         setShowModal(false);
         const mutate = newBehaviorGroup.mutate;
         const updateActionsMutate = updateBehaviorActions.mutate;
@@ -59,25 +59,25 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
             displayName: systemBehaviorGroup.displayName ?? '',
             bundleId: props.bundleId
         })
-        .then(response => {
-            if (response.payload?.status === 200 && (response.payload.value.id || systemBehaviorGroup.id)) {
-                return updateActionsMutate({
-                    behaviorGroupId: response.payload.value.id ?? systemBehaviorGroup.id,
-                    body: [
-                        {
-                            ignore_preferences: false,
-                            only_admins: systemBehaviorGroup.actions === 'email-admin' || systemBehaviorGroup.actions === 'drawer-admin',
-                            endpoint_type: systemBehaviorGroup.actions.startsWith('drawer') ? 'DRAWER' : 'EMAIL_SUBSCRIPTION'
-                        }
-                    ]
-                });
-            }
-        })
-        .finally(getBehaviorGroups.query);
+            .then(response => {
+                if (response.payload?.status === 200 && (response.payload.value.id || systemBehaviorGroup.id)) {
+                    return updateActionsMutate({
+                        behaviorGroupId: response.payload.value.id ?? systemBehaviorGroup.id,
+                        body: [
+                            {
+                                ignore_preferences: false,
+                                only_admins: systemBehaviorGroup.actions === 'email-admin' || systemBehaviorGroup.actions === 'drawer-admin',
+                                endpoint_type: systemBehaviorGroup.actions.startsWith('drawer') ? 'DRAWER' : 'EMAIL_SUBSCRIPTION'
+                            }
+                        ]
+                    });
+                }
+            })
+            .finally(getBehaviorGroups.query);
 
     }, [ getBehaviorGroups.query, newBehaviorGroup.mutate, props.bundleId, updateBehaviorActions.mutate ]);
 
-    const handleDelete = React.useCallback(async () => {
+    const handleDelete = React.useCallback(async() => {
         setShowDeleteModal(false);
         const deleteBehaviorGroup = deleteBehaviorGroupMutation.mutate;
         const response = await deleteBehaviorGroup(systemBehaviorGroup.id).finally(getBehaviorGroups.query);
@@ -99,13 +99,16 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
     }
 
     if (getBehaviorGroups.payload?.status !== 200) {
-        return <span>Error while loading sysem behavior groups: {getBehaviorGroups.errorObject.toString()}</span>;
+        return <span>
+            Error while loading sysem behavior groups:
+            { getBehaviorGroups.errorObject.toString() }
+        </span>;
     }
 
     return (
-        <React.Fragment>
+        <>
             <PageSection>
-                <Title headingLevel='h3'>
+                <Title headingLevel="h3">
                     System Behavior Groups
                 </Title>
                 <Table aria-label="System behavior groups table">
@@ -113,40 +116,55 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
                         <Toolbar>
                             <ToolbarContent>
                                 <ToolbarItem>
-                                    <Button variant='primary' type='button' onClick={ createBehaviorGroup }> Create new group </Button>
+                                    <Button variant="primary" type="button" onClick={ createBehaviorGroup }> Create new group </Button>
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
                         <Tr>
-                            {columns.map((column, columnIndex) => (
-                                <Th key={ columnIndex }>{column}</Th>
-                            ))}
+                            { columns.map((column, columnIndex) => (
+                                <Th key={ columnIndex }>{ column }</Th>
+                            )) }
                         </Tr>
                     </Thead>
                     <Tbody>
-                        { getBehaviorGroups.payload.value.map(b =>
-                            <Tr key={ b.id }>
-                                <Td>{ b.displayName }</Td>
-                                <Td>{ b.actions?.map(action => {
+                        { getBehaviorGroups.payload.value.map(b => <Tr key={ b.id }>
+                            <Td>{ b.displayName }</Td>
+                            <Td>
+                                { b.actions?.map(action => {
                                     const properties = action.endpoint?.properties as Schemas.SystemSubscriptionProperties;
                                     if (properties) {
                                         if (properties.only_admins) {
                                             return 'Admins';
-                                        } else {
-                                            return 'All users';
                                         }
+                                        return 'All users';
+
                                     }
-                                }) }</Td>
-                                <Td>
-                                    <Button className='edit' type='button' variant='plain'
-                                        onClick={ () => editSystemBehaviorGroup(b) }
-                                    > { <PencilAltIcon /> } </Button></Td>
-                                <Td>
-                                    <Button className='delete' type='button' variant='plain'
-                                        onClick={ () => deleteBehaviorGroupModal(b) }
-                                    >{ <TrashIcon /> } </Button></Td>
-                            </Tr>
-                        )}
+                                }) }
+                            </Td>
+                            <Td>
+                                <Button
+                                    className="edit"
+                                    type="button"
+                                    variant="plain"
+                                    onClick={ () => editSystemBehaviorGroup(b) }
+                                >
+                                    { ' ' }
+                                    <PencilAltIcon />
+                                    { ' ' }
+                                </Button>
+                            </Td>
+                            <Td>
+                                <Button
+                                    className="delete"
+                                    type="button"
+                                    variant="plain"
+                                    onClick={ () => deleteBehaviorGroupModal(b) }
+                                >
+                                    <TrashIcon />
+                                    { ' ' }
+                                </Button>
+                            </Td>
+                        </Tr>) }
                     </Tbody>
                 </Table>
             </PageSection>
@@ -165,7 +183,7 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
                 isOpen={ showDeleteModal }
                 onClose={ onDeleteClose }
             />
-        </React.Fragment>
+        </>
 
     );
 };

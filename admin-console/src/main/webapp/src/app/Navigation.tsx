@@ -29,9 +29,10 @@ export const Navigation: React.FunctionComponent<NavigationProps> = props => {
     return (
         <Nav>
             <NavList>
-                <NavExpandable title='Bundles'>
+                <NavExpandable title="Bundles">
                     { props.bundles.map(b => (
-                        <EnhancedNavItem key={ b.id } to={ linkTo.bundle(b.id) }>{ b.displayName }
+                        <EnhancedNavItem key={ b.id } to={ linkTo.bundle(b.id) }>
+                            { b.displayName }
                         </EnhancedNavItem>
                     )) }
                 </NavExpandable>
