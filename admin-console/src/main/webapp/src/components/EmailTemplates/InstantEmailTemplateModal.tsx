@@ -32,7 +32,7 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
         )) : [])
     ];
 
-    const handleChange = (value: string, event: React.FormEvent<HTMLFormElement> | React.FormEvent<HTMLSelectElement>) => {
+    const handleChange = (event: React.FormEvent<HTMLFormElement> | React.FormEvent<HTMLSelectElement>, _value: string) => {
         const target = event.target as HTMLSelectElement;
         setInstantTemplate(prev => ({ ...prev, [target.name]: target.value }));
     };

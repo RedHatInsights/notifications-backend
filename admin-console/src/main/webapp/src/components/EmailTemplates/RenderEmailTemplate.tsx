@@ -151,7 +151,6 @@ export const RenderEmailTemplateForm: React.FunctionComponent<EmailTemplateFormP
                 <FormGroup
                     label='Name'
                     isRequired
-                    helperText='Enter a name for your template'
                 >
                     <SkeletonIfLoading isLoading={ props.isLoading }>
                         <TextInput
@@ -159,14 +158,18 @@ export const RenderEmailTemplateForm: React.FunctionComponent<EmailTemplateFormP
                             id='name'
                             name="name"
                             value={ props.template?.name ?? '' }
-                            onChange={ name => props.updateTemplate({ name })}
+                            onChange={ (_event, name) => props.updateTemplate({ name })}
                         />
                     </SkeletonIfLoading>
+                    <HelperText>
+                        <HelperTextItem>
+                            Enter a name for your template
+                        </HelperTextItem>
+                    </HelperText>
                 </FormGroup>
                 <FormGroup
                     label='Description'
                     isRequired
-                    helperText='Enter a brief description for your template'
                 >
                     <SkeletonIfLoading isLoading={props.isLoading}>
                         <TextInput
@@ -174,9 +177,14 @@ export const RenderEmailTemplateForm: React.FunctionComponent<EmailTemplateFormP
                             id='description'
                             name="description"
                             value={ props.template?.description ?? '' }
-                            onChange={ description => props.updateTemplate({ description })}
+                            onChange={ (_event, description) => props.updateTemplate({ description })}
                         />
                     </SkeletonIfLoading>
+                    <HelperText>
+                        <HelperTextItem>
+                            Enter a brief description for your template
+                        </HelperTextItem>
+                    </HelperText>
                 </FormGroup>
                 <FormGroup
                     label="Content"

@@ -24,7 +24,7 @@ export const DeleteBehaviorGroupModal: React.FunctionComponent<DeleteBehaviorGro
         }
     }, [ props ]);
 
-    const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
+    const handleDeleteChange = (event: React.FormEvent<HTMLInputElement>, _value: string) => {
         const target = event.target as HTMLInputElement;
         if (target.value !== props.systemBehaviorGroupName) {
             return setErrors(true);
@@ -35,7 +35,7 @@ export const DeleteBehaviorGroupModal: React.FunctionComponent<DeleteBehaviorGro
 
     return (
         <React.Fragment>
-            <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ props.isOpen }
+            <Modal variant={ ModalVariant.small } isOpen={ props.isOpen }
                 onClose={ props.onClose }
                 title={ `Permanently delete ${ props.systemBehaviorGroupName }` }>
                 { <b>{ props.systemBehaviorGroupName }</b> } from { props.bundleName ? props.bundleName :

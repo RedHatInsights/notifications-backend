@@ -1,6 +1,6 @@
 import { Button, PageSection, Spinner, Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 
 import { CreateEditBehaviorGroupModal } from '../../components/SystemBehaviorGroups/CreateEditBehaviorGroupModal';
@@ -108,7 +108,7 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
                 <Title headingLevel='h3'>
                     System Behavior Groups
                 </Title>
-                <TableComposable aria-label="System behavior groups table">
+                <Table aria-label="System behavior groups table">
                     <Thead>
                         <Toolbar>
                             <ToolbarContent>
@@ -148,7 +148,7 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
                             </Tr>
                         )}
                     </Tbody>
-                </TableComposable>
+                </Table>
             </PageSection>
             <CreateEditBehaviorGroupModal
                 isEdit={ isEdit }

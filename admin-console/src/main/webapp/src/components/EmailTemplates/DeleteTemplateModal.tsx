@@ -24,7 +24,7 @@ export const DeleteTemplateModal: React.FunctionComponent<DeleteTemplateModalPro
 
     return (
         <React.Fragment>
-            <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ props.isOpen }
+            <Modal variant={ ModalVariant.small } isOpen={ props.isOpen }
                 onClose={ props.onClose }
                 title={ `Permanently delete ${ props.templateName }` }>
                 { <b>{ props.templateName }</b> } {' template will be deleted.'}

@@ -25,7 +25,7 @@ export const DeleteModal: React.FunctionComponent<DeleteModalProps> = (props) =>
         }
     }, [ props ]);
 
-    const handleDeleteChange = (value: string, event: React.FormEvent<HTMLInputElement>) => {
+    const handleDeleteChange = (event: React.FormEvent<HTMLInputElement>, _value: string) => {
         const target = event.target as HTMLInputElement;
         if (target.value !== props.eventTypeName) {
             return setErrors(true);
@@ -36,7 +36,7 @@ export const DeleteModal: React.FunctionComponent<DeleteModalProps> = (props) =>
 
     return (
         <React.Fragment>
-            <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ props.isOpen }
+            <Modal variant={ ModalVariant.small } isOpen={ props.isOpen }
                 onClose={ props.onClose }
                 title={ `Permanently delete ${ props.eventTypeName }` }>
                 { <b>{ props.eventTypeName }</b> } {`from  ${ props.applicationName }/${ props.bundleName ? props.bundleName :

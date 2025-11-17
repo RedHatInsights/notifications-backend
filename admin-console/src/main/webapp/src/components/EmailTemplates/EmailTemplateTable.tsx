@@ -1,7 +1,7 @@
 import { Button, PageSection, Spinner, Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { EyeIcon, PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import {
-    TableComposable,
+    Table,
     Tbody,
     Td,  Th,   Thead,
     Tr } from '@patternfly/react-table';
@@ -64,7 +64,7 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
                 <Title headingLevel="h3">
                     Email Templates
                 </Title>
-                <TableComposable aria-label="Email Template table">
+                <Table aria-label="Email Template table">
                     <Thead>
                         <Toolbar>
                             <ToolbarContent>
@@ -104,7 +104,7 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
                             </Tr>
                         ))}
                     </Tbody>
-                </TableComposable>
+                </Table>
             </PageSection>
         </React.Fragment>
 

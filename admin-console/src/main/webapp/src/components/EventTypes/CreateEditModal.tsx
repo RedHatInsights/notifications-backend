@@ -20,7 +20,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
 
     const [ eventType, setEventType ] = React.useState<Partial<EventType>>(props.initialEventType ?? {});
 
-    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>) => {
+    const handleChange = (event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>, _value: string) => {
         const target = event.target as HTMLInputElement;
         setEventType(prev => ({ ...prev, [target.name]: target.value }));
     };
@@ -41,10 +41,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                 isOpen={ props.showModal }
                 onClose={ props.onClose }
             ><Form isHorizontal>
-                    <FormGroup label='Name' fieldId='name' isRequired
-                        helperText={ props.isEdit ? <HelperText><HelperTextItem variant="warning" hasIcon>
-                                                    If this field is modified it may affect exisiting behavior.
-                        </HelperTextItem></HelperText> : 'This is a short name, only composed of a-z 0-9 and - characters.' }>
+                    <FormGroup label='Name' fieldId='name' isRequired>
                         <TextInput
                             type='text'
                             value={ eventType.name }
@@ -52,16 +49,24 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                             id='name'
                             name="name"
                         />
+                        { props.isEdit ? (
+                            <HelperText>
+                                <HelperTextItem variant="warning">
+                                    If this field is modified it may affect exisiting behavior.
+                                </HelperTextItem>
+                            </HelperText>
+                        ) : (
+                            <HelperText>
+                                <HelperTextItem>
+                                    This is a short name, only composed of a-z 0-9 and - characters.
+                                </HelperTextItem>
+                            </HelperText>
+                        )}
                     </FormGroup>
                     <FormGroup
                         label='Event type name'
                         fieldId='fullyQualifiedName'
-                        isRequired
-                        helperText={ props.isEdit ? <HelperText>
-                            <HelperTextItem variant="warning" hasIcon>
-                                If this field is modified it may affect existing behavior.
-                            </HelperTextItem>
-                        </HelperText> : 'This is the fully qualified name for the event type. e.g. \'com.redhat.console.insights.policies.policy-triggered\'' }>
+                        isRequired>
                         <TextInput
                             type='text'
                             value={ eventType.fullyQualifiedName }
@@ -69,9 +74,21 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                             id='fullyQualifiedName'
                             name="fullyQualifiedName"
                         />
+                        { props.isEdit ? (
+                            <HelperText>
+                                <HelperTextItem variant="warning">
+                                    If this field is modified it may affect existing behavior.
+                                </HelperTextItem>
+                            </HelperText>
+                        ) : (
+                            <HelperText>
+                                <HelperTextItem>
+                                    This is the fully qualified name for the event type. e.g. &apos;com.redhat.console.insights.policies.policy-triggered&apos;
+                                </HelperTextItem>
+                            </HelperText>
+                        )}
                     </FormGroup>
-                    <FormGroup label='Display name' fieldId='display-name' isRequired
-                        helperText='This is the name you want to display on the UI'>
+                    <FormGroup label='Display name' fieldId='display-name' isRequired>
                         <TextInput
                             type='text'
                             value={ eventType.displayName }
@@ -79,10 +96,13 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                             id='display-name'
                             name="displayName"
                         />
+                        <HelperText>
+                            <HelperTextItem>
+                                This is the name you want to display on the UI
+                            </HelperTextItem>
+                        </HelperText>
                     </FormGroup>
-                    <FormGroup label='Description' fieldId='description'
-                        helperText='Optional short description that appears in the UI
-                                                to help admin decide how to notify users.'>
+                    <FormGroup label='Description' fieldId='description'>
                         <TextArea
                             type='text'
                             value={ eventType.description }
@@ -90,33 +110,50 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = (p
                             id='description'
                             name="description"
                         />
+                        <HelperText>
+                            <HelperTextItem>
+                                Optional short description that appears in the UI to help admin decide how to notify users.
+                            </HelperTextItem>
+                        </HelperText>
                     </FormGroup>
-                    <FormGroup label='Subscribed by default?' fieldId='subscribedByDefault'
-                        helperText='Should users be subscribed by default?'>
+                    <FormGroup label='Subscribed by default?' fieldId='subscribedByDefault'>
                         <Checkbox
                             id='subscribedByDefault'
                             name='subscribedByDefault'
                             isChecked={ eventType.subscribedByDefault }
-                            onChange={ (isChecked) => setEventType(prev => ({...prev, subscribedByDefault: isChecked})) }
+                            onChange={ (_event, isChecked) => setEventType(prev => ({...prev, subscribedByDefault: isChecked})) }
                         />
+                        <HelperText>
+                            <HelperTextItem>
+                                Should users be subscribed by default?
+                            </HelperTextItem>
+                        </HelperText>
                     </FormGroup>
-                    <FormGroup label='Subscription locked?' fieldId='subscriptionLocked'
-                        helperText='Should the subscription be locked, preventing the users from unsubscribing?'>
+                    <FormGroup label='Subscription locked?' fieldId='subscriptionLocked'>
                         <Checkbox
                             id='subscriptionLocked'
                             name='subscriptionLocked'
                             isChecked={ eventType.subscriptionLocked }
-                            onChange={ (isChecked) => setEventType(prev => ({...prev, subscriptionLocked: isChecked})) }
+                            onChange={ (_event, isChecked) => setEventType(prev => ({...prev, subscriptionLocked: isChecked})) }
                         />
+                        <HelperText>
+                            <HelperTextItem>
+                                Should the subscription be locked, preventing the users from unsubscribing?
+                            </HelperTextItem>
+                        </HelperText>
                     </FormGroup>
-                    <FormGroup label='Is visible?' fieldId='visible'
-                        helperText='Should the event type be visible in the public UI?'>
+                    <FormGroup label='Is visible?' fieldId='visible'>
                         <Checkbox
                             id='visible'
                             name='visible'
                             isChecked={ eventType.visible }
-                            onChange={ (isChecked) => setEventType(prev => ({...prev, visible: isChecked})) }
+                            onChange={ (_event, isChecked) => setEventType(prev => ({...prev, visible: isChecked})) }
                         />
+                        <HelperText>
+                            <HelperTextItem>
+                                Should the event type be visible in the public UI?
+                            </HelperTextItem>
+                        </HelperText>
                     </FormGroup>
                     <ActionGroup>
                         <Button variant='primary' type='submit'

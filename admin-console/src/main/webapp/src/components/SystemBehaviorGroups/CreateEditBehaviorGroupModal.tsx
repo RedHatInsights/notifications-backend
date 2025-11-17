@@ -1,6 +1,8 @@
 import { ActionGroup, Button, Form, FormGroup,
     FormSelect,
     FormSelectOption,
+    HelperText,
+    HelperTextItem,
     Modal, ModalVariant, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
@@ -27,8 +29,8 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
         <FormSelectOption key='email-admin' label='Send an email to Users: Admins' value='email-admin' />
     ];
 
-    const handleChange = (value: string, event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>
-        | React.FormEvent<HTMLSelectElement>) => {
+    const handleChange = (event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement>
+        | React.FormEvent<HTMLSelectElement>, _value: string) => {
         const target = event.target as HTMLInputElement | HTMLSelectElement;
         setSystemBehaviorGroup(prev => ({ ...prev, [target.name]: target.value }));
     };
@@ -49,15 +51,20 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
                 isOpen={ props.showModal }
                 onClose={ props.onClose }
             ><Form isHorizontal>
-                    <FormGroup label='Group Name' fieldId='displayName' isRequired
-                        helperText='Enter a name for your group'>
+                    <FormGroup label='Group Name' fieldId='displayName' isRequired>
                         <TextInput
                             type='text'
                             value={ systemBehaviorGroup.displayName }
                             onChange={ handleChange }
                             id='displayName'
                             name="displayName"
-                        /></FormGroup>
+                        />
+                        <HelperText>
+                            <HelperTextItem>
+                                Enter a name for your group
+                            </HelperTextItem>
+                        </HelperText>
+                    </FormGroup>
                     <FormGroup label='Action' fieldId='actions' isRequired>
                         <FormSelect
                             id='actions'

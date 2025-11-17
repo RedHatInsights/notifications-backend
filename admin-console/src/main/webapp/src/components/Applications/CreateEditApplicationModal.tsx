@@ -34,8 +34,8 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
     });
 
     const handleChange = (
-        value: string,
-        event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement> | React.FormEvent<HTMLSelectElement>) => {
+        event: React.FormEvent<HTMLInputElement> | React.FormEvent<HTMLTextAreaElement> | React.FormEvent<HTMLSelectElement>,
+        _value: string) => {
         const target = event.target as HTMLInputElement;
         setApplication(prev => ({ ...prev, [target.name]: target.value }));
     };
@@ -61,30 +61,45 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
                 isOpen={ props.showModal }
                 onClose={ props.onClose }
             ><Form isHorizontal>
-                    <FormGroup label='Name' fieldId='name' isRequired
-                        helperText={ props.isEdit ? <HelperText><HelperTextItem variant="warning" hasIcon>
-                                                    If this field is modified it may affect exisiting behavior.
-                        </HelperTextItem></HelperText> : 'This is a short name, only composed of a-z 0-9 and - characters.' }>
+                    <FormGroup label='Name' fieldId='name' isRequired>
                         <TextInput
                             type='text'
                             value={ application.name }
                             onChange={ handleChange }
                             id='name'
                             name="name"
-                        /></FormGroup>
-                    <FormGroup label='Display name' fieldId='display-name' isRequired
-                        helperText='This is the name you want to display on the UI'>
+                        />
+                        { props.isEdit ? (
+                            <HelperText>
+                                <HelperTextItem variant="warning">
+                                    If this field is modified it may affect exisiting behavior.
+                                </HelperTextItem>
+                            </HelperText>
+                        ) : (
+                            <HelperText>
+                                <HelperTextItem>
+                                    This is a short name, only composed of a-z 0-9 and - characters.
+                                </HelperTextItem>
+                            </HelperText>
+                        )}
+                    </FormGroup>
+                    <FormGroup label='Display name' fieldId='display-name' isRequired>
                         <TextInput
                             type='text'
                             value={ application.displayName }
                             onChange={ handleChange }
                             id='display-name'
                             name="displayName"
-                        /></FormGroup>
+                        />
+                        <HelperText>
+                            <HelperTextItem>
+                                This is the name you want to display on the UI
+                            </HelperTextItem>
+                        </HelperText>
+                    </FormGroup>
                     { !props.isEdit && <FormGroup
                         fieldId="role-name"
                         label="Role admin"
-                        helperText="Rover group of users who will manage the application"
                     >
                         { permissions.isAdmin ? (
                             <TextInput
@@ -105,6 +120,11 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
                                 { permissions.roles.map(r => <FormSelectOption key={ r } label={ r } value={ r } />) }
                             </FormSelect>
                         )}
+                        <HelperText>
+                            <HelperTextItem>
+                                Rover group of users who will manage the application
+                            </HelperTextItem>
+                        </HelperText>
                     </FormGroup>
                     }
                     <ActionGroup>

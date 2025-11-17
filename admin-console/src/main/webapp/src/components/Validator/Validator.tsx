@@ -9,7 +9,6 @@ import {
     Title
 } from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons';
-import { global_palette_green_400 } from '@patternfly/react-tokens';
 import * as React from 'react';
 
 const defaultPayload = JSON.stringify({}, null, 2);
@@ -66,8 +65,8 @@ export const Validator: React.FunctionComponent<ValidatorProps> = ({validate}) =
     }, [ validate, message ]);
 
     const validatePayloadButton = <CodeEditorControl
-        icon={ <CheckCircleIcon color={ global_palette_green_400.value } /> }
-        toolTipText="Validates the message"
+        icon={ <CheckCircleIcon color="var(--pf-t--global--icon--color--status--success--default)" /> }
+        aria-label="Validates the message"
         onClick={ runValidation }
     />;
 

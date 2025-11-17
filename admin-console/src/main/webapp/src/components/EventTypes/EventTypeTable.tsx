@@ -9,7 +9,7 @@ import {
     ToolbarItem
 } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon, CheckCircleIcon, TimesIcon } from '@patternfly/react-icons';
-import { ExpandableRowContent, OnCollapse, TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ExpandableRowContent, OnCollapse, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import produce from 'immer';
 import * as React from 'react';
 import { useEffect } from 'react';
@@ -60,7 +60,7 @@ const EventTypeTableLayout: React.FunctionComponent<EventTypeTableLayoutProps> =
                 </ToolbarItem>
             </ToolbarContent>
         </Toolbar>
-        <TableComposable aria-label="Event types table">
+        <Table aria-label="Event types table">
             <Thead>
                 <Th />
                 <Th>Event Type</Th>
@@ -74,7 +74,7 @@ const EventTypeTableLayout: React.FunctionComponent<EventTypeTableLayoutProps> =
             <Tbody>
                 { props.children }
             </Tbody>
-        </TableComposable>
+        </Table>
     </>;
 };
 

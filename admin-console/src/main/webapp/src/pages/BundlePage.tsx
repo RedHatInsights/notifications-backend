@@ -3,7 +3,7 @@ import {
     Title, Toolbar, ToolbarContent, ToolbarItem
 } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
-import { TableComposable, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
 
@@ -129,7 +129,7 @@ export const BundlePage: React.FunctionComponent = () => {
                 <Title headingLevel='h3'>
                     Applications
                 </Title>
-                <TableComposable aria-label="Applications table">
+                <Table aria-label="Applications table">
                     <Thead>
                         <Toolbar>
                             <ToolbarContent>
@@ -194,7 +194,7 @@ export const BundlePage: React.FunctionComponent = () => {
                             </Tr>
                         )}
                     </Tbody>
-                </TableComposable>
+                </Table>
             </PageSection>
             <BehaviorGroupsTable
                 bundleId={ bundleId! }
