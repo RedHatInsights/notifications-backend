@@ -1,4 +1,4 @@
-import { ActionGroup, Button, Modal, ModalVariant } from '@patternfly/react-core';
+import { Button, Modal, ModalBody, ModalFooter, ModalHeader, ModalVariant } from '@patternfly/react-core';
 import React from 'react';
 
 import { Template } from '../../types/Notifications';
@@ -25,16 +25,16 @@ export const DeleteTemplateModal: React.FunctionComponent<DeleteTemplateModalPro
     return (
         <React.Fragment>
             <Modal variant={ ModalVariant.small } isOpen={ props.isOpen }
-                onClose={ props.onClose }
-                title={ `Permanently delete ${ props.templateName }` }>
-                { <b>{ props.templateName }</b> } {' template will be deleted.'}
-                <br />
-                <br />
-                <ActionGroup>
+                onClose={ props.onClose }>
+                <ModalHeader title={ `Permanently delete ${ props.templateName }` } />
+                <ModalBody>
+                    { <b>{ props.templateName }</b> } {' template will be deleted.'}
+                </ModalBody>
+                <ModalFooter>
                     <Button variant='danger' type='button'
                         onClick={ onDelete }>Delete</Button>
                     <Button variant='link' type='button' onClick={ props.onClose }>Cancel</Button>
-                </ActionGroup>
+                </ModalFooter>
             </Modal>
         </React.Fragment>
     );

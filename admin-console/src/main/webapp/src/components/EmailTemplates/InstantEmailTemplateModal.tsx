@@ -1,11 +1,13 @@
 import {
-    ActionGroup,
     Button,
     Form,
     FormGroup,
     FormSelect,
     FormSelectOption,
     Modal,
+    ModalBody,
+    ModalFooter,
+    ModalHeader,
     ModalVariant
 } from '@patternfly/react-core';
 import React from 'react';
@@ -55,42 +57,44 @@ export const InstantTemplateModal: React.FunctionComponent<InstantTemplateModalP
             <Modal
                 isOpen={ props.showModal }
                 variant={ ModalVariant.medium }
-                title={ `${ props.isEdit ? 'Update' : 'Select'} your instant email templates` }
                 onClose={ props.onClose }
             >
-                <Form isHorizontal>
-                    <FormGroup label='Subject template' fieldId='subject-template'>
-                        <FormSelect
-                            id="subject-template"
-                            name="subjectTemplateId"
-                            aria-label="Subject template"
-                            onChange={ handleChange }
-                            isRequired
-                            value={ instantTemplate.subjectTemplateId }
-                        >
-                            { templateOption }
-                        </FormSelect>
-                    </FormGroup>
-                    <FormGroup label='Body template' fieldId='body-template'>
-                        <FormSelect
-                            id="body-template"
-                            name="bodyTemplateId"
-                            aria-label="Body template"
-                            onChange={ handleChange }
-                            isRequired
-                            value={ instantTemplate.bodyTemplateId }
-                        >
-                            { templateOption }
-                        </FormSelect>
-                    </FormGroup>
-                    <ActionGroup>
-                        <Button variant='primary' type='submit'
-                            onClick={ onSubmitLocal }
-                        >{ props.isEdit ? 'Update' : 'Submit' }</Button>
-                        <Button variant='link' type='reset'
-                            onClick={ props.onClose }>Cancel</Button>
-                    </ActionGroup>
-                </Form>
+                <ModalHeader title={ `${ props.isEdit ? 'Update' : 'Select'} your instant email templates` } />
+                <ModalBody>
+                    <Form isHorizontal>
+                        <FormGroup label='Subject template' fieldId='subject-template'>
+                            <FormSelect
+                                id="subject-template"
+                                name="subjectTemplateId"
+                                aria-label="Subject template"
+                                onChange={ handleChange }
+                                isRequired
+                                value={ instantTemplate.subjectTemplateId }
+                            >
+                                { templateOption }
+                            </FormSelect>
+                        </FormGroup>
+                        <FormGroup label='Body template' fieldId='body-template'>
+                            <FormSelect
+                                id="body-template"
+                                name="bodyTemplateId"
+                                aria-label="Body template"
+                                onChange={ handleChange }
+                                isRequired
+                                value={ instantTemplate.bodyTemplateId }
+                            >
+                                { templateOption }
+                            </FormSelect>
+                        </FormGroup>
+                    </Form>
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant='primary' type='submit'
+                        onClick={ onSubmitLocal }
+                    >{ props.isEdit ? 'Update' : 'Submit' }</Button>
+                    <Button variant='link' type='reset'
+                        onClick={ props.onClose }>Cancel</Button>
+                </ModalFooter>
             </Modal>
         </React.Fragment>
     );

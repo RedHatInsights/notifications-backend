@@ -1,4 +1,4 @@
-import { ActionGroup, Button, Modal, ModalVariant, Spinner, TextInput } from '@patternfly/react-core';
+import { Button, Modal, ModalBody, ModalFooter, ModalHeader, ModalVariant, Spinner, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
 import { EventType } from '../../types/Notifications';
@@ -37,23 +37,23 @@ export const DeleteModal: React.FunctionComponent<DeleteModalProps> = (props) =>
     return (
         <React.Fragment>
             <Modal variant={ ModalVariant.small } isOpen={ props.isOpen }
-                onClose={ props.onClose }
-                title={ `Permanently delete ${ props.eventTypeName }` }>
-                { <b>{ props.eventTypeName }</b> } {`from  ${ props.applicationName }/${ props.bundleName ? props.bundleName :
-                    <Spinner /> } will be deleted. 
-                        If an application is currently sending this event, it will no longer be processed.`}
-                <br />
-                <br />
-                        Type <b>{ props.eventTypeName }</b> to confirm:
-                <br />
-                <TextInput type='text' onChange={ handleDeleteChange } id='name' name="name" isRequired />
-                <br />
-                <br />
-                <ActionGroup>
+                onClose={ props.onClose }>
+                <ModalHeader title={ `Permanently delete ${ props.eventTypeName }` } />
+                <ModalBody>
+                    { <b>{ props.eventTypeName }</b> } {`from  ${ props.applicationName }/${ props.bundleName ? props.bundleName :
+                        <Spinner /> } will be deleted.
+                            If an application is currently sending this event, it will no longer be processed.`}
+                    <br />
+                    <br />
+                            Type <b>{ props.eventTypeName }</b> to confirm:
+                    <br />
+                    <TextInput type='text' onChange={ handleDeleteChange } id='name' name="name" isRequired />
+                </ModalBody>
+                <ModalFooter>
                     <Button variant='danger' type='button' isDisabled = { errors }
                         onClick={ onDelete }>Delete</Button>
                     <Button variant='link' type='button' onClick={ props.onClose }>Cancel</Button>
-                </ActionGroup>
+                </ModalFooter>
             </Modal>
         </React.Fragment>
     );

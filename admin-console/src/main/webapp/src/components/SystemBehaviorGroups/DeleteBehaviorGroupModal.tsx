@@ -1,4 +1,4 @@
-import { ActionGroup, Button, Modal, ModalVariant, Spinner, TextInput } from '@patternfly/react-core';
+import { Button, Modal, ModalBody, ModalFooter, ModalHeader, ModalVariant, Spinner, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
 import { BehaviorGroup } from '../../types/Notifications';
@@ -36,23 +36,23 @@ export const DeleteBehaviorGroupModal: React.FunctionComponent<DeleteBehaviorGro
     return (
         <React.Fragment>
             <Modal variant={ ModalVariant.small } isOpen={ props.isOpen }
-                onClose={ props.onClose }
-                title={ `Permanently delete ${ props.systemBehaviorGroupName }` }>
-                { <b>{ props.systemBehaviorGroupName }</b> } from { props.bundleName ? props.bundleName :
-                    <Spinner /> } will be deleted. You will no longer be able to assign this system behavior
-                    group to event types and any associated event types will stop using this behavior group.
-                <br />
-                <br />
-                        Type <b>{ props.systemBehaviorGroupName }</b> to confirm:
-                <br />
-                <TextInput type='text' onChange={ handleDeleteChange } id='name' name="name" isRequired />
-                <br />
-                <br />
-                <ActionGroup>
+                onClose={ props.onClose }>
+                <ModalHeader title={ `Permanently delete ${ props.systemBehaviorGroupName }` } />
+                <ModalBody>
+                    { <b>{ props.systemBehaviorGroupName }</b> } from { props.bundleName ? props.bundleName :
+                        <Spinner /> } will be deleted. You will no longer be able to assign this system behavior
+                        group to event types and any associated event types will stop using this behavior group.
+                    <br />
+                    <br />
+                            Type <b>{ props.systemBehaviorGroupName }</b> to confirm:
+                    <br />
+                    <TextInput type='text' onChange={ handleDeleteChange } id='name' name="name" isRequired />
+                </ModalBody>
+                <ModalFooter>
                     <Button variant='danger' type='button' isDisabled = { errors }
                         onClick={ onDelete }>Delete</Button>
                     <Button variant='link' type='button' onClick={ props.onClose }>Cancel</Button>
-                </ActionGroup>
+                </ModalFooter>
             </Modal>
         </React.Fragment>
     );

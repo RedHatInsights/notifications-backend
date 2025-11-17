@@ -58,17 +58,17 @@ export const App: React.FunctionComponent<unknown> = () => {
     const permissionQuery = usePermissions();
 
     const appHeader = <Masthead>
-        <MastheadToggle>
-            <Button
-                variant="plain"
-                onClick={ onNavToggle }
-                aria-label="Global navigation"
-                aria-expanded={ isNavOpen }
-            >
-                <BarsIcon />
-            </Button>
-        </MastheadToggle>
         <MastheadMain>
+            <MastheadToggle>
+                <Button
+                    variant="plain"
+                    onClick={ onNavToggle }
+                    aria-label="Global navigation"
+                    aria-expanded={ isNavOpen }
+                >
+                    <BarsIcon />
+                </Button>
+            </MastheadToggle>
             <MastheadBrand href="/internal">
                 <Brand className={ brandClassName } src={ logo } alt="Red Hat" />
             </MastheadBrand>
@@ -109,7 +109,7 @@ export const App: React.FunctionComponent<unknown> = () => {
         );
     }
 
-    const appSidebar = <PageSidebar>
+    const appSidebar = <PageSidebar isSidebarOpen={ isNavOpen }>
         <Navigation bundles={ bundles.bundles } />
     </PageSidebar>;
 

@@ -1,5 +1,4 @@
 import {
-    ActionGroup,
     Button,
     Form,
     FormGroup,
@@ -7,6 +6,9 @@ import {
     HelperText,
     HelperTextItem,
     Modal,
+    ModalBody,
+    ModalFooter,
+    ModalHeader,
     ModalVariant,
     TextInput
 } from '@patternfly/react-core';
@@ -57,84 +59,87 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
         <React.Fragment>
             <Modal
                 variant={ ModalVariant.medium }
-                title={ `${ props.isEdit ? `Update ${ props.applicationName }` : 'Create Application'} for ${ props.bundleName }` }
                 isOpen={ props.showModal }
                 onClose={ props.onClose }
-            ><Form isHorizontal>
-                    <FormGroup label='Name' fieldId='name' isRequired>
-                        <TextInput
-                            type='text'
-                            value={ application.name }
-                            onChange={ handleChange }
-                            id='name'
-                            name="name"
-                        />
-                        { props.isEdit ? (
-                            <HelperText>
-                                <HelperTextItem variant="warning">
-                                    If this field is modified it may affect exisiting behavior.
-                                </HelperTextItem>
-                            </HelperText>
-                        ) : (
-                            <HelperText>
-                                <HelperTextItem>
-                                    This is a short name, only composed of a-z 0-9 and - characters.
-                                </HelperTextItem>
-                            </HelperText>
-                        )}
-                    </FormGroup>
-                    <FormGroup label='Display name' fieldId='display-name' isRequired>
-                        <TextInput
-                            type='text'
-                            value={ application.displayName }
-                            onChange={ handleChange }
-                            id='display-name'
-                            name="displayName"
-                        />
-                        <HelperText>
-                            <HelperTextItem>
-                                This is the name you want to display on the UI
-                            </HelperTextItem>
-                        </HelperText>
-                    </FormGroup>
-                    { !props.isEdit && <FormGroup
-                        fieldId="role-name"
-                        label="Role admin"
-                    >
-                        { permissions.isAdmin ? (
+            >
+                <ModalHeader title={ `${ props.isEdit ? `Update ${ props.applicationName }` : 'Create Application'} for ${ props.bundleName }` } />
+                <ModalBody>
+                    <Form isHorizontal>
+                        <FormGroup label='Name' fieldId='name' isRequired>
                             <TextInput
                                 type='text'
+                                value={ application.name }
                                 onChange={ handleChange }
-                                value={ application.ownerRole }
-                                id='owner-role'
-                                name="ownerRole"
+                                id='name'
+                                name="name"
                             />
-                        ) : (
-                            <FormSelect
-                                isRequired
-                                value={ application.ownerRole }
+                            { props.isEdit ? (
+                                <HelperText>
+                                    <HelperTextItem variant="warning">
+                                        If this field is modified it may affect exisiting behavior.
+                                    </HelperTextItem>
+                                </HelperText>
+                            ) : (
+                                <HelperText>
+                                    <HelperTextItem>
+                                        This is a short name, only composed of a-z 0-9 and - characters.
+                                    </HelperTextItem>
+                                </HelperText>
+                            )}
+                        </FormGroup>
+                        <FormGroup label='Display name' fieldId='display-name' isRequired>
+                            <TextInput
+                                type='text'
+                                value={ application.displayName }
                                 onChange={ handleChange }
-                                id='owner-role'
-                                name="ownerRole"
-                            >
-                                { permissions.roles.map(r => <FormSelectOption key={ r } label={ r } value={ r } />) }
-                            </FormSelect>
-                        )}
-                        <HelperText>
-                            <HelperTextItem>
-                                Rover group of users who will manage the application
-                            </HelperTextItem>
-                        </HelperText>
-                    </FormGroup>
-                    }
-                    <ActionGroup>
-                        <Button variant='primary' type='submit'
-                            isLoading={ props.isLoading } isDisabled={ props.isLoading }
-                            onClick={ onSubmitLocal }>{ props.isEdit ? 'Update' : 'Submit' }</Button>
-                        <Button variant='link' type='reset'
-                            onClick={ props.onClose }>Cancel</Button>
-                    </ActionGroup>
-                </Form>
+                                id='display-name'
+                                name="displayName"
+                            />
+                            <HelperText>
+                                <HelperTextItem>
+                                    This is the name you want to display on the UI
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormGroup>
+                        { !props.isEdit && <FormGroup
+                            fieldId="role-name"
+                            label="Role admin"
+                        >
+                            { permissions.isAdmin ? (
+                                <TextInput
+                                    type='text'
+                                    onChange={ handleChange }
+                                    value={ application.ownerRole }
+                                    id='owner-role'
+                                    name="ownerRole"
+                                />
+                            ) : (
+                                <FormSelect
+                                    isRequired
+                                    value={ application.ownerRole }
+                                    onChange={ handleChange }
+                                    id='owner-role'
+                                    name="ownerRole"
+                                >
+                                    { permissions.roles.map(r => <FormSelectOption key={ r } label={ r } value={ r } />) }
+                                </FormSelect>
+                            )}
+                            <HelperText>
+                                <HelperTextItem>
+                                    Rover group of users who will manage the application
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormGroup>
+                        }
+                    </Form>
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant='primary' type='submit'
+                        isLoading={ props.isLoading } isDisabled={ props.isLoading }
+                        onClick={ onSubmitLocal }>{ props.isEdit ? 'Update' : 'Submit' }</Button>
+                    <Button variant='link' type='reset'
+                        onClick={ props.onClose }>Cancel</Button>
+                </ModalFooter>
             </Modal>
         </React.Fragment>
     );

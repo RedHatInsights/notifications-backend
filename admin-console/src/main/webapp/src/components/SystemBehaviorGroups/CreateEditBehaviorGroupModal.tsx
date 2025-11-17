@@ -1,9 +1,9 @@
-import { ActionGroup, Button, Form, FormGroup,
+import { Button, Form, FormGroup,
     FormSelect,
     FormSelectOption,
     HelperText,
     HelperTextItem,
-    Modal, ModalVariant, TextInput } from '@patternfly/react-core';
+    Modal, ModalBody, ModalFooter, ModalHeader, ModalVariant, TextInput } from '@patternfly/react-core';
 import React from 'react';
 
 import { BehaviorGroup } from '../../types/Notifications';
@@ -47,43 +47,46 @@ export const CreateEditBehaviorGroupModal: React.FunctionComponent<CreateEditMod
         <React.Fragment>
             <Modal
                 variant={ ModalVariant.medium }
-                title={ `${ props.isEdit ? 'Update' : 'Create'} your System Behavior Group` }
                 isOpen={ props.showModal }
                 onClose={ props.onClose }
-            ><Form isHorizontal>
-                    <FormGroup label='Group Name' fieldId='displayName' isRequired>
-                        <TextInput
-                            type='text'
-                            value={ systemBehaviorGroup.displayName }
-                            onChange={ handleChange }
-                            id='displayName'
-                            name="displayName"
-                        />
-                        <HelperText>
-                            <HelperTextItem>
-                                Enter a name for your group
-                            </HelperTextItem>
-                        </HelperText>
-                    </FormGroup>
-                    <FormGroup label='Action' fieldId='actions' isRequired>
-                        <FormSelect
-                            id='actions'
-                            name='actions'
-                            value={ systemBehaviorGroup.actions }
-                            open={ props.showModal }
-                            onChange={ handleChange }
-                        >
-                            { actionOption }
-                        </FormSelect>
-                    </FormGroup>
-                    <ActionGroup>
-                        <Button variant='primary' type='submit'
-                            isLoading={ props.isLoading } isDisabled={ props.isLoading }
-                            onClick={ onSubmitLocal }>{ props.isEdit ? 'Update' : 'Submit' }</Button>
-                        <Button variant='link' type='reset'
-                            onClick={ props.onClose }>Cancel</Button>
-                    </ActionGroup>
-                </Form>
+            >
+                <ModalHeader title={ `${ props.isEdit ? 'Update' : 'Create'} your System Behavior Group` } />
+                <ModalBody>
+                    <Form isHorizontal>
+                        <FormGroup label='Group Name' fieldId='displayName' isRequired>
+                            <TextInput
+                                type='text'
+                                value={ systemBehaviorGroup.displayName }
+                                onChange={ handleChange }
+                                id='displayName'
+                                name="displayName"
+                            />
+                            <HelperText>
+                                <HelperTextItem>
+                                    Enter a name for your group
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormGroup>
+                        <FormGroup label='Action' fieldId='actions' isRequired>
+                            <FormSelect
+                                id='actions'
+                                name='actions'
+                                value={ systemBehaviorGroup.actions }
+                                open={ props.showModal }
+                                onChange={ handleChange }
+                            >
+                                { actionOption }
+                            </FormSelect>
+                        </FormGroup>
+                    </Form>
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant='primary' type='submit'
+                        isLoading={ props.isLoading } isDisabled={ props.isLoading }
+                        onClick={ onSubmitLocal }>{ props.isEdit ? 'Update' : 'Submit' }</Button>
+                    <Button variant='link' type='reset'
+                        onClick={ props.onClose }>Cancel</Button>
+                </ModalFooter>
             </Modal>
         </React.Fragment>
     );
