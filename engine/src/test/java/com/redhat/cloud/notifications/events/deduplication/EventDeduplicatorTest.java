@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.junit.QuarkusTest;
+import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -36,9 +37,9 @@ class EventDeduplicatorTest {
     }
 
     @Test
-    void testIsNew() {
+    void testIsNewWithDefaultDeduplication() {
 
-        EventType eventType = createEventType();
+        EventType eventType = createEventType("test-bundle", "test-app");
 
         UUID eventId1 = UUID.randomUUID();
         Event event1 = new Event();
@@ -64,16 +65,99 @@ class EventDeduplicatorTest {
         assertFalse(eventDeduplicator.isNew(event3), "Duplicate event should return false");
     }
 
+    @Test
+    void testIsNewWithSubscriptionsDeduplication() {
+
+        EventType eventType = createEventType("subscription-services", "subscriptions");
+
+        Event event1 = createSubscriptionsEvent(
+            UUID.randomUUID(),
+            eventType,
+            LocalDateTime.of(2025, 11, 14, 10, 52),
+            "org123",
+            "prod456",
+            "metric789",
+            "billing001");
+
+        assertTrue(eventDeduplicator.isNew(event1), "New subscriptions event should return true");
+
+        Event event2 = createSubscriptionsEvent(
+            UUID.randomUUID(),
+            eventType,
+            LocalDateTime.of(2025, 11, 15, 14, 30), // Different day, same month.
+            "org123",
+            "prod456",
+            "metric789",
+            "billing001");
+
+        assertFalse(eventDeduplicator.isNew(event2), "Duplicate subscriptions event (same month) should return false");
+
+        Event event3 = createSubscriptionsEvent(
+            UUID.randomUUID(),
+            eventType,
+            LocalDateTime.of(2025, 11, 16, 9, 15), // Different day, still same month.
+            "org999",
+            "prod456",
+            "metric789",
+            "billing001");
+
+        assertTrue(eventDeduplicator.isNew(event3), "Event with different orgId should return true");
+
+        Event event4 = createSubscriptionsEvent(
+            UUID.randomUUID(),
+            eventType,
+            LocalDateTime.of(2025, 12, 1, 10, 0), // Different month.
+            "org123",
+            "prod456",
+            "metric789",
+            "billing001");
+
+        assertTrue(eventDeduplicator.isNew(event4), "Event with different month should return true");
+
+        Event event5 = createSubscriptionsEvent(
+            UUID.randomUUID(),
+            eventType,
+            LocalDateTime.of(2025, 11, 17, 11, 0),
+            "org123",
+            "prod999",
+            "metric789",
+            "billing001");
+
+        assertTrue(eventDeduplicator.isNew(event5), "Event with different productId should return true");
+
+        Event event6 = createSubscriptionsEvent(
+            UUID.randomUUID(),
+            eventType,
+            LocalDateTime.of(2025, 11, 18, 11, 0),
+            "org123",
+            "prod999",
+            "metric999",
+            "billing001");
+
+        assertTrue(eventDeduplicator.isNew(event6), "Event with different metricId should return true");
+
+        Event event7 = createSubscriptionsEvent(
+            UUID.randomUUID(),
+            eventType,
+            LocalDateTime.of(2025, 11, 19, 11, 0),
+            "org123",
+            "prod999",
+            "metric999",
+            "billing999");
+
+        assertTrue(eventDeduplicator.isNew(event7), "Event with different billingAccountId should return true");
+    }
+
     @Transactional
-    EventType createEventType() {
+    EventType createEventType(String bundleName, String appName) {
         Bundle bundle = new Bundle();
-        bundle.setName("test-bundle");
-        bundle.setDisplayName("test-bundle");
+        bundle.setName(bundleName);
+        bundle.setDisplayName(bundleName);
         entityManager.persist(bundle);
 
         Application app = new Application();
-        app.setName("test-app");
-        app.setDisplayName("test-app");
+        app.setName(appName);
+        app.setDisplayName(appName);
         app.setBundle(bundle);
         app.setBundleId(bundle.getId());
         entityManager.persist(app);
@@ -86,5 +170,22 @@ class EventDeduplicatorTest {
         entityManager.persist(eventType);
 
         return eventType;
+    }
+
+    private static Event createSubscriptionsEvent(UUID eventId, EventType eventType, LocalDateTime timestamp, String orgId, String productId, String metricId, String billingAccountId) {
+
+        JsonObject payload = new JsonObject();
+        payload.put("orgId", orgId);
+        payload.put("productId", productId);
+        payload.put("metricId", metricId);
+        payload.put("billingAccountId", billingAccountId);
+
+        Event event = new Event();
+        event.setId(eventId);
+        event.setEventType(eventType);
+        event.setEventWrapper(new EventWrapperAction(ActionBuilder.build(timestamp)));
+        event.setPayload(payload.encode());
+
+        return event;
     }
 }

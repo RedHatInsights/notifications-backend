@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -46,12 +47,12 @@ class SubscriptionsDeduplicationConfigTest {
         event.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         SubscriptionsDeduplicationConfig deduplicationConfig = new SubscriptionsDeduplicationConfig(event);
-        String deduplicationKey = deduplicationConfig.getDeduplicationKey();
+        Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey();
 
-        assertNotNull(deduplicationKey);
+        assertTrue(deduplicationKey.isPresent());
 
         // Parse the JSON key to verify it contains all expected fields
-        JsonObject deduplicationKeyJson = new JsonObject(deduplicationKey);
+        JsonObject deduplicationKeyJson = new JsonObject(deduplicationKey.get());
         assertEquals(orgId, deduplicationKeyJson.getString("orgId"));
         assertEquals(productId, deduplicationKeyJson.getString("productId"));
         assertEquals(metricId, deduplicationKeyJson.getString("metricId"));
@@ -73,7 +74,7 @@ class SubscriptionsDeduplicationConfigTest {
         event1.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         SubscriptionsDeduplicationConfig deduplicationConfig1 = new SubscriptionsDeduplicationConfig(event1);
-        String deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
+        Optional<String> deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
 
         JsonObject payload2 = new JsonObject();
         payload2.put("orgId", "org-2");
@@ -86,11 +87,11 @@ class SubscriptionsDeduplicationConfigTest {
         event2.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         SubscriptionsDeduplicationConfig deduplicationConfig2 = new SubscriptionsDeduplicationConfig(event2);
-        String deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
+        Optional<String> deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
 
-        assertNotNull(deduplicationKey1);
-        assertNotNull(deduplicationKey2);
-        assertNotEquals(deduplicationKey1, deduplicationKey2, "Different events should have different deduplication keys");
+        assertTrue(deduplicationKey1.isPresent());
+        assertTrue(deduplicationKey2.isPresent());
+        assertNotEquals(deduplicationKey1.get(), deduplicationKey2.get(), "Different events should have different deduplication keys");
     }
 
     @Test
@@ -112,7 +113,7 @@ class SubscriptionsDeduplicationConfigTest {
         event1.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         SubscriptionsDeduplicationConfig deduplicationConfig1 = new SubscriptionsDeduplicationConfig(event1);
-        String deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
+        Optional<String> deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
 
         JsonObject payload2 = new JsonObject();
         payload2.put("orgId", orgId);
@@ -125,9 +126,11 @@ class SubscriptionsDeduplicationConfigTest {
         event2.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         SubscriptionsDeduplicationConfig deduplicationConfig2 = new SubscriptionsDeduplicationConfig(event2);
-        String deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
+        Optional<String> deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
 
-        assertEquals(deduplicationKey1, deduplicationKey2, "Same event data should produce identical deduplication keys");
+        assertTrue(deduplicationKey1.isPresent());
+        assertTrue(deduplicationKey2.isPresent());
+        assertEquals(deduplicationKey1.get(), deduplicationKey2.get(), "Same event data should produce identical deduplication keys");
     }
 
     @Test
@@ -144,10 +147,13 @@ class SubscriptionsDeduplicationConfigTest {
         event.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
 
         SubscriptionsDeduplicationConfig deduplicationConfig = new SubscriptionsDeduplicationConfig(event);
-        String deduplicationKey = deduplicationConfig.getDeduplicationKey();
-        JsonObject deduplicationKeyJson = new JsonObject(deduplicationKey);
+        Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey();
 
+        assertTrue(deduplicationKey.isPresent());
+
+        JsonObject deduplicationKeyJson = new JsonObject(deduplicationKey.get());
         String month = deduplicationKeyJson.getString("month");
+
         assertNotNull(month);
         assertTrue(month.matches("\\d{4}-\\d{2}"), "Month should be in yyyy-MM format");
     }

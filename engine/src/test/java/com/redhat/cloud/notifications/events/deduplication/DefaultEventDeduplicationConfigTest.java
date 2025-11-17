@@ -3,26 +3,39 @@ package com.redhat.cloud.notifications.events.deduplication;
 import com.redhat.cloud.notifications.models.Event;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DefaultEventDeduplicationConfigTest {
 
     @Test
-    void testGetDeduplicationKey() {
+    void testGetDeduplicationKeyWithNullEventId() {
+
+        Event event = new Event();
+        // Event ID is null by default.
+
+        DefaultEventDeduplicationConfig deduplicationConfig = new DefaultEventDeduplicationConfig(event);
+        Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey();
+
+        assertTrue(deduplicationKey.isEmpty(), "The default deduplication key should be empty when event ID is null");
+    }
+
+    @Test
+    void testGetDeduplicationKeyWithNonNullEventId() {
 
         UUID eventId = UUID.randomUUID();
         Event event = new Event();
         event.setId(eventId);
 
         DefaultEventDeduplicationConfig deduplicationConfig = new DefaultEventDeduplicationConfig(event);
-        String deduplicationKey = deduplicationConfig.getDeduplicationKey();
+        Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey();
 
-        assertNotNull(deduplicationKey);
-        assertEquals(eventId.toString(), deduplicationKey);
+        assertTrue(deduplicationKey.isPresent());
+        assertEquals(eventId.toString(), deduplicationKey.get());
     }
 
     @Test
@@ -33,18 +46,18 @@ class DefaultEventDeduplicationConfigTest {
         event1.setId(eventId1);
 
         DefaultEventDeduplicationConfig deduplicationConfig1 = new DefaultEventDeduplicationConfig(event1);
-        String deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
+        Optional<String> deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
 
         UUID eventId2 = UUID.randomUUID();
         Event event2 = new Event();
         event2.setId(eventId2);
 
         DefaultEventDeduplicationConfig deduplicationConfig2 = new DefaultEventDeduplicationConfig(event2);
-        String deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
+        Optional<String> deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
 
-        assertNotNull(deduplicationKey1);
-        assertNotNull(deduplicationKey2);
-        assertNotEquals(deduplicationKey1, deduplicationKey2, "Different events should have different deduplication keys");
+        assertTrue(deduplicationKey1.isPresent());
+        assertTrue(deduplicationKey2.isPresent());
+        assertNotEquals(deduplicationKey1.get(), deduplicationKey2.get(), "Different events should have different deduplication keys");
     }
 
     @Test
@@ -56,16 +69,16 @@ class DefaultEventDeduplicationConfigTest {
         event1.setId(eventId);
 
         DefaultEventDeduplicationConfig deduplicationConfig1 = new DefaultEventDeduplicationConfig(event1);
-        String deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
+        Optional<String> deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
 
         Event event2 = new Event();
         event2.setId(eventId);
 
         DefaultEventDeduplicationConfig deduplicationConfig2 = new DefaultEventDeduplicationConfig(event2);
-        String deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
+        Optional<String> deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
 
-        assertNotNull(deduplicationKey1);
-        assertNotNull(deduplicationKey2);
-        assertEquals(deduplicationKey1, deduplicationKey2, "Events with the same data should have the same deduplication key");
+        assertTrue(deduplicationKey1.isPresent());
+        assertTrue(deduplicationKey2.isPresent());
+        assertEquals(deduplicationKey1.get(), deduplicationKey2.get(), "Events with the same data should have the same deduplication key");
     }
 }

@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.TreeMap;
 
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -24,7 +25,7 @@ public class SubscriptionsDeduplicationConfig extends EventDeduplicationConfig {
     }
 
     @Override
-    public String getDeduplicationKey() {
+    public Optional<String> getDeduplicationKey() {
 
         JsonObject eventPayload = new JsonObject(event.getPayload());
 
@@ -37,6 +38,6 @@ public class SubscriptionsDeduplicationConfig extends EventDeduplicationConfig {
         deduplicationKey.put("billingAccountId", eventPayload.getString("billingAccountId"));
         deduplicationKey.put("month", event.getTimestamp().format(MONTH_FORMATTER));
 
-        return new JsonObject(deduplicationKey).encode();
+        return Optional.of(new JsonObject(deduplicationKey).encode());
     }
 }

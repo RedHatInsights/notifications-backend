@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.events.deduplication;
 import com.redhat.cloud.notifications.models.Event;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 public abstract class EventDeduplicationConfig {
 
@@ -14,5 +15,5 @@ public abstract class EventDeduplicationConfig {
 
     public abstract LocalDateTime getDeleteAfter();
 
-    public abstract String getDeduplicationKey();
+    public abstract Optional<String> getDeduplicationKey();
 }

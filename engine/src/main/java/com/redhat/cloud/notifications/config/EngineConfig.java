@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
+import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
 import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
@@ -338,9 +339,7 @@ public class EngineConfig {
 
     public boolean isEventDeduplicationEnabled(String orgId) {
         if (unleashEnabled) {
-            UnleashContext unleashContext = UnleashContext.builder()
-                .addProperty("orgId", orgId)
-                .build();
+            UnleashContext unleashContext = UnleashContextBuilder.buildUnleashContextWithOrgId(orgId);
             return unleash.isEnabled(toggleEventDeduplication, unleashContext, false);
         } else {
             return false;

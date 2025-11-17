@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.events.deduplication;
 import com.redhat.cloud.notifications.models.Event;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 public class DefaultEventDeduplicationConfig extends EventDeduplicationConfig {
 
@@ -18,7 +19,10 @@ public class DefaultEventDeduplicationConfig extends EventDeduplicationConfig {
     }
 
     @Override
-    public String getDeduplicationKey() {
-        return event.getId().toString();
+    public Optional<String> getDeduplicationKey() {
+        if (event.getId() != null) {
+            return Optional.of(event.getId().toString());
+        }
+        return Optional.empty();
     }
 }
