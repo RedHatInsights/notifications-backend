@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.cloudevent.transformers.CloudEventTransfor
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
+import com.redhat.cloud.notifications.events.deduplication.EventDeduplicator;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
@@ -52,6 +53,7 @@ public class EventConsumer {
     public static final String PROCESSING_BLACKLISTED_COUNTER_NAME = "input.processing.blacklisted";
     public static final String PROCESSING_EXCEPTION_COUNTER_NAME = "input.processing.exception";
     public static final String DUPLICATE_COUNTER_NAME = "input.duplicate";
+    public static final String DUPLICATE_EVENT_COUNTER_NAME = "input.duplicate.event";
     public static final String CONSUMED_TIMER_NAME = "input.consumed";
 
     static final String TAG_KEY_BUNDLE = "bundle";
@@ -79,6 +81,12 @@ public class EventConsumer {
 
     @Inject
     KafkaMessageDeduplicator kafkaMessageDeduplicator;
+
+    @Inject
+    EventDeduplicator eventDeduplicator;
+
+    @Inject
+    EngineConfig engineConfig;
 
     @Inject
     CloudEventTransformerFactory cloudEventTransformerFactory;
@@ -263,30 +271,52 @@ public class EventConsumer {
                 }
                 /*
                  * Step 5
-                 * The EventType was found. It's time to create an Event from the current message and persist it.
+                 * The EventType was found. It's time to create an Event from the current message.
                  */
                 Optional<String> sourceEnvironmentHeader = kafkaHeaders.get(SOURCE_ENVIRONMENT_HEADER);
                 Event event = new Event(eventType, payload, eventWrapperToProcess, sourceEnvironmentHeader);
-                event.setHasAuthorizationCriterion(null != recipientsAuthorizationCriterionExtractor.extract(event));
-                updateSeverity(event, eventType);
 
-                if (event.getId() == null) {
-                    // NOTIF-499 If there is no ID provided whatsoever we create one.
-                    event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));
-                }
-                eventRepository.create(event);
                 /*
                  * Step 6
-                 * The Event and the Action it contains are processed by all relevant endpoint processors.
+                 * Before we persist the event into the DB and process it, we need to check whether the event is
+                 * a duplicate using the custom event deduplication logic tenants might have implemented.
                  */
-                try {
-                    endpointProcessor.process(event);
-                } catch (Exception e) {
+                if (engineConfig.isEventDeduplicationEnabled(event.getOrgId()) && !eventDeduplicator.isNew(event)) {
+                    // The event is already known and should therefore be ignored.
+                    Log.debug("Duplicated event ignored");
+                    registry.counter(DUPLICATE_EVENT_COUNTER_NAME,
+                        TAG_KEY_BUNDLE, tags.getOrDefault(TAG_KEY_BUNDLE, ""),
+                        TAG_KEY_APPLICATION, tags.getOrDefault(TAG_KEY_APPLICATION, ""),
+                        TAG_KEY_EVENT_TYPE, tags.getOrDefault(TAG_KEY_EVENT_TYPE, ""))
+                        .increment();
+                } else {
+
                     /*
-                     * The Event processing failed.
+                     * Step 7
+                     * The event is not a duplicate. We can now persist it.
                      */
-                    processingErrorCounter.increment();
-                    throw e;
+                    event.setHasAuthorizationCriterion(null != recipientsAuthorizationCriterionExtractor.extract(event));
+                    updateSeverity(event, eventType);
+
+                    if (event.getId() == null) {
+                        // NOTIF-499 If there is no ID provided whatsoever we create one.
+                        event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));
+                    }
+                    eventRepository.create(event);
+
+                    /*
+                     * Step 8
+                     * The Event and the Action it contains are processed by all relevant endpoint processors.
+                     */
+                    try {
+                        endpointProcessor.process(event);
+                    } catch (Exception e) {
+                        /*
+                         * The Event processing failed.
+                         */
+                        processingErrorCounter.increment();
+                        throw e;
+                    }
                 }
             }
         } catch (Exception e) {
