@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires, no-undef
+// eslint-disable-next-line @typescript-eslint/no-require-imports, no-undef
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 // eslint-disable-next-line no-undef

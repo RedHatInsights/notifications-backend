@@ -86,12 +86,12 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = (pr
 
     const onClose = () => {
         setShowModal(false);
-        getBehaviorGroups.query;
+        getBehaviorGroups.query();
     };
 
     const onDeleteClose = () => {
         setShowDeleteModal(false);
-        getBehaviorGroups.query;
+        getBehaviorGroups.query();
     };
 
     if (getBehaviorGroups.loading) {
