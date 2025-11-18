@@ -1,0 +1,35 @@
+{#include email/Common/insightsEmailBodyV2}
+{#content-header-title}
+    Policies - Red Hat Enterprise Linux
+{/content-header-title}
+{#content-title}
+    Policies triggered
+{/content-title}
+{#content-title-right-part}
+    <a target="_blank" style="{title-right-part-link-style}" href="{environment.url}/insights/policies?{query_params}">{action.events.size()}</a>
+{/content-title-right-part}
+{#content-button-href}{environment.url}/insights/policies?{query_params}{/content-button-href}
+{#content-button-service-name}Policies{/content-button-service-name}
+{#content-body}
+    <p style="{body-section-p-style}">The <a target="_blank" style="{body-section-underline-link-style}" href="{environment.url}/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a> host triggered {action.events.size()} {#if action.events.size() is 1}policy{#else}policies{/if}.</p>
+
+    <table style="{body-section-table-style}">
+        <thead>
+        <tr>
+            <th style="{body-section-table-th-style}">Policy</th>
+        </tr>
+        </thead>
+        <tbody style="{body-section-table-tbody-style}">
+            {#if action.events.size() > 0}
+                {#each action.events}
+                <tr style="{body-section-table-tr-style}">
+                    <td style="{body-section-table-td-style}">
+                    <a style="{body-section-table-td-a-style}" href="{environment.url}/insights/policies/policy/{it.payload.policy_id}?{query_params}" target="_blank">{it.payload.policy_name}</a>
+                    </td>
+                </tr>
+                {/each}
+            {/if}
+        </tbody>
+    </table>
+{/content-body}
+{/include}

@@ -6,6 +6,8 @@ import helpers.PatchTestHelpers;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,9 +69,10 @@ public class TestPatchTemplate extends EmailTemplatesRendererHelper {
         assertEquals("Instant notification - New advisory - Patch - Red Hat Enterprise Linux", result);
     }
 
-    @Test
-    public void testNewAdvisoryEmailBody() {
-        String result = generateEmailBody(NEW_ADVISORY, ACTION);
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testNewAdvisoryEmailBody(boolean useBetaTemplate) {
+        String result = generateEmailBody(NEW_ADVISORY, ACTION, useBetaTemplate);
         assertTrue(result.contains("Red Hat Lightspeed has just released new Advisories for your organization"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
