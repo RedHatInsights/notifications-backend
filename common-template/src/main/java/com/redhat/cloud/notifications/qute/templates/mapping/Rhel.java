@@ -17,9 +17,6 @@ public class Rhel {
     public static final String COMPLIANCE_APP_NAME = "compliance";
     public static final String COMPLIANCE_FOLDER_NAME = "Compliance/";
 
-    public static final String IMAGE_BUILDER_APP_NAME = "image-builder";
-    public static final String IMAGE_BUILDER_FOLDER_NAME = "ImageBuilder/";
-
     public static final String INVENTORY_APP_NAME = "inventory";
     public static final String INVENTORY_FOLDER_NAME = "Inventory/";
 
@@ -83,9 +80,6 @@ public class Rhel {
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_REPORT_UPLOAD_FAILED), COMPLIANCE_FOLDER_NAME + "reportUploadFailedBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_REPORT_UPLOAD_FAILED), COMPLIANCE_FOLDER_NAME + "reportUploadFailedEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, null), COMPLIANCE_FOLDER_NAME + "dailyEmailBody.html"),
-
-        // Image builder
-        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, IMAGE_BUILDER_APP_NAME, null), IMAGE_BUILDER_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Inventory
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_NEW_SYSTEM_REGISTERED), INVENTORY_FOLDER_NAME + "newSystemRegisteredEmailBody.html"),
