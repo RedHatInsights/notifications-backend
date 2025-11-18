@@ -124,6 +124,8 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
         String result = generateEmailBody(EVENT_TYPE_VALIDATION_ERROR, action, useBetaTemplate);
         if (useBetaTemplate) {
             assertTrue(result.contains("Data in a payload from insights-client was unable to be processed in the inventory due to corrupted data, incorrect values, or another issue."));
+            // Overall severity icon in body
+            assertTrue(result.contains("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v2.png\" alt=\"IMPORTANT severity notification\""));
         } else {
             assertTrue(result.contains(InventoryTestHelpers.DISPLAY_NAME_1), "Body should contain host display name" + InventoryTestHelpers.DISPLAY_NAME_1);
             assertTrue(result.contains(InventoryTestHelpers.ERROR_MESSAGE_1), "Body should contain error message" + InventoryTestHelpers.ERROR_MESSAGE_1);

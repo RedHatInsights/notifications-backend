@@ -62,9 +62,14 @@
                                     <td>
                                         <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-bottom: 1pt solid #c7c7c7;">
                                             <tr>
-                                                <td style="font-size: 24px; font-weight: 500; padding-top: 16px; padding-bottom: 16px; padding-left: 22px;">
+                                                <td style="font-size: 24px; font-weight: 500; padding-top: 16px; padding-bottom: 16px; padding-left: 22px; width: 100%">
                                                     {#insert content-title}{/}
                                                 </td>
+                                                {#if action.severity.or('').severityBodyIcon??}
+                                                    <td style="text-align: right; padding-top: 16px; padding-bottom: 16px; padding-left: 22px; padding-right: {#if renderTitleRightPart.or(false)}0px{#else}22px{/if};" id="notif-severity-td">
+                                                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_{action.severity.or('').severityBodyIcon}_v2.png" alt="{action.severity} severity notification" height="25" style="display: block; border: none;" />
+                                                    </td>
+                                                {/if}
                                                 {#if renderTitleRightPart.or(false)}
                                                     <td style="text-align: right; padding-top: 16px; padding-bottom: 16px; padding-left: 22px; padding-right: 22px;">
                                                         <!--[if mso]>
