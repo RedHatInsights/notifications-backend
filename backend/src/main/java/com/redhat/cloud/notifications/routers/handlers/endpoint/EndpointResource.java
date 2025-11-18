@@ -286,7 +286,7 @@ public class EndpointResource extends EndpointResourceCommon {
         final Endpoint endpoint,
         final Set<UUID> eventTypes
     ) {
-        if (!isEndpointTypeAllowed()) {
+        if (!isEndpointTypeAllowed(endpoint.getType())) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
         String accountId = getAccountId(sec);
@@ -454,16 +454,14 @@ public class EndpointResource extends EndpointResourceCommon {
     @Transactional
     public Response deleteEndpoint(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
-        if (!isEndpointTypeAllowed()) {
+        EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
+        if (!isEndpointTypeAllowed(endpointType)) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
 
         // Clean up the secrets in Sources.
         final Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
 
-        if (endpoint == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
         endpointRepository.deleteEndpoint(orgId, id);
 
         if (this.backendConfig.isKesselInventoryEnabled(orgId)) {
@@ -511,11 +509,8 @@ public class EndpointResource extends EndpointResourceCommon {
     @Transactional
     public Response enableEndpoint(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
-
-        // Check it endpoint exists, if not it throw an NotFoundException
         EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
-
-        if (!isEndpointTypeAllowed()) {
+        if (!isEndpointTypeAllowed(endpointType)) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
 
@@ -534,11 +529,8 @@ public class EndpointResource extends EndpointResourceCommon {
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS, integrationPermissions = {IntegrationPermission.DISABLE})
     public Response disableEndpoint(@Context SecurityContext sec, @IntegrationId @PathParam("id") UUID id) {
         String orgId = getOrgId(sec);
-
-        // Check it endpoint exists, if not it throw an NotFoundException
-        endpointRepository.getEndpointTypeById(orgId, id);
-
-        if (!isEndpointTypeAllowed()) {
+        EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
+        if (!isEndpointTypeAllowed(endpointType)) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
         endpointRepository.disableEndpoint(orgId, id);
@@ -559,10 +551,8 @@ public class EndpointResource extends EndpointResourceCommon {
         @RequestBody(required = true) @NotNull @Valid   EndpointDTO endpointDTO
     ) {
         final Endpoint endpoint = this.endpointMapper.toEntity(endpointDTO);
-        if (endpoint == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-        if (!isEndpointTypeAllowed()) {
+
+        if (!isEndpointTypeAllowed(endpoint.getType())) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
         RhIdPrincipal principal = (RhIdPrincipal) securityContext.getUserPrincipal();
@@ -726,8 +716,8 @@ public class EndpointResource extends EndpointResourceCommon {
                 "verification will be removed soon. Please enable SSL/TLS verification to continue using this integration, or contact Red Hat Support for assistance.");
     }
 
-    private boolean isEndpointTypeAllowed() {
-        return !backendConfig.isEmailsOnlyModeEnabled();
+    private boolean isEndpointTypeAllowed(EndpointType endpointType) {
+        return !backendConfig.isEmailsOnlyModeEnabled() || EMAIL_SUBSCRIPTION.equals(endpointType);
     }
 
     @DELETE
