@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.events.deduplication;
 
 import com.redhat.cloud.notifications.models.Event;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
@@ -27,15 +28,19 @@ public class SubscriptionsDeduplicationConfig extends EventDeduplicationConfig {
     @Override
     public Optional<String> getDeduplicationKey() {
 
-        JsonObject eventPayload = new JsonObject(event.getPayload());
+        JsonObject context = new JsonObject(event.getPayload()).getJsonObject("context");
+        if (context == null) {
+            Log.debug("Deduplication key could not be built because of a missing context");
+            return Optional.empty();
+        }
 
         // TODO We could build a simpler String key with all field values concatenated. Check if the JSON data structure has a significant impact on the query performances.
         // Use TreeMap to ensure consistent alphabetical ordering of fields in the JSON output
         TreeMap<String, Object> deduplicationKey = new TreeMap<>();
-        deduplicationKey.put("orgId", eventPayload.getString("orgId"));
-        deduplicationKey.put("productId", eventPayload.getString("productId"));
-        deduplicationKey.put("metricId", eventPayload.getString("metricId"));
-        deduplicationKey.put("billingAccountId", eventPayload.getString("billingAccountId"));
+        deduplicationKey.put("orgId", event.getOrgId());
+        deduplicationKey.put("productId", context.getString("productId"));
+        deduplicationKey.put("metricId", context.getString("metricId"));
+        deduplicationKey.put("billingAccountId", context.getString("billingAccountId"));
         deduplicationKey.put("month", event.getTimestamp().format(MONTH_FORMATTER));
 
         return Optional.of(new JsonObject(deduplicationKey).encode());
