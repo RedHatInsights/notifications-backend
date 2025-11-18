@@ -2,6 +2,7 @@ package email;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.qute.templates.Severity;
 import helpers.ErrataTestHelpers;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
@@ -73,9 +74,14 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testNewSubscriptionSecurityUpdateErrataEmailBody(boolean useBetaTemplate) {
-        String result = generateEmailBody(NEW_SUBSCRIPTION_SECURITY_UPDATE_ERRATA, ACTION, useBetaTemplate);
+        Action criticalAction = ACTION;
+        criticalAction.setSeverity(Severity.CRITICAL.name());
+        String result = generateEmailBody(NEW_SUBSCRIPTION_SECURITY_UPDATE_ERRATA, criticalAction, useBetaTemplate);
         if (useBetaTemplate) {
             assertTrue(result.contains("There are 4 security updates available for your subscriptions."));
+            // Overall severity icon in body with correct padding
+            assertTrue(result.contains("padding-right: 0px;\" id=\"notif-severity-td\""));
+            assertTrue(result.contains("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v2.png\" alt=\"CRITICAL severity notification\""));
         } else {
             assertTrue(result.contains("There are 4 security updates affecting your subscriptions."));
         }
