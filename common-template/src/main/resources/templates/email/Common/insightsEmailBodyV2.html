@@ -6,7 +6,7 @@
 {@String body-section-table-th-style = "font-size: 12px; font-weight: 700; border-bottom-color: rgb(184, 187, 190); border-bottom-style: solid; border-bottom-width: 1px; text-align: left; padding-bottom: 10px; padding-left: 10px; padding-right: 10px; padding-top: 10px;"}
 {@String body-section-table-tbody-style = "font-size: 14px; font-weight: 400;"}
 {@String body-section-table-tr-style = "border-bottom-color: rgb(184, 187, 190); border-bottom-width: 1px; border-bottom-style: solid;"}
-{@String body-section-table-td-style = "padding-bottom: 10px; padding-left: 10px; padding-right: 10px; padding-top: 10px; border-bottom-color: rgb(184, 187, 190); border-bottom-width: 1px; border-bottom-style: solid;"}
+{@String body-section-table-td-style = "padding-bottom: 8px; padding-left: 10px; padding-right: 10px; padding-top: 8px; border-bottom-color: rgb(184, 187, 190); border-bottom-width: 1px; border-bottom-style: solid; line-height: 22px"}
 {@String body-section-table-td-a-style = "color: rgb(0, 102, 204); text-decoration-color: rgb(0, 102, 204); text-decoration-line: none; text-decoration: none;"}
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -44,8 +44,8 @@
                                 </tr>
                                 <tr>
                                     <td style="color: rgb(0, 0, 0); padding-bottom: 0; padding-top: 22px; text-align: center;">
-                                        <h2 style="font-size: 20px; font-weight: 500; line-height: 20px; margin-top: 0;">{#insert content-header-title}{/}</h2>
-                                        <h3 style="font-size: 14px; font-weight: 500; line-height: 14px; margin-bottom: 0;">(Org ID: {action.orgId})</h3>
+                                        <h2 style="font-size: 20px; font-weight: 500; line-height: 20px; margin-top: 0; margin-bottom: 10px">{#insert content-header-title}{/}</h2>
+                                        <h3 style="font-size: 14px; font-weight: 500; line-height: 14px; margin-bottom: 0; margin-top: 0;">(Org ID: {action.orgId})</h3>
                                     </td>
                                 </tr>
                             </table>
@@ -110,7 +110,7 @@
                                                             <tr>
                                                                 <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_left.png" alt="" height="37" style="display: block; border: none;" /></td>
                                                                 <td style="padding-right: 8px; font-size: 14px; font-weight: 400; color: #ffffff; vertical-align: middle; background-color: #0066cc;">
-                                                                    Go to `{#insert content-button-service-name}{/}`
+                                                                    Go to ‘{#insert content-button-service-name}{/}‘
                                                                 </td>
                                                                 <td style="vertical-align: middle; background-color: #0066cc;">
                                                                     <img src="https://console.redhat.com/apps/frontend-assets/email-assets/external-link.png" alt="" width="14" height="14" style="display: block; border: none;" />
@@ -126,7 +126,7 @@
                                                         <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; background-color: #0066cc; ">
                                                             <tr>
                                                                 <td style="padding-right: 8px; font-size: 14px; font-weight: 400; line-height: 21px; color: #ffffff; vertical-align: middle;">
-                                                                    Go to `{#insert content-button-service-name}{/}`
+                                                                    Go to ‘{#insert content-button-service-name}{/}‘
                                                                 </td>
                                                                 <td style="line-height: 21px; vertical-align: middle;">
                                                                     <img src="https://console.redhat.com/apps/frontend-assets/email-assets/external-link.png" alt="" width="14" height="14" style="display: block; border: none;" />
@@ -180,12 +180,12 @@
                         <td style="background-color: rgb(33, 36, 39); padding-bottom: 24px; padding-left: 20px; padding-right: 20px; padding-top: 24px">
                             <table border="0" align="center" cellpadding="0" cellspacing="0" width="100%">
                                 <tr>
-                                    <td style="color: rgb(255, 255, 255); font-family: arial; font-size: 14px; font-weight: 400; text-align: center;">
+                                    <td style="color: rgb(255, 255, 255); font-size: 14px; font-weight: 400; text-align: center;">
                                         {#if ignore_user_preferences??}
                                             This email was sent by Red Hat Hybrid Cloud Console, it is critical or requires action.<br/>
                                             Therefore, you are receiving this message regardless of your email preferences.
                                         {#else}
-                                            This email was sent by Red Hat Hybrid Cloud Console | <a href="{environment.url}/user-preferences/notifications/notifications?bundle={action.bundle.or("")}&app={action.application.or("")}" target="_blank" style="color: rgb(0, 102, 204); font-family: arial; font-size: 14px; font-weight: 400; text-align: center; text-decoration-color: rgb(0, 102, 204); text-decoration-line: none; text-decoration-style: solid;">Manage email preferences</a>
+                                            This email was sent by Red Hat Hybrid Cloud Console | <a href="{environment.url}/user-preferences/notifications/notifications?bundle={action.bundle.or("")}&app={action.application.or("")}" target="_blank" style="color: rgb(31, 167, 248); font-size: 14px; font-weight: 400; text-align: center; text-decoration-color: rgb(31, 167, 248); text-decoration-line: none; text-decoration-style: solid;">Manage email preferences</a>
                                         {/if}
                                     </td>
                                 </tr>
