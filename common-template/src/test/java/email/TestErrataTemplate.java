@@ -79,9 +79,9 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
         String result = generateEmailBody(NEW_SUBSCRIPTION_SECURITY_UPDATE_ERRATA, criticalAction, useBetaTemplate);
         if (useBetaTemplate) {
             assertTrue(result.contains("There are 4 security updates available for your subscriptions."));
-            // Overall severity icon in body with correct padding
-            assertTrue(result.contains("padding-right: 0px;\" id=\"notif-severity-td\""));
-            assertTrue(result.contains("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v2.png\" alt=\"CRITICAL severity notification\""));
+            // Overall severity icon in body with critical severity border
+            assertTrue(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
+            assertTrue(result.contains("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/severities/critical.png\" alt=\"CRITICAL severity notification\""));
         } else {
             assertTrue(result.contains("There are 4 security updates affecting your subscriptions."));
         }
