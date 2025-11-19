@@ -2,6 +2,8 @@
 {@String title-right-part-link-style = "color: rgb(255, 255, 255); text-decoration-line: none; text-decoration: none;"}
 {@String body-section-p-style = "margin-top: 0px; font-size: 16px; font-weight: 400;"}
 {@String body-section-underline-link-style = "text-decoration-line: underline !important; color: rgb(0, 102, 204); text-decoration-color: rgb(0, 102, 204);"}
+{@String body-section-table-default-border-style = "border-width: 0px;"}
+{@String body-section-table-critical-sev-border-style = "border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"}
 {@String body-section-table-style = "width: 100% !important; border-collapse: collapse !important;"}
 {@String body-section-table-th-style = "font-size: 12px; font-weight: 700; border-bottom-color: rgb(184, 187, 190); border-bottom-style: solid; border-bottom-width: 1px; text-align: left; padding-bottom: 10px; padding-left: 10px; padding-right: 10px; padding-top: 10px;"}
 {@String body-section-table-tbody-style = "font-size: 14px; font-weight: 400;"}
@@ -57,19 +59,20 @@
                     <tr>
                         <td style="padding: 0 16px 24px 16px;">
 
-                            <table cellspacing="0" cellpadding="0" border="0" width="100%" style="border-radius: 16px; overflow: hidden; background-attachment: scroll; background-clip: border-box; background-color: rgb(255, 255, 255); overflow-x: hidden; overflow-y: hidden">
+                            <table cellspacing="0" cellpadding="0" width="100%" style="{#if action.severity.or('') == 'CRITICAL'}{body-section-table-critical-sev-border-style}{#else}{body-section-table-default-border-style}{/if}
+                                    border-radius: 16px; overflow: hidden; background-attachment: scroll; background-clip: border-box; background-color: rgb(255, 255, 255); overflow-x: hidden; overflow-y: hidden">
                                 <tr>
                                     <td>
                                         <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-bottom: 1pt solid #c7c7c7;">
                                             <tr>
-                                                <td style="font-size: 24px; font-weight: 500; padding-top: 16px; padding-bottom: 16px; padding-left: 22px; width: 100%">
-                                                    {#insert content-title}{/}
-                                                </td>
                                                 {#if action.severity.or('').severityBodyIcon??}
-                                                    <td style="text-align: right; padding-top: 16px; padding-bottom: 16px; padding-left: 22px; padding-right: {#if renderTitleRightPart.or(false)}0px{#else}22px{/if};" id="notif-severity-td">
-                                                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_{action.severity.or('').severityBodyIcon}_v2.png" alt="{action.severity} severity notification" height="25" style="display: block; border: none;" />
+                                                    <td style="text-align: right; padding-top: 16px; padding-bottom: 16px; padding-left: 22px; padding-right: 0px;">
+                                                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/{action.severity.or('').severityBodyIcon}.png" alt="{action.severity} severity notification" height="25" style="display: block; border: none;" />
                                                     </td>
                                                 {/if}
+                                                <td style="font-size: 24px; font-weight: 500; padding-top: 16px; padding-bottom: 16px; padding-left: {#if action.severity.or('').severityBodyIcon??}16px{#else}22px{/if}; width: 100%;">
+                                                    {#insert content-title}{/}
+                                                </td>
                                                 {#if renderTitleRightPart.or(false)}
                                                     <td style="text-align: right; padding-top: 16px; padding-bottom: 16px; padding-left: 22px; padding-right: 22px;">
                                                         <!--[if mso]>
