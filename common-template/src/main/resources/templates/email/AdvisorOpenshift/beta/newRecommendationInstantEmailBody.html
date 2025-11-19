@@ -12,13 +12,13 @@
 {/content-title-right-part}
 
 {#content-body}
-<p style="{body-section-p-style}">The <a style="{body-section-underline-link-style}" target="_blank" href="{action.context.host_url}">{action.context.display_name}</a> has {action.events.size()} new {#if action.events.size() is 1}recommendation{#else}recommendations{/if}.</p>
+<p style="{body-section-p-style}">The <a style="{body-section-underline-link-style}" target="_blank" href="{action.context.host_url}"><b>{action.context.display_name}</b></a> has {action.events.size()} new {#if action.events.size() is 1}recommendation{#else}recommendations{/if}.</p>
 <table style="{body-section-table-style}">
     <thead>
     <tr>
-        <th style="{body-section-table-th-style} width: 60%">Recommendation</th>
-        <th style="{body-section-table-th-style} width: 20%">Total Risk</th>
-        <th style="{body-section-table-th-style} width: 20%">Added</th>
+        <th style="{body-section-table-th-style}">Recommendation</th>
+        <th style="{body-section-table-th-style}">Total Risk</th>
+        <th style="{body-section-table-th-style}">Added</th>
     </tr>
     </thead>
     <tbody style="{body-section-table-tbody-style}">

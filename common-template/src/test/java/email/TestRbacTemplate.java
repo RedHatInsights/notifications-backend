@@ -289,11 +289,12 @@ public class TestRbacTemplate extends EmailTemplatesRendererHelper {
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case RH_TAM_ACCESS_REQUESTED:
-                assertTrue(result.contains("New TAM Access Request"));
                 if (useBetaTemplate) {
+                    assertTrue(result.contains("New TAM access request"));
                     assertTrue(result.contains("A Red Hat technical account manager requested access to your account."));
                     assertTrue(result.contains("to review the request."));
                 } else {
+                    assertTrue(result.contains("New TAM Access Request"));
                     assertTrue(result.contains("A technical account manager requested to access your account."));
                     assertTrue(result.contains("Check the request in Red Hat Lightspeed"));
                 }

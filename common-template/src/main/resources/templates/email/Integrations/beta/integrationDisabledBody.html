@@ -8,14 +8,14 @@
 {#content-body}
     {#if action.context.error_type == "HTTP_4XX"}
         <p style="{body-section-p-style}">
-            Integration <a style="{body-section-underline-link-style}" href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank">{action.context.endpoint_name}</a> was disabled because the remote endpoint responded with an HTTP status code {action.context.status_code}.
+            Integration <a style="{body-section-underline-link-style}" href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank"><b>{action.context.endpoint_name}</b></a> was disabled because the remote endpoint responded with an HTTP status code {action.context.status_code}.
         </p>
         <p style="{body-section-p-style}">
             Please review the integration configuration from <a style="{body-section-underline-link-style}" href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank">Settings > Integrations</a> to troubleshoot and re-enable the integration.
         </p>
     {#else}
         <p style="{body-section-p-style}">
-            Integration <a style="{body-section-underline-link-style}" href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank">{action.context.endpoint_name}</a> was disabled because the connection couldn't be established with the remote endpoint, or it responded too many times with a server error (HTTP status code 5xx) after {action.context.errors_count} attempts.
+            Integration <a style="{body-section-underline-link-style}" href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank"><b>{action.context.endpoint_name}</b></a> was disabled because the connection couldn't be established with the remote endpoint, or it responded too many times with a server error (HTTP status code 5xx) after {action.context.errors_count} attempts.
         </p>
         <p style="{body-section-p-style}">
             The latest error was: {action.context.error_details}{#if action.context.error_type == "HTTP_5XX"} {action.context.status_code}{/if}.

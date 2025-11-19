@@ -10,12 +10,12 @@
     <a style="{title-right-part-link-style}" href="{environment.url}/insights/advisor/systems/{action.context.inventory_id}?{query_params}" target="_blank">{action.events.size()}</a>
 {/content-title-right-part}
 {#content-body}
-<p style="{body-section-p-style}">The <a style="{body-section-underline-link-style}" target="_blank" href="{environment.url}/insights/inventory/{action.context.inventory_id}">{action.context.display_name}</a> has {action.events.size()} resolved {#if action.events.size() is 1}recommendation{#else}recommendations{/if}.</p>
+<p style="{body-section-p-style}">The <a style="{body-section-underline-link-style}" target="_blank" href="{environment.url}/insights/inventory/{action.context.inventory_id}"><b>{action.context.display_name}</b></a> has {action.events.size()} resolved {#if action.events.size() is 1}recommendation{#else}recommendations{/if}.</p>
 <table style="{body-section-table-style}">
     <thead>
     <tr>
-        <th style="{body-section-table-th-style} width: 75%">Recommendation</th>
-        <th style="{body-section-table-th-style} width: 25%">Total Risk</th>
+        <th style="{body-section-table-th-style}">Recommendation</th>
+        <th style="{body-section-table-th-style}">Total Risk</th>
     </tr>
     </thead>
     <tbody style="{body-section-table-tbody-style}">

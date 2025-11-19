@@ -10,13 +10,13 @@
 <p style="{body-section-p-style}">
     {#switch global_vars.template_sub_type.or("")}
     {#case 'osd-trial-creation-template'}
-        Welcome to your OpenShift Dedicated trial! We are notifying you about your <a style="{body-section-underline-link-style}" href="https://cloud.redhat.com/openshift/details/s/{global_vars.subscription_id}#overview" target="_blank" title="{global_vars.cluster_display_name}">{global_vars.cluster_display_name} OpenShift Dedicated trial cluster</a>.
+        Welcome to your OpenShift Dedicated trial! We are notifying you about your <a style="{body-section-underline-link-style}" href="https://cloud.redhat.com/openshift/details/s/{global_vars.subscription_id}#overview" target="_blank" title="{global_vars.cluster_display_name}"><b>{global_vars.cluster_display_name}</b> OpenShift Dedicated trial cluster</a>.
     {#case 'osd-trial-reminder-template'}
-        We are notifying you about your <a style="{body-section-underline-link-style}" href="https://cloud.redhat.com/openshift/details/s/{global_vars.subscription_id}#overview" target="_blank" title="{global_vars.cluster_display_name}">{global_vars.cluster_display_name} OpenShift Dedicated trial cluster</a>.
+        We are notifying you about your <a style="{body-section-underline-link-style}" href="https://cloud.redhat.com/openshift/details/s/{global_vars.subscription_id}#overview" target="_blank" title="{global_vars.cluster_display_name}"><b>{global_vars.cluster_display_name}</b> OpenShift Dedicated trial cluster</a>.
     {#case 'osd-trial-deletion-template'}
         Thank you for trialing OpenShift Dedicated!
     {#case}
-        This notification is for your <a style="{body-section-underline-link-style}" href="https://cloud.redhat.com/openshift/details/s/{global_vars.subscription_id}#overview" target="_blank" title="{global_vars.cluster_display_name}">{global_vars.cluster_display_name} cluster</a>.
+        This notification is for your <a style="{body-section-underline-link-style}" href="https://cloud.redhat.com/openshift/details/s/{global_vars.subscription_id}#overview" target="_blank" title="{global_vars.cluster_display_name}"><b>{global_vars.cluster_display_name}</b> cluster</a>.
     {/switch}
 </p>
 <p style="{body-section-p-style}">

@@ -53,46 +53,46 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testUpgradeEmailTitle() {
-        Action action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", null, Optional.empty());
+        Action action = OcmTestHelpers.createOcmAction("Dummy cluster name", "OSDTrial", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager", null, Optional.empty());
         eventTypeDisplayName = "Cluster Update";
         String result = generateEmailSubject(CLUSTER_UPDATE, action);
-        assertEquals("Cluster Update - Awesome subject", result);
+        assertEquals("Cluster Update - Title provided by Cluster Manager", result);
 
         // Test with Critical severity level (OCM severity Critical)
         action.setSeverity(Severity.CRITICAL.name());
         String criticalResult = generateEmailSubject(CLUSTER_UPDATE, action);
-        assertEquals("[CRITICAL] Cluster Update - Awesome subject", criticalResult);
+        assertEquals("[CRITICAL] Cluster Update - Title provided by Cluster Manager", criticalResult);
 
         // Test with Important severity level (OCM severity Major)
         action.setSeverity(Severity.IMPORTANT.name());
         String majorResult = generateEmailSubject(CLUSTER_UPDATE, action);
-        assertEquals("[IMPORTANT] Cluster Update - Awesome subject", majorResult);
+        assertEquals("[IMPORTANT] Cluster Update - Title provided by Cluster Manager", majorResult);
 
         // Test with Moderate severity level (OCM severity Warning)
         action.setSeverity(Severity.MODERATE.name());
         String warningResult = generateEmailSubject(CLUSTER_UPDATE, action);
-        assertEquals("[MODERATE] Cluster Update - Awesome subject", warningResult);
+        assertEquals("[MODERATE] Cluster Update - Title provided by Cluster Manager", warningResult);
 
         // Test with Low severity level (OCM severity Info)
         action.setSeverity(Severity.LOW.name());
         String infoResult = generateEmailSubject(CLUSTER_UPDATE, action);
-        assertEquals("[LOW] Cluster Update - Awesome subject", infoResult);
+        assertEquals("[LOW] Cluster Update - Title provided by Cluster Manager", infoResult);
 
         // Test with None severity level (OCM severity Debug)
         action.setSeverity(Severity.NONE.name());
         String debugResult = generateEmailSubject(CLUSTER_UPDATE, action);
-        assertEquals("Cluster Update - Awesome subject", debugResult);
+        assertEquals("Cluster Update - Title provided by Cluster Manager", debugResult);
 
         // Test with Undefined severity level (should never be sent)
         action.setSeverity(Severity.UNDEFINED.name());
         String undefinedResult = generateEmailSubject(CLUSTER_UPDATE, action);
-        assertEquals("Cluster Update - Awesome subject", undefinedResult);
+        assertEquals("Cluster Update - Title provided by Cluster Manager", undefinedResult);
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testUpgradeScheduledInstantEmailBody(boolean useBetaTemplate) {
-        Action action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template")));
+        Action action = OcmTestHelpers.createOcmAction("Dummy cluster name", "OSDTrial", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template")));
         String result = generateEmailBody(CLUSTER_UPDATE, action, useBetaTemplate);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Upgrade scheduled"));
@@ -102,13 +102,13 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
         assertFalse(result.contains("Check these resources for more information"));
         assertTrue(result.contains("What should you do to minimize impact"));
 
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template", "doc_references", List.of("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview", "https://console.redhat.com/openshift"))));
+        action = OcmTestHelpers.createOcmAction("Dummy cluster name", "OSDTrial", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template", "doc_references", List.of("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview", "https://console.redhat.com/openshift"))));
         result = generateEmailBody(CLUSTER_UPDATE, action, useBetaTemplate);
         assertTrue(result.contains("Check these resources for more information"));
         assertTrue(result.contains("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview"));
         assertTrue(result.contains("https://console.redhat.com/openshift"));
 
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template-rosa-hcp")));
+        action = OcmTestHelpers.createOcmAction("Dummy cluster name", "OSDTrial", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager", "Upgrade scheduled", Optional.of(Map.of("template_sub_type", "upgrade-scheduled-template-rosa-hcp")));
         result = generateEmailBody(CLUSTER_UPDATE, action, useBetaTemplate);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Upgrade scheduled"));
@@ -120,10 +120,10 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testUpgradeEndedInstantEmailBody(boolean useBetaTemplate) {
-        Action action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> is ready to go", "Awesome subject", null, Optional.of(Map.of("template_sub_type", "upgrade-ended-template")));
+        Action action = OcmTestHelpers.createOcmAction("Dummy cluster name", "MOA", "<b>Dummy server name</b> is ready to go", "Title provided by Cluster Manager", null, Optional.of(Map.of("template_sub_type", "upgrade-ended-template")));
         String result = generateEmailBody(CLUSTER_UPDATE, action, useBetaTemplate);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertTrue(result.contains("Awesome subject"));
+        assertTrue(result.contains("Title provided by Cluster Manager"));
         assertTrue(result.contains(((Map<String, String>) action.getEvents().get(0).getPayload().getAdditionalProperties().get("global_vars")).get("log_description")));
         assertFalse(result.contains("What can you expect"));
         assertTrue(result.contains("Thank you for choosing Red Hat OpenShift Service on AWS."));
@@ -132,11 +132,11 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
         Map<String, Object> additionalMapParameters = new HashMap<>();
         additionalMapParameters.put("template_sub_type", "upgrade-ended-template");
         additionalMapParameters.put("doc_references", null);
-        action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> is ready to go", "Awesome subject", null, Optional.of(additionalMapParameters));
+        action = OcmTestHelpers.createOcmAction("Dummy cluster name", "MOA", "<b>Dummy server name</b> is ready to go", "Title provided by Cluster Manager", null, Optional.of(additionalMapParameters));
         result = generateEmailBody(CLUSTER_UPDATE, action, useBetaTemplate);
         assertFalse(result.contains("Check these resources for more information"));
 
-        action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> is ready to go", "Awesome subject", null, Optional.of(Map.of("template_sub_type", "osd-trial-deletion-template", "doc_references", List.of("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview", "https://console.redhat.com/openshift"))));
+        action = OcmTestHelpers.createOcmAction("Dummy cluster name", "MOA", "<b>Dummy server name</b> is ready to go", "Title provided by Cluster Manager", null, Optional.of(Map.of("template_sub_type", "osd-trial-deletion-template", "doc_references", List.of("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview", "https://console.redhat.com/openshift"))));
         result = generateEmailBody(CLUSTER_UPDATE, action, useBetaTemplate);
         assertTrue(result.contains("Check these resources for more information"));
         assertTrue(result.contains("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview"));
@@ -147,10 +147,10 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
     @ValueSource(booleans = {true, false})
     public void testApprovedAccessEmailBody(boolean useBetaTemplate) {
         // test generic template case
-        Action action = OcmTestHelpers.createOcmAction("Batcave", "MOA", "<b>Batmobile</b> need a revision", "Awesome subject", null, Optional.of(Map.of("template_sub_type", "ocm-approved-access-template")));
+        Action action = OcmTestHelpers.createOcmAction("Dummy cluster name", "MOA", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager", null, Optional.of(Map.of("template_sub_type", "ocm-approved-access-template")));
         String result = generateEmailBody(CLUSTER_CUSTOMER_SUPPORT, action, useBetaTemplate);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertTrue(result.contains("Awesome subject"));
+        assertTrue(result.contains("Title provided by Cluster Manager"));
         assertTrue(result.contains("This notification is for your"));
         assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
         assertFalse(result.contains("We are notifying you about your"));
@@ -167,10 +167,10 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
     @ValueSource(booleans = {true, false})
     public void testClusterLifecycleInstantEmailBody(boolean useBetaTemplate) {
         // test generic template case
-        Action action = OcmTestHelpers.createOcmAction("Batcave", "OSD", "<b>Batmobile</b> need a revision", "Awesome subject");
+        Action action = OcmTestHelpers.createOcmAction("Dummy cluster name", "OSD", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager");
         String result = generateEmailBody(CLUSTER_LIFECYCLE, action, useBetaTemplate);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertTrue(result.contains("Awesome subject"));
+        assertTrue(result.contains("Title provided by Cluster Manager"));
         assertTrue(result.contains("This notification is for your"));
         assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
         assertFalse(result.contains("We are notifying you about your"));
@@ -182,10 +182,10 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with osd trial
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject");
+        action = OcmTestHelpers.createOcmAction("Dummy cluster name", "OSDTrial", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager");
         result = generateEmailBody(CLUSTER_LIFECYCLE, action, useBetaTemplate);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertTrue(result.contains("Awesome subject"));
+        assertTrue(result.contains("Title provided by Cluster Manager"));
         assertTrue(result.contains("This notification is for your"));
         assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
         assertFalse(result.contains("We are notifying you about your"));
@@ -197,11 +197,11 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with trial_creation subtype
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Trial creation", Optional.of(Map.of("template_sub_type", "osd-trial-creation-template")));
+        action = OcmTestHelpers.createOcmAction("Dummy cluster name", "OSDTrial", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager", "Trial creation", Optional.of(Map.of("template_sub_type", "osd-trial-creation-template")));
         result = generateEmailBody(CLUSTER_LIFECYCLE, action, useBetaTemplate);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Trial creation"));
-        assertFalse(result.contains("Awesome subject"));
+        assertFalse(result.contains("Title provided by Cluster Manager"));
         assertFalse(result.contains("This notification is for your"));
         assertTrue(result.contains("Welcome to your OpenShift Dedicated"));
         assertTrue(result.contains("We are notifying you about your"));
@@ -213,11 +213,11 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with trial_reminder subtype
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Trial reminder", Optional.of(Map.of("template_sub_type", "osd-trial-reminder-template")));
+        action = OcmTestHelpers.createOcmAction("Dummy cluster name", "OSDTrial", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager", "Trial reminder", Optional.of(Map.of("template_sub_type", "osd-trial-reminder-template")));
         result = generateEmailBody(CLUSTER_LIFECYCLE, action, useBetaTemplate);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Trial reminder"));
-        assertFalse(result.contains("Awesome subject"));
+        assertFalse(result.contains("Title provided by Cluster Manager"));
         assertFalse(result.contains("This notification is for your"));
         assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
         assertTrue(result.contains("We are notifying you about your"));
@@ -229,11 +229,11 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with trial_delete subtype
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Trial delete", Optional.of(Map.of("template_sub_type", "osd-trial-deletion-template")));
+        action = OcmTestHelpers.createOcmAction("Dummy cluster name", "OSDTrial", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager", "Trial delete", Optional.of(Map.of("template_sub_type", "osd-trial-deletion-template")));
         result = generateEmailBody(CLUSTER_LIFECYCLE, action, useBetaTemplate);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("Trial delete"));
-        assertFalse(result.contains("Awesome subject"));
+        assertFalse(result.contains("Title provided by Cluster Manager"));
         assertFalse(result.contains("This notification is for your"));
         assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
         assertFalse(result.contains("We are notifying you about your"));
@@ -248,11 +248,11 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
         Map<String, Object> additionalMapParameters = new HashMap<>();
         additionalMapParameters.put("template_sub_type", "osd-trial-deletion-template");
         additionalMapParameters.put("doc_references", null);
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Trial delete", Optional.of(additionalMapParameters));
+        action = OcmTestHelpers.createOcmAction("Dummy cluster name", "OSDTrial", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager", "Trial delete", Optional.of(additionalMapParameters));
         result = generateEmailBody(CLUSTER_LIFECYCLE, action, useBetaTemplate);
         assertFalse(result.contains("Check these resources for more information"));
 
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject", "Trial delete", Optional.of(Map.of("template_sub_type", "osd-trial-deletion-template", "doc_references", List.of("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview", "https://console.redhat.com/openshift"))));
+        action = OcmTestHelpers.createOcmAction("Dummy cluster name", "OSDTrial", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager", "Trial delete", Optional.of(Map.of("template_sub_type", "osd-trial-deletion-template", "doc_references", List.of("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview", "https://console.redhat.com/openshift"))));
         result = generateEmailBody(CLUSTER_LIFECYCLE, action, useBetaTemplate);
         assertTrue(result.contains("Check these resources for more information"));
         assertTrue(result.contains("https://docs.redhat.com/en/documentation/red_hat_openshift_service_on_aws_classic_architecture/4/html/red_hat_openshift_cluster_manager/ocm-overview"));
@@ -268,10 +268,10 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
 
     public void testIdenticalInstantEmailBody(String eventType, boolean useBetaTemplate) {
         // test generic template case
-        Action action = OcmTestHelpers.createOcmAction("Batcave", "OSD", "<b>Batmobile</b> need a revision", "Awesome subject");
+        Action action = OcmTestHelpers.createOcmAction("Dummy cluster name", "OSD", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager");
         String result = generateEmailBody(eventType, action, useBetaTemplate);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertTrue(result.contains("Awesome subject"));
+        assertTrue(result.contains("Title provided by Cluster Manager"));
         assertTrue(result.contains("This notification is for your"));
         assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
         assertFalse(result.contains("We are notifying you about your"));
@@ -283,10 +283,10 @@ public class TestOcmTemplate extends EmailTemplatesRendererHelper {
         assertFalse(result.contains("about OpenShift Dedicated, and create a new cluster at any time"));
 
         // test generic template case with osd trial
-        action = OcmTestHelpers.createOcmAction("Batcave", "OSDTrial", "<b>Batmobile</b> need a revision", "Awesome subject");
+        action = OcmTestHelpers.createOcmAction("Dummy cluster name", "OSDTrial", "<b>Dummy server name</b> need a revision", "Title provided by Cluster Manager");
         result = generateEmailBody(eventType, action, useBetaTemplate);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-        assertTrue(result.contains("Awesome subject"));
+        assertTrue(result.contains("Title provided by Cluster Manager"));
         assertTrue(result.contains("This notification is for your"));
         assertFalse(result.contains("Welcome to your OpenShift Dedicated"));
         assertFalse(result.contains("We are notifying you about your"));

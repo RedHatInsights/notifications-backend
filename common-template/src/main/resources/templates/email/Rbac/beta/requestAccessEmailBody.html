@@ -12,15 +12,15 @@
     <p style="{body-section-p-style}">
         <strong>User's Request:</strong>
         <div style="background-color: #ededed;">
-            URL Path: <a target="blank" style="{body-section-underline-link-style}" href="{action.events[0].payload.url_path}">{action.events[0].payload.url_path}</a><br/>
-            Username: <a style="{body-section-underline-link-style}" href="{environment.url}/iam/user-access/users/detail/{action.events[0].payload.username}">{action.events[0].payload.username}</a><br/>
-            Email Address: <a style="{body-section-underline-link-style}" href="mailto:{action.events[0].payload.user.email}">{action.events[0].payload.user.email}</a><br/>
+            URL Path: <a target="blank" style="{body-section-underline-link-style}" href="{action.events[0].payload.url_path}"><b>{action.events[0].payload.url_path}</b></a><br/>
+            Username: <a style="{body-section-underline-link-style}" href="{environment.url}/iam/user-access/users/detail/{action.events[0].payload.username}"><b>{action.events[0].payload.username}</b></a><br/>
+            Email Address: <a style="{body-section-underline-link-style}" href="mailto:{action.events[0].payload.user.email}"><b>{action.events[0].payload.user.email}</b></a><br/>
             Message from User: "{action.events[0].payload.user.request}"<br/>
         </div>
         <br/>
         <strong>Action Required:</strong>
         <ul>
-            <li><strong>Granting Access:</strong> To grant access, please log in to the console and add the user to the appropriate <a target="blank" style="{body-section-underline-link-style}" href="{environment.url}/iam/user-access/groups">User Access</a> Groups.</li>
+            <li><strong>Granting Access:</strong> To grant access, please log in to the console and add the user to the appropriate <a target="blank" style="{body-section-underline-link-style}" href="{environment.url}/iam/user-access/groups"><b>User Access</b></a> Groups.</li>
             <li><strong>Denying Access:</strong> To deny access, contact the user directly to explain the reason for the denial and offer alternative solutions if available.</li>
         </ul>
     </p>

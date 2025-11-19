@@ -7,7 +7,7 @@
 {/content-title}
 {#content-body}
     <p style="{body-section-p-style}">
-        <a style="{body-section-underline-link-style}" href="{environment.url}/iam/user-access/users/detail/{action.events[0].payload.username}">{action.events[0].payload.username}</a> deleted the <b>{action.events[0].payload.name}</b> custom role.
+        <a style="{body-section-underline-link-style}" href="{environment.url}/iam/user-access/users/detail/{action.events[0].payload.username}"><b>{action.events[0].payload.username}</b></a> deleted the <b>{action.events[0].payload.name}</b> custom role.
     </p>
 {/content-body}
 {#content-button-href}{environment.url}/iam/user-access/overview?{query_params}{/content-button-href}
