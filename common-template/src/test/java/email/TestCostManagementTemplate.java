@@ -91,7 +91,7 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
     @ValueSource(booleans = {true, false})
     public void testInstantCostModelUpdateEmailBody(boolean useBetaTemplate) {
         String result = generateEmailBody(COST_MODEL_UPDATE, ACTION, useBetaTemplate);
-        if(useBetaTemplate) {
+        if (useBetaTemplate) {
             assertTrue(result.contains("Cost model <b>Sample model</b> has been updated"));
         } else {
             assertTrue(result.contains("Cost model Sample model has been updated"));
