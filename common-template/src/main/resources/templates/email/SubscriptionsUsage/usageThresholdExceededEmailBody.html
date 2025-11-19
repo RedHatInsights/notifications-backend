@@ -10,7 +10,7 @@
 {/content-title-section1}
 {#content-body-section1}
     <p>
-        Product variant: <b>{action.events[0].context.product_id}</b>
+        Product variant: <b>{action.context.product_id}</b>
     </p>
     <p>
         Organization: <b>{action.orgId}</b>
@@ -33,7 +33,7 @@
         </thead>
         <tbody>
             <tr style="font-size: 14px;">
-                <td>{action.events[0].context.metric_id}</td>
+                <td>{action.context.metric_id}</td>
                 <td>{action.events[0].payload.utilization_percentage}%</td>
             </tr>
         </tbody>
