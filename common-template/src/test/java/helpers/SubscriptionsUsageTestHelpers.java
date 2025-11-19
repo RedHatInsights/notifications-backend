@@ -25,9 +25,8 @@ public class SubscriptionsUsageTestHelpers {
                         .withMetadata(new Metadata.MetadataBuilder().build())
                         .withPayload(
                                 new Payload.PayloadBuilder()
-                                        .withAdditionalProperty("product_tag", "RHEL for x86")
-                                        .withAdditionalProperty("threshold_percentage", "85")
-                                        .withAdditionalProperty("metric", "sockets")
+                                        .withAdditionalProperty("product_id", "RHEL for x86")
+                                        .withAdditionalProperty("metric_id", "sockets")
                                         .withAdditionalProperty("utilization_percentage", "105")
                                         .build()
                         )

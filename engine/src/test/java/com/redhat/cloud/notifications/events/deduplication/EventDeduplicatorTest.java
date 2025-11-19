@@ -175,9 +175,9 @@ class EventDeduplicatorTest {
     private static Event createSubscriptionsEvent(UUID eventId, String orgId, EventType eventType, LocalDateTime timestamp, String productId, String metricId, String billingAccountId) {
 
         JsonObject context = new JsonObject();
-        context.put("productId", productId);
-        context.put("metricId", metricId);
-        context.put("billingAccountId", billingAccountId);
+        context.put("product_id", productId);
+        context.put("metric_id", metricId);
+        context.put("billing_account_id", billingAccountId);
 
         Event event = new Event();
         event.setId(eventId);
