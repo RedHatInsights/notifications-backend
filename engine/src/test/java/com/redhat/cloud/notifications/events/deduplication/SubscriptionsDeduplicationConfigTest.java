@@ -36,16 +36,7 @@ class SubscriptionsDeduplicationConfigTest {
         String metricId = "metric-789";
         String billingAccountId = "billing-abc";
 
-        JsonObject context = new JsonObject();
-        context.put("productId", productId);
-        context.put("metricId", metricId);
-        context.put("billingAccountId", billingAccountId);
-
-        Event event = new Event();
-        event.setOrgId(orgId);
-        event.setPayload(JsonObject.of("context", context).encode());
-        event.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
-
+        Event event = givenSubscriptionEvent(orgId, productId, metricId, billingAccountId);
         SubscriptionsDeduplicationConfig deduplicationConfig = new SubscriptionsDeduplicationConfig(event);
         Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey();
 
@@ -63,29 +54,11 @@ class SubscriptionsDeduplicationConfigTest {
     @Test
     void testGetDeduplicationKeyDifferentEventsInSameMonth() {
 
-        JsonObject context1 = new JsonObject();
-        context1.put("productId", "product-1");
-        context1.put("metricId", "metric-1");
-        context1.put("billingAccountId", "billing-1");
-
-        Event event1 = new Event();
-        event1.setOrgId("org-1");
-        event1.setPayload(JsonObject.of("context", context1).encode());
-        event1.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
-
+        Event event1 = givenSubscriptionEvent("org-1", "product-1", "metric-1", "billing-1");
         SubscriptionsDeduplicationConfig deduplicationConfig1 = new SubscriptionsDeduplicationConfig(event1);
         Optional<String> deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
 
-        JsonObject context2 = new JsonObject();
-        context2.put("productId", "product-2");
-        context2.put("metricId", "metric-2");
-        context2.put("billingAccountId", "billing-2");
-
-        Event event2 = new Event();
-        event2.setOrgId("org-2");
-        event2.setPayload(JsonObject.of("context", context2).encode());
-        event2.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
-
+        Event event2 = givenSubscriptionEvent("org-2", "product-2", "metric-2", "billing-2");
         SubscriptionsDeduplicationConfig deduplicationConfig2 = new SubscriptionsDeduplicationConfig(event2);
         Optional<String> deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
 
@@ -102,29 +75,11 @@ class SubscriptionsDeduplicationConfigTest {
         String metricId = "metric-456";
         String billingAccountId = "billing-789";
 
-        JsonObject context1 = new JsonObject();
-        context1.put("productId", productId);
-        context1.put("metricId", metricId);
-        context1.put("billingAccountId", billingAccountId);
-
-        Event event1 = new Event();
-        event1.setOrgId(orgId);
-        event1.setPayload(JsonObject.of("context", context1).encode());
-        event1.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
-
+        Event event1 = givenSubscriptionEvent(orgId, productId, metricId, billingAccountId);
         SubscriptionsDeduplicationConfig deduplicationConfig1 = new SubscriptionsDeduplicationConfig(event1);
         Optional<String> deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
 
-        JsonObject context2 = new JsonObject();
-        context2.put("productId", productId);
-        context2.put("metricId", metricId);
-        context2.put("billingAccountId", billingAccountId);
-
-        Event event2 = new Event();
-        event2.setOrgId(orgId);
-        event2.setPayload(JsonObject.of("context", context2).encode());
-        event2.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
-
+        Event event2 = givenSubscriptionEvent(orgId, productId, metricId, billingAccountId);
         SubscriptionsDeduplicationConfig deduplicationConfig2 = new SubscriptionsDeduplicationConfig(event2);
         Optional<String> deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
 
@@ -136,16 +91,7 @@ class SubscriptionsDeduplicationConfigTest {
     @Test
     void testGetDeduplicationKeyIncludesCurrentMonth() {
 
-        JsonObject context = new JsonObject();
-        context.put("productId", "product");
-        context.put("metricId", "metric");
-        context.put("billingAccountId", "billing");
-
-        Event event = new Event();
-        event.setOrgId("org");
-        event.setPayload(JsonObject.of("context", context).encode());
-        event.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
-
+        Event event = givenSubscriptionEvent("org", "product", "metric", "billing");
         SubscriptionsDeduplicationConfig deduplicationConfig = new SubscriptionsDeduplicationConfig(event);
         Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey();
 
@@ -156,5 +102,18 @@ class SubscriptionsDeduplicationConfigTest {
 
         assertNotNull(month);
         assertTrue(month.matches("\\d{4}-\\d{2}"), "Month should be in yyyy-MM format");
+    }
+
+    private Event givenSubscriptionEvent(String orgId, String productId, String metricId, String billingAccountId) {
+        JsonObject context = new JsonObject();
+        context.put("product_id", productId);
+        context.put("metric_id", metricId);
+        context.put("billing_account_id", billingAccountId);
+
+        Event event = new Event();
+        event.setOrgId(orgId);
+        event.setPayload(JsonObject.of("context", context).encode());
+        event.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
+        return event;
     }
 }
