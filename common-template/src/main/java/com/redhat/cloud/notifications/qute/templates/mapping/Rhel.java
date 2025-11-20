@@ -76,6 +76,7 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_NEW_RECOMMENDATION, true), ADVISOR_FOLDER_NAME + "beta/newRecommendationInstantEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_RESOLVED_RECOMMENDATION, true), ADVISOR_FOLDER_NAME + "beta/resolvedRecommendationInstantEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, null), ADVISOR_FOLDER_NAME + "dailyEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, null, true), ADVISOR_FOLDER_NAME + "beta/dailyEmailBody.html"),
 
         // Compliance
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_COMPLIANCE_BELOW_THRESHOLD), COMPLIANCE_FOLDER_NAME + "belowThresholdBody.md"),
@@ -85,6 +86,7 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_REPORT_UPLOAD_FAILED), COMPLIANCE_FOLDER_NAME + "reportUploadFailedEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_REPORT_UPLOAD_FAILED, true), COMPLIANCE_FOLDER_NAME + "beta/reportUploadFailedEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, null), COMPLIANCE_FOLDER_NAME + "dailyEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, null, true), COMPLIANCE_FOLDER_NAME + "beta/dailyEmailBody.html"),
 
         // Inventory
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_NEW_SYSTEM_REGISTERED), INVENTORY_FOLDER_NAME + "newSystemRegisteredEmailBody.html"),
@@ -97,6 +99,7 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_VALIDATION_ERROR), INVENTORY_FOLDER_NAME + "validationErrorEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_VALIDATION_ERROR, true), INVENTORY_FOLDER_NAME + "beta/validationErrorEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, null), INVENTORY_FOLDER_NAME + "dailyEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, null, true), INVENTORY_FOLDER_NAME + "beta/dailyEmailBody.html"),
 
         // Malware detection
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, MALWARE_APP_NAME, MALWARE_DETECTED_MALWARE), MALWARE_FOLDER_NAME + "detectedMalwareBody.md"),
@@ -109,6 +112,7 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, PATCH_APP_NAME, PATCH_NEW_ADVISORY, true), PATCH_FOLDER_NAME + "beta/newAdvisoriesInstantEmailBody.html"),
 
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, PATCH_APP_NAME, null), PATCH_FOLDER_NAME + "dailyEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, PATCH_APP_NAME, null, true), PATCH_FOLDER_NAME + "beta/dailyEmailBody.html"),
 
         // Policies
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, POLICIES_APP_NAME, POLICIES_POLICY_TRIGGERED), POLICY_FOLDER_NAME + "policyTriggeredBody.md"),
@@ -116,9 +120,11 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, POLICIES_APP_NAME, POLICIES_POLICY_TRIGGERED, true), POLICY_FOLDER_NAME + "beta/instantEmailBody.html"),
 
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, POLICIES_APP_NAME, null), POLICY_FOLDER_NAME + "dailyEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, POLICIES_APP_NAME, null, true), POLICY_FOLDER_NAME + "beta/dailyEmailBody.html"),
 
         // Resource optimization
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, RESOURCE_OPTIMIZATION_APP_NAME, null), RESOURCE_OPTIMIZATION_FOLDER_NAME + "dailyEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, RESOURCE_OPTIMIZATION_APP_NAME, null, true), RESOURCE_OPTIMIZATION_FOLDER_NAME + "beta/dailyEmailBody.html"),
 
         // Task
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, TASK_APP_NAME, TASK_EXECUTED_TASK_COMPLETED), TASK_FOLDER_NAME + "executedTaskCompletedEmailBody.html"),
@@ -139,6 +145,7 @@ public class Rhel {
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_SECURITY_RULE), VULNERABILITY_FOLDER_NAME + "newCveSecurityRuleBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_SECURITY_RULE), VULNERABILITY_FOLDER_NAME + "newCveSecurityRuleEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_SECURITY_RULE, true), VULNERABILITY_FOLDER_NAME + "beta/newCveSecurityRuleEmailBody.html"),
-        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, null), VULNERABILITY_FOLDER_NAME + "dailyEmailBody.html")
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, null), VULNERABILITY_FOLDER_NAME + "dailyEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, null, true), VULNERABILITY_FOLDER_NAME + "beta/dailyEmailBody.html")
     );
 }

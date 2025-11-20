@@ -1,0 +1,13 @@
+{@boolean renderSection1=true}
+{#include email/Common/insightsEmailBodyLightV2}
+{#content-title-section1}
+    Compliance below threshold
+{/content-title-section1}
+{#content-body-section1}
+    <p style="{body-section-p-style}">
+    Red Hat Lightspeed has identified one or more systems that have reported with a compliance level below your specified threshold or have not reported at all. Please review the <a style="{body-section-underline-link-style}" href="{environment.url}/insights/compliance/reports">Red Hat Lightspeed Compliance service</a> to further assess and determine next steps.
+    </p>
+{/content-body-section1}
+{#content-button-href}{environment.url}/insights/compliance/reports?{query_params}{/content-button-href}
+{#content-button-service-name}Reports - Compliance{/content-button-service-name}
+{/include}
