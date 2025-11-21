@@ -200,9 +200,9 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
             if (null != bundle) {
                 bundleApplicationEventType = bundle;
                 if (null != application) {
-                    bundleApplicationEventType = bundleApplicationEventType + "#" + application;
+                    bundleApplicationEventType += "#" + application;
                     if (null != eventType) {
-                        bundleApplicationEventType = bundleApplicationEventType + "#" + eventType;
+                        bundleApplicationEventType += "#" + eventType;
                     }
                 }
             }
