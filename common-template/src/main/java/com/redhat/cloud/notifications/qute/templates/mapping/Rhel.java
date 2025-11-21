@@ -72,30 +72,36 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_DEACTIVATED_RECOMMENDATION), ADVISOR_FOLDER_NAME + "deactivatedRecommendationInstantEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_NEW_RECOMMENDATION), ADVISOR_FOLDER_NAME + "newRecommendationInstantEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_RESOLVED_RECOMMENDATION), ADVISOR_FOLDER_NAME + "resolvedRecommendationInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_DEACTIVATED_RECOMMENDATION, true), ADVISOR_FOLDER_NAME + "beta/deactivatedRecommendationInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_NEW_RECOMMENDATION, true), ADVISOR_FOLDER_NAME + "beta/newRecommendationInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_RESOLVED_RECOMMENDATION, true), ADVISOR_FOLDER_NAME + "beta/resolvedRecommendationInstantEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, null), ADVISOR_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Compliance
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_COMPLIANCE_BELOW_THRESHOLD), COMPLIANCE_FOLDER_NAME + "belowThresholdBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_COMPLIANCE_BELOW_THRESHOLD), COMPLIANCE_FOLDER_NAME + "complianceBelowThresholdEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_COMPLIANCE_BELOW_THRESHOLD, true), COMPLIANCE_FOLDER_NAME + "beta/complianceBelowThresholdEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_REPORT_UPLOAD_FAILED), COMPLIANCE_FOLDER_NAME + "reportUploadFailedBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_REPORT_UPLOAD_FAILED), COMPLIANCE_FOLDER_NAME + "reportUploadFailedEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, COMPLIANCE_REPORT_UPLOAD_FAILED, true), COMPLIANCE_FOLDER_NAME + "beta/reportUploadFailedEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, null), COMPLIANCE_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Inventory
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_NEW_SYSTEM_REGISTERED), INVENTORY_FOLDER_NAME + "newSystemRegisteredEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_NEW_SYSTEM_REGISTERED, true), INVENTORY_FOLDER_NAME + "beta/newSystemRegisteredEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_SYSTEM_BECAME_STALE), INVENTORY_FOLDER_NAME + "systemBecameStaleBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_SYSTEM_BECAME_STALE, true), INVENTORY_FOLDER_NAME + "beta/systemBecameStaleBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_SYSTEM_DELETED), INVENTORY_FOLDER_NAME + "systemDeletedEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_SYSTEM_DELETED, true), INVENTORY_FOLDER_NAME + "beta/systemDeletedEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_VALIDATION_ERROR), INVENTORY_FOLDER_NAME + "validationErrorBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_VALIDATION_ERROR), INVENTORY_FOLDER_NAME + "validationErrorEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_VALIDATION_ERROR, true), INVENTORY_FOLDER_NAME + "beta/validationErrorEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, null), INVENTORY_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Malware detection
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, MALWARE_APP_NAME, MALWARE_DETECTED_MALWARE), MALWARE_FOLDER_NAME + "detectedMalwareBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, MALWARE_APP_NAME, MALWARE_DETECTED_MALWARE), MALWARE_FOLDER_NAME + "detectedMalwareInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, MALWARE_APP_NAME, MALWARE_DETECTED_MALWARE, true), MALWARE_FOLDER_NAME + "beta/detectedMalwareInstantEmailBody.html"),
 
         // Patch
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, PATCH_APP_NAME, PATCH_NEW_ADVISORY), PATCH_FOLDER_NAME + "newAdvisoriesBody.md"),
@@ -116,22 +122,23 @@ public class Rhel {
 
         // Task
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, TASK_APP_NAME, TASK_EXECUTED_TASK_COMPLETED), TASK_FOLDER_NAME + "executedTaskCompletedEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, TASK_APP_NAME, TASK_EXECUTED_TASK_COMPLETED, true), TASK_FOLDER_NAME + "beta/executedTaskCompletedEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, TASK_APP_NAME, TASK_JOB_FAILED), TASK_FOLDER_NAME + "jobFailedEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, TASK_APP_NAME, TASK_JOB_FAILED, true), TASK_FOLDER_NAME + "beta/jobFailedEmailBody.html"),
 
         // Vulnerability
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_ANY_CVE_KNOWN_EXPLOIT), VULNERABILITY_FOLDER_NAME + "anyCveKnownExploitBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_ANY_CVE_KNOWN_EXPLOIT), VULNERABILITY_FOLDER_NAME + "anyCveKnownExploitEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_ANY_CVE_KNOWN_EXPLOIT, true), VULNERABILITY_FOLDER_NAME + "beta/anyCveKnownExploitEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_SEVERITY), VULNERABILITY_FOLDER_NAME + "newCveCritSeverityBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_SEVERITY), VULNERABILITY_FOLDER_NAME + "newCveCritSeverityEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_SEVERITY, true), VULNERABILITY_FOLDER_NAME + "beta/newCveCritSeverityEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_CVSS), VULNERABILITY_FOLDER_NAME + "newCveHighCvssBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_CVSS), VULNERABILITY_FOLDER_NAME + "newCveHighCvssEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_CVSS, true), VULNERABILITY_FOLDER_NAME + "beta/newCveHighCvssEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_SECURITY_RULE), VULNERABILITY_FOLDER_NAME + "newCveSecurityRuleBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_SECURITY_RULE), VULNERABILITY_FOLDER_NAME + "newCveSecurityRuleEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_SECURITY_RULE, true), VULNERABILITY_FOLDER_NAME + "beta/newCveSecurityRuleEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, null), VULNERABILITY_FOLDER_NAME + "dailyEmailBody.html")
     );
 }

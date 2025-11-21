@@ -1,0 +1,43 @@
+{#include email/Common/insightsEmailBodyV2}
+{#content-header-title}
+    Subscriptions Usage - Subscription Services
+{/content-header-title}
+{#content-title}
+    Subscription threshold exceeded
+{/content-title}
+{#content-body}
+    <p style="{body-section-p-style}">
+        Product variant: <b>{action.context.product_id}</b>
+    </p>
+    <p style="{body-section-p-style}">
+        Organization: <b>{action.orgId}</b>
+    </p>
+
+    <p>
+        <strong>Usage information</strong>
+    </p>
+
+    <p style="{body-section-p-style}">
+        The subscription usage for your organization has exceeded your subscription threshold. The subscription threshold is the maximum capacity of usage for all active subscriptions of that product variant. Your current subscription usage is shown as a utilization percentage.
+    </p>
+
+    <table style="{body-section-table-style}">
+        <thead>
+            <tr>
+                <th style="{body-section-table-th-style} width: 30%">Usage metric</th>
+                <th style="{body-section-table-th-style} width: 60%">Subscription threshold utilization</th>
+            </tr>
+        </thead>
+        <tbody style="{body-section-table-tbody-style}">
+            <tr style="{body-section-table-tr-style}">
+                <td style="{body-section-table-td-style}">{action.context.metric_id}</td>
+                <td style="{body-section-table-td-style}">{action.events[0].payload.utilization_percentage}%</td>
+            </tr>
+        </tbody>
+    </table>
+    <br>
+    <p style="{body-section-p-style}">View your subscription usage data in the Subscriptions Usage service. To learn more about how subscription usage is calculated, see <a style="{body-section-underline-link-style}" href="https://docs.redhat.com/en/documentation/subscription_central/1-latest/html/getting_started_with_the_subscriptions_service/index" target="_blank" rel="noopener noreferrer">Getting Started with the Subscriptions Usage Service</a>. For additional help, contact your Red Hat account team.</p>
+{/content-body}
+{#content-button-href}{environment.url}/subscriptions/usage?{query_params}{/content-button-href}
+{#content-button-service-name}Subscription Usage{/content-button-service-name}
+{/include}

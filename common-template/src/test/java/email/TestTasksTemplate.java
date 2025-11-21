@@ -5,6 +5,8 @@ import helpers.TasksTestHelpers;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,12 +36,17 @@ public class TestTasksTemplate extends EmailTemplatesRendererHelper {
         assertEquals("Instant notification - Executed Task completed - Tasks - Red Hat Enterprise Linux", result);
     }
 
-    @Test
-    public void testExecutedTaskCompletedEmailBody() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testExecutedTaskCompletedEmailBody(boolean useBetaTemplate) {
         Action action = TasksTestHelpers.createTasksExecutedTaskCompletedAction(EVENT_TYPE_EXECUTED_TASK_COMPLETED);
-        String result = generateEmailBody(EVENT_TYPE_EXECUTED_TASK_COMPLETED, action);
+        String result = generateEmailBody(EVENT_TYPE_EXECUTED_TASK_COMPLETED, action, useBetaTemplate);
         assertTrue(result.contains("Executed task completed"));
-        assertTrue(result.contains("has been executed and ended with status"));
+        if (useBetaTemplate) {
+            assertTrue(result.contains("was executed and completed with the"));
+        } else {
+            assertTrue(result.contains("has been executed and ended with status"));
+        }
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -51,14 +58,18 @@ public class TestTasksTemplate extends EmailTemplatesRendererHelper {
         assertEquals("Instant notification - Job failed - Tasks - Red Hat Enterprise Linux", result);
     }
 
-    @Test
-    public void testJobFailedEmailBody() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testJobFailedEmailBody(boolean useBetaTemplate) {
         Action action = TasksTestHelpers.createTasksJobFailedAction(EVENT_TYPE_JOB_FAILED);
-        String result = generateEmailBody(EVENT_TYPE_JOB_FAILED, action);
+        String result = generateEmailBody(EVENT_TYPE_JOB_FAILED, action, useBetaTemplate);
         assertTrue(result.contains("Job failed"));
-        assertTrue(result.contains("from task"));
-        assertTrue(result.contains("has failed"));
+        if (useBetaTemplate) {
+            assertTrue(result.contains("task failed with the"));
+        } else {
+            assertTrue(result.contains("from task"));
+            assertTrue(result.contains("has failed"));
+        }
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
-
 }

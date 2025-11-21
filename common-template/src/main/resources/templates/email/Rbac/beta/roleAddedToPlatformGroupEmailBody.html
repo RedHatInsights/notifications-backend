@@ -1,0 +1,15 @@
+{#include email/Common/insightsEmailBodyV2}
+{#content-header-title}
+    User Access - Console
+{/content-header-title}
+{#content-title}
+    New Red Hat role added to default access group
+{/content-title}
+{#content-body}
+    <p style="{body-section-p-style}">
+        Red Hat added the <a style="{body-section-underline-link-style}" target="_blank" href="{environment.url}/iam/user-access/roles/detail/{action.events[0].payload.role.uuid}?{query_params}"><b>{action.events[0].payload.role.name}</b></a> role to the Default access group.
+    </p>
+{/content-body}
+{#content-button-href}{environment.url}/iam/user-access/overview?{query_params}{/content-button-href}
+{#content-button-service-name}User Access{/content-button-service-name}
+{/include}

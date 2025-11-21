@@ -1,0 +1,15 @@
+{#include email/Common/insightsEmailBodyV2}
+{#content-header-title}
+    User Access - Console
+{/content-header-title}
+{#content-title}
+    Group created
+{/content-title}
+{#content-body}
+    <p style="{body-section-p-style}">
+        <a style="{body-section-underline-link-style}" href="{environment.url}/iam/user-access/users/detail/{action.events[0].payload.username}"><b>{action.events[0].payload.username}</b></a> created the <a style="{body-section-underline-link-style}" href="{environment.url}/iam/user-access/groups/detail/{action.events[0].payload.uuid}"><b>{action.events[0].payload.name}</b></a> group.
+    </p>
+{/content-body}
+{#content-button-href}{environment.url}/iam/user-access/overview?{query_params}{/content-button-href}
+{#content-button-service-name}User Access{/content-button-service-name}
+{/include}
