@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class EmailAggregationProcessor {
 
+    public static final String DAILY_DIGEST = "daily-digest";
     @Inject
     TemplateService templateService;
 
@@ -53,7 +54,9 @@ public class EmailAggregationProcessor {
             AggregationAction action = new AggregationAction(emailAggregation.bundleName(), new AggregationActionContext(emailTitle, result, orgId));
 
             try {
-                TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null);
+                // Bundle daily digest template don't have any specific application or event type, to avoid confusion un Unleash, we add "daily-digest" as application and event type.
+                boolean useBetaTemplate = emailConnectorConfig.isUseBetaTemplatesEnabled(orgId, emailAggregation.bundleName(), DAILY_DIGEST, DAILY_DIGEST);
+                TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null, useBetaTemplate);
 
                 Map<String, Object> additionalContext = buildFullTemplateContext(action, emailAggregation.environment());
                 return templateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
@@ -73,7 +76,9 @@ public class EmailAggregationProcessor {
         DailyDigestSection builtSection = null;
 
         try {
-            TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, bundle, app, null, emailConnectorConfig.isUseBetaTemplatesEnabled(orgId, null));
+            // Application daily digest don't have any specific event type, to avoid confusion in Unleash we add "daily-digest" as event type.
+            boolean useBetaTemplate = emailConnectorConfig.isUseBetaTemplatesEnabled(orgId, bundle, app, DAILY_DIGEST);
+            TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, bundle, app, null, useBetaTemplate);
             String renderedAppTemplate = templateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
             builtSection = addItem(renderedAppTemplate);
         } catch (Exception e) {
