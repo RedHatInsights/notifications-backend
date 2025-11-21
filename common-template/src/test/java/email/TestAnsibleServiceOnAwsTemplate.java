@@ -5,6 +5,8 @@ import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -32,13 +34,14 @@ public class TestAnsibleServiceOnAwsTemplate extends EmailTemplatesRendererHelpe
         assertEquals("Environment is ready - Ansible Automation Platform Service on AWS", result);
     }
 
-    @Test
-    public void testInstantEmailBody() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testInstantEmailBody(boolean useBetaTemplate) {
         String envName  = "cus-" + RandomStringUtils.randomAlphanumeric(5).toLowerCase();
         String bitwardenURL = "https://www.example.com";
         Action action = TestHelpers.createAnsibleAction(NOTIFY_CUSTOMER_PROVISION_SUCCESS, envName, bitwardenURL);
 
-        String result = generateEmailBody(NOTIFY_CUSTOMER_PROVISION_SUCCESS, action);
+        String result = generateEmailBody(NOTIFY_CUSTOMER_PROVISION_SUCCESS, action, useBetaTemplate);
         assertTrue(result.contains(envName));
         assertTrue(result.contains(bitwardenURL));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));

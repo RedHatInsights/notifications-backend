@@ -51,28 +51,30 @@ public class OpenShift {
         // Advisor
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_NEW_RECOMMENDATION), ADVISOR_FOLDER_NAME + "newRecommendationBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_NEW_RECOMMENDATION), ADVISOR_FOLDER_NAME + "newRecommendationInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ADVISOR_APP_NAME, ADVISOR_NEW_RECOMMENDATION, true), ADVISOR_FOLDER_NAME + "beta/newRecommendationInstantEmailBody.html"),
 
         // Cost Management
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_MISSING_COST_MODEL), COST_MANAGEMENT_FOLDER_NAME + "MissingCostModelBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_MISSING_COST_MODEL), COST_MANAGEMENT_FOLDER_NAME + "MissingCostModelEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_MISSING_COST_MODEL, true), COST_MANAGEMENT_FOLDER_NAME + "beta/MissingCostModelEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_COST_MODEL_CREATE), COST_MANAGEMENT_FOLDER_NAME + "CostModelCreateBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_COST_MODEL_CREATE), COST_MANAGEMENT_FOLDER_NAME + "CostModelCreateEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_COST_MODEL_CREATE, true), COST_MANAGEMENT_FOLDER_NAME + "beta/CostModelCreateEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_COST_MODEL_UPDATE), COST_MANAGEMENT_FOLDER_NAME + "CostModelUpdateBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_COST_MODEL_UPDATE), COST_MANAGEMENT_FOLDER_NAME + "CostModelUpdateEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_COST_MODEL_UPDATE, true), COST_MANAGEMENT_FOLDER_NAME + "beta/CostModelUpdateEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_COST_MODEL_REMOVE), COST_MANAGEMENT_FOLDER_NAME + "CostModelRemoveBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_COST_MODEL_REMOVE), COST_MANAGEMENT_FOLDER_NAME + "CostModelRemoveEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_COST_MODEL_REMOVE, true), COST_MANAGEMENT_FOLDER_NAME + "beta/CostModelRemoveEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_CM_OPERATOR_STALE), COST_MANAGEMENT_FOLDER_NAME + "CmOperatorStaleBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_CM_OPERATOR_STALE), COST_MANAGEMENT_FOLDER_NAME + "CmOperatorStaleEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_CM_OPERATOR_STALE, true), COST_MANAGEMENT_FOLDER_NAME + "beta/CmOperatorStaleEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_CM_OPERATOR_DATA_RECEIVED), COST_MANAGEMENT_FOLDER_NAME + "CmOperatorDataReceivedBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_CM_OPERATOR_DATA_RECEIVED), COST_MANAGEMENT_FOLDER_NAME + "CmOperatorDataReceivedEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_CM_OPERATOR_DATA_RECEIVED, true), COST_MANAGEMENT_FOLDER_NAME + "beta/CmOperatorDataReceivedEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_CM_OPERATOR_DATA_PROCESSED), COST_MANAGEMENT_FOLDER_NAME + "CmOperatorDataProcessedBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_CM_OPERATOR_DATA_PROCESSED), COST_MANAGEMENT_FOLDER_NAME + "CmOperatorDataProcessedEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, COST_MANAGEMENT_APP_NAME, COST_MANAGEMENT_CM_OPERATOR_DATA_PROCESSED, true), COST_MANAGEMENT_FOLDER_NAME + "beta/CmOperatorDataProcessedEmailBody.html"),
 
         // Cluster manager
         entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "instantEmailTitle.txt"),
@@ -89,6 +91,20 @@ public class OpenShift {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CUSTOMER_SUPPORT), CLUSTER_MANAGER_FOLDER_NAME + "customerSupportInstantEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_NETWORKING), CLUSTER_MANAGER_FOLDER_NAME + "clusterNetworkingInstantEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_GENERAL_NOTIFICATION), CLUSTER_MANAGER_FOLDER_NAME + "generalNotificationInstantEmailBody.html"),
+
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_UPDATE, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterUpdateInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_LIFECYCLE, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterLifecycleInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_CONFIGURATION, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterConfigurationInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_SUBSCRIPTION, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterSubscriptionInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_OWNERSHIP, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterOwnershipInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_ACCESS, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterAccessInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_SCALING, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterScalingInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CAPACITY_MANAGEMENT, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/capacityManagementInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_SECURITY, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterSecurityInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_ADD_ON, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterAddOnInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CUSTOMER_SUPPORT, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/customerSupportInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_CLUSTER_NETWORKING, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/clusterNetworkingInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_GENERAL_NOTIFICATION, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/generalNotificationInstantEmailBody.html"),
 
         entry(new TemplateDefinition(GOOGLE_CHAT, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.json"),
         entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.json"),

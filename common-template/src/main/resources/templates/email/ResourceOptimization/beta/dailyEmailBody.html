@@ -1,0 +1,30 @@
+{@boolean renderSection1=true}
+{#include email/Common/insightsEmailBodyLightV2}
+{#content-title-section1}
+    System{#if action.context.aggregated_data.systems_with_suggestions > 1}s{/if} with suggestions
+{/content-title-section1}
+{#content-title-right-part-section1}
+    {action.context.aggregated_data.systems_with_suggestions}
+{/content-title-right-part-section1}
+{#content-body-section1}
+    <p style="{body-section-p-style}">Today, rules triggered on {action.context.aggregated_data.systems_triggered} system{#if action.context.aggregated_data.systems_triggered > 1}s{/if}:</p>
+    <table style="{body-section-table-style}">
+        <thead>
+            <tr>
+                <th style="{body-section-table-th-style}">State</th>
+                <th style="{body-section-table-th-style}">Systems</th>
+            </tr>
+        </thead>
+        <tbody style="{body-section-table-tbody-style}">
+            {#for entry in action.context.aggregated_data.states}
+                <tr>
+                    <td style="{body-section-table-td-style}">{entry.state}</td>
+                    <td style="{body-section-table-td-style}">{entry.system_count}</td>
+                </tr>
+            {/for}
+        </tbody>
+    </table>
+{/content-body-section1}
+{#content-button-href}{environment.url}/insights/ros?{query_params}{/content-button-href}
+{#content-button-service-name}Resource Optimization{/content-button-service-name}
+{/include}

@@ -1,0 +1,30 @@
+{#include email/Common/insightsEmailBodyV2}
+{#content-header-title}
+    {source.application.display_name} - {source.bundle.display_name}
+{/content-header-title}
+{#content-title}
+    Notifications
+{/content-title}
+{#content-body}
+    <p style="{body-section-p-style}">
+        {source.bundle.display_name}/{source.application.display_name}/{source.event_type.display_name} notification was triggered.
+    </p>
+    <p style="{body-section-p-style}">You are receiving this email because the email template associated with this event type is not configured properly.</p>
+    <p style="{body-section-p-style}">Please see the <a style="{body-section-underline-link-style}" href="https://inscope.corp.redhat.com/docs/default/component/notifications-app/user-guide/email-templates/">documentation</a> for information about setting up email templates.</p>
+
+    <table style="{body-section-table-style}">
+        <thead>
+        <tr>
+            <th>RAW ACTION CONTENT</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr style="font-size: 14px;">
+            <td><pre>{action.toPrettyJson()}</pre></td>
+        </tr>
+        </tbody>
+    </table>
+{/content-body}
+{#content-button-href}https://inscope.corp.redhat.com/docs/default/component/notifications-app/user-guide/email-templates/{/content-button-href}
+{#content-button-service-name}Notifications' documentation{/content-button-service-name}
+{/include}

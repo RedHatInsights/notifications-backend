@@ -1,0 +1,18 @@
+{#include email/Common/insightsEmailBodyV2}
+{#content-header-title}
+    SCAP policies - Compliance - Red Hat Enterprise Linux
+{/content-header-title}
+{#content-title}
+    System is non compliant to SCAP policy
+{/content-title}
+{#content-body}
+    <p style="{body-section-p-style}">
+        Your system, <a style="{body-section-underline-link-style}" href="{environment.url}/insights/compliance/systems/{action.events[0].payload.host_id}"><b>{action.events[0].payload.host_name}</b></a>, assigned to policy <a style="{body-section-underline-link-style}" href="{environment.url}/insights/compliance/scappolicies/{action.events[0].payload.policy_id}"><b>{action.events[0].payload.policy_name}</b></a>, has been marked as non-compliant because its compliance score {action.events[0].payload.compliance_score}% dropped below the configured compliance threshold of {action.events[0].payload.policy_threshold}% for this policy.
+    </p>
+    <p style="{body-section-p-style}">
+        Please review the <a style="{body-section-underline-link-style}" href="{environment.url}/insights/compliance/reports/{action.events[0].payload.policy_id}">detailed policy report for this system</a> and take the appropriate steps to bring this system into compliance. For additional details on how to  remediate compliance issues, learn more <a style="{body-section-underline-link-style}" href="https://docs.redhat.com/en/documentation/red_hat_insights/1-latest/html/red_hat_insights_remediations_guide">here</a>.
+    </p>
+{/content-body}
+{#content-button-href}{environment.url}/insights/compliance/scappolicies?{query_params}{/content-button-href}
+{#content-button-service-name}SCAP policies - Compliance{/content-button-service-name}
+{/include}

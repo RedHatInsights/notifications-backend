@@ -6,6 +6,8 @@ import com.redhat.cloud.notifications.qute.templates.Severity;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.redhat.cloud.notifications.qute.templates.mapping.Rhel.ADVISOR_DEACTIVATED_RECOMMENDATION;
 import static com.redhat.cloud.notifications.qute.templates.mapping.Rhel.ADVISOR_RESOLVED_RECOMMENDATION;
@@ -73,27 +75,41 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         "   \"end_time\":\"2025-07-25T13:38:38.379899748\"" +
         "}";
 
-    @Test
-    public void testDailyEmailBody() throws JsonProcessingException {
-        final String result = generateAggregatedEmailBody(JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT);
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testDailyEmailBody(boolean useBetaTemplate) throws JsonProcessingException {
+        final String result = generateAggregatedEmailBody(JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT, useBetaTemplate);
         assertTrue(result.contains("New Recommendations"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_1"));
         assertTrue(result.contains("Active rule 1</a>"));
         assertTrue(result.contains("https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png"));
-        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important.png"));
+        if (useBetaTemplate) {
+            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important_v2.png"));
+        } else {
+            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important.png"));
+        }
         assertTrue(result.contains("Resolved Recommendation"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
         assertTrue(result.contains("Active rule 2</a>"));
-        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
+        if (useBetaTemplate) {
+            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low_v2.png"));
+        } else {
+            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
+        }
         assertTrue(result.contains("Deactivated Recommendations"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_3"));
         assertTrue(result.contains("Active rule 3</a>"));
-        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
+        if (useBetaTemplate) {
+            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical_v2.png"));
+        } else {
+            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
+        }
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
-    @Test
-    public void testDailyEmailBodyWithEmptyRuleValues() throws JsonProcessingException {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testDailyEmailBodyWithEmptyRuleValues(boolean useBetaTemplate) throws JsonProcessingException {
 
         final String jsonContext = "{" +
             "   \"advisor\":{" +
@@ -130,7 +146,7 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
             "   \"end_time\":\"2025-07-25T13:51:20.657602689\"" +
             "}";
 
-        final String result = generateAggregatedEmailBody(jsonContext);
+        final String result = generateAggregatedEmailBody(jsonContext, useBetaTemplate);
         // check that template is able to render sections, even if they are empty
         assertTrue(result.contains("New Recommendation"));
         assertTrue(result.contains("Resolved Recommendation"));
@@ -138,8 +154,9 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
-    @Test
-    public void testDailyEmailBodyResolvedOnly() throws JsonProcessingException {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testDailyEmailBodyResolvedOnly(boolean useBetaTemplate) throws JsonProcessingException {
         final String jsonContext = "{" +
             "   \"advisor\":{" +
             "      \"total_incident\":0," +
@@ -158,14 +175,22 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
             "   \"end_time\":\"2025-07-25T13:56:28.213081719\"" +
             "}";
 
-        final String result = generateAggregatedEmailBody(jsonContext);
+        final String result = generateAggregatedEmailBody(jsonContext, useBetaTemplate);
         assertTrue(result.contains("Resolved Recommendation"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
         assertTrue(result.contains("Active rule 2</a>"));
-        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
+        if (useBetaTemplate) {
+            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low_v2.png"));
+        } else {
+            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
+        }
         assertFalse(result.contains("New Recommendation"));
         assertFalse(result.contains("Deactivated Recommendation"));
-        assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
+        if (useBetaTemplate) {
+            assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical_v2.png"));
+        } else {
+            assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
+        }
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -191,11 +216,12 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         assertEquals("Instant notification - New recommendation - Advisor - Red Hat Enterprise Linux", result);
     }
 
-    @Test
-    public void testInstantEmailBodyForNewRecommendation() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testInstantEmailBodyForNewRecommendation(boolean useBetaTemplate) {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
 
-        String result = generateEmailBody(NEW_RECOMMENDATION, action);
+        String result = generateEmailBody(NEW_RECOMMENDATION, action, useBetaTemplate);
         checkNewRecommendationsBodyResults(action, result);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
@@ -231,18 +257,20 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         assertEquals("Instant notification - Deactivated recommendation - Advisor - Red Hat Enterprise Linux", result);
     }
 
-    @Test
-    public void testInstantEmailBodyForDeactivatedRecommendation() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testInstantEmailBodyForDeactivatedRecommendation(boolean useBetaTemplate) {
         Action action = TestHelpers.createAdvisorAction("123456", ADVISOR_DEACTIVATED_RECOMMENDATION);
-        String result = generateEmailBody(ADVISOR_DEACTIVATED_RECOMMENDATION, action);
+        String result = generateEmailBody(ADVISOR_DEACTIVATED_RECOMMENDATION, action, useBetaTemplate);
         checkDeactivatedRecommendationResults(action, result);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
-    @Test
-    public void testInstantEmailBodyForResolvedRecommendation() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testInstantEmailBodyForResolvedRecommendation(boolean useBetaTemplate) {
         Action action = TestHelpers.createAdvisorAction("123456", ADVISOR_RESOLVED_RECOMMENDATION);
-        String result = generateEmailBody(ADVISOR_RESOLVED_RECOMMENDATION, action);
+        String result = generateEmailBody(ADVISOR_RESOLVED_RECOMMENDATION, action, useBetaTemplate);
         checkNewRecommendationsBodyResults(action, result);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
