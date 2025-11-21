@@ -112,11 +112,17 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
         additionalContext.put("action", emailNotification.eventData());
         additionalContext.put("source", emailNotification.eventData().get("source"));
 
+        String bundle = emailNotification.eventData().get("bundle").toString();
+        String application = emailNotification.eventData().get("application").toString();
+        String eventType = emailNotification.eventData().get("event_type").toString();
+        boolean useBetaTemplate = emailConnectorConfig.isUseBetaTemplatesEnabled(emailNotification.orgId(), bundle, application, eventType);
+
         TemplateDefinition templateDefinition = new TemplateDefinition(
             integrationType,
-            emailNotification.eventData().get("bundle").toString(),
-            emailNotification.eventData().get("application").toString(),
-            emailNotification.eventData().get("event_type").toString());
+            bundle,
+            application,
+            eventType,
+            useBetaTemplate);
         return templateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
     }
 

@@ -10,7 +10,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 @ApplicationScoped
 public class EmailConnectorConfig extends HttpConnectorConfig {
@@ -109,7 +108,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
         config.put(toggleUseSimplifiedEmailRoute, useSimplifiedEmailRoute(null));
         config.put(toggleKafkaIncomingHighVolumeTopic, isIncomingKafkaHighVolumeTopicEnabled());
-        config.put(toggleUseBetaTemplatesEnabled, isUseBetaTemplatesEnabled(null, null));
+        config.put(toggleUseBetaTemplatesEnabled, isUseBetaTemplatesEnabled(null, null, null, null));
         /*
          * /!\ WARNING /!\
          * DO NOT log config values that come from OpenShift secrets.
@@ -195,12 +194,23 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         }
     }
 
-    public boolean isUseBetaTemplatesEnabled(final String orgId, final UUID eventTypeId) {
+    public boolean isUseBetaTemplatesEnabled(final String orgId, final String bundle, final String application, final String eventType) {
         if (unleashEnabled) {
+            String bundleApplicationEventType = null;
+            if (null != bundle) {
+                bundleApplicationEventType = bundle;
+                if (null != application) {
+                    bundleApplicationEventType += "#" + application;
+                    if (null != eventType) {
+                        bundleApplicationEventType += "#" + eventType;
+                    }
+                }
+            }
             UnleashContext.Builder unleashContextBuilder = UnleashContext.builder()
                 .addProperty("orgId", orgId);
-            if (eventTypeId != null) {
-                unleashContextBuilder.addProperty("eventTypeId", eventTypeId.toString());
+
+            if (null != bundleApplicationEventType) {
+                unleashContextBuilder.addProperty("bundleApplicationEventType", bundleApplicationEventType);
             }
             return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContextBuilder.build(), false);
         } else {
