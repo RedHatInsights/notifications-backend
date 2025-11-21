@@ -37,10 +37,10 @@ public class SubscriptionsDeduplicationConfig extends EventDeduplicationConfig {
         // TODO We could build a simpler String key with all field values concatenated. Check if the JSON data structure has a significant impact on the query performances.
         // Use TreeMap to ensure consistent alphabetical ordering of fields in the JSON output
         TreeMap<String, Object> deduplicationKey = new TreeMap<>();
-        deduplicationKey.put("orgId", event.getOrgId());
-        deduplicationKey.put("productId", context.getString("product_id"));
-        deduplicationKey.put("metricId", context.getString("metric_id"));
-        deduplicationKey.put("billingAccountId", context.getString("billing_account_id"));
+        deduplicationKey.put("org_id", event.getOrgId());
+        deduplicationKey.put("product_id", context.getString("product_id"));
+        deduplicationKey.put("metric_id", context.getString("metric_id"));
+        deduplicationKey.put("billing_account_id", context.getString("billing_account_id"));
         deduplicationKey.put("month", event.getTimestamp().format(MONTH_FORMATTER));
 
         return Optional.of(new JsonObject(deduplicationKey).encode());

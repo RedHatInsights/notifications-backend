@@ -44,10 +44,10 @@ class SubscriptionsDeduplicationConfigTest {
 
         // Parse the JSON key to verify it contains all expected fields
         JsonObject deduplicationKeyJson = new JsonObject(deduplicationKey.get());
-        assertEquals(orgId, deduplicationKeyJson.getString("orgId"));
-        assertEquals(productId, deduplicationKeyJson.getString("productId"));
-        assertEquals(metricId, deduplicationKeyJson.getString("metricId"));
-        assertEquals(billingAccountId, deduplicationKeyJson.getString("billingAccountId"));
+        assertEquals(orgId, deduplicationKeyJson.getString("org_id"));
+        assertEquals(productId, deduplicationKeyJson.getString("product_id"));
+        assertEquals(metricId, deduplicationKeyJson.getString("metric_id"));
+        assertEquals(billingAccountId, deduplicationKeyJson.getString("billing_account_id"));
         assertEquals("2025-11", deduplicationKeyJson.getString("month"));
     }
 

@@ -123,7 +123,7 @@ class EventDeduplicatorTest {
             "metric789",
             "billing001");
 
-        assertTrue(eventDeduplicator.isNew(event5), "Event with different productId should return true");
+        assertTrue(eventDeduplicator.isNew(event5), "Event with different product_id should return true");
 
         Event event6 = createSubscriptionsEvent(
             UUID.randomUUID(),
@@ -134,7 +134,7 @@ class EventDeduplicatorTest {
             "metric999",
             "billing001");
 
-        assertTrue(eventDeduplicator.isNew(event6), "Event with different metricId should return true");
+        assertTrue(eventDeduplicator.isNew(event6), "Event with different metric_id should return true");
 
         Event event7 = createSubscriptionsEvent(
             UUID.randomUUID(),
@@ -145,7 +145,7 @@ class EventDeduplicatorTest {
             "metric999",
             "billing999");
 
-        assertTrue(eventDeduplicator.isNew(event7), "Event with different billingAccountId should return true");
+        assertTrue(eventDeduplicator.isNew(event7), "Event with different billing_account_id should return true");
     }
 
     @Transactional
