@@ -89,6 +89,10 @@ public class TestHelpers {
     }
 
     public static Action createAdvisorAction(String accountId, String eventType) {
+        return createAdvisorAction(accountId, eventType, null);
+    }
+
+    public static Action createAdvisorAction(String accountId, String eventType, String severity) {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle("rhel");
         emailActionMessage.setApplication("advisor");
@@ -96,6 +100,9 @@ public class TestHelpers {
         emailActionMessage.setEventType(eventType);
         emailActionMessage.setAccountId(accountId);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+        if (severity != null) {
+            emailActionMessage.setSeverity(severity);
+        }
 
         if (eventType.equals("deactivated-recommendation")) {
             emailActionMessage.setContext(new Context.ContextBuilder().build());
@@ -396,7 +403,11 @@ public class TestHelpers {
     }
 
     public String renderTemplate(final IntegrationType integrationType, final String eventType, final Action action, final String inventoryUrl, final String applicationUrl) {
-        TemplateDefinition templateConfig = new TemplateDefinition(integrationType, "rhel", "unknown-app", eventType);
+        return renderTemplate(integrationType, eventType, action, inventoryUrl, applicationUrl, false);
+    }
+
+    public String renderTemplate(final IntegrationType integrationType, final String eventType, final Action action, final String inventoryUrl, final String applicationUrl, boolean useBetaTemplate) {
+        TemplateDefinition templateConfig = new TemplateDefinition(integrationType, "rhel", "unknown-app", eventType, useBetaTemplate);
         Map<String, Object> map = objectMapper
             .convertValue(action, new TypeReference<Map<String, Object>>() { });
         map.put("inventory_url", inventoryUrl);
