@@ -67,15 +67,22 @@ public class OcmTestHelpers {
 
 
     public static JsonObject createOcmMessage(String clusterDisplayName, String subscriptionPlan, String logDescription, String subject) {
-        return createOcmMessage(clusterDisplayName, subscriptionPlan, logDescription, subject, null, Optional.empty());
+        return createOcmMessage(clusterDisplayName, subscriptionPlan, logDescription, subject, null);
     }
 
-    public static JsonObject createOcmMessage(String clusterDisplayName, String subscriptionPlan, String logDescription, String subject, String title, Optional<Map<String, Object>> specificGlobalVars) {
+    public static JsonObject createOcmMessage(String clusterDisplayName, String subscriptionPlan, String logDescription, String subject, String severity) {
+        return createOcmMessage(clusterDisplayName, subscriptionPlan, logDescription, subject, null, severity, Optional.empty());
+    }
+
+    public static JsonObject createOcmMessage(String clusterDisplayName, String subscriptionPlan, String logDescription, String subject, String title, String severity, Optional<Map<String, Object>> specificGlobalVars) {
         JsonObject emailActionMessage = new JsonObject();
         emailActionMessage.put("bundle", "openshift");
         emailActionMessage.put("application", "cluster-manager");
         emailActionMessage.put("timestamp", LocalDateTime.now());
         emailActionMessage.put("event_type", "testEmailSubscriptionInstant");
+        if (severity != null) {
+            emailActionMessage.put("severity", severity);
+        }
 
         emailActionMessage.put("context",
                 new Context.ContextBuilder()

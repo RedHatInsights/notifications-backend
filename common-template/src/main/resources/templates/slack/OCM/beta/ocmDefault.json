@@ -1,0 +1,40 @@
+{
+    "blocks": [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "{data.source.application.display_name} - {data.source.bundle.display_name}",
+                "emoji": true
+            }
+        },
+        {#if data.severity.asSeverityEmoji??}
+        {
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": "{data.severity.asSeverityEmoji} Severity: {data.severity.toTitleCase}"
+                }
+            ]
+        },
+        {/if}
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "{data.events.size()} event{#if data.events.size() != 1}s{/if} triggered."
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Explore {#if data.events.size() != 1}these{#else}this{/if} and others in *<https://cloud.redhat.com/openshift/details/s/{data.events[0].payload.global_vars.subscription_id}?from=notifications&integration=slack|{data.source.application.display_name}>*."
+            }
+        }
+    ]
+}
