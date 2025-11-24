@@ -310,6 +310,9 @@ public class EndpointResource extends EndpointResourceCommon {
             }
         } else if (endpoint.getType() == WEBHOOK || endpoint.getType() == ANSIBLE) {
             checkSslDisabledEndpoint(endpoint);
+        } else if (Set.of(EMAIL_SUBSCRIPTION, DRAWER).contains(endpoint.getType())) {
+            RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+            getOrCreateInternalEndpointCommonChecks(endpoint.getProperties(SystemSubscriptionProperties.class), principal);
         }
 
         endpoint.setStatus(EndpointStatus.READY);
@@ -588,7 +591,7 @@ public class EndpointResource extends EndpointResourceCommon {
             } else if (subType.equals("servicenow") || subType.equals("splunk")) {
                 checkHttpsEndpoint(endpoint.getProperties(CamelProperties.class));
             }
-        } else if (endpoint.getType() == EMAIL_SUBSCRIPTION || endpoint.getType() == DRAWER) {
+        } else if (Set.of(EMAIL_SUBSCRIPTION, DRAWER).contains(endpoint.getType())) {
             getOrCreateInternalEndpointCommonChecks(endpoint.getProperties(SystemSubscriptionProperties.class), principal);
         } else if (endpoint.getType() == WEBHOOK || endpoint.getType() == ANSIBLE) {
             checkSslDisabledEndpoint(endpoint);
@@ -717,7 +720,7 @@ public class EndpointResource extends EndpointResourceCommon {
     }
 
     private boolean isEndpointTypeAllowed(EndpointType endpointType) {
-        return !backendConfig.isEmailsOnlyModeEnabled() || EMAIL_SUBSCRIPTION.equals(endpointType);
+        return !backendConfig.isEmailsOnlyModeEnabled() || EMAIL_SUBSCRIPTION.equals(endpointType) || DRAWER.equals(endpointType);
     }
 
     @DELETE
