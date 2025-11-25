@@ -37,7 +37,7 @@ objects:
           limits:
             cpu: ${DB_CLEANER_CPU_LIMIT}
             memory: ${DB_CLEANER_MEMORY_LIMIT}
-        image: registry.redhat.io/rhel9/postgresql-16:latest
+        image: registry.redhat.io/rhel9/postgresql-16:9.7
         imagePullPolicy: Always
         volumes:
           - name: notifications-db-cleaner-volume
