@@ -40,6 +40,7 @@ public class TestHelpers {
     public static final String POLICY_ID_2 = "0123-456-789-5721f";
     public static final String POLICY_NAME_2 = "Latest foo is installed";
     public static final String EVENT_TYPE = "policy-triggered";
+    public static final String NOT_USE_EVENT_TYPE = "not use";
 
     public static Action createPoliciesAction(String accountId, String bundle, String application, String hostDisplayName) {
         Action emailActionMessage = new Action();
@@ -412,7 +413,7 @@ public class TestHelpers {
             .convertValue(action, new TypeReference<Map<String, Object>>() { });
         map.put("inventory_url", inventoryUrl);
         map.put("application_url", applicationUrl);
-        map.put("source", TestHelpers.buildSourceParameter("Red Hat Enterprise Linux", "Policies", "not use"));
+        map.put("source", TestHelpers.buildSourceParameter("Red Hat Enterprise Linux", "Policies", NOT_USE_EVENT_TYPE));
         return templateService.renderTemplate(templateConfig, map);
     }
 }

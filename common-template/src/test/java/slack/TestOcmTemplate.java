@@ -52,7 +52,7 @@ class TestOcmTemplate {
 
     private void checkResult(String eventType, String result, boolean useBetaTemplate) {
         if (useBetaTemplate) {
-            assertTrue(result.contains("Cluster Manager - OpenShift"));
+            assertTrue(result.contains(" - Cluster Manager - OpenShift"));
             assertTrue(result.contains("\u203C\uFE0F Severity: Critical"));
             assertTrue(result.contains("1 event triggered."));
             assertTrue(result.contains("Explore this and others in *<" + CLUSTER_MANAGER_DEFAULT_EVENT_URL + "|Cluster Manager>*."));

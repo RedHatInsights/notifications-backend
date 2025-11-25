@@ -54,7 +54,7 @@ class TestDefaultTemplate {
         );
 
         if (useBetaTemplate) {
-            assertTrue(result.contains(APP_BUNDLE_HEADER));
+            assertTrue(result.contains(TestHelpers.NOT_USE_EVENT_TYPE + " - " + APP_BUNDLE_HEADER));
             if (severity == null) {
                 assertFalse(result.contains("\"type\": \"context\","));
             } else {
