@@ -2,11 +2,11 @@
 {#content-body}
 {
     "type": "TextBlock",
-    "text": "{data.source.application.display_name} - {data.source.bundle.display_name}",
+    "text": "{data.source.event_type.display_name} - {data.source.application.display_name} - {data.source.bundle.display_name}",
     "style": "heading",
     "wrap": true
 },
-{#if data.severity.asSeverityEmoji??}
+{#if data.severity??}
 {
     "type": "Badge",
     "text": "{data.severity.asSeverityEmoji} Severity: {data.severity.toTitleCase}",
