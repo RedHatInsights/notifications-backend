@@ -57,7 +57,7 @@ class TestDefaultTemplate {
             // The JSON schema is not up to date with the preferred formatting of Teams.
             // Validated using https://adaptivecards.microsoft.com/designer.html
 
-            assertTrue(result.contains(APP_BUNDLE_HEADER));
+            assertTrue(result.contains(TestHelpers.NOT_USE_EVENT_TYPE + " - " + APP_BUNDLE_HEADER));
             switch (severity) {
                 case null -> assertFalse(result.contains("\"type\": \"Badge\""));
                 case "LOW" -> {

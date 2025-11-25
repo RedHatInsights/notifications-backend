@@ -6,7 +6,7 @@
   "style":"heading",
   "wrap":true
 },
-{#if data.severity.asSeverityEmoji??}
+{#if data.severity??}
 {
   "type":"Badge",
   "text":"{data.severity.asSeverityEmoji} Highest severity: {data.severity.toTitleCase}",

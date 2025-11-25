@@ -99,7 +99,7 @@ class TestOcmTemplate {
 
     private void checkResult(String result, final boolean useBetaTemplate) {
         if (useBetaTemplate) {
-            assertTrue(result.contains("Cluster Manager - OpenShift"));
+            assertTrue(result.contains("Test instant email subscription - Cluster Manager - OpenShift"));
             assertTrue(result.contains("\u2796 Severity: None"));
             assertTrue(result.contains("1 event triggered."));
             assertTrue(result.contains("Explore this and others in **Cluster Manager**."));
