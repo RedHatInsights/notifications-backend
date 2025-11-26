@@ -68,13 +68,7 @@ public class SystemSubscriptionProperties extends EndpointProperties {
             return true;
         }
 
-        boolean groupIdsEqual = false;
-        if (groupIds != null && groupIds.equals(otherProps.groupIds)) {
-            groupIdsEqual = true;
-        } else if (groupIds == null || groupIds.isEmpty() && otherProps.groupIds == null || otherProps.groupIds.isEmpty()) {
-            groupIdsEqual = true;
-        }
         return onlyAdmins == otherProps.onlyAdmins && ignorePreferences == otherProps.ignorePreferences
-                && Objects.equals(groupId, otherProps.groupId) && groupIdsEqual;
+                && Objects.equals(groupId, otherProps.groupId) && Objects.equals(groupIds, otherProps.groupIds);
     }
 }
