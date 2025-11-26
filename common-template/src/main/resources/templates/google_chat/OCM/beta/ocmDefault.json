@@ -1,48 +1,50 @@
-{
-  "header": {
-    "title": "{data.source.event_type.display_name} - {data.source.application.display_name} - {data.source.bundle.display_name}"
-  },
-  "sections": [
-    {
-      "collapsible": false,
-      "widgets": [
-        {#if data.severity??}
-        {#include google_chat/Common/severityDecoratedText.json /}
-        {/if}
-        {
-          "textParagraph": {
-            "text": "{data.events.size()} event{#if data.events.size() != 1}s{/if} triggered."
-          }
-        },
-        {
-          "divider": {}
-        },
-        {
-          "textParagraph": {
-            "text": "Explore {#if data.events.size() != 1}these{#else}this{/if} and others in <b>{data.source.application.display_name}</b>."
-          }
-        },
-        {
-          "buttonList": {
-            "buttons": [
-              {
-                "text": "Open {data.source.application.display_name}",
-                "type": "FILLED",
-                "color": {
-                  "red": 0,
-                  "green": 0.396,
-                  "blue": 0.796
-                },
-                "onClick": {
-                  "openLink": {
-                    "url": "https://cloud.redhat.com/openshift/details/s/{data.events[0].payload.global_vars.subscription_id}?from=notifications&integration=google_chat"
-                  }
+{#include google_chat/Common/commonCardsV2.json}
+{#content-body}
+"header": {
+  "title": "{data.source.event_type.display_name} - {data.source.application.display_name} - {data.source.bundle.display_name}"
+},
+"sections": [
+  {
+    "collapsible": false,
+    "widgets": [
+      {#if data.severity??}
+      {#include google_chat/Common/severityDecoratedText.json /}
+      {/if}
+      {
+        "textParagraph": {
+          "text": "{data.events.size()} event{#if data.events.size() != 1}s{/if} triggered."
+        }
+      },
+      {
+        "divider": {}
+      },
+      {
+        "textParagraph": {
+          "text": "Explore {#if data.events.size() != 1}these{#else}this{/if} and others in <b>{data.source.application.display_name}</b>."
+        }
+      },
+      {
+        "buttonList": {
+          "buttons": [
+            {
+              "text": "Open {data.source.application.display_name}",
+              "type": "FILLED",
+              "color": {
+                "red": 0,
+                "green": 0.396,
+                "blue": 0.796
+              },
+              "onClick": {
+                "openLink": {
+                  "url": "https://cloud.redhat.com/openshift/details/s/{data.events[0].payload.global_vars.subscription_id}?from=notifications&integration=google_chat"
                 }
               }
-            ]
-          }
+            }
+          ]
         }
-      ]
-    }
-  ]
-}
+      }
+    ]
+  }
+]
+{/content-body}
+{/include}
