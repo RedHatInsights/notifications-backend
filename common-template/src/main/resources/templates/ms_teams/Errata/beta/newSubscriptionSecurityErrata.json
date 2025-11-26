@@ -7,17 +7,9 @@
   "wrap":true
 },
 {#if data.severity??}
-{
-  "type":"Badge",
-  "text":"{data.severity.asSeverityEmoji} Highest severity: {data.severity.toTitleCase}",
-  "size":"Large",
-  {#if data.severity.toUpperCase == "CRITICAL"}
-  "style":"Attention",
-  "appearance":"Tint"
-  {#else}
-  "style":"Subtle"
-  {/if}
-},
+{#include ms_teams/Common/severityBadge.json}
+  {#severity-label}Highest severity:{/severity-label}
+{/include}
 {/if}
 {
   "type":"TextBlock",
@@ -88,3 +80,4 @@
   ]
 }
 {/content-body}
+{/include}
