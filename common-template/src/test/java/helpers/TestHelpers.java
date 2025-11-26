@@ -401,10 +401,6 @@ public class TestHelpers {
             "event_type", Map.of("display_name", eventTypeDisplayName));
     }
 
-    public String renderTemplate(final IntegrationType integrationType, final String eventType, final Action action, final String inventoryUrl, final String applicationUrl) {
-        return renderTemplate(integrationType, eventType, action, inventoryUrl, applicationUrl, false);
-    }
-
     public String renderTemplate(final IntegrationType integrationType, final String eventType, final Action action, final String inventoryUrl, final String applicationUrl, boolean useBetaTemplate) {
         TemplateDefinition templateConfig = new TemplateDefinition(integrationType, "rhel", "unknown-app", eventType, useBetaTemplate);
         Map<String, Object> map = objectMapper
