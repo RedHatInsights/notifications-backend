@@ -80,9 +80,7 @@ public class OcmTestHelpers {
         emailActionMessage.put("application", "cluster-manager");
         emailActionMessage.put("timestamp", LocalDateTime.now());
         emailActionMessage.put("event_type", "testEmailSubscriptionInstant");
-        if (severity != null) {
-            emailActionMessage.put("severity", severity);
-        }
+        emailActionMessage.put("severity", severity);
 
         emailActionMessage.put("context",
                 new Context.ContextBuilder()

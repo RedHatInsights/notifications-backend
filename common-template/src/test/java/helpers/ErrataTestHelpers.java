@@ -32,9 +32,7 @@ public class ErrataTestHelpers {
         emailActionMessage.setTimestamp(LocalDateTime.of(2022, 10, 3, 15, 22, 13, 25));
         emailActionMessage.setEventType(StringUtils.EMPTY);
         emailActionMessage.setRecipients(List.of());
-        if (severity != null) {
-            emailActionMessage.setSeverity(severity);
-        }
+        emailActionMessage.setSeverity(severity);
 
         emailActionMessage.setContext(
                 new Context.ContextBuilder()

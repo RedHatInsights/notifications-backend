@@ -9,15 +9,7 @@
             }
         },
         {#if data.severity??}
-        {
-            "type": "context",
-            "elements": [
-                {
-                    "type": "mrkdwn",
-                    "text": "{data.severity.asSeverityEmoji} Severity: {data.severity.toTitleCase}"
-                }
-            ]
-        },
+        {#include slack/Common/severityContext.json /}
         {/if}
         {
             "type": "section",

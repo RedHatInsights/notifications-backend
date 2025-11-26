@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 class TestOcmTemplate {
 
+    private static final JsonObject MESSAGE = OcmTestHelpers.createOcmMessage("Atlantic", "OSDTrial", "<b>Altlantic</b> server is experiencing flooding issues", "Subject line!", Severity.CRITICAL.name());
+
     private static final String CLUSTER_MANAGER_DEFAULT_EVENT_URL = "https://cloud.redhat.com/openshift/details/s/2XqNHRdLNEAzshh7MkkOql6fx6I?from=notifications&integration=slack";
 
     @Inject
@@ -32,10 +34,7 @@ class TestOcmTemplate {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testRenderedOcmTemplates(boolean useBetaTemplate) {
-        JsonObject message = OcmTestHelpers.createOcmMessage("Atlantic", "OSDTrial", "<b>Altlantic</b> server is experiencing flooding issues",
-                "Subject line!", Severity.CRITICAL.name());
-
-        String result = renderTemplate(null, message, useBetaTemplate);
+        String result = renderTemplate(null, MESSAGE, useBetaTemplate);
         checkResult(null, result, useBetaTemplate);
     }
 

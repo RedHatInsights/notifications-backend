@@ -101,9 +101,7 @@ public class TestHelpers {
         emailActionMessage.setEventType(eventType);
         emailActionMessage.setAccountId(accountId);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
-        if (severity != null) {
-            emailActionMessage.setSeverity(severity);
-        }
+        emailActionMessage.setSeverity(severity);
 
         if (eventType.equals("deactivated-recommendation")) {
             emailActionMessage.setContext(new Context.ContextBuilder().build());
