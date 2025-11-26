@@ -283,13 +283,12 @@ public class EndpointResource extends EndpointResourceCommon {
     @Transactional
     protected Endpoint internalCreateEndpoint(
         final SecurityContext sec,
-        final  Endpoint endpoint,
+        final Endpoint endpoint,
         final Set<UUID> eventTypes
     ) {
         if (!isEndpointTypeAllowed(endpoint.getType())) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
-        checkSystemEndpoint(endpoint.getType());
         String accountId = getAccountId(sec);
         String orgId = getOrgId(sec);
 
@@ -311,6 +310,9 @@ public class EndpointResource extends EndpointResourceCommon {
             }
         } else if (endpoint.getType() == WEBHOOK || endpoint.getType() == ANSIBLE) {
             checkSslDisabledEndpoint(endpoint);
+        } else if (Set.of(EMAIL_SUBSCRIPTION, DRAWER).contains(endpoint.getType())) {
+            RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
+            getOrCreateInternalEndpointCommonChecks(endpoint.getProperties(SystemSubscriptionProperties.class), principal);
         }
 
         endpoint.setStatus(EndpointStatus.READY);
@@ -425,6 +427,19 @@ public class EndpointResource extends EndpointResourceCommon {
         }
     }
 
+    private void getOrCreateInternalEndpointCommonChecks(SystemSubscriptionProperties requestProps, RhIdPrincipal principal) {
+        if (requestProps.getGroupId() != null && requestProps.isOnlyAdmins()) {
+            throw new BadRequestException("Cannot use RBAC groups and only admins in the same endpoint");
+        }
+
+        if (requestProps.getGroupId() != null) {
+            boolean isValid = rbacGroupValidator.validate(requestProps.getGroupId(), principal.getIdentity().rawIdentity);
+            if (!isValid) {
+                throw new BadRequestException(String.format("Invalid RBAC group identified with id %s", requestProps.getGroupId()));
+            }
+        }
+    }
+
     @GET
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
@@ -446,7 +461,6 @@ public class EndpointResource extends EndpointResourceCommon {
         if (!isEndpointTypeAllowed(endpointType)) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
-        checkSystemEndpoint(endpointType);
 
         // Clean up the secrets in Sources.
         final Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
@@ -502,8 +516,8 @@ public class EndpointResource extends EndpointResourceCommon {
         if (!isEndpointTypeAllowed(endpointType)) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
-        checkSystemEndpoint(endpointType);
-        if (endpointType == CAMEL || endpointType == WEBHOOK || endpointType == ANSIBLE) {
+
+        if (List.of(CAMEL, WEBHOOK, ANSIBLE).contains(endpointType)) {
             checkSslDisabledEndpoint(orgId, id);
         }
         endpointRepository.enableEndpoint(orgId, id);
@@ -522,7 +536,6 @@ public class EndpointResource extends EndpointResourceCommon {
         if (!isEndpointTypeAllowed(endpointType)) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
-        checkSystemEndpoint(endpointType);
         endpointRepository.disableEndpoint(orgId, id);
         return Response.noContent().build();
     }
@@ -545,8 +558,7 @@ public class EndpointResource extends EndpointResourceCommon {
         if (!isEndpointTypeAllowed(endpoint.getType())) {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
-        // This prevents from updating an endpoint from whatever EndpointType to a system EndpointType
-        checkSystemEndpoint(endpoint.getType());
+        RhIdPrincipal principal = (RhIdPrincipal) securityContext.getUserPrincipal();
         String accountId = getAccountId(securityContext);
         String orgId = getOrgId(securityContext);
         endpoint.setAccountId(accountId);
@@ -558,9 +570,6 @@ public class EndpointResource extends EndpointResourceCommon {
             throw new NotFoundException("Endpoint not found");
         }
         EndpointType endpointType = dbEndpoint.getType();
-
-        // This prevents from updating an endpoint from system EndpointType to a whatever EndpointType
-        checkSystemEndpoint(endpointType);
 
         if (endpoint.getType() == CAMEL) {
             String subType = endpoint.getSubType();
@@ -582,6 +591,8 @@ public class EndpointResource extends EndpointResourceCommon {
             } else if (subType.equals("servicenow") || subType.equals("splunk")) {
                 checkHttpsEndpoint(endpoint.getProperties(CamelProperties.class));
             }
+        } else if (Set.of(EMAIL_SUBSCRIPTION, DRAWER).contains(endpoint.getType())) {
+            getOrCreateInternalEndpointCommonChecks(endpoint.getProperties(SystemSubscriptionProperties.class), principal);
         } else if (endpoint.getType() == WEBHOOK || endpoint.getType() == ANSIBLE) {
             checkSslDisabledEndpoint(endpoint);
             // If SSL verification is disabled on the existing endpoint, only permit updates which re-enable verification.
@@ -681,15 +692,6 @@ public class EndpointResource extends EndpointResourceCommon {
         this.endpointTestService.testEndpoint(internalEndpointTestRequest);
     }
 
-    private static void checkSystemEndpoint(EndpointType endpointType) {
-        if (endpointType.isSystemEndpointType) {
-            throw new BadRequestException(String.format(
-                    "Is not possible to create or alter endpoint with type %s, check API for alternatives",
-                    endpointType
-            ));
-        }
-    }
-
     /** @deprecated to be removed once all endpoints with {@code disableSslVerification = true} are deleted. */
     @Deprecated(forRemoval = true)
     private void checkSslDisabledEndpoint(String orgId, UUID id) {
@@ -718,7 +720,7 @@ public class EndpointResource extends EndpointResourceCommon {
     }
 
     private boolean isEndpointTypeAllowed(EndpointType endpointType) {
-        return !backendConfig.isEmailsOnlyModeEnabled() || endpointType.isSystemEndpointType;
+        return !backendConfig.isEmailsOnlyModeEnabled() || EMAIL_SUBSCRIPTION.equals(endpointType) || DRAWER.equals(endpointType);
     }
 
     @DELETE

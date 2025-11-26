@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
+import static com.redhat.cloud.notifications.db.repositories.EndpointRepository.INTERNAL_ENDPOINT_TYPES;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
@@ -174,7 +175,7 @@ public class EndpointRepositoryTest {
         // Create the enabled system endpoints.
         final Set<Endpoint> systemEndpoints = new HashSet<>();
         for (final EndpointType endpointType : EndpointType.values()) {
-            if (endpointType.isSystemEndpointType) {
+            if (INTERNAL_ENDPOINT_TYPES.contains(endpointType)) {
                 systemEndpoints.add(this.resourceHelpers.createEndpoint(endpointType, null, true, 0));
             }
         }
@@ -430,7 +431,7 @@ public class EndpointRepositoryTest {
         final int originalServerErrors = 12;
         final Set<Endpoint> systemEndpoints = new HashSet<>();
         for (final EndpointType endpointType : EndpointType.values()) {
-            if (endpointType.isSystemEndpointType) {
+            if (INTERNAL_ENDPOINT_TYPES.contains(endpointType)) {
                 systemEndpoints.add(this.resourceHelpers.createEndpoint(endpointType, null, true, originalServerErrors));
             }
         }

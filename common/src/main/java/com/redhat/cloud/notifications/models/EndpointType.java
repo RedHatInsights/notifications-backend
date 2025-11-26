@@ -6,24 +6,22 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(enumeration = { "ansible", "camel", "drawer", "email_subscription", "webhook", "pagerduty" }) // TODO remove them once the transition to DTOs have been completed.
 public enum EndpointType {
     @JsonProperty("webhook") // TODO remove them once the transition to DTOs have been completed.
-    WEBHOOK(false, false),
+    WEBHOOK(false),
     @JsonProperty("email_subscription") // TODO remove them once the transition to DTOs have been completed.
-    EMAIL_SUBSCRIPTION(false, true),
+    EMAIL_SUBSCRIPTION(false),
     @JsonProperty("camel") // TODO remove them once the transition to DTOs have been completed.
-    CAMEL(true, false),
+    CAMEL(true),
     @JsonProperty("ansible") // TODO remove them once the transition to DTOs have been completed.
-    ANSIBLE(false, false),
+    ANSIBLE(false),
     @JsonProperty("drawer") // TODO remove them once the transition to DTOs have been completed.
-    DRAWER(false, true),
+    DRAWER(false),
     @JsonProperty("pagerduty") // TODO remove them once the transition to DTOs have been completed.
-    PAGERDUTY(false, false);
+    PAGERDUTY(false);
 
     public final boolean requiresSubType;
-    public final boolean isSystemEndpointType;
 
-    EndpointType(boolean requiresSubType, boolean isSystemEndpointType) {
+    EndpointType(boolean requiresSubType) {
         this.requiresSubType = requiresSubType;
-        this.isSystemEndpointType = isSystemEndpointType;
     }
 
     public static boolean isRecipientsEndpointType(final EndpointType endpointType) {
