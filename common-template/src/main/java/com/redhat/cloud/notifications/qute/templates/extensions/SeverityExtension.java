@@ -41,4 +41,20 @@ public class SeverityExtension {
             default -> "";
         };
     }
+
+    @TemplateExtension
+    public static String asPatternFlySeverity(String severity) {
+        if (severity == null) {
+            return "";
+        }
+        return switch (severity.toUpperCase()) {
+            case "CRITICAL" -> "critical";
+            case "IMPORTANT" -> "important";
+            case "MODERATE" -> "moderate";
+            case "LOW" -> "minor";
+            case "NONE" -> "none";
+            case "UNDEFINED" -> "undefined";
+            default -> "";
+        };
+    }
 }

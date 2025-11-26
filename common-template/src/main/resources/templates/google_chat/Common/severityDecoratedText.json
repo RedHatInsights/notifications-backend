@@ -1,7 +1,7 @@
 {
   "decoratedText": {
     "startIcon": {
-      "iconUrl": "https://console.redhat.com/apps/frontend-assets/email-assets/severities/{data.severity.toLowerCase}.png"
+      "iconUrl": "https://console.redhat.com/apps/frontend-assets/email-assets/severities/{data.severity.asPatternFlySeverity}.png"
     },
     "text": {#insert severity-label}"Severity:{/insert} {#if data.severity.toUpperCase == 'CRITICAL'}<font color=\"#B1380B\"><b>{data.severity.toTitleCase}</b></font>{#else}{data.severity.toTitleCase}{/if}"
   }
