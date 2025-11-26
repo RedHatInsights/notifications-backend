@@ -34,6 +34,7 @@ import com.redhat.cloud.notifications.models.dto.v1.EventTypeDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointTypeDTO;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.SystemSubscriptionPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.WebhookPropertiesDTO;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidatorTest;
@@ -121,6 +122,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -2040,7 +2042,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(EndpointDTO.class);
+
+        // check rbac group id from response
+        EndpointDTO endpointDto = responsePoint.mapTo(EndpointDTO.class);
+        assertInstanceOf(SystemSubscriptionPropertiesDTO.class, endpointDto.getProperties());
+        SystemSubscriptionPropertiesDTO emailEndpointProperties = (SystemSubscriptionPropertiesDTO) endpointDto.getProperties();
+        assertEquals(requestProps.getGroupId(), emailEndpointProperties.getGroupId());
+        assertEquals(1, emailEndpointProperties.getGroupIds().size());
+        assertTrue(emailEndpointProperties.getGroupIds().contains(requestProps.getGroupId()));
+
         String endpointId = responsePoint.getString("id");
         assertNotNull(endpointId);
 
