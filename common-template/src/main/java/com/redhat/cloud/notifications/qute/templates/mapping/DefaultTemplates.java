@@ -20,6 +20,7 @@ public class DefaultTemplates {
         entry(new TemplateDefinition(MS_TEAMS, null, null, null), "Default/default.json"),
         entry(new TemplateDefinition(GOOGLE_CHAT, null, null, null), "Default/default.json"),
         entry(new TemplateDefinition(SLACK, null, null, null), "Default/default.md"),
+        entry(new TemplateDefinition(SLACK, null, null, null, true), "Default/beta/default.json"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null), "Common/insightsDailyEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE, null, null, null), "Common/insightsDailyEmailTitle.txt"),
         entry(new TemplateDefinition(EMAIL_TITLE, null, null, null), "Common/insightsEmailTitle.txt")
