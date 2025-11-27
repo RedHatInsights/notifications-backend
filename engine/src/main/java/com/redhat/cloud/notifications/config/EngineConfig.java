@@ -60,6 +60,7 @@ public class EngineConfig {
     private String toggleKafkaOutgoingHighVolumeTopic;
     private String toggleIgnoreSeverityForApplications;
     private String toggleEventDeduplication;
+    private String toggleIncludeSeverityToFilterRecipients;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -162,6 +163,7 @@ public class EngineConfig {
         toggleBlacklistedEventTypes = toggleRegistry.register("blacklisted-event-types", true);
         toggleIgnoreSeverityForApplications = toggleRegistry.register("ignore-severity-for-applications", true);
         toggleEventDeduplication = toggleRegistry.register("event-deduplication", true);
+        toggleIncludeSeverityToFilterRecipients = toggleRegistry.register("include-severity-to-filter-recipients", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -187,6 +189,7 @@ public class EngineConfig {
         config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
         config.put(asyncEventProcessingToggle, isAsyncEventProcessing());
         config.put(valkeyKafkaMessageDeduplicatorToggle, isValkeyKafkaMessageDeduplicatorEnabled());
+        config.put(toggleIncludeSeverityToFilterRecipients, isIncludeSeverityToFilterRecipientsEnabled(""));
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -341,6 +344,14 @@ public class EngineConfig {
         if (unleashEnabled) {
             UnleashContext unleashContext = UnleashContextBuilder.buildUnleashContextWithOrgId(orgId);
             return unleash.isEnabled(toggleEventDeduplication, unleashContext, false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isIncludeSeverityToFilterRecipientsEnabled(String orgId) {
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleIncludeSeverityToFilterRecipients, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
         } else {
             return false;
         }

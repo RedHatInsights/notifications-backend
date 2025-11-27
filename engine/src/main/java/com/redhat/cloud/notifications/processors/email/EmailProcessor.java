@@ -2,6 +2,8 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.Severity;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -24,6 +26,7 @@ import jakarta.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -61,6 +64,9 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
     @Inject
     ObjectMapper objectMapper;
 
+    @Inject
+    EngineConfig engineConfig;
+
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
 
@@ -84,11 +90,17 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         Set<String> subscribers;
         Set<String> unsubscribers;
+
+        Optional<Severity> eventSeverity = Optional.empty();
+        if (engineConfig.isIncludeSeverityToFilterRecipientsEnabled(event.getOrgId())) {
+            eventSeverity = Optional.ofNullable(event.getSeverity());
+        }
+
         if (event.getEventType().isSubscribedByDefault()) {
             subscribers = Collections.emptySet();
-            unsubscribers = Set.copyOf(subscriptionRepository.getUnsubscribers(event.getOrgId(), event.getEventType().getId(), INSTANT));
+            unsubscribers = Set.copyOf(subscriptionRepository.getUnsubscribers(event.getOrgId(), event.getEventType().getId(), INSTANT, eventSeverity));
         } else {
-            subscribers = Set.copyOf(subscriptionRepository.getSubscribers(event.getOrgId(), event.getEventType().getId(), INSTANT));
+            subscribers = Set.copyOf(subscriptionRepository.getSubscribers(event.getOrgId(), event.getEventType().getId(), INSTANT, eventSeverity));
             unsubscribers = Collections.emptySet();
         }
 

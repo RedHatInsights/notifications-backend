@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.notification;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.annotation.IntegrationId;
@@ -68,6 +69,7 @@ import org.jboss.resteasy.reactive.RestPath;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -282,6 +284,14 @@ public class NotificationResource {
                 return new Facet(b.getId().toString(), b.getName(), b.getDisplayName(), applications);
             })
             .collect(Collectors.toList());
+    }
+
+    @GET
+    @Path("/severities")
+    @Produces(APPLICATION_JSON)
+    @Operation(summary = "List configured severities", description = "Returns a list of configured severities")
+    public Set<Severity> getSeverities() {
+        return EnumSet.allOf(Severity.class);
     }
 
     /**
