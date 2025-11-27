@@ -7,7 +7,8 @@ import com.redhat.cloud.notifications.qute.templates.mapping.SubscriptionService
 import email.pojo.DailyDigestSection;
 import email.pojo.EmailPendo;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,12 +36,13 @@ class TestSubscriptionServicesDailyTemplate extends EmailTemplatesRendererHelper
         return SubscriptionServices.BUNDLE_NAME;
     }
 
-    @Test
-    void testDailyEmailBodyAllApplications() throws JsonProcessingException {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testDailyEmailBodyAllApplications(boolean useBetaVersion) throws JsonProcessingException {
 
         Map<String, DailyDigestSection> dataMap = new HashMap<>();
 
-        generateAggregatedEmailBody(JSON_ERRATA_DEFAULT_AGGREGATION_CONTEXT, SubscriptionServices.ERRATA_APP_NAME, dataMap);
+        generateAggregatedEmailBody(JSON_ERRATA_DEFAULT_AGGREGATION_CONTEXT, SubscriptionServices.ERRATA_APP_NAME, dataMap, useBetaVersion);
 
         // sort application by name
         List<DailyDigestSection> result = dataMap.entrySet().stream()
@@ -48,17 +50,17 @@ class TestSubscriptionServicesDailyTemplate extends EmailTemplatesRendererHelper
             .map(Map.Entry::getValue)
             .toList();
 
-        TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null);
+        TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null, useBetaVersion);
         TemplateDefinition globalDailyTitleTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE, null, null, null);
 
         Map<String, Object> mapDataTitle = Map.of("source", Map.of("bundle", Map.of("display_name", "Subscription Services")));
 
         String templateTitleResult = templateService.renderTemplateWithCustomDataMap(globalDailyTitleTemplateDefinition, mapDataTitle);
-        assertEquals("Daily digest - Subscription Services", templateTitleResult);
+        assertEquals("Daily Digest - Subscription Services", templateTitleResult);
 
         Map<String, Object> mapData = Map.of("title", templateTitleResult, "items", result, "orgId", DEFAULT_ORG_ID);
 
-        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url()));
+        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url(), environment.url()));
 
         String templateResult = generateEmailFromContextMap(globalDailyTemplateDefinition, mapData, null);
         templateResultChecks(templateResult);

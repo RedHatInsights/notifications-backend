@@ -1,1 +1,1 @@
-Daily digest - {source.bundle.display_name}
+Daily Digest - {source.bundle.display_name}

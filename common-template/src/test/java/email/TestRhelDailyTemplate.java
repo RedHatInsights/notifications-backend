@@ -9,13 +9,14 @@ import email.pojo.EmailPendo;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static email.TestAdvisorTemplate.JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT;
-import static email.TestInventoryTemplate.JSON_INVENTORY_DEFAULT_AGGREGATION_CONTEXT;
+import static email.TestInventoryTemplate.JSON_INVENTORY_FULL_AGGREGATION_CONTEXT;
 import static email.TestPatchTemplate.JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestResourceOptimizationTemplate.JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT;
 import static email.pojo.EmailPendo.GENERAL_PENDO_MESSAGE;
@@ -38,24 +39,25 @@ public class TestRhelDailyTemplate extends EmailTemplatesRendererHelper {
     @Inject
     TemplateService templateService;
 
-    @Test
-    public void testDailyEmailBodyAllApplications() throws JsonProcessingException {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testDailyEmailBodyAllApplications(boolean useBetaTemplate) throws JsonProcessingException {
 
         Map<String, DailyDigestSection> dataMap = new HashMap<>();
 
-        generateAggregatedEmailBody(TestPoliciesTemplate.buildPoliciesAggregatedPayload(), "policies", dataMap);
+        generateAggregatedEmailBody(TestPoliciesTemplate.buildPoliciesAggregatedPayload(), "policies", dataMap, useBetaTemplate);
 
-        generateAggregatedEmailBody(JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT, "advisor", dataMap);
+        generateAggregatedEmailBody(JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT, "advisor", dataMap, useBetaTemplate);
 
-        generateAggregatedEmailBody(templateService.convertActionToContextMap(TestHelpers.createComplianceAction()), "compliance", dataMap);
+        generateAggregatedEmailBody(templateService.convertActionToContextMap(TestHelpers.createComplianceAction()), "compliance", dataMap, useBetaTemplate);
 
-        generateAggregatedEmailBody(JSON_INVENTORY_DEFAULT_AGGREGATION_CONTEXT, "inventory", dataMap);
+        generateAggregatedEmailBody(JSON_INVENTORY_FULL_AGGREGATION_CONTEXT, "inventory", dataMap, useBetaTemplate);
 
-        generateAggregatedEmailBody(JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT, "patch", dataMap);
+        generateAggregatedEmailBody(JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT, "patch", dataMap, useBetaTemplate);
 
-        generateAggregatedEmailBody(JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT, "resource-optimization", dataMap);
+        generateAggregatedEmailBody(JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT, "resource-optimization", dataMap, useBetaTemplate);
 
-        generateAggregatedEmailBody(templateService.convertActionToContextMap(TestHelpers.createVulnerabilityAction()), "vulnerability", dataMap);
+        generateAggregatedEmailBody(templateService.convertActionToContextMap(TestHelpers.createVulnerabilityAction()), "vulnerability", dataMap, useBetaTemplate);
 
         // sort application by name
         List<DailyDigestSection> result = dataMap.entrySet().stream()
@@ -63,15 +65,15 @@ public class TestRhelDailyTemplate extends EmailTemplatesRendererHelper {
             .map(Map.Entry::getValue)
             .toList();
 
-        TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null);
+        TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null, useBetaTemplate);
         TemplateDefinition globalDailyTitleTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE, null, null, null);
 
-        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url()));
+        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url(), environment.url()));
 
         Map<String, Object> mapDataTitle = Map.of("source", Map.of("bundle", Map.of("display_name", "Red Hat Enterprise Linux")));
 
         String templateTitleResult = templateService.renderTemplateWithCustomDataMap(globalDailyTitleTemplateDefinition, mapDataTitle);
-        assertEquals("Daily digest - Red Hat Enterprise Linux", templateTitleResult);
+        assertEquals("Daily Digest - Red Hat Enterprise Linux", templateTitleResult);
 
         Map<String, Object> mapData = Map.of("title", templateTitleResult, "items", result, "orgId", DEFAULT_ORG_ID);
 
