@@ -1,0 +1,146 @@
+{@boolean renderSection1=action.context.inventory.errors.size}
+{@boolean renderSection2=(action.context.inventory.new_systems.orEmpty.size || action.context.inventory.stale_systems.orEmpty.size || action.context.inventory.deleted_systems.orEmpty.size)}
+{@boolean renderCustomLinks=true}
+{@boolean renderTitleRightPart=true}
+{#include email/Common/insightsEmailBodyLightV2}
+{#content-render-custom-links-section}
+    {#if action.context.inventory.errors.size() > 0}
+        <a style="{body-section-table-td-a-style}" href="#inventory-section1">{#insert content-title-section1}{/} ({action.context.inventory.errors.size()})</a>
+    {/if}
+    {#if action.context.inventory.new_systems.size() > 0}
+        <!-- next section -->
+        <a style="{body-section-table-td-a-style}" href="#inventory-section2-1">New systems registered ({action.context.inventory.new_systems.size()})</a>
+    {/if}
+    {#if action.context.inventory.stale_systems.size() > 0}
+        <!-- next section -->
+        <a style="{body-section-table-td-a-style}" href="#inventory-section2-2">Stale systems ({action.context.inventory.stale_systems.size()})</a>
+    {/if}
+    {#if action.context.inventory.deleted_systems.size() > 0}
+        <!-- next section -->
+        <a style="{body-section-table-td-a-style}" href="#inventory-section2-3">Systems deleted ({action.context.inventory.deleted_systems.size()})</a>
+    {/if}
+{/content-render-custom-links-section}
+{#content-title-section1}
+    Host{#if action.context.inventory.errors.size() > 1}s{/if} with validation error
+{/content-title-section1}
+{#content-title-right-part}
+{action.context.inventory.errors.size()}
+{/content-title-right-part}
+{#content-body-section1}
+    <p style="{body-section-p-style}">
+        Red Hat Lightspeed has identified {action.context.inventory.errors.size()} host{#if action.context.inventory.errors.size() > 1}s{/if} that presented a validation error.
+        For errors in updating hosts, please review the Red Hat Lightspeed Inventory service to further assess and determine next steps.
+    </p>
+    <p style="{body-section-p-style}">
+        If no hosts were created by {#if action.context.inventory.errors.size() > 1}these changes, these errors{#else}this change, this error{/if} will not appear in the service.
+    </p>
+
+    <table style="{body-section-table-style}">
+        <thead>
+            <tr>
+                <th style="{body-section-table-th-style}">Host Name</th>
+                <th style="{body-section-table-th-style}">Error</th>
+            </tr>
+        </thead>
+        <tbody style="{body-section-table-tbody-style}">
+            {#each action.context.inventory.errors}
+            <tr>
+                <td style="{body-section-table-td-style}">{#if it.display_name}{it.display_name}{#else}Not available{/if}</td>
+                <td style="{body-section-table-td-style}">{it.message}</td>
+            </tr>
+            {/each}
+        </tbody>
+    </table>
+{/content-body-section1}
+
+{#content-title-section2}
+    Inventory
+{/content-title-section2}
+{#content-title-right-part-section2}
+    {action.context.inventory.new_systems.size() + action.context.inventory.stale_systems.size() + action.context.inventory.deleted_systems.size()}
+{/content-title-right-part-section2}
+{#content-body-section2}
+    {#let total_systems_state_change=(action.context.inventory.new_systems.size() + action.context.inventory.stale_systems.size() + action.context.inventory.deleted_systems.size())}
+        <p style="{body-section-p-style}">{total_systems_state_change} system{#if total_systems_state_change > 1}s{/if} changed state:</p>
+    {/let}
+{#if action.context.inventory.new_systems.size() > 0}
+    <a id="inventory-section2-1" name="inventory-section2-1"></a>
+    {#if action.context.inventory.stale_systems.orEmpty.size() > 0 || action.context.inventory.deleted_systems.orEmpty.size > 0}
+        <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 0 8px 0 8px; width: 100%;"><tr><td>
+    {/if}
+
+    <table style="{body-section-table-style}">
+        <thead>
+            <tr>
+                <th style="{body-section-table-th-style}">New system registered</th>
+            </tr>
+        </thead>
+        <tbody style="{body-section-table-tbody-style}">
+            {#each action.context.inventory.new_systems}
+            <tr>
+                <td style="{body-section-table-td-style}"><a style="{body-section-table-td-a-style}" target="_blank" href="{environment.url}/insights/inventory/{it.inventory_id}">{it.display_name}</a></td>
+            </tr>
+            {/each}
+        </tbody>
+    </table>
+    {#if action.context.inventory.stale_systems.orEmpty.size() > 0 || action.context.inventory.deleted_systems.orEmpty.size > 0}
+        </td></tr></table><div style="height: 24px">&#xA0;</div>
+    {/if}
+{/if}
+{#if action.context.inventory.stale_systems.size() > 0}
+    <a id="inventory-section2-2" name="inventory-section2-2"></a>
+    {#if action.context.inventory.new_systems.orEmpty.size() > 0 || action.context.inventory.deleted_systems.orEmpty.size > 0}
+        <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 0 8px 0 8px; width: 100%;"><tr><td>
+    {/if}
+    <table style="{body-section-table-style}">
+        <thead>
+        <tr>
+            <th style="{body-section-table-th-style}">Stale system</th>
+        </tr>
+        </thead>
+        <tbody style="{body-section-table-tbody-style}">
+        {#each action.context.inventory.stale_systems}
+        <tr>
+            <td style="{body-section-table-td-style}"><a style="{body-section-table-td-a-style}" target="_blank" href="{environment.url}/insights/inventory/{it.inventory_id}">{it.display_name}</a></td>
+        </tr>
+        {/each}
+        </tbody>
+    </table>
+    {#if action.context.inventory.new_systems.orEmpty.size() > 0 || action.context.inventory.deleted_systems.orEmpty.size > 0}
+        </td></tr></table>
+    {/if}
+    {#if action.context.inventory.deleted_systems.orEmpty.size > 0}
+        <div style="height: 24px">&#xA0;</div>
+    {/if}
+{/if}
+{#if action.context.inventory.deleted_systems.size() > 0}
+    <a id="inventory-section2-3" name="inventory-section2-3"></a>
+    {#if action.context.inventory.new_systems.orEmpty.size() > 0 || action.context.inventory.stale_systems.orEmpty.size > 0}
+        <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 0 8px 0 8px; width: 100%;"><tr><td>
+    {/if}
+    <table style="{body-section-table-style}">
+        <thead>
+        <tr>
+            <th style="{body-section-table-th-style}">System deleted</th>
+        </tr>
+        </thead>
+        <tbody style="{body-section-table-tbody-style}">
+        {#each action.context.inventory.deleted_systems}
+            <tr>
+                <td style="{body-section-table-td-style}">{it.display_name}</td>
+            </tr>
+        {/each}
+        </tbody>
+    </table>
+    {#if action.context.inventory.new_systems.orEmpty.size() > 0 || action.context.inventory.stale_systems.orEmpty.size > 0}
+        </td></tr></table>
+    {/if}
+{/if}
+    <div style="height: 24px">&#xA0;</div>
+    <p style="{body-section-p-style}">
+    If you want to see more details, go to Red Hat Lightspeed Inventory.
+    </p>
+{/content-body-section2}
+{#content-button-href}{environment.url}/insights/inventory/?{query_params}{/content-button-href}
+{#content-button-service-name}Systems - Inventory{/content-button-service-name}
+{/include}
