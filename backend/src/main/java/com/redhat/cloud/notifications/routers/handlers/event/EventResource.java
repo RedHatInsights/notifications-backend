@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.routers.handlers.event;
 
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
-import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -70,9 +69,6 @@ public class EventResource {
     EventRepository eventRepository;
 
     @Inject
-    KesselAuthorization kesselAuthorization;
-
-    @Inject
     KesselInventoryAuthorization kesselInventoryAuthorization;
 
     @GET
@@ -126,11 +122,7 @@ public class EventResource {
             for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
                 int criterionHashCode = eventAuthorizationCriterion.authorizationCriterion().hashCode();
                 if (!criterionResultCache.containsKey(criterionHashCode)) {
-                    if (backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(orgId)) {
-                        criterionResultCache.put(criterionHashCode, kesselInventoryAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
-                    } else {
-                        criterionResultCache.put(criterionHashCode, kesselAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
-                    }
+                    criterionResultCache.put(criterionHashCode, kesselInventoryAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
                 }
                 if (!criterionResultCache.get(criterionHashCode)) {
                     Log.infof("%s is not visible for current user", eventAuthorizationCriterion.id());
