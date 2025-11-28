@@ -3443,6 +3443,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(HttpStatus.SC_OK)
             .body("data", Matchers.hasSize(1))
+            .body("links", Matchers.anEmptyMap())
             .body("meta.count", Matchers.is(1));
 
         // Create an endpoint.
