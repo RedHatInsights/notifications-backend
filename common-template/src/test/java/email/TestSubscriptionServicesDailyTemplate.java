@@ -60,7 +60,7 @@ class TestSubscriptionServicesDailyTemplate extends EmailTemplatesRendererHelper
 
         Map<String, Object> mapData = Map.of("title", templateTitleResult, "items", result, "orgId", DEFAULT_ORG_ID);
 
-        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url(), environment.url()));
+        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url()));
 
         String templateResult = generateEmailFromContextMap(globalDailyTemplateDefinition, mapData, null);
         templateResultChecks(templateResult);

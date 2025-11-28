@@ -26,7 +26,7 @@ public class TestPendoMessage extends EmailTemplatesRendererHelper {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testInstantEmailBody(boolean useBetaTemplate) {
-        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url(), environment.url()));
+        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url()));
 
         Action action = PatchTestHelpers.createPatchAction();
         String result = generateEmailBody(EVENT_TYPE_NAME, action, useBetaTemplate);

@@ -68,7 +68,7 @@ public class TestRhelDailyTemplate extends EmailTemplatesRendererHelper {
         TemplateDefinition globalDailyTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY, null, null, null, useBetaTemplate);
         TemplateDefinition globalDailyTitleTemplateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE, null, null, null);
 
-        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url(), environment.url()));
+        EmailPendo emailPendo = new EmailPendo(GENERAL_PENDO_TITLE, String.format(GENERAL_PENDO_MESSAGE, environment.url()));
 
         Map<String, Object> mapDataTitle = Map.of("source", Map.of("bundle", Map.of("display_name", "Red Hat Enterprise Linux")));
 
