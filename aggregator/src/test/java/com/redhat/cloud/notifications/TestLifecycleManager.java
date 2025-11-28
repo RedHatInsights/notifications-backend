@@ -34,17 +34,11 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
                 System.out.println(" -- setting up postgres");
                 setupPostgres(properties);
             }
-            System.out.println(" -- setting up InMemoryConnector");
-            setupInMemoryConnector(properties);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         System.out.println(" -- Running with properties: " + properties);
         return properties;
-    }
-
-    public void setupInMemoryConnector(Map<String, String> props) {
-        props.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(DailyEmailAggregationJob.EGRESS_CHANNEL));
     }
 
     @Override
