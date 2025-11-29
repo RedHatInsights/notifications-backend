@@ -22,12 +22,17 @@ public class ErrataTestHelpers {
     private static final String ERRATA_SEARCH_URL = "https://access.redhat.com/errata-search/?from=notifications&integration=";
 
     public static Action createErrataAction() {
+        return createErrataAction(null);
+    }
+
+    public static Action createErrataAction(String severity) {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(StringUtils.EMPTY);
         emailActionMessage.setApplication(StringUtils.EMPTY);
         emailActionMessage.setTimestamp(LocalDateTime.of(2022, 10, 3, 15, 22, 13, 25));
         emailActionMessage.setEventType(StringUtils.EMPTY);
         emailActionMessage.setRecipients(List.of());
+        emailActionMessage.setSeverity(severity);
 
         emailActionMessage.setContext(
                 new Context.ContextBuilder()
