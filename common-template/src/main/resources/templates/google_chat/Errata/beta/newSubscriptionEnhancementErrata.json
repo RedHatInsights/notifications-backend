@@ -1,0 +1,63 @@
+{#include google_chat/Common/commonCardsV2.json}
+{#content-body}
+"header": {
+  "title": "Enhancements - Errata - Subscription Services"
+},
+"sections": [
+  {
+    "collapsible": false,
+    "widgets": [
+      {#if data.severity??}
+      {#include google_chat/Common/severityDecoratedText.json /}
+      {/if}
+      {
+        "textParagraph": {
+          "text": "There {#if data.events.size() == 1}is 1 enhancement{#else}are {data.events.size()} enhancements{/if} affecting your subscriptions.{#if data.events.size() > 3}<br>First 3 are:{/if}"
+        }
+      },
+      {
+        "divider": {}
+      },
+      {#each data.events}
+      {#if it_index < 3}
+      {
+        "decoratedText": {
+          "text": "\u2699\uFE0F <a href=\"{data.context.base_url}{it.payload.id}?from=notifications&integration=google_chat\">{it.payload.id}</a><br>{it.payload.synopsis}",
+          "wrapText": true
+        }
+      },
+      {/if}
+      {/each}
+      {
+        "divider": {}
+      },
+      {
+        "textParagraph": {
+          "text": "Explore these and others in the <b>errata search</b>."
+        }
+      },
+      {
+        "buttonList": {
+          "buttons": [
+            {
+              "text": "Search errata",
+              "type": "FILLED",
+              "color": {
+                "red": 0,
+                "green": 0.396,
+                "blue": 0.796
+              },
+              "onClick": {
+                "openLink": {
+                  "url": "https://access.redhat.com/errata-search/?from=notifications&integration=google_chat"
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+]
+{/content-body}
+{/include}
