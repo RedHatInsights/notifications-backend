@@ -1,0 +1,9 @@
+{
+  "type": "context",
+  "elements": [
+    {
+      "type": "mrkdwn",
+      "text": "{data.severity.asSeverityEmoji} {#insert severity-label}Severity:{/} {data.severity.toTitleCase}"
+    }
+  ]
+},
