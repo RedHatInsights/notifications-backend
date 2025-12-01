@@ -3,7 +3,8 @@ package email;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,9 +40,10 @@ public class TestResourceOptimizationTemplate extends EmailTemplatesRendererHelp
         return "resource-optimization";
     }
 
-    @Test
-    public void testDailyDigestEmailBody() throws JsonProcessingException {
-        String result = generateAggregatedEmailBody(JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT);
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testDailyDigestEmailBody(boolean useBetaTemplate) throws JsonProcessingException {
+        String result = generateAggregatedEmailBody(JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT, useBetaTemplate);
         assertTrue(result.contains("Today, rules triggered on"));
         assertTrue(result.contains("IDLING"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));

@@ -1,0 +1,208 @@
+{@String title-right-part-link-style = "color: black; text-decoration-line: none; text-decoration: none;"}
+{@String body-section-p-style = "margin-top: 0px; font-size: 16px; font-weight: 400;"}
+{@String body-section-underline-link-style = "text-decoration-line: underline !important; color: rgb(0, 102, 204); text-decoration-color: rgb(0, 102, 204);"}
+{@String body-section-table-style = "width: 100% !important; border-collapse: collapse !important;"}
+{@String body-section-table-th-style = "font-size: 12px; font-weight: 700; text-align: left; padding-bottom: 10px; padding-left: 10px; padding-right: 10px; padding-top: 10px;"}
+{@String body-section-table-tbody-style = "font-size: 14px; font-weight: 400;"}
+{@String body-section-table-tr-style = "border-bottom-color: rgb(184, 187, 190); border-bottom-width: 1px; border-bottom-style: solid;"}
+{@String body-section-table-td-style = "padding-bottom: 8px; padding-left: 10px; padding-right: 10px; padding-top: 8px; border-top-color: rgb(184, 187, 190); border-top-width: 1px; border-top-style: solid; line-height: 22px;"}
+{@String body-section-table-td-a-style = "color: rgb(0, 102, 204); text-decoration-color: rgb(0, 102, 204); text-decoration-line: none; text-decoration: none;"}
+{@String body-badge-style = "font-size: 16px; font-family: 'Red Hat Text', sans-serif; font-weight: 400; display: inline-block; padding-right: 0.5rem; padding-left: 0.5rem; text-align: center; background-color: #f0f0f0; border-radius: 30em;"}
+
+{@String query_params = "from=notifications&integration=daily_digest"}
+{#if renderCustomLinks.or(false)}
+    {#insert content-render-custom-links-section}{/}
+{#else}
+    <a style="{body-section-table-td-a-style}" href="#{action.context.application}-section1">{#insert content-title-section1}{/} {#insert content-title-counter}{/}</a>
+     <!-- next section -->
+    {#if renderSection2.or(false) && renderButtonSection3.or(false)}
+        <a style="{body-section-table-td-a-style}" href="#{action.context.application}-section2">{#insert content-title-section2}{/} {#insert content-title-right-part-section2}{/}</a>
+    {/if}
+{/if}
+<!-- Body section -->
+{#if renderSection1.or(false)}
+    <tr>
+        <td style="padding: 0 16px 24px 16px;">
+            <a id="{action.context.application}-section1" name="{action.context.application}-section1"></a>
+            <table cellspacing="0" cellpadding="0" border="0" width="100%" style="border-radius: 16px; overflow: hidden; background-attachment: scroll; background-clip: border-box; background-color: rgb(255, 255, 255); overflow-x: hidden; overflow-y: hidden">
+                <tr>
+                    <td>
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-bottom: 1pt solid #c7c7c7;">
+                            <tr>
+                                <td style="font-size: 24px; font-weight: 500; padding-top: 16px; padding-bottom: 16px; padding-left: 22px;">
+                                    <span>{#insert content-title-section1}{/}</span>
+                                </td>
+                                {#if renderTitleRightPart.or(false)}
+                                    <td style="text-align: right; padding-top: 16px; padding-bottom: 16px; padding-left: 22px; padding-right: 22px;">
+                                        <!--[if mso]>
+                                        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" height="25">
+                                            <tr>
+                                                <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_left.png" alt="" height="25" style="display: block; border: none;" /></td>
+                                                <td style="font-size: 14px; font-weight: 400; color: #ffffff; vertical-align: middle; background-color: #0066cc;">
+                                                    {#insert content-title-right-part}{/}
+                                                </td>
+                                                <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_right.png" alt="" height="25" style="display: block; border: none;" /></td>
+                                            </tr>
+                                        </table>
+
+                                        <![endif]-->
+
+                                        <!--[if !mso]><!-->
+                                        <span style="font-size: 16px; font-weight: 400; color: #ffffff; display: inline-block; padding-right: 8px; padding-left: 8px; text-align: center; background-color: #0066cc; border-radius: 16px;">
+                                                {#insert content-title-right-part}{/}
+                                        </span>
+                                        <!--<![endif]-->
+                                    </td>
+                                {/if}
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="max-width: 100%; overflow: hidden; padding: 0px 0px 24px 0px; background-color: #fff;"></td>
+                </tr>
+                <tr>
+                    <td style="max-width: 100%; overflow: hidden; padding: 0px 20px 0px 20px; background-color: #fff;">
+                        {#insert content-body-section1}{/}
+                    </td>
+                </tr>
+
+                    <!-- Blue external link button -->
+                    <tr>
+                        <td style="padding: 24px 0px;">
+                            <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" align="center">
+                                <tr>
+                                    <td>
+                                        <!--[if mso]>
+                                                <a href="{#insert content-button-href}{/}" target="_blank" style="font-size: 14px; font-weight: 400; color: #ffffff; text-decoration: none; ">
+                                                    <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" height="37">
+                                                        <tr>
+                                                            <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_left.png" alt="" height="37" style="display: block; border: none;" /></td>
+                                                            <td style="padding-right: 8px; font-size: 14px; font-weight: 400; color: #ffffff; vertical-align: middle; background-color: #0066cc;">
+                                                                Go to {#insert content-button-service-name}{/}
+                                                            </td>
+                                                            <td style="vertical-align: middle; background-color: #0066cc;">
+                                                                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/external-link.png" alt="" width="14" height="14" style="display: block; border: none;" />
+                                                            </td>
+                                                            <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_right.png" alt="" height="37" style="display: block; border: none;" /></td>
+                                                        </tr>
+                                                    </table>
+                                                </a>
+                                                <![endif]-->
+
+                                        <!--[if !mso]><!-->
+                                        <a href="{#insert content-button-href}{/}" target="_blank" style="display: inline-block; padding: 8px 14px; font-size: 14px; font-weight: 400; color: #ffffff; text-decoration: none; background-color: #0066cc; border-radius: 24px;">
+                                            <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; background-color: #0066cc; ">
+                                                <tr>
+                                                    <td style="padding-right: 8px; font-size: 14px; font-weight: 400; line-height: 21px; color: #ffffff; vertical-align: middle;">
+                                                        Go to {#insert content-button-service-name}{/}
+                                                    </td>
+                                                    <td style="line-height: 21px; vertical-align: middle;">
+                                                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/external-link.png" alt="" width="14" height="14" style="display: block; border: none;" />
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </a>
+                                        <!--<![endif]-->
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+            </table>
+        </td>
+    </tr>
+{/if}
+{#if renderSection2.or(false)}
+    <tr>
+        <td style="padding: 0 16px 24px 16px;">
+            <a id="{action.context.application}-section2" name="{action.context.application}-section2"></a>
+            <table cellspacing="0" cellpadding="0" border="0" width="100%" style="border-radius: 16px; overflow: hidden; background-attachment: scroll; background-clip: border-box; background-color: rgb(255, 255, 255); overflow-x: hidden; overflow-y: hidden">
+                <tr>
+                    <td>
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-bottom: 1pt solid #c7c7c7;">
+                            <tr>
+                                <td style="font-size: 24px; font-weight: 500; padding-top: 16px; padding-bottom: 16px; padding-left: 22px;">
+                                    <span>{#insert content-title-section2}{/}</span>
+                                </td>
+                                {#if renderTitleRightPart.or(false)}
+                                    <td style="text-align: right; padding-top: 16px; padding-bottom: 16px; padding-left: 22px; padding-right: 22px;">
+                                        <!--[if mso]>
+                                        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" height="25">
+                                            <tr>
+                                                <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_left.png" alt="" height="25" style="display: block; border: none;" /></td>
+                                                <td style="font-size: 14px; font-weight: 400; color: #ffffff; vertical-align: middle; background-color: #0066cc;">
+                                                    {#insert content-title-right-part-section2}{/}
+                                                </td>
+                                                <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_right.png" alt="" height="25" style="display: block; border: none;" /></td>
+                                            </tr>
+                                        </table>
+
+                                        <![endif]-->
+
+                                        <!--[if !mso]><!-->
+                                        <span style="font-size: 16px; font-weight: 400; color: #ffffff; display: inline-block; padding-right: 8px; padding-left: 8px; text-align: center; background-color: #0066cc; border-radius: 16px;">
+                                                {#insert content-title-right-part-section2}{/}
+                                        </span>
+                                        <!--<![endif]-->
+                                    </td>
+                                {/if}
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="max-width: 100%; overflow: hidden; padding: 0px 0px 24px 0px; background-color: #fff;"></td>
+                </tr>
+                <tr>
+                    <td style="max-width: 100%; overflow: hidden; padding: 0px 20px 0px 20px; background-color: #fff;">
+                        {#insert content-body-section2}{/}
+                    </td>
+                </tr>
+
+                <!-- Blue external link button -->
+                <tr>
+                    <td style="padding: 24px 0px;">
+                        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" align="center">
+                            <tr>
+                                <td>
+                                    <!--[if mso]>
+                                    <a href="{#insert content-button-href}{/}" target="_blank" style="font-size: 14px; font-weight: 400; color: #ffffff; text-decoration: none; ">
+                                        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" height="37">
+                                            <tr>
+                                                <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_left.png" alt="" height="37" style="display: block; border: none;" /></td>
+                                                <td style="padding-right: 8px; font-size: 14px; font-weight: 400; color: #ffffff; vertical-align: middle; background-color: #0066cc;">
+                                                    Go to {#insert content-button-service-name}{/}
+                                                </td>
+                                                <td style="vertical-align: middle; background-color: #0066cc;">
+                                                    <img src="https://console.redhat.com/apps/frontend-assets/email-assets/external-link.png" alt="" width="14" height="14" style="display: block; border: none;" />
+                                                </td>
+                                                <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_right.png" alt="" height="37" style="display: block; border: none;" /></td>
+                                            </tr>
+                                        </table>
+                                    </a>
+                                    <![endif]-->
+
+                                    <!--[if !mso]><!-->
+                                    <a href="{#insert content-button-href}{/}" target="_blank" style="display: inline-block; padding: 8px 14px; font-size: 14px; font-weight: 400; color: #ffffff; text-decoration: none; background-color: #0066cc; border-radius: 24px;">
+                                        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; background-color: #0066cc; ">
+                                            <tr>
+                                                <td style="padding-right: 8px; font-size: 14px; font-weight: 400; line-height: 21px; color: #ffffff; vertical-align: middle;">
+                                                    Go to {#insert content-button-service-name}{/}
+                                                </td>
+                                                <td style="line-height: 21px; vertical-align: middle;">
+                                                    <img src="https://console.redhat.com/apps/frontend-assets/email-assets/external-link.png" alt="" width="14" height="14" style="display: block; border: none;" />
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </a>
+                                    <!--<![endif]-->
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+{/if}
