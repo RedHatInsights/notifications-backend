@@ -7,10 +7,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.project_kessel.api.auth.ClientConfigAuth;
 import org.project_kessel.api.auth.OAuth2ClientCredentials;
-import org.project_kessel.api.auth.OIDCDiscovery;
-import org.project_kessel.api.auth.OIDCDiscoveryMetadata;
 import org.project_kessel.api.inventory.v1beta2.CheckForUpdateRequest;
 import org.project_kessel.api.inventory.v1beta2.CheckForUpdateResponse;
 import org.project_kessel.api.inventory.v1beta2.CheckRequest;
@@ -22,6 +19,9 @@ import org.project_kessel.api.inventory.v1beta2.KesselInventoryServiceGrpc;
 public class KesselCheckClient {
 
     @Inject
+    OAuth2ClientCredentialsCache oauth2ClientCredentialsCache;
+
+    @Inject
     BackendConfig backendConfig;
 
     private KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub grpcClient;
@@ -30,9 +30,7 @@ public class KesselCheckClient {
     @PostConstruct
     void postConstruct() {
 
-        OIDCDiscoveryMetadata oidcDiscovery = OIDCDiscovery.fetchOIDCDiscovery(backendConfig.getOidcIssuer());
-        ClientConfigAuth authConfig = new ClientConfigAuth(backendConfig.getOidcClientId(), backendConfig.getOidcSecret(), oidcDiscovery.tokenEndpoint());
-        OAuth2ClientCredentials credentials = new OAuth2ClientCredentials(authConfig);
+        OAuth2ClientCredentials credentials = oauth2ClientCredentialsCache.getCredentials();
 
         Pair<KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub, ManagedChannel> clientAndChannel = new ClientBuilder(backendConfig.getKesselUrl())
             .oauth2ClientAuthenticated(credentials)
