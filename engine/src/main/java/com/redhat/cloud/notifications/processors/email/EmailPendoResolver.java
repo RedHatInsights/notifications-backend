@@ -29,7 +29,7 @@ public class EmailPendoResolver {
         } else if (!isPendoMessageEnabled(event, forcedEmail)) {
             return null;
         } else {
-            String pendoMessage = String.format(GENERAL_PENDO_MESSAGE, environment.url(), environment.url());
+            String pendoMessage = String.format(GENERAL_PENDO_MESSAGE, environment.url());
             String pendoTitle = GENERAL_PENDO_TITLE;
             return new EmailPendo(pendoTitle, pendoMessage);
         }

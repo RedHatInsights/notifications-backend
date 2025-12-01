@@ -52,6 +52,26 @@ public class TestPatchTemplate extends EmailTemplatesRendererHelper {
         "   \"end_time\":null" +
         "}";
 
+    public static final String JSON_PATCH_DEFAULT_SINGLE_AGGREGATION_CONTEXT = "{" +
+        "   \"patch\":{" +
+        "      \"security\":[" +
+        "         {" +
+        "            \"name\":\"advisory_1\"," +
+        "            \"synopsis\":\"synopsis\"" +
+        "         }" +
+        "      ]," +
+        "      \"bugfix\":[]," +
+        "      \"enhancement\":[]," +
+        "      \"other\":[" +
+        "         " +
+        "      ]" +
+        "   }," +
+        "   \"total_advisories\":1," +
+        "   \"start_time\":null," +
+        "   \"end_time\":null" +
+        "}";
+
+
     @Override
     protected String getApp() {
         return "patch";
@@ -82,6 +102,13 @@ public class TestPatchTemplate extends EmailTemplatesRendererHelper {
     public void testDailyDigestEmailBody(boolean useBetaTemplate) throws JsonProcessingException {
         String result = generateAggregatedEmailBody(JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT, useBetaTemplate);
         assertTrue(result.contains("There are 4 new advisories affecting your systems"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+    }
+
+    @Test
+    public void testDailyDigestEmailBodySingleAdvisory() throws JsonProcessingException {
+        String result = generateAggregatedEmailBody(JSON_PATCH_DEFAULT_SINGLE_AGGREGATION_CONTEXT, true);
+        assertTrue(result.contains("There is 1 new advisory affecting your systems"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }

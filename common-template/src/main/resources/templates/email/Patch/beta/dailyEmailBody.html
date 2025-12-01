@@ -11,7 +11,7 @@
 {action.context.total_advisories}
 {/content-title-right-part}
 {#content-body-section1}
-<p style="{body-section-p-style}"> There are {action.context.total_advisories} new advisories affecting your systems:</p>
+<p style="{body-section-p-style}">There {#if action.context.total_advisories == 1}is {action.context.total_advisories} new advisory{#else}are {action.context.total_advisories} new advisories{/if} affecting your systems:</p>
     {#for key in action.context.patch.keySet()}
         {#if action.context.patch.get(key).size() > 0}
             {#if !key_isFirst}
