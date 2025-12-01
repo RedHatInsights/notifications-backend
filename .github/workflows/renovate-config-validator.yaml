@@ -1,0 +1,24 @@
+name: Renovate Config Validator
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - renovate.json
+  push:
+    branches:
+      - master
+    paths:
+      - renovate.json
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      TEST_IMAGE: quay.io/konflux-ci/mintmaker-renovate-image:latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate renovate.json
+        run: |
+          podman run --rm -v ./:/src:z ${{ env.TEST_IMAGE }} renovate-config-validator /src/renovate.json
