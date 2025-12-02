@@ -32,7 +32,6 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -298,10 +297,9 @@ public class EventConsumer {
                     event.setHasAuthorizationCriterion(null != recipientsAuthorizationCriterionExtractor.extract(event));
                     updateSeverity(event);
 
-                    if (event.getId() == null) {
-                        // NOTIF-499 If there is no ID provided whatsoever we create one.
-                        event.setId(Objects.requireNonNullElseGet(messageId, UUID::randomUUID));
-                    }
+                    event.setExternalId(messageId);
+                    event.setId(UUID.randomUUID());
+
                     eventRepository.create(event);
 
                     /*

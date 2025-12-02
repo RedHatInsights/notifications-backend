@@ -174,6 +174,7 @@ public class EventResource {
 
             EventLogEntry entry = new EventLogEntry();
             entry.setId(event.getId());
+            entry.setExternalId(event.getExternalId());
             entry.setCreated(event.getCreated());
             entry.setBundle(event.getBundleDisplayName());
             entry.setApplication(event.getApplicationDisplayName());

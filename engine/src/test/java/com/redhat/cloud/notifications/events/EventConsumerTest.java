@@ -58,6 +58,7 @@ import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MES
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_VALID_COUNTER_NAME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -160,11 +161,13 @@ public class EventConsumerTest {
                 PROCESSING_BLACKLISTED_COUNTER_NAME
         );
 
-        verifyExactlyOneProcessing(eventType, payload, action, true);
+        final Event processedEvent = verifyExactlyOneProcessing(eventType, payload, action, true);
         verifySeverity(action, false);
         verify(kafkaMessageDeduplicator, times(1)).isNew(messageId);
         // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
         verify(eventDeduplicator, never()).isNew(any(Event.class));
+        assertEquals(messageId, processedEvent.getExternalId());
+        assertNotEquals(messageId, processedEvent.getId());
     }
 
     @Test
@@ -457,7 +460,7 @@ public class EventConsumerTest {
                 .when(endpointProcessor).process(any(Event.class));
     }
 
-    private void verifyExactlyOneProcessing(EventType eventType, String payload, Action action, boolean withAccountId) {
+    private Event verifyExactlyOneProcessing(EventType eventType, String payload, Action action, boolean withAccountId) {
         ArgumentCaptor<Event> argumentCaptor = ArgumentCaptor.forClass(Event.class);
         verify(endpointProcessor, times(1)).process(argumentCaptor.capture());
         if (withAccountId) {
@@ -469,6 +472,7 @@ public class EventConsumerTest {
         assertEquals(eventType, argumentCaptor.getValue().getEventType());
         assertEquals(payload, argumentCaptor.getValue().getPayload());
         assertEquals(action, argumentCaptor.getValue().getEventWrapper().getEvent());
+        return argumentCaptor.getValue();
     }
 
     private void verifySeverity(Action action, boolean severityIgnored) {
