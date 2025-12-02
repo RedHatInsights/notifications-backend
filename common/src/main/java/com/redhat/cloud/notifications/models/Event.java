@@ -87,6 +87,8 @@ public class Event {
     @Transient
     private EventWrapper<?, ?> eventWrapper;
 
+    private UUID externalId;
+
     public Event() { }
 
     public Event(EventType eventType, String payload, EventWrapper<?, ?> eventWrapper, Optional<String> sourceEnvironment) {
@@ -135,6 +137,14 @@ public class Event {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public UUID getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(UUID externalId) {
+        this.externalId = externalId;
     }
 
     public LocalDateTime getCreated() {
