@@ -327,7 +327,7 @@ public class EndpointResource extends EndpointResourceCommon {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Create an email subscription endpoint", description = "Adds the email subscription endpoint into the system and specifies the role-based access control (RBAC) group that will receive email notifications. Use this endpoint in behavior groups to send emails when an action linked to the behavior group is triggered.")
-    @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
+    @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
     @Transactional
     public EndpointDTO getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid @RequestBody(required = true) RequestSystemSubscriptionProperties requestProps) {
         return this.endpointMapper.toDTO(getOrCreateSystemSubscriptionEndpoint(sec, requestProps, EMAIL_SUBSCRIPTION));
@@ -338,7 +338,7 @@ public class EndpointResource extends EndpointResourceCommon {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Add a drawer endpoint", description = "Adds the drawer system endpoint into the system and specifies the role-based access control (RBAC) group that will receive notifications. Use this endpoint to add an animation as a notification in the UI.")
-    @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
+    @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
     @Transactional
     public EndpointDTO getOrCreateDrawerSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid @RequestBody(required = true) RequestSystemSubscriptionProperties requestProps) {
         return this.endpointMapper.toDTO(this.getOrCreateSystemSubscriptionEndpoint(sec, requestProps, DRAWER));

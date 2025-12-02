@@ -1957,7 +1957,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
         }
 
         final String endpointTypeUrl;
@@ -4314,7 +4314,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
         }
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
