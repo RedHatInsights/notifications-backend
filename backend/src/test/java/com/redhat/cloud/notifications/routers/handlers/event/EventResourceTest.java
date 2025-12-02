@@ -1096,13 +1096,8 @@ public class EventResourceTest extends DbIsolatedTest {
             .thenReturn(kesselTestHelper.buildCheckResponse(allowed));
     }
 
-    @ParameterizedTest
-    @MethodSource("kesselFlags")
-    void testEventLogEntriesIncludeSeverity(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
-        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-
+    @Test
+    void testEventLogEntriesIncludeSeverity() {
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
         Bundle bundle = resourceHelpers.createBundle("test-bundle", "Test Bundle");

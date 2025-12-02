@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
+import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -271,7 +272,7 @@ public class EventResource {
                 return Severity.UNDEFINED;
             }
             // Parse the payload to get the Action
-            com.redhat.cloud.notifications.ingress.Action action = Parser.decode(event.getPayload());
+            Action action = Parser.decode(event.getPayload());
             // Extract the severity directly from the Action
             return severityTransformer.getSeverity(action);
         } catch (Exception e) {
