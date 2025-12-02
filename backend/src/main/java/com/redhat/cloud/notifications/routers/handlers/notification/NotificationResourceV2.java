@@ -28,8 +28,7 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.BEHAVIOR_GROUPS_VIEW;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.EVENT_TYPES_VIEW;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_VIEW;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -53,7 +52,7 @@ public class NotificationResourceV2 {
         schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
     )
     @Operation(summary = "Retrieve the behavior groups linked to an event type.")
-    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = {EVENT_TYPES_VIEW, BEHAVIOR_GROUPS_VIEW})
+    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW)
     public Page<BehaviorGroup> getLinkedBehaviorGroups(
         @Context SecurityContext sec,
         @PathParam("eventTypeId") UUID eventTypeId,

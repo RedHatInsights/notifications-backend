@@ -301,19 +301,12 @@ public class KesselInventoryAuthorization {
     CheckOperation getCheckOperation(KesselInventoryResourceType resourceType, KesselPermission permission) {
         if ((resourceType == KesselInventoryResourceType.WORKSPACE) && (permission instanceof WorkspacePermission workspacePermission)) {
             return switch (workspacePermission) {
-                case APPLICATIONS_VIEW,
-                     BUNDLES_VIEW,
-                     BEHAVIOR_GROUPS_VIEW,
-                     EVENT_LOG_VIEW,
-                     EVENT_TYPES_VIEW,
+                case EVENTS_VIEW,
                      INTEGRATIONS_VIEW,
-                     DAILY_DIGEST_PREFERENCE_VIEW
+                     NOTIFICATIONS_VIEW
                     -> CheckOperation.CHECK;
-                case BEHAVIOR_GROUPS_EDIT,
-                     CREATE_DRAWER_INTEGRATION,
-                     CREATE_EMAIL_SUBSCRIPTION_INTEGRATION,
-                     INTEGRATIONS_CREATE,
-                     DAILY_DIGEST_PREFERENCE_EDIT
+                case INTEGRATIONS_EDIT,
+                     NOTIFICATIONS_EDIT
                     -> CheckOperation.UPDATE;
             };
         } else {

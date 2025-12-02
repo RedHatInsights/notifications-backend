@@ -70,7 +70,7 @@ public class KesselInventoryAuthorizationTest {
         // Call the function under test.
         this.kesselAuthorization.hasPermissionOnResource(
             mockedSecurityContext,
-            WorkspacePermission.EVENT_LOG_VIEW,
+            WorkspacePermission.EVENTS_VIEW,
             KesselInventoryResourceType.WORKSPACE,
             "workspace-uuid"
         );
@@ -99,7 +99,7 @@ public class KesselInventoryAuthorizationTest {
         Mockito.when(this.checkClient.check(Mockito.any())).thenReturn(positiveCheckResponse);
         RecipientsAuthorizationCriterion authorizationCriterion = new RecipientsAuthorizationCriterion();
         authorizationCriterion.setId("workspace-uuid");
-        authorizationCriterion.setRelation(WorkspacePermission.EVENT_LOG_VIEW.getKesselPermissionName());
+        authorizationCriterion.setRelation(WorkspacePermission.EVENTS_VIEW.getKesselPermissionName());
         Type t = new Type();
         t.setNamespace("rbac");
         t.setName("workspace");
@@ -135,7 +135,7 @@ public class KesselInventoryAuthorizationTest {
             RuntimeException.class,
             () -> this.kesselAuthorization.hasPermissionOnResource(
                     mockedSecurityContext,
-                    WorkspacePermission.EVENT_LOG_VIEW,
+                    WorkspacePermission.EVENTS_VIEW,
                     KesselInventoryResourceType.WORKSPACE,
                     "workspace-uuid"
             )
@@ -167,7 +167,7 @@ public class KesselInventoryAuthorizationTest {
             ForbiddenException.class,
             () -> this.kesselAuthorization.hasPermissionOnResource(
                 mockedSecurityContext,
-                WorkspacePermission.EVENT_LOG_VIEW,
+                WorkspacePermission.EVENTS_VIEW,
                 KesselInventoryResourceType.WORKSPACE,
                 "workspace-uuid"
             ),
@@ -199,7 +199,7 @@ public class KesselInventoryAuthorizationTest {
 
         RecipientsAuthorizationCriterion authorizationCriterion = new RecipientsAuthorizationCriterion();
         authorizationCriterion.setId("workspace-uuid");
-        authorizationCriterion.setRelation(WorkspacePermission.EVENT_LOG_VIEW.getKesselPermissionName());
+        authorizationCriterion.setRelation(WorkspacePermission.EVENTS_VIEW.getKesselPermissionName());
         Type t = new Type();
         t.setNamespace("rbac");
         t.setName("workspace");
@@ -236,7 +236,7 @@ public class KesselInventoryAuthorizationTest {
 
         RecipientsAuthorizationCriterion authorizationCriterion = new RecipientsAuthorizationCriterion();
         authorizationCriterion.setId("workspace-uuid");
-        authorizationCriterion.setRelation(WorkspacePermission.EVENT_LOG_VIEW.getKesselPermissionName());
+        authorizationCriterion.setRelation(WorkspacePermission.EVENTS_VIEW.getKesselPermissionName());
         Type t = new Type();
         t.setNamespace("rbac");
         t.setName("workspace");
