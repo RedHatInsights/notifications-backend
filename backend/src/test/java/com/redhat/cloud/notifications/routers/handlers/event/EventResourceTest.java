@@ -870,6 +870,11 @@ public class EventResourceTest extends DbIsolatedTest {
         return entityManager.merge(event);
     }
 
+    private String buildPayloadWithSeverity(String orgId, String bundleName, String appName, String eventTypeName) {
+        Action action = EventPayloadTestHelper.buildValidAction(orgId, bundleName, appName, eventTypeName);
+        return Parser.encode(action);
+    }
+
     private String buildPayloadWithAuthorizationCriterion(String orgId, String bundleName, String appName, String eventTypeName) {
         Action action = EventPayloadTestHelper.buildValidAction(orgId, bundleName, appName, eventTypeName);
 
@@ -952,6 +957,8 @@ public class EventResourceTest extends DbIsolatedTest {
         assertEquals(event.getBundleDisplayName(), eventLogEntry.getBundle());
         assertEquals(event.getApplicationDisplayName(), eventLogEntry.getApplication());
         assertEquals(event.getEventTypeDisplayName(), eventLogEntry.getEventType());
+        // Severity should be present in the event log entry
+        Assertions.assertNotNull(eventLogEntry.getSeverity(), "Severity should not be null");
         if (historyEntries == null) {
             assertTrue(eventLogEntry.getActions().isEmpty());
         } else {
@@ -1092,5 +1099,34 @@ public class EventResourceTest extends DbIsolatedTest {
         when(kesselCheckClient
             .check(kesselTestHelper.buildCheckRequest(orgId, subjectUsername, permission)))
             .thenReturn(kesselTestHelper.buildCheckResponse(allowed));
+    }
+
+    @ParameterizedTest
+    @MethodSource("kesselFlags")
+    void testEventLogEntriesIncludeSeverity(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.EVENT_LOG_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
+        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        Bundle bundle = resourceHelpers.createBundle("test-bundle", "Test Bundle");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "test-app", "Test Application");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "test-event-type", "Test Event Type", "Test Event Type");
+
+        // Create event with severity
+        Action action = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
+        action.setSeverity(com.redhat.cloud.notifications.Severity.CRITICAL.name());
+        String payload = Parser.encode(action);
+        Event event = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, payload, false);
+
+        // Verify severity is included in the response
+        Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false);
+
+        assertEquals(1, page.getMeta().getCount());
+        EventLogEntry entry = page.getData().get(0);
+        assertEquals(event.getId(), entry.getId());
+        Assertions.assertNotNull(entry.getSeverity());
+        assertEquals(com.redhat.cloud.notifications.Severity.CRITICAL, entry.getSeverity());
     }
 }
