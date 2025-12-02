@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
-import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EndpointType;
@@ -271,15 +270,10 @@ public class EventResource {
             if (event.getPayload() == null || event.getPayload().isEmpty()) {
                 return Severity.UNDEFINED;
             }
-            // Parse the payload to get the EventWrapper
-            EventWrapper<?, ?> eventWrapper = Parser.decode(event.getPayload());
-            // Temporarily set the EventWrapper on the event
-            event.setEventWrapper(eventWrapper);
-            // Extract the severity using the transformer
-            Severity severity = severityTransformer.getSeverity(event);
-            // Clear the EventWrapper to avoid memory issues
-            event.setEventWrapper(null);
-            return severity;
+            // Parse the payload to get the Action
+            com.redhat.cloud.notifications.ingress.Action action = Parser.decode(event.getPayload());
+            // Extract the severity directly from the Action
+            return severityTransformer.getSeverity(action);
         } catch (Exception e) {
             Log.debugf(e, "Failed to extract severity from event [event_id=%s]", event.getId());
             return Severity.UNDEFINED;

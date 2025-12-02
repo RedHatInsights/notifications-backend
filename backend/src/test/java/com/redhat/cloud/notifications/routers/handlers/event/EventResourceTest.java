@@ -870,11 +870,6 @@ public class EventResourceTest extends DbIsolatedTest {
         return entityManager.merge(event);
     }
 
-    private String buildPayloadWithSeverity(String orgId, String bundleName, String appName, String eventTypeName) {
-        Action action = EventPayloadTestHelper.buildValidAction(orgId, bundleName, appName, eventTypeName);
-        return Parser.encode(action);
-    }
-
     private String buildPayloadWithAuthorizationCriterion(String orgId, String bundleName, String appName, String eventTypeName) {
         Action action = EventPayloadTestHelper.buildValidAction(orgId, bundleName, appName, eventTypeName);
 
@@ -1126,7 +1121,6 @@ public class EventResourceTest extends DbIsolatedTest {
         assertEquals(1, page.getMeta().getCount());
         EventLogEntry entry = page.getData().get(0);
         assertEquals(event.getId(), entry.getId());
-        Assertions.assertNotNull(entry.getSeverity());
         assertEquals(com.redhat.cloud.notifications.Severity.CRITICAL, entry.getSeverity());
     }
 }
