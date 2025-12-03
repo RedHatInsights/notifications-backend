@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.routers.handlers.event;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
-import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
@@ -50,6 +49,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.EVENTS_VIEW;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -81,7 +81,7 @@ public class EventResource {
         description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
         schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
     )
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS, workspacePermissions = {WorkspacePermission.EVENT_LOG_VIEW})
+    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS, workspacePermissions = EVENTS_VIEW)
     public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @Context UriInfo uriInfo,
                                          @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
                                          @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
