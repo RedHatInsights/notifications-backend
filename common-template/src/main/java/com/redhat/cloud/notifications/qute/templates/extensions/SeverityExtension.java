@@ -14,15 +14,6 @@ public class SeverityExtension {
     }
 
     @TemplateExtension
-    public static String severityBodyIcon(String severity) {
-        if (severity == null || severity.isEmpty()) {
-            return null;
-        } else {
-            return String.format(severity.toLowerCase());
-        }
-    }
-
-    @TemplateExtension
     public static String toTitleCase(String severity) {
         return switch (severity) {
             case "CRITICAL" -> "Critical";
@@ -47,6 +38,22 @@ public class SeverityExtension {
             case "LOW" -> "\u26AB"; // Medium Black Circle
             case "NONE" -> "\u2796"; // Heavy Minus Sign
             case "UNDEFINED" -> "\u2753"; // Red (or Black) Question Mark
+            default -> "";
+        };
+    }
+
+    @TemplateExtension
+    public static String asPatternFlySeverity(String severity) {
+        if (severity == null) {
+            return "";
+        }
+        return switch (severity.toUpperCase()) {
+            case "CRITICAL" -> "critical";
+            case "IMPORTANT" -> "important";
+            case "MODERATE" -> "moderate";
+            case "LOW" -> "minor";
+            case "NONE" -> "none";
+            case "UNDEFINED" -> "undefined";
             default -> "";
         };
     }
