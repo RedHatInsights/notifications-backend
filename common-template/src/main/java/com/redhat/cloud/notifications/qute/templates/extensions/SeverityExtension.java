@@ -14,15 +14,6 @@ public class SeverityExtension {
     }
 
     @TemplateExtension
-    public static String severityBodyIcon(String severity) {
-        if (severity == null || severity.isEmpty()) {
-            return null;
-        } else {
-            return String.format(severity.toLowerCase());
-        }
-    }
-
-    @TemplateExtension
     public static String toTitleCase(String severity) {
         return switch (severity) {
             case "CRITICAL" -> "Critical";
