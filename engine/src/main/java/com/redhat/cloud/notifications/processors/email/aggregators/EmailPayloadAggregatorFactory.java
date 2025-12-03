@@ -1,7 +1,8 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
-import java.time.LocalDateTime;
+import com.redhat.cloud.notifications.processors.email.SubscribedEventTypeSeverities;
+import java.util.Set;
 
 public class EmailPayloadAggregatorFactory {
 
@@ -23,14 +24,14 @@ public class EmailPayloadAggregatorFactory {
 
     }
 
-    public static AbstractEmailPayloadAggregator by(EventAggregationCriterion aggregationKey, LocalDateTime start, LocalDateTime end) {
+    public static AbstractEmailPayloadAggregator by(EventAggregationCriterion aggregationKey, String username, Set<SubscribedEventTypeSeverities> userSeverities) {
         String bundle = aggregationKey.getBundle();
         String application = aggregationKey.getApplication();
 
         AbstractEmailPayloadAggregator aggregator = getAggregator(bundle, application);
         if (aggregator != null) {
-            aggregator.setStartTime(start);
-            aggregator.setEndTimeKey(end);
+            aggregator.userName = username;
+            aggregator.userSeverities = userSeverities;
         }
         return aggregator;
     }

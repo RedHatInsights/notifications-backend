@@ -81,7 +81,6 @@ public class Event {
 
     private String sourceEnvironment;
 
-    @Transient
     private Severity severity;
 
     @Transient
