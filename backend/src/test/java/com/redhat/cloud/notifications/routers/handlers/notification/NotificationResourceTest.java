@@ -2453,6 +2453,26 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(0, behaviorGroupList.get(0).getActions().size());
     }
 
+    @Test
+    void testSeverityList() {
+        String accountId = RandomStringUtils.secure().nextAlphanumeric(25);
+        String orgId = RandomStringUtils.secure().nextAlphanumeric(25);
+        Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);
+
+        String jsonResponse = given()
+            .basePath(API_NOTIFICATIONS_V_1_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .when()
+            .get("/notifications/severities")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .extract().body().asString();
+
+        final String orderedExpectedResult = "[\"CRITICAL\",\"IMPORTANT\",\"MODERATE\",\"LOW\",\"NONE\",\"UNDEFINED\"]";
+        assertEquals(orderedExpectedResult, jsonResponse);
+    }
+
     private void mockKesselDenyAll() {
         when(kesselCheckClient
             .check(any(CheckRequest.class)))
