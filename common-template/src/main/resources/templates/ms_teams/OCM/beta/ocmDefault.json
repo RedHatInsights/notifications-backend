@@ -1,35 +1,4 @@
-{#include ms_teams/Common/commonMsAdaptiveCardHighLevelStructure.json}
-{#content-body}
-{
-    "type": "TextBlock",
-    "text": "{data.source.event_type.display_name} - {data.source.application.display_name} - {data.source.bundle.display_name}",
-    "style": "heading",
-    "wrap": true
-},
-{#if data.severity??}
-{#include ms_teams/Common/severityBadge.json /}
-{/if}
-{
-    "type": "TextBlock",
-    "text": "{data.events.size()} event{#if data.events.size() != 1}s{/if} triggered.",
-    "wrap": true
-},
-{
-    "type": "TextBlock",
-    "text": "Explore {#if data.events.size() != 1}these{#else}this{/if} and others in **{data.source.application.display_name}**.",
-    "wrap": true,
-    "spacing": "Padding",
-    "separator": true
-},
-{
-    "type": "ActionSet",
-    "actions": [
-        {
-            "type": "Action.OpenUrl",
-            "url": "https://cloud.redhat.com/openshift/details/s/{data.events[0].payload.global_vars.subscription_id}?from=notifications&integration=teams",
-            "title": "Open {data.source.application.display_name}"
-        }
-    ]
-}
-{/content-body}
+{#include ms_teams/Common/beta/commonMsAdaptiveCardHighLevelStructure.json}
+  {#content-intro}{data.events.size()} event{#if data.events.size() != 1}s{/if} triggered.{/content-intro}
+  {#action-url}https://cloud.redhat.com/openshift/details/s/{data.events[0].payload.global_vars.subscription_id}?from=notifications&integration=teams{/action-url}
 {/include}

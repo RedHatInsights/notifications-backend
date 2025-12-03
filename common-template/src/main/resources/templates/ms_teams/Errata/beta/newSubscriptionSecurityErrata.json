@@ -1,83 +1,55 @@
-{#include ms_teams/Common/commonMsAdaptiveCardHighLevelStructure.json}
-{#content-body}
-{
-  "type":"TextBlock",
-  "text":"Security updates - Errata - Subscription Services",
-  "style":"heading",
-  "wrap":true
-},
-{#if data.severity??}
-{#include ms_teams/Common/severityBadge.json}
+{#include ms_teams/Common/beta/commonMsAdaptiveCardHighLevelStructure.json}
+  {#content-intro}There {#if data.events.size() == 1}is 1 security update{#else}are {data.events.size()} security updates{/if} affecting your subscriptions.{/content-intro}
   {#severity-label}Highest severity:{/severity-label}
-{/include}
-{/if}
-{
-  "type":"TextBlock",
-  "text":"There {#if data.events.size() == 1}is 1 security update{#else}are {data.events.size()} security updates{/if} affecting your subscriptions.",
-  "wrap":true
-},
-{#if data.events.size() > 3}
-{
-  "type":"TextBlock",
-  "text":"First 3 are:",
-  "wrap":true,
-  "spacing":"Small"
-},
-{/if}
-{#each data.events}
-{#if it_index < 3}
-{
-  "type":"ColumnSet",
-  "separator": {it_isFirst},
-  "columns":[
+  {#content-body}
+    {#if data.events.size() > 3}
     {
-      "type":"Column",
-      "width":"auto",
-      "items":[
+      "type":"TextBlock",
+      "text":"First 3 are:",
+      "wrap":true,
+      "spacing":"Small"
+    },
+    {/if}
+    {#each data.events}
+    {#if it_index < 3}
+    {
+      "type":"ColumnSet",
+      "separator": {it_isFirst},
+      "columns":[
         {
-        "type":"TextBlock",
-        "text":"{it.payload.severity.or('UNDEFINED').asSeverityEmoji}",
-        "size":"Medium"
+          "type":"Column",
+          "width":"auto",
+          "items":[
+            {
+            "type":"TextBlock",
+            "text":"{it.payload.severity.or('UNDEFINED').asSeverityEmoji}",
+            "size":"Medium"
+            }
+          ]
+        },
+        {
+          "type":"Column",
+          "width":"stretch",
+          "items":[
+            {
+              "type":"TextBlock",
+              "text":"[{it.payload.id}]({data.context.base_url}{it.payload.id}?from=notifications&integration=teams)",
+              "wrap":true,
+              "weight":"Bolder"
+            },
+            {
+              "type":"TextBlock",
+              "text":"{it.payload.synopsis}",
+              "wrap":true
+            }
+          ]
         }
       ]
     },
-    {
-      "type":"Column",
-      "width":"stretch",
-      "items":[
-        {
-          "type":"TextBlock",
-          "text":"[{it.payload.id}]({data.context.base_url}{it.payload.id}?from=notifications&integration=teams)",
-          "wrap":true,
-          "weight":"Bolder"
-        },
-        {
-          "type":"TextBlock",
-          "text":"{it.payload.synopsis}",
-          "wrap":true
-        }
-      ]
-    }
-  ]
-},
-{/if}
-{/each}
-{
-  "type":"TextBlock",
-  "separator":true,
-  "text":"Explore {#if data.events.size() != 1}these{#else}this{/if} and others in the **errata search**.",
-  "wrap":true,
-  "spacing":"Padding"
-},
-{
-  "type": "ActionSet",
-  "actions": [
-    {
-      "type":"Action.OpenUrl",
-      "url":"https://access.redhat.com/errata-search/?from=notifications&integration=teams",
-      "title":"Search errata"
-    }
-  ]
-}
-{/content-body}
+    {/if}
+    {/each}
+  {/content-body}
+  {#explore-location}errata search{/explore-location}
+  {#action-url}https://access.redhat.com/errata-search/?from=notifications&integration=teams{/action-url}
+  {#action-title}Search errata{/action-title}
 {/include}
