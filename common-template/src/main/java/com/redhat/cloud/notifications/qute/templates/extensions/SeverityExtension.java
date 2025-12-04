@@ -45,7 +45,7 @@ public class SeverityExtension {
     @TemplateExtension
     public static String asPatternFlySeverity(String severity) {
         if (severity == null) {
-            return "";
+            return null;
         }
         return switch (severity.toUpperCase()) {
             case "CRITICAL" -> "critical";
@@ -54,7 +54,7 @@ public class SeverityExtension {
             case "LOW" -> "minor";
             case "NONE" -> "none";
             case "UNDEFINED" -> "undefined";
-            default -> "";
+            default -> null;
         };
     }
 }

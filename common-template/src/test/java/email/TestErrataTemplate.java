@@ -102,14 +102,14 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
             // Check for presence of overall severity icon (and border for critical)
             if (severity == null) {
                 assertFalse(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
-                assertFalse(result.contains(" severity notification\""));
+                assertFalse(result.contains("alt=\"["));
             } else if (severity.equals(Severity.CRITICAL.name())) {
                 assertTrue(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
-                assertTrue(result.contains("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/severities/critical.png\" alt=\"Critical severity notification\""));
+                assertTrue(result.contains("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/severities/critical.png\" alt=\"[Critical]\""));
             } else {
                 assertFalse(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
                 assertTrue(result.contains(
-                        String.format("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/severities/%s.png\" alt=\"%s severity notification\"",
+                        String.format("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/severities/%s.png\" alt=\"[%s]\"",
                                 SeverityExtension.asPatternFlySeverity(severity),
                                 SeverityExtension.toTitleCase(severity))));
             }
