@@ -26,6 +26,7 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_VIEW;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_FALSE;
@@ -254,9 +255,7 @@ public class AuthorizationInterceptorTest {
         // Mock the Kessel checks to simulate that the principal has the
         // required workspace permissions.
         when(workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID);
-        mockKesselPermission(WorkspacePermission.BUNDLES_VIEW, ALLOWED_TRUE);
-        mockKesselPermission(WorkspacePermission.APPLICATIONS_VIEW, ALLOWED_TRUE);
-        mockKesselPermission(WorkspacePermission.EVENT_TYPES_VIEW, ALLOWED_TRUE);
+        mockKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
 
         // Call the function under test which should not throw any exceptions.
         this.authorizationInterceptor.aroundInvoke(invocationContext);
@@ -291,9 +290,7 @@ public class AuthorizationInterceptorTest {
         // Mock the Kessel checks to simulate that the principal has the
         // required workspace permissions.
         when(workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID);
-        mockKesselPermission(WorkspacePermission.BUNDLES_VIEW, ALLOWED_TRUE);
-        mockKesselPermission(WorkspacePermission.APPLICATIONS_VIEW, ALLOWED_FALSE);
-        mockKesselPermission(WorkspacePermission.EVENT_TYPES_VIEW, ALLOWED_TRUE);
+        mockKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_FALSE);
 
         // Call the function under test which should throw a ForbiddenException.
         Assertions.assertThrows(
