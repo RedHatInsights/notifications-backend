@@ -88,7 +88,6 @@ public class EmailCloudEventDataExtractor extends CloudEventDataExtractor {
         exchange.setProperty(ExchangeProperty.RECIPIENTS_AUTHORIZATION_CRITERION, emailNotification.recipientsAuthorizationCriterion());
         exchange.setProperty(ExchangeProperty.EMAIL_RECIPIENTS, emails);
         exchange.setProperty(ExchangeProperty.EMAIL_SENDER, emailNotification.emailSender());
-        exchange.setProperty(ExchangeProperty.USE_SIMPLIFIED_EMAIL_ROUTE, emailConnectorConfig.useSimplifiedEmailRoute(emailNotification.orgId()));
     }
 
     private void renderDailyDigestFromCommonModule(Exchange exchange, EmailNotification emailNotification) {
