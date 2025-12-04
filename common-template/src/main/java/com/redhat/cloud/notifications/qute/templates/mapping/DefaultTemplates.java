@@ -18,6 +18,7 @@ public class DefaultTemplates {
         // Default Drawer template
         entry(new TemplateDefinition(DRAWER, null, null, null), "Default/defaultBody.md"),
         entry(new TemplateDefinition(MS_TEAMS, null, null, null), "Default/default.json"),
+        entry(new TemplateDefinition(MS_TEAMS, null, null, null, true), "Default/beta/default.json"),
         entry(new TemplateDefinition(GOOGLE_CHAT, null, null, null), "Default/default.json"),
         entry(new TemplateDefinition(SLACK, null, null, null), "Default/default.md"),
         entry(new TemplateDefinition(SLACK, null, null, null, true), "Default/beta/default.json"),
