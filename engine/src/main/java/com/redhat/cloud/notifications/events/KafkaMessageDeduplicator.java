@@ -1,7 +1,5 @@
 package com.redhat.cloud.notifications.events;
 
-import com.redhat.cloud.notifications.ValkeyService;
-import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.models.EventTypeKey;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -29,13 +27,7 @@ public class KafkaMessageDeduplicator {
     EntityManager entityManager;
 
     @Inject
-    ValkeyService valkeyService;
-
-    @Inject
     MeterRegistry meterRegistry;
-
-    @Inject
-    EngineConfig config;
 
     private Counter validMessageIdCounter;
     private Counter invalidMessageIdCounter;
@@ -95,17 +87,13 @@ public class KafkaMessageDeduplicator {
              */
             return true;
         } else {
-            if (config.isValkeyKafkaMessageDeduplicatorEnabled()) {
-                return valkeyService.isNewMessageId(messageId);
-            } else {
-                String sql = "INSERT INTO kafka_message(id) " +
-                        "VALUES (:messageId) " +
-                        "ON CONFLICT DO NOTHING";
-                int rowCount = entityManager.createNativeQuery(sql)
-                        .setParameter("messageId", messageId)
-                        .executeUpdate();
-                return rowCount > 0;
-            }
+            String sql = "INSERT INTO kafka_message(id) " +
+                    "VALUES (:messageId) " +
+                    "ON CONFLICT DO NOTHING";
+            int rowCount = entityManager.createNativeQuery(sql)
+                    .setParameter("messageId", messageId)
+                    .executeUpdate();
+            return rowCount > 0;
         }
     }
 }
