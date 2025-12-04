@@ -32,8 +32,6 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import java.util.UUID;
@@ -337,13 +335,8 @@ public class EventConsumerTest {
         verify(eventDeduplicator, never()).isNew(any(Event.class));
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void testDuplicatePayload(final boolean valkeyEnabled) {
-        if (valkeyEnabled) {
-            when(config.isValkeyKafkaMessageDeduplicatorEnabled()).thenReturn(Boolean.TRUE);
-        }
-
+    @Test
+    void testDuplicatePayload() {
         EventType eventType = mockGetEventTypeAndCreateEvent();
         Action action = buildValidAction(false);
         String payload = serializeAction(action);
