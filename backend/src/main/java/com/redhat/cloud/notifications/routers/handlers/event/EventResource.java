@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers.handlers.event;
 
-import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
@@ -8,8 +7,6 @@ import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
-import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -21,7 +18,6 @@ import com.redhat.cloud.notifications.routers.models.EventLogEntryActionStatus;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
-import com.redhat.cloud.notifications.transformers.SeverityTransformer;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -74,9 +70,6 @@ public class EventResource {
 
     @Inject
     KesselInventoryAuthorization kesselInventoryAuthorization;
-
-    @Inject
-    SeverityTransformer severityTransformer;
 
     @GET
     @Produces(APPLICATION_JSON)
@@ -186,7 +179,7 @@ public class EventResource {
             entry.setApplication(event.getApplicationDisplayName());
             entry.setEventType(event.getEventTypeDisplayName());
             entry.setActions(actions);
-            entry.setSeverity(extractSeverity(event));
+            entry.setSeverity(event.getSeverity());
             if (includePayload) {
                 entry.setPayload(event.getPayload());
             }
@@ -264,20 +257,5 @@ public class EventResource {
             }
         }
         return Optional.empty();
-    }
-
-    private Severity extractSeverity(Event event) {
-        try {
-            if (event.getPayload() == null || event.getPayload().isEmpty()) {
-                return Severity.UNDEFINED;
-            }
-            // Parse the payload to get the Action
-            Action action = Parser.decode(event.getPayload());
-            // Extract the severity directly from the Action
-            return severityTransformer.getSeverity(action);
-        } catch (Exception e) {
-            Log.debugf(e, "Failed to extract severity from event [event_id=%s]", event.getId());
-            return Severity.UNDEFINED;
-        }
     }
 }

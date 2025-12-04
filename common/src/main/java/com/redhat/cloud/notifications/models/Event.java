@@ -2,7 +2,9 @@ package com.redhat.cloud.notifications.models;
 
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.events.EventWrapper;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -23,6 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static jakarta.persistence.CascadeType.REMOVE;
+import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
 import static java.time.ZoneOffset.UTC;
 
@@ -81,7 +84,8 @@ public class Event {
 
     private String sourceEnvironment;
 
-    @Transient
+    @Enumerated(STRING)
+    @Column(length = 20)
     private Severity severity;
 
     @Transient
