@@ -1,0 +1,10 @@
+{
+  "cardsV2": [
+    {
+      "cardId": "notificationsCard",
+      "card": {
+        {#insert content-body}{/}
+      }
+    }
+  ]
+}

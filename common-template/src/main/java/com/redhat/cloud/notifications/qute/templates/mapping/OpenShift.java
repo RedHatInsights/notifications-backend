@@ -107,6 +107,7 @@ public class OpenShift {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, CLUSTER_MANAGER_GENERAL_NOTIFICATION, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/generalNotificationInstantEmailBody.html"),
 
         entry(new TemplateDefinition(GOOGLE_CHAT, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.json"),
+        entry(new TemplateDefinition(GOOGLE_CHAT, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/ocmDefault.json"),
         entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.json"),
         entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null, true), CLUSTER_MANAGER_FOLDER_NAME + "beta/ocmDefault.json"),
         entry(new TemplateDefinition(SLACK, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.md"),
