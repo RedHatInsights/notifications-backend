@@ -110,7 +110,7 @@ public class ReplayResourceTest {
 
         // OrgId: 123
 
-        when(endpointRepository.getTargetEndpointsWithoutUsingBgs(eq(ORG_ID_1), eq(eventType))).thenReturn(List.of(emailEndpoint, gchatEndpoint, slackEndpoint, teamsEndpoint));
+        when(endpointRepository.getTargetEndpoints(eq(ORG_ID_1), eq(eventType))).thenReturn(List.of(emailEndpoint, gchatEndpoint, slackEndpoint, teamsEndpoint));
 
         // The creation date of this event is before the incident time frame.
         event1 = resourceHelpers.createEvent(eventType, ORG_ID_1, LocalDateTime.of(2024, SEPTEMBER, 1, 10, 0), payload);
@@ -143,7 +143,7 @@ public class ReplayResourceTest {
 
         // OrgId: 456
 
-        when(endpointRepository.getTargetEndpointsWithoutUsingBgs(eq(ORG_ID_2), eq(eventType))).thenReturn(List.of(emailEndpoint, gchatEndpoint, slackEndpoint, teamsEndpoint));
+        when(endpointRepository.getTargetEndpoints(eq(ORG_ID_2), eq(eventType))).thenReturn(List.of(emailEndpoint, gchatEndpoint, slackEndpoint, teamsEndpoint));
 
         event5 = resourceHelpers.createEvent(eventType, ORG_ID_2, aug24, payload);
         createNotificationHistory(NotificationStatus.FAILED_EXTERNAL, emailEndpoint, event5);

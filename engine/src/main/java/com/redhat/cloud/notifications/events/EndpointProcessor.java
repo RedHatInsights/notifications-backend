@@ -27,6 +27,7 @@ import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -109,7 +110,21 @@ public class EndpointProcessor {
 
             Log.debugf("[org_id: %s] Found %s endpoints for the aggregation event: %s", event.getOrgId(), endpoints.size(), event);
         } else {
-            endpoints.addAll(endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType()));
+            if (engineConfig.isUseDirectEndpointToEventTypeEnabled()) {
+                endpoints.addAll(endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType()));
+            } else {
+                endpoints.addAll(endpointRepository.getTargetEndpoints(event.getOrgId(), event.getEventType()));
+                if (engineConfig.isDirectEndpointToEventTypeDryRunEnabled()) {
+                    final List<Endpoint> fetchEndpointWithoutBg = endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType());
+                    Set<Endpoint> endpointsWithBG = endpoints.stream().collect(Collectors.toSet());
+                    Set<Endpoint> endpointsWithoutBG = fetchEndpointWithoutBg.stream().collect(Collectors.toSet());
+                    if (!endpointsWithBG.equals(endpointsWithoutBG)) {
+                        Log.errorf("Fetching endpoints with and without BG don't have the same result for orgId '%s' and Event type '%s (%s)'", event.getOrgId(), event.getEventType().getName(), event.getEventType().getId());
+                        Log.info("Endpoint list from bg is: " + endpointsWithBG);
+                        Log.info("Endpoint list without bg is: " + endpointsWithoutBG);
+                    }
+                }
+            }
         }
 
         endpoints.removeIf(endpoint -> {

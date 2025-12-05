@@ -57,6 +57,8 @@ public class EngineConfig {
     private String toggleBlacklistedEndpoints;
     private String toggleBlacklistedEventTypes;
     private String toggleKafkaOutgoingHighVolumeTopic;
+    private String toggleDirectEndpointToEventTypeDryRunEnabled;
+    private String toggleUseDirectEndpointToEventTypeEnabled;
     private String toggleIgnoreSeverityForApplications;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
@@ -156,6 +158,8 @@ public class EngineConfig {
         kafkaConsumedTotalCheckerToggle = toggleRegistry.register("kafka-consumed-total-checker", true);
         valkeyKafkaMessageDeduplicatorToggle = toggleRegistry.register("valkey-kafka-message-deduplicator", true);
         toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
+        toggleDirectEndpointToEventTypeDryRunEnabled = toggleRegistry.register("endpoint-to-event-type-dry-run", true);
+        toggleUseDirectEndpointToEventTypeEnabled = toggleRegistry.register("use-endpoint-to-event-type", true);
         toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
         toggleBlacklistedEventTypes = toggleRegistry.register("blacklisted-event-types", true);
         toggleIgnoreSeverityForApplications = toggleRegistry.register("ignore-severity-for-applications", true);
@@ -183,6 +187,8 @@ public class EngineConfig {
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, rhOpenshiftSenderProd);
         config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
         config.put(asyncEventProcessingToggle, isAsyncEventProcessing());
+        config.put(toggleDirectEndpointToEventTypeDryRunEnabled, isDirectEndpointToEventTypeDryRunEnabled());
+        config.put(toggleUseDirectEndpointToEventTypeEnabled, isUseDirectEndpointToEventTypeEnabled());
         config.put(valkeyKafkaMessageDeduplicatorToggle, isValkeyKafkaMessageDeduplicatorEnabled());
 
         Log.info("=== Startup configuration ===");
@@ -305,6 +311,22 @@ public class EngineConfig {
 
     public int getKafkaToCamelMaximumRequestSize() {
         return kafkaToCamelMaximumRequestSize;
+    }
+
+    public boolean isDirectEndpointToEventTypeDryRunEnabled() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleDirectEndpointToEventTypeDryRunEnabled, false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isUseDirectEndpointToEventTypeEnabled() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleUseDirectEndpointToEventTypeEnabled, false);
+        } else {
+            return false;
+        }
     }
 
     public boolean isOutgoingKafkaHighVolumeTopicEnabled() {
