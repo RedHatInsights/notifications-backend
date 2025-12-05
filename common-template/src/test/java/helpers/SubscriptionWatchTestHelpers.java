@@ -10,9 +10,9 @@ import java.util.List;
 
 import static helpers.TestHelpers.DEFAULT_ORG_ID;
 
-public class SubscriptionsUsageTestHelpers {
+public class SubscriptionWatchTestHelpers {
 
-    public static Action createSubscriptionsUsageAction() {
+    public static Action createSubscriptionWatchAction() {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle("subscription-services");
         emailActionMessage.setApplication("subscriptions");
@@ -27,8 +27,6 @@ public class SubscriptionsUsageTestHelpers {
                                 new Payload.PayloadBuilder()
                                         .withAdditionalProperty("product_tag", "RHEL for x86")
                                         .withAdditionalProperty("threshold_percentage", "85")
-                                        .withAdditionalProperty("metric", "sockets")
-                                        .withAdditionalProperty("utilization_percentage", "105")
                                         .build()
                         )
                         .build()
