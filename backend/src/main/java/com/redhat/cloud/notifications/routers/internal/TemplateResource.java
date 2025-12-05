@@ -1,23 +1,18 @@
 package com.redhat.cloud.notifications.routers.internal;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.db.repositories.TemplateRepository;
-import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
-import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
-import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
-import com.redhat.cloud.notifications.utils.ActionParser;
-import io.quarkus.qute.TemplateException;
+import com.redhat.cloud.notifications.templates.TemplateEngineClient;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -32,11 +27,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
@@ -44,25 +38,18 @@ import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_I
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_USER;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
+import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
 @Path(API_INTERNAL + "/templates")
 @RolesAllowed(RBAC_INTERNAL_ADMIN)
 public class TemplateResource {
 
     @Inject
-    TemplateService templateService;
-
-    @Inject
-    ActionParser actionParser;
-
-    @Inject
-    Environment environment;
-
-    @Inject
     TemplateRepository templateRepository;
 
     @Inject
-    ObjectMapper objectMapper;
+    @RestClient
+    TemplateEngineClient templateEngineClient;
 
     @POST
     @Consumes(APPLICATION_JSON)
@@ -242,42 +229,11 @@ public class TemplateResource {
     })
     @RolesAllowed(RBAC_INTERNAL_USER)
     public Response renderEmailTemplate(@NotNull @Valid RenderEmailTemplateRequest renderEmailTemplateRequest) {
-        String payload = renderEmailTemplateRequest.getPayload();
         try {
-            Action action = actionParser.fromJsonString(payload);
-
-            String[] templateContent = renderEmailTemplateRequest.getTemplate();
-            String[] renderedTemplate = new String[templateContent.length];
-
-            Map<String, Object> actionAsMap = objectMapper
-                .convertValue(action, new TypeReference<Map<String, Object>>() { });
-
-            // we need to add manually the orgId for old parent templates
-            actionAsMap.put("orgId", action.getOrgId());
-
-            Map<String, Object> additionalContext = new HashMap<>();
-            additionalContext.put("environment", environment);
-            additionalContext.put("pendo_message", null);
-            additionalContext.put("ignore_user_preferences", null);
-            additionalContext.put("action", actionAsMap);
-
-            for (int i = 0; i < templateContent.length; i++) {
-                renderedTemplate[i] = templateService.renderTemplateWithCustomDataMap(templateContent[i], additionalContext);
-            }
-
-            return Response.ok(new RenderEmailTemplateResponse.Success(renderedTemplate)).build();
-        } catch (Exception e) {
-            final String errorMessage;
-
-            // For some reason the error message is in the nested exception of
-            // the thrown exception.
-            if (e.getCause() instanceof TemplateException templateException) {
-                errorMessage = templateException.getMessage();
-            } else {
-                errorMessage = e.getMessage();
-            }
-
-            return Response.status(Response.Status.BAD_REQUEST).entity(new RenderEmailTemplateResponse.Error(errorMessage)).build();
+            return templateEngineClient.render(renderEmailTemplateRequest);
+        } catch (BadRequestException e) {
+            // The following line is required to forward the HTTP 400 error message.
+            return Response.status(BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
 }

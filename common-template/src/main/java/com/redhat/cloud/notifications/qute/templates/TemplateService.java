@@ -179,13 +179,6 @@ public class TemplateService {
         return result.trim();
     }
 
-    public String renderTemplateWithCustomDataMap(final String templateContent, final Map<String, Object> additionalContext) {
-        return engine.parse(templateContent)
-            .data(additionalContext)
-            .render()
-            .trim();
-    }
-
     public String getTemplateId(final TemplateDefinition config) {
         return compileTemplate(config).getId();
     }
