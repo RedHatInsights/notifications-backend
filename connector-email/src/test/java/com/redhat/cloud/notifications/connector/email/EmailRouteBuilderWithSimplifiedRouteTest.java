@@ -181,7 +181,6 @@ class EmailRouteBuilderWithSimplifiedRouteTest extends CamelQuarkusTestSupport {
     @ValueSource(booleans = {true, false})
     void testWithRecipientsForDailyDigest(boolean emailsInternalOnlyEnabled) throws Exception {
         eventData = buildRhelDailyDigestEmailContext();
-
         isDailyDigest = true;
         try {
             emailConnectorConfig.setEmailsInternalOnlyEnabled(emailsInternalOnlyEnabled);
@@ -362,6 +361,8 @@ class EmailRouteBuilderWithSimplifiedRouteTest extends CamelQuarkusTestSupport {
         RecipientSettings recipientSettings = new RecipientSettings(false, false, null, null, emailRecipients);
 
         final EmailNotification emailNotification = new EmailNotification(
+            "test email body",
+            "[MODERATE] test email subject",
             "Not used",
             "123456",
             "123456",
@@ -394,7 +395,7 @@ class EmailRouteBuilderWithSimplifiedRouteTest extends CamelQuarkusTestSupport {
                 objectMapper.readValue(JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT, typeRef)
             ));
             applicationAggregatedDataList.add(new ApplicationAggregatedData(
-                "compliance",
+                "Compliance",
                 templateService.convertActionToContextMap(TestHelpers.createComplianceAction())
             ));
             applicationAggregatedDataList.add(new ApplicationAggregatedData(

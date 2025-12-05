@@ -362,7 +362,7 @@ public abstract class ConnectorRoutesTest extends CamelQuarkusTestSupport {
         return payload;
     }
 
-    public static Map<String, Object> getDefaultEventDataMap() {
+    protected static Map<String, Object> getDefaultEventDataMap() {
         String content = "{" +
             "   \"account_id\":null," +
             "   \"application\":\"policies\"," +

@@ -35,7 +35,6 @@ import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcess
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_ID;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_TYPE;
 import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
-import static com.redhat.cloud.notifications.connector.email.EmailCloudEventDataExtractorTest.generateDefaultPatchEventData;
 import static com.redhat.cloud.notifications.connector.email.constants.Routes.SEND_EMAIL_BOP;
 import static com.redhat.cloud.notifications.connector.email.constants.Routes.SPLIT_AND_SEND;
 import static org.apache.camel.builder.AdviceWith.adviceWith;
@@ -361,6 +360,8 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
         RecipientSettings recipientSettings = new RecipientSettings(false, false, null, null, emailRecipients);
 
         final EmailNotification emailNotification = new EmailNotification(
+            "test email body",
+            "test email subject",
             "Not used",
             "123456",
             "123456",
@@ -369,7 +370,7 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             new ArrayList<>(),
             false,
             null,
-            generateDefaultPatchEventData(),
+            new HashMap<>(),
             false
         );
         final JsonObject payload = JsonObject.mapFrom(emailNotification);

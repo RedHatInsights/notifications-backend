@@ -6,5 +6,7 @@ public class CamelNotification {
 
     public String webhookUrl;
 
+    public String message;
+
     public Map<String, Object> eventData;
 }
