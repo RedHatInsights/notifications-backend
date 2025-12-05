@@ -1,4 +1,4 @@
-import { Button, Form, Modal, ModalBody, ModalFooter, ModalHeader, ModalVariant } from '@patternfly/react-core';
+import { ActionGroup, Button, Form, Modal, ModalVariant } from '@patternfly/react-core';
 import React from 'react';
 
 interface ViewTemplateModalProps {
@@ -7,30 +7,24 @@ interface ViewTemplateModalProps {
     onClose: () => void;
 }
 
-export const ViewTemplateModal: React.FunctionComponent<ViewTemplateModalProps> = props => {
+export const ViewTemplateModal: React.FunctionComponent<ViewTemplateModalProps> = (props) => {
 
     return (
-        <Modal
-            variant={ ModalVariant.medium }
-            isOpen={ props.showModal }
-            onClose={ props.onClose }
-        >
-            <ModalHeader title={ ` Email Template for ${props.applicationName}` } />
-            <ModalBody>
-                <Form isHorizontal>
+        <React.Fragment>
+            <Modal
+                variant={ ModalVariant.medium }
+                title={ ` Email Template for ${ props.applicationName }` }
+                isOpen={ props.showModal }
+                onClose={ props.onClose }
+            ><Form isHorizontal>
                     Viewing modal for existing templates
+                    <ActionGroup>
+                        <Button variant='primary' type='reset'
+                            onClick={ props.onClose }>Close</Button>
+                    </ActionGroup>
                 </Form>
-            </ModalBody>
-            <ModalFooter>
-                <Button
-                    variant="primary"
-                    type="reset"
-                    onClick={ props.onClose }
-                >
-                    Close
-                </Button>
-            </ModalFooter>
-        </Modal>
+            </Modal>
+        </React.Fragment>
     );
 };
 

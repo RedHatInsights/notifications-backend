@@ -5,7 +5,7 @@ import { LinkAdapter } from './LinkAdapter';
 
 type BreadcrumbLinkItemProps = Omit<BreadcrumbItemProps, 'component'>
 
-export const BreadcrumbLinkItem: React.FunctionComponent<BreadcrumbLinkItemProps> = props => {
+export const BreadcrumbLinkItem: React.FunctionComponent<BreadcrumbLinkItemProps> = (props) => {
     return (
         <BreadcrumbItem
             { ...props }

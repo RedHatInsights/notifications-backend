@@ -1,4 +1,4 @@
-import { Button, Modal, ModalBody, ModalFooter, ModalHeader, ModalVariant } from '@patternfly/react-core';
+import { ActionGroup, Button, Modal, ModalVariant } from '@patternfly/react-core';
 import React from 'react';
 
 import { Template } from '../../types/Notifications';
@@ -10,9 +10,9 @@ interface DeleteTemplateModalProps {
     onClose: () => void;
 
 }
-export const DeleteTemplateModal: React.FunctionComponent<DeleteTemplateModalProps> = props => {
+export const DeleteTemplateModal: React.FunctionComponent<DeleteTemplateModalProps> = (props) => {
 
-    const onDelete = React.useCallback(async() => {
+    const onDelete = React.useCallback(async () => {
         const onDeleteImpl = props.onDelete;
         const response = await onDeleteImpl();
         if (response) {
@@ -23,27 +23,19 @@ export const DeleteTemplateModal: React.FunctionComponent<DeleteTemplateModalPro
     }, [ props ]);
 
     return (
-        <Modal
-            variant={ ModalVariant.small }
-            isOpen={ props.isOpen }
-            onClose={ props.onClose }
-        >
-            <ModalHeader title={ `Permanently delete ${props.templateName}` } />
-            <ModalBody>
-                <b>{ props.templateName }</b>
-                { ' ' }
-                { ' template will be deleted.' }
-            </ModalBody>
-            <ModalFooter>
-                <Button
-                    variant="danger"
-                    type="button"
-                    onClick={ onDelete }
-                >
-                    Delete
-                </Button>
-                <Button variant="link" type="button" onClick={ props.onClose }>Cancel</Button>
-            </ModalFooter>
-        </Modal>
+        <React.Fragment>
+            <Modal variant={ ModalVariant.small } titleIconVariant="warning" isOpen={ props.isOpen }
+                onClose={ props.onClose }
+                title={ `Permanently delete ${ props.templateName }` }>
+                { <b>{ props.templateName }</b> } {' template will be deleted.'}
+                <br />
+                <br />
+                <ActionGroup>
+                    <Button variant='danger' type='button'
+                        onClick={ onDelete }>Delete</Button>
+                    <Button variant='link' type='button' onClick={ props.onClose }>Cancel</Button>
+                </ActionGroup>
+            </Modal>
+        </React.Fragment>
     );
 };

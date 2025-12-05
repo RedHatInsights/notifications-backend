@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Navigate, Route, Routes as RouterRoutes } from 'react-router-dom';
+import { Redirect, Route, Switch } from 'react-router';
 
 import { ApplicationPage } from './pages/ApplicationPage';
 import { BundlePage } from './pages/BundlePage';
@@ -56,15 +56,15 @@ const pathRoutes: Path[] = [
 
 export const Routes: React.FunctionComponent<unknown> = _props => {
     return (
-        <RouterRoutes>
+        <Switch>
             { pathRoutes.map(pathRoute => (
                 <Route
                     key={ pathRoute.path }
-                    element={ <pathRoute.component /> }
+                    component={ pathRoute.component }
                     path={ pathRoute.path }
                 />
             )) }
-            <Route path="*" element={ <Navigate to={ linkTo.consoleCloudEventValidator() } replace /> } />
-        </RouterRoutes>
+            <Redirect to={ linkTo.consoleCloudEventValidator() } />
+        </Switch>
     );
 };

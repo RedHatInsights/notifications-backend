@@ -8,12 +8,12 @@ import {
 } from '@patternfly/react-core';
 import * as React from 'react';
 import { useParams } from 'react-router-dom';
-import { useEffect } from 'react';
 import { useUserPermissions } from '../app/PermissionContext';
 import { useCreateTemplate } from '../services/EmailTemplates/CreateTemplate';
 import { Template } from '../types/Notifications';
 import { useGetTemplate } from '../services/EmailTemplates/GetTemplate';
 import { EmailTemplateForm } from '../components/EmailTemplates/EmailTemplateForm';
+import { useEffect } from 'react';
 import { RenderEmailTemplateForm } from '../components/EmailTemplates/RenderEmailTemplate';
 
 const defaultContentTemplate = `
@@ -93,55 +93,51 @@ export const EmailTemplatePage: React.FunctionComponent = () => {
                 });
             }
         }
-    }, [ templateId, originalTemplate.loading, originalTemplate.payload ]);
+    }, [templateId, originalTemplate.loading, originalTemplate.payload]);
 
     return (
-        <>
-            { isAdmin
-            && <>
-                <PageSection>
-                    <Split>
-                        <SplitItem isFilled>
-                            <Title headingLevel="h1">
-                                { templateId ? 'Update' : 'Create' }
-                                { ' ' }
-                                an Email Template
-                            </Title>
+        <>{ isAdmin &&
+            <><PageSection>
+                <Split>
+                    <SplitItem isFilled>
+                        <Title headingLevel="h1">{ templateId ? 'Update' : 'Create'} an Email Template</Title>
+                    </SplitItem>
+                </Split>
+            </PageSection>
+            <PageSection>
+                {templateId ? 
+                    <EmailTemplateForm
+                        isLoading={ originalTemplate.loading }
+                        template={template}
+                        updateTemplate={ updateTemplate }
+                    /> 
+                    : 
+                    <RenderEmailTemplateForm
+                        isLoading={ originalTemplate.loading }
+                        template={template}
+                        updateTemplate={ updateTemplate } />
+                }
+                <ActionGroup>
+                    <Split hasGutter>
+                        <SplitItem>
+                            <Button
+                                variant="primary"
+                                onClick={ handleSave }
+                                isDisabled={!isNewTemplate(template)}
+                            >
+                                Save
+                            </Button>
+                        </SplitItem>
+                        <SplitItem>
+                            <Button variant='secondary' onClick={ handleBackClick }>
+                                Back
+                            </Button>
                         </SplitItem>
                     </Split>
-                </PageSection>
-                <PageSection>
-                    { templateId
-                        ? <EmailTemplateForm
-                            isLoading={ originalTemplate.loading }
-                            template={ template }
-                            updateTemplate={ updateTemplate }
-                        />
-                        : <RenderEmailTemplateForm
-                            isLoading={ originalTemplate.loading }
-                            template={ template }
-                            updateTemplate={ updateTemplate }
-                        /> }
-                    <ActionGroup>
-                        <Split hasGutter>
-                            <SplitItem>
-                                <Button
-                                    variant="primary"
-                                    onClick={ handleSave }
-                                    isDisabled={ !isNewTemplate(template) }
-                                >
-                                    Save
-                                </Button>
-                            </SplitItem>
-                            <SplitItem>
-                                <Button variant="secondary" onClick={ handleBackClick }>
-                                    Back
-                                </Button>
-                            </SplitItem>
-                        </Split>
-                    </ActionGroup>
-                </PageSection>
-            </> }
+                </ActionGroup>
+            </PageSection>
+            </>
+        }
         </>
     );
 };

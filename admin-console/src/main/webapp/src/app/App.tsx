@@ -1,8 +1,7 @@
 import '@patternfly/react-core/dist/styles/base.css';
 import './app.css';
 
-import { Alert, AlertVariant, Brand, Button, Masthead, MastheadToggle, MastheadMain, MastheadBrand, Page, PageSection, PageSidebar, Spinner } from '@patternfly/react-core';
-import { BarsIcon } from '@patternfly/react-icons';
+import { Alert, AlertVariant, Brand, Page, PageHeader, PageSection, PageSidebar, Spinner } from '@patternfly/react-core';
 import React, { useMemo } from 'react';
 import { style } from 'typestyle';
 
@@ -57,23 +56,13 @@ export const App: React.FunctionComponent<unknown> = () => {
     }, [ serverInfo.payload ]);
     const permissionQuery = usePermissions();
 
-    const appHeader = <Masthead>
-        <MastheadMain>
-            <MastheadToggle>
-                <Button
-                    variant="plain"
-                    onClick={ onNavToggle }
-                    aria-label="Global navigation"
-                    aria-expanded={ isNavOpen }
-                >
-                    <BarsIcon />
-                </Button>
-            </MastheadToggle>
-            <MastheadBrand href="/internal">
-                <Brand className={ brandClassName } src={ logo } alt="Red Hat" />
-            </MastheadBrand>
-        </MastheadMain>
-    </Masthead>;
+    const appHeader = <PageHeader
+        showNavToggle
+        logo={ <Brand className={ brandClassName } src={ logo } alt="Red Hat" /> }
+        logoProps={ { href: '/internal' } }
+        isNavOpen={ isNavOpen }
+        onNavToggle={ onNavToggle }
+    />;
 
     const permission = React.useMemo<PermissionContext>(() => {
         const payload = permissionQuery.payload;
@@ -100,7 +89,7 @@ export const App: React.FunctionComponent<unknown> = () => {
     if (bundles.isLoading || serverInfo.loading || permissionQuery.loading) {
         return (
             <Page
-                masthead={ appHeader }
+                header={ appHeader }
             >
                 <PageSection>
                     <Spinner />
@@ -109,21 +98,18 @@ export const App: React.FunctionComponent<unknown> = () => {
         );
     }
 
-    const appSidebar = <PageSidebar isSidebarOpen={ isNavOpen }>
-        <Navigation bundles={ bundles.bundles } />
-    </PageSidebar>;
+    const appSidebar = <PageSidebar nav={ <Navigation bundles={ bundles.bundles } /> } isNavOpen={ isNavOpen } />;
 
     return (
         <PermissionContext.Provider value={ permission }>
             <Page
                 sidebar={ appSidebar }
-                masthead={ appHeader }
-            >
+                header={ appHeader }>
                 { message.show && (
                     <PageSection>
                         <Alert variant={ AlertVariant.warning } title={ message.content } />
                     </PageSection>
-                ) }
+                )}
                 <Routes />
             </Page>
         </PermissionContext.Provider>

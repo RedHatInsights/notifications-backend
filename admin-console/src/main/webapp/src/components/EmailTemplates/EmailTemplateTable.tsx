@@ -1,7 +1,7 @@
 import { Button, PageSection, Spinner, Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { EyeIcon, PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import {
-    Table,
+    TableComposable,
     Tbody,
     Td,  Th,   Thead,
     Tr } from '@patternfly/react-table';
@@ -34,7 +34,7 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
         setTemplate(t);
     };
 
-    const handleDelete = React.useCallback(async() => {
+    const handleDelete = React.useCallback(async () => {
         setShowDeleteModal(false);
         const deleteTemplate = deleteTemplates.mutate;
         const response = await deleteTemplate(template.id);
@@ -43,7 +43,7 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
         }
 
         return true;
-    }, [ deleteTemplates.mutate, template.id ]);
+    }, [deleteTemplates.mutate, template.id]);
 
     const onDeleteClose = () => {
         setShowDeleteModal(false);
@@ -55,88 +55,58 @@ export const EmailTemplateTable: React.FunctionComponent<EmailTemplateTableProps
     }
 
     if (getAllTemplates.payload?.status !== 200) {
-        return <span>
-            Error while loading templates:
-            { getAllTemplates.errorObject.toString() }
-        </span>;
+        return <span>Error while loading templates: {getAllTemplates.errorObject.toString()}</span>;
     }
 
     return (
-        <PageSection>
-            <Title headingLevel="h3">
-                Email Templates
-            </Title>
-            <Table aria-label="Email Template table">
-                <Thead>
-                    <Toolbar>
-                        <ToolbarContent>
-                            <ToolbarItem>
-                                <Button
-                                    variant="primary"
-                                    isDisabled={ !hasPermission(props.application.id) }
-                                    component={ (props: any) => <Link { ...props } to={ linkTo.newEmailTemplate() } /> }
-                                >
-                                    Create Email Template
-                                </Button>
-                            </ToolbarItem>
-                            <DeleteTemplateModal
-                                onDelete={ handleDelete }
-                                templateName={ template.name }
-                                isOpen={ showDeleteModal }
-                                onClose={ onDeleteClose }
-                            />
-                        </ToolbarContent>
-                    </Toolbar>
-                    <Tr>
-                        { columns.map((column, columnIndex) => (
-                            <Th key={ columnIndex }>{ column }</Th>
-                        )) }
-                    </Tr>
-                </Thead>
-                <Tbody>
-                    { getAllTemplates.payload.value.map(e => (
-                        <Tr key={ e.id }>
-                            <Td>{ e.name }</Td>
-                            <Td>
-                                <Button
-                                    className="view"
-                                    type="button"
-                                    variant="plain"
-                                    isDisabled
-                                >
-                                    { ' ' }
-                                    <EyeIcon />
-                                    { ' ' }
-                                </Button>
-                            </Td>
-                            <Td>
-                                <Button
-                                    className="edit"
-                                    type="button"
-                                    variant="plain"
-                                    component={ (props: any) => <Link { ...props } to={ linkTo.emailTemplates(e.id) } /> }
-                                >
-                                    { ' ' }
-                                    <PencilAltIcon />
-                                    { ' ' }
-                                </Button>
-                            </Td>
-                            <Td>
-                                <Button
-                                    className="delete"
-                                    type="button"
-                                    variant="plain"
-                                    onClick={ () => deleteTemplateModal(e) }
-                                >
-                                    <TrashIcon />
-                                    { ' ' }
-                                </Button>
-                            </Td>
+        <React.Fragment>
+            <PageSection>
+                <Title headingLevel="h3">
+                    Email Templates
+                </Title>
+                <TableComposable aria-label="Email Template table">
+                    <Thead>
+                        <Toolbar>
+                            <ToolbarContent>
+                                <ToolbarItem>
+                                    <Button variant="primary" isDisabled={ !hasPermission(props.application.id) }
+                                        component={ (props: any) =>
+                                            <Link { ...props } to={ linkTo.newEmailTemplate() } /> }>Create Email Template</Button>
+                                </ToolbarItem>
+                                <DeleteTemplateModal 
+                                    onDelete={ handleDelete }
+                                    templateName={ template.name }
+                                    isOpen={ showDeleteModal }
+                                    onClose={ onDeleteClose }
+                                />
+                            </ToolbarContent>
+                        </Toolbar>
+                        <Tr>
+                            {columns.map((column, columnIndex) => (
+                                <Th key={ columnIndex }>{column}</Th>
+                            ))}
                         </Tr>
-                    )) }
-                </Tbody>
-            </Table>
-        </PageSection>
+                    </Thead>
+                    <Tbody>
+                        { getAllTemplates.payload.value.map(e => (
+                            <Tr key={ e.id }>
+                                <Td>{ e.name }</Td>
+                                <Td>
+                                    <Button className='view' type='button' variant='plain' isDisabled
+                                    > { <EyeIcon /> } </Button></Td>
+                                <Td>
+                                    <Button className='edit' type='button' variant='plain' component={ (props: any) =>
+                                        <Link { ...props } to={ linkTo.emailTemplates(e.id) } /> }
+                                    > { <PencilAltIcon /> } </Button></Td>
+                                <Td>
+                                    <Button className='delete' type='button' variant='plain' onClick={ () => deleteTemplateModal(e) }
+                                    >{ <TrashIcon /> } </Button></Td>
+                            </Tr>
+                        ))}
+                    </Tbody>
+                </TableComposable>
+            </PageSection>
+        </React.Fragment>
 
     );
 };

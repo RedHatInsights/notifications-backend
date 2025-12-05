@@ -1,4 +1,4 @@
-import { produce } from 'immer';
+import produce from 'immer';
 import { useCallback, useEffect, useState } from 'react';
 import { QueryResponse, useClient } from 'react-fetching-library';
 import { useUnmountPromise } from 'react-use';
@@ -14,7 +14,7 @@ export const useBundles = () => {
 
     const [ isLoading, setLoading ] = useState<boolean>();
 
-    const query = useCallback(async() => {
+    const query = useCallback(async () => {
         const cQuery = client.query;
         setLoading(true);
 

@@ -7,24 +7,22 @@ interface AggregationEmailCardProps {
     templateName: (string | undefined)[] | undefined;
 }
 
-export const AggregationTemplateCard: React.FunctionComponent<AggregationEmailCardProps> = props => {
+export const AggregationTemplateCard: React.FunctionComponent<AggregationEmailCardProps> = (props) => {
 
     return (
         <PageSection>
             <Title headingLevel="h3">
-                Aggregation Email Template for
-                { ' ' }
-                { props.applicationName }
+                Aggregation Email Template for { props.applicationName }
             </Title>
             <Card>
                 <CardHeader>
-                    { `Application: ${props.applicationName} ` }
+                    {`Application: ${ props.applicationName } `}
                 </CardHeader>
                 <CardBody>
-                    { `Bundle: ${props.bundleName}` }
+                    {`Bundle: ${ props.bundleName }`}
                 </CardBody>
                 <CardBody>
-                    { `Aggregation Template: ${props.templateName} ` }
+                    {`Aggregation Template: ${ props.templateName } `}
                 </CardBody>
             </Card>
         </PageSection>
