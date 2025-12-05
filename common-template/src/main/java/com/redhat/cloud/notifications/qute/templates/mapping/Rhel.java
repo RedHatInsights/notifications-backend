@@ -100,14 +100,12 @@ public class Rhel {
         // Patch
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, PATCH_APP_NAME, PATCH_NEW_ADVISORY), PATCH_FOLDER_NAME + "newAdvisoriesBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, PATCH_APP_NAME, PATCH_NEW_ADVISORY), PATCH_FOLDER_NAME + "newAdvisoriesInstantEmailBody.html"),
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, PATCH_APP_NAME, PATCH_NEW_ADVISORY, true), PATCH_FOLDER_NAME + "beta/newAdvisoriesInstantEmailBody.html"),
 
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, PATCH_APP_NAME, null), PATCH_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Policies
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, POLICIES_APP_NAME, POLICIES_POLICY_TRIGGERED), POLICY_FOLDER_NAME + "policyTriggeredBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, POLICIES_APP_NAME, POLICIES_POLICY_TRIGGERED), POLICY_FOLDER_NAME + "instantEmailBody.html"),
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, POLICIES_APP_NAME, POLICIES_POLICY_TRIGGERED, true), POLICY_FOLDER_NAME + "beta/instantEmailBody.html"),
 
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, POLICIES_APP_NAME, null), POLICY_FOLDER_NAME + "dailyEmailBody.html"),
 

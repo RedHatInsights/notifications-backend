@@ -74,17 +74,8 @@ public abstract class EmailTemplatesRendererHelper {
         return generateEmail(templateDefinition, action, null);
     }
 
-    protected String generateEmailBody(String eventTypeStr, Action action, boolean useBetaTemplate) {
-        return generateEmailBody(eventTypeStr, action, null, false, useBetaTemplate);
-    }
-
     protected String generateEmailBody(String eventTypeStr, Action action) {
         return generateEmailBody(eventTypeStr, action, null, false);
-    }
-
-    protected String generateEmailBody(String eventTypeStr, Action event, EmailPendo pendo, boolean ignoreUserPreferences, boolean useBetaTemplate) {
-        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_BODY, getBundle(), getApp(), eventTypeStr, useBetaTemplate);
-        return generateEmail(templateDefinition, event, pendo, ignoreUserPreferences);
     }
 
     protected String generateEmailBody(String eventTypeStr, Action event, EmailPendo pendo, boolean ignoreUserPreferences) {

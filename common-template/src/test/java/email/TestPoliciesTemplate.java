@@ -5,12 +5,10 @@ import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -40,11 +38,10 @@ public class TestPoliciesTemplate extends EmailTemplatesRendererHelper {
     }
 
     @ParameterizedTest
-    @MethodSource("ignorePreferencesAndBetaFlags")
-    void testInstantEmailBody(boolean ignoreUserPreferences,  boolean useBetaTemplate) {
-
+    @ValueSource(booleans = {true, false})
+    void testInstantEmailBody(boolean ignoreUserPreferences) {
         Action action = TestHelpers.createPoliciesAction("", "", "", "FooMachine");
-        String result = generateEmailBody(EVENT_TYPE_NAME, action, null, ignoreUserPreferences, useBetaTemplate);
+        String result = generateEmailBody(EVENT_TYPE_NAME, action, null, ignoreUserPreferences);
         assertTrue(result.contains(TestHelpers.POLICY_ID_1), "Body should contain policy id" + TestHelpers.POLICY_ID_1);
         assertTrue(result.contains(TestHelpers.POLICY_NAME_1), "Body should contain policy name" + TestHelpers.POLICY_NAME_1);
 
@@ -122,14 +119,5 @@ public class TestPoliciesTemplate extends EmailTemplatesRendererHelper {
         String result = generateAggregatedEmailBody(payload);
         assertTrue(result.contains("Review the 1 policy that triggered 1 system"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
-    }
-
-    private static Stream<Arguments> ignorePreferencesAndBetaFlags() {
-        return Stream.of(
-            Arguments.of(false, false),
-            Arguments.of(false, true),
-            Arguments.of(true, false),
-            Arguments.of(true, true)
-        );
     }
 }
