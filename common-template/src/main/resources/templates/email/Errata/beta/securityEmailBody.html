@@ -1,8 +1,4 @@
 {@boolean renderTitleRightPart=true}
-{@String renderLowTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; border-color: #5e40be; border-width: 1px; border-style: solid; background-color: #ffffff; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/minor-purple.png" height="10px" style="margin-right: 4px;">Low</td></tr></table>'}
-{@String renderModerateTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; border-color: #dba614; border-width: 1px; border-style: solid; background-color: #ffffff; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/moderate.png" height="10px" style="margin-right: 4px;">Moderate</td></tr></table>'}
-{@String renderImportantTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; background-color: #ffcd17; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400;"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/important-black.png" height="10px" style="margin-right: 4px;">Important</td></tr></table>'}
-{@String renderCriticalTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; background-color: #b0370b; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400; color: #ffffff;"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/critical-white.png" height="10px" style="margin-right: 4px;">Critical</td></tr></table>'}
 {#include email/Common/insightsEmailBodyV2}
 {#content-header-title}
     Errata - Subscription Services
@@ -30,10 +26,14 @@
                     <td style="{body-section-table-td-style}"><a style="{body-section-table-td-a-style}" href="{action.context.base_url}{it.payload.id}" target="_blank">{it.payload.id}</a></td>
                     <td style="{body-section-table-td-style}">
                         {#switch it.payload.severity.toLowerCase}
-                            {#case 'low'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v2.png" alt="Low" width="55" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderLowTag}<!--<![endif]-->
-                            {#case 'moderate'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v2.png" alt="Moderate" width="85" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderModerateTag}<!--<![endif]-->
-                            {#case 'important'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v2.png" alt="Important" width="86" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderImportantTag}<!--<![endif]-->
-                            {#case 'critical'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v2.png" alt="Critical" width="70" border="0"><![endif]--><!--[if !mso]><!-->{renderCriticalTag}<!--<![endif]-->
+                            {#case 'low'}
+                            <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v2.png" alt="Low" width="55" border="0">
+                            {#case 'moderate'}
+                            <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v2.png" alt="Moderate" width="85" border="0">
+                            {#case 'important'}
+                            <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v2.png" alt="Important" width="86" border="0">
+                            {#case 'critical'}
+                            <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v2.png" alt="Critical" width="70" border="0">
                         {/switch}
                     </td>
                     <td style="{body-section-table-td-style}">{it.payload.synopsis}</td>

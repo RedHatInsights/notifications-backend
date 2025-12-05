@@ -222,11 +222,11 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
 
         String result = generateEmailBody(NEW_RECOMMENDATION, action, useBetaTemplate);
-        checkNewRecommendationsBodyResults(action, result, useBetaTemplate);
+        checkNewRecommendationsBodyResults(action, result);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
-    private void checkNewRecommendationsBodyResults(Action action, final String result, final boolean useBetaTemplate) {
+    private void checkNewRecommendationsBodyResults(Action action, final String result) {
         action.getEvents().forEach(event -> {
             assertTrue(
                 result.contains(event.getPayload().getAdditionalProperties().get("rule_id").toString()),
@@ -238,17 +238,10 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
             );
         });
 
-        if (useBetaTemplate) {
-            assertTrue(result.contains("alt=\"Low\""), "Body should contain low severity rule image");
-            assertTrue(result.contains("alt=\"Moderate\""), "Body should contain moderate severity rule image");
-            assertTrue(result.contains("alt=\"Important\""), "Body should contain important severity rule image");
-            assertTrue(result.contains("alt=\"Critical\""), "Body should contain critical severity rule image");
-        } else {
-            assertTrue(result.contains("alt=\"Low severity\""), "Body should contain low severity rule image");
-            assertTrue(result.contains("alt=\"Moderate severity\""), "Body should contain moderate severity rule image");
-            assertTrue(result.contains("alt=\"Important severity\""), "Body should contain important severity rule image");
-            assertTrue(result.contains("alt=\"Critical severity\""), "Body should contain critical severity rule image");
-        }
+        assertTrue(result.contains("alt=\"Low severity\""), "Body should contain low severity rule image");
+        assertTrue(result.contains("alt=\"Moderate severity\""), "Body should contain moderate severity rule image");
+        assertTrue(result.contains("alt=\"Important severity\""), "Body should contain important severity rule image");
+        assertTrue(result.contains("alt=\"Critical severity\""), "Body should contain critical severity rule image");
 
         // Display name
         assertTrue(result.contains("My Host"), "Body should contain the display_name");
@@ -269,7 +262,7 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
     public void testInstantEmailBodyForDeactivatedRecommendation(boolean useBetaTemplate) {
         Action action = TestHelpers.createAdvisorAction("123456", ADVISOR_DEACTIVATED_RECOMMENDATION);
         String result = generateEmailBody(ADVISOR_DEACTIVATED_RECOMMENDATION, action, useBetaTemplate);
-        checkDeactivatedRecommendationResults(action, result, useBetaTemplate);
+        checkDeactivatedRecommendationResults(action, result);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -278,11 +271,11 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
     public void testInstantEmailBodyForResolvedRecommendation(boolean useBetaTemplate) {
         Action action = TestHelpers.createAdvisorAction("123456", ADVISOR_RESOLVED_RECOMMENDATION);
         String result = generateEmailBody(ADVISOR_RESOLVED_RECOMMENDATION, action, useBetaTemplate);
-        checkNewRecommendationsBodyResults(action, result, useBetaTemplate);
+        checkNewRecommendationsBodyResults(action, result);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
-    private void checkDeactivatedRecommendationResults(Action action, final String result, boolean useBetaTemplate) {
+    private void checkDeactivatedRecommendationResults(Action action, final String result) {
         action.getEvents().forEach(event -> {
             assertTrue(result.contains(event.getPayload().getAdditionalProperties().get("rule_description").toString()),
                 "Body should contain rule description" + event.getPayload().getAdditionalProperties().get("rule_description"));
@@ -292,12 +285,7 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
                 "Body should contain deactivation reason" + event.getPayload().getAdditionalProperties().get("deactivation_reason"));
         });
 
-        if (useBetaTemplate) {
-            assertTrue(result.contains("alt=\"Low\""), "Body should contain low severity rule image");
-            assertTrue(result.contains("alt=\"Moderate\""), "Body should contain moderate severity rule image");
-        } else {
-            assertTrue(result.contains("alt=\"Low severity\""), "Body should contain low severity rule image");
-            assertTrue(result.contains("alt=\"Moderate severity\""), "Body should contain moderate severity rule image");
-        }
+        assertTrue(result.contains("alt=\"Low severity\""), "Body should contain low severity rule image");
+        assertTrue(result.contains("alt=\"Moderate severity\""), "Body should contain moderate severity rule image");
     }
 }
