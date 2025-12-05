@@ -38,9 +38,9 @@ public class SubscriptionsDeduplicationConfig extends EventDeduplicationConfig {
         // Use TreeMap to ensure consistent alphabetical ordering of fields in the JSON output
         TreeMap<String, Object> deduplicationKey = new TreeMap<>();
         deduplicationKey.put("orgId", event.getOrgId());
-        deduplicationKey.put("productId", context.getString("product_id"));
-        deduplicationKey.put("metricId", context.getString("metric_id"));
-        deduplicationKey.put("billingAccountId", context.getString("billing_account_id"));
+        deduplicationKey.put("productId", context.getString("productId"));
+        deduplicationKey.put("metricId", context.getString("metricId"));
+        deduplicationKey.put("billingAccountId", context.getString("billingAccountId"));
         deduplicationKey.put("month", event.getTimestamp().format(MONTH_FORMATTER));
 
         return Optional.of(new JsonObject(deduplicationKey).encode());

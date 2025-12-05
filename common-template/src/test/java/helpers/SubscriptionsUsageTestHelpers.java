@@ -1,7 +1,6 @@
 package helpers;
 
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
@@ -14,27 +13,29 @@ import static helpers.TestHelpers.DEFAULT_ORG_ID;
 public class SubscriptionsUsageTestHelpers {
 
     public static Action createSubscriptionsUsageAction() {
-        return Action.builder()
-            .withBundle("subscription-services")
-            .withApplication("subscriptions")
-            .withEventType("exceeded-utilization-threshold")
-            .withOrgId(DEFAULT_ORG_ID)
-            .withTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25))
-            .withContext(Context.builder()
-                .withAdditionalProperty("product_id", "RHEL for x86")
-                .withAdditionalProperty("metric_id", "sockets")
-                .build()
-            )
-            .withEvents(List.of(
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle("subscription-services");
+        emailActionMessage.setApplication("subscriptions");
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        emailActionMessage.setEventType("exceeded-utilization-threshold");
+        emailActionMessage.setRecipients(List.of());
+
+        emailActionMessage.setEvents(List.of(
                 new Event.EventBuilder()
-                    .withMetadata(new Metadata.MetadataBuilder().build())
-                    .withPayload(
-                        new Payload.PayloadBuilder()
-                            .withAdditionalProperty("utilization_percentage", "105")
-                            .build()
-                    )
-                    .build()
-            ))
-            .build();
+                        .withMetadata(new Metadata.MetadataBuilder().build())
+                        .withPayload(
+                                new Payload.PayloadBuilder()
+                                        .withAdditionalProperty("product_tag", "RHEL for x86")
+                                        .withAdditionalProperty("threshold_percentage", "85")
+                                        .withAdditionalProperty("metric", "sockets")
+                                        .withAdditionalProperty("utilization_percentage", "105")
+                                        .build()
+                        )
+                        .build()
+        ));
+
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+
+        return emailActionMessage;
     }
 }
