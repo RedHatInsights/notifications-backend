@@ -139,13 +139,13 @@ objects:
         - name: QUARKUS_OIDC_CLIENT_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: oidc-authentication
-              key: client-id
+              name: kessel-authentication
+              key: relations-api.client.id
         - name: QUARKUS_OIDC_CLIENT_CREDENTIALS_SECRET
           valueFrom:
             secretKeyRef:
-              name: oidc-authentication
-              key: secret
+              name: kessel-authentication
+              key: relations-api.client.secret
         - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE
           value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
         - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_PASSWORD
@@ -178,15 +178,15 @@ objects:
         - name: RELATIONS_API_AUTHN_CLIENT_ID
           valueFrom:
             secretKeyRef:
-              name: oidc-authentication
-              key: client-id
+              name: kessel-authentication
+              key: relations-api.client.id
         - name: RELATIONS_API_AUTHN_CLIENT_ISSUER
           value: ${NOTIFICATIONS_KESSEL_OIDC_ISSUER}
         - name: RELATIONS_API_AUTHN_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
-              name: oidc-authentication
-              key: secret
+              name: kessel-authentication
+              key: relations-api.client.secret
         - name: RELATIONS_API_IS_SECURE_CLIENTS
           value: ${NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS}
         - name: KESSEL_DOMAIN
