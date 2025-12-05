@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.connector.drawer.recipients.recipientsresolver;
 
 
-import com.redhat.cloud.notifications.connector.drawer.models.DrawerUser;
+import com.redhat.cloud.notifications.connector.drawer.model.DrawerUser;
 import com.redhat.cloud.notifications.connector.drawer.recipients.pojo.RecipientsQuery;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.PUT;

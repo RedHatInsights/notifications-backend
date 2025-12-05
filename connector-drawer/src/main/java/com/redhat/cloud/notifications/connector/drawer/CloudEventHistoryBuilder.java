@@ -1,17 +1,15 @@
 package com.redhat.cloud.notifications.connector.drawer;
 
-import com.redhat.cloud.notifications.connector.drawer.models.HandledDrawerExceptionDetails;
-import com.redhat.cloud.notifications.connector.drawer.models.HandledDrawerMessageDetails;
-import com.redhat.cloud.notifications.connector.v2.OutgoingCloudEventBuilder;
-import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
-import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
+import com.redhat.cloud.notifications.connector.OutgoingCloudEventBuilder;
+import com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
+import org.apache.camel.Exchange;
+import org.apache.camel.Message;
 
-import static com.redhat.cloud.notifications.connector.drawer.constant.Constants.ADDITIONAL_ERROR_DETAILS;
-import static com.redhat.cloud.notifications.connector.drawer.constant.Constants.RESOLVED_RECIPIENT_LIST;
+import static com.redhat.cloud.notifications.connector.drawer.constant.ExchangeProperty.ADDITIONAL_ERROR_DETAILS;
 
 @ApplicationScoped
 @Alternative
@@ -21,30 +19,28 @@ public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
     public static final String TOTAL_RECIPIENTS_KEY = "total_recipients";
 
     @Override
-    public JsonObject buildSuccess(HandledMessageDetails processedMessageDetails) {
-        JsonObject data = new JsonObject();
+    public void process(Exchange exchange) throws Exception {
+        super.process(exchange);
+        int totalRecipients = exchange.getProperty(TOTAL_RECIPIENTS_KEY, 0, Integer.class);
 
-        if (processedMessageDetails instanceof HandledDrawerMessageDetails processedDrawerMessageDetails) {
-            data.put("details", new JsonObject());
-
-            data.getJsonObject("details").put(RESOLVED_RECIPIENT_LIST, processedDrawerMessageDetails.recipientsList);
-            data.getJsonObject("details").put(TOTAL_RECIPIENTS_KEY, processedDrawerMessageDetails.recipientsList.size());
+        Message in = exchange.getIn();
+        JsonObject cloudEvent = new JsonObject(in.getBody(String.class));
+        JsonObject data = new JsonObject(cloudEvent.getString("data"));
+        data.getJsonObject("details").put(ExchangeProperty.RESOLVED_RECIPIENT_LIST, exchange.getProperty(ExchangeProperty.RESOLVED_RECIPIENT_LIST));
+        data.getJsonObject("details").put(TOTAL_RECIPIENTS_KEY, totalRecipients);
+        if (exchange.getProperties().containsKey(ADDITIONAL_ERROR_DETAILS)) {
+            data.getJsonObject("details").put(ADDITIONAL_ERROR_DETAILS, getErrorDetail(exchange));
         }
-        return data;
+
+        cloudEvent.put("data", data.encode());
+        in.setBody(cloudEvent.encode());
     }
 
-    @Override
-    public JsonObject buildFailure(HandledExceptionDetails processedExceptionDetails) {
-        JsonObject data = new JsonObject();
-
-        if (processedExceptionDetails instanceof HandledDrawerExceptionDetails processedDrawerExceptionDetails) {
-            data.put("details", new JsonObject());
-            data.getJsonObject("details").put(TOTAL_RECIPIENTS_KEY, 0);
-            if (null != processedDrawerExceptionDetails.additionalErrorDetails) {
-                data.getJsonObject("details").put(ADDITIONAL_ERROR_DETAILS,
-                    processedDrawerExceptionDetails.additionalErrorDetails);
-            }
+    private Object getErrorDetail(final Exchange exchange) {
+        try {
+            return new JsonObject(exchange.getProperty(ADDITIONAL_ERROR_DETAILS, String.class));
+        } catch (Exception e) {
+            return exchange.getProperty(ADDITIONAL_ERROR_DETAILS, String.class);
         }
-        return data;
     }
 }

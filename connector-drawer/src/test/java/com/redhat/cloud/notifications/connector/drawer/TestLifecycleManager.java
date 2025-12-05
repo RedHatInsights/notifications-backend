@@ -17,11 +17,7 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         Map<String, String> properties = new HashMap<>();
         properties.put("notifications.connector.recipients-resolver.url", getMockServerUrl());
         properties.put("quarkus.rest-client.recipients-resolver.url", getMockServerUrl());
-
-        // Configure InMemory connectors for reactive messaging channels
-        properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory("incomingmessages"));
-        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory("outgoingmessages"));
-        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(DrawerMessageHandler.DRAWER_CHANNEL));
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(DrawerProcessor.DRAWER_CHANNEL));
         return properties;
     }
 
