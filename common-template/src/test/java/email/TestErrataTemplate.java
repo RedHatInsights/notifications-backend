@@ -2,15 +2,22 @@ package email;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.qute.templates.Severity;
+import com.redhat.cloud.notifications.qute.templates.extensions.SeverityExtension;
 import helpers.ErrataTestHelpers;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.stream.Stream;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -21,6 +28,19 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
     static final String NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA = "new-subscription-enhancement-errata";
 
     private static final Action ACTION = ErrataTestHelpers.createErrataAction();
+
+    private static Stream<Arguments> testBetaAndSeverity() {
+        return Stream.of(
+                Arguments.of(false, null),
+                Arguments.of(true, null),
+                Arguments.of(true, Severity.UNDEFINED.name()),
+                Arguments.of(true, Severity.NONE.name()),
+                Arguments.of(true, Severity.LOW.name()),
+                Arguments.of(true, Severity.MODERATE.name()),
+                Arguments.of(true, Severity.IMPORTANT.name()),
+                Arguments.of(true, Severity.CRITICAL.name())
+        );
+    }
 
     @Override
     protected String getBundle() {
@@ -71,11 +91,28 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testNewSubscriptionSecurityUpdateErrataEmailBody(boolean useBetaTemplate) {
-        String result = generateEmailBody(NEW_SUBSCRIPTION_SECURITY_UPDATE_ERRATA, ACTION, useBetaTemplate);
+    @MethodSource("testBetaAndSeverity")
+    public void testNewSubscriptionSecurityUpdateErrataEmailBody(boolean useBetaTemplate, String severity) {
+        Action criticalAction = ErrataTestHelpers.createErrataAction();
+        criticalAction.setSeverity(severity);
+        String result = generateEmailBody(NEW_SUBSCRIPTION_SECURITY_UPDATE_ERRATA, criticalAction, useBetaTemplate);
         if (useBetaTemplate) {
             assertTrue(result.contains("There are 4 security updates available for your subscriptions."));
+
+            // Check for presence of overall severity icon (and border for critical)
+            if (severity == null) {
+                assertFalse(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
+                assertFalse(result.contains("alt=\"["));
+            } else if (severity.equals(Severity.CRITICAL.name())) {
+                assertTrue(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
+                assertTrue(result.contains("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/severities/critical.png\" alt=\"[Critical]\""));
+            } else {
+                assertFalse(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
+                assertTrue(result.contains(
+                        String.format("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/severities/%s.png\" alt=\"[%s]\"",
+                                SeverityExtension.asPatternFlySeverity(severity),
+                                SeverityExtension.toTitleCase(severity))));
+            }
         } else {
             assertTrue(result.contains("There are 4 security updates affecting your subscriptions."));
         }
