@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
+import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
 import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
@@ -58,6 +59,9 @@ public class EngineConfig {
     private String toggleKafkaOutgoingHighVolumeTopic;
     private String toggleDirectEndpointToEventTypeDryRunEnabled;
     private String toggleUseDirectEndpointToEventTypeEnabled;
+    private String toggleUseCommonTemplateModuleToRenderEmailsEnabled;
+    private String toggleUseBetaTemplatesEnabled;
+    private String toggleIsConnectorTemplateTransformationEnabled;
     private String toggleIgnoreSeverityForApplications;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
@@ -158,8 +162,11 @@ public class EngineConfig {
         toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
         toggleDirectEndpointToEventTypeDryRunEnabled = toggleRegistry.register("endpoint-to-event-type-dry-run", true);
         toggleUseDirectEndpointToEventTypeEnabled = toggleRegistry.register("use-endpoint-to-event-type", true);
+        toggleUseCommonTemplateModuleToRenderEmailsEnabled = toggleRegistry.register("use-common-template-module-for-emails", true);
+        toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
         toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
         toggleBlacklistedEventTypes = toggleRegistry.register("blacklisted-event-types", true);
+        toggleIsConnectorTemplateTransformationEnabled = toggleRegistry.register("connectors-template-transformation", true);
         toggleIgnoreSeverityForApplications = toggleRegistry.register("ignore-severity-for-applications", true);
     }
 
@@ -187,6 +194,7 @@ public class EngineConfig {
         config.put(asyncEventProcessingToggle, isAsyncEventProcessing());
         config.put(toggleDirectEndpointToEventTypeDryRunEnabled, isDirectEndpointToEventTypeDryRunEnabled());
         config.put(toggleUseDirectEndpointToEventTypeEnabled, isUseDirectEndpointToEventTypeEnabled());
+        config.put(toggleUseCommonTemplateModuleToRenderEmailsEnabled, isUseCommonTemplateModuleToRenderEmailsEnabled());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -326,11 +334,40 @@ public class EngineConfig {
         }
     }
 
+    public boolean isUseCommonTemplateModuleToRenderEmailsEnabled() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleUseCommonTemplateModuleToRenderEmailsEnabled, true);
+        } else {
+            return true;
+        }
+    }
+
     public boolean isOutgoingKafkaHighVolumeTopicEnabled() {
         if (unleashEnabled) {
             return this.unleash.isEnabled(this.toggleKafkaOutgoingHighVolumeTopic, false);
         } else {
             return this.outgoingKafkaHighVolumeTopicEnabled;
+        }
+    }
+
+    public boolean isUseBetaTemplatesEnabled(final String orgId, final UUID eventTypeId) {
+        if (unleashEnabled) {
+            UnleashContext.Builder unleashContextBuilder = UnleashContext.builder()
+                .addProperty("orgId", orgId);
+            if (eventTypeId != null) {
+                unleashContextBuilder.addProperty("eventTypeId", eventTypeId.toString());
+            }
+            return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContextBuilder.build(), false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isConnectorTemplateTransformationEnabled(final String orgId) {
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleIsConnectorTemplateTransformationEnabled, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+        } else {
+            return true;
         }
     }
 

@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.templates.drawer;
 
-import com.redhat.cloud.notifications.DrawerTemplatesHelper;
+import com.redhat.cloud.notifications.IntegrationTemplatesInDbHelper;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
 import io.quarkus.test.junit.QuarkusTest;
@@ -13,7 +13,7 @@ import static com.redhat.cloud.notifications.processors.email.aggregators.Adviso
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-class TestAdvisorTemplate extends DrawerTemplatesHelper {
+class TestAdvisorTemplate extends IntegrationTemplatesInDbHelper {
 
     @Override
     protected String getApp() {

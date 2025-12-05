@@ -1,0 +1,35 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include Secure/Common/insightsEmailBodyLight}
+{#content-title}
+    Daily digest - Resource Optimization - Red Hat Enterprise Linux
+{/content-title}
+{#content-title-section1}
+    System{#if action.context.aggregated_data.systems_with_suggestions > 1}s{/if} with suggestions
+{/content-title-section1}
+{#content-title-right-part-section1}
+    <a target="_blank" href="{environment.url}/insights/ros?{query_params}">{action.context.aggregated_data.systems_with_suggestions}</a>
+{/content-title-right-part-section1}
+{#content-body-section1}
+    <p>Today, rules triggered on {action.context.aggregated_data.systems_triggered} system{#if action.context.aggregated_data.systems_triggered > 1}s{/if}:</p>
+    <table class="rh-data-table-bordered">
+        <thead>
+            <tr>
+                <th>State</th>
+                <th>Systems</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#for entry in action.context.aggregated_data.states}
+                <tr>
+                    <td>{entry.state}</td>
+                    <td>{entry.system_count}</td>
+                </tr>
+            {/for}
+        </tbody>
+    </table>
+{/content-body-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/insights/ros?{query_params}">Open Resource Optimization in Insights</a>
+{/content-button-section1}
+{/include}

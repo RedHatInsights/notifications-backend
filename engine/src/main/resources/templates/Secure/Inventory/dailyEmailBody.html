@@ -1,0 +1,25 @@
+{@boolean renderSection1=true}
+{@boolean renderButtonSection1=true}
+{#include Secure/Common/insightsEmailBodyLight}
+{#content-title}
+    Daily digest - Inventory - Red Hat Enterprise Linux
+{/content-title}
+{#content-title-section1}
+    Host{#if action.context.inventory.errors.size() > 1}s{/if} with validation error
+{/content-title-section1}
+{#content-title-right-part-section1}
+    <a target="_blank" href="{environment.url}/insights/inventory/?{query_params}">{action.context.inventory.errors.size()}</a>
+{/content-title-right-part-section1}
+{#content-button-section1}
+    <a target="_blank" href="{environment.url}/insights/inventory/?{query_params}">Open Inventory in Insights</a>
+{/content-button-section1}
+{#content-body-section1}
+    <p>
+        Red Hat Insights has identified {action.context.inventory.errors.size()} host{#if action.context.inventory.errors.size() > 1}s{/if} that presented a validation error.
+        For errors in updating hosts, please review the Insights Inventory service to further assess and determine next steps.
+    </p>
+    <p>
+        If no hosts were created by {#if action.context.inventory.errors.size() > 1}these changes, these errors{#else}this change, this error{/if} will not appear in the service.
+    </p>
+{/content-body-section1}
+{/include}

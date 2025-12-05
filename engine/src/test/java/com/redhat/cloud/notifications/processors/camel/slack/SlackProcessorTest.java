@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.processors.camel.CamelProcessor;
 import com.redhat.cloud.notifications.processors.camel.CamelProcessorTest;
+import com.redhat.cloud.notifications.templates.models.EnvironmentTest;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.ce.CloudEventMetadata;
 import io.vertx.core.json.JsonObject;
@@ -27,9 +28,18 @@ public class SlackProcessorTest extends CamelProcessorTest {
 
     private static final String WEBHOOK_URL = "https://foo.bar";
     private static final String CHANNEL = "#notifications";
+    private static final String SLACK_EXPECTED_MSG = "<" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f?from=notifications&integration=slack|my-computer> " +
+            "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies?from=notifications&integration=slack|Open Policies>";
+    private static final String SLACK_EXPECTED_MSG_WITH_HOST_URL = "<" + CONTEXT_HOST_URL + "?from=notifications&integration=slack|my-computer> " +
+            "triggered 1 event from Policies - Red Hat Enterprise Linux. <" + EnvironmentTest.expectedTestEnvUrlValue + "/insights/policies?from=notifications&integration=slack|Open Policies>";
 
     @Inject
     SlackProcessor slackProcessor;
+
+    @Override
+    protected String getExpectedMessage(boolean withHostUrl) {
+        return withHostUrl ? SLACK_EXPECTED_MSG_WITH_HOST_URL : SLACK_EXPECTED_MSG;
+    }
 
     @Override
     protected String getSubType() {
@@ -41,8 +51,24 @@ public class SlackProcessorTest extends CamelProcessorTest {
         return slackProcessor;
     }
 
-    protected void verifyKafkaMessageProcessorSpecificChecks(final JsonObject notification) {
+    @Override
+    protected void verifyKafkaMessage(boolean withHostUrl) {
+
+        await().until(() -> inMemorySink.received().size() == 1);
+        Message<JsonObject> message = inMemorySink.received().get(0);
+
+        assertNotificationsConnectorHeader(message);
+
+        CloudEventMetadata cloudEventMetadata = message.getMetadata(CloudEventMetadata.class).get();
+        assertNotNull(cloudEventMetadata.getId());
+        assertEquals(getExpectedCloudEventType(), cloudEventMetadata.getType());
+
+        JsonObject notification = message.getPayload();
+
+        assertEquals(DEFAULT_ORG_ID, notification.getString("org_id"));
+        assertEquals(WEBHOOK_URL, notification.getString("webhookUrl"));
         assertEquals(CHANNEL, notification.getString("channel"));
+        assertEquals(getExpectedMessage(withHostUrl), notification.getString("message"));
     }
 
     @Override
@@ -91,5 +117,6 @@ public class SlackProcessorTest extends CamelProcessorTest {
         // The channel should be null in this case, since we removed the
         // "extras" object.
         assertNull(notification.getString("channel"), "the channel should be null since the endpoint's camel properties did not contain an \"extras\" object");
+        assertEquals(SLACK_EXPECTED_MSG, notification.getString("message"));
     }
 }
