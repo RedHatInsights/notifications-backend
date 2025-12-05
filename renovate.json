@@ -1,13 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "github>konflux-ci/mintmaker//config/renovate/renovate.json"
-  ],
-  "baseBranchPatterns": [
-    "master"
-  ],
+  "extends": ["github>konflux-ci/mintmaker//config/renovate/renovate.json"],
+  "baseBranches": ["master"],
   "tekton": {
-    "automerge": true,
-    "schedule": ["at any time"]
+    "automerge": true
   }
 }
