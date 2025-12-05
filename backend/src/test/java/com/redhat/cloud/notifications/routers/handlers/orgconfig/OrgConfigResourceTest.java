@@ -26,8 +26,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.project_kessel.api.inventory.v1beta2.Allowed;
-import org.project_kessel.api.inventory.v1beta2.CheckForUpdateRequest;
-import org.project_kessel.api.inventory.v1beta2.CheckRequest;
 
 import java.time.LocalTime;
 
@@ -36,13 +34,12 @@ import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.READ_AC
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_EDIT;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_VIEW;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.DAILY_DIGEST_PREFERENCE_VIEW;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_FALSE;
@@ -106,7 +103,6 @@ class OrgConfigResourceTest extends DbIsolatedTest {
         // disabled.
         when(backendConfig.isRBACEnabled()).thenReturn(true);
         when(workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID);
-        mockKesselDenyAll();
     }
 
     @ParameterizedTest
@@ -115,7 +111,7 @@ class OrgConfigResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(DAILY_DIGEST_PREFERENCE_EDIT, ALLOWED_TRUE);
         }
 
         recordDefaultDailyDigestTimePreference();
@@ -136,7 +132,7 @@ class OrgConfigResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(isKesselEnabled);
         if (isKesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(DAILY_DIGEST_PREFERENCE_EDIT, ALLOWED_TRUE);
         }
 
         final String ERROR_MESSAGE_WRONG_MINUTE_VALUE = "Accepted minute values are: 00, 15, 30, 45.";
@@ -157,8 +153,8 @@ class OrgConfigResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselPermission(DAILY_DIGEST_PREFERENCE_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(DAILY_DIGEST_PREFERENCE_EDIT, ALLOWED_TRUE);
         }
 
         LocalTime foundedPreference = given()
@@ -243,8 +239,8 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     void testKesselUnauthorized() {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
-        mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_FALSE);
-        mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_FALSE);
+        mockDefaultKesselPermission(DAILY_DIGEST_PREFERENCE_VIEW, ALLOWED_FALSE);
+        mockDefaultKesselUpdatePermission(DAILY_DIGEST_PREFERENCE_EDIT, ALLOWED_FALSE);
 
         // Get the time preferences.
         given()
@@ -265,15 +261,6 @@ class OrgConfigResourceTest extends DbIsolatedTest {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, username);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
-    }
-
-    private void mockKesselDenyAll() {
-        when(kesselCheckClient
-            .check(any(CheckRequest.class)))
-            .thenReturn(kesselTestHelper.buildCheckResponse(ALLOWED_FALSE));
-        when(kesselCheckClient
-            .checkForUpdate(any(CheckForUpdateRequest.class)))
-            .thenReturn(kesselTestHelper.buildCheckForUpdateResponse(ALLOWED_FALSE));
     }
 
     private void mockDefaultKesselPermission(WorkspacePermission permission, Allowed allowed) {

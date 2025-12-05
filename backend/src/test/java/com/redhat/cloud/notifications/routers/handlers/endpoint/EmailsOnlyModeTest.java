@@ -33,7 +33,7 @@ import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_AC
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_EDIT;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_CREATE;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.routers.handlers.endpoint.EndpointResource.UNSUPPORTED_ENDPOINT_TYPE;
@@ -90,7 +90,7 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
         }
 
         when(backendConfig.isEmailsOnlyModeEnabled()).thenReturn(true);
@@ -123,7 +123,7 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
         }
 
         when(backendConfig.isEmailsOnlyModeEnabled()).thenReturn(true);
@@ -160,7 +160,7 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
         }
 
         when(backendConfig.isEmailsOnlyModeEnabled()).thenReturn(true);
@@ -192,7 +192,7 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
         }
 
         when(backendConfig.isEmailsOnlyModeEnabled()).thenReturn(true);
@@ -224,7 +224,7 @@ public class EmailsOnlyModeTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
         }
 
         when(backendConfig.isEmailsOnlyModeEnabled()).thenReturn(true);

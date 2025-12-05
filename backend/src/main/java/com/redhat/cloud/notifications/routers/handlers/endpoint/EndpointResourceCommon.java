@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers.handlers.endpoint;
 
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
@@ -37,7 +38,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_EDIT;
+
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 
 public class EndpointResourceCommon {
@@ -163,7 +164,7 @@ public class EndpointResourceCommon {
         if (this.backendConfig.isKesselEnabled(getOrgId(securityContext))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(securityContext));
             try {
-                this.kesselInventoryAuthorization.hasPermissionOnWorkspace(securityContext, INTEGRATIONS_EDIT, workspaceId);
+                this.kesselInventoryAuthorization.hasPermissionOnWorkspace(securityContext, WorkspacePermission.INTEGRATIONS_CREATE, workspaceId);
                 shouldRedactSecrets = false;
             } catch (final ForbiddenException | NotFoundException e) {
                 shouldRedactSecrets = true;

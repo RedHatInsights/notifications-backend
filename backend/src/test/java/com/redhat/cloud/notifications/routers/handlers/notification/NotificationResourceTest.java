@@ -50,8 +50,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.project_kessel.api.inventory.v1beta2.Allowed;
-import org.project_kessel.api.inventory.v1beta2.CheckForUpdateRequest;
-import org.project_kessel.api.inventory.v1beta2.CheckRequest;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -72,8 +70,12 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
 import static com.redhat.cloud.notifications.auth.kessel.KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_EDIT;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_VIEW;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.APPLICATIONS_VIEW;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.BEHAVIOR_GROUPS_EDIT;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.BEHAVIOR_GROUPS_VIEW;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.BUNDLES_VIEW;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.EVENT_TYPES_VIEW;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_VIEW;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_APP_NAME_2;
 import static com.redhat.cloud.notifications.db.ResourceHelpers.TEST_BUNDLE_2_NAME;
@@ -87,7 +89,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_FALSE;
@@ -144,7 +145,6 @@ public class NotificationResourceTest extends DbIsolatedTest {
         // disabled.
         Mockito.when(this.backendConfig.isRBACEnabled()).thenReturn(true);
         when(workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID);
-        mockKesselDenyAll();
     }
 
     private Header initRbacMock(String accountId, String orgId, String username, RbacAccess access) {
@@ -159,7 +159,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
         }
 
         helpers.createTestAppAndEventTypes();
@@ -239,7 +239,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
         }
 
         helpers.createTestAppAndEventTypes();
@@ -275,7 +275,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
         }
 
         helpers.createTestAppAndEventTypes();
@@ -312,7 +312,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
         }
 
         helpers.createTestAppAndEventTypes();
@@ -352,7 +352,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
         }
 
         helpers.createTestAppAndEventTypes();
@@ -386,7 +386,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
         }
 
         helpers.createTestAppAndEventTypes();
@@ -428,7 +428,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
         }
 
         UUID bundleId = helpers.createTestAppAndEventTypes();
@@ -507,7 +507,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
         }
 
         UUID bundleId = helpers.createTestAppAndEventTypes();
@@ -599,7 +599,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
         if (kesselEnabled) {
             UUID otherOrganizationWorkspaceId = UUID.randomUUID();
             when(workspaceUtils.getDefaultWorkspaceId(otherOrganization)).thenReturn(otherOrganizationWorkspaceId);
-            mockKesselPermission(otherOrganization, DEFAULT_USER, NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockKesselPermission(otherOrganization, DEFAULT_USER, EVENT_TYPES_VIEW, ALLOWED_TRUE);
         }
 
         Response otherOrgUnmatchedResponse = given()
@@ -651,7 +651,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(BEHAVIOR_GROUPS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
         }
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -805,7 +806,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -879,7 +880,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -959,7 +960,9 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(BUNDLES_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(APPLICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
         }
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -1076,9 +1079,13 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockKesselPermission(DEFAULT_ORG_ID, DEFAULT_USER + "no-access", NOTIFICATIONS_VIEW, ALLOWED_FALSE);
-            mockKesselUpdatePermission(DEFAULT_ORG_ID, DEFAULT_USER + "no-access", NOTIFICATIONS_EDIT, ALLOWED_FALSE);
-            mockKesselUpdatePermission(DEFAULT_ORG_ID, DEFAULT_USER + "read-access", NOTIFICATIONS_EDIT, ALLOWED_FALSE);
+            mockKesselPermission(DEFAULT_ORG_ID, DEFAULT_USER + "no-access", BUNDLES_VIEW, ALLOWED_FALSE);
+            mockKesselPermission(DEFAULT_ORG_ID, DEFAULT_USER + "no-access", APPLICATIONS_VIEW, ALLOWED_FALSE);
+            mockKesselPermission(DEFAULT_ORG_ID, DEFAULT_USER + "no-access", EVENT_TYPES_VIEW, ALLOWED_FALSE);
+            mockKesselPermission(DEFAULT_ORG_ID, DEFAULT_USER + "no-access", BEHAVIOR_GROUPS_VIEW, ALLOWED_FALSE);
+            mockKesselPermission(DEFAULT_ORG_ID, DEFAULT_USER + "no-access", INTEGRATIONS_VIEW, ALLOWED_FALSE);
+            mockKesselUpdatePermission(DEFAULT_ORG_ID, DEFAULT_USER + "no-access", BEHAVIOR_GROUPS_EDIT, ALLOWED_FALSE);
+            mockKesselUpdatePermission(DEFAULT_ORG_ID, DEFAULT_USER + "read-access", BEHAVIOR_GROUPS_EDIT, ALLOWED_FALSE);
         }
 
         Header noAccessIdentityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER + "no-access", NO_ACCESS);
@@ -1252,7 +1259,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -1278,7 +1285,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -1298,7 +1305,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(BUNDLES_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(BEHAVIOR_GROUPS_VIEW, ALLOWED_TRUE);
         }
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -1318,7 +1326,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(BEHAVIOR_GROUPS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
         }
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -1338,7 +1347,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(BEHAVIOR_GROUPS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
         }
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -1358,7 +1368,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(BEHAVIOR_GROUPS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
         }
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -1380,7 +1391,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         final String BEHAVIOR_GROUP_1_NAME = "BehaviorGroup1";
@@ -1460,7 +1471,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         final CreateBehaviorGroupRequest createBehaviorGroupRequest = new CreateBehaviorGroupRequest();
@@ -1504,7 +1515,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -1560,7 +1571,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         final Bundle bundle = this.helpers.createBundle(TEST_BUNDLE_NAME, "Bundle-display-name");
@@ -1614,7 +1625,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         // Create the fixtures in the database.
@@ -1667,7 +1678,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         // Create the fixtures in the database.
@@ -1717,7 +1728,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         final Bundle bundle = this.helpers.createBundle();
@@ -1748,7 +1760,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         final Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -1778,7 +1791,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         final Bundle bundle = this.helpers.createBundle();
@@ -1814,7 +1828,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         // Create a bundle and a set of fixtures...
@@ -1851,7 +1866,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
         // Create the fixtures.
         final Bundle bundle = this.helpers.createBundle();
@@ -1895,7 +1911,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
         }
 
         // Create the fixtures.
@@ -2015,7 +2032,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
         }
 
         final Bundle bundle = helpers.createBundle();
@@ -2063,7 +2081,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(BEHAVIOR_GROUPS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_TYPES_VIEW, ALLOWED_TRUE);
         }
 
         Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -2451,15 +2470,6 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(1, behaviorGroupList.size());
         assertEquals("behavior-group-ep-2", behaviorGroupList.get(0).getDisplayName());
         assertEquals(0, behaviorGroupList.get(0).getActions().size());
-    }
-
-    private void mockKesselDenyAll() {
-        when(kesselCheckClient
-            .check(any(CheckRequest.class)))
-            .thenReturn(kesselTestHelper.buildCheckResponse(ALLOWED_FALSE));
-        when(kesselCheckClient
-            .checkForUpdate(any(CheckForUpdateRequest.class)))
-            .thenReturn(kesselTestHelper.buildCheckForUpdateResponse(ALLOWED_FALSE));
     }
 
     private void mockDefaultKesselPermission(WorkspacePermission permission, Allowed allowed) {

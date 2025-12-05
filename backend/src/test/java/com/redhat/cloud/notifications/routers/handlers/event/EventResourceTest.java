@@ -47,7 +47,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.project_kessel.api.inventory.v1beta2.Allowed;
-import org.project_kessel.api.inventory.v1beta2.CheckForUpdateRequest;
 import org.project_kessel.api.inventory.v1beta2.CheckRequest;
 import org.project_kessel.api.inventory.v1beta2.CheckResponse;
 
@@ -69,7 +68,7 @@ import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.EVENTS_VIEW;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.EVENT_LOG_VIEW;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -153,7 +152,6 @@ public class EventResourceTest extends DbIsolatedTest {
         // disabled.
         Mockito.when(this.backendConfig.isRBACEnabled()).thenReturn(true);
         when(workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID);
-        mockKesselDenyAll();
     }
 
     @ParameterizedTest
@@ -162,7 +160,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockKesselPermission(DEFAULT_ORG_ID, "non-default-user", EVENTS_VIEW, ALLOWED_FALSE);
+            mockKesselPermission(DEFAULT_ORG_ID, "non-default-user", EVENT_LOG_VIEW, ALLOWED_FALSE);
         }
 
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "non-default-user", NOTIFICATIONS_ACCESS_ONLY);
@@ -179,11 +177,11 @@ public class EventResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(EVENTS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_LOG_VIEW, ALLOWED_TRUE);
             when(workspaceUtils.getDefaultWorkspaceId(OTHER_ORG_ID)).thenReturn(UUID.randomUUID());
-            mockKesselPermission(OTHER_ORG_ID, OTHER_USERNAME, EVENTS_VIEW, ALLOWED_TRUE);
+            mockKesselPermission(OTHER_ORG_ID, OTHER_USERNAME, EVENT_LOG_VIEW, ALLOWED_TRUE);
             when(workspaceUtils.getDefaultWorkspaceId("none")).thenReturn(UUID.randomUUID());
-            mockKesselPermission("none", OTHER_USERNAME, EVENTS_VIEW, ALLOWED_TRUE);
+            mockKesselPermission("none", OTHER_USERNAME, EVENT_LOG_VIEW, ALLOWED_TRUE);
         }
 
         /*
@@ -696,7 +694,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockKesselPermission(DEFAULT_ORG_ID, DEFAULT_USER + "no-access", EVENTS_VIEW, ALLOWED_FALSE);
+            mockKesselPermission(DEFAULT_ORG_ID, DEFAULT_USER + "no-access", EVENT_LOG_VIEW, ALLOWED_FALSE);
         }
 
         Header noAccessIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER + "no-access", NO_ACCESS);
@@ -713,7 +711,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(EVENTS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_LOG_VIEW, ALLOWED_TRUE);
         }
 
         Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -733,7 +731,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(EVENTS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_LOG_VIEW, ALLOWED_TRUE);
         }
 
         Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
@@ -760,7 +758,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(EVENTS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselPermission(EVENT_LOG_VIEW, ALLOWED_TRUE);
         }
 
         Header readAccessIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, NOTIFICATIONS_READ_ACCESS_ONLY);
@@ -993,11 +991,11 @@ public class EventResourceTest extends DbIsolatedTest {
 
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
-        mockDefaultKesselPermission(EVENTS_VIEW, ALLOWED_TRUE);
+        mockDefaultKesselPermission(EVENT_LOG_VIEW, ALLOWED_TRUE);
         when(workspaceUtils.getDefaultWorkspaceId(OTHER_ORG_ID)).thenReturn(UUID.randomUUID());
-        mockKesselPermission(OTHER_ORG_ID, OTHER_USERNAME, EVENTS_VIEW, ALLOWED_TRUE);
+        mockKesselPermission(OTHER_ORG_ID, OTHER_USERNAME, EVENT_LOG_VIEW, ALLOWED_TRUE);
         when(workspaceUtils.getDefaultWorkspaceId("none")).thenReturn(UUID.randomUUID());
-        mockKesselPermission("none", OTHER_USERNAME, EVENTS_VIEW, ALLOWED_TRUE);
+        mockKesselPermission("none", OTHER_USERNAME, EVENT_LOG_VIEW, ALLOWED_TRUE);
 
         Bundle bundle1 = resourceHelpers.createBundle("bundle-1", "Bundle 1");
         Bundle bundle2 = resourceHelpers.createBundle("bundle-2", "Bundle 2");
@@ -1084,15 +1082,6 @@ public class EventResourceTest extends DbIsolatedTest {
         assertSameEvent(page.getData().get(2), event1, history1, history2, history6);
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
-    }
-
-    private void mockKesselDenyAll() {
-        when(kesselCheckClient
-            .check(any(CheckRequest.class)))
-            .thenReturn(kesselTestHelper.buildCheckResponse(ALLOWED_FALSE));
-        when(kesselCheckClient
-            .checkForUpdate(any(CheckForUpdateRequest.class)))
-            .thenReturn(kesselTestHelper.buildCheckForUpdateResponse(ALLOWED_FALSE));
     }
 
     private void mockDefaultKesselPermission(WorkspacePermission permission, Allowed allowed) {

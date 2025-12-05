@@ -1,10 +1,9 @@
 package com.redhat.cloud.notifications.auth.annotation;
 
+import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import jakarta.ws.rs.core.SecurityContext;
 
 import java.util.UUID;
-
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_VIEW;
 
 /**
  * A simple helper class which defines a few methods for the {@link AuthorizationInterceptorTest}
@@ -21,7 +20,7 @@ public class AuthorizationInterceptorHelper {
 
     @Authorization(
         legacyRBACRole = AuthorizationInterceptorTest.LEGACY_RBAC_ROLE,
-        workspacePermissions = NOTIFICATIONS_VIEW
+        workspacePermissions = {WorkspacePermission.BUNDLES_VIEW, WorkspacePermission.APPLICATIONS_VIEW, WorkspacePermission.EVENT_TYPES_VIEW}
     )
     public void testMethodWithWorkspacePermissions(final SecurityContext ignored, final String ignoredTwo, final UUID ignoredThree) { }
 }
