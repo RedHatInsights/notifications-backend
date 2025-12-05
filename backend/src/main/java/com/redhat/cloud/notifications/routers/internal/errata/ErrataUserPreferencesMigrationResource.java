@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.routers.internal.userpreferencesmigration;
+package com.redhat.cloud.notifications.routers.internal.errata;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;

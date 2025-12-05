@@ -7,7 +7,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
-import com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataSubscription;
+import com.redhat.cloud.notifications.routers.internal.errata.ErrataSubscription;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_BUGFIX;
-import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_ENHANCEMENT;
-import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_SECURITY;
+import static com.redhat.cloud.notifications.routers.internal.errata.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_BUGFIX;
+import static com.redhat.cloud.notifications.routers.internal.errata.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_ENHANCEMENT;
+import static com.redhat.cloud.notifications.routers.internal.errata.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_SECURITY;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
