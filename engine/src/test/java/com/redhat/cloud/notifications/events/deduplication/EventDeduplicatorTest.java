@@ -72,9 +72,9 @@ class EventDeduplicatorTest {
 
         Event event1 = createSubscriptionsEvent(
             UUID.randomUUID(),
-            "org123",
             eventType,
             LocalDateTime.of(2025, 11, 14, 10, 52),
+            "org123",
             "prod456",
             "metric789",
             "billing001");
@@ -83,9 +83,9 @@ class EventDeduplicatorTest {
 
         Event event2 = createSubscriptionsEvent(
             UUID.randomUUID(),
-            "org123",
             eventType,
             LocalDateTime.of(2025, 11, 15, 14, 30), // Different day, same month.
+            "org123",
             "prod456",
             "metric789",
             "billing001");
@@ -94,9 +94,9 @@ class EventDeduplicatorTest {
 
         Event event3 = createSubscriptionsEvent(
             UUID.randomUUID(),
-            "org999",
             eventType,
             LocalDateTime.of(2025, 11, 16, 9, 15), // Different day, still same month.
+            "org999",
             "prod456",
             "metric789",
             "billing001");
@@ -105,9 +105,9 @@ class EventDeduplicatorTest {
 
         Event event4 = createSubscriptionsEvent(
             UUID.randomUUID(),
-            "org123",
             eventType,
             LocalDateTime.of(2025, 12, 1, 10, 0), // Different month.
+            "org123",
             "prod456",
             "metric789",
             "billing001");
@@ -116,9 +116,9 @@ class EventDeduplicatorTest {
 
         Event event5 = createSubscriptionsEvent(
             UUID.randomUUID(),
-            "org123",
             eventType,
             LocalDateTime.of(2025, 11, 17, 11, 0),
+            "org123",
             "prod999",
             "metric789",
             "billing001");
@@ -127,9 +127,9 @@ class EventDeduplicatorTest {
 
         Event event6 = createSubscriptionsEvent(
             UUID.randomUUID(),
-            "org123",
             eventType,
             LocalDateTime.of(2025, 11, 18, 11, 0),
+            "org123",
             "prod999",
             "metric999",
             "billing001");
@@ -138,9 +138,9 @@ class EventDeduplicatorTest {
 
         Event event7 = createSubscriptionsEvent(
             UUID.randomUUID(),
-            "org123",
             eventType,
             LocalDateTime.of(2025, 11, 19, 11, 0),
+            "org123",
             "prod999",
             "metric999",
             "billing999");
@@ -172,19 +172,19 @@ class EventDeduplicatorTest {
         return eventType;
     }
 
-    private static Event createSubscriptionsEvent(UUID eventId, String orgId, EventType eventType, LocalDateTime timestamp, String productId, String metricId, String billingAccountId) {
+    private static Event createSubscriptionsEvent(UUID eventId, EventType eventType, LocalDateTime timestamp, String orgId, String productId, String metricId, String billingAccountId) {
 
-        JsonObject context = new JsonObject();
-        context.put("productId", productId);
-        context.put("metricId", metricId);
-        context.put("billingAccountId", billingAccountId);
+        JsonObject payload = new JsonObject();
+        payload.put("orgId", orgId);
+        payload.put("productId", productId);
+        payload.put("metricId", metricId);
+        payload.put("billingAccountId", billingAccountId);
 
         Event event = new Event();
         event.setId(eventId);
-        event.setOrgId(orgId);
         event.setEventType(eventType);
         event.setEventWrapper(new EventWrapperAction(ActionBuilder.build(timestamp)));
-        event.setPayload(JsonObject.of("context", context).encode());
+        event.setPayload(payload.encode());
 
         return event;
     }

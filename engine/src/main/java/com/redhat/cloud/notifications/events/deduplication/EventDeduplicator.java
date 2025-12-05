@@ -38,7 +38,7 @@ public class EventDeduplicator {
 
         String sql = "INSERT INTO event_deduplication(event_type_id, deduplication_key, delete_after) " +
                 "VALUES (:eventTypeId, :deduplicationKey, :deleteAfter) " +
-                "ON CONFLICT (event_type_id, deduplication_key) DO NOTHING";
+                "ON CONFLICT DO NOTHING";
 
         int rowCount = entityManager.createNativeQuery(sql)
                 .setParameter("eventTypeId", event.getEventType().getId())
