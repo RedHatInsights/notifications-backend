@@ -126,7 +126,7 @@ public class ConsoleIdentityProviderTest {
     @Test
     void testTurnpikePrincipalGetsRolesWhenKesselEnabled() {
         // Enable Kessel for this test.
-        Mockito.when(this.backendConfig.isKesselEnabled(Mockito.anyString())).thenReturn(true);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(Mockito.anyString())).thenReturn(true);
 
         record TestCase(String[] turnpikeRoles) {
             @Override
@@ -182,7 +182,7 @@ public class ConsoleIdentityProviderTest {
      */
     @Test
     void testRbacKesselDisabledUnauthorizedResponse() {
-        Mockito.when(this.backendConfig.isKesselEnabled(Mockito.anyString())).thenReturn(false);
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(Mockito.anyString())).thenReturn(false);
         Mockito.when(this.backendConfig.isRBACEnabled()).thenReturn(false);
         Mockito.when(this.environment.isLocal()).thenReturn(false);
 

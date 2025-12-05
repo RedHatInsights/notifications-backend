@@ -26,13 +26,15 @@ public class BackendConfig {
     private static final String SECURED_EMAIL_TEMPLATES = "notifications.use-secured-email-templates.enabled";
     private static final String ERRATA_MIGRATION_BATCH_SIZE = "notifications.errata.migration.batch.size";
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
+    private static final String KESSEL_INVENTORY_CLIENT_ID = "inventory-api.authn.client.id";
+    private static final String KESSEL_INVENTORY_URL = "inventory-api.target-url";
+    private static final String KESSEL_INVENTORY_ENABLED = "notifications.kessel-inventory.enabled";
+    private static final String KESSEL_MIGRATION_BATCH_SIZE = "notifications.kessel.migration.batch.size";
+    private static final String KESSEL_RELATIONS_ENABLED = "notifications.kessel-relations.enabled";
+    private static final String KESSEL_INVENTORY_FOR_PERMISSIONS_CHECKS_ENABLED = "notifications.kessel-inventory.permissions-checks.enabled";
+    private static final String KESSEL_RELATIONS_LOOKUP_RESOURCES_LIMIT = "notifications.kessel-relations.lookup-resources.limit";
+    private static final String KESSEL_RELATIONS_URL = "relations-api.target-url";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
-    private static final String KESSEL_ENABLED = "notifications.kessel.enabled";
-    private static final String KESSEL_URL = "notifications.kessel.url";
-    private static final String OIDC_CLIENT_ID = "notifications.oidc.client-id";
-    private static final String OIDC_ISSUER = "notifications.oidc.issuer";
-    private static final String OIDC_SECRET = "notifications.oidc.secret";
-    private static final String RBAC_URL = "notifications.rbac.url";
     private static final String RBAC_ENABLED = "rbac.enabled";
     private static final String RBAC_PSKS = "notifications.rbac.psks";
     private static final String UNLEASH = "notifications.unleash.enabled";
@@ -42,7 +44,9 @@ public class BackendConfig {
      * Unleash configuration
      */
     private String drawerToggle;
-    private String kesselToggle;
+    private String kesselInventoryToggle;
+    private String kesselRelationsToggle;
+    private String kesselInventoryUseForPermissionsChecksToggle;
     private String kesselChecksOnEventLogToggle;
     private String maintenanceModeToggle;
     private String bypassBehaviorGroupMaxCreationLimitToggle;
@@ -76,29 +80,29 @@ public class BackendConfig {
     @ConfigProperty(name = INSTANT_EMAILS, defaultValue = "false")
     boolean instantEmailsEnabled;
 
-    @ConfigProperty(name = KESSEL_DOMAIN, defaultValue = "redhat")
-    String kesselDomain;
+    @ConfigProperty(name = KESSEL_INVENTORY_CLIENT_ID, defaultValue = "insights-notifications")
+    String kesselInventoryClientId;
 
-    @ConfigProperty(name = KESSEL_ENABLED, defaultValue = "false")
-    boolean kesselEnabled;
+    @ConfigProperty(name = KESSEL_INVENTORY_ENABLED, defaultValue = "false")
+    boolean kesselInventoryEnabled;
 
-    @ConfigProperty(name = KESSEL_URL)
-    String kesselUrl;
+    @ConfigProperty(name = KESSEL_MIGRATION_BATCH_SIZE, defaultValue = "1000")
+    int kesselMigrationBatchSize;
 
-    @ConfigProperty(name = OIDC_CLIENT_ID)
-    String oidcClientId;
+    @ConfigProperty(name = KESSEL_RELATIONS_ENABLED, defaultValue = "false")
+    boolean kesselRelationsEnabled;
 
-    @ConfigProperty(name = OIDC_ISSUER, defaultValue = "http://localhost:8084/realms/redhat-external")
-    String oidcIssuer;
+    @ConfigProperty(name = KESSEL_INVENTORY_FOR_PERMISSIONS_CHECKS_ENABLED, defaultValue = "false")
+    boolean kesselInventoryUseForPermissionsChecksEnabled;
 
-    @ConfigProperty(name = OIDC_SECRET)
-    String oidcSecret;
-
-    @ConfigProperty(name = RBAC_URL)
-    String rbacUrl;
+    @ConfigProperty(name = KESSEL_RELATIONS_LOOKUP_RESOURCES_LIMIT, defaultValue = "1000")
+    int kesselRelationsLookupResourceLimit;
 
     @ConfigProperty(name = ERRATA_MIGRATION_BATCH_SIZE, defaultValue = "1000")
     int errataMigrationBatchSize;
+
+    @ConfigProperty(name = KESSEL_DOMAIN, defaultValue = "redhat")
+    String kesselDomain;
 
     @ConfigProperty(name = RBAC_ENABLED, defaultValue = "true")
     protected boolean rbacEnabled;
@@ -108,6 +112,12 @@ public class BackendConfig {
 
     @ConfigProperty(name = MAINTENANCE_MODE, defaultValue = "false")
     boolean maintenanceModeEnabled;
+
+    @ConfigProperty(name = KESSEL_INVENTORY_URL, defaultValue = "localhost:9081")
+    String kesselInventoryUrl;
+
+    @ConfigProperty(name = KESSEL_RELATIONS_URL, defaultValue = "localhost:9000")
+    String kesselRelationsUrl;
 
     // Only used in special environments.
     @ConfigProperty(name = SECURED_EMAIL_TEMPLATES, defaultValue = "false")
@@ -122,11 +132,13 @@ public class BackendConfig {
     @PostConstruct
     void postConstruct() {
         drawerToggle = toggleRegistry.register("drawer", true);
-        kesselToggle = toggleRegistry.register("kessel", true);
+        kesselInventoryToggle = toggleRegistry.register("kessel-inventory", true);
+        kesselRelationsToggle = toggleRegistry.register("kessel-relations", true);
         kesselChecksOnEventLogToggle = toggleRegistry.register("kessel-checks-on-event-log", true);
         maintenanceModeToggle = toggleRegistry.register("notifications-maintenance-mode", true);
         bypassBehaviorGroupMaxCreationLimitToggle = toggleRegistry.register("bypass-behavior-group-max-creation-limit", true);
         ignoreSourcesErrorOnEndpointDeleteToggle = toggleRegistry.register("ignore-sources-error-on-endpoint-delete", true);
+        kesselInventoryUseForPermissionsChecksToggle = toggleRegistry.register("kessel-inventory-permissions-checks", true);
         useCommonTemplateModuleForUserPrefApisToggle = toggleRegistry.register("use-common-template-module-for-user-pref-apis", true);
         rbacOidcAuthToggle = toggleRegistry.register("rbac-oidc-auth", true);
         sourcesOidcAuthToggle = toggleRegistry.register("sources-oidc-auth", true);
@@ -140,12 +152,13 @@ public class BackendConfig {
         config.put(drawerToggle, isDrawerEnabled());
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(ERRATA_MIGRATION_BATCH_SIZE, getErrataMigrationBatchSize());
-        config.put(KESSEL_DOMAIN, kesselDomain);
-        config.put(KESSEL_ENABLED, isKesselEnabled(null));
-        config.put(KESSEL_URL, kesselUrl);
-        config.put(OIDC_ISSUER, oidcIssuer);
-        config.put(RBAC_URL, rbacUrl);
+        config.put(KESSEL_INVENTORY_ENABLED, isKesselInventoryEnabled(null));
+        config.put(KESSEL_INVENTORY_URL, kesselInventoryUrl);
+        config.put(KESSEL_RELATIONS_ENABLED, isKesselRelationsEnabled(null));
+        config.put(KESSEL_RELATIONS_LOOKUP_RESOURCES_LIMIT, getKesselRelationsLookupResourceLimit());
+        config.put(KESSEL_RELATIONS_URL, kesselRelationsUrl);
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
+        config.put(KESSEL_DOMAIN, getKesselDomain());
         config.put(RBAC_ENABLED, isRBACEnabled());
         config.put(SECURED_EMAIL_TEMPLATES, useSecuredEmailTemplates);
         config.put(UNLEASH, unleashEnabled);
@@ -182,37 +195,13 @@ public class BackendConfig {
         return instantEmailsEnabled;
     }
 
-    public String getKesselDomain() {
-        return kesselDomain;
-    }
-
-    public boolean isKesselEnabled(String orgId) {
+    public boolean isKesselInventoryEnabled(String orgId) {
         if (unleashEnabled) {
             UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(kesselToggle, unleashContext, false);
+            return unleash.isEnabled(kesselInventoryToggle, unleashContext, false);
         } else {
-            return kesselEnabled;
+            return kesselInventoryEnabled;
         }
-    }
-
-    public String getKesselUrl() {
-        return kesselUrl;
-    }
-
-    public String getOidcClientId() {
-        return oidcClientId;
-    }
-
-    public String getOidcIssuer() {
-        return oidcIssuer;
-    }
-
-    public String getOidcSecret() {
-        return oidcSecret;
-    }
-
-    public String getRbacUrl() {
-        return rbacUrl;
     }
 
     public boolean isIgnoreSourcesErrorOnEndpointDelete(String orgId) {
@@ -224,6 +213,50 @@ public class BackendConfig {
         }
     }
 
+    /**
+     * Specifies the maximum number of resources that we will ask Kessel to
+     * stream back at us when we are looking up resources.
+     * @return the maximum number of resources to query for in Kessel.
+     */
+    public int getKesselRelationsLookupResourceLimit() {
+        return this.kesselRelationsLookupResourceLimit;
+    }
+
+    /**
+     * Return the "reporter instance ID" that needs to be used when sending
+     * gRPC requests to the Kessel Inventory.
+     * @return the properly formatted reporter instance ID to be used on Kessel
+     * Inventory gRPC requests. The returned format is
+     * {@code service-account-${CLIENT_ID}}, since that is what the Inventory
+     * API expects in that field. More information can be found in <a href="https://github.com/project-kessel/inventory-api/tree/586bf9b1ef689b8afe56546681e7f50f6ed443d9?tab=readme-ov-file#running-inventory-api-with-sso-keycloak-docker-compose-setup">
+     * the Inventory API documentation.</a>
+     */
+    public String getKesselInventoryReporterInstanceId() {
+        return "service-account-" + kesselInventoryClientId;
+    }
+
+    public int getKesselMigrationBatchSize() {
+        return this.kesselMigrationBatchSize;
+    }
+
+    public boolean isKesselRelationsEnabled(String orgId) {
+        if (unleashEnabled) {
+            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+            return unleash.isEnabled(kesselRelationsToggle, unleashContext, false);
+        } else {
+            return kesselRelationsEnabled;
+        }
+    }
+
+    public boolean isKesselInventoryUseForPermissionsChecksEnabled(String orgId) {
+        if (unleashEnabled) {
+            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+            return unleash.isEnabled(kesselInventoryUseForPermissionsChecksToggle, unleashContext, false);
+        } else {
+            return kesselInventoryUseForPermissionsChecksEnabled;
+        }
+    }
+
     public boolean isKesselChecksOnEventLogEnabled(String orgId) {
         if (unleashEnabled) {
             UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
@@ -231,6 +264,10 @@ public class BackendConfig {
         } else {
             return false;
         }
+    }
+
+    public String getKesselDomain() {
+        return kesselDomain;
     }
 
     public boolean isUseCommonTemplateModuleForUserPrefApisToggle() {

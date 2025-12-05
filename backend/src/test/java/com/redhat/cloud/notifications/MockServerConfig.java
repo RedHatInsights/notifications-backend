@@ -1,12 +1,16 @@
 package com.redhat.cloud.notifications;
 
+import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
+import jakarta.ws.rs.core.MediaType;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 
 import java.io.InputStream;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -61,6 +65,121 @@ public class MockServerConfig {
             any(urlMatching(request.getUrl()))
                 .willReturn(aResponse()
                     .withStatus(response.getStatus()))
+        );
+    }
+
+    /**
+     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacWorkspacesPskClient#getWorkspaces(String, String, String, String, Integer, Integer)}
+     * method, which simulates RBAC returning a response which does not have
+     * the expected "count" JSON key.
+     */
+    public static void addMissingCountFromWorkspacesResponseRbacEndpoint() {
+        getClient().stubFor(
+            get(urlPathEqualTo("/api/rbac/v2/workspaces/"))
+                .withHeader("x-rh-rbac-psk", equalTo("development-psk-value"))
+                .withHeader("x-rh-rbac-client-id", equalTo(WorkspaceUtils.APPLICATION_KEY))
+                .withHeader("x-rh-rbac-org-id", equalTo(DEFAULT_ORG_ID))
+                .withQueryParam("offset", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                .withQueryParam("limit", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", MediaType.APPLICATION_JSON)
+                    .withStatus(HttpStatus.SC_OK)
+                    .withBody(getFileAsString("rbac-examples/workspaces/missing-count-response.json")))
+        );
+    }
+
+    /**
+     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacWorkspacesPskClient#getWorkspaces(String, String, String, String, Integer, Integer)}
+     * method, which simulates RBAC returning more than one workspace in the
+     * response.
+     */
+    public static void addMultipleReturningMultipleWorkspacesRbacEndpoint() {
+        getClient().stubFor(
+            get(urlPathEqualTo("/api/rbac/v2/workspaces/"))
+                .withHeader("x-rh-rbac-psk", equalTo("development-psk-value"))
+                .withHeader("x-rh-rbac-client-id", equalTo(WorkspaceUtils.APPLICATION_KEY))
+                .withHeader("x-rh-rbac-org-id", equalTo(DEFAULT_ORG_ID))
+                .withQueryParam("offset", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                .withQueryParam("limit", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", MediaType.APPLICATION_JSON)
+                    .withStatus(HttpStatus.SC_OK)
+                    .withBody(getFileAsString("rbac-examples/workspaces/multiple-workspaces-response.json")))
+        );
+    }
+
+    /**
+     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacWorkspacesPskClient#getWorkspaces(String, String, String, String, Integer, Integer)}
+     * method, which simulates RBAC returning a default workspace in the
+     * response.
+     */
+    public static void addMultipleReturningSingleDefaultWorkspaceRbacEndpoint() {
+        getClient().stubFor(
+            get(urlPathEqualTo("/api/rbac/v2/workspaces/"))
+                .withHeader("x-rh-rbac-psk", equalTo("development-psk-value"))
+                .withHeader("x-rh-rbac-client-id", equalTo(WorkspaceUtils.APPLICATION_KEY))
+                .withHeader("x-rh-rbac-org-id", equalTo(DEFAULT_ORG_ID))
+                .withQueryParam("offset", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                .withQueryParam("limit", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", MediaType.APPLICATION_JSON)
+                    .withStatus(HttpStatus.SC_OK)
+                    .withBody(getFileAsString("rbac-examples/workspaces/single-default-workspace-response.json")))
+        );
+    }
+
+    /**
+     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacWorkspacesPskClient#getWorkspaces(String, String, String, String, Integer, Integer)}
+     * method, which simulates RBAC returning a response with no workspaces in
+     * it.
+     */
+    public static void addNoReturnedWorkspacesResponseRbacEndpoint() {
+        getClient().stubFor(
+            get(urlPathEqualTo("/api/rbac/v2/workspaces/"))
+                .withHeader("x-rh-rbac-psk", equalTo("development-psk-value"))
+                .withHeader("x-rh-rbac-client-id", equalTo(WorkspaceUtils.APPLICATION_KEY))
+                .withHeader("x-rh-rbac-org-id", equalTo(DEFAULT_ORG_ID))
+                .withQueryParam("offset", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                .withQueryParam("limit", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", MediaType.APPLICATION_JSON)
+                    .withStatus(HttpStatus.SC_OK)
+                    .withBody(getFileAsString("rbac-examples/workspaces/no-workspaces-response.json")))
+        );
+    }
+
+    /**
+     * Adds a path in the MockServer for the {@link com.redhat.cloud.notifications.auth.rbac.RbacWorkspacesPskClient#getWorkspaces(String, String, String, String, Integer, Integer)}
+     * method, which simulates RBAC returning a "root" workspace instead of the
+     * expected "default" workspace.
+     */
+    public static void addReturningSingleRootWorkspaceRbacEndpoint() {
+        getClient().stubFor(
+            get(urlPathEqualTo("/api/rbac/v2/workspaces/"))
+                .withHeader("x-rh-rbac-psk", equalTo("development-psk-value"))
+                .withHeader("x-rh-rbac-client-id", equalTo(WorkspaceUtils.APPLICATION_KEY))
+                .withHeader("x-rh-rbac-org-id", equalTo(DEFAULT_ORG_ID))
+                .withQueryParam("offset", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                .withQueryParam("limit", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", MediaType.APPLICATION_JSON)
+                    .withStatus(HttpStatus.SC_OK)
+                    .withBody(getFileAsString("rbac-examples/workspaces/single-root-workspace-response.json")))
+        );
+    }
+
+    /**
+     * Verifies that the default workspace for an organization has been only
+     * fetched once from RBAC, since Notifications should have cached it.
+     */
+    public static void verifyDefaultWorkspaceFetchedOnlyOnce() {
+        getClient().verify(1,
+            getRequestedFor(urlPathEqualTo("/api/rbac/v2/workspaces/"))
+                .withHeader("x-rh-rbac-psk", equalTo("development-psk-value"))
+                .withHeader("x-rh-rbac-client-id", equalTo(WorkspaceUtils.APPLICATION_KEY))
+                .withHeader("x-rh-rbac-org-id", equalTo(DEFAULT_ORG_ID))
+                .withQueryParam("offset", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                .withQueryParam("limit", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
         );
     }
 

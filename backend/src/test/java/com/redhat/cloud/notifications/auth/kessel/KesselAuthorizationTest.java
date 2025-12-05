@@ -16,7 +16,6 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
-import io.smallrye.mutiny.Multi;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
@@ -26,45 +25,43 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.project_kessel.api.inventory.v1beta1.authz.CheckRequest;
-import org.project_kessel.api.inventory.v1beta1.authz.CheckResponse;
-import org.project_kessel.api.inventory.v1beta1.authz.ObjectReference;
-import org.project_kessel.api.inventory.v1beta1.authz.SubjectReference;
-import org.project_kessel.api.inventory.v1beta1.resources.ListNotificationsIntegrationsRequest;
-import org.project_kessel.api.inventory.v1beta1.resources.ListNotificationsIntegrationsResponse;
-import org.project_kessel.api.inventory.v1beta1.resources.NotificationsIntegration;
-import org.project_kessel.api.inventory.v1beta1.resources.ReporterData;
-import org.project_kessel.inventory.client.KesselCheckClient;
-import org.project_kessel.inventory.client.NotificationsIntegrationClient;
+import org.project_kessel.api.relations.v1beta1.CheckRequest;
+import org.project_kessel.api.relations.v1beta1.CheckResponse;
+import org.project_kessel.api.relations.v1beta1.LookupResourcesRequest;
+import org.project_kessel.api.relations.v1beta1.LookupResourcesResponse;
+import org.project_kessel.api.relations.v1beta1.ObjectReference;
+import org.project_kessel.api.relations.v1beta1.ResponsePagination;
+import org.project_kessel.api.relations.v1beta1.SubjectReference;
+import org.project_kessel.relations.client.CheckClient;
+import org.project_kessel.relations.client.LookupClient;
+
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization.COUNTER_TAG_FAILURES;
-import static com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization.COUNTER_TAG_REQUEST_RESULT;
-import static com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization.COUNTER_TAG_SUCCESSES;
-import static com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE;
-import static com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization.KESSEL_METRICS_LIST_INTEGRATIONS_COUNTER_NAME;
-import static com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization.KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.COUNTER_TAG_FAILURES;
+import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.COUNTER_TAG_REQUEST_RESULT;
+import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.COUNTER_TAG_SUCCESSES;
+import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME;
+import static com.redhat.cloud.notifications.auth.kessel.KesselAuthorization.KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME;
+import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 
 @QuarkusTest
-public class KesselInventoryAuthorizationTest {
+public class KesselAuthorizationTest {
     @InjectSpy
     BackendConfig backendConfig;
 
     @InjectMock
-    KesselCheckClient checkClient;
+    CheckClient checkClient;
 
     @InjectMock
-    NotificationsIntegrationClient notificationsIntegrationClient;
+    LookupClient lookupClient;
 
     @Inject
-    KesselInventoryAuthorization kesselAuthorization;
+    KesselAuthorization kesselAuthorization;
 
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
@@ -86,22 +83,21 @@ public class KesselInventoryAuthorizationTest {
 
         // Enable the Kessel back end integration for this test.
         Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
-        Mockito.when(this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(anyString())).thenReturn(true);
 
         // Simulate that Kessel returns a positive response.
         final CheckResponse positiveCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build();
-        Mockito.when(this.checkClient.Check(Mockito.any())).thenReturn(positiveCheckResponse);
+        Mockito.when(this.checkClient.check(Mockito.any())).thenReturn(positiveCheckResponse);
 
         // Call the function under test.
         this.kesselAuthorization.hasPermissionOnResource(
             mockedSecurityContext,
             WorkspacePermission.EVENT_LOG_VIEW,
-            KesselInventoryResourceType.WORKSPACE,
+            ResourceType.WORKSPACE,
             "workspace-uuid"
         );
 
         // Verify that we called Kessel.
-        Mockito.verify(this.checkClient, Mockito.times(1)).Check(Mockito.any());
+        Mockito.verify(this.checkClient, Mockito.times(1)).check(Mockito.any());
 
         // Assert counter values
         assertCounterIncrements(1, 0, 0, 0);
@@ -118,11 +114,10 @@ public class KesselInventoryAuthorizationTest {
 
         // Enable the Kessel back end integration for this test.
         Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
-        Mockito.when(this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(anyString())).thenReturn(true);
 
         // Simulate that Kessel returns a positive response.
         final CheckResponse positiveCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build();
-        Mockito.when(this.checkClient.Check(Mockito.any())).thenReturn(positiveCheckResponse);
+        Mockito.when(this.checkClient.check(Mockito.any())).thenReturn(positiveCheckResponse);
         RecipientsAuthorizationCriterion authorizationCriterion = new RecipientsAuthorizationCriterion();
         authorizationCriterion.setId("workspace-uuid");
         authorizationCriterion.setRelation(WorkspacePermission.EVENT_LOG_VIEW.getKesselPermissionName());
@@ -139,7 +134,7 @@ public class KesselInventoryAuthorizationTest {
 
         assertTrue(isAuthorized);
         // Verify that we called Kessel.
-        Mockito.verify(this.checkClient, Mockito.times(1)).Check(Mockito.any());
+        Mockito.verify(this.checkClient, Mockito.times(1)).check(Mockito.any());
 
         // Assert counter values
         assertCounterIncrements(1, 0, 0, 0);
@@ -154,7 +149,7 @@ public class KesselInventoryAuthorizationTest {
         final SecurityContext mockedSecurityContext = initMockedSecurityContextWithRhIdentity();
 
         // Simulate that Kessel returns an exception
-        Mockito.when(this.checkClient.Check(Mockito.any())).thenThrow(RuntimeException.class);
+        Mockito.when(this.checkClient.check(Mockito.any())).thenThrow(RuntimeException.class);
 
         // Call the function under test.
         Assertions.assertThrows(
@@ -162,7 +157,7 @@ public class KesselInventoryAuthorizationTest {
             () -> this.kesselAuthorization.hasPermissionOnResource(
                     mockedSecurityContext,
                     WorkspacePermission.EVENT_LOG_VIEW,
-                    KesselInventoryResourceType.WORKSPACE,
+                    ResourceType.WORKSPACE,
                     "workspace-uuid"
             )
         );
@@ -171,12 +166,12 @@ public class KesselInventoryAuthorizationTest {
         assertCounterIncrements(0, 1, 0, 0);
 
         // Return the exception to simulate a Kessel error.
-        Mockito.when(this.notificationsIntegrationClient.listNotificationsIntegrations(Mockito.any())).thenThrow(RuntimeException.class);
+        Mockito.when(this.lookupClient.lookupResources(Mockito.any())).thenThrow(RuntimeException.class);
 
         // Call the function under test.
         Assertions.assertThrows(
             RuntimeException.class,
-            () -> this.kesselAuthorization.lookupAuthorizedIntegrations(mockedSecurityContext, UUID.randomUUID(), IntegrationPermission.VIEW)
+            () -> this.kesselAuthorization.lookupAuthorizedIntegrations(mockedSecurityContext, IntegrationPermission.VIEW)
         );
 
         // Assert counter values
@@ -195,7 +190,7 @@ public class KesselInventoryAuthorizationTest {
 
         // Simulate an "authorized" response from Kessel.
         final CheckResponse positiveCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build();
-        Mockito.when(this.checkClient.Check(Mockito.any())).thenReturn(positiveCheckResponse);
+        Mockito.when(this.checkClient.check(Mockito.any())).thenReturn(positiveCheckResponse);
 
         // Call the function under test.
         this.kesselAuthorization.hasPermissionOnIntegration(mockedSecurityContext, IntegrationPermission.VIEW, UUID.randomUUID());
@@ -213,7 +208,7 @@ public class KesselInventoryAuthorizationTest {
 
         // Simulate an "unauthorized" response coming from Kessel.
         final CheckResponse negativeCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_FALSE).build();
-        Mockito.when(this.checkClient.Check(Mockito.any())).thenReturn(negativeCheckResponse);
+        Mockito.when(this.checkClient.check(Mockito.any())).thenReturn(negativeCheckResponse);
 
         // Call the function under test.
         Assertions.assertThrows(
@@ -236,11 +231,10 @@ public class KesselInventoryAuthorizationTest {
 
         // Enable the Kessel back end integration for this test.
         Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
-        Mockito.when(this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(anyString())).thenReturn(true);
 
         // Simulate that Kessel returns a negative response.
         final CheckResponse positiveCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_FALSE).build();
-        Mockito.when(this.checkClient.Check(Mockito.any())).thenReturn(positiveCheckResponse);
+        Mockito.when(this.checkClient.check(Mockito.any())).thenReturn(positiveCheckResponse);
 
         // Call the function under test and expect that it throws a "Forbidden"
         // exception.
@@ -249,14 +243,14 @@ public class KesselInventoryAuthorizationTest {
             () -> this.kesselAuthorization.hasPermissionOnResource(
                 mockedSecurityContext,
                 WorkspacePermission.EVENT_LOG_VIEW,
-                KesselInventoryResourceType.WORKSPACE,
+                ResourceType.WORKSPACE,
                 "workspace-uuid"
             ),
             "unexpected exception thrown, as with a negative response from Kessel it should throw a \"Forbidden exception\""
         );
 
         // Verify that we called Kessel.
-        Mockito.verify(this.checkClient, Mockito.times(1)).Check(Mockito.any());
+        Mockito.verify(this.checkClient, Mockito.times(1)).check(Mockito.any());
 
         // Assert counter values
         assertCounterIncrements(1, 0, 0, 0);
@@ -273,11 +267,10 @@ public class KesselInventoryAuthorizationTest {
 
         // Enable the Kessel back end integration for this test.
         Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
-        Mockito.when(this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(anyString())).thenReturn(true);
 
         // Simulate that Kessel returns a negative response.
         final CheckResponse positiveCheckResponse = CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_FALSE).build();
-        Mockito.when(this.checkClient.Check(Mockito.any())).thenReturn(positiveCheckResponse);
+        Mockito.when(this.checkClient.check(Mockito.any())).thenReturn(positiveCheckResponse);
 
         RecipientsAuthorizationCriterion authorizationCriterion = new RecipientsAuthorizationCriterion();
         authorizationCriterion.setId("workspace-uuid");
@@ -295,7 +288,7 @@ public class KesselInventoryAuthorizationTest {
 
         assertFalse(isAuthorized);
         // Verify that we called Kessel.
-        Mockito.verify(this.checkClient, Mockito.times(1)).Check(Mockito.any());
+        Mockito.verify(this.checkClient, Mockito.times(1)).check(Mockito.any());
 
         // Assert counter values
         assertCounterIncrements(1, 0, 0, 0);
@@ -312,10 +305,9 @@ public class KesselInventoryAuthorizationTest {
 
         // Enable the Kessel back end integration for this test.
         Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
-        Mockito.when(this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(anyString())).thenReturn(true);
 
         // Simulate that Kessel returns an exception
-        Mockito.when(this.checkClient.Check(Mockito.any())).thenThrow(RuntimeException.class);
+        Mockito.when(this.checkClient.check(Mockito.any())).thenThrow(RuntimeException.class);
 
         RecipientsAuthorizationCriterion authorizationCriterion = new RecipientsAuthorizationCriterion();
         authorizationCriterion.setId("workspace-uuid");
@@ -333,7 +325,7 @@ public class KesselInventoryAuthorizationTest {
 
         assertFalse(isAuthorized);
         // Verify that we called Kessel.
-        Mockito.verify(this.checkClient, Mockito.times(1)).Check(Mockito.any());
+        Mockito.verify(this.checkClient, Mockito.times(1)).check(Mockito.any());
 
         // Assert counter values
         assertCounterIncrements(0, 1, 0, 0);
@@ -350,33 +342,70 @@ public class KesselInventoryAuthorizationTest {
 
         // Enable the Kessel back end integration for this test.
         Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(true);
-        Mockito.when(this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(anyString())).thenReturn(true);
 
-        Set<UUID> expectedUuids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        // Simulate that Kessel returns a few resources. We set a continuation
+        // token on each element to simulate Kessel's behavior.
+        final UUID firstUuid = UUID.randomUUID();
+        final ObjectReference objectReferenceOne = ObjectReference.newBuilder().setId(firstUuid.toString()).build();
+        final LookupResourcesResponse lookupResourcesResponseOne = LookupResourcesResponse
+            .newBuilder()
+            .setResource(objectReferenceOne)
+            .setPagination(ResponsePagination.newBuilder().setContinuationToken(UUID.randomUUID().toString()).build())
+            .build();
 
-        Set<ListNotificationsIntegrationsResponse> setList = new HashSet<>();
-        for (UUID uuid : expectedUuids) {
-            setList.add(
-                ListNotificationsIntegrationsResponse.newBuilder().setIntegrations(
-                    NotificationsIntegration.newBuilder().setReporterData(
-                        ReporterData.newBuilder().setLocalResourceId(uuid.toString()).build()
-                    ).build()
-                ).build()
-            );
-        }
+        final UUID secondUuid = UUID.randomUUID();
+        final ObjectReference objectReferenceTwo = ObjectReference.newBuilder().setId(secondUuid.toString()).build();
+        final LookupResourcesResponse lookupResourcesResponseTwo = LookupResourcesResponse
+            .newBuilder()
+            .setResource(objectReferenceTwo)
+            .setPagination(ResponsePagination.newBuilder().setContinuationToken(UUID.randomUUID().toString()).build())
+            .build();
 
-        Multi<ListNotificationsIntegrationsResponse> mockedResponse =  Multi.createFrom().items(setList.stream());
+        // Set a continuation token in the third resource so that we can
+        // trigger another loop in the "do-while" loop.
+        final UUID thirdUuid = UUID.randomUUID();
+        final ObjectReference objectReferenceThree = ObjectReference.newBuilder().setId(thirdUuid.toString()).build();
+        final LookupResourcesResponse lookupResourcesResponseThree = LookupResourcesResponse
+            .newBuilder()
+            .setResource(objectReferenceThree)
+            .setPagination(ResponsePagination.newBuilder().setContinuationToken(UUID.randomUUID().toString()).build())
+            .build();
 
-        Mockito.when(this.notificationsIntegrationClient.listNotificationsIntegrations(Mockito.any())).thenReturn(mockedResponse);
+        final UUID fourthUuid = UUID.randomUUID();
+        final ObjectReference objectReferenceFour = ObjectReference.newBuilder().setId(fourthUuid.toString()).build();
+        final LookupResourcesResponse lookupResourcesResponseFour = LookupResourcesResponse.newBuilder()
+            .setResource(objectReferenceFour)
+            .setPagination(ResponsePagination.newBuilder().setContinuationToken(UUID.randomUUID().toString()).build())
+            .build();
+
+        final UUID fifthUuid = UUID.randomUUID();
+        final ObjectReference objectReferenceFive = ObjectReference.newBuilder().setId(fifthUuid.toString()).build();
+        final LookupResourcesResponse lookupResourcesResponseFive = LookupResourcesResponse
+            .newBuilder()
+            .setResource(objectReferenceFive)
+            .setPagination(ResponsePagination.newBuilder().setContinuationToken(UUID.randomUUID().toString()).build())
+            .build();
+
+        // Return the iterator to simulate a stream of incoming results from
+        // Kessel.
+        final List<LookupResourcesResponse> lookupResourcesResponsesFirstLoop = List.of(lookupResourcesResponseOne, lookupResourcesResponseTwo, lookupResourcesResponseThree);
+        final List<LookupResourcesResponse> lookupResourcesResponsesSecondLoop = List.of(lookupResourcesResponseFour, lookupResourcesResponseFive);
+        Mockito.when(this.lookupClient.lookupResources(Mockito.any())).thenReturn(lookupResourcesResponsesFirstLoop.iterator(), lookupResourcesResponsesSecondLoop.iterator());
 
         // Call the function under test.
-        final Set<UUID> result = this.kesselAuthorization.lookupAuthorizedIntegrations(mockedSecurityContext, UUID.randomUUID(), IntegrationPermission.VIEW);
+        final Set<UUID> result = this.kesselAuthorization.lookupAuthorizedIntegrations(mockedSecurityContext, IntegrationPermission.VIEW);
 
-        // Asser that oen call was made to Kessel
-        Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).listNotificationsIntegrations(Mockito.any());
+        // Asser that three calls were made to Kessel. Since the last element
+        // returned from Kessel also brings a continuation token, we are always
+        // forced to make yet another call to make sure that we didn't leave
+        // any elements unfetched.
+        Mockito.verify(this.lookupClient, Mockito.times(2 + 1)).lookupResources(Mockito.any());
 
         // Assert counter values
-        assertCounterIncrements(0, 0, 1, 0);
+        assertCounterIncrements(0, 0, 2 + 1, 0);
+
+        // Assert that the results contain all the UUIDs from the two calls.
+        final Set<UUID> expectedUuids = Set.of(firstUuid, secondUuid, thirdUuid, fourthUuid, fifthUuid);
 
         result.forEach(r -> Assertions.assertTrue(expectedUuids.contains(r), String.format("UUID \"%s\" not present in the expected UUIDs", r)));
     }
@@ -404,7 +433,7 @@ public class KesselInventoryAuthorizationTest {
      */
     @Test
     void testBuildCheckRequest() {
-        record TestCase(RhIdentity identity, KesselInventoryResourceType resourceType, KesselPermission permission, String resourceId) {
+        record TestCase(RhIdentity identity, ResourceType resourceType, KesselPermission permission, String resourceId) {
             @Override
             public String toString() {
                 return "TestCase{" +
@@ -428,10 +457,10 @@ public class KesselInventoryAuthorizationTest {
 
         // Loop through the supported identities.
         final List<TestCase> testCases = List.of(
-            new TestCase(userIdentity, KesselInventoryResourceType.INTEGRATION, IntegrationPermission.VIEW, "12345"),
-            new TestCase(serviceAccountIdentity, KesselInventoryResourceType.INTEGRATION, IntegrationPermission.EDIT, "54321"),
-            new TestCase(userIdentity, KesselInventoryResourceType.WORKSPACE, WorkspacePermission.CREATE_DRAWER_INTEGRATION, "workspace-a"),
-            new TestCase(serviceAccountIdentity, KesselInventoryResourceType.WORKSPACE, WorkspacePermission.EVENT_LOG_VIEW, "workspace-b")
+            new TestCase(userIdentity, ResourceType.INTEGRATION, IntegrationPermission.VIEW, "12345"),
+            new TestCase(serviceAccountIdentity, ResourceType.INTEGRATION, IntegrationPermission.EDIT, "54321"),
+            new TestCase(userIdentity, ResourceType.WORKSPACE, WorkspacePermission.CREATE_DRAWER_INTEGRATION, "workspace-a"),
+            new TestCase(serviceAccountIdentity, ResourceType.WORKSPACE, WorkspacePermission.EVENT_LOG_VIEW, "workspace-b")
         );
 
         for (final TestCase tc : testCases) {
@@ -439,14 +468,14 @@ public class KesselInventoryAuthorizationTest {
             final CheckRequest checkRequest = this.kesselAuthorization.buildCheckRequest(tc.identity(), tc.permission(), tc.resourceType(), tc.resourceId());
 
             // Make sure the request was built appropriately.
-            final ObjectReference objectReference = checkRequest.getParent();
+            final ObjectReference objectReference = checkRequest.getResource();
             Assertions.assertEquals(tc.resourceType().getKesselObjectType(), objectReference.getType(), String.format("unexpected resource type obtained for the object's reference on test case: %s", tc));
             Assertions.assertEquals(tc.resourceId(), objectReference.getId(), String.format("unexpected resource ID obtained for the object's reference on test case: %s", tc));
 
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), checkRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
 
             final SubjectReference subjectReference = checkRequest.getSubject();
-            Assertions.assertEquals(KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
+            Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
             Assertions.assertEquals(backendConfig.getKesselDomain() + "/" + tc.identity().getUserId(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
         }
     }
@@ -472,8 +501,8 @@ public class KesselInventoryAuthorizationTest {
             authorizedEndpoint.setId(id);
             endpoints.add(authorizedEndpoint);
 
-            final CheckRequest authorizedCheckRequest = this.kesselAuthorization.buildCheckRequest(((RhIdPrincipal) securityContext.getUserPrincipal()).getIdentity(), IntegrationPermission.VIEW, KesselInventoryResourceType.INTEGRATION, authorizedEndpoint.getId().toString());
-            Mockito.when(this.checkClient.Check(authorizedCheckRequest)).thenReturn(CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build());
+            final CheckRequest authorizedCheckRequest = this.kesselAuthorization.buildCheckRequest(((RhIdPrincipal) securityContext.getUserPrincipal()).getIdentity(), IntegrationPermission.VIEW, ResourceType.INTEGRATION, authorizedEndpoint.getId().toString());
+            Mockito.when(this.checkClient.check(authorizedCheckRequest)).thenReturn(CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_TRUE).build());
 
             // Create the endpoint the principal will not have the
             // authorization for, and mock the Kessel response.
@@ -481,8 +510,8 @@ public class KesselInventoryAuthorizationTest {
             unauthorizedEndpoint.setId(UUID.randomUUID());
             endpoints.add(unauthorizedEndpoint);
 
-            final CheckRequest unauthorizedCheckRequest = this.kesselAuthorization.buildCheckRequest(((RhIdPrincipal) securityContext.getUserPrincipal()).getIdentity(), IntegrationPermission.VIEW, KesselInventoryResourceType.INTEGRATION, unauthorizedEndpoint.getId().toString());
-            Mockito.when(this.checkClient.Check(unauthorizedCheckRequest)).thenReturn(CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_FALSE).build());
+            final CheckRequest unauthorizedCheckRequest = this.kesselAuthorization.buildCheckRequest(((RhIdPrincipal) securityContext.getUserPrincipal()).getIdentity(), IntegrationPermission.VIEW, ResourceType.INTEGRATION, unauthorizedEndpoint.getId().toString());
+            Mockito.when(this.checkClient.check(unauthorizedCheckRequest)).thenReturn(CheckResponse.newBuilder().setAllowed(CheckResponse.Allowed.ALLOWED_FALSE).build());
         }
 
         // Call the function under test.
@@ -499,12 +528,13 @@ public class KesselInventoryAuthorizationTest {
      */
     @Test
     void testBuildLookupResourcesRequest() {
-        record TestCase(RhIdentity identity, IntegrationPermission permission) {
+        record TestCase(RhIdentity identity, KesselPermission permission, String continuationToken) {
             @Override
             public String toString() {
                 return "TestCase{" +
                     "identity='" + this.identity + '\'' +
-                    ", integrationPermission='" + this.permission + '\'' +
+                    ", kesselPermission='" + this.permission + '\'' +
+                    ", continuationToken='" + this.continuationToken + '\'' +
                     '}';
             }
         }
@@ -521,36 +551,42 @@ public class KesselInventoryAuthorizationTest {
 
         // Loop through the supported identities.
         final List<TestCase> testCases = List.of(
-            new TestCase(userIdentity, IntegrationPermission.VIEW),
-            new TestCase(serviceAccountIdentity, IntegrationPermission.VIEW)
+            new TestCase(userIdentity, IntegrationPermission.VIEW, null),
+            new TestCase(serviceAccountIdentity, IntegrationPermission.VIEW, "cont-token-123")
         );
 
         for (final TestCase tc : testCases) {
             // Call the function under test.
-            final ListNotificationsIntegrationsRequest lookupResourcesRequest = this.kesselAuthorization.buildListIntegrationRequest(tc.identity(), UUID.randomUUID(), tc.permission());
+            final LookupResourcesRequest lookupResourcesRequest = this.kesselAuthorization.buildLookupResourcesRequest(tc.identity(), tc.permission(), tc.continuationToken);
 
             // Make sure the request was built appropriately.
             final SubjectReference subjectReference = lookupResourcesRequest.getSubject();
-            Assertions.assertEquals(KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
+            Assertions.assertEquals(KesselAuthorization.KESSEL_IDENTITY_SUBJECT_TYPE, subjectReference.getSubject().getType().getName(), String.format("unexpected resource type obtained for the subject's reference on test case: %s", tc));
             Assertions.assertEquals(backendConfig.getKesselDomain() + "/" + tc.identity().getUserId(), subjectReference.getSubject().getId(), String.format("unexpected resource ID obtained for the subject's reference on test case: %s", tc));
 
             Assertions.assertEquals(tc.permission().getKesselPermissionName(), lookupResourcesRequest.getRelation(), String.format("unexpected relation obtained on test case: %s", tc));
 
-            Assertions.assertEquals(KesselInventoryResourceType.INTEGRATION.getKesselObjectType(), lookupResourcesRequest.getResourceType(), String.format("unexpected resource type obtained on test case: %s", tc));
+            Assertions.assertEquals(ResourceType.INTEGRATION.getKesselObjectType(), lookupResourcesRequest.getResourceType(), String.format("unexpected resource type obtained on test case: %s", tc));
+
+            if (tc.continuationToken() == null) {
+                Assertions.assertEquals("", lookupResourcesRequest.getPagination().getContinuationToken(), String.format("the continuation token should have been an empty string when none is given when building the request: %s", tc));
+            } else {
+                Assertions.assertEquals(tc.continuationToken, lookupResourcesRequest.getPagination().getContinuationToken(), String.format("unexpected continuation token obtained on test case: %s", tc));
+            }
         }
     }
 
     private void saveCounterValues() {
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(KesselInventoryAuthorization.KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES);
         this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES);
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(KESSEL_METRICS_LIST_INTEGRATIONS_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES);
-        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(KESSEL_METRICS_LIST_INTEGRATIONS_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES);
+        this.micrometerAssertionHelper.saveCounterValueFilteredByTagsBeforeTest(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES);
     }
 
     private void assertCounterIncrements(final int expectedPermissionCheckSuccesses, final int expectedPermissionCheckFailures, final int expectedLookupResourcesSuccesses, int expectedLookupResourcesFailures) {
         this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES, expectedPermissionCheckSuccesses);
         this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(KESSEL_METRICS_PERMISSION_CHECK_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, expectedPermissionCheckFailures);
-        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(KESSEL_METRICS_LIST_INTEGRATIONS_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES, expectedLookupResourcesSuccesses);
-        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(KESSEL_METRICS_LIST_INTEGRATIONS_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, expectedLookupResourcesFailures);
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES, expectedLookupResourcesSuccesses);
+        this.micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(KESSEL_METRICS_LOOKUP_RESOURCES_COUNTER_NAME, COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_FAILURES, expectedLookupResourcesFailures);
     }
 }

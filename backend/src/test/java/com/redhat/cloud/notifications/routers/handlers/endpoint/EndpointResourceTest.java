@@ -5,8 +5,9 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.auth.kessel.KesselCheckClient;
 import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
+import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.principal.ConsoleIdentity;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
@@ -44,6 +45,8 @@ import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.Secret;
 import com.redhat.cloud.notifications.routers.sources.SourcesPskService;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.test.InjectMock;
@@ -75,7 +78,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.project_kessel.api.inventory.v1beta2.Allowed;
+import org.project_kessel.api.inventory.v1beta1.resources.CreateNotificationsIntegrationRequest;
+import org.project_kessel.api.inventory.v1beta1.resources.DeleteNotificationsIntegrationRequest;
+import org.project_kessel.api.inventory.v1beta1.resources.Metadata;
+import org.project_kessel.api.inventory.v1beta1.resources.NotificationsIntegration;
+import org.project_kessel.api.inventory.v1beta1.resources.ReporterData;
+import org.project_kessel.inventory.client.KesselCheckClient;
+import org.project_kessel.inventory.client.NotificationsIntegrationClient;
+import org.project_kessel.relations.client.CheckClient;
+import org.project_kessel.relations.client.LookupClient;
 
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -97,10 +108,6 @@ import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockS
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.CREATE_DRAWER_INTEGRATION;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_CREATE;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_VIEW;
 import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
@@ -124,8 +131,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_FALSE;
-import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_TRUE;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -142,7 +147,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
     void beforeEach() {
         RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
-        when(workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID);
     }
 
     @Inject
@@ -154,6 +158,17 @@ public class EndpointResourceTest extends DbIsolatedTest {
     @InjectMock
     BackendConfig backendConfig;
 
+    /**
+     * Mocked Kessel's check client so that the {@link KesselTestHelper} can
+     * be used.
+     */
+    @InjectMock
+    CheckClient checkClient;
+
+    /**
+     * Mocked Kessel's check client so that the {@link KesselTestHelper} can
+     * be used.
+     */
     @InjectMock
     KesselCheckClient kesselCheckClient;
 
@@ -176,6 +191,20 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Inject
     KesselTestHelper kesselTestHelper;
+
+    /**
+     * Mocked Kessel's lookup client so that the {@link KesselTestHelper} can
+     * be used.
+     */
+    @InjectMock
+    LookupClient lookupClient;
+
+    /**
+     * Mocked Kessel's inventory client so that the {@link KesselTestHelper}
+     * can be used.
+     */
+    @InjectMock
+    NotificationsIntegrationClient notificationsIntegrationClient;
 
     /**
      * We mock the sources service's REST client because there are a few tests
@@ -229,19 +258,17 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testEndpointAdding(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testEndpointAdding(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup();
 
         // Test empty tenant
         given()
@@ -270,6 +297,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         mockSources(properties);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -286,6 +316,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertNotNull(responsePoint.getString("id"));
         assertEquals(3, responsePoint.getInteger("server_errors"));
         assertEquals(READY.toString(), responsePoint.getString("status"));
+
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(Set.of(UUID.fromString(responsePoint.getString("id"))));
 
         // Fetch the list
         response = given()
@@ -316,6 +348,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(READY.toString(), responsePoint.getString("status"));
 
         // Disable and fetch
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DISABLE, ResourceType.INTEGRATION, responsePoint.getString("id"));
 
         String body =
                 given()
@@ -331,6 +364,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertFalse(responsePointSingle.getBoolean("enabled"));
 
         // Enable and fetch
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.ENABLE, ResourceType.INTEGRATION, responsePoint.getString("id"));
 
         given()
                 .header(identityHeader)
@@ -344,6 +378,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(0, responsePointSingle.getInteger("server_errors"));
 
         // Delete
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, responsePoint.getString("id"));
+
         body =
                 given()
                         .header(identityHeader)
@@ -361,6 +397,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(HttpStatus.SC_NOT_FOUND)
                 .contentType(TEXT);
+
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(Set.of(UUID.fromString(responsePoint.getString("id"))));
 
         // Fetch all, nothing should be left
         given()
@@ -464,13 +502,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testRepeatedEndpointName(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testRepeatedEndpointName(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -493,6 +527,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint1.setServerErrors(3);
 
         mockSources(properties);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
                 .header(identityHeader)
@@ -561,6 +598,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .statusCode(HttpStatus.SC_BAD_REQUEST);
 
         // Updating endpoint1 name is possible
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpoint1Id);
 
         endpoint1.setName("Endpoint1-updated");
         given()
@@ -588,6 +626,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Decode the header and grab the username to mock the Kessel
         // permission.
         final ConsoleIdentity identity = TestHelpers.decodeRhIdentityHeader(identityHeader.getValue());
+        this.kesselTestHelper.mockKesselPermission(identity.getName(), IntegrationPermission.VIEW, ResourceType.INTEGRATION, id);
 
         Response response = given()
                 // Set header to x-rh-identity
@@ -604,13 +643,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testEndpointValidation(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testEndpointValidation(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -665,6 +700,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * @param ep the endpoint to create.
      */
     private void expectReturn400(final String DEFAULT_USER, final Header identityHeader, final Endpoint ep) {
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         given()
                  .header(identityHeader)
                  .when()
@@ -676,14 +714,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void addCamelEndpoint(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void addCamelEndpoint(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -714,6 +747,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // the secrets from Sources too.
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         String responseBody = given()
                 .header(identityHeader)
                 .when()
@@ -743,6 +779,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
             assertEquals("secret-token", properties.getString("secret_token"));
         } finally {
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, id);
 
             given()
                     .header(identityHeader)
@@ -754,13 +791,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void addBogusCamelEndpoint(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void addBogusCamelEndpoint(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -782,6 +815,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(cAttr);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         given()
                 .header(identityHeader)
                 .when()
@@ -802,13 +838,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testForbidSlackChannelUsage(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testForbidSlackChannelUsage(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -825,6 +857,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setName("name");
         endpoint.setDescription("description");
         endpoint.setProperties(camelProperties);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         String responseBody = given()
             .header(identityHeader)
@@ -858,6 +893,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setName(UUID.randomUUID().toString());
 
         // try to update endpoint without channel
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointUuidRaw);
 
         given()
             .header(identityHeader)
@@ -899,26 +935,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testRequireHttpsSchemeServiceNow(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testRequireHttpsSchemeServiceNow(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         URI sNowUri = URI.create("http://redhat.com");
         testRequireHttpsScheme("servicenow", sNowUri);
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testRequireHttpsSchemeSplunk(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testRequireHttpsSchemeSplunk(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         URI splunkUri = URI.create("http://redhat.com");
         testRequireHttpsScheme("splunk", splunkUri);
@@ -937,6 +965,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setName("name");
         endpoint.setDescription("description");
         endpoint.setProperties(camelProperties);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         String invalidResp = given()
                 .header(identityHeader)
@@ -965,6 +996,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .extract().asString();
 
         final String endpointUuidRaw = new JsonObject(createdEndpoint).getString("id");
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointUuidRaw);
 
         // try to update endpoint with HTTPS URI
         URI exampleUri = URI.create("https://webhook.site/a6de9c30-f4c9-49af-8d03-c9ce7e78fdb3");
@@ -1019,14 +1051,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void addSlackEndpoint(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void addSlackEndpoint(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final ConsoleIdentity ide = TestHelpers.decodeRhIdentityHeader(identityHeaderValue);
@@ -1047,6 +1074,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(cAttr);
         ep.setStatus(EndpointStatus.DELETING); // Trying to set other status
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         String responseBody = given()
                 .header(identityHeader)
@@ -1076,6 +1106,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
             ep.getProperties(CamelProperties.class).setUrl("https://redhat.com");
 
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, id);
+
             // Now update
             responseBody = given()
                     .header(identityHeader)
@@ -1095,6 +1127,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertEquals(ep.getProperties(CamelProperties.class).getUrl(), updatedProperties.getUrl());
 
         } finally {
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, id);
 
             given()
                     .header(identityHeader)
@@ -1110,19 +1143,17 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testEndpointUpdates(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testEndpointUpdates(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup();
 
         // Test empty tenant
         given()
@@ -1151,6 +1182,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         Secret secretTokenSecret = mockSources(properties);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -1168,6 +1202,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(7, responsePoint.getInteger("server_errors"));
 
         // Fetch the list
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(Set.of(UUID.fromString(responsePoint.getString("id"))));
+
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
@@ -1202,6 +1238,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         attrSingle.put("secret_token", "not-so-secret-anymore");
 
         // Give the Kessel permissions to see the endpoint.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, responsePointSingle.getString("id"));
 
         // Update without payload
         given()
@@ -1213,6 +1250,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .statusCode(HttpStatus.SC_BAD_REQUEST);
 
         // With payload
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, responsePointSingle.getString("id"));
 
         given()
                 .header(identityHeader)
@@ -1260,24 +1298,19 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @MethodSource("testEndpointTypeQuery")
-    void testEndpointTypeQueryKesselRelations(boolean kesselEnabled, final Set<EndpointType> types) {
-        testEndpointTypeQuery(kesselEnabled, types);
+    void testEndpointTypeQueryKesselRelations(final boolean isKesselRelationsApiEnabled, final Set<EndpointType> types) {
+        testEndpointTypeQuery(isKesselRelationsApiEnabled, types, false);
 
     }
 
     @ParameterizedTest
     @MethodSource("testEndpointTypeQuery")
-    void testEndpointTypeQueryKesselInventory(boolean kesselEnabled, final Set<EndpointType> types) {
-        testEndpointTypeQuery(kesselEnabled, types);
+    void testEndpointTypeQueryKesselInventory(final boolean isKesselRelationsApiEnabled, final Set<EndpointType> types) {
+        testEndpointTypeQuery(isKesselRelationsApiEnabled, types, true);
     }
 
-    void testEndpointTypeQuery(boolean kesselEnabled, final Set<EndpointType> types) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    void testEndpointTypeQuery(final boolean isKesselRelationsApiEnabled, final Set<EndpointType> types, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -1301,6 +1334,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         mockSources(properties);
 
         final Set<UUID> createdEndpointIds = new HashSet<>();
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -1349,6 +1384,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         createdEndpointIds.add(UUID.fromString(responsePoint.getString("id")));
 
         // Fetch the list to ensure everything was inserted correctly.
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpointIds);
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
@@ -1370,6 +1406,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(2, endpoints.size());
 
         // Fetch the list with types
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpointIds);
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
@@ -1398,21 +1435,20 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testEndpointLimiter(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testEndpointLimiter(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         final Set<UUID> createdEndpointsIdentifiers = addEndpoints(29, identityHeader);
+
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpointsIdentifiers);
 
         // Fetch the list, page 1
         Response response = given()
@@ -1437,6 +1473,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         }
         assertEquals(10, endpoints.size());
         assertEquals(29, endpointPage.getMeta().getCount());
+
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpointsIdentifiers);
 
         // Fetch the list, page 3
         response = given()
@@ -1465,14 +1503,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testSortingOrder(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testSortingOrder(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -1481,6 +1514,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Create 50 test-ones with sanely sortable name & enabled & disabled & type
         final Stats stats = helpers.createTestEndpoints(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, 50);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
 
         Response response = given()
                 .header(identityHeader)
@@ -1499,6 +1534,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         }
 
         assertEquals(stats.getCreatedEndpointsCount(), endpoints.size());
+
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
 
         response = given()
                 .header(identityHeader)
@@ -1521,6 +1558,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertFalse(endpoints.get(stats.getDisabledCount() - 1).isEnabled());
         assertTrue(endpoints.get(stats.getDisabledCount()).isEnabled());
         assertTrue(endpoints.get(stats.getCreatedEndpointsCount() - 1).isEnabled());
+
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
 
         response = given()
                 .header(identityHeader)
@@ -1546,6 +1585,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals("Endpoint 10", endpoints.get(endpoints.size() - 2).getName());
         assertEquals("Endpoint 27", endpoints.get(0).getName());
 
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
+
         given()
                 .header(identityHeader)
                 .queryParam("sort_by", "hulla:desc")
@@ -1557,14 +1598,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testWebhookAttributes(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testWebhookAttributes(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -1607,6 +1643,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(bearerTokenSecret.id))).thenReturn(bearerTokenSecret);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -1625,6 +1664,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Fetch single endpoint and make the verifications. Make the user have
         // "edit" permission in the integration so that the secrets are not
         // redacted.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, responsePoint.getString("id"));
 
         JsonObject responsePointSingle = fetchSingle(responsePoint.getString("id"), identityHeader);
 
@@ -1640,13 +1680,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @MethodSource("kesselFlagsEmailOrDrawerEndpoints")
-    void testAddEndpointEmailOrDrawerSubscriptionAsRegularEndpoint(boolean kesselEnabled, EndpointType endpointType) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ALLOWED_TRUE);
-        }
+    void testAddEndpointEmailOrDrawerSubscriptionAsRegularEndpoint(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled, final EndpointType endpointType) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -1662,7 +1697,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         // Email or Drawer subscriptions can be fetched from the properties
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
             .header(identityHeader)
@@ -1702,12 +1742,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
         )));
 
         // It is possible to disable or enable it
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DISABLE, ResourceType.INTEGRATION, defaultEndpointId);
 
         given()
             .header(identityHeader)
             .when().delete("/endpoints/" + defaultEndpointId + "/enable")
             .then()
             .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.ENABLE, ResourceType.INTEGRATION, defaultEndpointId);
 
         given()
             .header(identityHeader)
@@ -1716,6 +1759,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .statusCode(HttpStatus.SC_OK);
 
         // It is possible to update it
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, defaultEndpointId);
 
         given()
                 .header(identityHeader)
@@ -1744,6 +1788,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .statusCode(HttpStatus.SC_OK);
 
         // It is not possible to delete it
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, defaultEndpointId);
 
         given()
             .header(identityHeader)
@@ -1755,21 +1800,16 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @MethodSource("kesselFlagsEmailOrDrawerEndpoints")
-    void testAddEndpointEmailOrDrawerSubscription(boolean kesselEnabled, EndpointType endpointType) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(CREATE_DRAWER_INTEGRATION, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(CREATE_DRAWER_INTEGRATION, ALLOWED_TRUE);
-        }
+    void testAddEndpointEmailOrDrawerSubscription(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled, final EndpointType endpointType) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final String endpointTypeUrl;
         if (EndpointType.EMAIL_SUBSCRIPTION == endpointType) {
             endpointTypeUrl = "email_subscription";
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         } else {
             endpointTypeUrl = "drawer_subscription";
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_DRAWER_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         }
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
@@ -1786,9 +1826,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setEnabled(true);
         ep.setProperties(properties);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
 
         // EmailSubscription or Drawer endpoints can be fetched from the properties
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
 
         Response response = given()
             .header(identityHeader)
@@ -1871,16 +1915,17 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @MethodSource("kesselFlagsEmailOrDrawerEndpoints")
-    void testAddEndpointEmailOrDrawerSubscriptionRbacAsRegularEndpoint(boolean kesselEnabled, EndpointType endpointType) {
-
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    void testAddEndpointEmailOrDrawerSubscriptionRbacAsRegularEndpoint(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled, final EndpointType endpointType) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
 
         String validGroupId = "f85517d0-063b-4eed-a501-e79ffc1f5ad3";
         String unknownGroupId = "f44f50d5-acab-482c-a3cf-087faf2c709c";
@@ -1914,6 +1959,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         responsePoint.mapTo(EndpointDTO.class);
         String endpointId = responsePoint.getString("id");
         assertNotNull(endpointId);
+
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId);
 
         // Same group again yields the same endpoint id
         given()
@@ -1955,19 +2002,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @MethodSource("kesselFlagsEmailOrDrawerEndpoints")
-    void testAddEndpointEmailOrDrawerSubscriptionRbac(boolean kesselEnabled, EndpointType endpointType) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(CREATE_DRAWER_INTEGRATION, ALLOWED_TRUE);
-        }
+    void testAddEndpointEmailOrDrawerSubscriptionRbac(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled, final EndpointType endpointType) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
+        // valid group id
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
 
         final String endpointTypeUrl;
         if (EndpointType.EMAIL_SUBSCRIPTION == endpointType) {
             endpointTypeUrl = "email_subscription";
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         } else {
             endpointTypeUrl = "drawer_subscription";
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_DRAWER_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         }
 
         String validGroupId = "f85517d0-063b-4eed-a501-e79ffc1f5ad3";
@@ -2056,17 +2102,19 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testUnknownEndpointTypes(boolean kesselEnabled) {
+    @MethodSource("kesselFlags")
+    void testUnknownEndpointTypes(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-        }
-
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("test-tenant", "test-orgid", "test-user");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // If Kessel doesn't return any authorized IDs we return an empty page
+        // to the user, so we need to simulate that there would be some
+        // endpoints that the user would be able to fetch.
+        this.kesselTestHelper.mockDefaultWorkspaceId("test-orgid");
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(Set.of(UUID.randomUUID()));
 
         given()
                 .header(identityHeader)
@@ -2077,6 +2125,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .body(is("Unknown endpoint type: [foo]"));
 
         // Same thing here.
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(Set.of(UUID.randomUUID()));
+
         given()
                 .header(identityHeader)
                 .queryParam("type", EndpointType.WEBHOOK.toString())
@@ -2088,14 +2138,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testConnectionCount(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testConnectionCount(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2103,6 +2148,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Test empty tenant
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup();
 
         given()
                 // Set header to x-rh-identity
@@ -2113,6 +2160,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .contentType(JSON)
                 .body(is("{\"data\":[],\"links\":{},\"meta\":{\"count\":0}}"));
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         final Set<UUID> createdEndpointIds = new HashSet<>();
         for (int i = 0; i < 200; i++) {
             // Add new endpoints
@@ -2147,6 +2196,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertNotNull(responsePoint.getString("id"));
 
             createdEndpointIds.add(UUID.fromString(responsePoint.getString("id")));
+            this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpointIds);
 
             // Fetch the list
             given()
@@ -2160,14 +2210,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testActive(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testActive(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2176,6 +2221,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final Stats stats = resourceHelpers.createTestEndpoints(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, 11);
 
         // Get all endpoints
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
 
         Response response = given()
                 .header(identityHeader)
@@ -2191,6 +2238,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(stats.getCreatedEndpointsCount(), endpointPage.getData().size());
 
         // Only active
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
+
         response = given()
                 .header(identityHeader)
                 .when()
@@ -2206,6 +2255,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(stats.getCreatedEndpointsCount() - stats.getDisabledCount(), endpointPage.getData().size());
 
         // Only inactive
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(stats.getEndpointIds());
+
         response = given()
                 .header(identityHeader)
                 .when()
@@ -2223,20 +2274,21 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testSearch(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testSearch(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
-        addEndpoints(10, identityHeader);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
+        final Set<UUID> createdEndpoints = addEndpoints(10, identityHeader);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpoints);
 
         Response response = given()
                 // Set header to x-rh-identity
@@ -2255,6 +2307,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(1, endpointPage.getData().size());
         assertEquals("Endpoint 2", endpointPage.getData().get(0).getName());
 
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpoints);
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
@@ -2273,20 +2326,21 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testSearchWithType(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testSearchWithType(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
         final Set<UUID> createdEndpoints = addEndpoints(10, identityHeader);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpoints);
 
         Response response = given()
                 // Set header to x-rh-identity
@@ -2307,6 +2361,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals("Endpoint 2", endpointPage.getData().get(0).getName());
 
         // because Kessel ListIntegration mocks uses Multi, we have to re-init the mock before each call
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup(createdEndpoints);
         response = given()
                 // Set header to x-rh-identity
                 .header(identityHeader)
@@ -2331,13 +2386,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * the handler.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testEndpointInvalidUrls(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testEndpointInvalidUrls(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         // Set up the RBAC access for the test.
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
@@ -2403,6 +2454,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         );
         try {
             LaunchMode.set(LaunchMode.NORMAL);
+            this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
             // Test the URLs with both camel and webhook endpoints.
             for (final var testCase : testCases) {
@@ -2463,13 +2516,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * {@link CamelProperties} or {@link WebhookProperties}, no constraint violations are raised.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testEndpointValidUrls(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testEndpointValidUrls(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         // Set up the RBAC access for the test.
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
@@ -2502,6 +2551,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         when(this.sourcesServiceMock.create(anyString(), anyString(), any()))
             .thenReturn(secret);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         for (final String url : ValidNonPrivateUrlValidatorTest.validUrls) {
             // Test with a camel endpoint.
             camelProperties.setUrl(url);
@@ -2551,13 +2602,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * If it's not required, then it should be rejected.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testEndpointSubtypeIsOnlyAllowedWhenRequired(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testEndpointSubtypeIsOnlyAllowedWhenRequired(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2579,6 +2626,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         ep.setProperties(properties);
         ep.setServerErrors(3);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         given()
                 .header(identityHeader)
                 .when()
@@ -2618,13 +2667,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * that endpoint.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testEndpointTest(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testEndpointTest(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL);
 
@@ -2634,6 +2679,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         // Call the endpoint under test.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.TEST, ResourceType.INTEGRATION, createdEndpoint.getId().toString());
 
         final String path = String.format("/endpoints/%s/test", createdEndpoint.getId());
         given()
@@ -2660,13 +2706,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * UUID that doesn't exist, a not found response is returned.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testEndpointTestNotFound(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testEndpointTestNotFound(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2686,7 +2728,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body()
             .asString();
 
-        Assertions.assertEquals("integration not found", responseBody, "unexpected not found error message returned");
+        if (this.backendConfig.isKesselRelationsEnabled(DEFAULT_ORG_ID)) {
+            final JsonObject expectedBody = new JsonObject();
+            expectedBody.put("error", "Integration not found");
+
+            Assertions.assertEquals(expectedBody.encode(), responseBody, "unexpected not found error message returned");
+        } else {
+            Assertions.assertEquals("integration not found", responseBody, "unexpected not found error message returned");
+        }
     }
 
     /**
@@ -2694,13 +2743,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * sent to the engine.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testEndpointTestCustomMessage(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testEndpointTestCustomMessage(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL);
 
@@ -2714,6 +2759,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpointTestRequest.message = customTestMessage;
 
         // Call the endpoint under test.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.TEST, ResourceType.INTEGRATION, createdEndpoint.getId().toString());
         given()
             .header(identityHeader)
             .when()
@@ -2740,13 +2786,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * request response is returned.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testEndpointTestBlankMessageReturnsBadRequest(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testEndpointTestBlankMessageReturnsBadRequest(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.CAMEL);
 
@@ -2759,6 +2801,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpointTestRequest.message = "";
 
         // Call the endpoint under test.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.TEST, ResourceType.INTEGRATION, createdEndpoint.getId().toString());
         final String rawResponse = given()
             .header(identityHeader)
             .when()
@@ -2785,13 +2828,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * Tests that when an endpoint has SSL verification disabled, testing it returns a bad request.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testEndpointTestDisableSslVerification(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testEndpointTestDisableSslVerification(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         CamelProperties camelProperties = new CamelProperties();
         camelProperties.setUrl("https://webhook.site/b6179849-b71a-4388-9d0e-0184619b231e");
@@ -2808,6 +2847,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpointTestRequest.message = "should not send because SSL verification is disabled";
 
         // Call the endpoint under test.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.TEST, ResourceType.INTEGRATION, createdEndpoint.getId().toString());
 
         final String rawResponse = given()
             .header(identityHeader)
@@ -2833,13 +2873,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * references to those secrets are stored in the database.
     */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testUpdateEndpointCreateSecrets(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testUpdateEndpointCreateSecrets(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2861,6 +2897,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setStatus(EndpointStatus.PROVISIONING);
         endpoint.setType(EndpointType.WEBHOOK);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         final String response = given()
             .header(identityHeader)
             .when()
@@ -2902,6 +2940,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             mockedSecretBearer
         );
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointUuid.toString());
         given()
             .header(identityHeader)
             .when()
@@ -2933,13 +2972,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * their references deleted from our database.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testUpdateEndpointDeleteSecrets(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    public void testUpdateEndpointDeleteSecrets(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -2977,6 +3012,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
             mockedSecretTokenSecret
         );
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         final String response = given()
             .header(identityHeader)
             .when()
@@ -2998,6 +3035,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // null, which triggers the secret deletion in Sources.
         properties.setSecretToken(null);
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointUuid.toString());
         given()
             .header(identityHeader)
             .when()
@@ -3028,13 +3066,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * references for the secrets don't change.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testUpdateEndpointUpdateSecrets(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    public void testUpdateEndpointUpdateSecrets(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -3072,6 +3106,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
             mockedSecretTokenSecret
         );
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         final String response = given()
             .header(identityHeader)
             .when()
@@ -3116,6 +3152,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             mockedSecretTokenUpdatedSecret
         );
 
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointUuid.toString());
         given()
             .header(identityHeader)
             .when()
@@ -3144,14 +3181,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testAnsibleEndpointCRUD(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testAnsibleEndpointCRUD(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -3170,6 +3202,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         endpoint.setProperties(properties);
 
         // POST the endpoint.
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         String responseBody = given()
                 .header(identityHeader)
                 .contentType(JSON)
@@ -3193,6 +3227,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(properties.getUrl(), jsonEndpoint.getJsonObject("properties").getString("url"));
 
         // PUT the endpoint (update).
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, jsonEndpoint.getString("id"));
 
         properties.setUrl("https://console.redhat.com");
         given()
@@ -3210,6 +3245,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(properties.getUrl(), jsonEndpoint.getJsonObject("properties").getString("url"));
 
         // DELETE the endpoint.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, jsonEndpoint.getString("id"));
 
         given()
                 .header(identityHeader)
@@ -3230,14 +3266,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void addPagerDutyEndpoint(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void addPagerDutyEndpoint(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -3269,6 +3300,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // the secrets from Sources too.
         when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         Response response = given()
                 .header(identityHeader)
                 .when()
@@ -3299,6 +3332,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             assertNotNull(properties.getString("secret_token"));
             assertEquals(pagerDutyProperties.getSecretToken(), properties.getString("secret_token"));
         } finally {
+            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, id);
             given()
                     .header(identityHeader)
                     .when().delete("/endpoints/" + id)
@@ -3313,13 +3347,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * stored in the database, its created secrets in Sources are cleaned up.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testSourcesSecretsDeletedWhenEndpointCreationFails(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testSourcesSecretsDeletedWhenEndpointCreationFails(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         WebhookProperties properties = new WebhookProperties();
         properties.setBearerAuthentication("bearer-authentication");
@@ -3359,6 +3389,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         Mockito.doThrow(new RuntimeException()).when(this.endpointRepository).createEndpoint(Mockito.any());
 
         // Call the endpoint under test.
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         given()
             .header(identityHeader)
             .when()
@@ -3395,19 +3427,17 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * Tests that when using Kessel, if the user is not authorized to send
      * requests to the endpoints from the "EndpointResource", a "forbidden"
      * response is returned for those endpoints that require a workspace
-     * permission.
+     * permission, and a "not found" one for those ones that require an
+     * integration permission.
      */
-    @Test
-    void testKesselUnauthorized() {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
-        mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_FALSE);
-        mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_FALSE);
-        mockDefaultKesselUpdatePermission(CREATE_DRAWER_INTEGRATION, ALLOWED_FALSE);
-        mockDefaultKesselUpdatePermission(CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ALLOWED_FALSE);
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testKesselUnauthorized(final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        // Enable the Kessel back end integration for this test.
+        this.kesselTestHelper.mockKesselRelations(true, isKesselInventoryUseForPermissionsChecksEnabled);
 
         // Create an identity header.
-        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "username");
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         // Create an endpoint so that we don't get a 404 instead of an
@@ -3423,7 +3453,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .queryParam("includeDetail", false)
             .get("/endpoints/{endpointId}/history")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         try {
             RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
@@ -3437,14 +3467,15 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .queryParam("includeDetail", false)
                 .get("/endpoints/{endpointId}/history")
                 .then()
-                .statusCode(HttpStatus.SC_FORBIDDEN);
+                .statusCode(HttpStatus.SC_NOT_FOUND);
         } finally {
             RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
         }
 
-        mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-
         // Get the list of endpoints.
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockAuthorizedIntegrationsLookup();
+
         given()
             .header(identityHeader)
             .when()
@@ -3452,11 +3483,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .get("/endpoints")
             .then()
             .statusCode(HttpStatus.SC_OK)
-            .body("data", Matchers.hasSize(1))
+            .body("data", Matchers.hasSize(0))
             .body("links", Matchers.anEmptyMap())
-            .body("meta.count", Matchers.is(1));
+            .body("meta.count", Matchers.is(0));
 
         // Create an endpoint.
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
         given()
             .header(identityHeader)
             .when()
@@ -3486,8 +3518,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(HttpStatus.SC_FORBIDDEN);
 
-        mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_FALSE);
-
         try {
             RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
 
@@ -3499,7 +3529,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .pathParam("id", createdEndpoint.getId())
                 .get("/endpoints/{id}")
                 .then()
-                .statusCode(HttpStatus.SC_FORBIDDEN);
+                .statusCode(HttpStatus.SC_NOT_FOUND);
         } finally {
             RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
         }
@@ -3511,7 +3541,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .pathParam("id", createdEndpoint.getId())
             .get("/endpoints/{id}")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         // Delete an endpoint.
         given()
@@ -3521,7 +3551,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .pathParam("id", createdEndpoint.getId())
             .delete("/endpoints/{id}")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         // Enable an endpoint.
         given()
@@ -3531,7 +3561,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .pathParam("id", createdEndpoint.getId())
             .put("/endpoints/{id}/enable")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         // Disable an endpoint.
         given()
@@ -3541,7 +3571,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .pathParam("id", createdEndpoint.getId())
             .delete("/endpoints/{id}/enable")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         // Update an endpoint.
         given()
@@ -3552,7 +3582,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(this.endpointMapper.toDTO(createdEndpoint)))
             .put("/endpoints/{id}")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         // Retrieve the history details.
         given()
@@ -3563,7 +3593,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .pathParam("historyId", UUID.randomUUID())
             .get("/endpoints/{endpointId}/history/{historyId}/details")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
 
         // Test an endpoint.
         given()
@@ -3573,7 +3603,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .pathParam("id", createdEndpoint.getId())
             .post("/endpoints/{id}/test")
             .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+            .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {
@@ -4149,14 +4179,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testNotFoundResponsesUnknownEndpointId(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testNotFoundResponsesUnknownEndpointId(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         // Add RBAC access.
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
@@ -4313,15 +4338,96 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
+    /**
+     * Tests that when the Kessel inventory back end's toggle is enabled, the
+     * integration creations and removals are notified to Kessel's Inventory
+     * API. We need to test for both cases when the Relations API is enabled or
+     * not, because we might enable the Inventory API way before we start using
+     * the Relations API.
+     */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testSystemEndpointsCreationKesselInventory(boolean kesselEnabled) {
+    @MethodSource("kesselFlags")
+    void testIntegrationCreationRemovalKesselInventory(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        // Enable the Inventory API.
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(true);
 
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(CREATE_DRAWER_INTEGRATION, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ALLOWED_TRUE);
-        }
+        // Conditionally enable the Relations API to test this in both
+        // scenarios.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(isKesselRelationsApiEnabled);
+        Mockito.when(this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(anyString())).thenReturn(isKesselInventoryUseForPermissionsChecksEnabled);
+
+        // Mock the reporter instance id.
+        Mockito.when(this.backendConfig.getKesselInventoryReporterInstanceId()).thenReturn("service-account-notifications");
+
+        // Create the identity header to be used in the requests.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        // Add full RBAC access for when the Relations API is disabled.
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Give the principal the "create endpoints" permission.
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
+        // Create the integration.
+        final Set<UUID> createdIntegration = this.addEndpoints(1, identityHeader);
+        Assertions.assertEquals(1, createdIntegration.size(), "only a single integration should have been created");
+
+        final UUID integrationId = createdIntegration.iterator().next();
+
+        // Verify that the integration's creation was communicated to the
+        // Inventory API.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).CreateNotificationsIntegration(
+            CreateNotificationsIntegrationRequest.newBuilder()
+                .setIntegration(
+                    NotificationsIntegration.newBuilder()
+                        .setMetadata(Metadata.newBuilder()
+                            .setResourceType(ResourceType.INTEGRATION.getKesselRepresentation())
+                            .setWorkspaceId(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString())
+                            .build()
+                        ).setReporterData(ReporterData.newBuilder()
+                            .setLocalResourceId(integrationId.toString())
+                            .setReporterInstanceId(this.backendConfig.getKesselInventoryReporterInstanceId())
+                            .setReporterType(ReporterData.ReporterType.NOTIFICATIONS)
+                            .build()
+                        ).build()
+                ).build()
+        );
+
+        // Give the principal the permission to delete the integration.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, integrationId.toString());
+
+        // Delete the integration.
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .pathParam("endpointId", integrationId)
+            .delete("/endpoints/{endpointId}")
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        // Verify that the integration's removal was communicated to the
+        // Inventory API.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).DeleteNotificationsIntegration(
+            DeleteNotificationsIntegrationRequest.newBuilder()
+                .setReporterData(
+                    ReporterData.newBuilder()
+                        .setLocalResourceId(integrationId.toString())
+                        .setReporterInstanceId(this.backendConfig.getKesselInventoryReporterInstanceId())
+                        .setReporterType(ReporterData.ReporterType.NOTIFICATIONS)
+                ).build()
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("kesselFlags")
+    void testSystemEndpointsCreationKesselInventory(final boolean isKesselInventoryEnabled) {
+        // Enable the Inventory API.
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(isKesselInventoryEnabled);
+        Mockito.when(this.backendConfig.getKesselInventoryReporterInstanceId()).thenReturn(RandomStringUtils.secure().nextAlphanumeric(10));
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
@@ -4361,6 +4467,265 @@ public class EndpointResourceTest extends DbIsolatedTest {
         responsePoint.mapTo(EndpointDTO.class);
         String drawerEndpointId = responsePoint.getString("id");
         assertNotNull(drawerEndpointId);
+
+        if (isKesselInventoryEnabled) {
+            Mockito.verify(notificationsIntegrationClient, Mockito.times(1)).CreateNotificationsIntegration(
+                CreateNotificationsIntegrationRequest.newBuilder()
+                    .setIntegration(
+                        NotificationsIntegration.newBuilder()
+                            .setMetadata(Metadata.newBuilder()
+                                .setResourceType(ResourceType.INTEGRATION.getKesselRepresentation())
+                                .setWorkspaceId(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString())
+                                .build()
+                            ).setReporterData(ReporterData.newBuilder()
+                                .setLocalResourceId(emailEndpointId.toString())
+                                .setReporterInstanceId(backendConfig.getKesselInventoryReporterInstanceId())
+                                .setReporterType(ReporterData.ReporterType.NOTIFICATIONS)
+                                .build()
+                            ).build()
+                    ).build()
+            );
+
+            Mockito.verify(notificationsIntegrationClient, Mockito.times(1)).CreateNotificationsIntegration(
+                CreateNotificationsIntegrationRequest.newBuilder()
+                    .setIntegration(
+                        NotificationsIntegration.newBuilder()
+                            .setMetadata(Metadata.newBuilder()
+                                .setResourceType(ResourceType.INTEGRATION.getKesselRepresentation())
+                                .setWorkspaceId(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString())
+                                .build()
+                            ).setReporterData(ReporterData.newBuilder()
+                                .setLocalResourceId(drawerEndpointId.toString())
+                                .setReporterInstanceId(backendConfig.getKesselInventoryReporterInstanceId())
+                                .setReporterType(ReporterData.ReporterType.NOTIFICATIONS)
+                                .build()
+                            ).build()
+                    ).build()
+            );
+        } else {
+            Mockito.verify(notificationsIntegrationClient, Mockito.never()).CreateNotificationsIntegration(any(CreateNotificationsIntegrationRequest.class));
+        }
+    }
+
+    /**
+     * Tests that when we fail to save an integration in our database for some
+     * reason, the Inventory API does not get called to create an integration
+     * there.
+     */
+    @ParameterizedTest
+    @MethodSource("kesselFlags")
+    void testCreateIntegrationFailInventoryNotNotified(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        // Enable the Inventory API.
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(true);
+
+        // Conditionally enable the Relations API to test this in both
+        // scenarios.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(isKesselRelationsApiEnabled);
+        Mockito.when(this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(anyString())).thenReturn(isKesselInventoryUseForPermissionsChecksEnabled);
+
+        // Create the identity header to be used in the request.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Mock the Kessel permission to be able to create the integration.
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
+        // Simulate an error when saving the integration in our database.
+        Mockito.doThrow(IllegalStateException.class).when(this.endpointRepository).createEndpoint(Mockito.any());
+
+        // Create the integration.
+        final CamelProperties slackProperties = new CamelProperties();
+        slackProperties.setDisableSslVerification(false);
+        slackProperties.setUrl(getMockServerUrl());
+
+        final Endpoint slackIntegration = new Endpoint();
+        slackIntegration.setDescription("I guess the camel is slacking");
+        slackIntegration.setEnabled(true);
+        slackIntegration.setName("Push the camel through the needle's ear");
+        slackIntegration.setProperties(slackProperties);
+        slackIntegration.setStatus(EndpointStatus.PROVISIONING);
+        slackIntegration.setSubType("slack");
+        slackIntegration.setType(EndpointType.CAMEL);
+
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(this.endpointMapper.toDTO(slackIntegration)))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+            .contentType(JSON);
+
+        // Assert that the Inventory API never got called.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.never()).CreateNotificationsIntegration(Mockito.any(CreateNotificationsIntegrationRequest.class));
+
+        // Assert that the transaction was rolled back and that the integration
+        // was not created.
+        this.assertNoIntegrationsInDatabase(identityHeader);
+    }
+
+    /**
+     * Tests that when the Inventory API returns any kind of error when
+     * attempting to create an integration, we also do not save it in our
+     * database.
+     */
+    @ParameterizedTest
+    @MethodSource("kesselFlags")
+    void testInventoryCreateIntegrationFailNotSavedInDatabase(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        // Enable the Inventory API.
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(true);
+
+        // Conditionally enable the Relations API to test this in both
+        // scenarios.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(isKesselRelationsApiEnabled);
+        Mockito.when(this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(anyString())).thenReturn(isKesselInventoryUseForPermissionsChecksEnabled);
+
+        // Create the identity header to be used in the request.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Mock the Kessel permission to be able to create the integration.
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
+
+        // Simulate an error when saving the integration in the Inventory API.
+        Mockito.when(this.notificationsIntegrationClient.CreateNotificationsIntegration(Mockito.any(CreateNotificationsIntegrationRequest.class))).thenThrow(StatusRuntimeException.class);
+
+        // Create the integration.
+        final CamelProperties slackProperties = new CamelProperties();
+        slackProperties.setDisableSslVerification(false);
+        slackProperties.setUrl(getMockServerUrl());
+
+        final Endpoint slackIntegration = new Endpoint();
+        slackIntegration.setDescription("I guess the camel is slacking");
+        slackIntegration.setEnabled(true);
+        slackIntegration.setName("Push the camel through the needle's ear");
+        slackIntegration.setProperties(slackProperties);
+        slackIntegration.setStatus(EndpointStatus.PROVISIONING);
+        slackIntegration.setSubType("slack");
+        slackIntegration.setType(EndpointType.CAMEL);
+
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(this.endpointMapper.toDTO(slackIntegration)))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR)
+            .contentType(JSON);
+
+        // Assert that the Inventory API never got called.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.never()).CreateNotificationsIntegration(Mockito.any(CreateNotificationsIntegrationRequest.class));
+
+        // Assert that the transaction was rolled back and that the integration
+        // was not created.
+        this.assertNoIntegrationsInDatabase(identityHeader);
+    }
+
+    /**
+     * Tests that when we fail to delete an integration from our database for
+     * some reason, the Inventory API does not get called to delete an
+     * integration from there.
+     */
+    @ParameterizedTest
+    @MethodSource("kesselFlags")
+    void testRemoveIntegrationFailInventoryNotNotified(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        // Enable the Inventory API.
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(true);
+
+        // Conditionally enable the Relations API to test this in both
+        // scenarios.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(isKesselRelationsApiEnabled);
+        Mockito.when(this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(anyString())).thenReturn(isKesselInventoryUseForPermissionsChecksEnabled);
+
+        // Mock the reporter instance id.
+        Mockito.when(this.backendConfig.getKesselInventoryReporterInstanceId()).thenReturn("service-account-notifications");
+
+        // Create the integration we are going to attempt to delete.
+        final Endpoint integration = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
+
+        // Simulate that removing the integration from our database throws an
+        // exception.
+        Mockito.doThrow(IllegalStateException.class).when(this.endpointRepository).deleteEndpoint(DEFAULT_ORG_ID, integration.getId());
+
+        // Create the identity header to be used in the request.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Mock the Kessel permission to be able to delete the integration.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, integration.getId().toString());
+
+        // Attempt deleting the integration.
+        given()
+            .header(identityHeader)
+            .pathParam("id", integration.getId())
+            .when()
+            .delete("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+        // Assert that the Inventory API never got called.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.never()).DeleteNotificationsIntegration(Mockito.any(DeleteNotificationsIntegrationRequest.class));
+
+        // Assert that the transaction was rolled back and that the integration
+        // was not deleted.
+        this.assertIntegrationExists(identityHeader, integration);
+    }
+
+    /**
+     * Tests that when we attempt to remove an integration from our database,
+     * if the Inventory API throws an exception, the whole transaction is
+     * rolled back and the integration does not get deleted from our database.
+     */
+    @ParameterizedTest
+    @MethodSource("kesselFlags")
+    void testInventoryDeleteIntegrationFailFailIntegrationNotRemovedFromDatabase(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        // Enable the Inventory API.
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(true);
+
+        // Conditionally enable the Relations API to test this in both
+        // scenarios.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(isKesselRelationsApiEnabled);
+        Mockito.when(this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(anyString())).thenReturn(isKesselInventoryUseForPermissionsChecksEnabled);
+
+        // Mock the reporter instance id.
+        Mockito.when(this.backendConfig.getKesselInventoryReporterInstanceId()).thenReturn("service-account-notifications");
+
+        // Create the integration we are going to attempt to delete.
+        final Endpoint integration = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
+
+        // mock workspace id
+        Mockito.when(this.workspaceUtils.getDefaultWorkspaceId(anyString())).thenReturn(UUID.randomUUID());
+
+        // Simulate that the Kessel Inventory throws an exception.
+        Mockito.when(this.notificationsIntegrationClient.DeleteNotificationsIntegration(Mockito.any())).thenThrow(new StatusRuntimeException(Status.NOT_FOUND));
+
+        // Create the identity header to be used in the request.
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Mock the Kessel permission to be able to delete the integration.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, integration.getId().toString());
+
+        // Attempt deleting the integration.
+        given()
+            .header(identityHeader)
+            .pathParam("id", integration.getId())
+            .when()
+            .delete("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+        // Assert that the transaction was rolled back and that the integration
+        // was not deleted.
+        this.assertIntegrationExists(identityHeader, integration);
     }
 
     /**
@@ -4371,14 +4736,18 @@ public class EndpointResourceTest extends DbIsolatedTest {
      * in Kessel's Inventory.
      */
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testInventoryDeleteIntegrationSourcesFail(boolean kesselEnabled) {
+    @MethodSource("kesselFlags")
+    void testInventoryDeleteIntegrationSourcesFail(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        // Enable the Inventory API.
+        Mockito.when(this.backendConfig.isKesselInventoryEnabled(anyString())).thenReturn(true);
 
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(INTEGRATIONS_CREATE, ALLOWED_TRUE);
-        }
+        // Conditionally enable the Relations API to test this in both
+        // scenarios.
+        Mockito.when(this.backendConfig.isKesselRelationsEnabled(anyString())).thenReturn(isKesselRelationsApiEnabled);
+        Mockito.when(this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(anyString())).thenReturn(isKesselInventoryUseForPermissionsChecksEnabled);
+
+        // Mock the reporter instance id.
+        Mockito.when(this.backendConfig.getKesselInventoryReporterInstanceId()).thenReturn("service-account-notifications");
 
         // Create the integration we are going to attempt to delete.
         final WebhookProperties webhookProperties = new WebhookProperties();
@@ -4400,6 +4769,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
             LocalDateTime.now()
         );
 
+        // Return a default workspace for the organization.
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+
         // Simulate that Sources throws an exception when attempting to delete
         // the secrets.
         Mockito.doThrow(new ClientWebApplicationException()).when(this.sourcesServiceMock).delete(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong());
@@ -4408,6 +4780,9 @@ public class EndpointResourceTest extends DbIsolatedTest {
         final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Mock the Kessel permission to be able to delete the integration.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, integration.getId().toString());
 
         // Attempt deleting the integration.
         given()
@@ -4431,6 +4806,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Assert that the transaction was rolled back and that the integration
         // was not deleted.
         this.assertIntegrationExists(identityHeader, integration);
+
+        // Since the Sources' secrets' deletion failed, we should have
+        // recreated the integration in Kessel's Inventory.
+        Mockito.verify(this.notificationsIntegrationClient, Mockito.times(1)).CreateNotificationsIntegration(Mockito.any(CreateNotificationsIntegrationRequest.class));
     }
 
     /**
@@ -4510,7 +4889,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // created, it kind of defeats the purpose. We also do not have an ID
         // we could use to even mock the Relations API, because the integration
         // does not get created in the database.
-        if (this.backendConfig.isKesselEnabled(anyString())) {
+        if (this.backendConfig.isKesselRelationsEnabled(anyString())) {
             return;
         }
 
@@ -4543,6 +4922,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Sources' stuff in this assertion, but we need to give the principal
         // this permission so that the check evaluates to something instead of
         // throwing a "null pointer" exception.
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.VIEW, ResourceType.INTEGRATION, endpoint.getId().toString());
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpoint.getId().toString());
 
         given()
             .header(identityHeader)
@@ -4555,24 +4936,22 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body("id", Matchers.is(endpoint.getId().toString()));
     }
 
-    private static Stream<Arguments> kesselFlagsEmailOrDrawerEndpoints() {
+    private static Stream<Arguments> kesselFlags() {
         return Stream.of(
-                Arguments.of(false, EndpointType.EMAIL_SUBSCRIPTION), // Should use RBAC
-                Arguments.of(true, EndpointType.EMAIL_SUBSCRIPTION), // Should use Kessel
-                Arguments.of(false, EndpointType.DRAWER), // Should use RBAC
-                Arguments.of(true, EndpointType.DRAWER) // Should use Kessel
+            Arguments.of(false, false), // Should use RBAC
+            Arguments.of(true, false), // Should use Kessel relations
+            Arguments.of(true, true) // Should use Kessel inventory
         );
     }
 
-    private void mockDefaultKesselPermission(WorkspacePermission permission, Allowed allowed) {
-        when(kesselCheckClient
-            .check(kesselTestHelper.buildCheckRequest(DEFAULT_ORG_ID, DEFAULT_USER, permission)))
-            .thenReturn(kesselTestHelper.buildCheckResponse(allowed));
-    }
-
-    private void mockDefaultKesselUpdatePermission(WorkspacePermission permission, Allowed allowed) {
-        when(kesselCheckClient
-            .checkForUpdate(kesselTestHelper.buildCheckForUpdateRequest(DEFAULT_USER, permission)))
-            .thenReturn(kesselTestHelper.buildCheckForUpdateResponse(allowed));
+    private static Stream<Arguments> kesselFlagsEmailOrDrawerEndpoints() {
+        return Stream.of(
+            Arguments.of(false, false, EndpointType.EMAIL_SUBSCRIPTION), // Should use RBAC
+            Arguments.of(true, false, EndpointType.EMAIL_SUBSCRIPTION), // Should use Kessel relations
+            Arguments.of(true, true, EndpointType.EMAIL_SUBSCRIPTION), // Should use Kessel inventory
+            Arguments.of(false, false, EndpointType.DRAWER), // Should use RBAC
+            Arguments.of(true, false, EndpointType.DRAWER), // Should use Kessel relations
+            Arguments.of(true, true, EndpointType.DRAWER) // Should use Kessel inventory
+        );
     }
 }

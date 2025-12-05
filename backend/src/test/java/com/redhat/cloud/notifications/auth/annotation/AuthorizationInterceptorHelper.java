@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.auth.annotation;
 
+import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import jakarta.ws.rs.core.SecurityContext;
 
@@ -23,4 +24,19 @@ public class AuthorizationInterceptorHelper {
         workspacePermissions = {WorkspacePermission.BUNDLES_VIEW, WorkspacePermission.APPLICATIONS_VIEW, WorkspacePermission.EVENT_TYPES_VIEW}
     )
     public void testMethodWithWorkspacePermissions(final SecurityContext ignored, final String ignoredTwo, final UUID ignoredThree) { }
+
+    @Authorization(
+        legacyRBACRole = AuthorizationInterceptorTest.LEGACY_RBAC_ROLE,
+        workspacePermissions = {WorkspacePermission.BUNDLES_VIEW, WorkspacePermission.APPLICATIONS_VIEW, WorkspacePermission.EVENT_TYPES_VIEW},
+        integrationPermissions = {IntegrationPermission.VIEW, IntegrationPermission.VIEW_HISTORY}
+    )
+    public void testMethodWithWorkspaceAndIntegrationPermissionsMissingIntegrationId(final SecurityContext ignored, final String ignoredTwo, final UUID ignoredThree) { }
+
+    @Authorization(
+        legacyRBACRole = AuthorizationInterceptorTest.LEGACY_RBAC_ROLE,
+        workspacePermissions = {WorkspacePermission.BUNDLES_VIEW, WorkspacePermission.APPLICATIONS_VIEW, WorkspacePermission.EVENT_TYPES_VIEW},
+        integrationPermissions = {IntegrationPermission.VIEW, IntegrationPermission.VIEW_HISTORY}
+    )
+    public void testMethodWithWorkspaceAndIntegrationPermissions(final SecurityContext ignored, final String ignoredTwo, @IntegrationId final UUID ignoredThree) { }
+
 }

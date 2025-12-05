@@ -89,12 +89,12 @@ public class EndpointRepository {
         return endpoint;
     }
 
-    public List<Endpoint> getEndpointsPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
+    public List<Endpoint> getEndpointsPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter, final Set<UUID> authorizedIds) {
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Optional<Sort> sort = limiter == null ? Optional.empty() : Sort.getSort(limiter, null, Endpoint.SORT_FIELDS);
 
-        Log.debugf("[org_id: %s][name: %s][composite_type: %s][active_only: %s][query: %s] Looking up endpoints in our database", orgId, name, type, activeOnly, limiter);
-        List<Endpoint> endpoints = EndpointRepository.queryBuilderEndpointsPerType(orgId, name, type, activeOnly)
+        Log.debugf("[org_id: %s][name: %s][composite_type: %s][active_only: %s][query: %s][authorized_ids: %s] Looking up endpoints in our database", orgId, name, type, activeOnly, limiter, authorizedIds);
+        List<Endpoint> endpoints = EndpointRepository.queryBuilderEndpointsPerType(orgId, name, type, activeOnly, authorizedIds)
                 .limit(limit)
                 .sort(sort)
                 .build(entityManager::createQuery)
@@ -120,7 +120,7 @@ public class EndpointRepository {
 
     @Transactional
     public Optional<Endpoint> getSystemSubscriptionEndpoint(String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
-        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null);
+        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null, null);
         loadProperties(endpoints);
         return endpoints
             .stream()
@@ -134,7 +134,7 @@ public class EndpointRepository {
         if (EndpointType.DRAWER == endpointType) {
             label = "Drawer";
         }
-        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null);
+        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null, null);
         loadProperties(endpoints);
         Optional<Endpoint> endpointOptional = endpoints
             .stream()
@@ -163,8 +163,8 @@ public class EndpointRepository {
         return createEndpoint(endpoint);
     }
 
-    public Long getEndpointsCountPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly) {
-        return EndpointRepository.queryBuilderEndpointsPerType(orgId, name, type, activeOnly)
+    public Long getEndpointsCountPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, final Set<UUID> authorizedIds) {
+        return EndpointRepository.queryBuilderEndpointsPerType(orgId, name, type, activeOnly, authorizedIds)
                 .buildCount(entityManager::createQuery)
                 .getSingleResult();
     }
@@ -306,7 +306,7 @@ public class EndpointRepository {
         }
     }
 
-    static QueryBuilder<Endpoint> queryBuilderEndpointsPerType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly) {
+    static QueryBuilder<Endpoint> queryBuilderEndpointsPerType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, final Set<UUID> authorizedIds) {
         Set<EndpointType> basicTypes = type.stream().filter(c -> c.getSubType() == null).map(CompositeEndpointType::getType).collect(Collectors.toSet());
         Set<CompositeEndpointType> compositeTypes = type.stream().filter(c -> c.getSubType() != null).collect(Collectors.toSet());
         return QueryBuilder
@@ -324,6 +324,7 @@ public class EndpointRepository {
                                                 .ifOr(basicTypes.size() > 0, "e.compositeType.type IN (:endpointType)", "endpointType", basicTypes)
                                                 .ifOr(compositeTypes.size() > 0, "e.compositeType IN (:compositeTypes)", "compositeTypes", compositeTypes)
                                 )
+                                .ifAnd(authorizedIds != null, "e.id IN (:authorizedIds)", "authorizedIds", authorizedIds)
                                 .ifAnd(activeOnly != null, "e.enabled = :enabled", "enabled", activeOnly)
                                 .ifAnd(
                                         name != null && !name.isEmpty(),

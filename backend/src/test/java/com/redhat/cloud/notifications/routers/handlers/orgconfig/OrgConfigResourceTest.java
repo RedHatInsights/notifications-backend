@@ -4,8 +4,8 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.auth.kessel.KesselCheckClient;
 import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
+import com.redhat.cloud.notifications.auth.kessel.ResourceType;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -13,7 +13,6 @@ import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.RestAssured;
 import io.restassured.http.Header;
 import jakarta.inject.Inject;
@@ -24,26 +23,26 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.project_kessel.api.inventory.v1beta2.Allowed;
+import org.mockito.Mockito;
+import org.project_kessel.inventory.client.KesselCheckClient;
+import org.project_kessel.relations.client.CheckClient;
+import org.project_kessel.relations.client.LookupClient;
 
 import java.time.LocalTime;
+import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.READ_ACCESS;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.DAILY_DIGEST_PREFERENCE_VIEW;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_FALSE;
-import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_TRUE;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -52,8 +51,15 @@ class OrgConfigResourceTest extends DbIsolatedTest {
      * Mocked the backend's configuration so that the {@link KesselTestHelper}
      * can be used.
      */
-    @InjectSpy
+    @InjectMock
     BackendConfig backendConfig;
+
+    /**
+     * Mocked Kessel's check client so that the {@link KesselTestHelper} can
+     * be used.
+     */
+    @InjectMock
+    CheckClient checkClient;
 
     /**
      * Mocked Kessel's check client so that the {@link KesselTestHelper} can
@@ -74,6 +80,13 @@ class OrgConfigResourceTest extends DbIsolatedTest {
 
     @Inject
     KesselTestHelper kesselTestHelper;
+
+    /**
+     * Mocked Kessel's lookup client so that the {@link KesselTestHelper} can
+     * be used.
+     */
+    @InjectMock
+    LookupClient lookupClient;
 
     static final LocalTime TIME = LocalTime.of(10, 00);
 
@@ -101,18 +114,17 @@ class OrgConfigResourceTest extends DbIsolatedTest {
         // that the "ConsoleIdentityProvider" doesn't build a principal with
         // all the privileges because it thinks that both Kessel and RBAC are
         // disabled.
-        when(backendConfig.isRBACEnabled()).thenReturn(true);
-        when(workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID);
+        Mockito.when(this.backendConfig.isRBACEnabled()).thenReturn(true);
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testSaveDailyDigestTimePreference(boolean kesselEnabled) {
+    @MethodSource("kesselFlags")
+    void testSaveDailyDigestTimePreference(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(DAILY_DIGEST_PREFERENCE_EDIT, ALLOWED_TRUE);
-        }
+        // check regular parameter
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         recordDefaultDailyDigestTimePreference();
 
@@ -127,17 +139,16 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testMinuteFilter(boolean isKesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(isKesselEnabled);
-        if (isKesselEnabled) {
-            mockDefaultKesselUpdatePermission(DAILY_DIGEST_PREFERENCE_EDIT, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testMinuteFilter(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         final String ERROR_MESSAGE_WRONG_MINUTE_VALUE = "Accepted minute values are: 00, 15, 30, 45.";
 
         Header testMinIdentityHeader = TestHelpers.createRHIdentityHeader(testMinIdentityHeaderValue);
+
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 00), Response.Status.NO_CONTENT.getStatusCode());
         recordDailyDigestTimePreference(testMinIdentityHeader, LocalTime.of(5, 15), Response.Status.NO_CONTENT.getStatusCode());
@@ -148,14 +159,11 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testGetDailyDigestTimePreference(boolean kesselEnabled) {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselPermission(DAILY_DIGEST_PREFERENCE_VIEW, ALLOWED_TRUE);
-            mockDefaultKesselUpdatePermission(DAILY_DIGEST_PREFERENCE_EDIT, ALLOWED_TRUE);
-        }
+    @MethodSource("kesselFlags")
+    void testGetDailyDigestTimePreference(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_VIEW, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         LocalTime foundedPreference = given()
                 .header(identityHeader)
@@ -167,6 +175,8 @@ class OrgConfigResourceTest extends DbIsolatedTest {
                 .extract().as(LocalTime.class);
         assertEquals(LocalTime.MIDNIGHT, foundedPreference);
 
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.DAILY_DIGEST_PREFERENCE_EDIT, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
         recordDefaultDailyDigestTimePreference();
 
         foundedPreference = given()
@@ -230,17 +240,17 @@ class OrgConfigResourceTest extends DbIsolatedTest {
             .statusCode(HttpStatus.SC_FORBIDDEN);
     }
 
+
     /**
      * Test that when using Kessel, if the user is not authorized to send
      * requests to the "OrgConfigResource"'s endpoints, an {@link HttpStatus#SC_UNAUTHORIZED}
      * response is returned.
      */
-    @Test
-    void testKesselUnauthorized() {
-
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
-        mockDefaultKesselPermission(DAILY_DIGEST_PREFERENCE_VIEW, ALLOWED_FALSE);
-        mockDefaultKesselUpdatePermission(DAILY_DIGEST_PREFERENCE_EDIT, ALLOWED_FALSE);
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testKesselUnauthorized(final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
+        this.kesselTestHelper.mockKesselRelations(true, isKesselInventoryUseForPermissionsChecksEnabled);
+        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
 
         // Get the time preferences.
         given()
@@ -263,15 +273,11 @@ class OrgConfigResourceTest extends DbIsolatedTest {
         return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
 
-    private void mockDefaultKesselPermission(WorkspacePermission permission, Allowed allowed) {
-        when(kesselCheckClient
-            .check(kesselTestHelper.buildCheckRequest(DEFAULT_USER, permission)))
-            .thenReturn(kesselTestHelper.buildCheckResponse(allowed));
-    }
-
-    private void mockDefaultKesselUpdatePermission(WorkspacePermission permission, Allowed allowed) {
-        when(kesselCheckClient
-            .checkForUpdate(kesselTestHelper.buildCheckForUpdateRequest(DEFAULT_USER, permission)))
-            .thenReturn(kesselTestHelper.buildCheckForUpdateResponse(allowed));
+    private static Stream<Arguments> kesselFlags() {
+        return Stream.of(
+            Arguments.of(false, false), // Should use RBAC
+            Arguments.of(true, false), // Should use Kessel relations
+            Arguments.of(true, true) // Should use Kessel inventory
+        );
     }
 }

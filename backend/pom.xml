@@ -161,16 +161,23 @@
             <version>${quarkus-logging-cloudwatch.version}</version>
         </dependency>
 
-        <!-- Kessel -->
+        <!-- gRPC clients for the interactions with Kessel -->
         <dependency>
             <groupId>org.project-kessel</groupId>
-            <artifactId>kessel-sdk</artifactId>
-            <version>${kessel-sdk.version}</version>
+            <artifactId>inventory-client-java</artifactId>
+            <version>${kessel.inventory-client.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.project-kessel</groupId>
+            <artifactId>relations-client-java</artifactId>
+            <version>${kessel.relationships-client.version}</version>
+        </dependency>
+
+        <!-- oAuth library for the gRPC clients -->
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>oauth2-oidc-sdk</artifactId>
-            <version>${oauth2-oidc-sdk.version}</version>
+            <version>${kessel.oauth-client.version}</version>
         </dependency>
 
         <!-- Test dependencies -->

@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.auth.annotation;
 
+import com.redhat.cloud.notifications.auth.kessel.KesselAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
+import com.redhat.cloud.notifications.auth.kessel.permission.IntegrationPermission;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -27,6 +29,7 @@ import java.util.UUID;
 public class AuthorizationInterceptor {
 
     private final BackendConfig backendConfig;
+    private final KesselAuthorization kesselAuthorization;
     private final WorkspaceUtils workspaceUtils;
     private final KesselInventoryAuthorization kesselInventoryAuthorization;
 
@@ -34,15 +37,18 @@ public class AuthorizationInterceptor {
      * Constructor for the interceptor. Helps with testing, as otherwise the
      * interceptor cannot get its dependencies injected.
      * @param backendConfig the back end's configuration bean.
+     * @param kesselAuthorization the Kessel's authorization bean.
      * @param kesselInventoryAuthorization the Kessel's inventory authorization bean.
      * @param workspaceUtils the workspace utils' bean.
      */
     public AuthorizationInterceptor(
         final BackendConfig backendConfig,
+        final KesselAuthorization kesselAuthorization,
         final WorkspaceUtils workspaceUtils,
         final KesselInventoryAuthorization kesselInventoryAuthorization
     ) {
         this.backendConfig = backendConfig;
+        this.kesselAuthorization = kesselAuthorization;
         this.workspaceUtils = workspaceUtils;
         this.kesselInventoryAuthorization = kesselInventoryAuthorization;
     }
@@ -77,7 +83,7 @@ public class AuthorizationInterceptor {
 
         // Perform the legacy RBAC check first. The only reason is to be able
         // to return early and make the code easier to follow.
-        if (!this.backendConfig.isKesselEnabled(SecurityContextUtil.getOrgId(securityContext))) {
+        if (!this.backendConfig.isKesselRelationsEnabled(SecurityContextUtil.getOrgId(securityContext))) {
             // Legacy RBAC permission checking. The permission will have been
             // prefetched and processed by the "ConsoleIdentityProvider".
             if (securityContext.isUserInRole(annotation.legacyRBACRole())) {
@@ -90,19 +96,52 @@ public class AuthorizationInterceptor {
         // When the execution reaches this point we can be sure that the
         // enabled authorization back end is "Kessel", so we proceed to get the
         // Kessel permissions.
+        final IntegrationPermission[] integrationPermissions = annotation.integrationPermissions();
         final WorkspacePermission[] workspacePermissions = annotation.workspacePermissions();
 
-        // Make sure that we have workspace permissions to check.
-        // If we don't, that probably signals a mistake on the developer's side.
-        if (workspacePermissions.length == 0) {
-            throw new IllegalStateException(String.format("No workspace permissions were set for method \"%s\", and at least one of them is required for the \"KesselRequiredPermission\" annotation to work", ctx.getMethod().getName()));
+        // Make sure that we have either integration permissions or workspace
+        // permissions to check. If we don't, that probably signals a mistake
+        // on the developer's side.
+        if (integrationPermissions.length == 0 && workspacePermissions.length == 0) {
+            throw new IllegalStateException(String.format("No integration or workspace permissions were set for method \"%s\", and at least one of them is required for the \"KesselRequiredPermission\" annotation to work", ctx.getMethod().getName()));
         }
 
-        // Check the workspace permissions.
+        // Check the workspace permissions first since they are more generic.
         if (workspacePermissions.length > 0) {
             UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(SecurityContextUtil.getOrgId(securityContext));
-            for (final WorkspacePermission workspacePermission : workspacePermissions) {
-                this.kesselInventoryAuthorization.hasPermissionOnWorkspace(securityContext, workspacePermission, workspaceId);
+            if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(SecurityContextUtil.getOrgId(securityContext))) {
+                for (final WorkspacePermission workspacePermission : workspacePermissions) {
+                    this.kesselInventoryAuthorization.hasPermissionOnWorkspace(securityContext, workspacePermission, workspaceId);
+                }
+            } else {
+                for (final WorkspacePermission workspacePermission : workspacePermissions) {
+                    this.kesselAuthorization.hasPermissionOnWorkspace(securityContext, workspacePermission, workspaceId);
+                }
+            }
+        }
+
+        // If no integration permissions are specified we can simply skip any
+        // further checks.
+        if (integrationPermissions.length == 0) {
+            return ctx.proceed();
+        }
+
+        // We need to make sure that we spotted the integration's identifier in
+        // the method, as otherwise we will not be able to perform the checks.
+        if (parameterIndexes.getIntegrationIdIndex().isEmpty()) {
+            throw new IllegalStateException(String.format("The integration ID is not annotated on the method \"%s\", which is needed for the \"KesselRequiredPermission\" annotation to work", ctx.getMethod().getName()));
+        }
+
+        // Now it is safe to grab the intercepted integration id...
+        final UUID integrationId = (UUID) interceptedParameters[parameterIndexes.getIntegrationIdIndex().get()];
+        // ... and check the principal's permission.
+        if (this.backendConfig.isKesselInventoryUseForPermissionsChecksEnabled(SecurityContextUtil.getOrgId(securityContext))) {
+            for (final IntegrationPermission integrationPermission : integrationPermissions) {
+                this.kesselInventoryAuthorization.hasPermissionOnIntegration(securityContext, integrationPermission, integrationId);
+            }
+        } else {
+            for (final IntegrationPermission integrationPermission : integrationPermissions) {
+                this.kesselAuthorization.hasPermissionOnIntegration(securityContext, integrationPermission, integrationId);
             }
         }
 
@@ -124,6 +163,11 @@ public class AuthorizationInterceptor {
 
             if (parameter.getType().equals(SecurityContext.class)) {
                 parameterIndexes.setSecurityContextIndex(i);
+                continue;
+            }
+
+            if (parameter.getAnnotation(IntegrationId.class) != null) {
+                parameterIndexes.setIntegrationIdIndex(i);
             }
         }
         return parameterIndexes;

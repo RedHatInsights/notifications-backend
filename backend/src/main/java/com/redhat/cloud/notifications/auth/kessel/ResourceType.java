@@ -1,12 +1,12 @@
 package com.redhat.cloud.notifications.auth.kessel;
 
-
-import org.project_kessel.api.inventory.v1beta1.authz.ObjectType;
+import org.project_kessel.api.relations.v1beta1.ObjectType;
 
 /**
  * Enumerates the resource types that are present in Kessel.
  */
-public enum KesselInventoryResourceType {
+@Deprecated(forRemoval = true)
+public enum ResourceType {
     INTEGRATION(buildObjectType("notifications", "integration")),
     WORKSPACE(buildObjectType("rbac", "workspace"));
 
@@ -15,7 +15,7 @@ public enum KesselInventoryResourceType {
      */
     private final ObjectType kesselObjectType;
 
-    KesselInventoryResourceType(final ObjectType kesselObjectType) {
+    ResourceType(final ObjectType kesselObjectType) {
         this.kesselObjectType = kesselObjectType;
     }
 
