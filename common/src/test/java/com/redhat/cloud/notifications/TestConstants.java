@@ -16,5 +16,4 @@ public class TestConstants {
     public static final String DEFAULT_USER = "default-user";
 
     public static final String POSTGRES_MAJOR_VERSION = "16";
-    public static final String VALKEY_MAJOR_VERSION = "8";
 }

@@ -1,22 +1,20 @@
 package com.redhat.cloud.notifications;
 
-import com.redis.testcontainers.RedisContainer;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.POSTGRES_MAJOR_VERSION;
-import static com.redhat.cloud.notifications.TestConstants.VALKEY_MAJOR_VERSION;
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.EGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.FROMCAMEL_CHANNEL;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
@@ -27,34 +25,23 @@ import static com.redhat.cloud.notifications.routers.DailyDigestResource.AGGREGA
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
-    Boolean quarkusDatasourceDevServiceEnabled = true;
-    Boolean quarkusRedisDevServiceEnabled = true;
+    Boolean quarkusDevServiceEnabled = true;
 
     PostgreSQLContainer<?> postgreSQLContainer;
-    RedisContainer valkeyContainer;
 
     @Override
     public Map<String, String> start() {
         System.out.println("++++  TestLifecycleManager start +++");
-        ConfigProvider.getConfig().getOptionalValue("quarkus.datasource.devservices.enabled", Boolean.class)
-                .ifPresent(flag -> quarkusDatasourceDevServiceEnabled = flag);
-        System.out.println(" -- quarkusDatasourceDevServiceEnabled is " + quarkusDatasourceDevServiceEnabled);
-
-        ConfigProvider.getConfig().getOptionalValue("quarkus.redis.devservices.enabled", Boolean.class)
-                .ifPresent(flag -> quarkusRedisDevServiceEnabled = flag);
-        System.out.println(" -- quarkusRedisDevServiceEnabled is " + quarkusRedisDevServiceEnabled);
+        Optional<Boolean> quarkusDevServiceEnabledFlag = ConfigProvider.getConfig().getOptionalValue("quarkus.datasource.devservices.enabled", Boolean.class);
+        if (quarkusDevServiceEnabledFlag.isPresent()) {
+            quarkusDevServiceEnabled = quarkusDevServiceEnabledFlag.get();
+        }
+        System.out.println(" -- quarkusDatasourceDevServiceEnabled is " + quarkusDevServiceEnabled);
 
         Map<String, String> properties = new HashMap<>();
-        if (quarkusDatasourceDevServiceEnabled) {
+        if (quarkusDevServiceEnabled) {
             try {
                 setupPostgres(properties);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        if (quarkusRedisDevServiceEnabled) {
-            try {
-                setupRedis(properties);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -79,11 +66,8 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
     @Override
     public void stop() {
-        if (quarkusDatasourceDevServiceEnabled) {
+        if (quarkusDevServiceEnabled) {
             postgreSQLContainer.stop();
-        }
-        if (quarkusRedisDevServiceEnabled) {
-            valkeyContainer.stop();
         }
         MockServerLifecycleManager.stop();
         InMemoryConnector.clear();
@@ -109,12 +93,6 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         statement.execute("CREATE EXTENSION pgcrypto;");
         statement.close();
         connection.close();
-    }
-
-    void setupRedis(Map<String, String> props) {
-        valkeyContainer = new RedisContainer(DockerImageName.parse("valkey/valkey:" + VALKEY_MAJOR_VERSION));
-        valkeyContainer.start();
-        props.put("quarkus.redis.hosts", "redis://" + valkeyContainer.getRedisHost() + ":" + valkeyContainer.getRedisPort());
     }
 
     void setupMockEngine(Map<String, String> props) {
