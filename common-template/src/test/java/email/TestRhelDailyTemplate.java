@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import static email.TestAdvisorTemplate.JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT;
+import static email.TestImageBuilderTemplate.JSON_IMAGE_BUILDER_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestInventoryTemplate.JSON_INVENTORY_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestPatchTemplate.JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestResourceOptimizationTemplate.JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT;
@@ -57,6 +58,8 @@ public class TestRhelDailyTemplate extends EmailTemplatesRendererHelper {
 
         generateAggregatedEmailBody(templateService.convertActionToContextMap(TestHelpers.createVulnerabilityAction()), "vulnerability", dataMap);
 
+        generateAggregatedEmailBody(JSON_IMAGE_BUILDER_DEFAULT_AGGREGATION_CONTEXT, "image-builder", dataMap);
+
         // sort application by name
         List<DailyDigestSection> result = dataMap.entrySet().stream()
             .sorted(Map.Entry.comparingByKey())
@@ -89,6 +92,8 @@ public class TestRhelDailyTemplate extends EmailTemplatesRendererHelper {
     private static void templateResultChecks(String templateResult) {
         assertTrue(templateResult.contains("\"#advisor-section1\""));
         assertTrue(templateResult.contains("\"#compliance-section1\""));
+        assertTrue(templateResult.contains("\"#image-builder-section1\""));
+        assertTrue(templateResult.contains("\"#image-builder-section2\""));
         assertTrue(templateResult.contains("\"#inventory-section1\""));
         assertTrue(templateResult.contains("\"#patch-section1\""));
         assertTrue(templateResult.contains("\"#policies-section1\""));
@@ -97,6 +102,8 @@ public class TestRhelDailyTemplate extends EmailTemplatesRendererHelper {
 
         assertTrue(templateResult.contains("\"advisor-section1\""));
         assertTrue(templateResult.contains("\"compliance-section1\""));
+        assertTrue(templateResult.contains("\"image-builder-section1\""));
+        assertTrue(templateResult.contains("\"image-builder-section2\""));
         assertTrue(templateResult.contains("\"inventory-section1\""));
         assertTrue(templateResult.contains("\"patch-section1\""));
         assertTrue(templateResult.contains("\"policies-section1\""));

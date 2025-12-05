@@ -362,6 +362,57 @@ public class TestHelpers {
         return emailActionMessage;
     }
 
+    public static Action createImageBuilderAction(String eventType) {
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle("rhel");
+        emailActionMessage.setApplication("image-builder");
+        emailActionMessage.setTimestamp(LocalDateTime.now());
+        emailActionMessage.setEventType(eventType);
+        emailActionMessage.setAccountId(StringUtils.EMPTY);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+        emailActionMessage.setRecipients(List.of());
+
+        emailActionMessage.setContext(
+            new Context.ContextBuilder()
+            .withAdditionalProperty("provider", "aws")
+            .withAdditionalProperty("launch_id", 3011)
+            .build());
+        if (eventType.equals("launch-success")) {
+            emailActionMessage.setEvents(List.of(
+                new Event.EventBuilder()
+                .withMetadata(new Metadata.MetadataBuilder().build())
+                .withPayload(
+                    new Payload.PayloadBuilder()
+                    .withAdditionalProperty("instance_id", "i-0cbaed564af9faf")
+                    .withAdditionalProperty("detail",
+                        Map.of("public_ipv4", "92.123.32.3", "public_dns",
+                            "ec2-92-123-32-3.compute-1.amazonaws.com"))
+                    .build())
+                .build(),
+                new Event.EventBuilder()
+                .withMetadata(new Metadata.MetadataBuilder().build())
+                .withPayload(
+                    new Payload.PayloadBuilder()
+                    .withAdditionalProperty("instance_id", "i-0aba12564af9faf")
+                    .withAdditionalProperty("detail",
+                        Map.of("public_ipv4", "91.123.32.4", "public_dns",
+                            ""))
+                    .build())
+                .build()));
+        } else {
+            emailActionMessage.setEvents(List.of(
+                new Event.EventBuilder()
+                .withMetadata(new Metadata.MetadataBuilder().build())
+                .withPayload(
+                    new Payload.PayloadBuilder()
+                    .withAdditionalProperty("error", "Some launch error")
+                    .build())
+                .build()));
+
+        }
+        return emailActionMessage;
+    }
+
     public static Action createIntegrationDisabledAction(String errorType, String integrationName, Integer statusCode) {
         Context.ContextBuilderBase contextBuilder = new Context.ContextBuilder()
             .withAdditionalProperty("error_type", errorType)

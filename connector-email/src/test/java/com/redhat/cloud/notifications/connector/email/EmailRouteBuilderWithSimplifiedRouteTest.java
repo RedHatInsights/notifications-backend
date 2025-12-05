@@ -44,6 +44,7 @@ import static com.redhat.cloud.notifications.connector.IncomingCloudEventFilter.
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.*;
 import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
 import static email.TestAdvisorTemplate.JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT;
+import static email.TestImageBuilderTemplate.JSON_IMAGE_BUILDER_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestInventoryTemplate.JSON_INVENTORY_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestPatchTemplate.JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestResourceOptimizationTemplate.JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT;
@@ -427,6 +428,10 @@ class EmailRouteBuilderWithSimplifiedRouteTest extends CamelQuarkusTestSupport {
             applicationAggregatedDataList.add(new ApplicationAggregatedData(
                 "compliance",
                 templateService.convertActionToContextMap(TestHelpers.createComplianceAction())
+            ));
+            applicationAggregatedDataList.add(new ApplicationAggregatedData(
+                "image-builder",
+                objectMapper.readValue(JSON_IMAGE_BUILDER_DEFAULT_AGGREGATION_CONTEXT, typeRef)
             ));
             applicationAggregatedDataList.add(new ApplicationAggregatedData(
                 "inventory",

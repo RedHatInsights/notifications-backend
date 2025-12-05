@@ -1,0 +1,29 @@
+{@boolean renderSection1=true}
+{@boolean renderSection1AsIncident=true}
+{#include email/Common/insightsEmailBody}
+{#content-title}
+    Image builder - Red Hat Enterprise Linux
+{/content-title}
+{#content-title-section1}
+    An image failed to launch on
+{#switch action.context.provider}
+{#case "aws"}
+Amazon Web Services
+{#case "azure"}
+Microsoft Azure
+{#case "gcp"}
+Google Cloud Platform
+{/switch}
+{/content-title-section1}
+{#content-subtitle-section1}
+Launch id #{action.context.launch_id}
+{/content-subtitle-section1}
+{#content-body-section1}
+    <p>
+        <i>{action.events[0].payload.error}</i>
+    </p>
+    <p>
+        If this issue persists please contact <a class="rh-url" href="https://access.redhat.com/support">Red Hat support</a>.
+    </p>
+{/content-body-section1}
+{/include}
