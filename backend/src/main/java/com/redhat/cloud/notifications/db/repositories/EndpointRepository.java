@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.db.builder.QueryBuilder;
@@ -41,7 +42,14 @@ public class EndpointRepository {
     @Inject
     EntityManager entityManager;
 
+    @Inject
+    BackendConfig backendConfig;
+
     public void checkEndpointNameDuplicate(Endpoint endpoint) {
+        if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
+            // This check does not apply for email subscriptions - as these are managed by us.
+            return;
+        }
 
         String hql = "SELECT COUNT(*) FROM Endpoint WHERE name = :name AND orgId = :orgId";
         if (endpoint.getId() != null) {
@@ -226,6 +234,10 @@ public class EndpointRepository {
                 "disableSslVerification = :disableSslVerification WHERE endpoint.id = :endpointId";
         String pagerDutyQuery = "UPDATE PagerDutyProperties SET severity = :severity " +
                 "WHERE endpoint.id = :endpointId";
+
+        if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
+            throw new RuntimeException("Unable to update a system endpoint of type " + endpoint.getType());
+        }
 
         int endpointRowCount = entityManager.createQuery(endpointQuery)
                 .setParameter("name", endpoint.getName())

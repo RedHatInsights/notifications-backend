@@ -678,6 +678,13 @@ public class EndpointResourceTest extends DbIsolatedTest {
         expectReturn400(DEFAULT_USER, identityHeader, ep);
 
         // Type and attributes don't match
+        properties.setMethod(POST);
+        ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        expectReturn400(DEFAULT_USER, identityHeader, ep);
+
+        ep.setType(EndpointType.DRAWER);
+        expectReturn400(DEFAULT_USER, identityHeader, ep);
+
         ep.setName("endpoint with subtype too long");
         ep.setType(EndpointType.CAMEL);
         ep.setSubType("something-longer-than-20-chars");
@@ -1677,8 +1684,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @MethodSource("kesselFlagsEmailOrDrawerEndpoints")
-    void testAddEndpointEmailOrDrawerSubscriptionAsRegularEndpoint(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled, final EndpointType endpointType) {
+    @MethodSource("kesselFlags")
+    void testAddEndpointEmailSubscription(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
         this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
@@ -1686,11 +1693,12 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
+        // EmailSubscription can't be created
         SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
-        ep.setType(endpointType);
-        ep.setName("Endpoint: " + endpointType.name());
+        ep.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        ep.setName("Endpoint: EmailSubscription");
         ep.setDescription("Subscribe!");
         ep.setEnabled(true);
         ep.setProperties(properties);
@@ -1698,20 +1706,34 @@ public class EndpointResourceTest extends DbIsolatedTest {
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
-        // Email or Drawer subscriptions can be fetched from the properties
+        String stringResponse = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(this.endpointMapper.toDTO(ep)))
+                .post("/endpoints")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
+                .extract().asString();
+
+        assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
+
+        RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
+
+        // EmailSubscription can be fetched from the properties
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .body(Json.encode(this.endpointMapper.toDTO(ep)))
-            .post("/endpoints")
-            .then()
-            .statusCode(HttpStatus.SC_OK)
-            .contentType(JSON)
-            .extract().response();
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(JSON)
+                .extract().response();
 
         JsonObject responsePoint = new JsonObject(response.getBody().asString());
         responsePoint.mapTo(EndpointDTO.class);
@@ -1723,51 +1745,104 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Calling again yields the same endpoint id
         String defaultEndpointId = responsePoint.getString("id");
 
-        Response badRequestDupName = given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .body(Json.encode(this.endpointMapper.toDTO(ep)))
-            .post("/endpoints")
-            .then()
-            .statusCode(HttpStatus.SC_BAD_REQUEST)
-            .contentType(JSON)
-            .extract().response();
+        response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(JSON)
+                .extract().response();
 
-        assertTrue(badRequestDupName.getBody().asString().contains(String.format(
-            "An endpoint with name [%s] already exists",
-            ep.getName()
-        )));
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(EndpointDTO.class);
+        assertEquals(defaultEndpointId, responsePoint.getString("id"));
 
-        // It is possible to disable or enable it
+        // Different properties are different endpoints
+        Set<String> endpointIds = new HashSet<>();
+        endpointIds.add(defaultEndpointId);
+
+        requestProps.setOnlyAdmins(true);
+
+        response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(JSON)
+                .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(EndpointDTO.class);
+        assertFalse(endpointIds.contains(responsePoint.getString("id")));
+        endpointIds.add(responsePoint.getString("id"));
+
+        response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(requestProps))
+                .post("/endpoints/system/email_subscription")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(JSON)
+                .extract().response();
+
+        responsePoint = new JsonObject(response.getBody().asString());
+        responsePoint.mapTo(EndpointDTO.class);
+        assertTrue(endpointIds.contains(responsePoint.getString("id")));
+
+        // It is not possible to delete it
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, defaultEndpointId);
+
+        stringResponse = given()
+                .header(identityHeader)
+                .when().delete("/endpoints/" + defaultEndpointId)
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
+                .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
+
+        // It is not possible to disable or enable it
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DISABLE, ResourceType.INTEGRATION, defaultEndpointId);
 
-        given()
-            .header(identityHeader)
-            .when().delete("/endpoints/" + defaultEndpointId + "/enable")
-            .then()
-            .statusCode(HttpStatus.SC_NO_CONTENT);
+        stringResponse = given()
+                .header(identityHeader)
+                .when().delete("/endpoints/" + defaultEndpointId + "/enable")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
+                .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.ENABLE, ResourceType.INTEGRATION, defaultEndpointId);
 
-        given()
-            .header(identityHeader)
-            .when().put("/endpoints/" + defaultEndpointId + "/enable")
-            .then()
-            .statusCode(HttpStatus.SC_OK);
+        stringResponse = given()
+                .header(identityHeader)
+                .when().put("/endpoints/" + defaultEndpointId + "/enable")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
+                .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
-        // It is possible to update it
+        // It is not possible to update it
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, defaultEndpointId);
 
-        given()
+        stringResponse = given()
                 .header(identityHeader)
                 .contentType(JSON)
                 .body(Json.encode(ep))
                 .when().put("/endpoints/" + defaultEndpointId)
                 .then()
-                .statusCode(HttpStatus.SC_OK);
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
+                .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
 
-        // It is possible to update it to other type
+        // It is not possible to update it to other type
         ep.setType(EndpointType.WEBHOOK);
 
         WebhookProperties webhookProperties = new WebhookProperties();
@@ -1777,49 +1852,33 @@ public class EndpointResourceTest extends DbIsolatedTest {
         webhookProperties.setUrl(getMockServerUrl());
         ep.setProperties(webhookProperties);
 
-        given()
-            .header(identityHeader)
-            .contentType(JSON)
-            .body(Json.encode(ep))
-            .when().put("/endpoints/" + defaultEndpointId)
-            .then()
-            .statusCode(HttpStatus.SC_OK);
-
-        // It is not possible to delete it
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, defaultEndpointId);
-
-        given()
-            .header(identityHeader)
-            .when().delete("/endpoints/" + defaultEndpointId)
-            .then()
-            .statusCode(HttpStatus.SC_NO_CONTENT)
-            .extract().response();
+        stringResponse = given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .body(Json.encode(ep))
+                .when().put("/endpoints/" + defaultEndpointId)
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
+                .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.EMAIL_SUBSCRIPTION);
     }
 
     @ParameterizedTest
-    @MethodSource("kesselFlagsEmailOrDrawerEndpoints")
-    void testAddEndpointEmailOrDrawerSubscription(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled, final EndpointType endpointType) {
+    @MethodSource("kesselFlags")
+    void testAddEndpointDrawerSubscription(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
         this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
-
-        final String endpointTypeUrl;
-        if (EndpointType.EMAIL_SUBSCRIPTION == endpointType) {
-            endpointTypeUrl = "email_subscription";
-            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-        } else {
-            endpointTypeUrl = "drawer_subscription";
-            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_DRAWER_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-        }
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
+        // Drawer endpoints can't be created from the general endpoint
         SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
 
         Endpoint ep = new Endpoint();
-        ep.setType(endpointType);
-        ep.setName("Endpoint: " + endpointType.name());
+        ep.setType(EndpointType.DRAWER);
+        ep.setName("Endpoint: Drawer");
         ep.setDescription("Subscribe!");
         ep.setEnabled(true);
         ep.setProperties(properties);
@@ -1827,18 +1886,30 @@ public class EndpointResourceTest extends DbIsolatedTest {
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
         this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
+        String stringResponse = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(ep))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract().asString();
+
+        assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
+
         RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
 
-        // EmailSubscription or Drawer endpoints can be fetched from the properties
+        // Drawer endpoints can be created from the dedicated endpoint
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_DRAWER_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         Response response = given()
             .header(identityHeader)
             .when()
             .contentType(JSON)
             .body(Json.encode(requestProps))
-            .pathParam("endpoint_type", endpointTypeUrl)
-            .post("/endpoints/system/{endpoint_type}")
+            .post("/endpoints/system/drawer_subscription")
             .then()
             .statusCode(HttpStatus.SC_OK)
             .contentType(JSON)
@@ -1859,8 +1930,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .when()
             .contentType(JSON)
             .body(Json.encode(requestProps))
-            .pathParam("endpoint_type", endpointTypeUrl)
-            .post("/endpoints/system/{endpoint_type}")
+            .post("/endpoints/system/drawer_subscription")
             .then()
             .statusCode(HttpStatus.SC_OK)
             .contentType(JSON)
@@ -1881,8 +1951,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .when()
             .contentType(JSON)
             .body(Json.encode(requestProps))
-            .pathParam("endpoint_type", endpointTypeUrl)
-            .post("/endpoints/system/{endpoint_type}")
+            .post("/endpoints/system/drawer_subscription")
             .then()
             .statusCode(HttpStatus.SC_OK)
             .contentType(JSON)
@@ -1898,8 +1967,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .when()
             .contentType(JSON)
             .body(Json.encode(requestProps))
-            .pathParam("endpoint_type", endpointTypeUrl)
-            .post("/endpoints/system/{endpoint_type}")
+            .post("/endpoints/system/drawer_subscription")
             .then()
             .statusCode(HttpStatus.SC_OK)
             .contentType(JSON)
@@ -1909,120 +1977,90 @@ public class EndpointResourceTest extends DbIsolatedTest {
         responsePoint.mapTo(EndpointDTO.class);
         assertTrue(endpointIds.contains(responsePoint.getString("id")));
 
+        // It is not possible to delete it
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DELETE, ResourceType.INTEGRATION, defaultEndpointId);
+
+        stringResponse = given()
+            .header(identityHeader)
+            .when().delete("/endpoints/" + defaultEndpointId)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
+
+        // It is not possible to disable or enable it
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.DISABLE, ResourceType.INTEGRATION, defaultEndpointId);
+
+        stringResponse = given()
+            .header(identityHeader)
+            .when().delete("/endpoints/" + defaultEndpointId + "/enable")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
+
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.ENABLE, ResourceType.INTEGRATION, defaultEndpointId);
+
+        stringResponse = given()
+            .header(identityHeader)
+            .when().put("/endpoints/" + defaultEndpointId + "/enable")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
+
+        // It is not possible to update it
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, defaultEndpointId);
+
+        stringResponse = given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body(Json.encode(ep))
+            .when().put("/endpoints/" + defaultEndpointId)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
+
+        // It is not possible to update it to other type
+        ep.setType(EndpointType.WEBHOOK);
+
+        WebhookProperties webhookProperties = new WebhookProperties();
+        webhookProperties.setMethod(POST);
+        webhookProperties.setDisableSslVerification(false);
+        webhookProperties.setSecretToken("my-super-secret-token");
+        webhookProperties.setUrl(getMockServerUrl());
+        ep.setProperties(webhookProperties);
+
+        stringResponse = given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body(Json.encode(ep))
+            .when().put("/endpoints/" + defaultEndpointId)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract().asString();
+        assertSystemEndpointTypeError(stringResponse, EndpointType.DRAWER);
     }
 
     @ParameterizedTest
-    @MethodSource("kesselFlagsEmailOrDrawerEndpoints")
-    void testAddEndpointEmailOrDrawerSubscriptionRbacAsRegularEndpoint(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled, final EndpointType endpointType) {
+    @MethodSource("kesselFlags")
+    void testAddEndpointEmailSubscriptionRbac(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled) {
         this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
+
+        String validGroupId = "f85517d0-063b-4eed-a501-e79ffc1f5ad3";
+        String unknownGroupId = "f44f50d5-acab-482c-a3cf-087faf2c709c";
 
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
-
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.INTEGRATIONS_CREATE, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-
-        this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-
-        String validGroupId = "f85517d0-063b-4eed-a501-e79ffc1f5ad3";
-        String unknownGroupId = "f44f50d5-acab-482c-a3cf-087faf2c709c";
-
         MockServerConfig.addGroupResponse(identityHeaderValue, validGroupId, HttpStatus.SC_OK);
         MockServerConfig.addGroupResponse(identityHeaderValue, unknownGroupId, HttpStatus.SC_NOT_FOUND);
 
-        SystemSubscriptionProperties requestProps = new SystemSubscriptionProperties();
-
-        Endpoint ep = new Endpoint();
-        ep.setType(endpointType);
-        ep.setName("Endpoint: " + endpointType.name());
-        ep.setDescription("Subscribe!");
-        ep.setEnabled(true);
-        ep.setProperties(requestProps);
-
-        requestProps.setGroupId(UUID.fromString(validGroupId));
-
-        Response response = given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .body(endpointMapper.toDTO(ep))
-            .post("/endpoints")
-            .then()
-            .statusCode(HttpStatus.SC_OK)
-            .contentType(JSON)
-            .extract().response();
-
-        JsonObject responsePoint = new JsonObject(response.getBody().asString());
-        responsePoint.mapTo(EndpointDTO.class);
-        String endpointId = responsePoint.getString("id");
-        assertNotNull(endpointId);
-
-        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, IntegrationPermission.EDIT, ResourceType.INTEGRATION, endpointId);
-
-        // Same group again yields the same endpoint id
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .body(endpointMapper.toDTO(ep))
-            .put("/endpoints/" + endpointId)
-            .then()
-            .statusCode(HttpStatus.SC_OK)
-            .extract().response();
-
-        // Invalid group is a bad request (i.e. group does not exist)
-        requestProps.setGroupId(UUID.fromString(unknownGroupId));
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .body(endpointMapper.toDTO(ep))
-            .put("/endpoints/" + endpointId)
-            .then()
-            .statusCode(HttpStatus.SC_BAD_REQUEST)
-            .extract().response();
-
-        // Can't specify admin and group - bad request
-        requestProps.setGroupId(UUID.fromString(validGroupId));
-        requestProps.setOnlyAdmins(true);
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .body(endpointMapper.toDTO(ep))
-            .put("/endpoints/" + endpointId)
-            .then()
-            .statusCode(HttpStatus.SC_BAD_REQUEST)
-            .extract().response();
-    }
-
-
-    @ParameterizedTest
-    @MethodSource("kesselFlagsEmailOrDrawerEndpoints")
-    void testAddEndpointEmailOrDrawerSubscriptionRbac(final boolean isKesselRelationsApiEnabled, final boolean isKesselInventoryUseForPermissionsChecksEnabled, final EndpointType endpointType) {
-        this.kesselTestHelper.mockKesselRelations(isKesselRelationsApiEnabled, isKesselInventoryUseForPermissionsChecksEnabled);
         // valid group id
         this.kesselTestHelper.mockDefaultWorkspaceId(DEFAULT_ORG_ID);
-
-        final String endpointTypeUrl;
-        if (EndpointType.EMAIL_SUBSCRIPTION == endpointType) {
-            endpointTypeUrl = "email_subscription";
-            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-        } else {
-            endpointTypeUrl = "drawer_subscription";
-            this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_DRAWER_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
-        }
-
-        String validGroupId = "f85517d0-063b-4eed-a501-e79ffc1f5ad3";
-        String unknownGroupId = "f44f50d5-acab-482c-a3cf-087faf2c709c";
-
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
-        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
-
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
-        MockServerConfig.addGroupResponse(identityHeaderValue, validGroupId, HttpStatus.SC_OK);
-        MockServerConfig.addGroupResponse(identityHeaderValue, unknownGroupId, HttpStatus.SC_NOT_FOUND);
+        this.kesselTestHelper.mockKesselPermission(DEFAULT_USER, WorkspacePermission.CREATE_EMAIL_SUBSCRIPTION_INTEGRATION, ResourceType.WORKSPACE, KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID.toString());
 
         RequestSystemSubscriptionProperties requestProps = new RequestSystemSubscriptionProperties();
         requestProps.setGroupId(UUID.fromString(validGroupId));
@@ -2032,8 +2070,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .contentType(JSON)
                 .body(Json.encode(requestProps))
-                .pathParam("endpoint_type", endpointTypeUrl)
-                .post("/endpoints/system/{endpoint_type}")
+                .post("/endpoints/system/email_subscription")
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
@@ -2050,8 +2087,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .contentType(JSON)
                 .body(Json.encode(requestProps))
-                .pathParam("endpoint_type", endpointTypeUrl)
-                .post("/endpoints/system/{endpoint_type}")
+                .post("/endpoints/system/email_subscription")
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .contentType(JSON)
@@ -2068,8 +2104,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .contentType(JSON)
                 .body(Json.encode(requestProps))
-                .pathParam("endpoint_type", endpointTypeUrl)
-                .post("/endpoints/system/{endpoint_type}")
+                .post("/endpoints/system/email_subscription")
                 .then()
                 .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .contentType(JSON)
@@ -2083,8 +2118,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .when()
                 .contentType(JSON)
                 .body(Json.encode(requestProps))
-                .pathParam("endpoint_type", endpointTypeUrl)
-                .post("/endpoints/system/{endpoint_type}")
+                .post("/endpoints/system/email_subscription")
                 .then()
                 .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .contentType(JSON)
@@ -4931,17 +4965,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
             Arguments.of(false, false), // Should use RBAC
             Arguments.of(true, false), // Should use Kessel relations
             Arguments.of(true, true) // Should use Kessel inventory
-        );
-    }
-
-    private static Stream<Arguments> kesselFlagsEmailOrDrawerEndpoints() {
-        return Stream.of(
-            Arguments.of(false, false, EndpointType.EMAIL_SUBSCRIPTION), // Should use RBAC
-            Arguments.of(true, false, EndpointType.EMAIL_SUBSCRIPTION), // Should use Kessel relations
-            Arguments.of(true, true, EndpointType.EMAIL_SUBSCRIPTION), // Should use Kessel inventory
-            Arguments.of(false, false, EndpointType.DRAWER), // Should use RBAC
-            Arguments.of(true, false, EndpointType.DRAWER), // Should use Kessel relations
-            Arguments.of(true, true, EndpointType.DRAWER) // Should use Kessel inventory
         );
     }
 }

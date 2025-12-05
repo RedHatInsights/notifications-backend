@@ -44,8 +44,6 @@ import static jakarta.persistence.LockModeType.PESSIMISTIC_WRITE;
 @ApplicationScoped
 public class EndpointRepository {
 
-    public static final List<EndpointType> INTERNAL_ENDPOINT_TYPES = List.of(EMAIL_SUBSCRIPTION, DRAWER);
-
     @Inject
     EntityManager entityManager;
 
@@ -115,7 +113,7 @@ public class EndpointRepository {
         loadProperties(endpoints);
         for (Endpoint endpoint : endpoints) {
             if (endpoint.getOrgId() == null) {
-                if (endpoint.getType() != null && INTERNAL_ENDPOINT_TYPES.contains(endpoint.getType())) {
+                if (endpoint.getType() != null && endpoint.getType().isSystemEndpointType) {
                     endpoint.setOrgId(orgId);
                 } else {
                     Log.warnf("Invalid endpoint configured in default behavior group: %s", endpoint.getId());
@@ -165,9 +163,9 @@ public class EndpointRepository {
             return false;
         }
 
-        // Email and Drawer endpoints should not be disabled since they are considered
+        // System endpoints should not be disabled since they are considered
         // internal.
-        if (INTERNAL_ENDPOINT_TYPES.contains(endpoint.getType())) {
+        if (endpoint.getType().isSystemEndpointType) {
             return false;
         }
 
@@ -304,7 +302,7 @@ public class EndpointRepository {
      */
     @Transactional
     public boolean disableEndpoint(Endpoint endpoint) {
-        if (INTERNAL_ENDPOINT_TYPES.contains(endpoint.getType())) {
+        if (endpoint.getType().isSystemEndpointType) {
             return false;
         }
 
