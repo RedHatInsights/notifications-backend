@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
-import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
 import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
@@ -59,7 +58,6 @@ public class EngineConfig {
     private String toggleBlacklistedEventTypes;
     private String toggleKafkaOutgoingHighVolumeTopic;
     private String toggleIgnoreSeverityForApplications;
-    private String toggleEventDeduplication;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -161,7 +159,6 @@ public class EngineConfig {
         toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
         toggleBlacklistedEventTypes = toggleRegistry.register("blacklisted-event-types", true);
         toggleIgnoreSeverityForApplications = toggleRegistry.register("ignore-severity-for-applications", true);
-        toggleEventDeduplication = toggleRegistry.register("event-deduplication", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -332,15 +329,6 @@ public class EngineConfig {
     public boolean isValkeyKafkaMessageDeduplicatorEnabled() {
         if (unleashEnabled) {
             return this.unleash.isEnabled(this.valkeyKafkaMessageDeduplicatorToggle, false);
-        } else {
-            return false;
-        }
-    }
-
-    public boolean isEventDeduplicationEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = UnleashContextBuilder.buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(toggleEventDeduplication, unleashContext, false);
         } else {
             return false;
         }

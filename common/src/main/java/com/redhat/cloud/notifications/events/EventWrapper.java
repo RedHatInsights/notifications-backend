@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.events;
 
 import com.redhat.cloud.notifications.models.EventTypeKey;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -18,6 +17,4 @@ public interface EventWrapper<T, K extends EventTypeKey> {
     String getOrgId();
 
     String getAccountId();
-
-    LocalDateTime getTimestamp();
 }

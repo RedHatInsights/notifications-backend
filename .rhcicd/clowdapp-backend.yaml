@@ -247,8 +247,6 @@ objects:
       VACUUM ANALYZE notification_history;
       CALL cleanKafkaMessagesIds();
       VACUUM ANALYZE kafka_message;
-      CALL cleanEventDeduplication();
-      VACUUM ANALYZE event_deduplication;
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)

@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.models.EventTypeKeyFqn;
 import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class EventWrapperCloudEvent implements EventWrapper<NotificationsConsoleCloudEvent, EventTypeKeyFqn> {
@@ -39,10 +38,5 @@ public class EventWrapperCloudEvent implements EventWrapper<NotificationsConsole
     @Override
     public String getAccountId() {
         return cloudEvent.getAccountId();
-    }
-
-    @Override
-    public LocalDateTime getTimestamp() {
-        return cloudEvent.getTime();
     }
 }
