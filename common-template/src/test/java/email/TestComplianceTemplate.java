@@ -1,6 +1,5 @@
 package email;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.redhat.cloud.notifications.ingress.Action;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
@@ -59,10 +58,9 @@ public class TestComplianceTemplate extends EmailTemplatesRendererHelper {
         assertEquals("Instant notification - Policy report failed to upload - Compliance - Red Hat Enterprise Linux", result);
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testDailyReportEmailBody(boolean useBetaTemplate) throws JsonProcessingException {
-        String result = generateAggregatedEmailBody(Map.of(), useBetaTemplate);
+    @Test
+    public void testDailyReportEmailBody() {
+        String result = generateAggregatedEmailBody(Map.of());
         assertTrue(result.contains("Red Hat Lightspeed has identified one or more systems"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }

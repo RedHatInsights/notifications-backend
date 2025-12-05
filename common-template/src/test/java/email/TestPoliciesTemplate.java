@@ -1,6 +1,5 @@
 package email;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.redhat.cloud.notifications.ingress.Action;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
@@ -8,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,10 +61,9 @@ public class TestPoliciesTemplate extends EmailTemplatesRendererHelper {
         assertNotEquals(ignoreUserPreferences, result.contains("Manage email preferences"));
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testDailyEmailBodyMultiplePoliciesAndSystems(boolean useBetaTemplate) throws JsonProcessingException {
-        String result = generateAggregatedEmailBody(buildPoliciesAggregatedPayload(), useBetaTemplate);
+    @Test
+    void testDailyEmailBodyMultiplePoliciesAndSystems() {
+        String result = generateAggregatedEmailBody(buildPoliciesAggregatedPayload());
         assertTrue(result.contains("Review the 3 policies that triggered 3 unique systems"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
@@ -103,9 +100,8 @@ public class TestPoliciesTemplate extends EmailTemplatesRendererHelper {
         return payload;
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testDailyEmailBodyOnePoliciesAndOneSystem(boolean useBetaTemplate) {
+    @Test
+    void testDailyEmailBodyOnePoliciesAndOneSystem() {
         LocalDateTime startTime = LocalDateTime.of(2021, 4, 22, 13, 15, 33);
         LocalDateTime endTime = LocalDateTime.of(2021, 4, 22, 14, 15, 33);
 
@@ -123,7 +119,7 @@ public class TestPoliciesTemplate extends EmailTemplatesRendererHelper {
         payload.put("policies", policies);
         payload.put("unique_system_count", 1);
 
-        String result = generateAggregatedEmailBody(payload, useBetaTemplate);
+        String result = generateAggregatedEmailBody(payload);
         assertTrue(result.contains("Review the 1 policy that triggered 1 system"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }

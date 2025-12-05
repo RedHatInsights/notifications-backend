@@ -52,52 +52,6 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
         "   \"end_time\":null" +
         "}";
 
-    public static final String JSON_INVENTORY_FULL_AGGREGATION_CONTEXT = """
-        {
-           "inventory":{
-              "errors":[
-                 {
-                    "message":"error 1",
-                    "display_name":"random_name"
-                 },
-                 {
-                    "message":"error 2",
-                    "display_name":"random_name2"
-                 }
-              ],
-              "new_systems":[
-                 {
-                    "inventory_id":"05232955-721f-4e50-8a56-c8f3c45b17c3",
-                    "display_name":"new-second-system-display-name"
-                 },
-                 {
-                    "inventory_id":"562a01ad-31d3-472e-aec7-aded82787d9b",
-                    "display_name":"new-system-display-name"
-                 }
-              ],
-              "stale_systems":[
-                 {
-                    "inventory_id":"d7646022-dcdc-44df-b1a8-f796d932d5a1",
-                    "display_name":"stale-system-display-name"
-                 },
-                 {
-                    "inventory_id":"75bb495a-3492-470e-b8c3-7ec45c813c08",
-                    "display_name":"second-stale-system-display-name"
-                 }
-              ],
-              "deleted_systems":[
-                 {
-                    "display_name":"deleted-system-display-name"
-                 },
-                 {
-                    "display_name":"second-deleted-system-display-name"
-                 }
-              ]
-           },
-           "start_time":null,
-           "end_time":null
-        }""";
-
     @Override
     protected String getApp() {
         return "inventory";
@@ -133,19 +87,14 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
 
     @ParameterizedTest
     @ValueSource(strings = {"NEW", "STALE", "DELETED", "NEW_STALE", "NEW_STALE_DELETE"})
-    public void testDailyEmailBody(final String groupToValidate) throws JsonProcessingException {
-        testDailyEmailBody(groupToValidate, false);
-        testDailyEmailBody(groupToValidate, true);
-    }
-
-    private void testDailyEmailBody(final String groupToValidate, boolean useBetaTemplate) throws JsonProcessingException {
+    public void testDailyEmailBody(final String groupToValidte) throws JsonProcessingException {
         Map<String, Object> aggregationContext = objectMapper.readValue(JSON_INVENTORY_DEFAULT_AGGREGATION_CONTEXT, new TypeReference<Map<String, Object>>() { });
 
         Map<UUID, String> newSystemsMap = new HashMap<>();
         Map<UUID, String> staleSystemsMap = new HashMap<>();
         Map<UUID, String> deletedSystemsMap = new HashMap<>();
 
-        if (groupToValidate.contains("NEW")) {
+        if (groupToValidte.contains("NEW")) {
             // Add two new system events.
             newSystemsMap = Map.of(
                 UUID.randomUUID(), "new-system-display-name",
@@ -155,7 +104,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
             addToAggregationContext("new_systems", newSystemsMap, aggregationContext);
         }
 
-        if (groupToValidate.contains("STALE")) {
+        if (groupToValidte.contains("STALE")) {
             // Add two "system became stale" events.
             staleSystemsMap = Map.of(
                 UUID.randomUUID(), "stale-system-display-name",
@@ -165,7 +114,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
             addToAggregationContext("stale_systems", staleSystemsMap, aggregationContext);
         }
 
-        if (groupToValidate.contains("DELETED")) {
+        if (groupToValidte.contains("DELETED")) {
             // Add two "system deleted" events.
             deletedSystemsMap = Map.of(
                 UUID.randomUUID(), "deleted-system-display-name",
@@ -175,14 +124,14 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
             addToAggregationContext("deleted_systems", deletedSystemsMap, aggregationContext);
         }
 
-        String result = generateAggregatedEmailBody(aggregationContext, useBetaTemplate);
+        String result = generateAggregatedEmailBody(aggregationContext);
         JsonObject context = new JsonObject(aggregationContext);
         assertTrue(context.getJsonObject("inventory").getJsonArray("errors").size() < 10);
         assertTrue(result.contains("Host Name"), "Body should contain 'Host Name' header");
         assertTrue(result.contains("Error"), "Body should contain 'Error' header");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
 
-        assertOpenInventoryInsightsButtonPresent(result, false, useBetaTemplate);
+        assertOpenInventoryInsightsButtonPresent(result, false, false);
 
         // Make sure that the section headline is present.
         assertTrue(result.contains("Inventory"), "the \"Inventory\" header was not found as the section title");
@@ -393,7 +342,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
             assertEquals(expected,
                 htmlString.contains(
                     String.format(
-                        "target=\"_blank\" href=\"%s/insights/inventory/%s\">%s</a>",
+                        "<a target=\"_blank\" href=\"%s/insights/inventory/%s\">%s</a>",
                         environment.url(),
                         entry.getKey(),
                         entry.getValue()
