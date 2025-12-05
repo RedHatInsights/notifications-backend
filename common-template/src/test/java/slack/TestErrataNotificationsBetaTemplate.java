@@ -15,7 +15,7 @@ import static helpers.ErrataTestHelpers.ENHANCEMENT_ERRATA;
 import static helpers.ErrataTestHelpers.SECURITY_ERRATA;
 
 @QuarkusTest
-class TestErrataNotificationsTemplate {
+class TestErrataNotificationsBetaTemplate {
 
     private static final Action ACTION = ErrataTestHelpers.createErrataAction();
 
@@ -25,7 +25,7 @@ class TestErrataNotificationsTemplate {
     @ValueSource(strings = { BUGFIX_ERRATA, SECURITY_ERRATA, ENHANCEMENT_ERRATA })
     @ParameterizedTest
     void testRenderedErrataTemplates(final String eventType) {
-        TemplateDefinition templateConfig = new TemplateDefinition(SLACK, "subscription-services", "errata-notifications", eventType);
+        TemplateDefinition templateConfig = new TemplateDefinition(SLACK, "subscription-services", "errata-notifications", eventType, true);
         String result = templateService.renderTemplate(templateConfig, ACTION);
         ErrataTestHelpers.checkErrataChatTemplateContent(eventType, result, ACTION, "slack");
     }

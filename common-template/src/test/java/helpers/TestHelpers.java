@@ -40,7 +40,6 @@ public class TestHelpers {
     public static final String POLICY_ID_2 = "0123-456-789-5721f";
     public static final String POLICY_NAME_2 = "Latest foo is installed";
     public static final String EVENT_TYPE = "policy-triggered";
-    public static final String NOT_USE_EVENT_TYPE = "not use";
 
     public static Action createPoliciesAction(String accountId, String bundle, String application, String hostDisplayName) {
         Action emailActionMessage = new Action();
@@ -90,10 +89,6 @@ public class TestHelpers {
     }
 
     public static Action createAdvisorAction(String accountId, String eventType) {
-        return createAdvisorAction(accountId, eventType, null);
-    }
-
-    public static Action createAdvisorAction(String accountId, String eventType, String severity) {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle("rhel");
         emailActionMessage.setApplication("advisor");
@@ -101,7 +96,6 @@ public class TestHelpers {
         emailActionMessage.setEventType(eventType);
         emailActionMessage.setAccountId(accountId);
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
-        emailActionMessage.setSeverity(severity);
 
         if (eventType.equals("deactivated-recommendation")) {
             emailActionMessage.setContext(new Context.ContextBuilder().build());
@@ -402,16 +396,12 @@ public class TestHelpers {
     }
 
     public String renderTemplate(final IntegrationType integrationType, final String eventType, final Action action, final String inventoryUrl, final String applicationUrl) {
-        return renderTemplate(integrationType, eventType, action, inventoryUrl, applicationUrl, false);
-    }
-
-    public String renderTemplate(final IntegrationType integrationType, final String eventType, final Action action, final String inventoryUrl, final String applicationUrl, boolean useBetaTemplate) {
-        TemplateDefinition templateConfig = new TemplateDefinition(integrationType, "rhel", "unknown-app", eventType, useBetaTemplate);
+        TemplateDefinition templateConfig = new TemplateDefinition(integrationType, "rhel", "unknown-app", eventType);
         Map<String, Object> map = objectMapper
             .convertValue(action, new TypeReference<Map<String, Object>>() { });
         map.put("inventory_url", inventoryUrl);
         map.put("application_url", applicationUrl);
-        map.put("source", TestHelpers.buildSourceParameter("Red Hat Enterprise Linux", "Policies", NOT_USE_EVENT_TYPE));
+        map.put("source", TestHelpers.buildSourceParameter("Red Hat Enterprise Linux", "Policies", "not use"));
         return templateService.renderTemplate(templateConfig, map);
     }
 }
