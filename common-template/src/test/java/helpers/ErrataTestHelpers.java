@@ -65,7 +65,7 @@ public class ErrataTestHelpers {
                                 new Payload.PayloadBuilder()
                                         .withAdditionalProperty("id", "RHSA-2024:3842")
                                         .withAdditionalProperty("severity", "Important")
-                                        .withAdditionalProperty("synopsis", "c-ares security update, also need a long text to validate columns width")
+                                        .withAdditionalProperty("synopsis", "c-ares security update")
                                         .build()
                         )
                         .build(),

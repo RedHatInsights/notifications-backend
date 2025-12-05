@@ -68,7 +68,7 @@
     {#else}
         <p style="{body-section-p-style}">There are {action.context.errata.new-subscription-enhancement-errata.size()} enhancements affecting your subscriptions.</p>
     {/if}
-    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 0 8px 0 8px; width: 100%;"><tr><td>
+    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 0 8px 0px 8px; width: 100%;"><tr><td>
     <table style="{body-section-table-style}">
         <thead>
             <tr>
@@ -99,12 +99,12 @@
     {#else}
         <p style="{body-section-p-style}">There are {action.context.errata.new-subscription-security-errata.size()} security updates affecting your subscriptions.</p>
     {/if}
-    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 0 8px 0 8px; width: 100%;"><tr><td>
+    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 0 8px 0px 8px; width: 100%;"><tr><td>
     <table style="{body-section-table-style}">
         <thead>
             <tr>
               <th style="{body-section-table-th-style} width: 30%;">Security update</th>
-              <th style="{body-section-table-th-style} min-width: 90px;">Severity</th>
+              <th style="{body-section-table-th-style}">Severity</th>
               <th style="{body-section-table-th-style}">Synopsis</th>
             </tr>
         </thead>
