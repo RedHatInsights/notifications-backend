@@ -72,7 +72,7 @@
         <swagger-v3-core.version>2.2.40</swagger-v3-core.version>
         <failsafe.version>3.3.2</failsafe.version>
 
-        <wiremock.version>3.13.2</wiremock.version>
+        <wiremock.version>3.13.1</wiremock.version>
 
         <insights-notification-schemas-java.version>1.0.1</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>2.7.1</clowder-quarkus-config-source.version>
