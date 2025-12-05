@@ -62,7 +62,7 @@
 
         <surefire-plugin.version>3.5.4</surefire-plugin.version>
         <checkstyle-plugin.version>3.6.0</checkstyle-plugin.version>
-        <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+        <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
         <jacoco-plugin.version>0.8.14</jacoco-plugin.version>
         <checkstyle.version>12.1.2</checkstyle.version>
 
