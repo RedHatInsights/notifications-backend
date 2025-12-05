@@ -85,10 +85,9 @@ public class TestRbacTemplate extends EmailTemplatesRendererHelper {
     void shouldTestAllEventTypeTemplateBodies(String eventType) {
         Action action = RbacTestHelpers.createRbacAction();
         String result = generateEmailBody(eventType, action);
-        testBody(eventType, result, false);
-        result = generateEmailBody(eventType, action, true);
-        testBody(eventType, result, true);
+        testBody(eventType, result);
     }
+
 
     private void testTitle(String eventType, String result) {
         switch (eventType) {
@@ -142,162 +141,85 @@ public class TestRbacTemplate extends EmailTemplatesRendererHelper {
         }
     }
 
-    private void testBody(String eventType, String result, boolean useBetaTemplate) {
+    private void testBody(String eventType, String result) {
         switch (eventType) {
             case RH_NEW_ROLE_AVAILABLE:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("Red Hat now provides the"));
-                } else {
-                    assertTrue(result.contains("Red Hat now provides a new role"));
-                }
+                assertTrue(result.contains("Red Hat now provides a new role"));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case RH_PLATFORM_DEFAULT_ROLE_UPDATED:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("Red Hat updated the"));
-                    assertTrue(result.contains("The role belongs to the"));
-                } else {
-                    assertTrue(result.contains("Red Hat has updated the role"));
-                    assertTrue(result.contains("The role belongs to the platform default access group and"));
-                    assertTrue(result.contains("will be inherited by all users within your account."));
-                }
+                assertTrue(result.contains("Red Hat has updated the role"));
+                assertTrue(result.contains("The role belongs to the platform default access group and"));
+                assertTrue(result.contains("will be inherited by all users within your account."));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("Red Hat updated the"));
-                    assertTrue(result.contains("The role does not belong to the"));
-                } else {
-                    assertTrue(result.contains("Red Hat has updated the role"));
-                    assertTrue(result.contains("The role does not belong to the platform default access group."));
-                }
+                assertTrue(result.contains("Red Hat has updated the role"));
+                assertTrue(result.contains("The role does not belong to the platform default access group."));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case CUSTOM_ROLE_CREATED:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("Custom role created"));
-                    assertTrue(result.contains("created the"));
-                } else {
-                    assertTrue(result.contains("custom role"));
-                    assertTrue(result.contains("has been created by"));
-                }
+                assertTrue(result.contains("custom role"));
+                assertTrue(result.contains("has been created by"));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case CUSTOM_ROLE_UPDATED:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("Custom role updated"));
-                    assertTrue(result.contains("updated the"));
-                } else {
-                    assertTrue(result.contains("has been updated by"));
-                    assertTrue(result.contains("Custom role"));
-                }
+                assertTrue(result.contains("has been updated by"));
+                assertTrue(result.contains("Custom role"));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case CUSTOM_ROLE_DELETED:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("Custom role deleted"));
-                    assertTrue(result.contains("deleted the"));
-                } else {
-                    assertTrue(result.contains("Custom role"));
-                    assertTrue(result.contains("has been deleted by"));
-                }
+                assertTrue(result.contains("Custom role"));
+                assertTrue(result.contains("has been deleted by"));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("Red Hat added the"));
-                } else {
-                    assertTrue(result.contains("Red Hat added a role"));
-                    assertTrue(result.contains("to platform default access group."));
-                }
+                assertTrue(result.contains("Red Hat added a role"));
+                assertTrue(result.contains("to platform default access group."));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("Red Hat removed the"));
-                } else {
-                    assertTrue(result.contains("Red Hat removed a role"));
-                    assertTrue(result.contains("from platform default access group"));
-                }
+                assertTrue(result.contains("Red Hat removed a role"));
+                assertTrue(result.contains("from platform default access group"));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case CUSTOM_DEFAULT_ACCESS_UPDATED:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("Custom default access group updated"));
-                } else {
-                    assertTrue(result.contains("Custom platform default access group has been updated by"));
-                }
+                assertTrue(result.contains("Custom platform default access group has been updated by"));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case GROUP_CREATED:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("Group created"));
-                    assertTrue(result.contains("created the"));
-                } else {
-                    assertTrue(result.contains("A custom group"));
-                    assertTrue(result.contains("has been created by"));
-                }
+                assertTrue(result.contains("A custom group"));
+                assertTrue(result.contains("has been created by"));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case GROUP_UPDATED:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("role was added to the group."));
-                    assertTrue(result.contains("user was removed from the group."));
-                } else {
-                    assertTrue(result.contains("Custom group has been updated by"));
-                }
+                assertTrue(result.contains("Custom group has been updated by"));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case GROUP_DELETED:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("Group deleted"));
-                    assertTrue(result.contains("deleted the"));
-                } else {
-                    assertTrue(result.contains("Custom group"));
-                    assertTrue(result.contains("has been deleted by"));
-                }
+                assertTrue(result.contains("Custom group"));
+                assertTrue(result.contains("has been deleted by"));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("Platform default group turned into custom"));
-                    assertTrue(result.contains("It will receive no further updates from Red Hat Hybrid Cloud Console."));
-                } else {
-                    assertTrue(result.contains("Platform default group is modified by"));
-                    assertTrue(result.contains("Red Hat will not be responsible for managing it from now on."));
-                }
+                assertTrue(result.contains("Platform default group is modified by"));
+                assertTrue(result.contains("Red Hat will not be responsible for managing it from now on."));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case REQUEST_ACCESS:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("Access requested"));
-                    assertTrue(result.contains("A user within your organization requested"));
-                    assertTrue(result.contains("Granting Access:"));
-                    assertTrue(result.contains("Denying Access:"));
-                    assertTrue(result.contains("https://console.redhat.com/stuff"));
-                    assertTrue(result.contains("I want access to stuff"));
-                    assertTrue(result.contains("testUser AT somewhere"));
-                } else {
-                    assertTrue(result.contains("Request for access received"));
-                    assertTrue(result.contains("within console.redhat.com. Please review this request and decide whether to grant or deny access."));
-                    assertTrue(result.contains("Granting Access:"));
-                    assertTrue(result.contains("Denying Access:"));
-                    assertTrue(result.contains("https://console.redhat.com/stuff"));
-                    assertTrue(result.contains("I want access to stuff"));
-                    assertTrue(result.contains("testUser AT somewhere"));
-                }
+                assertTrue(result.contains("Request for access received"));
+                assertTrue(result.contains("within console.redhat.com. Please review this request and decide whether to grant or deny access."));
+                assertTrue(result.contains("Granting Access:"));
+                assertTrue(result.contains("Denying Access:"));
+                assertTrue(result.contains("https://console.redhat.com/stuff"));
+                assertTrue(result.contains("I want access to stuff"));
+                assertTrue(result.contains("testUser AT somewhere"));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             case RH_TAM_ACCESS_REQUESTED:
-                if (useBetaTemplate) {
-                    assertTrue(result.contains("New TAM access request"));
-                    assertTrue(result.contains("A Red Hat technical account manager requested access to your account."));
-                    assertTrue(result.contains("to review the request."));
-                } else {
-                    assertTrue(result.contains("New TAM Access Request"));
-                    assertTrue(result.contains("A technical account manager requested to access your account."));
-                    assertTrue(result.contains("Check the request in Red Hat Lightspeed"));
-                }
+                assertTrue(result.contains("New TAM Access Request"));
+                assertTrue(result.contains("A technical account manager requested to access your account."));
+                assertTrue(result.contains("Check the request in Red Hat Lightspeed"));
                 assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
                 break;
             default:

@@ -28,7 +28,7 @@
     <table border="0" cellpadding="0" cellspacing="0" width="100%">
         <tr>
             <td align="center" valign="top" >
-                <table border="0" cellpadding="0" cellspacing="0" style="background-color: #ededed; width: 650px;" >
+                <table border="0" cellpadding="0" cellspacing="0" style="background-color: rgb(237, 237, 237); width: 600px;" >
 
                     <!-- Head -->
                     <tr>
@@ -65,28 +65,26 @@
                                                 <td style="font-size: 24px; font-weight: 500; padding-top: 16px; padding-bottom: 16px; padding-left: 22px;">
                                                     {#insert content-title}{/}
                                                 </td>
-                                                {#if renderTitleRightPart.or(false)}
-                                                    <td style="text-align: right; padding-top: 16px; padding-bottom: 16px; padding-left: 22px; padding-right: 22px;">
-                                                        <!--[if mso]>
-                                                        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" height="25">
-                                                            <tr>
-                                                                <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_left.png" alt="" height="25" style="display: block; border: none;" /></td>
-                                                                <td style="font-size: 14px; font-weight: 400; color: #ffffff; vertical-align: middle; background-color: #0066cc;">
-                                                                    {#insert content-title-right-part}{/}
-                                                                </td>
-                                                                <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_right.png" alt="" height="25" style="display: block; border: none;" /></td>
-                                                            </tr>
-                                                        </table>
-
-                                                        <![endif]-->
-
-                                                        <!--[if !mso]><!-->
-                                                        <span style="font-size: 16px; font-weight: 400; color: #ffffff; display: inline-block; padding-right: 8px; padding-left: 8px; text-align: center; background-color: #0066cc; border-radius: 16px;">
+                                                <td style="text-align: right; padding-top: 16px; padding-bottom: 16px; padding-left: 22px; padding-right: 22px;">
+                                                    <!--[if mso]>
+                                                    <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" height="25">
+                                                        <tr>
+                                                            <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_left.png" alt="" height="25" style="display: block; border: none;" /></td>
+                                                            <td style="font-size: 14px; font-weight: 400; color: #ffffff; vertical-align: middle; background-color: #0066cc;">
                                                                 {#insert content-title-right-part}{/}
-                                                        </span>
-                                                        <!--<![endif]-->
-                                                    </td>
-                                                {/if}
+                                                            </td>
+                                                            <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_right.png" alt="" height="25" style="display: block; border: none;" /></td>
+                                                        </tr>
+                                                    </table>
+
+                                                    <![endif]-->
+
+                                                    <!--[if !mso]><!-->
+                                                    <span style="font-size: 16px; font-weight: 400; color: #ffffff; display: inline-block; padding-right: 8px; padding-left: 8px; text-align: center; background-color: #0066cc; border-radius: 16px;">
+                                                            {#insert content-title-right-part}{/}
+                                                    </span>
+                                                    <!--<![endif]-->
+                                                </td>
                                             </tr>
                                         </table>
                                     </td>

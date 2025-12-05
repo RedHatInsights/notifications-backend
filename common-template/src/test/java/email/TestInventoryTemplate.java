@@ -71,17 +71,12 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
         assertEquals("[IMPORTANT] Instant notification - Validation error - Inventory - Red Hat Enterprise Linux", result);
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testInstantEmailBody(boolean useBetaTemplate) {
+    @Test
+    public void testInstantEmailBody() {
         Action action = InventoryTestHelpers.createInventoryAction("", "", "", "FooEvent");
-        String result = generateEmailBody(EVENT_TYPE_VALIDATION_ERROR, action, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("Data in a payload from insights-client was unable to be processed in the inventory due to corrupted data, incorrect values, or another issue."));
-        } else {
-            assertTrue(result.contains(InventoryTestHelpers.DISPLAY_NAME_1), "Body should contain host display name" + InventoryTestHelpers.DISPLAY_NAME_1);
-            assertTrue(result.contains(InventoryTestHelpers.ERROR_MESSAGE_1), "Body should contain error message" + InventoryTestHelpers.ERROR_MESSAGE_1);
-        }
+        String result = generateEmailBody(EVENT_TYPE_VALIDATION_ERROR, action);
+        assertTrue(result.contains(InventoryTestHelpers.DISPLAY_NAME_1), "Body should contain host display name" + InventoryTestHelpers.DISPLAY_NAME_1);
+        assertTrue(result.contains(InventoryTestHelpers.ERROR_MESSAGE_1), "Body should contain error message" + InventoryTestHelpers.ERROR_MESSAGE_1);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -131,7 +126,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("Error"), "Body should contain 'Error' header");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
 
-        assertOpenInventoryInsightsButtonPresent(result, false, false);
+        assertOpenInventoryInsightsButtonPresent(result, false);
 
         // Make sure that the section headline is present.
         assertTrue(result.contains("Inventory"), "the \"Inventory\" header was not found as the section title");
@@ -168,7 +163,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
         final UUID inventoryId = UUID.randomUUID();
         eventTypeDisplayName = "New system registered";
         final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", EVENT_TYPE_NEW_SYSTEM_REGISTERED, inventoryId, hostDisplayName);
-        final String result = generateEmailSubject(EVENT_TYPE_NEW_SYSTEM_REGISTERED, action);
+        final String result = this.generateEmailSubject(EVENT_TYPE_NEW_SYSTEM_REGISTERED, action);
 
         Assertions.assertEquals(EMAIL_SUBJECT_NEW_SYSTEM_REGISTERED, result);
     }
@@ -177,23 +172,18 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
      * Tests that the subject body for the "new system registered" event is
      * correctly rendered and contains the expected text.
      */
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testInstantNewSystemRegisteredBody(boolean useBetaTemplate) {
+    @Test
+    void testInstantNewSystemRegisteredBody() {
         final String hostDisplayName = "new-host";
         final UUID inventoryId = UUID.randomUUID();
 
         final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", EVENT_TYPE_NEW_SYSTEM_REGISTERED, inventoryId, hostDisplayName);
-        final String result = generateEmailBody(EVENT_TYPE_NEW_SYSTEM_REGISTERED, action, useBetaTemplate);
+        final String result = this.generateEmailBody(EVENT_TYPE_NEW_SYSTEM_REGISTERED, action);
 
         Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
-        if (useBetaTemplate) {
-            Assertions.assertTrue(result.contains("was registered in the inventory."), "the message body should indicate that the system was registered");
-        } else {
-            Assertions.assertTrue(result.contains("was registered in Inventory."), "the message body should indicate that the system was registered");
-        }
+        Assertions.assertTrue(result.contains("was registered in Inventory."), "the message body should indicate that the system was registered");
 
-        assertOpenInventoryInsightsButtonPresent(result, true, useBetaTemplate);
+        this.assertOpenInventoryInsightsButtonPresent(result, true);
     }
 
     /**
@@ -206,7 +196,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
         final UUID inventoryId = UUID.randomUUID();
         eventTypeDisplayName = "System became stale";
         final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", EVENT_TYPE_SYSTEM_BECAME_STALE, inventoryId, hostDisplayName);
-        final String result = generateEmailSubject(EVENT_TYPE_SYSTEM_BECAME_STALE, action);
+        final String result = this.generateEmailSubject(EVENT_TYPE_SYSTEM_BECAME_STALE, action);
 
         Assertions.assertEquals(EMAIL_SUBJECT_SYSTEM_BECAME_STALE, result);
     }
@@ -215,36 +205,25 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
      * Tests that the body template for the "system became stale" event is
      * correctly rendered and contains the expected text.
      */
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testInstantSystemBecameStaleBody(boolean useBetaTemplate) {
+    @Test
+    void testInstantSystemBecameStaleBody() {
         final String hostDisplayName = "stale-host";
         final UUID inventoryId = UUID.randomUUID();
 
         final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", EVENT_TYPE_SYSTEM_BECAME_STALE, inventoryId, hostDisplayName);
-        final String result = generateEmailBody(EVENT_TYPE_SYSTEM_BECAME_STALE, action, useBetaTemplate);
+        final String result = this.generateEmailBody(EVENT_TYPE_SYSTEM_BECAME_STALE, action);
 
         Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
 
-        if (useBetaTemplate) {
-            Assertions.assertTrue(
-                Pattern
-                    .compile(String.format("The state of system.+%s.+changed to stale in the inventory", hostDisplayName))
-                    .matcher(result)
-                    .find(),
-                "the message body should indicate that the system was registered"
-            );
-        } else {
-            Assertions.assertTrue(
-                Pattern
-                    .compile(String.format("The state of system.+%s.+changed to stale in Inventory", hostDisplayName))
-                    .matcher(result)
-                    .find(),
-                "the message body should indicate that the system was registered"
-            );
-        }
+        Assertions.assertTrue(
+            Pattern
+                .compile(String.format("The state of system.+%s.+changed to stale in Inventory", hostDisplayName))
+                .matcher(result)
+                .find(),
+            "the message body should indicate that the system was registered"
+        );
 
-        assertOpenInventoryInsightsButtonPresent(result, true, useBetaTemplate);
+        this.assertOpenInventoryInsightsButtonPresent(result, true);
     }
 
     /**
@@ -257,7 +236,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
         final UUID inventoryId = UUID.randomUUID();
         eventTypeDisplayName = "System deleted";
         final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", "new-system-registered", inventoryId, hostDisplayName);
-        final String result = generateEmailSubject(EVENT_TYPE_SYSTEM_DELETED, action);
+        final String result = this.generateEmailSubject(EVENT_TYPE_SYSTEM_DELETED, action);
 
         Assertions.assertEquals(EMAIL_SUBJECT_SYSTEM_DELETED, result);
     }
@@ -266,23 +245,18 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
      * Tests that the body template for the "system deleted" event is correctly
      * rendered and contains the expected text.
      */
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testInstantSystemDeletedBody(boolean useBetaTemplate) {
+    @Test
+    void testInstantSystemDeletedBody() {
         final String hostDisplayName = "deleted-host";
         final UUID inventoryId = UUID.randomUUID();
 
         final Action action = InventoryTestHelpers.createInventoryActionV2("rhel", "inventory", "new-system-registered", inventoryId, hostDisplayName);
-        final String result = generateEmailBody(EVENT_TYPE_SYSTEM_DELETED, action, useBetaTemplate);
+        final String result = this.generateEmailBody(EVENT_TYPE_SYSTEM_DELETED, action);
 
         Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
-        if (useBetaTemplate) {
-            Assertions.assertTrue(result.contains("was deleted from the inventory."), "the message body should indicate that the system was deleted");
-        } else {
-            Assertions.assertTrue(result.contains("was deleted from Inventory."), "the message body should indicate that the system was deleted");
-        }
+        Assertions.assertTrue(result.contains("was deleted from Inventory."), "the message body should indicate that the system was deleted");
 
-        assertOpenInventoryInsightsButtonPresent(result, true, useBetaTemplate);
+        this.assertOpenInventoryInsightsButtonPresent(result, true);
     }
 
     /**
@@ -291,28 +265,16 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
      *               assertion.
      * @param instant_email specifies query parameter for instant or aggregation email
      */
-    private void assertOpenInventoryInsightsButtonPresent(final String result, final boolean instant_email, final boolean useBetaTemplate) {
-        if (useBetaTemplate) {
-            Assertions.assertTrue(
-                result.contains(
-                    String.format(
-                        "<a href=\"%s/insights/inventory/%s\" target=\"_blank\"",
-                        environment.url(),
-                        instant_email ? "?from=notifications&integration=instant_email" : "?from=notifications&integration=daily_digest"
-                    )
+    private void assertOpenInventoryInsightsButtonPresent(final String result, final boolean instant_email) {
+        Assertions.assertTrue(
+            result.contains(
+                String.format(
+                    "<a target=\"_blank\" href=\"%s/insights/inventory/%s\">Open Inventory in Red Hat Lightspeed</a>",
+                    this.environment.url(),
+                    instant_email ? "?from=notifications&integration=instant_email" : "?from=notifications&integration=daily_digest"
                 )
-            );
-        } else {
-            Assertions.assertTrue(
-                result.contains(
-                    String.format(
-                        "<a target=\"_blank\" href=\"%s/insights/inventory/%s\">Open Inventory in Red Hat Lightspeed</a>",
-                        environment.url(),
-                        instant_email ? "?from=notifications&integration=instant_email" : "?from=notifications&integration=daily_digest"
-                    )
-                )
-            );
-        }
+            )
+        );
     }
 
     /**
@@ -343,7 +305,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
                 htmlString.contains(
                     String.format(
                         "<a target=\"_blank\" href=\"%s/insights/inventory/%s\">%s</a>",
-                        environment.url(),
+                        this.environment.url(),
                         entry.getKey(),
                         entry.getValue()
                     )

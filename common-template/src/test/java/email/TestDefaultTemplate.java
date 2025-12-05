@@ -12,8 +12,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -103,12 +101,11 @@ public class TestDefaultTemplate extends EmailTemplatesRendererHelper {
         assertEquals("Instant notification - Policy Triggered - Policies - Red Hat Enterprise Linux", undefinedResult);
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testInstantEmailBody(boolean useBetaTemplate) {
+    @Test
+    public void testInstantEmailBody() {
         Action action = TestHelpers.createPoliciesAction("", "my-bundle", "my-app", "FooMachine");
         eventTypeDisplayName = "Policy Triggered";
-        String result = generateEmailBody(EVENT_TYPE_NAME, action, useBetaTemplate);
+        String result = generateEmailBody(EVENT_TYPE_NAME, action);
 
         assertTrue(result.contains("Red Hat Enterprise Linux/Policies/Policy Triggered notification was triggered"), "Body should contain bundle/app/event-type");
         assertTrue(result.contains("You are receiving this email because the email template associated with this event type is not configured properly"));

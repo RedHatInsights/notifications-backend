@@ -7,8 +7,6 @@ import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -49,15 +47,10 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
         assertEquals("Instant notification - Subscription Bug Fixes - Errata - Subscription Services", result);
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testNewSubscriptionBugfixErrataEmailBody(boolean useBetaTemplate) {
-        String result = generateEmailBody(NEW_SUBSCRIPTION_BUGFIX_ERRATA, ACTION, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("There are 4 bug fixes available for your subscriptions."));
-        } else {
-            assertTrue(result.contains("There are 4 bug fixes affecting your subscriptions."));
-        }
+    @Test
+    public void testNewSubscriptionBugfixErrataEmailBody() {
+        String result = generateEmailBody(NEW_SUBSCRIPTION_BUGFIX_ERRATA, ACTION);
+        assertTrue(result.contains("There are 4 bug fixes affecting your subscriptions."));
         assertTrue(result.contains("href=\"https://access.redhat.com/errata/RHSA-2024:3843\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("secalert@redhat.com"));
@@ -70,15 +63,10 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
         assertEquals("Instant notification - Subscription Security Updates - Errata - Subscription Services", result);
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testNewSubscriptionSecurityUpdateErrataEmailBody(boolean useBetaTemplate) {
-        String result = generateEmailBody(NEW_SUBSCRIPTION_SECURITY_UPDATE_ERRATA, ACTION, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("There are 4 security updates available for your subscriptions."));
-        } else {
-            assertTrue(result.contains("There are 4 security updates affecting your subscriptions."));
-        }
+    @Test
+    public void testNewSubscriptionSecurityUpdateErrataEmailBody() {
+        String result = generateEmailBody(NEW_SUBSCRIPTION_SECURITY_UPDATE_ERRATA, ACTION);
+        assertTrue(result.contains("There are 4 security updates affecting your subscriptions."));
         assertTrue(result.contains("href=\"https://access.redhat.com/errata/RHSA-2024:3843\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("secalert@redhat.com"));
@@ -92,15 +80,10 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
         assertEquals("Instant notification - Subscription Enhancements - Errata - Subscription Services", result);
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testNewSubscriptionEnhancementErrataEmailBody(boolean useBetaTemplate) {
-        String result = generateEmailBody(NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA, ACTION, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("There are 4 enhancements available for your subscriptions."));
-        } else {
-            assertTrue(result.contains("There are 4 enhancements affecting your subscriptions."));
-        }
+    @Test
+    public void testNewSubscriptionEnhancementErrataEmailBody() {
+        String result = generateEmailBody(NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA, ACTION);
+        assertTrue(result.contains("There are 4 enhancements affecting your subscriptions."));
         assertTrue(result.contains("href=\"https://access.redhat.com/errata/RHSA-2024:3843\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("secalert@redhat.com"));

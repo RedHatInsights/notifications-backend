@@ -4,8 +4,6 @@ import com.redhat.cloud.notifications.ingress.Action;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -36,15 +34,10 @@ public class TestSourcesTemplate extends EmailTemplatesRendererHelper {
         return "Sources";
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testAvailabilityStatusEmailBody(boolean useBetaTemplate) {
-        String result = generateEmailBody(AVAILABILITY_STATUS, ACTION, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("The availability of integration"));
-        } else {
-            assertTrue(result.contains("availability status was changed"));
-        }
+    @Test
+    public void testAvailabilityStatusEmailBody() {
+        String result = generateEmailBody(AVAILABILITY_STATUS, ACTION);
+        assertTrue(result.contains("availability status was changed"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 

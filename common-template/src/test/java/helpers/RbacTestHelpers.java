@@ -36,30 +36,13 @@ public class RbacTestHelpers {
                         .withAdditionalProperty("name", "testRoleName")
                         .withAdditionalProperty("role", new TestRole("myRole"))
                         .withAdditionalProperty("username", "testUser1")
+                        .withAdditionalProperty("principal", "testUser1")
                         .withAdditionalProperty("operation", "added")
                         // Used by request-access
                         .withAdditionalProperty("url_path", "https://console.redhat.com/stuff")
                         .withAdditionalProperty("user", Map.of(
                                 "email", "testUser AT somewhere",
                                 "request", "I want access to stuff"
-                        ))
-
-                        .build()
-                )
-                .build(),
-            new Event.EventBuilder()
-                .withMetadata(new Metadata.MetadataBuilder().build())
-                .withPayload(
-                    new Payload.PayloadBuilder()
-                        .withAdditionalProperty("name", "testRoleName")
-                        .withAdditionalProperty("username", "testUser1")
-                        .withAdditionalProperty("principal", "testUser1")
-                        .withAdditionalProperty("operation", "removed")
-                        // Used by request-access
-                        .withAdditionalProperty("url_path", "https://console.redhat.com/stuff")
-                        .withAdditionalProperty("user", Map.of(
-                            "email", "testUser AT somewhere",
-                            "request", "I want access to stuff"
                         ))
 
                         .build()

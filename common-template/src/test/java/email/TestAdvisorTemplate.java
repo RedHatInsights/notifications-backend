@@ -6,8 +6,6 @@ import com.redhat.cloud.notifications.qute.templates.Severity;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.redhat.cloud.notifications.qute.templates.mapping.Rhel.ADVISOR_DEACTIVATED_RECOMMENDATION;
 import static com.redhat.cloud.notifications.qute.templates.mapping.Rhel.ADVISOR_RESOLVED_RECOMMENDATION;
@@ -193,12 +191,11 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         assertEquals("Instant notification - New recommendation - Advisor - Red Hat Enterprise Linux", result);
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testInstantEmailBodyForNewRecommendation(boolean useBetaTemplate) {
+    @Test
+    public void testInstantEmailBodyForNewRecommendation() {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
 
-        String result = generateEmailBody(NEW_RECOMMENDATION, action, useBetaTemplate);
+        String result = generateEmailBody(NEW_RECOMMENDATION, action);
         checkNewRecommendationsBodyResults(action, result);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
@@ -234,20 +231,18 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         assertEquals("Instant notification - Deactivated recommendation - Advisor - Red Hat Enterprise Linux", result);
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testInstantEmailBodyForDeactivatedRecommendation(boolean useBetaTemplate) {
+    @Test
+    public void testInstantEmailBodyForDeactivatedRecommendation() {
         Action action = TestHelpers.createAdvisorAction("123456", ADVISOR_DEACTIVATED_RECOMMENDATION);
-        String result = generateEmailBody(ADVISOR_DEACTIVATED_RECOMMENDATION, action, useBetaTemplate);
+        String result = generateEmailBody(ADVISOR_DEACTIVATED_RECOMMENDATION, action);
         checkDeactivatedRecommendationResults(action, result);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testInstantEmailBodyForResolvedRecommendation(boolean useBetaTemplate) {
+    @Test
+    public void testInstantEmailBodyForResolvedRecommendation() {
         Action action = TestHelpers.createAdvisorAction("123456", ADVISOR_RESOLVED_RECOMMENDATION);
-        String result = generateEmailBody(ADVISOR_RESOLVED_RECOMMENDATION, action, useBetaTemplate);
+        String result = generateEmailBody(ADVISOR_RESOLVED_RECOMMENDATION, action);
         checkNewRecommendationsBodyResults(action, result);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }

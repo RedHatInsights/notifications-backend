@@ -5,8 +5,6 @@ import com.redhat.cloud.notifications.ingress.Parser;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,20 +44,18 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
     }
 
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testIntegrationDisabledBodyWithClientError(boolean useBetaTemplate) {
+    @Test
+    void testIntegrationDisabledBodyWithClientError() {
         Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
-        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, useBetaTemplate);
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action);
         assertTrue(rendered.contains("disabled because the remote endpoint responded with an HTTP status code 401"));
         assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testIntegrationDisabledBodyWithServerError(boolean useBetaTemplate) {
+    @Test
+    void testIntegrationDisabledBodyWithServerError() {
         Action action = buildIntegrationDisabledAction("HTTP_5XX", "the HTTP server responded with an HTTP status", 2048, -1);
-        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, useBetaTemplate);
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action);
         assertTrue(rendered.contains("disabled because the connection couldn't be established with the remote endpoint, or it responded too many times with a server error (HTTP status code 5xx) after 2048 attempts"));
         assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
     }
@@ -67,9 +63,8 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
     /**
      * Tests that the general communication email works as expected.
      */
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testGeneralCommunication(boolean useBetaTemplate) {
+    @Test
+    void testGeneralCommunication() {
 
         final String actionAsString = "{" +
             "   \"version\":\"2.0.0\"," +
@@ -114,7 +109,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
                 orgId,
                 integrationNames.stream().map(integrationName -> "\"" +  integrationName + "\"").collect(Collectors.joining(",")))
         );
-        final String rendered = generateEmailBody(INTEGRATIONS_GENERAL_COMMUNICATION, action, useBetaTemplate);
+        final String rendered = generateEmailBody(INTEGRATIONS_GENERAL_COMMUNICATION, action);
         assertTrue(rendered.contains("We are contacting you because you have the following Microsoft Teams integrations set up for your organization in the"));
         assertTrue(rendered.contains("Integration one"));
         assertTrue(rendered.contains("Another integration"));

@@ -5,8 +5,6 @@ import com.redhat.cloud.notifications.qute.templates.Severity;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -50,12 +48,11 @@ public class TestAdvisorOpenShiftTemplate extends EmailTemplatesRendererHelper {
         assertEquals("[LOW] Instant notification - New Recommendation - Advisor - OpenShift", lowResult);
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    public void testInstantEmailBodyForNewRecommendation(boolean useBetaTemplate) {
+    @Test
+    public void testInstantEmailBodyForNewRecommendation() {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
 
-        String result = generateEmailBody(NEW_RECOMMENDATION, action, useBetaTemplate);
+        String result = generateEmailBody(NEW_RECOMMENDATION, action);
         checkNewRecommendationsBodyResults(action, result);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
