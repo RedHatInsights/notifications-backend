@@ -9874,8 +9874,8 @@ data:
         "list": [
           {
             "current": {
-              "text": "crcp01ue1-prometheus",
-              "value": "crcp01ue1-prometheus"
+              "text": "crcs02ue1-prometheus",
+              "value": "crcs02ue1-prometheus"
             },
             "includeAll": false,
             "label": "environment",
@@ -9887,45 +9887,35 @@ data:
                 "value": "insights-perf-prometheus"
               },
               {
-                "selected": false,
+                "selected": true,
                 "text": "crcs02ue1-prometheus",
                 "value": "crcs02ue1-prometheus"
               },
               {
-                "selected": true,
+                "selected": false,
                 "text": "crcp01ue1-prometheus",
                 "value": "crcp01ue1-prometheus"
-              },
-              {
-                "selected": false,
-                "text": "hccs01ue1-prometheus",
-                "value": "hccs01ue1-prometheus"
-              },
-              {
-                "selected": false,
-                "text": "hccp01ue1-prometheus",
-                "value": "hccp01ue1-prometheus"
               }
             ],
-            "query": "insights-perf-prometheus, crcs02ue1-prometheus, crcp01ue1-prometheus, hccs01ue1-prometheus, hccp01ue1-prometheus",
+            "query": "insights-perf-prometheus, crcs02ue1-prometheus, crcp01ue1-prometheus",
             "type": "custom"
           },
           {
             "current": {
-              "text": "AWS insights-prod",
-              "value": "AWS insights-prod"
+              "text": "AWS insights-stage",
+              "value": "AWS insights-stage"
             },
             "includeAll": false,
             "label": "RDS",
             "name": "rds_datasource",
             "options": [
               {
-                "selected": true,
+                "selected": false,
                 "text": "AWS insights-prod",
                 "value": "AWS insights-prod"
               },
               {
-                "selected": false,
+                "selected": true,
                 "text": "AWS insights-stage",
                 "value": "AWS insights-stage"
               }
@@ -9935,8 +9925,8 @@ data:
           },
           {
             "current": {
-              "text": "aws-resources-exporter-production",
-              "value": "PCEFB875D6FD018FC"
+              "text": "aws-resources-exporter-stage",
+              "value": "P80B3240D3DAB93EB"
             },
             "includeAll": false,
             "label": "Resources Exporter",
@@ -9949,8 +9939,8 @@ data:
           },
           {
             "current": {
-              "text": "notifications-backend-prod",
-              "value": "notifications-backend-prod"
+              "text": "notifications-backend-stage",
+              "value": "notifications-backend-stage"
             },
             "datasource": {
               "uid": "$rds_datasource"
@@ -9975,8 +9965,8 @@ data:
           },
           {
             "current": {
-              "text": "consoledot-prod",
-              "value": "consoledot-prod"
+              "text": "consoledot-stage",
+              "value": "consoledot-stage"
             },
             "datasource": {
               "type": "prometheus",
