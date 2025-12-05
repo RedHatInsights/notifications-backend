@@ -17,6 +17,13 @@ import java.util.Map;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.POSTGRES_MAJOR_VERSION;
 import static com.redhat.cloud.notifications.TestConstants.VALKEY_MAJOR_VERSION;
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.EGRESS_CHANNEL;
+import static com.redhat.cloud.notifications.events.ConnectorReceiver.FROMCAMEL_CHANNEL;
+import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
+import static com.redhat.cloud.notifications.exports.ExportEventListener.EXPORT_CHANNEL;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.HIGH_VOLUME_CHANNEL;
+import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
+import static com.redhat.cloud.notifications.routers.DailyDigestResource.AGGREGATION_OUT_CHANNEL;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
@@ -53,6 +60,18 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
             }
         }
         setupMockEngine(properties);
+
+        /*
+         * We'll use an in-memory Reactive Messaging connector to send payloads.
+         * See https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/2/testing/testing.html
+         */
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(HIGH_VOLUME_CHANNEL));
+        properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(INGRESS_CHANNEL));
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(AGGREGATION_OUT_CHANNEL));
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(TOCAMEL_CHANNEL));
+        properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(FROMCAMEL_CHANNEL));
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(EGRESS_CHANNEL));
+        properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory(EXPORT_CHANNEL));
 
         System.out.println(" -- Running with properties: " + properties);
         return properties;

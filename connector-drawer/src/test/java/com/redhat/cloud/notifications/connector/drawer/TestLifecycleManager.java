@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector.drawer;
 
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,6 +18,10 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         properties.put("notifications.connector.recipients-resolver.url", getMockServerUrl());
         properties.put("quarkus.rest-client.recipients-resolver.url", getMockServerUrl());
 
+        // Configure InMemory connectors for reactive messaging channels
+        properties.putAll(InMemoryConnector.switchIncomingChannelsToInMemory("incomingmessages"));
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory("outgoingmessages"));
+        properties.putAll(InMemoryConnector.switchOutgoingChannelsToInMemory(DrawerMessageHandler.DRAWER_CHANNEL));
         return properties;
     }
 
