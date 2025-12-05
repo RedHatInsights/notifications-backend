@@ -87,7 +87,7 @@
         <redhat.event-schemas.version>1.4.12</redhat.event-schemas.version>
         <com.networknt.json-schema-validator.version>1.5.9</com.networknt.json-schema-validator.version>
 
-        <sonar.maven.plugin.version>5.4.0.6343</sonar.maven.plugin.version>
+        <sonar.maven.plugin.version>5.5.0.6356</sonar.maven.plugin.version>
         <jacoco.output.directory>${project.build.directory}/jacoco-report</jacoco.output.directory>
         <!-- Point the Sonar Qube Plugin always to the same JaCoCo report to aggregate sub-modules reports-->
         <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
