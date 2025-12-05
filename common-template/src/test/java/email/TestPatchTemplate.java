@@ -70,7 +70,7 @@ public class TestPatchTemplate extends EmailTemplatesRendererHelper {
     @Test
     public void testNewAdvisoryEmailBody() {
         String result = generateEmailBody(NEW_ADVISORY, ACTION);
-        assertTrue(result.contains("Red Hat Lightspeed has just released new Advisories for your organization"));
+        assertTrue(result.contains("Red Hat Insights has just released new Advisories for your organization"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 

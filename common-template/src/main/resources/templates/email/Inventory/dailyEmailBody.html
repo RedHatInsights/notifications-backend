@@ -32,8 +32,8 @@
 {/content-title-right-part-section1}
 {#content-body-section1}
     <p>
-        Red Hat Lightspeed has identified {action.context.inventory.errors.size()} host{#if action.context.inventory.errors.size() > 1}s{/if} that presented a validation error.
-        For errors in updating hosts, please review the Red Hat Lightspeed Inventory service to further assess and determine next steps.
+        Red Hat Insights has identified {action.context.inventory.errors.size()} host{#if action.context.inventory.errors.size() > 1}s{/if} that presented a validation error.
+        For errors in updating hosts, please review the Insights Inventory service to further assess and determine next steps.
     </p>
     <p>
         If no hosts were created by {#if action.context.inventory.errors.size() > 1}these changes, these errors{#else}this change, this error{/if} will not appear in the service.
@@ -130,10 +130,10 @@
 {/content-body-section2}
 {#content-body-section3}
     <p>
-    If you want to see more details, go to Red Hat Lightspeed Inventory for Red Hat Enterprise Linux.
+    If you want to see more details, go to Insights Inventory for Red Hat Enterprise Linux.
     </p>
 {/content-body-section3}
 {#content-button-section3}
-    <a target="_blank" href="{environment.url}/insights/inventory/?{query_params}">Open Inventory in Red Hat Lightspeed</a>
+    <a target="_blank" href="{environment.url}/insights/inventory/?{query_params}">Open Inventory in Insights</a>
 {/content-button-section3}
 {/include}

@@ -269,7 +269,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
         Assertions.assertTrue(
             result.contains(
                 String.format(
-                    "<a target=\"_blank\" href=\"%s/insights/inventory/%s\">Open Inventory in Red Hat Lightspeed</a>",
+                    "<a target=\"_blank\" href=\"%s/insights/inventory/%s\">Open Inventory in Insights</a>",
                     this.environment.url(),
                     instant_email ? "?from=notifications&integration=instant_email" : "?from=notifications&integration=daily_digest"
                 )
