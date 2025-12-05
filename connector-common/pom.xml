@@ -142,11 +142,11 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- WireMock -->
+        <!-- MockServer -->
         <dependency>
-            <groupId>org.wiremock</groupId>
-            <artifactId>wiremock-standalone</artifactId>
-            <version>${wiremock.version}</version>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-netty-no-dependencies</artifactId>
+            <version>${mockserver-netty-no-dependencies.version}</version>
             <scope>test</scope>
         </dependency>
 

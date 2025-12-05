@@ -73,9 +73,15 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.wiremock</groupId>
-            <artifactId>wiremock-standalone</artifactId>
-            <version>${wiremock.version}</version>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mockserver</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-netty-no-dependencies</artifactId>
+            <version>${mockserver-netty-no-dependencies.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -86,6 +92,20 @@
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-instrumentation-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-core</artifactId>
+            <version>5.15.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- io.netty:netty-codec-http2 is a transitive dependency of org.mock-server:mockserver-core -->
+        <!-- do not remove unless RHCLOUD-41812 has been addressed -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-http2</artifactId>
+            <version>4.2.6.Final</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

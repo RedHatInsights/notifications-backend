@@ -29,6 +29,9 @@ import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockserver.mock.action.ExpectationResponseCallback;
+import org.mockserver.model.HttpRequest;
+import org.mockserver.model.MediaType;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +39,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.redhat.cloud.notifications.connector.ConnectorRoutesTest.KAFKA_SOURCE_MOCK;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.SUCCESS;
@@ -52,6 +54,7 @@ import static com.redhat.cloud.notifications.connector.OutgoingCloudEventBuilder
 import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -144,20 +147,23 @@ class DrawerConnectorRoutesTest extends CamelQuarkusTestSupport {
         return new DrawerNotificationToConnector(orgId, drawerEntryPayload, Set.of(recipientSettings), List.of("user-1", "user-2"), new JsonObject(), ActionTemplateHelper.jsonActionToMap(ActionTemplateHelper.actionAsJson));
     }
 
-    private void setupMockHttpRequest(String path, String responseBody, int statusCode) {
-        MockServerLifecycleManager.getClient().resetAll();
-        MockServerLifecycleManager.getClient().stubFor(
-            put(urlEqualTo(path))
-                .willReturn(aResponse()
-                    .withStatus(statusCode)
-                    .withHeader("Content-Type", "application/json")
-                    .withBody(responseBody))
-        );
+    private HttpRequest getMockHttpRequest(String path, ExpectationResponseCallback expectationResponseCallback) {
+        MockServerLifecycleManager.getClient().reset();
+        HttpRequest postReq = new HttpRequest()
+            .withPath(path)
+            .withMethod("PUT");
+        MockServerLifecycleManager.getClient()
+            .withSecure(false)
+            .when(postReq)
+            .respond(expectationResponseCallback);
+        return postReq;
     }
 
     @Test
     void testSuccessFulNotificationWithoutRecipient() throws Exception {
-        setupMockHttpRequest("/internal/recipients-resolver", "[]", 200);
+        ExpectationResponseCallback verifyEmptyRequest = req -> response().withBody("[]").withContentType(MediaType.APPLICATION_JSON).withStatusCode(200);
+
+        getMockHttpRequest("/internal/recipients-resolver", verifyEmptyRequest);
 
         JsonObject jsonObject = testSuccessfulDrawerNotification(0, 0);
         JsonObject data = new JsonObject(jsonObject.getString("data"));
@@ -173,10 +179,13 @@ class DrawerConnectorRoutesTest extends CamelQuarkusTestSupport {
         DrawerUser user2 = new DrawerUser();
         user2.setUsername("username-2");
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        String responseBody = objectMapper.writeValueAsString(List.of(user1, user2));
+        ExpectationResponseCallback verifyEmptyRequest = req -> {
+            ObjectMapper objectMapper = new ObjectMapper();
+            String responseBody = objectMapper.writeValueAsString(List.of(user1, user2));
+            return response().withBody(responseBody).withContentType(MediaType.APPLICATION_JSON).withStatusCode(200);
+        };
 
-        setupMockHttpRequest("/internal/recipients-resolver", responseBody, 200);
+        getMockHttpRequest("/internal/recipients-resolver", verifyEmptyRequest);
 
         JsonObject jsonObject = testSuccessfulDrawerNotification(1, 2);
         JsonObject data = new JsonObject(jsonObject.getString("data"));
@@ -186,7 +195,9 @@ class DrawerConnectorRoutesTest extends CamelQuarkusTestSupport {
 
     @Test
     void testFailureNotification() throws Exception {
-        setupMockHttpRequest("/internal/recipients-resolver", "", 500);
+        ExpectationResponseCallback verifyEmptyRequest = req -> response().withStatusCode(500);
+
+        getMockHttpRequest("/internal/recipients-resolver", verifyEmptyRequest);
 
         // We expect the connector to retry the notifications since the mocked
         // request returns a 500.
@@ -197,8 +208,7 @@ class DrawerConnectorRoutesTest extends CamelQuarkusTestSupport {
         Integer nbRecipients = data.getJsonObject("details").getInteger(CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY);
         assertEquals(0, nbRecipients);
         String errorMessage = data.getJsonObject("details").getString(OUTCOME);
-        // WireMock returns different error message format than MockServer
-        assertTrue(errorMessage.contains("500") || errorMessage.contains("Server Error"));
+        assertTrue(errorMessage.contains("Internal Server Error, status code 500"));
     }
 
     protected JsonObject testFailedNotification() throws Exception {

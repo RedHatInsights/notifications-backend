@@ -17,6 +17,8 @@ import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockserver.mock.action.ExpectationResponseCallback;
+import org.mockserver.model.HttpRequest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.redhat.cloud.notifications.connector.ConnectorRoutesTest.KAFKA_SOURCE_MOCK;
 import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
 import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
@@ -41,6 +42,7 @@ import static org.apache.camel.builder.AdviceWith.adviceWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockserver.model.HttpResponse.response;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -103,29 +105,11 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
         kafkaEngineToConnector = getMockEndpoint("mock:" + KAFKA_SOURCE_MOCK);
     }
 
-    void initMocks(Integer recipientsStatus, String recipientsBody, Integer bopStatus) throws Exception {
+    void initMocks(ExpectationResponseCallback verifyEmptyRequest, ExpectationResponseCallback bopResponse) throws Exception {
 
-        MockServerLifecycleManager.getClient().resetAll();
-
-        if (recipientsStatus != null) {
-            MockServerLifecycleManager.getClient().stubFor(
-                put(urlEqualTo("/internal/recipients-resolver"))
-                    .willReturn(aResponse()
-                        .withStatus(recipientsStatus)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(recipientsBody != null ? recipientsBody : ""))
-            );
-        }
-
-        if (bopStatus != null) {
-            MockServerLifecycleManager.getClient().stubFor(
-                post(urlEqualTo("/v1/sendEmails"))
-                    .willReturn(aResponse()
-                        .withStatus(bopStatus)
-                        .withHeader("Content-Type", "application/json"))
-            );
-        }
-
+        MockServerLifecycleManager.getClient().reset();
+        getMockHttpRequest("/internal/recipients-resolver", "PUT", verifyEmptyRequest);
+        getMockHttpRequest("/v1/sendEmails", "POST", bopResponse);
         if (!camelRoutesInitialised) {
             initCamelRoutes();
             camelRoutesInitialised = true;
@@ -135,7 +119,9 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
     @Test
     void testEmptyRecipients() throws Exception {
 
-        initMocks(200, "[]", 200);
+        ExpectationResponseCallback recipientsResolverResponse = req -> response().withBody("[]").withStatusCode(200);
+        ExpectationResponseCallback bopResponse = req -> response().withStatusCode(200);
+        initMocks(recipientsResolverResponse, bopResponse);
 
         splitRoute.expectedMessageCount(0);
         kafkaConnectorToEngine.expectedMessageCount(1);
@@ -153,7 +139,9 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             emailConnectorConfig.setEmailsInternalOnlyEnabled(emailsInternalOnlyEnabled);
             Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
             String strUsers = objectMapper.writeValueAsString(users);
-            initMocks(200, strUsers, 200);
+            ExpectationResponseCallback recipientsResolverResponse = req -> response().withBody(strUsers).withStatusCode(200);
+            ExpectationResponseCallback bopResponse = req -> response().withStatusCode(200);
+            initMocks(recipientsResolverResponse, bopResponse);
 
             Set<String> additionalEmails = Set.of("redhat_user@redhat.com", "external_user@noway.com");
             int usersAndRecipientsTotalNumber = users.size() + additionalEmails.size();
@@ -177,7 +165,8 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
     @Test
     void testFailureFetchingRecipientsInternalError() throws Exception {
 
-        initMocks(500, "", null);
+        ExpectationResponseCallback recipientsResolverResponse = req -> response().withStatusCode(500);
+        initMocks(recipientsResolverResponse, null);
 
         splitRoute.expectedMessageCount(0);
         kafkaConnectorToEngine.expectedMessageCount(1);
@@ -195,20 +184,7 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
 
     @Test
     void testFailureFetchingRecipientsTimeout() throws Exception {
-        // Simulate timeout by creating a stub with a delay longer than the configured socket timeout
-        MockServerLifecycleManager.getClient().resetAll();
-        MockServerLifecycleManager.getClient().stubFor(
-            put(urlEqualTo("/internal/recipients-resolver"))
-                .willReturn(aResponse()
-                    .withStatus(200)
-                    .withHeader("Content-Type", "application/json")
-                    .withBody("[]")
-                    .withFixedDelay(5000)) // 5 seconds delay, exceeds socket timeout
-        );
-        if (!camelRoutesInitialised) {
-            initCamelRoutes();
-            camelRoutesInitialised = true;
-        }
+        initMocks(null, null);
 
         splitRoute.expectedMessageCount(0);
         kafkaConnectorToEngine.expectedMessageCount(1);
@@ -229,7 +205,9 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
 
         Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
         String strUsers = objectMapper.writeValueAsString(users);
-        initMocks(200, strUsers, 500);
+        ExpectationResponseCallback recipientsResolverResponse = req -> response().withBody(strUsers).withStatusCode(200);
+        ExpectationResponseCallback bopInternalError = req -> response().withStatusCode(500);
+        initMocks(recipientsResolverResponse, bopInternalError);
 
         // The split route should result of 3 iterations:
         // 7 recipients / (4 as max recipients per email - 1 for the default recipient no-reply@redhat.com = 3) = 3 iterations
@@ -249,27 +227,9 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
 
         Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
         String strUsers = objectMapper.writeValueAsString(users);
+        ExpectationResponseCallback recipientsResolverResponse = req -> response().withBody(strUsers).withStatusCode(200);
 
-        // Set up recipients resolver with normal response, but BOP with timeout
-        MockServerLifecycleManager.getClient().resetAll();
-        MockServerLifecycleManager.getClient().stubFor(
-            put(urlEqualTo("/internal/recipients-resolver"))
-                .willReturn(aResponse()
-                    .withStatus(200)
-                    .withHeader("Content-Type", "application/json")
-                    .withBody(strUsers))
-        );
-        MockServerLifecycleManager.getClient().stubFor(
-            post(urlEqualTo("/v1/sendEmails"))
-                .willReturn(aResponse()
-                    .withStatus(200)
-                    .withHeader("Content-Type", "application/json")
-                    .withFixedDelay(5000)) // 5 seconds delay, exceeds socket timeout
-        );
-        if (!camelRoutesInitialised) {
-            initCamelRoutes();
-            camelRoutesInitialised = true;
-        }
+        initMocks(recipientsResolverResponse, null);
 
         // The split route should result of 3 iterations:
         // 7 recipients / (4 as max recipients per email - 1 for the default recipient no-reply@redhat.com = 3) = 3 iterations
@@ -376,6 +336,17 @@ public class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
         } else {
             assertEquals(usersAndRecipientsTotalNumber, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
         }
+    }
+
+    private HttpRequest getMockHttpRequest(String path, String method, ExpectationResponseCallback expectationResponseCallback) {
+        HttpRequest postReq = new HttpRequest()
+            .withPath(path)
+            .withMethod(method);
+        MockServerLifecycleManager.getClient()
+            .withSecure(false)
+            .when(postReq)
+            .respond(expectationResponseCallback);
+        return postReq;
     }
 
     private void buildCloudEventAndSendIt(Set<String> emailRecipients) {

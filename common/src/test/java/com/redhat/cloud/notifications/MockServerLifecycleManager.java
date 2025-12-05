@@ -1,52 +1,43 @@
 package com.redhat.cloud.notifications;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import org.mockserver.configuration.Configuration;
+import org.mockserver.integration.ClientAndServer;
+import org.mockserver.logging.MockServerLogger;
+import org.mockserver.socket.tls.KeyStoreFactory;
+import javax.net.ssl.HttpsURLConnection;
+
+import static org.mockserver.integration.ClientAndServer.startClientAndServer;
 
 public class MockServerLifecycleManager {
 
-    private static WireMockServer wireMockServer;
-    private static String mockServerUrl;
-    private static String mockServerHttpsUrl;
+    private static final String LOG_LEVEL_KEY = "mockserver.logLevel";
 
-    public static final String WIRE_MOCK_CERT_CN = "CN=Notifications WireMock cert";
+    private static ClientAndServer mockServer;
+    private static String mockServerUrl;
 
     public static void start() {
-        WireMockConfiguration config = WireMockConfiguration.wireMockConfig()
-            .dynamicPort()
-            .dynamicHttpsPort()
-            .keystorePath("wiremock/notifications-wiremock.jks") // exp date: 2035-10-28
-            .keystorePassword("password")
-            .keyManagerPassword("password");
-
-        wireMockServer = new WireMockServer(config);
-        wireMockServer.start();
-
-        // Configure WireMock client to use the server
-        WireMock.configureFor("localhost", wireMockServer.port());
-
-        mockServerUrl = "http://localhost:" + wireMockServer.port();
-        mockServerHttpsUrl = "https://localhost:" + wireMockServer.httpsPort();
-        System.out.println("WireMock server started on HTTP port: " + wireMockServer.port() + " and HTTPS port: " + wireMockServer.httpsPort());
+        if (System.getProperty(LOG_LEVEL_KEY) == null) {
+            System.setProperty(LOG_LEVEL_KEY, "OFF");
+            System.out.println("MockServer log is disabled. Use '-D" + LOG_LEVEL_KEY + "=WARN|INFO|DEBUG|TRACE' to enable it.");
+        }
+        // Thanks to the addition of MockServer KeyStoreFactory into default ssl context,
+        // MockServer ssl certificate issuer will be recognized
+        HttpsURLConnection.setDefaultSSLSocketFactory(new KeyStoreFactory(Configuration.configuration(), new MockServerLogger()).sslContext().getSocketFactory());
+        mockServer = startClientAndServer();
+        mockServerUrl = "http://localhost:" + mockServer.getPort();
     }
 
     public static String getMockServerUrl() {
         return mockServerUrl;
     }
 
-    public static String getMockServerHttpsUrl() {
-        return mockServerHttpsUrl;
-    }
-
-    public static WireMockServer getClient() {
-        return wireMockServer;
+    public static ClientAndServer getClient() {
+        return mockServer;
     }
 
     public static void stop() {
-        if (wireMockServer != null) {
-            wireMockServer.stop();
-            System.out.println("WireMock server stopped");
+        if (mockServer != null) {
+            mockServer.stop();
         }
     }
 }

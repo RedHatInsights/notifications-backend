@@ -4,15 +4,21 @@ import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import jakarta.ws.rs.core.MediaType;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
+import org.mockserver.model.ClearType;
+import org.mockserver.model.HttpRequest;
+import org.mockserver.model.HttpResponse;
+import org.mockserver.model.Parameter;
+import org.mockserver.verify.VerificationTimes;
 
 import java.io.InputStream;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 public class MockServerConfig {
 
@@ -35,37 +41,36 @@ public class MockServerConfig {
     }
 
     public static void addMockRbacAccess(String xRhIdentity, RbacAccess access) {
-        getClient().stubFor(
-            get(urlPathEqualTo("/api/rbac/v1/access/"))
-                .withQueryParam("application", equalTo("notifications,integrations"))
-                .withHeader(X_RH_IDENTITY_HEADER, equalTo(xRhIdentity))
-                .willReturn(aResponse()
-                    .withStatus(200)
-                    .withHeader("Content-Type", "application/json")
-                    .withBody(access.getPayload()))
-        );
+        getClient()
+                .when(request()
+                        .withPath("/api/rbac/v1/access/")
+                        .withQueryStringParameter("application", "notifications,integrations")
+                        .withHeader(X_RH_IDENTITY_HEADER, xRhIdentity)
+                )
+                .respond(response()
+                        .withStatusCode(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(access.getPayload()));
     }
 
     public static void addGroupResponse(String xRhIdentity, String groupId, int statusCode) {
-        getClient().stubFor(
-            get(urlPathEqualTo(String.format("/api/rbac/v1/groups/%s/", groupId)))
-                .withHeader(X_RH_IDENTITY_HEADER, equalTo(xRhIdentity))
-                .willReturn(aResponse()
-                    .withStatus(statusCode)
+        getClient()
+            .when(request()
+                    .withPath(String.format("/api/rbac/v1/groups/%s/", groupId))
+                    .withHeader(X_RH_IDENTITY_HEADER, xRhIdentity)
+            )
+            .respond(response()
+                    .withStatusCode(statusCode)
                     .withHeader("Content-Type", "application/json")
-                    .withBody("{}"))
-        );
+                    .withBody("{}")
+            );
     }
 
-    public void addHttpTestEndpoint(com.github.tomakehurst.wiremock.http.Request request, com.github.tomakehurst.wiremock.http.Response response, boolean secure) {
-        // Note: WireMock doesn't have a direct equivalent to withSecure()
-        // HTTPS is typically configured at the server level, not per-stub
-        // For now, we'll just add the stub without the secure flag
-        getClient().stubFor(
-            any(urlMatching(request.getUrl()))
-                .willReturn(aResponse()
-                    .withStatus(response.getStatus()))
-        );
+    public void addHttpTestEndpoint(HttpRequest request, HttpResponse response, boolean secure) {
+        getClient()
+            .withSecure(secure)
+            .when(request)
+            .respond(response);
     }
 
     /**
@@ -74,18 +79,21 @@ public class MockServerConfig {
      * the expected "count" JSON key.
      */
     public static void addMissingCountFromWorkspacesResponseRbacEndpoint() {
-        getClient().stubFor(
-            get(urlPathEqualTo("/api/rbac/v2/workspaces/"))
-                .withHeader("x-rh-rbac-psk", equalTo("development-psk-value"))
-                .withHeader("x-rh-rbac-client-id", equalTo(WorkspaceUtils.APPLICATION_KEY))
-                .withHeader("x-rh-rbac-org-id", equalTo(DEFAULT_ORG_ID))
-                .withQueryParam("offset", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
-                .withQueryParam("limit", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
-                .willReturn(aResponse()
+        getClient()
+            .when(
+                request()
+                    .withHeader("x-rh-rbac-psk", "development-psk-value")
+                    .withHeader("x-rh-rbac-client-id", WorkspaceUtils.APPLICATION_KEY)
+                    .withHeader("x-rh-rbac-org-id", DEFAULT_ORG_ID)
+                    .withQueryStringParameter(Parameter.param("offset", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                    .withQueryStringParameter(Parameter.param("limit", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
+                    .withPath("/api/rbac/v2/workspaces/")
+            ).respond(
+                response()
                     .withHeader("Content-Type", MediaType.APPLICATION_JSON)
-                    .withStatus(HttpStatus.SC_OK)
-                    .withBody(getFileAsString("rbac-examples/workspaces/missing-count-response.json")))
-        );
+                    .withStatusCode(HttpStatus.SC_OK)
+                    .withBody(getFileAsString("rbac-examples/workspaces/missing-count-response.json"))
+            );
     }
 
     /**
@@ -94,18 +102,21 @@ public class MockServerConfig {
      * response.
      */
     public static void addMultipleReturningMultipleWorkspacesRbacEndpoint() {
-        getClient().stubFor(
-            get(urlPathEqualTo("/api/rbac/v2/workspaces/"))
-                .withHeader("x-rh-rbac-psk", equalTo("development-psk-value"))
-                .withHeader("x-rh-rbac-client-id", equalTo(WorkspaceUtils.APPLICATION_KEY))
-                .withHeader("x-rh-rbac-org-id", equalTo(DEFAULT_ORG_ID))
-                .withQueryParam("offset", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
-                .withQueryParam("limit", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
-                .willReturn(aResponse()
+        getClient()
+            .when(
+                request()
+                    .withHeader("x-rh-rbac-psk", "development-psk-value")
+                    .withHeader("x-rh-rbac-client-id", WorkspaceUtils.APPLICATION_KEY)
+                    .withHeader("x-rh-rbac-org-id", DEFAULT_ORG_ID)
+                    .withQueryStringParameter(Parameter.param("offset", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                    .withQueryStringParameter(Parameter.param("limit", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
+                    .withPath("/api/rbac/v2/workspaces/")
+            ).respond(
+                response()
                     .withHeader("Content-Type", MediaType.APPLICATION_JSON)
-                    .withStatus(HttpStatus.SC_OK)
-                    .withBody(getFileAsString("rbac-examples/workspaces/multiple-workspaces-response.json")))
-        );
+                    .withStatusCode(HttpStatus.SC_OK)
+                    .withBody(getFileAsString("rbac-examples/workspaces/multiple-workspaces-response.json"))
+            );
     }
 
     /**
@@ -114,18 +125,21 @@ public class MockServerConfig {
      * response.
      */
     public static void addMultipleReturningSingleDefaultWorkspaceRbacEndpoint() {
-        getClient().stubFor(
-            get(urlPathEqualTo("/api/rbac/v2/workspaces/"))
-                .withHeader("x-rh-rbac-psk", equalTo("development-psk-value"))
-                .withHeader("x-rh-rbac-client-id", equalTo(WorkspaceUtils.APPLICATION_KEY))
-                .withHeader("x-rh-rbac-org-id", equalTo(DEFAULT_ORG_ID))
-                .withQueryParam("offset", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
-                .withQueryParam("limit", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
-                .willReturn(aResponse()
+        getClient()
+            .when(
+                request()
+                    .withHeader("x-rh-rbac-psk", "development-psk-value")
+                    .withHeader("x-rh-rbac-client-id", WorkspaceUtils.APPLICATION_KEY)
+                    .withHeader("x-rh-rbac-org-id", DEFAULT_ORG_ID)
+                    .withQueryStringParameter(Parameter.param("offset", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                    .withQueryStringParameter(Parameter.param("limit", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
+                    .withPath("/api/rbac/v2/workspaces/")
+            ).respond(
+                response()
                     .withHeader("Content-Type", MediaType.APPLICATION_JSON)
-                    .withStatus(HttpStatus.SC_OK)
-                    .withBody(getFileAsString("rbac-examples/workspaces/single-default-workspace-response.json")))
-        );
+                    .withStatusCode(HttpStatus.SC_OK)
+                    .withBody(getFileAsString("rbac-examples/workspaces/single-default-workspace-response.json"))
+            );
     }
 
     /**
@@ -134,18 +148,21 @@ public class MockServerConfig {
      * it.
      */
     public static void addNoReturnedWorkspacesResponseRbacEndpoint() {
-        getClient().stubFor(
-            get(urlPathEqualTo("/api/rbac/v2/workspaces/"))
-                .withHeader("x-rh-rbac-psk", equalTo("development-psk-value"))
-                .withHeader("x-rh-rbac-client-id", equalTo(WorkspaceUtils.APPLICATION_KEY))
-                .withHeader("x-rh-rbac-org-id", equalTo(DEFAULT_ORG_ID))
-                .withQueryParam("offset", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
-                .withQueryParam("limit", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
-                .willReturn(aResponse()
+        getClient()
+            .when(
+                request()
+                    .withHeader("x-rh-rbac-psk", "development-psk-value")
+                    .withHeader("x-rh-rbac-client-id", WorkspaceUtils.APPLICATION_KEY)
+                    .withHeader("x-rh-rbac-org-id", DEFAULT_ORG_ID)
+                    .withQueryStringParameter(Parameter.param("offset", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                    .withQueryStringParameter(Parameter.param("limit", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
+                    .withPath("/api/rbac/v2/workspaces/")
+            ).respond(
+                response()
                     .withHeader("Content-Type", MediaType.APPLICATION_JSON)
-                    .withStatus(HttpStatus.SC_OK)
-                    .withBody(getFileAsString("rbac-examples/workspaces/no-workspaces-response.json")))
-        );
+                    .withStatusCode(HttpStatus.SC_OK)
+                    .withBody(getFileAsString("rbac-examples/workspaces/no-workspaces-response.json"))
+            );
     }
 
     /**
@@ -154,18 +171,21 @@ public class MockServerConfig {
      * expected "default" workspace.
      */
     public static void addReturningSingleRootWorkspaceRbacEndpoint() {
-        getClient().stubFor(
-            get(urlPathEqualTo("/api/rbac/v2/workspaces/"))
-                .withHeader("x-rh-rbac-psk", equalTo("development-psk-value"))
-                .withHeader("x-rh-rbac-client-id", equalTo(WorkspaceUtils.APPLICATION_KEY))
-                .withHeader("x-rh-rbac-org-id", equalTo(DEFAULT_ORG_ID))
-                .withQueryParam("offset", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
-                .withQueryParam("limit", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
-                .willReturn(aResponse()
+        getClient()
+            .when(
+                request()
+                    .withHeader("x-rh-rbac-psk", "development-psk-value")
+                    .withHeader("x-rh-rbac-client-id", WorkspaceUtils.APPLICATION_KEY)
+                    .withHeader("x-rh-rbac-org-id", DEFAULT_ORG_ID)
+                    .withQueryStringParameter(Parameter.param("offset", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                    .withQueryStringParameter(Parameter.param("limit", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
+                    .withPath("/api/rbac/v2/workspaces/")
+            ).respond(
+                response()
                     .withHeader("Content-Type", MediaType.APPLICATION_JSON)
-                    .withStatus(HttpStatus.SC_OK)
-                    .withBody(getFileAsString("rbac-examples/workspaces/single-root-workspace-response.json")))
-        );
+                    .withStatusCode(HttpStatus.SC_OK)
+                    .withBody(getFileAsString("rbac-examples/workspaces/single-root-workspace-response.json"))
+            );
     }
 
     /**
@@ -173,56 +193,36 @@ public class MockServerConfig {
      * fetched once from RBAC, since Notifications should have cached it.
      */
     public static void verifyDefaultWorkspaceFetchedOnlyOnce() {
-        getClient().verify(1,
-            getRequestedFor(urlPathEqualTo("/api/rbac/v2/workspaces/"))
-                .withHeader("x-rh-rbac-psk", equalTo("development-psk-value"))
-                .withHeader("x-rh-rbac-client-id", equalTo(WorkspaceUtils.APPLICATION_KEY))
-                .withHeader("x-rh-rbac-org-id", equalTo(DEFAULT_ORG_ID))
-                .withQueryParam("offset", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
-                .withQueryParam("limit", equalTo(String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
-        );
+        getClient()
+            .verify(
+                request()
+                    .withHeader("x-rh-rbac-psk", "development-psk-value")
+                    .withHeader("x-rh-rbac-client-id", WorkspaceUtils.APPLICATION_KEY)
+                    .withHeader("x-rh-rbac-org-id", DEFAULT_ORG_ID)
+                    .withQueryStringParameter(Parameter.param("offset", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_OFFSET)))
+                    .withQueryStringParameter(Parameter.param("limit", String.valueOf(WorkspaceUtils.REQUEST_DEFAULT_LIMIT)))
+                    .withPath("/api/rbac/v2/workspaces/"),
+                VerificationTimes.once()
+            );
     }
 
     public static void clearRbacWorkspaces() {
-        // Reset request journal to clear verification history
-        getClient().resetRequests();
-
-        // Remove stub mappings for RBAC workspaces endpoint
-        getClient().getStubMappings().stream()
-            .filter(stub -> {
-                var urlPath = stub.getRequest().getUrlPath();
-                return urlPath != null && urlPath.equals("/api/rbac/v2/workspaces/");
-            })
-            .forEach(stub -> getClient().removeStubMapping(stub));
+        getClient()
+            .clear(
+                request()
+                .withPath("/api/rbac/v2/workspaces/")
+            );
     }
 
     public static void clearRbac() {
-        // Reset request journal to clear verification history
-        getClient().resetRequests();
-
-        // Remove stub mappings for RBAC access endpoint
-        getClient().getStubMappings().stream()
-            .filter(stub -> {
-                var urlPath = stub.getRequest().getUrlPath();
-                return urlPath != null && urlPath.equals("/api/rbac/v1/access/");
-            })
-            .forEach(stub -> getClient().removeStubMapping(stub));
+        getClient().clear(request()
+                .withPath("/api/rbac/v1/access/"),
+                ClearType.EXPECTATIONS
+        );
     }
 
-    public static void removeHttpTestEndpoint(com.github.tomakehurst.wiremock.http.Request request) {
-        // Reset request journal to clear verification history
-        getClient().resetRequests();
-
-        // Remove stub mappings matching the request URL
-        String requestUrl = request.getUrl();
-        getClient().getStubMappings().stream()
-            .filter(stub -> {
-                var urlPattern = stub.getRequest().getUrlPattern();
-                var urlPath = stub.getRequest().getUrlPath();
-                return (urlPattern != null && requestUrl.matches(urlPattern)) ||
-                       (urlPath != null && urlPath.equals(requestUrl));
-            })
-            .forEach(stub -> getClient().removeStubMapping(stub));
+    public static void removeHttpTestEndpoint(HttpRequest request) {
+        getClient().clear(request);
     }
 
     private static String getFileAsString(String filename) {

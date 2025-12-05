@@ -1,35 +1,44 @@
 package com.redhat.cloud.notifications.connector.authentication.secrets;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import org.mockserver.integration.ClientAndServer;
+import org.mockserver.model.MediaType;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static org.mockserver.integration.ClientAndServer.startClientAndServer;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
 public class SourcesServerMockResource implements QuarkusTestResourceLifecycleManager {
 
-    private static WireMockServer wireMockServer;
+    private static final String LOG_LEVEL_KEY = "mockserver.logLevel";
+    private static ClientAndServer clientAndServer;
 
     @Override
     public Map<String, String> start() {
 
-        wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
-        wireMockServer.start();
+        setMockServerLogLevel();
 
-        String serverUrl = "http://localhost:" + wireMockServer.port();
+        clientAndServer = startClientAndServer();
+        String serverUrl = "http://localhost:" + clientAndServer.getPort();
 
         setupMockExpectations();
 
         Map<String, String> config = new HashMap<>();
         config.put("quarkus.rest-client.sources-oidc.url", serverUrl);
 
-        System.out.println("Sources server mock started on port: " + wireMockServer.port());
+        System.out.println("Sources server mock started");
 
         return config;
+    }
+
+    private static void setMockServerLogLevel() {
+        if (System.getProperty(LOG_LEVEL_KEY) == null) {
+            System.setProperty(LOG_LEVEL_KEY, "OFF");
+            System.out.println("MockServer log is disabled. Use '-D" + LOG_LEVEL_KEY + "=WARN|INFO|DEBUG|TRACE' to enable it.");
+        }
     }
 
     private static void setupMockExpectations() {
@@ -37,42 +46,48 @@ public class SourcesServerMockResource implements QuarkusTestResourceLifecycleMa
         // Mock Sources endpoints - Return 200 for correct Authorization header, 401 otherwise
 
         // Mock Sources getById endpoint - Generic success case for any secret ID with valid auth
-        // Priority 1 (higher priority) to match before the catch-all 401 stub
-        wireMockServer.stubFor(get(urlMatching("/internal/v2.0/secrets/[0-9]+"))
-            .atPriority(1)
-            .withHeader("Authorization", equalTo("Bearer " + OidcServerMockResource.TEST_ACCESS_TOKEN))
-            .withHeader("x-rh-sources-org-id", matching(".*"))
-            .willReturn(aResponse()
-                .withStatus(200)
-                .withHeader("Content-Type", "application/json")
+        clientAndServer.when(
+            request()
+                .withMethod("GET")
+                .withPath("/internal/v2.0/secrets/[0-9]+")
+                .withHeader("Authorization", "Bearer " + OidcServerMockResource.TEST_ACCESS_TOKEN)
+                .withHeader("x-rh-sources-org-id")
+        ).respond(
+            response()
+                .withStatusCode(200)
+                .withContentType(MediaType.APPLICATION_JSON)
                 .withBody("""
                     {
                       "username": "test-username",
                       "password": "test-password"
                     }
-                    """)));
+                    """)
+        );
 
         // Mock Sources getById endpoint - Generic unauthorized case for any secret ID without auth
-        // Priority 2 (lower priority) acts as catch-all for requests without proper auth
-        wireMockServer.stubFor(get(urlMatching("/internal/v2.0/secrets/[0-9]+"))
-            .atPriority(2)
-            .withHeader("x-rh-sources-org-id", matching(".*"))
-            .willReturn(aResponse()
-                .withStatus(401)
-                .withHeader("Content-Type", "application/json")
+        clientAndServer.when(
+            request()
+                .withMethod("GET")
+                .withPath("/internal/v2.0/secrets/[0-9]+")
+                .withHeader("x-rh-sources-org-id")
+        ).respond(
+            response()
+                .withStatusCode(401)
+                .withContentType(MediaType.APPLICATION_JSON)
                 .withBody("""
                     {
                       "error": "Unauthorized - missing or invalid Authorization header"
                     }
-                    """)));
+                    """)
+        );
 
         System.out.println("Mock expectations configured successfully for Sources endpoints");
     }
 
     @Override
     public void stop() {
-        if (wireMockServer != null) {
-            wireMockServer.stop();
+        if (clientAndServer != null) {
+            clientAndServer.stop();
             System.out.println("Sources server mock stopped");
         }
     }
