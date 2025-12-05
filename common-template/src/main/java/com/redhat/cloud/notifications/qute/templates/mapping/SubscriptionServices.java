@@ -35,7 +35,6 @@ public class SubscriptionServices {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_BUGFIX_ERRATA, true), ERRATA_FOLDER_NAME + "beta/bugfixEmailBody.html"),
         entry(new TemplateDefinition(GOOGLE_CHAT, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_BUGFIX_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionBugfixErrata.json"),
         entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_BUGFIX_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionBugfixErrata.json"),
-        entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_BUGFIX_ERRATA, true), ERRATA_FOLDER_NAME + "beta/newSubscriptionBugfixErrata.json"),
         entry(new TemplateDefinition(SLACK, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_BUGFIX_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionBugfixErrata.json"),
         entry(new TemplateDefinition(SLACK, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_BUGFIX_ERRATA, true), ERRATA_FOLDER_NAME + "beta/newSubscriptionBugfixErrata.json"),
 
@@ -44,7 +43,6 @@ public class SubscriptionServices {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_SECURITY_ERRATA, true), ERRATA_FOLDER_NAME + "beta/securityEmailBody.html"),
         entry(new TemplateDefinition(GOOGLE_CHAT, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_SECURITY_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionSecurityErrata.json"),
         entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_SECURITY_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionSecurityErrata.json"),
-        entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_SECURITY_ERRATA, true), ERRATA_FOLDER_NAME + "beta/newSubscriptionSecurityErrata.json"),
         entry(new TemplateDefinition(SLACK, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_SECURITY_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionSecurityErrata.json"),
         entry(new TemplateDefinition(SLACK, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_SECURITY_ERRATA, true), ERRATA_FOLDER_NAME + "beta/newSubscriptionSecurityErrata.json"),
 
@@ -53,7 +51,6 @@ public class SubscriptionServices {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA, true), ERRATA_FOLDER_NAME + "beta/enhancementEmailBody.html"),
         entry(new TemplateDefinition(GOOGLE_CHAT, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionEnhancementErrata.json"),
         entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionEnhancementErrata.json"),
-        entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA, true), ERRATA_FOLDER_NAME + "beta/newSubscriptionEnhancementErrata.json"),
         entry(new TemplateDefinition(SLACK, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA), ERRATA_FOLDER_NAME + "newSubscriptionEnhancementErrata.json"),
         entry(new TemplateDefinition(SLACK, BUNDLE_NAME, ERRATA_APP_NAME, ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA, true), ERRATA_FOLDER_NAME + "beta/newSubscriptionEnhancementErrata.json"),
 

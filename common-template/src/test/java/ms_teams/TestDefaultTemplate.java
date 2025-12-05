@@ -2,18 +2,12 @@ package ms_teams;
 
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
-import com.redhat.cloud.notifications.qute.templates.Severity;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -24,81 +18,30 @@ class TestDefaultTemplate {
 
     private static final String INVENTORY_URL = TestHelpers.expectedTestEnvUrlValue + "/insights/inventory/6ad30f3e-0497-4e74-99f1-b3f9a6120a6f";
     private static final String APPLICATION_URL = TestHelpers.expectedTestEnvUrlValue + "/insights/policies";
-    private static final String APP_BUNDLE_HEADER = "Policies - Red Hat Enterprise Linux";
+    private static final String TEAMS_EXPECTED_MSG = "\"text\": \"[%s](" + INVENTORY_URL + ") " +
+        "triggered %d event%s from Policies - Red Hat Enterprise Linux. [Open Policies](" + APPLICATION_URL + ")\"";
 
-    private static final String TEAMS_EXPECTED_MAIN_MSG = "[%s](" + INVENTORY_URL + ") triggered %d event%s";
-    private static final String TEAMS_EXPECTED_INLINE_URL_MSG = "[Open Policies](" + APPLICATION_URL + ")";
-    private static final String TEAMS_EXPECTED_EXPLORE_APP_MSG = "Explore %s and others in **Policies**.";
-
-    private static Stream<Arguments> betaAndSeverity() {
-        return Stream.of(
-                Arguments.of(false, null), // old template without severity
-                Arguments.of(true, null), // beta template without severity
-                Arguments.of(true, Severity.LOW.name()), // beta template with low severity
-                Arguments.of(true, Severity.CRITICAL.name()) // beta template with critical severity
-        );
-    }
-
-    @ParameterizedTest
-    @MethodSource("betaAndSeverity")
-    void testRenderedDefaultTemplate(boolean useBetaTemplates, String severity) {
-        final Action action = TestHelpers.createAdvisorAction("123456", "unknown", severity);
+    @Test
+    void testRenderedDefaultTemplate() {
+        final Action action = TestHelpers.createAdvisorAction("123456", "unknown");
 
         final String result = testHelpers.renderTemplate(
             IntegrationType.MS_TEAMS,
             "unknown",
             action,
             INVENTORY_URL,
-            APPLICATION_URL,
-            useBetaTemplates
+            APPLICATION_URL
         );
 
-        if (useBetaTemplates) {
-            // The JSON schema is not up to date with the preferred formatting of Teams.
-            // Validated using https://adaptivecards.microsoft.com/designer.html
+        final String expectedMessage = String.format(TEAMS_EXPECTED_MSG,
+            action.getContext().getAdditionalProperties().get("display_name"),
+            action.getEvents().size(),
+            !action.getEvents().isEmpty() ? "s" : StringUtils.EMPTY);
 
-            assertTrue(result.contains(TestHelpers.NOT_USE_EVENT_TYPE + " - " + APP_BUNDLE_HEADER));
-            switch (severity) {
-                case null -> assertFalse(result.contains("\"type\": \"Badge\""));
-                case "LOW" -> {
-                    assertTrue(result.contains("\u26AB Severity: Low"));
-                    assertTrue(result.contains("\"style\": \"Subtle\""));
-                }
-                case "CRITICAL" -> {
-                    assertTrue(result.contains("\u203C\uFE0F Severity: Critical"));
-                    assertTrue(result.contains("\"appearance\": \"Tint\""));
-                    assertTrue(result.contains("\"style\": \"Attention\""));
-                }
-                default -> {
-                    // Nothing
-                }
-            }
+        // check notification body
+        assertTrue(result.contains(expectedMessage));
 
-            assertTrue(result.contains(
-                    String.format(TEAMS_EXPECTED_MAIN_MSG,
-                            action.getContext().getAdditionalProperties().get("display_name"),
-                            action.getEvents().size(),
-                            action.getEvents().size() != 1 ? "s" : StringUtils.EMPTY
-                    )));
-            assertTrue(result.contains(String.format(TEAMS_EXPECTED_EXPLORE_APP_MSG,
-                    action.getEvents().size() != 1 ? "these" : "this")));
-
-            // Open Policies button
-            assertTrue(result.contains("\"type\": \"Action.OpenUrl\""));
-            assertTrue(result.contains("\"url\": \"" + APPLICATION_URL + "\""));
-            assertTrue(result.contains("\"title\": \"Open Policies\""));
-        } else {
-            final String expectedMessage = String.format(TEAMS_EXPECTED_MAIN_MSG + " from " + APP_BUNDLE_HEADER + ". " + TEAMS_EXPECTED_INLINE_URL_MSG,
-                    action.getContext().getAdditionalProperties().get("display_name"),
-                    action.getEvents().size(),
-                    action.getEvents().size() != 1 ? "s" : StringUtils.EMPTY);
-
-            // check notification body
-            assertTrue(result.contains(expectedMessage));
-
-            // check content from parent template
-            AdaptiveCardValidatorHelper.validate(result);
-        }
-
+        // check content from parent template
+        AdaptiveCardValidatorHelper.validate(result);
     }
 }

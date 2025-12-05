@@ -19,12 +19,6 @@ public class ErrataTestHelpers {
     public static final String SECURITY_ERRATA = "new-subscription-security-errata";
     public static final String ENHANCEMENT_ERRATA = "new-subscription-enhancement-errata";
 
-    public static final String ERRATA_BUNDLE_DISPLAY_NAME = "Subscription Services";
-    public static final String ERRATA_APPLICATION_DISPLAY_NAME = "Errata";
-    public static final String BUGFIX_ERRATA_DISPLAY_NAME = "Subscription Bug Fixes";
-    public static final String SECURITY_ERRATA_DISPLAY_NAME = "Subscription Security Updates";
-    public static final String ENHANCEMENT_ERRATA_DISPLAY_NAME = "Subscription Enhancements";
-
     private static final String ERRATA_SEARCH_URL = "https://access.redhat.com/errata-search/?from=notifications&integration=";
 
     public static Action createErrataAction() {

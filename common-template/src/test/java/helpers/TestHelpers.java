@@ -401,12 +401,6 @@ public class TestHelpers {
             "event_type", Map.of("display_name", eventTypeDisplayName));
     }
 
-    public Map<String, Object> addSourceParameterToAction(Action action, String bundleDisplayName, String applicationDisplayName, String eventTypeDisplayName) {
-        Map<String, Object> map = objectMapper.convertValue(action, new TypeReference<Map<String, Object>>() { });
-        map.put("source", buildSourceParameter(bundleDisplayName, applicationDisplayName, eventTypeDisplayName));
-        return map;
-    }
-
     public String renderTemplate(final IntegrationType integrationType, final String eventType, final Action action, final String inventoryUrl, final String applicationUrl) {
         return renderTemplate(integrationType, eventType, action, inventoryUrl, applicationUrl, false);
     }
