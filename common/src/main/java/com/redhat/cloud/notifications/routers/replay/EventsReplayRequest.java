@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.routers.replay;
 
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.redhat.cloud.notifications.models.EndpointType;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
@@ -19,11 +18,6 @@ public class EventsReplayRequest {
 
     @NotNull
     public LocalDateTime endDate;
-
-    @NotNull
-    public EndpointType endpointType;
-
-    public String endpointSubType;
 
     public String orgId;
 }

@@ -91,10 +91,10 @@ public class EndpointProcessor {
     }
 
     public void process(Event event) {
-        process(event, false, null, null);
+        process(event, false);
     }
 
-    public void process(Event event, boolean replayOnly, EndpointType endpointTypeToReplay, String endpointSubTypeToReplay) {
+    public void process(Event event, boolean replayEmailsOnly) {
         processedItems.increment();
         final List<Endpoint> endpoints = new ArrayList<>();
         if (TestEventHelper.isIntegrationTestEvent(event)) {
@@ -143,7 +143,7 @@ public class EndpointProcessor {
         DelayedThrower.throwEventually(DELAYED_EXCEPTION_MSG, accumulator -> {
             for (Map.Entry<EndpointType, List<Endpoint>> endpointsByTypeEntry : endpointsByType.entrySet()) {
                 try {
-                    if (replayOnly && endpointsByTypeEntry.getKey() != endpointTypeToReplay) {
+                    if (replayEmailsOnly && endpointsByTypeEntry.getKey() != EndpointType.EMAIL_SUBSCRIPTION) {
                         continue;
                     }
                     // For each endpoint type, the list of target endpoints is sent alongside with the event to the relevant processor.
@@ -153,10 +153,6 @@ public class EndpointProcessor {
                             if (!event.getEventType().isRestrictToRecipientsIntegrations()) {
                                 Map<String, List<Endpoint>> endpointsBySubType = endpointsByTypeEntry.getValue().stream().collect(Collectors.groupingBy(Endpoint::getSubType));
                                 for (Map.Entry<String, List<Endpoint>> endpointsBySubTypeEntry : endpointsBySubType.entrySet()) {
-                                    if (replayOnly &&
-                                        (endpointSubTypeToReplay == null || !endpointSubTypeToReplay.equals(endpointsBySubTypeEntry.getKey()))) {
-                                        continue;
-                                    }
                                     try {
                                         if (SLACK_ENDPOINT_SUBTYPE.equals(endpointsBySubTypeEntry.getKey())) {
                                             slackProcessor.process(event, endpointsBySubTypeEntry.getValue());
@@ -174,12 +170,12 @@ public class EndpointProcessor {
                             }
                             break;
                         case EMAIL_SUBSCRIPTION:
-                            if (isAggregatorEvent(event)) {
+                            if (isAggregatorEvent(event) && !replayEmailsOnly) {
                                 Log.debugf("[org_id: %s] Sending event through the aggregator processor: %s", event.getOrgId(), event);
                                 emailAggregationProcessor.processAggregation(event);
                             } else {
                                 Log.debugf("[org_id: %s] Sending event through the email connector: %s", event.getOrgId(), event);
-                                emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());
+                                emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue(), replayEmailsOnly);
                             }
                             break;
                         case WEBHOOK:

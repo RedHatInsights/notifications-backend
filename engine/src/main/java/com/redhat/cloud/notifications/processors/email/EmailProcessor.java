@@ -78,6 +78,10 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
     @Override
     public void process(final Event event, final List<Endpoint> endpoints) {
+        process(event, endpoints, false);
+    }
+
+    public void process(final Event event, final List<Endpoint> endpoints, final boolean replayedEvent) {
 
         // Fetch the template that will be used to hydrate it with the data.
         final Optional<InstantEmailTemplate> instantEmailTemplateMaybe = this.templateRepository.findInstantEmailTemplate(event.getEventType().getId());
