@@ -866,6 +866,17 @@ public class EventResourceTest extends DbIsolatedTest {
         event.setCreated(created);
         event.setHasAuthorizationCriterion(hasAuthorizationCriterion);
         event.setPayload(payload);
+
+        // Extract and set severity from payload
+        com.redhat.cloud.notifications.Severity severity = com.redhat.cloud.notifications.Severity.UNDEFINED;
+        if (payload != null && payload.startsWith("{")) {
+            Action action = Parser.decode(payload);
+            if (action.getSeverity() != null) {
+                severity = com.redhat.cloud.notifications.Severity.valueOf(action.getSeverity().toUpperCase());
+            }
+        }
+        event.setSeverity(severity);
+
         entityManager.persist(event);
         return entityManager.merge(event);
     }
