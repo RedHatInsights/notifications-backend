@@ -16,7 +16,7 @@ jobs:
     env:
       TEST_IMAGE: quay.io/konflux-ci/mintmaker-renovate-image:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Validate renovate.json
