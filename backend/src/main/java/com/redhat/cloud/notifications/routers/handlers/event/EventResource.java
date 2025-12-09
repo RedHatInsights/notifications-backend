@@ -179,6 +179,7 @@ public class EventResource {
             entry.setApplication(event.getApplicationDisplayName());
             entry.setEventType(event.getEventTypeDisplayName());
             entry.setActions(actions);
+            entry.setSeverity(event.getSeverity());
             if (includePayload) {
                 entry.setPayload(event.getPayload());
             }

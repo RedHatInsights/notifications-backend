@@ -868,6 +868,17 @@ public class EventResourceTest extends DbIsolatedTest {
         event.setCreated(created);
         event.setHasAuthorizationCriterion(hasAuthorizationCriterion);
         event.setPayload(payload);
+
+        // Extract and set severity from payload
+        com.redhat.cloud.notifications.Severity severity = com.redhat.cloud.notifications.Severity.UNDEFINED;
+        if (payload != null && payload.startsWith("{")) {
+            Action action = Parser.decode(payload);
+            if (action.getSeverity() != null) {
+                severity = com.redhat.cloud.notifications.Severity.valueOf(action.getSeverity().toUpperCase());
+            }
+        }
+        event.setSeverity(severity);
+
         entityManager.persist(event);
         return entityManager.merge(event);
     }
@@ -954,6 +965,8 @@ public class EventResourceTest extends DbIsolatedTest {
         assertEquals(event.getBundleDisplayName(), eventLogEntry.getBundle());
         assertEquals(event.getApplicationDisplayName(), eventLogEntry.getApplication());
         assertEquals(event.getEventTypeDisplayName(), eventLogEntry.getEventType());
+        // Severity should be present in the event log entry
+        Assertions.assertNotNull(eventLogEntry.getSeverity(), "Severity should not be null");
         if (historyEntries == null) {
             assertTrue(eventLogEntry.getActions().isEmpty());
         } else {
@@ -1103,5 +1116,28 @@ public class EventResourceTest extends DbIsolatedTest {
         when(kesselCheckClient
             .check(kesselTestHelper.buildCheckRequest(orgId, subjectUsername, permission)))
             .thenReturn(kesselTestHelper.buildCheckResponse(allowed));
+    }
+
+    @Test
+    void testEventLogEntriesIncludeSeverity() {
+        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        Bundle bundle = resourceHelpers.createBundle("test-bundle", "Test Bundle");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "test-app", "Test Application");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "test-event-type", "Test Event Type", "Test Event Type");
+
+        // Create event with severity
+        Action action = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
+        action.setSeverity(com.redhat.cloud.notifications.Severity.CRITICAL.name());
+        String payload = Parser.encode(action);
+        Event event = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, payload, false);
+
+        // Verify severity is included in the response
+        Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false);
+
+        assertEquals(1, page.getMeta().getCount());
+        EventLogEntry entry = page.getData().get(0);
+        assertEquals(event.getId(), entry.getId());
+        assertEquals(com.redhat.cloud.notifications.Severity.CRITICAL, entry.getSeverity());
     }
 }

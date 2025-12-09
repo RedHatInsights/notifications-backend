@@ -30,7 +30,20 @@ public class SeverityTransformer {
             return Severity.UNDEFINED;
         }
         Action action = ((EventWrapperAction) event.getEventWrapper()).getEvent();
+        return getSeverity(action);
+    }
 
+    /**
+     * Retrieves the severity level from an Action.
+     * <br>
+     * Priority:
+     * <ol>
+     *     <li>Top-level {@link Action#severity severity} value</li>
+     *     <li>Migration from field of existing tenant</li>
+     *     <li>Default value of {@link Severity#UNDEFINED}</li>
+     * </ol>
+     */
+    public Severity getSeverity(Action action) {
         if (action.getSeverity() != null) {
             try {
                 return Severity.valueOf(action.getSeverity().toUpperCase());

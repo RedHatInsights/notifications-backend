@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.redhat.cloud.notifications.Severity;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
@@ -31,6 +32,8 @@ public class EventLogEntry {
     private String eventType;
 
     private String payload;
+
+    private Severity severity;
 
     @NotNull
     private List<EventLogEntryAction> actions;
@@ -81,6 +84,14 @@ public class EventLogEntry {
 
     public void setPayload(String payload) {
         this.payload = payload;
+    }
+
+    public Severity getSeverity() {
+        return severity;
+    }
+
+    public void setSeverity(Severity severity) {
+        this.severity = severity;
     }
 
     public List<EventLogEntryAction> getActions() {
