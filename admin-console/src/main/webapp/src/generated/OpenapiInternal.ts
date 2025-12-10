@@ -562,7 +562,7 @@ export namespace Schemas {
           application_id: zodSchemaUUID().optional().nullable(),
           role: z.string().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaAddApplicationRequest() {
@@ -573,7 +573,7 @@ export namespace Schemas {
           name: z.string(),
           owner_role: z.string().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaAggregationEmailTemplate() {
@@ -590,7 +590,7 @@ export namespace Schemas {
           subscription_type: zodSchemaSubscriptionType(),
           updated: zodSchemaLocalDateTime().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaApplication() {
@@ -603,7 +603,7 @@ export namespace Schemas {
           name: z.string(),
           updated: zodSchemaLocalDateTime().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaApplication1() {
@@ -612,7 +612,7 @@ export namespace Schemas {
           display_name: z.string(),
           id: zodSchemaUUID(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaApplicationDTO() {
@@ -625,18 +625,18 @@ export namespace Schemas {
           name: z.string(),
           owner_role: z.string().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaApplicationSettingsValue() {
       return z
       .object({
           eventTypes: z
-          .record(zodSchemaEventTypeSettingsValue())
+          .record(z.string(), zodSchemaEventTypeSettingsValue())
           .optional()
           .nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaBehaviorGroup() {
@@ -652,7 +652,7 @@ export namespace Schemas {
           id: zodSchemaUUID().optional().nullable(),
           updated: zodSchemaLocalDateTime().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaBehaviorGroupAction() {
@@ -662,7 +662,7 @@ export namespace Schemas {
           endpoint: zodSchemaEndpoint().optional().nullable(),
           id: zodSchemaBehaviorGroupActionId().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaBehaviorGroupActionId() {
@@ -671,7 +671,7 @@ export namespace Schemas {
           behaviorGroupId: zodSchemaUUID(),
           endpointId: zodSchemaUUID(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaBundle() {
@@ -683,18 +683,18 @@ export namespace Schemas {
           name: z.string(),
           updated: zodSchemaLocalDateTime().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaBundleSettingsValue() {
       return z
       .object({
           applications: z
-          .record(zodSchemaApplicationSettingsValue())
+          .record(z.string(), zodSchemaApplicationSettingsValue())
           .optional()
           .nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaCamelProperties() {
@@ -707,11 +707,11 @@ export namespace Schemas {
           .optional()
           .nullable(),
           disable_ssl_verification: z.boolean(),
-          extras: z.record(z.string()).optional().nullable(),
+          extras: z.record(z.string(), z.string()).optional().nullable(),
           secret_token: z.string().optional().nullable(),
           url: z.string(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaCreateBehaviorGroupRequest() {
@@ -724,7 +724,7 @@ export namespace Schemas {
           endpoint_ids: z.array(z.string()).optional().nullable(),
           event_type_ids: z.array(z.string()).optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaCreateBehaviorGroupResponse() {
@@ -737,7 +737,7 @@ export namespace Schemas {
           event_types: z.array(z.string()),
           id: zodSchemaUUID(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaCurrentStatus() {
@@ -747,7 +747,7 @@ export namespace Schemas {
           start_time: zodSchemaLocalDateTime().optional().nullable(),
           status: zodSchemaStatus(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaDrawerEntryPayload() {
@@ -760,7 +760,7 @@ export namespace Schemas {
           source: z.string().optional().nullable(),
           title: z.string().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaDuplicateNameMigrationReport() {
@@ -769,7 +769,7 @@ export namespace Schemas {
           updatedBehaviorGroups: z.number().int().optional().nullable(),
           updatedIntegrations: z.number().int().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaEndpoint() {
@@ -794,17 +794,17 @@ export namespace Schemas {
           type: zodSchemaEndpointType(),
           updated: zodSchemaLocalDateTime().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaEndpointPage() {
       return z
       .object({
           data: z.array(zodSchemaEndpoint()),
-          links: z.record(z.string()),
+          links: z.record(z.string(), z.string()),
           meta: zodSchemaMeta(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaEndpointProperties() {
@@ -827,7 +827,7 @@ export namespace Schemas {
       .object({
           message: z.string(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaEndpointType() {
@@ -855,13 +855,13 @@ export namespace Schemas {
           id: zodSchemaUUID(),
           payload: z.string().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaEventLogEntryAction() {
       return z
       .object({
-          details: z.record(z.unknown()).optional().nullable(),
+          details: z.record(z.string(), z.unknown()).optional().nullable(),
           endpoint_id: zodSchemaUUID().optional().nullable(),
           endpoint_sub_type: z.string().optional().nullable(),
           endpoint_type: zodSchemaEndpointType(),
@@ -869,7 +869,7 @@ export namespace Schemas {
           invocation_result: z.boolean(),
           status: zodSchemaEventLogEntryActionStatus(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaEventLogEntryActionStatus() {
@@ -890,7 +890,7 @@ export namespace Schemas {
           subscription_locked: z.boolean().optional().nullable(),
           visible: z.boolean().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaEventTypeBehavior() {
@@ -900,7 +900,7 @@ export namespace Schemas {
           event_type: zodSchemaEventType().optional().nullable(),
           id: zodSchemaEventTypeBehaviorId().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaEventTypeBehaviorId() {
@@ -909,16 +909,16 @@ export namespace Schemas {
           behaviorGroupId: zodSchemaUUID(),
           eventTypeId: zodSchemaUUID(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaEventTypeSettingsValue() {
       return z
       .object({
-          emailSubscriptionTypes: z.record(z.boolean()).optional().nullable(),
+          emailSubscriptionTypes: z.record(z.string(), z.boolean()).optional().nullable(),
           hasForcedEmail: z.boolean().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaFacet() {
@@ -932,7 +932,7 @@ export namespace Schemas {
           id: z.string(),
           name: z.string(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaHttpType() {
@@ -952,7 +952,7 @@ export namespace Schemas {
           subject_template_id: zodSchemaUUID(),
           updated: zodSchemaLocalDateTime().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaInternalApplicationUserPermission() {
@@ -962,7 +962,7 @@ export namespace Schemas {
           application_id: zodSchemaUUID(),
           role: z.string(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaInternalRoleAccess() {
@@ -972,7 +972,7 @@ export namespace Schemas {
           id: zodSchemaUUID().optional().nullable(),
           role: z.string(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaInternalUserPermissions() {
@@ -982,7 +982,7 @@ export namespace Schemas {
           is_admin: z.boolean(),
           roles: z.array(z.string()),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaLocalDate() {
@@ -1000,9 +1000,9 @@ export namespace Schemas {
   function zodSchemaMessageValidationResponse() {
       return z
       .object({
-          errors: z.record(z.array(z.string())),
+          errors: z.record(z.string(), z.array(z.string())),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaMeta() {
@@ -1010,14 +1010,14 @@ export namespace Schemas {
       .object({
           count: z.number().int(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaNotificationHistory() {
       return z
       .object({
           created: zodSchemaLocalDateTime().optional().nullable(),
-          details: z.record(z.unknown()).optional().nullable(),
+          details: z.record(z.string(), z.unknown()).optional().nullable(),
           endpointId: zodSchemaUUID().optional().nullable(),
           endpointSubType: z.string().optional().nullable(),
           endpointType: zodSchemaEndpointType().optional().nullable(),
@@ -1026,7 +1026,7 @@ export namespace Schemas {
           invocationTime: z.number().int(),
           status: zodSchemaNotificationStatus(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaNotificationStatus() {
@@ -1043,50 +1043,50 @@ export namespace Schemas {
       return z
       .object({
           data: z.array(zodSchemaBehaviorGroup()),
-          links: z.record(z.string()),
+          links: z.record(z.string(), z.string()),
           meta: zodSchemaMeta(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaPageDrawerEntryPayload() {
       return z
       .object({
           data: z.array(zodSchemaDrawerEntryPayload()),
-          links: z.record(z.string()),
+          links: z.record(z.string(), z.string()),
           meta: zodSchemaMeta(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaPageEventLogEntry() {
       return z
       .object({
           data: z.array(zodSchemaEventLogEntry()),
-          links: z.record(z.string()),
+          links: z.record(z.string(), z.string()),
           meta: zodSchemaMeta(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaPageEventType() {
       return z
       .object({
           data: z.array(zodSchemaEventType()),
-          links: z.record(z.string()),
+          links: z.record(z.string(), z.string()),
           meta: zodSchemaMeta(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaPageNotificationHistory() {
       return z
       .object({
           data: z.array(zodSchemaNotificationHistory()),
-          links: z.record(z.string()),
+          links: z.record(z.string(), z.string()),
           meta: zodSchemaMeta(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaRenderEmailTemplateRequest() {
@@ -1095,7 +1095,7 @@ export namespace Schemas {
           payload: z.string(),
           template: z.array(z.string()),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaRequestDefaultBehaviorGroupPropertyList() {
@@ -1104,7 +1104,7 @@ export namespace Schemas {
           ignore_preferences: z.boolean(),
           only_admins: z.boolean(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaRequestSystemSubscriptionProperties() {
@@ -1113,7 +1113,7 @@ export namespace Schemas {
           group_id: zodSchemaUUID().optional().nullable(),
           only_admins: z.boolean(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaServerInfo() {
@@ -1121,15 +1121,15 @@ export namespace Schemas {
       .object({
           environment: zodSchemaEnvironment().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaSettingsValuesByEventType() {
       return z
       .object({
-          bundles: z.record(zodSchemaBundleSettingsValue()).optional().nullable(),
+          bundles: z.record(z.string(), zodSchemaBundleSettingsValue()).optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaStatus() {
@@ -1147,7 +1147,7 @@ export namespace Schemas {
           ignore_preferences: z.boolean(),
           only_admins: z.boolean(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaTemplate() {
@@ -1160,7 +1160,7 @@ export namespace Schemas {
           name: z.string(),
           updated: zodSchemaLocalDateTime().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaTriggerDailyDigestRequest() {
@@ -1172,7 +1172,7 @@ export namespace Schemas {
           org_id: z.string(),
           start: zodSchemaLocalDateTime().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaUUID() {
@@ -1186,7 +1186,7 @@ export namespace Schemas {
           name: z.string().optional().nullable(),
           owner_role: z.string().optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaUpdateBehaviorGroupRequest() {
@@ -1197,7 +1197,7 @@ export namespace Schemas {
           endpoint_ids: z.array(z.string()).optional().nullable(),
           event_type_ids: z.array(z.string()).optional().nullable(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaUpdateNotificationDrawerStatus() {
@@ -1206,7 +1206,7 @@ export namespace Schemas {
           notification_ids: z.array(z.string()),
           read_status: z.boolean(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchemaWebhookProperties() {
@@ -1218,7 +1218,7 @@ export namespace Schemas {
           secret_token: z.string().optional().nullable(),
           url: z.string(),
       })
-      .nonstrict();
+      ;
   }
 
   function zodSchema__Empty() {
@@ -2807,7 +2807,7 @@ export namespace Operations {
     .object({
         result: z.array(z.string()).optional().nullable(),
     })
-    .nonstrict();
+    ;
     type Response200 = {
       result?: Array<string> | undefined | null;
     };
@@ -2815,7 +2815,7 @@ export namespace Operations {
     .object({
         message: z.string().optional().nullable(),
     })
-    .nonstrict();
+    ;
     type Response400 = {
       message?: string | undefined | null;
     };

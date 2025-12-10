@@ -7,6 +7,7 @@ import { Bundle } from '../types/Notifications';
 
 type EnhancedNavItemProps = {
     to: string;
+    children?: React.ReactNode;
 }
 
 const EnhancedNavItem: React.FunctionComponent<EnhancedNavItemProps> = props => {
