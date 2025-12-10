@@ -33,6 +33,7 @@ public class KesselCheckClient {
         OAuth2ClientCredentials credentials = oauth2ClientCredentialsCache.getCredentials();
 
         Pair<KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub, ManagedChannel> clientAndChannel = new ClientBuilder(backendConfig.getKesselUrl())
+            .insecure()
             .oauth2ClientAuthenticated(credentials)
             .build();
         grpcClient = clientAndChannel.getLeft();
