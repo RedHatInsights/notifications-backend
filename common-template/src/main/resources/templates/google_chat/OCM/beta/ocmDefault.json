@@ -1,0 +1,4 @@
+{#include google_chat/Common/beta/commonCardsV2.json}
+  {#content-intro}{data.events.size()} event{#if data.events.size() != 1}s{/if} triggered.{/content-intro}
+  {#button-url}https://cloud.redhat.com/openshift/details/s/{data.events[0].payload.global_vars.subscription_id}?from=notifications&integration=google_chat{/button-url}
+{/include}

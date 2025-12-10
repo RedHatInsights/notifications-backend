@@ -1,0 +1,25 @@
+{#include google_chat/Common/beta/commonCardsV2.json}
+  {#severity-label}Highest severity:{/severity-label}
+  {#content-intro}There {#if data.events.size() == 1}is 1 security update{#else}are {data.events.size()} security updates{/if} affecting your subscriptions.{#if data.events.size() > 3}<br>First 3 are:{/if}{/content-intro}
+  {#content-body}
+    {#each data.events}
+    {#if it_index < 3}
+    {
+      "decoratedText": {
+        "startIcon": {
+          "iconUrl": "https://console.redhat.com/apps/frontend-assets/email-assets/severities/{it.payload.severity.or('UNDEFINED').asPatternFlySeverity}.png"
+        },
+        "text": "<a href=\"{data.context.base_url}{it.payload.id}?from=notifications&integration=google_chat\">{it.payload.id}</a><br>{it.payload.synopsis}",
+        "wrapText": true
+      }
+    },
+    {/if}
+    {/each}
+    {
+      "divider": {}
+    },
+  {/content-body}
+  {#explore-location}errata search{/explore-location}
+  {#button-title}Search errata{/button-title}
+  {#button-url}https://access.redhat.com/errata-search/?from=notifications&integration=google_chat{/button-url}
+{/include}
