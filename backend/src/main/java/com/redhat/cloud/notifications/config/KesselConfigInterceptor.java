@@ -15,7 +15,7 @@ import java.net.URL;
 
 /**
  * <p>A configuration interceptor which helps overriding the resolved
- * configuration parameters for Kessel's inventory and relations APIs.</p>
+ * configuration parameters for Kessel's API.</p>
  *
  * <p>The <a href="https://github.com/RedHatInsights/clowder-quarkus-config-source">clowder-quarkus-config-source</a>
  * extension is very helpful to load the Clowder endpoints because it gets both
@@ -43,9 +43,9 @@ import java.net.URL;
 @Priority(Priorities.APPLICATION)
 public class KesselConfigInterceptor implements ConfigSourceInterceptor {
     /**
-     * Overrides the {@code inventory-api.target-url}'s and
-     * {@code relations-api.target-url}'s URL by removing the "http" or "https"
-     * schemes, and by replacing the port with the corresponding gRPC port.
+     * Overrides the {@code notifications.kessel.url}'s URL by removing the
+     * "http" or "https" schemes, and by replacing the port with the
+     * corresponding gRPC port.
      * @param configSourceInterceptorContext the configuration source's
      *                                       interceptor's context.
      * @param name the name of the configuration property we are loading.
@@ -57,7 +57,7 @@ public class KesselConfigInterceptor implements ConfigSourceInterceptor {
     public ConfigValue getValue(final ConfigSourceInterceptorContext configSourceInterceptorContext, final String name) {
         final ConfigValue configValue = SecretKeys.doLocked(() -> configSourceInterceptorContext.proceed(name));
 
-        if ((configValue != null) && (name.equals("inventory-api.target-url") || name.equals("relations-api.target-url"))) {
+        if (configValue != null && "notifications.kessel.url".equals(name)) {
             final String kesselUrl = configValue.getValue();
             try {
                 final URL url = new URI(kesselUrl).toURL();
