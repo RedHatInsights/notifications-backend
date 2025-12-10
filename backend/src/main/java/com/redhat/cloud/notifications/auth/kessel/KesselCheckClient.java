@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.auth.kessel;
 
 import com.nimbusds.jose.util.Pair;
 import com.redhat.cloud.notifications.config.BackendConfig;
+import io.grpc.InsecureChannelCredentials;
 import io.grpc.ManagedChannel;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -30,11 +31,10 @@ public class KesselCheckClient {
     @PostConstruct
     void postConstruct() {
 
-        OAuth2ClientCredentials credentials = oauth2ClientCredentialsCache.getCredentials();
+        OAuth2ClientCredentials oAuth2ClientCredentials = oauth2ClientCredentialsCache.getCredentials();
 
         Pair<KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub, ManagedChannel> clientAndChannel = new ClientBuilder(backendConfig.getKesselUrl())
-            .insecure()
-            .oauth2ClientAuthenticated(credentials)
+            .oauth2ClientAuthenticated(oAuth2ClientCredentials, InsecureChannelCredentials.create())
             .build();
         grpcClient = clientAndChannel.getLeft();
         grpcChannel = clientAndChannel.getRight();
