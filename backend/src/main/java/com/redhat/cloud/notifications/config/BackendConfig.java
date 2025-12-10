@@ -28,6 +28,7 @@ public class BackendConfig {
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
     private static final String KESSEL_ENABLED = "notifications.kessel.enabled";
+    private static final String KESSEL_INSECURE_CLIENT_ENABLED = "notifications.kessel.insecure-client.enabled";
     private static final String KESSEL_URL = "notifications.kessel.url";
     private static final String OIDC_CLIENT_ID = "notifications.oidc.client-id";
     private static final String OIDC_ISSUER = "notifications.oidc.issuer";
@@ -81,6 +82,9 @@ public class BackendConfig {
 
     @ConfigProperty(name = KESSEL_ENABLED, defaultValue = "false")
     boolean kesselEnabled;
+
+    @ConfigProperty(name = KESSEL_INSECURE_CLIENT_ENABLED, defaultValue = "false")
+    boolean kesselInsecureClientEnabled;
 
     @ConfigProperty(name = KESSEL_URL)
     String kesselUrl;
@@ -193,6 +197,10 @@ public class BackendConfig {
         } else {
             return kesselEnabled;
         }
+    }
+
+    public boolean isKesselInsecureClientEnabled() {
+        return kesselInsecureClientEnabled;
     }
 
     public String getKesselUrl() {

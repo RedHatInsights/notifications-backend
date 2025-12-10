@@ -2,8 +2,8 @@ package com.redhat.cloud.notifications.auth.kessel;
 
 import com.nimbusds.jose.util.Pair;
 import com.redhat.cloud.notifications.config.BackendConfig;
-import io.grpc.InsecureChannelCredentials;
 import io.grpc.ManagedChannel;
+import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -31,11 +31,19 @@ public class KesselCheckClient {
     @PostConstruct
     void postConstruct() {
 
-        OAuth2ClientCredentials oAuth2ClientCredentials = oauth2ClientCredentialsCache.getCredentials();
+        Pair<KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub, ManagedChannel> clientAndChannel;
+        if (backendConfig.isKesselInsecureClientEnabled()) {
+            Log.warn("Initializing insecure client for Kessel: OAuth2 authentication and TLS verification will be disabled");
+            clientAndChannel = new ClientBuilder(backendConfig.getKesselUrl())
+                .insecure()
+                .build();
+        } else {
+            OAuth2ClientCredentials oAuth2ClientCredentials = oauth2ClientCredentialsCache.getCredentials();
+            clientAndChannel = new ClientBuilder(backendConfig.getKesselUrl())
+                .oauth2ClientAuthenticated(oAuth2ClientCredentials)
+                .build();
+        }
 
-        Pair<KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub, ManagedChannel> clientAndChannel = new ClientBuilder(backendConfig.getKesselUrl())
-            .oauth2ClientAuthenticated(oAuth2ClientCredentials, InsecureChannelCredentials.create())
-            .build();
         grpcClient = clientAndChannel.getLeft();
         grpcChannel = clientAndChannel.getRight();
     }
