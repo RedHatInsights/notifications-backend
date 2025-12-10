@@ -2,7 +2,7 @@ import '@patternfly/react-core/dist/styles/base.css';
 
 import { validateSchemaResponseInterceptor } from 'openapi2typescript/react-fetching-library';
 import * as React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { ClientContextProvider, createClient } from 'react-fetching-library';
 import { HashRouter } from 'react-router-dom';
 import { Buffer } from 'buffer';
@@ -15,13 +15,14 @@ const client = createClient({
 
 window.Buffer = Buffer;
 
-ReactDOM.render(
-    <React.StrictMode>
-        <HashRouter>
-            <ClientContextProvider client={ client }>
-                <App />
-            </ClientContextProvider>
-        </HashRouter>
-    </React.StrictMode>,
-    document.getElementById('root')
+const container = document.getElementById('root');
+if (!container) throw new Error('Failed to find the root element');
+const root = createRoot(container);
+
+root.render(
+    <HashRouter>
+        <ClientContextProvider client={ client }>
+            <App />
+        </ClientContextProvider>
+    </HashRouter>
 );

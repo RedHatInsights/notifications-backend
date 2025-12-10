@@ -40,7 +40,9 @@ interface TableData {
     isExpanded: boolean;
 }
 
-type EventTypeTableLayoutProps = Pick<EventTypeTableBaseProps, 'hasPermissions' | 'onCreateEventType'> & CreateEventTypeButtonProp;
+type EventTypeTableLayoutProps = Pick<EventTypeTableBaseProps, 'hasPermissions' | 'onCreateEventType'> & CreateEventTypeButtonProp & {
+    children?: React.ReactNode;
+};
 
 export type EventTypeTableProps = Omit<EventTypeTableBaseProps, 'eventTypes'> & Partial<Pick<EventTypeTableBaseProps, 'eventTypes'>>;
 
