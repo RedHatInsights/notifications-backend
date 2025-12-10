@@ -24,14 +24,10 @@ public class KesselConfigInterceptorTest {
             Arguments.of("another-property-which-should-not-be-overwritten", "value", "value"),
             Arguments.of("another-property-which-should-not-be-overwritten", "http://kessel-url:8000", "http://kessel-url:8000"),
             Arguments.of("another-property-which-should-not-be-overwritten", "https://kessel-url:8000", "https://kessel-url:8000"),
-            Arguments.of("inventory-api.target-url", "invalidUrl", "invalidUrl"),
-            Arguments.of("inventory-api.target-url", "localhost:8000", "localhost:8000"),
-            Arguments.of("inventory-api.target-url", "http://kessel-inventory-api.url.test:8000", "kessel-inventory-api.url.test:9000"),
-            Arguments.of("inventory-api.target-url", "https://kessel-inventory-api-secure.url.test:8000", "kessel-inventory-api-secure.url.test:9000"),
-            Arguments.of("relations-api.target-url", "invalidUrl", "invalidUrl"),
-            Arguments.of("relations-api.target-url", "localhost:8000", "localhost:8000"),
-            Arguments.of("relations-api.target-url", "http://kessel-relations-api.url.test:8000", "kessel-relations-api.url.test:9000"),
-            Arguments.of("relations-api.target-url", "https://kessel-relations-api-secure.url.test:8000", "kessel-relations-api-secure.url.test:9000")
+            Arguments.of("notifications.kessel.url", "invalidUrl", "invalidUrl"),
+            Arguments.of("notifications.kessel.url", "localhost:8000", "localhost:8000"),
+            Arguments.of("notifications.kessel.url", "http://kessel-api.url.test:8000", "kessel-api.url.test:9000"),
+            Arguments.of("notifications.kessel.url", "https://kessel-api-secure.url.test:8000", "kessel-api-secure.url.test:9000")
         );
     }
 
