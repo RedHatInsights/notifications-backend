@@ -32,6 +32,11 @@ public class KesselCheckClient {
     void postConstruct() {
 
         Pair<KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub, ManagedChannel> clientAndChannel;
+        /*
+         * OAuth2 authentication and TLS verification are currently disabled in Kessel, so the insecure mode is the only option.
+         * TLS verification requires a CA cert which should be provided through the Clowder config soon. When the CA cert is
+         * available, we'll have to update our code and use it, then switch to the secure mode with OAuth2 and TLS.
+         */
         if (backendConfig.isKesselInsecureClientEnabled()) {
             Log.warn("Initializing insecure client for Kessel: OAuth2 authentication and TLS verification will be disabled");
             clientAndChannel = new ClientBuilder(backendConfig.getKesselUrl())
