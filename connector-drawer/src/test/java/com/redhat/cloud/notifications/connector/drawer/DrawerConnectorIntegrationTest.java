@@ -78,6 +78,7 @@ class DrawerConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         drawerEntryPayload.setSource("My app");
         drawerEntryPayload.setTitle("the title");
         drawerEntryPayload.setBundle("My Bundle");
+        drawerEntryPayload.setSeverity("IMPORTANT");
 
         RecipientSettings recipientSettings = new RecipientSettings();
         return new DrawerNotificationToConnector(orgId, drawerEntryPayload, Set.of(recipientSettings),
@@ -189,10 +190,12 @@ class DrawerConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         assertNotNull(secondPayloadLevel.getString("id"));
         assertEquals(false, secondPayloadLevel.getBoolean("read"));
         assertEquals("My Bundle", secondPayloadLevel.getString("bundle"));
+        assertEquals("IMPORTANT", secondPayloadLevel.getString("severity"));
 
         assertEquals(testNotification.getDrawerEntryPayload().getDescription(), secondPayloadLevel.getString("description"));
         assertEquals(testNotification.getDrawerEntryPayload().getSource(), secondPayloadLevel.getString("source"));
         assertEquals(testNotification.getDrawerEntryPayload().getTitle(), secondPayloadLevel.getString("title"));
+        assertEquals(testNotification.getDrawerEntryPayload().getSeverity(), secondPayloadLevel.getString("severity"));
     }
 
 }
