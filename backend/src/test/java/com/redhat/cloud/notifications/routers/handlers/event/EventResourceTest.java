@@ -84,6 +84,7 @@ import static java.lang.Boolean.TRUE;
 import static java.time.ZoneOffset.UTC;
 import static java.util.UUID.randomUUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -207,9 +208,9 @@ public class EventResourceTest extends DbIsolatedTest {
         Event event2 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW);
 
         // the following event will be ignored because isKesselChecksOnEventLogEnabled is set to false by default
-        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW, PAYLOAD, true);
+        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW, PAYLOAD, true, null);
 
-        Event event3 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusDays(2L));
+        Event event3 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusDays(2L), PAYLOAD, false, UUID.randomUUID());
         Event event4 = createEvent(OTHER_ACCOUNT_ID, OTHER_ORG_ID, bundle2, app2, eventType2, NOW.minusDays(10L));
         Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
         Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EMAIL_SUBSCRIPTION);
@@ -230,6 +231,9 @@ public class EventResourceTest extends DbIsolatedTest {
         endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint3.getId());
         endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint4.getId());
         endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint5.getId());
+
+        assertNull(event2.getExternalId());
+        assertNotNull(event3.getExternalId());
 
         /*
          * Test #1
@@ -850,13 +854,14 @@ public class EventResourceTest extends DbIsolatedTest {
     }
 
     Event createEvent(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created) {
-        return createEvent(accountId, orgId, bundle, app, eventType, created, PAYLOAD, false);
+        return createEvent(accountId, orgId, bundle, app, eventType, created, PAYLOAD, false, null);
     }
 
     @Transactional
-    Event createEvent(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created, String payload, boolean hasAuthorizationCriterion) {
+    Event createEvent(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created, String payload, boolean hasAuthorizationCriterion, UUID externalId) {
         Event event = new Event();
         event.setId(UUID.randomUUID());
+        event.setExternalId(externalId);
         event.setAccountId(accountId);
         event.setOrgId(orgId);
         event.setBundleId(bundle.getId());
@@ -960,6 +965,7 @@ public class EventResourceTest extends DbIsolatedTest {
 
     private static void assertSameEvent(EventLogEntry eventLogEntry, Event event, NotificationHistory... historyEntries) {
         assertEquals(event.getId(), eventLogEntry.getId());
+        assertEquals(event.getExternalId(), eventLogEntry.getExternalId());
         // Jackson's serialization gets rid of nanoseconds so an equals between the LocalDateTime objects won't work.
         assertEquals(event.getCreated().toEpochSecond(UTC), eventLogEntry.getCreated().toEpochSecond(UTC));
         assertEquals(event.getBundleDisplayName(), eventLogEntry.getBundle());
@@ -1022,9 +1028,9 @@ public class EventResourceTest extends DbIsolatedTest {
         String kesselPayload = buildPayloadWithAuthorizationCriterion(OTHER_ORG_ID, bundle2.getName(), app2.getName(), eventType2.getName());
         Event event1 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle1, app1, eventType1, NOW.minusDays(5L));
         Event event2 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW);
-        Event event2K = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusMinutes(5L), kesselPayload, true);
+        Event event2K = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusMinutes(5L), kesselPayload, true, UUID.randomUUID());
         Event event3 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusDays(2L));
-        Event event3K = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusDays(1L), kesselPayload, true);
+        Event event3K = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle2, app2, eventType2, NOW.minusDays(1L), kesselPayload, true, UUID.randomUUID());
 
         Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
         Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EMAIL_SUBSCRIPTION);
