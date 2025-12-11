@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.redhat.cloud.notifications.Severity;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
@@ -34,6 +35,8 @@ public class DrawerEntryPayload {
 
     private String bundle;
 
+    private String severity;
+
     public DrawerEntryPayload() {
     }
 
@@ -45,6 +48,9 @@ public class DrawerEntryPayload {
         created = (LocalDateTime) rawDrawerEntry[5];
         description = (String) rawDrawerEntry[6];
         bundle = (String) rawDrawerEntry[7];
+        if (rawDrawerEntry[8] instanceof Severity) {
+            severity = ((Severity) rawDrawerEntry[8]).name();
+        }
     }
 
     public UUID getEventId() {
@@ -101,5 +107,13 @@ public class DrawerEntryPayload {
 
     public void setBundle(String bundle) {
         this.bundle = bundle;
+    }
+
+    public String getSeverity() {
+        return severity;
+    }
+
+    public void setSeverity(String severity) {
+        this.severity = severity;
     }
 }

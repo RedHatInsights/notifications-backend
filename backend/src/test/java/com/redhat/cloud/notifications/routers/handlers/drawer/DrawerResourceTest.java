@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers.handlers.drawer;
 
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -70,7 +71,7 @@ public class DrawerResourceTest extends DbIsolatedTest {
         EventType eventType1 = resourceHelpers.createEventType(app1.getId(), "event-type-1");
 
         for (int i = 0; i < 30; i++) {
-            createDrawerNotification(USERNAME, createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle1, app1, eventType1, LocalDateTime.now(UTC)));
+            createDrawerNotification(USERNAME, createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle1, app1, eventType1, LocalDateTime.now(UTC), Severity.NONE));
         }
 
         // check default limit
@@ -109,18 +110,18 @@ public class DrawerResourceTest extends DbIsolatedTest {
         EventType createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-event-resource-event-type");
         EventType createdEventType2 = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-event-resource-event-type2");
         EventType createdEventType3 = resourceHelpers.createEventType(createdApplication2.getId(), "test-drawer-event-resource-event-type");
-        Event createdEvent = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle, createdApplication, createdEventType, LocalDateTime.now(UTC));
+        Event createdEvent = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle, createdApplication, createdEventType, LocalDateTime.now(UTC), Severity.LOW);
 
         final String USERNAME = "user-1";
         final String USERNAME2 = "user-2";
         createDrawerNotification(USERNAME, createdEvent);
-        createDrawerNotification(USERNAME, createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle, createdApplication, createdEventType2, LocalDateTime.now(UTC)));
-        createDrawerNotification(USERNAME, createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle2, createdApplication2, createdEventType3, LocalDateTime.now(UTC)));
+        createDrawerNotification(USERNAME, createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle, createdApplication, createdEventType2, LocalDateTime.now(UTC), Severity.MODERATE));
+        createDrawerNotification(USERNAME, createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle2, createdApplication2, createdEventType3, LocalDateTime.now(UTC), Severity.IMPORTANT));
         createDrawerNotification(USERNAME2, createdEvent);
-        Event eventInThePast = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle2, createdApplication2, createdEventType3, LocalDateTime.now(UTC).minusDays(5));
+        Event eventInThePast = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle2, createdApplication2, createdEventType3, LocalDateTime.now(UTC).minusDays(5), Severity.UNDEFINED);
         createDrawerNotification(USERNAME2, eventInThePast);
 
-        Event secondEventInThePast = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle2, createdApplication2, createdEventType3, LocalDateTime.now(UTC).minusDays(2));
+        Event secondEventInThePast = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle2, createdApplication2, createdEventType3, LocalDateTime.now(UTC).minusDays(2), Severity.UNDEFINED);
         createDrawerNotification(USERNAME2, secondEventInThePast);
 
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, USERNAME, FULL_ACCESS);
@@ -210,7 +211,7 @@ public class DrawerResourceTest extends DbIsolatedTest {
     }
 
     @Transactional
-    Event createEvent(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created) {
+    Event createEvent(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created, Severity severity) {
         Event event = new Event();
         event.setId(UUID.randomUUID());
         event.setAccountId(accountId);
@@ -222,6 +223,7 @@ public class DrawerResourceTest extends DbIsolatedTest {
         event.setEventType(eventType);
         event.setEventTypeDisplayName(eventType.getDisplayName());
         event.setCreated(created);
+        event.setSeverity(severity);
         event.setPayload(PAYLOAD);
         entityManager.persist(event);
         return event;
