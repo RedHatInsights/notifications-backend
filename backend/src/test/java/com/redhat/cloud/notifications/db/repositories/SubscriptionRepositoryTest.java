@@ -122,18 +122,18 @@ public class SubscriptionRepositoryTest extends DbIsolatedTest {
 
         final Random random = new Random();
         boolean subscribed = random.nextBoolean();
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdOne, randomEventType.getId(), SubscriptionType.INSTANT, random.nextBoolean(), buildAllSeveritiesUpdateDetails(subscribed));
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdOne, randomEventType.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
         subscribed = random.nextBoolean();
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdOne, randomEventTypeTwo.getId(), SubscriptionType.INSTANT, random.nextBoolean(), buildAllSeveritiesUpdateDetails(subscribed));
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdOne, randomEventTypeTwo.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
         subscribed = random.nextBoolean();
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdOne, randomEventTypeThree.getId(), SubscriptionType.INSTANT, random.nextBoolean(), buildAllSeveritiesUpdateDetails(subscribed));
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdOne, randomEventTypeThree.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
 
         subscribed = random.nextBoolean();
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdTwo, randomEventType.getId(), SubscriptionType.INSTANT, random.nextBoolean(), buildAllSeveritiesUpdateDetails(subscribed));
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdTwo, randomEventType.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
         subscribed = random.nextBoolean();
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdTwo, randomEventTypeTwo.getId(), SubscriptionType.INSTANT, random.nextBoolean(), buildAllSeveritiesUpdateDetails(subscribed));
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdTwo, randomEventTypeTwo.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
         subscribed = random.nextBoolean();
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdTwo, randomEventTypeThree.getId(), SubscriptionType.INSTANT, random.nextBoolean(), buildAllSeveritiesUpdateDetails(subscribed));
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdTwo, randomEventTypeThree.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
 
         // Call the function under test.
         final List<EventTypeEmailSubscription> subscriptions = this.subscriptionRepository.findEmailSubscriptionsByUserId(userIdOne);

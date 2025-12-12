@@ -43,14 +43,11 @@ public class SubscriptionRepository {
     @Inject
     TemplateRepository templateRepository;
 
-    private static final ObjectMapper mapper = new ObjectMapper();
+    @Inject
+    ObjectMapper mapper;
 
     public void subscribe(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
         updateSubscription(orgId, username, eventTypeId, subscriptionType, true, null);
-    }
-
-    public void unsubscribe(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
-        updateSubscription(orgId, username, eventTypeId, subscriptionType, false, null);
     }
 
     @Transactional

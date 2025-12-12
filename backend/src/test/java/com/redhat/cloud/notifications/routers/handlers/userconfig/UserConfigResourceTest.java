@@ -408,7 +408,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         // Fail if we have unknown event type on unsubscribe, but nothing will be added on database
         assertThrows(PersistenceException.class, () -> {
-            subscriptionRepository.unsubscribe(orgId, username, UUID.randomUUID(), DAILY);
+            unsubscribe(orgId, username, UUID.randomUUID(), DAILY);
         });
 
         // does not add if we try to create unknown bundle/apps
@@ -475,6 +475,10 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             assertNull(rhelPolicy, "RHEL policies was not supposed to be here");
             assertEquals(0, settingsValueJsonForm.bundles.size());
         }
+    }
+
+    public void unsubscribe(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
+        subscriptionRepository.updateSubscription(orgId, username, eventTypeId, subscriptionType, false, null);
     }
 
     @Test
@@ -624,7 +628,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         // Fail if we have unknown event type on unsubscribe, but nothing will be added on database
         assertThrows(PersistenceException.class, () -> {
-            subscriptionRepository.unsubscribe(orgId, username, UUID.randomUUID(), DAILY);
+            unsubscribe(orgId, username, UUID.randomUUID(), DAILY);
         });
 
         // does not add if we try to create unknown bundle/apps
