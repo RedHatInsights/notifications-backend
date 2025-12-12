@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.CrudTestHelpers;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
@@ -19,7 +20,6 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.Template;
-import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
 import com.redhat.cloud.notifications.routers.models.UserConfigPreferences;
@@ -36,7 +36,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.AfterEach;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.CrudTestHelpers.createApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createBundle;
@@ -69,7 +71,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -99,9 +100,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     @Inject
     ResourceHelpers resourceHelpers;
 
-    @InjectMock
-    TemplateService templateService;
-
     record TestRecordNameAndDisplayName(String name, String displayName) { }
 
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -110,11 +108,6 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     void beforeEach() {
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
         when(backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()).thenReturn(false);
-    }
-
-    @AfterEach
-    void afterEach() {
-        verifyNoInteractions(templateService);
     }
 
     private SettingsValueByEventTypeJsonForm.Application rhelPolicyForm(SettingsValueByEventTypeJsonForm settingsValuesByEventType) {
@@ -144,6 +137,21 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         return result;
     }
 
+    private Map<SubscriptionType, Map<Severity, Boolean>> extractNotificationSubscriptionTypeDetails(List<SettingsValueByEventTypeJsonForm.EventType> eventTypes, String bundle, String application, String eventName) {
+        Map<SubscriptionType, Map<Severity, Boolean>> result = new HashMap<>();
+        for (SettingsValueByEventTypeJsonForm.EventType eventType : eventTypes) {
+            for (SettingsValueByEventTypeJsonForm.Field field : eventType.fields) {
+                for (SubscriptionType type : SubscriptionType.values()) {
+                    if (field.name != null && field.name.equals(String.format("bundles[%s].applications[%s].eventTypes[%s].emailSubscriptionTypes[%s]", bundle, application, eventName, type))) {
+                        result.put(type, field.severities);
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
     private SettingsValuesByEventType createSettingsValue(String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
 
         SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
@@ -151,6 +159,40 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         eventTypeSettingsValue.emailSubscriptionTypes.put(INSTANT, instant);
         if (backendConfig.isDrawerEnabled()) {
             eventTypeSettingsValue.emailSubscriptionTypes.put(DRAWER, drawer);
+        }
+
+        SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = new SettingsValuesByEventType.ApplicationSettingsValue();
+        applicationSettingsValue.eventTypes.put(eventType, eventTypeSettingsValue);
+
+        SettingsValuesByEventType.BundleSettingsValue bundleSettingsValue = new SettingsValuesByEventType.BundleSettingsValue();
+        bundleSettingsValue.applications.put(application, applicationSettingsValue);
+
+        SettingsValuesByEventType settingsValues = new SettingsValuesByEventType();
+        settingsValues.bundles.put(bundle, bundleSettingsValue);
+
+        return settingsValues;
+    }
+
+    private Map<Severity, Boolean> createSeveritySubscriptionDetails(Set<Severity> severities) {
+        Map<Severity, Boolean> result = new HashMap<>();
+        for (Severity severity : Severity.values()) {
+            if (severities != null && severities.contains(severity)) {
+                result.put(severity, true);
+            } else {
+                result.put(severity, false);
+            }
+        }
+        return result;
+    }
+
+    private SettingsValuesByEventType createSettingsValueWithSeverity(String bundle, String application, String eventType, Set<Severity> instantSeverity, Set<Severity> dailySeverities, Set<Severity> drawerSeverities) {
+
+        SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
+        eventTypeSettingsValue.subscriptionTypes.put(INSTANT, createSeveritySubscriptionDetails(instantSeverity));
+        eventTypeSettingsValue.subscriptionTypes.put(DAILY, createSeveritySubscriptionDetails(dailySeverities));
+
+        if (backendConfig.isDrawerEnabled()) {
+            eventTypeSettingsValue.subscriptionTypes.put(DRAWER, createSeveritySubscriptionDetails(drawerSeverities));
         }
 
         SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = new SettingsValuesByEventType.ApplicationSettingsValue();
@@ -219,7 +261,8 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         // We want to validate bundles and apps orders returned as a json string
         String mappedString = mapper.writeValueAsString(settingsValuesByEventType);
-        final String RESULT = "{\"bundles\":{\"bundle-name2\":{\"applications\":{\"app-name3\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name2].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname\"},\"app-name2\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name2].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname3\"},\"app-name1\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name2].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appnamez\"}},\"label\":\"abundle\"},\"bundle-name3\":{\"applications\":{\"app-name3\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name3].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"a-appname\"},\"app-name1\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name3].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"e-appname\"},\"app-name2\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name3].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"r-appname\"}},\"label\":\"bbundle\"},\"rhel\":{\"applications\":{\"policies\":{\"eventTypes\":[{\"name\":\"policy-triggered\",\"label\":\"Policy triggered\",\"fields\":[{\"name\":\"bundles[rhel].applications[policies].eventTypes[policy-triggered].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"Policies\"}},\"label\":\"Red Hat Enterprise Linux\"},\"bundle-name1\":{\"applications\":{\"app-name1\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name1].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname1\"},\"app-name3\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name1].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname3\"},\"app-name2\":{\"eventTypes\":[{\"name\":\"event-type-name\",\"label\":\"Event type\",\"fields\":[{\"name\":\"bundles[bundle-name1].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]\",\"label\":\"Instant notification\",\"description\":\"Immediate email for each triggered application event.\",\"initialValue\":false,\"component\":\"descriptiveCheckbox\",\"validate\":[],\"checkedWarning\":\"Opting into this notification may result in a large number of emails\",\"disabled\":false}]}],\"label\":\"appname4\"}},\"label\":\"zbundle\"}}}";
+        final String RESULT = """
+            {"bundles":{"bundle-name2":{"applications":{"app-name3":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name2].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"appname"},"app-name2":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name2].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"appname3"},"app-name1":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name2].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"appnamez"}},"label":"abundle"},"bundle-name3":{"applications":{"app-name3":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name3].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"a-appname"},"app-name1":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name3].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"e-appname"},"app-name2":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name3].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"r-appname"}},"label":"bbundle"},"rhel":{"applications":{"policies":{"eventTypes":[{"name":"policy-triggered","label":"Policy triggered","fields":[{"name":"bundles[rhel].applications[policies].eventTypes[policy-triggered].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"Policies"}},"label":"Red Hat Enterprise Linux"},"bundle-name1":{"applications":{"app-name1":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name1].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"appname1"},"app-name3":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name1].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"appname3"},"app-name2":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name1].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"appname4"}},"label":"zbundle"}}}""";
         assertEquals(RESULT, mappedString);
 
         // delete created bundles, apps and event types
@@ -365,7 +408,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         // Fail if we have unknown event type on unsubscribe, but nothing will be added on database
         assertThrows(PersistenceException.class, () -> {
-            subscriptionRepository.unsubscribe(orgId, username, UUID.randomUUID(), DAILY);
+            unsubscribe(orgId, username, UUID.randomUUID(), DAILY);
         });
 
         // does not add if we try to create unknown bundle/apps
@@ -431,6 +474,259 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         } else {
             assertNull(rhelPolicy, "RHEL policies was not supposed to be here");
             assertEquals(0, settingsValueJsonForm.bundles.size());
+        }
+    }
+
+    public void unsubscribe(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
+        subscriptionRepository.updateSubscription(orgId, username, eventTypeId, subscriptionType, false, null);
+    }
+
+    @Test
+    void testSettingsByEventTypeWithSeverityAndDrawerEnabled() {
+        when(backendConfig.isDrawerEnabled()).thenReturn(true);
+        testSettingsByEventTypeWithSeverity();
+    }
+
+    @Test
+    void testSettingsByEventTypeWithSeverity() {
+        String accountId = "empty";
+        String orgId = "empty";
+        String username = "user";
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(accountId, orgId, username);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
+        when(backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()).thenReturn(true);
+
+        String bundle = "rhel";
+        String application = "policies";
+        String eventType = "policy-triggered";
+
+        // Policy event should not be returned because it is not visible
+        updatePoliciesEventTypeVisibility(false);
+        SettingsValueByEventTypeJsonForm settingsValuesByEventType = given()
+            .header(identityHeader)
+            .queryParam("bundleName", bundle)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+
+        SettingsValueByEventTypeJsonForm.Application rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
+        assertNull(rhelPolicy, "RHEL policies found");
+
+        // Policy event should be returned because it is visible
+        updatePoliciesEventTypeVisibility(true);
+        settingsValuesByEventType = given()
+            .header(identityHeader)
+            .queryParam("bundleName", bundle)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+
+        rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+        assertNull(rhelPolicy.eventTypes.get(0).fields.get(0).infoMessage);
+
+        Application applicationPolicies = new Application();
+        applicationPolicies.setName("policies");
+        when(applicationRepository.getApplicationsWithForcedEmail(any(), anyString())).thenReturn(List.of(applicationPolicies));
+
+        settingsValuesByEventType = given()
+            .header(identityHeader)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+        rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
+        assertNotNull(rhelPolicy.eventTypes.get(0).fields.get(0).infoMessage);
+
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(false);
+        SettingsValuesByEventType settingsValues = createSettingsValueWithSeverity(bundle, application, eventType, Set.of(Severity.MODERATE, Severity.LOW), Set.of(Severity.CRITICAL), null);
+        // should return an error because we try to set a instant email preference, while the instantEmailsEnabled flag is false.
+        postPreferencesByEventType(identityHeader, settingsValues, 400);
+
+        // same config with instant email enabled should work
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
+        postPreferencesByEventType(identityHeader, settingsValues, 200);
+
+        SettingsValueByEventTypeJsonForm settingsValue = getPreferencesByEventType(identityHeader);
+        rhelPolicy = rhelPolicyForm(settingsValue);
+        Map<SubscriptionType, Map<Severity, Boolean>> policiesSubscriptionDetails = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, bundle, application, eventType);
+        assertEquals(Set.of(Severity.MODERATE, Severity.LOW), getSubscribedSeveritiesSet(policiesSubscriptionDetails.get(INSTANT)));
+        assertEquals(Set.of(Severity.CRITICAL), getSubscribedSeveritiesSet(policiesSubscriptionDetails.get(DAILY)));
+
+        if (backendConfig.isDrawerEnabled()) {
+            assertTrue(getSubscribedSeveritiesSet(policiesSubscriptionDetails.get(DRAWER)).isEmpty());
+        }
+
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(false);
+        settingsValue = getPreferencesByEventType(identityHeader);
+        rhelPolicy = rhelPolicyForm(settingsValue);
+
+        policiesSubscriptionDetails = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, bundle, application, eventType);
+
+        boolean instantEmailSettingsReturned = policiesSubscriptionDetails.keySet().stream().anyMatch(INSTANT::equals);
+        assertFalse(instantEmailSettingsReturned, "Instant email subscription settings should not be returned when instant emails are disabled");
+
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
+
+        // Daily and Instant to false
+        updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, new HashMap<>());
+
+        // Daily to true
+        updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.LOW, Severity.MODERATE), DAILY, Set.of(Severity.CRITICAL)));
+
+        // Instant to true
+        updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(INSTANT, Set.of(Severity.IMPORTANT), DRAWER, Set.of(Severity.LOW)));
+
+        // Both to true
+        updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(INSTANT, Set.of(Severity.MODERATE, Severity.CRITICAL), DRAWER, Set.of(Severity.LOW, Severity.MODERATE), DAILY, Set.of(Severity.CRITICAL)));
+
+        // Before this line, we're subscribed to everything. Now, we're locking the subscriptions.
+        lockOrUnlockSubscriptionToPoliciesEventType(true);
+        // Let's try to unsubscribe from everything. The subscriptions should remain the same.
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), List.of(DAILY, INSTANT, DRAWER));
+        // We're now unlocking the subscriptions.
+        lockOrUnlockSubscriptionToPoliciesEventType(false);
+        // Unsubscribing from everything should work this time.
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), emptyList());
+
+        if (backendConfig.isDrawerEnabled()) {
+            // Daily, Instant and drawer to false
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, new HashMap<>());
+
+            // Daily to true
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DAILY, Set.of(Severity.LOW, Severity.MODERATE)));
+
+            // Instant to true
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(INSTANT, Set.of(Severity.IMPORTANT)));
+
+            // Daily and instant to true
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(INSTANT, Set.of(Severity.MODERATE, Severity.CRITICAL), DAILY, Set.of(Severity.LOW, Severity.MODERATE)));
+
+            // Daily and Instant to false, drawer to true
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.LOW, Severity.MODERATE)));
+
+            // Daily to true
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.IMPORTANT, Severity.MODERATE), DAILY, Set.of(Severity.LOW, Severity.MODERATE)));
+
+            // Instant to true
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.MODERATE, Severity.CRITICAL), INSTANT, Set.of(Severity.LOW, Severity.MODERATE)));
+
+            // Daily and instant to true
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.MODERATE, Severity.CRITICAL), INSTANT, Set.of(Severity.LOW, Severity.MODERATE), DAILY, Set.of(Severity.UNDEFINED, Severity.NONE)));
+        }
+
+        // Fail if we have unknown event type on subscribe, but nothing will be added on database
+        assertThrows(ConstraintViolationException.class, () -> {
+            subscriptionRepository.subscribe(orgId, username, UUID.randomUUID(), DAILY);
+        });
+
+        // Fail if we have unknown event type on unsubscribe, but nothing will be added on database
+        assertThrows(PersistenceException.class, () -> {
+            unsubscribe(orgId, username, UUID.randomUUID(), DAILY);
+        });
+
+        // does not add if we try to create unknown bundle/apps
+        settingsValues = createSettingsValueWithSeverity("not-found-bundle-2", "not-found-app-2", eventType, Set.of(Severity.MODERATE, Severity.LOW), Set.of(Severity.CRITICAL), Set.of(Severity.IMPORTANT, Severity.LOW));
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(settingsValues))
+            .post(PATH_EVENT_TYPE_PREFERENCE_API)
+            .then()
+            .statusCode(200);
+        settingsValuesByEventType = given()
+            .header(identityHeader)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+        rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+        Map<SubscriptionType, Map<Severity, Boolean>> initialValues = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, "not-found-bundle-2", "not-found-app-2", eventType);
+        assertEquals(0, initialValues.size());
+
+        // Does not add event type if is not supported by the templates
+        SettingsValueByEventTypeJsonForm settingsValueJsonForm = given()
+            .header(identityHeader)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+        rhelPolicy = rhelPolicyForm(settingsValueJsonForm);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+
+        Map<SubscriptionType, Map<Severity, Boolean>> notificationPreferences = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, bundle, application, eventType);
+
+        if (backendConfig.isDrawerEnabled()) {
+            assertEquals(3, notificationPreferences.size());
+            assertTrue(notificationPreferences.containsKey(DRAWER));
+        } else {
+            assertEquals(2, notificationPreferences.size());
+        }
+        assertTrue(notificationPreferences.containsKey(INSTANT));
+    }
+
+    private Set<Severity> getSubscribedSeveritiesSet(Map<Severity, Boolean> severitySubscriptionSet) {
+        if (severitySubscriptionSet == null) {
+            return Set.of();
+        }
+        return severitySubscriptionSet.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).collect(Collectors.toSet());
+    }
+
+    private void updateAndCheckUserPreferenceWithSeverities(Header identityHeader, String bundle, String application, String eventType, Map<SubscriptionType, Set<Severity>> severity) {
+        SettingsValuesByEventType settingsValues = createSettingsValueWithSeverity(bundle, application, eventType, severity.get(INSTANT), severity.get(DAILY), severity.get(DRAWER));
+        postPreferencesByEventType(identityHeader, settingsValues, 200);
+
+        // verify get all preferences for all bundles and applications response
+        SettingsValueByEventTypeJsonForm settingsValuesByEventType = getPreferencesByEventType(identityHeader);
+        final SettingsValueByEventTypeJsonForm.Application rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+        Map<SubscriptionType, Map<Severity, Boolean>> initialValues = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, bundle, application, eventType);
+
+        final Set<Severity> expectedDailySeverities = severity.get(DAILY) == null ? Set.of() : severity.get(DAILY);
+        final Set<Severity> expectedInstantSeverities = severity.get(INSTANT) == null ? Set.of() : severity.get(INSTANT);
+        final Set<Severity> expectedDrawerSeverities = severity.get(DRAWER) == null ? Set.of() : severity.get(DRAWER);
+
+        Set<Severity> subscribedSeverities = getSubscribedSeveritiesSet(initialValues.get(DAILY));
+        assertEquals(expectedDailySeverities, subscribedSeverities);
+
+        subscribedSeverities = getSubscribedSeveritiesSet(initialValues.get(INSTANT));
+        assertEquals(expectedInstantSeverities, subscribedSeverities);
+
+        if (backendConfig.isDrawerEnabled()) {
+            subscribedSeverities = getSubscribedSeveritiesSet(initialValues.get(DRAWER));
+            assertEquals(expectedDrawerSeverities, subscribedSeverities);
+        }
+
+        // verify get all preferences for a specific application response
+        final SettingsValueByEventTypeJsonForm.Application preferences = given()
+            .header(identityHeader)
+            .when().get(String.format(PATH_EVENT_TYPE_PREFERENCE_API + "/%s/%s", bundle, application))
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.Application.class);
+
+        assertNotNull(preferences);
+        Map<SubscriptionType, Map<Severity, Boolean>> notificationPreferences = extractNotificationSubscriptionTypeDetails(preferences.eventTypes, bundle, application, eventType);
+        subscribedSeverities = getSubscribedSeveritiesSet(notificationPreferences.get(DAILY));
+        assertEquals(expectedDailySeverities, subscribedSeverities);
+
+        subscribedSeverities = getSubscribedSeveritiesSet(notificationPreferences.get(INSTANT));
+        assertEquals(expectedInstantSeverities, subscribedSeverities);
+
+        if (backendConfig.isDrawerEnabled()) {
+            subscribedSeverities = getSubscribedSeveritiesSet(notificationPreferences.get(DRAWER));
+            assertEquals(expectedDrawerSeverities, subscribedSeverities);
         }
     }
 

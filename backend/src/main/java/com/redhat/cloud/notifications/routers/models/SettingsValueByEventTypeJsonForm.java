@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.redhat.cloud.notifications.Severity;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -36,6 +37,8 @@ public class SettingsValueByEventTypeJsonForm {
         @JsonInclude(Include.NON_NULL)
         public String infoMessage;
         public boolean disabled;
+        @JsonInclude(Include.NON_NULL)
+        public Map<Severity, Boolean> severities;
     }
 
     @JsonAutoDetect(fieldVisibility = Visibility.ANY)
@@ -95,11 +98,23 @@ public class SettingsValueByEventTypeJsonForm {
             EventType formEventType = new EventType();
             formEventType.name = eventTypeName;
             formEventType.label = eventTypeSettingsValue.displayName;
-            eventTypeSettingsValue.emailSubscriptionTypes.forEach((subscriptionType, isSubscribed) -> {
+            eventTypeSettingsValue.subscriptionTypes.forEach((subscriptionType, subscriptionTypeDetails) -> {
+
+                boolean subscribed = false;
+                Map<Severity, Boolean> severities = new LinkedHashMap<>();
+                if (subscriptionTypeDetails != null) {
+                    subscribed = subscriptionTypeDetails.entrySet().stream().anyMatch(Map.Entry::getValue);
+
+                    // sort severity Map according Severity enum order
+                    for (Severity severity : Severity.values()) {
+                        severities.put(severity, (subscriptionTypeDetails.get(severity) != null && subscriptionTypeDetails.get(severity)));
+                    }
+                }
 
                 Field field = new Field();
                 field.name = String.format("bundles[%s].applications[%s].eventTypes[%s].emailSubscriptionTypes[%s]", bundleName, applicationName, eventTypeName, subscriptionType.toString());
-                field.initialValue = isSubscribed;
+                field.initialValue = subscribed;
+                field.severities = severities;
                 field.validate = List.of();
                 field.component = COMPONENT_SUBSCRIPTION;
                 field.disabled = eventTypeSettingsValue.subscriptionLocked;

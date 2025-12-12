@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.routers.handlers.userconfig;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.Constants;
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
@@ -39,7 +40,9 @@ import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.RestPath;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -95,7 +98,13 @@ public class UserConfigResource {
         if (!backendConfig.isInstantEmailsEnabled() && userSettings.bundles.values().stream()
                 .flatMap(bundleSettings -> bundleSettings.applications.values().stream())
                 .flatMap(appSettings -> appSettings.eventTypes.values().stream())
-                .flatMap(eventTypeSettings -> eventTypeSettings.emailSubscriptionTypes.keySet().stream())
+                .flatMap(eventTypeSettings -> {
+                    if (eventTypeSettings.subscriptionTypes != null &&  !eventTypeSettings.subscriptionTypes.isEmpty()) {
+                        return eventTypeSettings.subscriptionTypes.keySet().stream();
+                    } else {
+                        return eventTypeSettings.emailSubscriptionTypes.keySet().stream();
+                    }
+                })
                 .anyMatch(subscriptionType -> subscriptionType == INSTANT)) {
             throw new BadRequestException("Subscribing to or unsubscribing from instant emails is not supported");
         }
@@ -110,29 +119,44 @@ public class UserConfigResource {
                     applicationSettingsValue.eventTypes.forEach((eventTypeName, eventTypeValue) -> {
                         Optional<EventType> eventType = eventTypeRepository.find(app.getId(), eventTypeName);
                         if (eventType.isPresent() && !eventType.get().isSubscriptionLocked()) {
-                            // for each email subscription
-                            eventTypeValue.emailSubscriptionTypes.forEach((subscriptionType, subscribed) -> {
-                                boolean supported = isTemplateSupported(bundleName, applicationName, eventType.get(), subscriptionType, orgId);
-
-                                if (!supported) {
-                                    throw new NotFoundException(String.format("Event type '%s' doesn't support '%s' subscription", eventType.get().getId(), subscriptionType.name()));
-                                }
-                                if (subscribed) {
-                                    subscriptionRepository.subscribe(
-                                        orgId, userName, eventType.get().getId(), subscriptionType
-                                    );
-                                } else {
-                                    subscriptionRepository.unsubscribe(
-                                        orgId, userName, eventType.get().getId(), subscriptionType
-                                    );
-                                }
-                            });
+                            // for each subscription
+                            handleSubscription(bundleName, applicationName, eventTypeValue, eventType, orgId, userName);
                         }
                     });
                 }
             }));
 
         return Response.ok().build();
+    }
+
+    private Map<Severity, Boolean> buildAllSeveritiesUpdateDetails(boolean subscribed) {
+        Map<Severity, Boolean> severitySubscriptionMap = new HashMap<>();
+        for (Severity severity : Severity.values()) {
+            severitySubscriptionMap.put(severity, subscribed);
+        }
+        return severitySubscriptionMap;
+    }
+
+    private void handleSubscription(String bundleName, String applicationName, SettingsValuesByEventType.EventTypeSettingsValue eventTypeValue, Optional<EventType> eventType, String orgId, String userName) {
+
+        // If 'subscriptionTypes' is empty, build it from 'emailSubscriptionTypes'
+        if (eventTypeValue.subscriptionTypes == null || eventTypeValue.subscriptionTypes.isEmpty()) {
+            eventTypeValue.subscriptionTypes = new HashMap<>();
+            eventTypeValue.emailSubscriptionTypes.forEach((key, value) ->
+                eventTypeValue.subscriptionTypes.put(key, buildAllSeveritiesUpdateDetails(value)));
+        }
+
+        eventTypeValue.subscriptionTypes.forEach((subscriptionType, subscriptionTypeDetails) -> {
+            boolean supported = isTemplateSupported(bundleName, applicationName, eventType.get(), subscriptionType, orgId);
+
+            if (!supported) {
+                throw new NotFoundException(String.format("Event type '%s' doesn't support '%s' subscription", eventType.get().getId(), subscriptionType.name()));
+            }
+
+            boolean subscribed = subscriptionTypeDetails.entrySet().stream().anyMatch(Map.Entry::getValue);
+
+            subscriptionRepository.updateSubscription(orgId, userName, eventType.get().getId(), subscriptionType, subscribed, subscriptionTypeDetails);
+        });
     }
 
     @GET
@@ -229,10 +253,11 @@ public class UserConfigResource {
                         if (supported) {
                             boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
                             eventTypeSettingsValue.emailSubscriptionTypes.put(subscriptionType, subscribedByDefault);
+                            eventTypeSettingsValue.subscriptionTypes.put(subscriptionType, buildAllSeveritiesUpdateDetails(subscribedByDefault));
                         }
                     }
                 }
-                if (!eventTypeSettingsValue.emailSubscriptionTypes.isEmpty()) {
+                if (!eventTypeSettingsValue.subscriptionTypes.isEmpty()) {
                     applicationSettingsValue.eventTypes.put(eventType.getName(), eventTypeSettingsValue);
                 }
             }
@@ -288,9 +313,14 @@ public class UserConfigResource {
                 SettingsValuesByEventType.ApplicationSettingsValue appSettings = bundleSettings.applications.get(emailSubscription.getEventType().getApplication().getName());
                 if (appSettings != null) {
                     SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettings = appSettings.eventTypes.get(emailSubscription.getEventType().getName());
+
                     if (eventTypeSettings != null) {
                         if (eventTypeSettings.emailSubscriptionTypes.containsKey(emailSubscription.getType())) {
                             eventTypeSettings.emailSubscriptionTypes.put(emailSubscription.getType(), emailSubscription.isSubscribed());
+                        }
+
+                        if (eventTypeSettings.subscriptionTypes.containsKey(emailSubscription.getType())) {
+                            eventTypeSettings.subscriptionTypes.put(emailSubscription.getType(), emailSubscription.getSeverities());
                         }
                     }
                 }
