@@ -30,15 +30,16 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.models.Endpoint.GOOGLE_CHAT_ENDPOINT_SUBTYPE;
+import static com.redhat.cloud.notifications.models.Endpoint.SLACK_ENDPOINT_SUBTYPE;
+import static com.redhat.cloud.notifications.models.Endpoint.TEAMS_ENDPOINT_SUBTYPE;
+
 @ApplicationScoped
 public class EndpointProcessor {
 
     public static final String PROCESSED_MESSAGES_COUNTER_NAME = "processor.input.processed";
     public static final String PROCESSED_ENDPOINTS_COUNTER_NAME = "processor.input.endpoint.processed";
     public static final String DELAYED_EXCEPTION_MSG = "Exceptions were thrown during an event processing";
-    public static final String SLACK_ENDPOINT_SUBTYPE = "slack";
-    public static final String TEAMS_ENDPOINT_SUBTYPE = "teams";
-    public static final String GOOGLE_CHAT_ENDPOINT_SUBTYPE = "google_chat";
 
     public static final String NOTIFICATIONS_APP_BUNDLE_NAME = "console";
     public static final String NOTIFICATIONS_APP_NAME = "notifications";

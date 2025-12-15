@@ -33,9 +33,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import static com.redhat.cloud.notifications.events.EndpointProcessor.GOOGLE_CHAT_ENDPOINT_SUBTYPE;
-import static com.redhat.cloud.notifications.events.EndpointProcessor.SLACK_ENDPOINT_SUBTYPE;
-import static com.redhat.cloud.notifications.events.EndpointProcessor.TEAMS_ENDPOINT_SUBTYPE;
+import static com.redhat.cloud.notifications.models.Endpoint.GOOGLE_CHAT_ENDPOINT_SUBTYPE;
+import static com.redhat.cloud.notifications.models.Endpoint.SLACK_ENDPOINT_SUBTYPE;
+import static com.redhat.cloud.notifications.models.Endpoint.TEAMS_ENDPOINT_SUBTYPE;
 import static java.time.ZoneOffset.UTC;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;

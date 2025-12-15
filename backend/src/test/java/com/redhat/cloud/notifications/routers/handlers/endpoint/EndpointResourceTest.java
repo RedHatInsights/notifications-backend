@@ -33,6 +33,7 @@ import com.redhat.cloud.notifications.models.dto.v1.EventTypeDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointTypeDTO;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.CamelPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.SystemSubscriptionPropertiesDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.WebhookPropertiesDTO;
 import com.redhat.cloud.notifications.models.validation.ValidNonPrivateUrlValidator;
@@ -701,7 +702,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         Endpoint ep = new Endpoint();
         ep.setType(EndpointType.CAMEL);
-        ep.setSubType("ansible");
+        ep.setSubType(Endpoint.GOOGLE_CHAT_ENDPOINT_SUBTYPE);
         ep.setName("Push the camel through the needle's ear");
         ep.setDescription("How many humps has a camel?");
         ep.setEnabled(true);
@@ -736,7 +737,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             JsonObject properties = responsePoint.getJsonObject("properties");
             assertNotNull(properties);
             assertTrue(endpoint.getBoolean("enabled"));
-            assertEquals("ansible", endpoint.getString("sub_type"));
+            assertEquals(Endpoint.GOOGLE_CHAT_ENDPOINT_SUBTYPE, endpoint.getString("sub_type"));
             JsonObject extrasObject = properties.getJsonObject("extras");
             assertNotNull(extrasObject);
             String template  = extrasObject.getString("template");
@@ -1327,7 +1328,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         Endpoint camelEp = new Endpoint();
         camelEp.setType(EndpointType.CAMEL);
-        camelEp.setSubType("demo");
+        camelEp.setSubType(Endpoint.TEAMS_ENDPOINT_SUBTYPE);
         camelEp.setName("endpoint 2 to find");
         camelEp.setDescription("needle in the haystack");
         camelEp.setEnabled(true);
@@ -1725,7 +1726,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(HttpStatus.SC_OK);
 
-        // It is possible to update it to other type
+        // It is not possible to update it to other type
         ep.setType(EndpointType.WEBHOOK);
 
         WebhookProperties webhookProperties = new WebhookProperties();
@@ -1741,7 +1742,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .body(Json.encode(ep))
             .when().put("/endpoints/" + defaultEndpointId)
             .then()
-            .statusCode(HttpStatus.SC_OK);
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
 
         // It is not possible to delete it
 
@@ -2054,6 +2055,86 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
+    void testEndpointTypesCantBeUpdated(boolean kesselEnabled) {
+
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
+        if (kesselEnabled) {
+            mockDefaultKesselPermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
+        }
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Add new endpoints
+        WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(POST);
+        properties.setUrl(getMockServerUrl());
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.WEBHOOK);
+        ep.setName("endpoint to find" + UUID.randomUUID());
+        ep.setDescription(ep.getName());
+        ep.setEnabled(true);
+        ep.setProperties(properties);
+
+        EndpointDTO createdEndpointDto = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(ep))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response().as(EndpointDTO.class);
+
+        // try to update endpoint type from webhook to teams
+        ep.setType(EndpointType.CAMEL);
+        ep.setSubType("teams");
+        CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setUrl("https://www.redhat.com");
+        ep.setProperties(camelProperties);
+
+        String responseBody = given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body(Json.encode(ep))
+            .when().put("/endpoints/" + createdEndpointDto.getId())
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract().response().asString();
+        assertEquals("The integration type can't be updated", responseBody);
+
+        // creating a teams endpoint
+        ep.setName(UUID.randomUUID().toString());
+        EndpointDTO teamsCreatedEndpointDto = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(ep))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response().as(EndpointDTO.class);
+
+        // try to update endpoint type from teams to google_chat
+        ep.setSubType("google_chat");
+        responseBody = given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body(Json.encode(ep))
+            .when().put("/endpoints/" + teamsCreatedEndpointDto.getId())
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract().response().asString();
+        assertEquals("The integration type can't be updated", responseBody);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
     void testUnknownEndpointTypes(boolean kesselEnabled) {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
@@ -2082,6 +2163,41 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .then()
                 .statusCode(HttpStatus.SC_BAD_REQUEST)
                 .body(is("Unknown endpoint type: [bar]"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testUnknownEndpointSubType(boolean kesselEnabled) {
+
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
+        if (kesselEnabled) {
+            mockDefaultKesselUpdatePermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
+        }
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        CamelPropertiesDTO camelPropertiesDTO = new CamelPropertiesDTO();
+        camelPropertiesDTO.setUrl(getMockServerUrl());
+        EndpointDTO dto = new EndpointDTO();
+        dto.setName(UUID.randomUUID().toString());
+        dto.setDescription("testUnknownEndpointSubType");
+        dto.setType(EndpointTypeDTO.CAMEL);
+        dto.setSubType("not_supported");
+        dto.setProperties(camelPropertiesDTO);
+
+        String errorMessage = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(dto))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract().body().asString();
+
+        assertEquals("The sub type 'not_supported' is not supported", errorMessage);
     }
 
     @ParameterizedTest

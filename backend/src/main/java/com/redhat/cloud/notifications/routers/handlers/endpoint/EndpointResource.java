@@ -73,6 +73,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -83,6 +84,9 @@ import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_W
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_EDIT;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_VIEW;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
+import static com.redhat.cloud.notifications.models.Endpoint.SERVICE_NOW_ENDPOINT_SUBTYPE;
+import static com.redhat.cloud.notifications.models.Endpoint.SLACK_ENDPOINT_SUBTYPE;
+import static com.redhat.cloud.notifications.models.Endpoint.SPLUNK_ENDPOINT_SUBTYPE;
 import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
 import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
@@ -268,6 +272,9 @@ public class EndpointResource extends EndpointResourceCommon {
         }
 
         if (endpoint.getType() == CAMEL) {
+            if (!endpoint.camelSubTypeSupported()) {
+                throw new BadRequestException("The sub type '" + endpoint.getSubType() + "' is not supported");
+            }
             checkSslDisabledEndpoint(endpoint);
             String subType = endpoint.getSubType();
 
@@ -508,6 +515,11 @@ public class EndpointResource extends EndpointResourceCommon {
         }
         EndpointType endpointType = dbEndpoint.getType();
 
+        if (endpointType != endpoint.getType() ||
+            !Objects.equals(dbEndpoint.getSubType(), endpoint.getSubType())) {
+            throw new BadRequestException("The integration type can't be updated");
+        }
+
         if (endpoint.getType() == CAMEL) {
             String subType = endpoint.getSubType();
             checkSslDisabledEndpoint(endpoint);
@@ -523,9 +535,9 @@ public class EndpointResource extends EndpointResourceCommon {
                 }
             }
 
-            if (subType.equals("slack")) {
+            if (subType.equals(SLACK_ENDPOINT_SUBTYPE)) {
                 checkSlackChannel(endpoint.getProperties(CamelProperties.class), dbEndpoint.getProperties(CamelProperties.class));
-            } else if (subType.equals("servicenow") || subType.equals("splunk")) {
+            } else if (subType.equals(SERVICE_NOW_ENDPOINT_SUBTYPE) || subType.equals(SPLUNK_ENDPOINT_SUBTYPE)) {
                 checkHttpsEndpoint(endpoint.getProperties(CamelProperties.class));
             }
         } else if (Set.of(EMAIL_SUBSCRIPTION, DRAWER).contains(endpoint.getType())) {
