@@ -517,7 +517,7 @@ public class EndpointResource extends EndpointResourceCommon {
 
         if (endpointType != endpoint.getType() ||
             !Objects.equals(dbEndpoint.getSubType(), endpoint.getSubType())) {
-            throw new BadRequestException("The integration type can't be updated");
+            throw new BadRequestException("The integration type or sub type can't be modified");
         }
 
         if (endpoint.getType() == CAMEL) {
