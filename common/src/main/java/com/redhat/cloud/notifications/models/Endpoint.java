@@ -261,7 +261,7 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.eventTypes = eventTypes;
     }
 
-    public boolean camelSubTypeSupported() {
+    public boolean isCamelSubTypeSupported() {
         return CAMEL_SUB_TYPES.contains(compositeType.getSubType());
     }
 

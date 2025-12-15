@@ -272,7 +272,7 @@ public class EndpointResource extends EndpointResourceCommon {
         }
 
         if (endpoint.getType() == CAMEL) {
-            if (!endpoint.camelSubTypeSupported()) {
+            if (!endpoint.isCamelSubTypeSupported()) {
                 throw new BadRequestException("The sub type '" + endpoint.getSubType() + "' is not supported with type " + CAMEL);
             }
             checkSslDisabledEndpoint(endpoint);
