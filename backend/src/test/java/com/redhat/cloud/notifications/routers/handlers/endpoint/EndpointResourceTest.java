@@ -2059,7 +2059,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
         if (kesselEnabled) {
-            mockDefaultKesselPermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
             mockDefaultKesselUpdatePermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
         }
 
