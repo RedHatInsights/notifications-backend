@@ -8,7 +8,7 @@ import com.redhat.cloud.notifications.processors.camel.CamelProcessor;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.util.Map;
 
-import static com.redhat.cloud.notifications.events.EndpointProcessor.SLACK_ENDPOINT_SUBTYPE;
+import static com.redhat.cloud.notifications.models.Endpoint.SLACK_ENDPOINT_SUBTYPE;
 
 @ApplicationScoped
 public class SlackProcessor extends CamelProcessor {

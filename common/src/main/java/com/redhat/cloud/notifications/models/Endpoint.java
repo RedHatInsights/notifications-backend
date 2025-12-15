@@ -32,6 +32,18 @@ import java.util.UUID;
 @Table(name = "endpoints")
 public class Endpoint extends CreationUpdateTimestamped {
 
+    public static final String SLACK_ENDPOINT_SUBTYPE = "slack";
+    public static final String TEAMS_ENDPOINT_SUBTYPE = "teams";
+    public static final String GOOGLE_CHAT_ENDPOINT_SUBTYPE = "google_chat";
+    public static final String SPLUNK_ENDPOINT_SUBTYPE = "splunk";
+    public static final String SERVICE_NOW_ENDPOINT_SUBTYPE = "servicenow";
+    public static final Set<String> CAMEL_SUB_TYPES  = Set.of(
+        GOOGLE_CHAT_ENDPOINT_SUBTYPE,
+        SERVICE_NOW_ENDPOINT_SUBTYPE,
+        SLACK_ENDPOINT_SUBTYPE,
+        SPLUNK_ENDPOINT_SUBTYPE,
+        TEAMS_ENDPOINT_SUBTYPE);
+
     public static final Map<String, String> SORT_FIELDS = Map.of(
             "id", "e.id",
             "name", "e.name",
@@ -247,6 +259,11 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     public void setEventTypes(Set<EventType> eventTypes) {
         this.eventTypes = eventTypes;
+    }
+
+    @JsonIgnore
+    public boolean isCamelSubTypeSupported() {
+        return CAMEL_SUB_TYPES.contains(compositeType.getSubType());
     }
 
     @Override

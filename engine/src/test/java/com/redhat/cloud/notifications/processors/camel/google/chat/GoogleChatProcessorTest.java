@@ -7,7 +7,7 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 
-import static com.redhat.cloud.notifications.events.EndpointProcessor.GOOGLE_CHAT_ENDPOINT_SUBTYPE;
+import static com.redhat.cloud.notifications.models.Endpoint.GOOGLE_CHAT_ENDPOINT_SUBTYPE;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
