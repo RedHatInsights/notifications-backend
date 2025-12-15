@@ -2104,7 +2104,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(HttpStatus.SC_BAD_REQUEST)
             .extract().response().asString();
-        assertEquals("The integration type can't be updated", responseBody);
+        assertEquals("The integration type or sub type can't be modified", responseBody);
 
         // creating a teams endpoint
         ep.setName(UUID.randomUUID().toString());
@@ -2129,7 +2129,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(HttpStatus.SC_BAD_REQUEST)
             .extract().response().asString();
-        assertEquals("The integration type can't be updated", responseBody);
+        assertEquals("The integration type or sub type can't be modified", responseBody);
     }
 
     @ParameterizedTest
@@ -2196,7 +2196,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .statusCode(HttpStatus.SC_BAD_REQUEST)
             .extract().body().asString();
 
-        assertEquals("The sub type 'not_supported' is not supported", errorMessage);
+        assertEquals("The sub type 'not_supported' is not supported with type 'CAMEL'", errorMessage);
     }
 
     @ParameterizedTest
