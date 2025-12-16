@@ -270,7 +270,7 @@ public class NotificationResource {
     @GET
     @Path("/severities")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "List configured severities", description = "Returns a list of configured severities")
+    @Operation(summary = "List configured severities", description = "Returns the list of available notification severities")
     public Set<Severity> getSeverities() {
         return EnumSet.allOf(Severity.class);
     }
