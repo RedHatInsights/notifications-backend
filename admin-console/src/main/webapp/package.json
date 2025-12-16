@@ -22,7 +22,7 @@
     "react-router-dom": "7.10.1",
     "react-use": "17.6.0",
     "typestyle": "2.4.0",
-    "zod": "4.2.0"
+    "zod": "4.2.1"
   },
   "devDependencies": {
     "@babel/plugin-syntax-flow": "^7.26.0",
