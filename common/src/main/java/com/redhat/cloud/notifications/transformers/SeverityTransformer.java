@@ -4,11 +4,15 @@ import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Event;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.transformers.BaseTransformer.SEVERITY;
 
@@ -26,11 +30,22 @@ public class SeverityTransformer {
      * </ol>
      */
     public Severity getSeverity(com.redhat.cloud.notifications.models.Event event) {
-        if (!(event.getEventWrapper() instanceof EventWrapperAction)) {
-            return Severity.UNDEFINED;
+        Severity severity = event.getEventType().getDefaultSeverity();
+        if ((event.getEventWrapper() instanceof EventWrapperAction action)) {
+            Optional<Severity> severityFromIncomingEvent = getSeverity(action.getEvent());
+            if (severityFromIncomingEvent.isPresent()) {
+                if (null != event.getEventType().getAvailableSeverities()
+                    && event.getEventType().getAvailableSeverities().contains(severityFromIncomingEvent.get())) {
+                    severity = severityFromIncomingEvent.get();
+                } else {
+                    Log.errorf("Severity '%s' is not available for event type '%s', '%s' will be used as default value",
+                        severityFromIncomingEvent.get(),
+                        event.getEventType().getName(),
+                        event.getEventType().getDefaultSeverity());
+                }
+            }
         }
-        Action action = ((EventWrapperAction) event.getEventWrapper()).getEvent();
-        return getSeverity(action);
+        return severity;
     }
 
     /**
@@ -43,12 +58,13 @@ public class SeverityTransformer {
      *     <li>Default value of {@link Severity#UNDEFINED}</li>
      * </ol>
      */
-    public Severity getSeverity(Action action) {
+    public Optional<Severity> getSeverity(Action action) {
         if (action.getSeverity() != null) {
             try {
-                return Severity.valueOf(action.getSeverity().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                return Severity.UNDEFINED;
+                return Optional.of(Severity.valueOf(action.getSeverity().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                Log.errorf(ex, "Invalid severity: %s", action.getSeverity());
+                return Optional.empty();
             }
         } else {
             return extractLegacySeverity(action);
@@ -60,117 +76,99 @@ public class SeverityTransformer {
      *
      * @return The highest severity within the payload events.
      */
-    private Severity extractLegacySeverity(final Action action) {
+    private Optional<Severity> extractLegacySeverity(final Action action) {
         List<Event> events = action.getEvents();
-        if (events.isEmpty()) {
-            return Severity.UNDEFINED;
-        }
+        Optional<Severity> severity = Optional.empty();
+        if (!events.isEmpty()) {
 
-        ArrayList<Severity> severities = switch (action.getApplication()) {
-            // Both OpenShift Advisor and RHEL Advisor use the same layout here
-            case "advisor" -> new ArrayList<>(events.stream().map(
+            Stream<Severity> severities = switch (action.getApplication()) {
+                // Both OpenShift Advisor and RHEL Advisor use the same layout here
+                case "advisor" -> events.stream().map(
                     event -> {
                         try {
-                            return AdvisorTotalRisk.fromEvent(event).mapToSeverity();
-                        } catch (Exception e) {
-                            return Severity.UNDEFINED;
+                            return extractAdvisorTotalRiskFromEvent(event);
+                        } catch (Exception ex) {
+                            Log.errorf(ex, "Error extracting 'advisor' severity from event '%s'", event);
+                            return null;
                         }
                     }
-            ).toList());
-            case "cluster-manager" -> new ArrayList<>(events.stream().map(event -> {
-                try {
-                    return OcmServiceLogSeverity.valueOf(
+                );
+                case "cluster-manager" -> events.stream().map(event -> {
+                    try {
+                        return OcmServiceLogSeverity.valueOf(
                             ((Map<String, Object>) event.getPayload().getAdditionalProperties().get("global_vars"))
-                                    .get(SEVERITY).toString().toUpperCase()
-                    ).mapToSeverity();
-                } catch (Exception ignored) {
-                    return Severity.UNDEFINED;
-                }
-            }).toList());
-            case "errata-notifications" -> new ArrayList<>(events.stream().map(event -> {
-                try {
-                    return Severity.valueOf(
+                                .get(SEVERITY).toString().toUpperCase()
+                        ).getSeverity();
+                    } catch (Exception ex) {
+                        Log.errorf(ex, "Error extracting 'cluster-manager' severity from event '%s'", event);
+                        return null;
+                    }
+                });
+                case "errata-notifications" -> events.stream().map(event -> {
+                    try {
+                        return Severity.valueOf(
                             event.getPayload().getAdditionalProperties().get(SEVERITY).toString().toUpperCase()
-                    );
-                } catch (Exception ignored) {
-                    return Severity.UNDEFINED;
-                }
-            }).toList());
-            case "inventory" -> {
-                if (action.getEventType().equals("validation-error")) {
-                    yield new ArrayList<>(List.of(Severity.IMPORTANT));
-                } else {
-                    yield new ArrayList<>(List.of(Severity.UNDEFINED));
-                }
-            }
-            default -> new ArrayList<>(List.of(Severity.UNDEFINED));
-        };
+                        );
+                    } catch (Exception ex) {
+                        Log.errorf(ex, "Error extracting 'cluster-manager' severity from event '%s'", event);
+                        return null;
+                    }
+                });
+                default -> Stream.empty();
+            };
 
-        severities.sort(null);
-        return severities.getFirst();
+            List<Severity> extractedSeverities = new ArrayList<>(severities.filter(Objects::nonNull).toList());
+            if (!extractedSeverities.isEmpty()) {
+                extractedSeverities.sort(null);
+                severity = Optional.of(extractedSeverities.getFirst());
+            }
+        }
+        return severity;
     }
 
-    enum AdvisorTotalRisk {
-        CRITICAL_RISK, // 4
-        HIGH_RISK, // 3
-        MEDIUM_RISK, // 2
-        LOW_RISK, // 1
-        NOTHING, // 0
-        UNKNOWN; // < 0 or > 4
-
-        static AdvisorTotalRisk fromEvent(Event event) {
-            Object totalRisk = event.getPayload().getAdditionalProperties().get("total_risk");
-            int totalRiskInt;
-            if (totalRisk instanceof Integer) {
-                totalRiskInt = (Integer) totalRisk;
-            } else if (totalRisk instanceof String) {
-                try {
-                    totalRiskInt = Integer.parseInt((String) totalRisk);
-                } catch (NumberFormatException ignored) {
-                    return UNKNOWN;
-                }
-            } else {
-                return UNKNOWN;
+    Severity extractAdvisorTotalRiskFromEvent(Event event) {
+        Object totalRisk = event.getPayload().getAdditionalProperties().get("total_risk");
+        Severity severity = null;
+        Integer totalRiskInt = null;
+        if (totalRisk instanceof Integer) {
+            totalRiskInt = (Integer) totalRisk;
+        } else if (totalRisk instanceof String) {
+            try {
+                totalRiskInt = Integer.parseInt((String) totalRisk);
+            } catch (NumberFormatException nfe) {
+                Log.error("Invalid number format for Advisor totalRisk", nfe);
+                return null;
             }
-
-            return switch (totalRiskInt) {
-                case 4 -> CRITICAL_RISK;
-                case 3 -> HIGH_RISK;
-                case 2 -> MEDIUM_RISK;
-                case 1 -> LOW_RISK;
-                case 0 -> NOTHING;
-                default -> UNKNOWN;
-            };
         }
 
-        Severity mapToSeverity() {
-            return switch (this) {
-                case CRITICAL_RISK -> Severity.CRITICAL;
-                case HIGH_RISK -> Severity.IMPORTANT;
-                case MEDIUM_RISK -> Severity.MODERATE;
-                case LOW_RISK -> Severity.LOW;
-                case NOTHING -> Severity.NONE;
-                case UNKNOWN -> Severity.UNDEFINED;
+        if (totalRiskInt != null) {
+            severity = switch (totalRiskInt) {
+                case 4 -> Severity.CRITICAL;
+                case 3 -> Severity.IMPORTANT;
+                case 2 -> Severity.MODERATE;
+                case 1 -> Severity.LOW;
+                case 0 -> Severity.NONE;
+                default -> null;
             };
         }
+        return severity;
     }
 
     enum OcmServiceLogSeverity {
-        CRITICAL,
-        MAJOR,
-        WARNING,
-        INFO,
-        DEBUG;
+        CRITICAL(Severity.CRITICAL),
+        MAJOR(Severity.IMPORTANT),
+        WARNING(Severity.MODERATE),
+        INFO(Severity.LOW),
+        DEBUG(Severity.NONE);
 
-        Severity mapToSeverity() {
-            return switch (this) {
-                case CRITICAL -> Severity.CRITICAL;
-                case MAJOR -> Severity.IMPORTANT;
-                case WARNING -> Severity.MODERATE;
-                case INFO -> Severity.LOW;
-                case DEBUG -> Severity.NONE;
-            };
+        private final Severity severity;
+
+        OcmServiceLogSeverity(final Severity severity) {
+            this.severity = severity;
+        }
+
+        public Severity getSeverity() {
+            return severity;
         }
     }
 }
-

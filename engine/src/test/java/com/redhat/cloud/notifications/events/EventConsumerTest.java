@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
@@ -240,7 +241,7 @@ public class EventConsumerTest {
         when(config.isIgnoreSeverityForApplicationsEnabled(or(any(UUID.class), isNull())))
                 .thenReturn(severityIgnored);
 
-        EventType eventType = mockGetEventTypeAndCreateEvent();
+        mockGetEventTypeAndCreateEvent(false, false);
         Action action = buildValidAction(false);
         action.setSeverity(Severity.CRITICAL.name());
         String payload = serializeAction(action);
@@ -433,6 +434,8 @@ public class EventConsumerTest {
         EventType eventType = new EventType();
         eventType.setDisplayName("Event type");
         eventType.setApplication(app);
+        eventType.setDefaultSeverity(Severity.MODERATE);
+        eventType.setAvailableSeverities(Set.of(Severity.values()));
         when(eventTypeRepository.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(eventType);
         when(eventRepository.create(any(Event.class))).thenAnswer(invocation -> {
             assertEquals(shouldHaveAuthorizationCriterion, ((Event) invocation.getArgument(0)).hasAuthorizationCriterion());
@@ -474,8 +477,8 @@ public class EventConsumerTest {
         ArgumentCaptor<Event> argumentCaptor = ArgumentCaptor.forClass(Event.class);
         verify(endpointProcessor, times(1)).process(argumentCaptor.capture());
         if (severityIgnored) {
-            assertEquals(Severity.UNDEFINED, argumentCaptor.getValue().getSeverity());
-            assertEquals(Severity.UNDEFINED.name(), ((Action) argumentCaptor.getValue().getEventWrapper().getEvent()).getSeverity());
+            assertNull(argumentCaptor.getValue().getSeverity());
+            assertNull(((Action) argumentCaptor.getValue().getEventWrapper().getEvent()).getSeverity());
         } else {
             assertEquals(action.getSeverity(), argumentCaptor.getValue().getSeverity().name());
             assertEquals(action.getSeverity(), ((Action) argumentCaptor.getValue().getEventWrapper().getEvent()).getSeverity());

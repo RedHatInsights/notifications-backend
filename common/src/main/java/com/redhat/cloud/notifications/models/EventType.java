@@ -5,10 +5,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.models.filter.ApiResponseFilter;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
@@ -22,6 +24,8 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.Map;
 import java.util.Objects;
@@ -31,6 +35,7 @@ import java.util.UUID;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
+import static jakarta.persistence.EnumType.STRING;
 
 @Entity
 @Table(name = "event_type")
@@ -72,6 +77,13 @@ public class EventType {
     @JoinColumn(name = "application_id")
     @JsonInclude(NON_NULL)
     private Application application;
+
+    @Enumerated(STRING)
+    private Severity defaultSeverity;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "available_severities")
+    private Set<Severity> availableSeverities;
 
     @Transient
     @JsonIgnore
@@ -199,6 +211,22 @@ public class EventType {
 
     public void setRestrictToRecipientsIntegrations(boolean restrictToNamedRecipients) {
         this.restrictToRecipientsIntegrations = restrictToNamedRecipients;
+    }
+
+    public Severity getDefaultSeverity() {
+        return defaultSeverity;
+    }
+
+    public void setDefaultSeverity(Severity defaultSeverity) {
+        this.defaultSeverity = defaultSeverity;
+    }
+
+    public Set<Severity> getAvailableSeverities() {
+        return availableSeverities;
+    }
+
+    public void setAvailableSeverities(Set<Severity> availableSeverities) {
+        this.availableSeverities = availableSeverities;
     }
 
     @AssertTrue(message = "The subscription of an event type can only be locked if the event type is subscribed by default")

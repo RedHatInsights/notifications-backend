@@ -9,13 +9,16 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.Event;
+import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.processors.email.aggregators.AdvisorEmailAggregator.*;
@@ -28,12 +31,21 @@ class SeverityTransformerTest {
     @Inject
     SeverityTransformer severityTransformer;
 
+    private static final EventType DEFAULT_EVENT_TYPE = new EventType();
+
+    @BeforeAll
+    static void init() {
+        DEFAULT_EVENT_TYPE.setDefaultSeverity(Severity.UNDEFINED);
+        DEFAULT_EVENT_TYPE.setAvailableSeverities(Set.of(Severity.values()));
+    }
+
     @Test
     public void testPayloadWithSeverity() {
         Action action = TestHelpers.createIntegrationsFailedAction();
         action.setSeverity(Severity.MODERATE.name()); // "MODERATE"
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(action));
+        event.setEventType(DEFAULT_EVENT_TYPE);
 
         assertEquals(Severity.MODERATE, severityTransformer.getSeverity(event));
 
@@ -41,6 +53,7 @@ class SeverityTransformerTest {
         action.setSeverity("iMpOrTaNt");
         Event eventMixed = new Event();
         eventMixed.setEventWrapper(new EventWrapperAction(action));
+        eventMixed.setEventType(DEFAULT_EVENT_TYPE);
 
         assertEquals(Severity.IMPORTANT, severityTransformer.getSeverity(eventMixed));
     }
@@ -51,6 +64,7 @@ class SeverityTransformerTest {
         action.setSeverity("this is not a valid severity level");
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(action));
+        event.setEventType(DEFAULT_EVENT_TYPE);
 
         assertEquals(Severity.UNDEFINED, severityTransformer.getSeverity(event));
     }
@@ -60,6 +74,7 @@ class SeverityTransformerTest {
         Action action = TestHelpers.createIntegrationsFailedAction();
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(action));
+        event.setEventType(DEFAULT_EVENT_TYPE);
 
         assertEquals(Severity.UNDEFINED, severityTransformer.getSeverity(event));
     }
@@ -73,6 +88,7 @@ class SeverityTransformerTest {
 
         Event singleEvent = new Event();
         singleEvent.setEventWrapper(new EventWrapperAction(singleEventAction));
+        singleEvent.setEventType(DEFAULT_EVENT_TYPE);
 
         assertEquals(Severity.MODERATE, severityTransformer.getSeverity(singleEvent));
 
@@ -80,6 +96,7 @@ class SeverityTransformerTest {
         Action multipleEventAction = ErrataTestHelpers.createErrataAction();
         Event multipleEvent = new Event();
         multipleEvent.setEventWrapper(new EventWrapperAction(multipleEventAction));
+        multipleEvent.setEventType(DEFAULT_EVENT_TYPE);
 
         assertEquals(Severity.IMPORTANT, severityTransformer.getSeverity(multipleEvent));
     }
@@ -91,6 +108,7 @@ class SeverityTransformerTest {
                 "System reboot in progress", "test-title", legacySeverity);
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(action));
+        event.setEventType(DEFAULT_EVENT_TYPE);
 
         assertEquals(Severity.LOW, severityTransformer.getSeverity(event));
     }
@@ -100,6 +118,10 @@ class SeverityTransformerTest {
         Action action = InventoryTestHelpers.createInventoryAction("test-tenant", "rhel", "inventory", "validation-error");
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(action));
+        EventType eventType = new EventType();
+        eventType.setAvailableSeverities(Set.of(Severity.values()));
+        eventType.setDefaultSeverity(Severity.IMPORTANT);
+        event.setEventType(eventType);
 
         assertEquals(Severity.IMPORTANT, severityTransformer.getSeverity(event));
     }
@@ -116,6 +138,7 @@ class SeverityTransformerTest {
         ));
         Event singleEvent = new Event();
         singleEvent.setEventWrapper(new EventWrapperAction(singleAction));
+        singleEvent.setEventType(DEFAULT_EVENT_TYPE);
 
         assertEquals(Severity.CRITICAL, severityTransformer.getSeverity(singleEvent));
 
@@ -123,6 +146,7 @@ class SeverityTransformerTest {
         Action multipleAction = TestHelpers.createAdvisorAction("test-account-id", "deactivated-recommendation");
         Event multipleEvent = new Event();
         multipleEvent.setEventWrapper(new EventWrapperAction(multipleAction));
+        multipleEvent.setEventType(DEFAULT_EVENT_TYPE);
 
         assertEquals(Severity.MODERATE, severityTransformer.getSeverity(multipleEvent));
     }
@@ -135,6 +159,7 @@ class SeverityTransformerTest {
                 "System reboot in progress", "test-title", legacySeverity);
         Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(action));
+        event.setEventType(DEFAULT_EVENT_TYPE);
 
         assertEquals(Severity.UNDEFINED, severityTransformer.getSeverity(event));
     }
