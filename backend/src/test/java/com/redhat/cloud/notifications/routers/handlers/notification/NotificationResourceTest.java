@@ -1244,6 +1244,13 @@ public class NotificationResourceTest extends DbIsolatedTest {
             .get("/notifications/eventTypes/{eventTypeId}/endpoints")
             .then()
             .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(noAccessIdentityHeader)
+            .when()
+            .get("/notifications/severities")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
     }
 
     @ParameterizedTest
