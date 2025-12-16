@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -15,8 +16,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -63,7 +66,8 @@ public class SubscriptionRepositoryTest extends DbIsolatedTest {
             // Store the created user ID to verify it afterward.
             expectedUsernames.add(userId);
 
-            this.subscriptionRepository.updateSubscription(orgId, userId, randomEventType.getId(), SubscriptionType.INSTANT, random.nextBoolean());
+            boolean subscribed = random.nextBoolean();
+            this.subscriptionRepository.updateSubscription(orgId, userId, randomEventType.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
         }
 
         // Create five subscriptions with lowercase usernames.
@@ -71,7 +75,8 @@ public class SubscriptionRepositoryTest extends DbIsolatedTest {
             final String userId = String.format("lowercaseusername%d", i);
             final String orgId = String.format("%d", i);
 
-            this.subscriptionRepository.updateSubscription(orgId, userId, randomEventType.getId(), SubscriptionType.INSTANT, random.nextBoolean());
+            boolean subscribed = random.nextBoolean();
+            this.subscriptionRepository.updateSubscription(orgId, userId, randomEventType.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
         }
 
         // Call the function under test.
@@ -84,6 +89,14 @@ public class SubscriptionRepositoryTest extends DbIsolatedTest {
                 String.format("a non-mixed-case user ID \"%s\" was fetched from the database", userId)
             );
         }
+    }
+
+    private Map<Severity, Boolean> buildAllSeveritiesUpdateDetails(boolean subscribed) {
+        Map<Severity, Boolean> severitySubscriptionMap = new HashMap<>();
+        for (Severity severity : Severity.values()) {
+            severitySubscriptionMap.put(severity, subscribed);
+        }
+        return severitySubscriptionMap;
     }
 
     /**
@@ -108,13 +121,19 @@ public class SubscriptionRepositoryTest extends DbIsolatedTest {
         final String userIdTwo = "userIdTwo";
 
         final Random random = new Random();
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdOne, randomEventType.getId(), SubscriptionType.INSTANT, random.nextBoolean());
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdOne, randomEventTypeTwo.getId(), SubscriptionType.INSTANT, random.nextBoolean());
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdOne, randomEventTypeThree.getId(), SubscriptionType.INSTANT, random.nextBoolean());
+        boolean subscribed = random.nextBoolean();
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdOne, randomEventType.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
+        subscribed = random.nextBoolean();
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdOne, randomEventTypeTwo.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
+        subscribed = random.nextBoolean();
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdOne, randomEventTypeThree.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
 
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdTwo, randomEventType.getId(), SubscriptionType.INSTANT, random.nextBoolean());
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdTwo, randomEventTypeTwo.getId(), SubscriptionType.INSTANT, random.nextBoolean());
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdTwo, randomEventTypeThree.getId(), SubscriptionType.INSTANT, random.nextBoolean());
+        subscribed = random.nextBoolean();
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdTwo, randomEventType.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
+        subscribed = random.nextBoolean();
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdTwo, randomEventTypeTwo.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
+        subscribed = random.nextBoolean();
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userIdTwo, randomEventTypeThree.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
 
         // Call the function under test.
         final List<EventTypeEmailSubscription> subscriptions = this.subscriptionRepository.findEmailSubscriptionsByUserId(userIdOne);
@@ -146,9 +165,9 @@ public class SubscriptionRepositoryTest extends DbIsolatedTest {
         // Create some subscriptions for a user that should simply be
         // renamed to lowercase.
         final String userId = "userIdOne";
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userId, randomEventType.getId(), SubscriptionType.INSTANT, true);
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userId, randomEventTypeTwo.getId(), SubscriptionType.INSTANT, false);
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userId, randomEventTypeThree.getId(), SubscriptionType.INSTANT, true);
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userId, randomEventType.getId(), SubscriptionType.INSTANT, true, buildAllSeveritiesUpdateDetails(true));
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userId, randomEventTypeTwo.getId(), SubscriptionType.INSTANT, false, buildAllSeveritiesUpdateDetails(false));
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userId, randomEventTypeThree.getId(), SubscriptionType.INSTANT, true, buildAllSeveritiesUpdateDetails(true));
 
         // Find the email subscriptions for the user.
         final List<EventTypeEmailSubscription> originalSubscriptions = this.subscriptionRepository.findEmailSubscriptionsByUserId(userId);
@@ -175,9 +194,9 @@ public class SubscriptionRepositoryTest extends DbIsolatedTest {
         );
 
         // Create the same subscriptions again for the previous user ID.
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userId, randomEventType.getId(), SubscriptionType.INSTANT, true);
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userId, randomEventTypeTwo.getId(), SubscriptionType.INSTANT, false);
-        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userId, randomEventTypeThree.getId(), SubscriptionType.INSTANT, true);
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userId, randomEventType.getId(), SubscriptionType.INSTANT, true, buildAllSeveritiesUpdateDetails(true));
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userId, randomEventTypeTwo.getId(), SubscriptionType.INSTANT, false, buildAllSeveritiesUpdateDetails(false));
+        this.subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, userId, randomEventTypeThree.getId(), SubscriptionType.INSTANT, true, buildAllSeveritiesUpdateDetails(true));
 
         // Find the email subscriptions for the user again.
         final List<EventTypeEmailSubscription> duplicatedMixedCaseSubscriptions = this.subscriptionRepository.findEmailSubscriptionsByUserId(userId);

@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
+import com.redhat.cloud.notifications.Severity;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -7,7 +8,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
+import java.util.Map;
 import java.util.Objects;
 
 @Entity
@@ -24,6 +28,17 @@ public class EventTypeEmailSubscription {
 
     @NotNull
     private boolean subscribed;
+
+    public Map<Severity, Boolean> getSeverities() {
+        return severities;
+    }
+
+    public void setSeverities(Map<Severity, Boolean> severities) {
+        this.severities = severities;
+    }
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map<Severity, Boolean> severities;
 
     public void setId(EventTypeEmailSubscriptionId id) {
         this.id = id;

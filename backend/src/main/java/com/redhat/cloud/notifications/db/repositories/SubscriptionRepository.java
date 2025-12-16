@@ -1,5 +1,8 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeEmailSubscription;
@@ -40,33 +43,49 @@ public class SubscriptionRepository {
     @Inject
     TemplateRepository templateRepository;
 
-    public void subscribe(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
-        updateSubscription(orgId, username, eventTypeId, subscriptionType, true);
-    }
+    @Inject
+    ObjectMapper mapper;
 
-    public void unsubscribe(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
-        updateSubscription(orgId, username, eventTypeId, subscriptionType, false);
+    public void subscribe(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
+        updateSubscription(orgId, username, eventTypeId, subscriptionType, true, null);
     }
 
     @Transactional
-    void updateSubscription(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType, boolean subscribed) {
+    public void updateSubscription(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType, boolean subscribed, Map<Severity, Boolean> severities) {
 
         if (subscribed && !backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()) {
             checkIfSubscriptionTypeIsSupportedForCurrentEventType(eventTypeId, subscriptionType);
         }
 
         // We're performing an upsert to update the user subscription.
-        String sql = "INSERT INTO email_subscriptions(org_id, user_id, event_type_id, subscription_type, subscribed) " +
-            "VALUES (:orgId, :userId, :eventTypeId, :subscriptionType, :subscribed) " +
-            "ON CONFLICT (org_id, user_id, event_type_id, subscription_type) DO UPDATE SET subscribed = :subscribed";
+        String jsonSeverities = null;
+        if (null != severities) {
+            try {
+                jsonSeverities = mapper.writeValueAsString(severities);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
-        // HQL does not support the ON CONFLICT clause, so we need a native query here
+        String sql = """
+            INSERT INTO email_subscriptions(
+                org_id, user_id, event_type_id, subscription_type, subscribed, severities
+            ) VALUES (
+                :orgId, :userId, :eventTypeId, :subscriptionType, :subscribed, CAST(:severities AS jsonb)
+            )
+            ON CONFLICT (org_id, user_id, event_type_id, subscription_type)
+            DO UPDATE SET
+                subscribed = :subscribed,
+                severities = CAST(:severities AS jsonb)
+            """;
+
         entityManager.createNativeQuery(sql)
             .setParameter("orgId", orgId)
             .setParameter("userId", username)
             .setParameter("eventTypeId", eventTypeId)
             .setParameter("subscriptionType", subscriptionType.name())
             .setParameter("subscribed", subscribed)
+            .setParameter("severities", jsonSeverities)
             .executeUpdate();
     }
 
