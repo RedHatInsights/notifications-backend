@@ -1244,13 +1244,6 @@ public class NotificationResourceTest extends DbIsolatedTest {
             .get("/notifications/eventTypes/{eventTypeId}/endpoints")
             .then()
             .statusCode(HttpStatus.SC_FORBIDDEN);
-
-        given()
-            .header(noAccessIdentityHeader)
-            .when()
-            .get("/notifications/severities")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
     }
 
     @ParameterizedTest
@@ -2460,14 +2453,8 @@ public class NotificationResourceTest extends DbIsolatedTest {
         assertEquals(0, behaviorGroupList.get(0).getActions().size());
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testSeverityList(boolean kesselEnabled) {
-        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
-        if (kesselEnabled) {
-            mockDefaultKesselUpdatePermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
-        }
-
+    @Test
+    void testSeverityList() {
         String accountId = RandomStringUtils.secure().nextAlphanumeric(25);
         String orgId = RandomStringUtils.secure().nextAlphanumeric(25);
         Header identityHeader = initRbacMock(accountId, orgId, "user", FULL_ACCESS);

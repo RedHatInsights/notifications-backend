@@ -271,7 +271,6 @@ public class NotificationResource {
     @Path("/severities")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "List configured severities", description = "Returns the list of available notification severities")
-    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW)
     public Set<Severity> getSeverities(@Context final SecurityContext sec) {
         return EnumSet.allOf(Severity.class);
     }
