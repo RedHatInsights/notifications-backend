@@ -76,7 +76,7 @@ public class SubscriptionRepositoryTest extends DbIsolatedTest {
             final String orgId = String.format("%d", i);
 
             boolean subscribed = random.nextBoolean();
-            this.subscriptionRepository.updateSubscription(orgId, userId, randomEventType.getId(), SubscriptionType.INSTANT, random.nextBoolean(), buildAllSeveritiesUpdateDetails(subscribed));
+            this.subscriptionRepository.updateSubscription(orgId, userId, randomEventType.getId(), SubscriptionType.INSTANT, subscribed, buildAllSeveritiesUpdateDetails(subscribed));
         }
 
         // Call the function under test.
