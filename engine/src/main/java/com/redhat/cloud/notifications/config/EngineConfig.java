@@ -57,7 +57,6 @@ public class EngineConfig {
     private String toggleBlacklistedEndpoints;
     private String toggleBlacklistedEventTypes;
     private String toggleKafkaOutgoingHighVolumeTopic;
-    private String toggleIgnoreSeverityForApplications;
     private String toggleEventDeduplication;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
@@ -158,7 +157,6 @@ public class EngineConfig {
         toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
         toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
         toggleBlacklistedEventTypes = toggleRegistry.register("blacklisted-event-types", true);
-        toggleIgnoreSeverityForApplications = toggleRegistry.register("ignore-severity-for-applications", true);
         toggleEventDeduplication = toggleRegistry.register("event-deduplication", true);
     }
 
@@ -312,17 +310,6 @@ public class EngineConfig {
             return this.unleash.isEnabled(this.toggleKafkaOutgoingHighVolumeTopic, false);
         } else {
             return this.outgoingKafkaHighVolumeTopicEnabled;
-        }
-    }
-
-    public boolean isIgnoreSeverityForApplicationsEnabled(final UUID application) {
-        if (unleashEnabled && application != null) {
-            UnleashContext unleashContext = UnleashContext.builder()
-                    .addProperty("appId", application.toString())
-                    .build();
-            return unleash.isEnabled(toggleIgnoreSeverityForApplications, unleashContext, false);
-        } else {
-            return false;
         }
     }
 

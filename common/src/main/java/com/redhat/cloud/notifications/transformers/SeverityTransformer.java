@@ -110,7 +110,7 @@ public class SeverityTransformer {
                             event.getPayload().getAdditionalProperties().get(SEVERITY).toString().toUpperCase()
                         );
                     } catch (Exception ex) {
-                        Log.errorf(ex, "Error extracting 'cluster-manager' severity from event '%s'", event);
+                        Log.errorf(ex, "Error extracting 'errata-notifications' severity from event '%s'", event);
                         return null;
                     }
                 });

@@ -338,21 +338,12 @@ public class EventConsumer {
     }
 
     private void updateSeverity(Event event) {
-        Severity severity = null;
-        if (config.isIgnoreSeverityForApplicationsEnabled(event.getApplicationId())) {
-            Log.debugf("Ignoring provided severity level for [bundle=%s, application=%s]",
-                event.getEventType().getApplication().getBundle().getName(),
-                event.getEventType().getApplication().getName());
-        } else {
-            severity = severityTransformer.getSeverity(event);
-        }
-
+        final Severity severity = severityTransformer.getSeverity(event);
         event.setSeverity(severity);
+
         if (event.getEventWrapper() instanceof EventWrapperAction evtAction) {
             if (severity != null) {
                 evtAction.getEvent().setSeverity(severity.name());
-            } else {
-                evtAction.getEvent().setSeverity(null);
             }
         }
     }
