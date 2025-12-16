@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -21,6 +22,7 @@ import jakarta.transaction.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -163,14 +165,19 @@ public class ResourceHelpers {
         return endpoint;
     }
 
-    @Transactional
     public EventTypeEmailSubscription createEventTypeEmailSubscription(String orgId, String userId, EventType eventType, SubscriptionType subscriptionType) {
+        return createEventTypeEmailSubscription(orgId, userId, eventType, subscriptionType, null);
+    }
+
+    @Transactional
+    public EventTypeEmailSubscription createEventTypeEmailSubscription(String orgId, String userId, EventType eventType, SubscriptionType subscriptionType, Map<Severity, Boolean> severities) {
         EventTypeEmailSubscription eventTypeEmailSubscription = new EventTypeEmailSubscription();
         eventTypeEmailSubscription.setId(
             new EventTypeEmailSubscriptionId(orgId, userId, eventType.getId(), subscriptionType)
         );
         eventTypeEmailSubscription.setEventType(entityManager.find(EventType.class, eventType.getId()));
         eventTypeEmailSubscription.setSubscribed(true);
+        eventTypeEmailSubscription.setSeverities(severities);
         entityManager.persist(eventTypeEmailSubscription);
         return eventTypeEmailSubscription;
     }
