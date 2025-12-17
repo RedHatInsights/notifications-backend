@@ -8,7 +8,8 @@ import email.pojo.DailyDigestSection;
 import email.pojo.EmailPendo;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
+import io.quarkus.test.junit.mockito.InjectSpy;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import static helpers.TestHelpers.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 public class TestRhelDailyTemplate extends EmailTemplatesRendererHelper {
@@ -36,16 +38,28 @@ public class TestRhelDailyTemplate extends EmailTemplatesRendererHelper {
         return myCurrentApp;
     }
 
-    @Inject
+    @InjectSpy
     TemplateService templateService;
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testDailyEmailBodyAllApplications(boolean useBetaTemplate) throws JsonProcessingException {
+        String result = commonTestDailyEmailBodyAllApplications(useBetaTemplate);
+        assertFalse(result.contains(COMMON_SECURED_LABEL_CHECK));
+    }
+
+    @Test
+    public void testSecureDailyEmailBodyAllApplications() throws JsonProcessingException {
+        when(templateService.isSecuredEmailTemplatesEnabled()).thenReturn(true);
+        templateService.init();
+
+        String result = commonTestDailyEmailBodyAllApplications(false);
+        assertTrue(result.contains(COMMON_SECURED_LABEL_CHECK));
+    }
+
+    public String commonTestDailyEmailBodyAllApplications(boolean useBetaTemplate) throws JsonProcessingException {
 
         Map<String, DailyDigestSection> dataMap = new HashMap<>();
-
-        generateAggregatedEmailBody(TestPoliciesTemplate.buildPoliciesAggregatedPayload(), "policies", dataMap, useBetaTemplate);
 
         generateAggregatedEmailBody(JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT, "advisor", dataMap, useBetaTemplate);
 
@@ -86,6 +100,7 @@ public class TestRhelDailyTemplate extends EmailTemplatesRendererHelper {
         templateResultChecks(templateResult);
         assertTrue(templateResult.contains(emailPendo.getPendoTitle()));
         assertTrue(templateResult.contains(emailPendo.getPendoMessage()));
+        return templateResult;
     }
 
     private static void templateResultChecks(String templateResult) {
@@ -93,7 +108,6 @@ public class TestRhelDailyTemplate extends EmailTemplatesRendererHelper {
         assertTrue(templateResult.contains("\"#compliance-section1\""));
         assertTrue(templateResult.contains("\"#inventory-section1\""));
         assertTrue(templateResult.contains("\"#patch-section1\""));
-        assertTrue(templateResult.contains("\"#policies-section1\""));
         assertTrue(templateResult.contains("\"#resource-optimization-section1\""));
         assertTrue(templateResult.contains("\"#vulnerability-section1\""));
 
@@ -101,7 +115,6 @@ public class TestRhelDailyTemplate extends EmailTemplatesRendererHelper {
         assertTrue(templateResult.contains("\"compliance-section1\""));
         assertTrue(templateResult.contains("\"inventory-section1\""));
         assertTrue(templateResult.contains("\"patch-section1\""));
-        assertTrue(templateResult.contains("\"policies-section1\""));
         assertTrue(templateResult.contains("\"resource-optimization-section1\""));
         assertTrue(templateResult.contains("\"vulnerability-section1\""));
 

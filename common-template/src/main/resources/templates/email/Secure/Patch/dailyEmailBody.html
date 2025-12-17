@@ -1,48 +1,49 @@
 {@boolean renderSection1=true}
 {@boolean renderButtonSection1=true}
-{#include Secure/Common/insightsEmailBodyLight}
-{#content-title}
-    Daily digest - Patch - Red Hat Enterprise Linux
-{/content-title}
+{#include email/Secure/Common/insightsEmailBodyLight}
 {#content-title-section1}
     Advisories
 {/content-title-section1}
-{#content-title-right-part-section1}
-    <a target="_blank" href="{environment.url}/insights/patch/advisories?{query_params}">{action.context.total_advisories}</a>
-{/content-title-right-part-section1}
-{#content-subtitle-section1}
-    There are {action.context.total_advisories} new advisories affecting your systems.
-{/content-subtitle-section1}
+{#content-title-counter}
+({action.context.total_advisories})
+{/content-title-counter}
+{#content-title-right-part}
+{action.context.total_advisories}
+{/content-title-right-part}
 {#content-body-section1}
+<p style="{body-section-p-style}">There {#if action.context.total_advisories == 1}is {action.context.total_advisories} new advisory{#else}are {action.context.total_advisories} new advisories{/if} affecting your systems:</p>
     {#for key in action.context.patch.keySet()}
         {#if action.context.patch.get(key).size() > 0}
-            <div style="height: 24px">&nbsp;</div>
-            <table class="rh-data-table-bordered">
+            {#if !key_isFirst}
+                <div style="height: 24px">&#xA0;</div>
+            {/if}
+            <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 0 8px 0 8px; width: 100%;"><tr><td>
+            <table style="{body-section-table-style}">
                 <thead>
                     <tr>
-                      <th>
+                      <th style="{body-section-table-th-style} width: 30%;">
                         <span style="text-transform: capitalize">{key}</span> advisories
                       </th>
-                      <th>Synopsis</th>
+                      <th style="{body-section-table-th-style} width: 70%;">Synopsis</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody style="{body-section-table-tbody-style}">
                     {#for advisory in action.context.patch.get(key)}
                         <tr>
-                            <td style="width: 40%">
-                                <a class="rh-url" href="{environment.url}/insights/patch/advisories/{advisory["name"]}?{query_params}">{advisory["name"]}</a>
+                            <td style="{body-section-table-td-style}">
+                                <a style="{body-section-table-td-a-style}" href="{environment.url}/insights/patch/advisories/{advisory["name"]}?{query_params}">{advisory["name"]}</a>
                             </td>
-                            <td style="width: 60%">
+                            <td style="{body-section-table-td-style}">
                                 {advisory["synopsis"]}
                             </td>
                         </tr>
                     {/for}
                 </tbody>
             </table>
+            </td></tr></table>
         {/if}
     {/for}
 {/content-body-section1}
-{#content-button-section1}
-    <a target="_blank" href="{environment.url}/insights/patch/advisories?{query_params}">Open Advisories in Red Hat Lightspeed</a>
-{/content-button-section1}
+{#content-button-href}{environment.url}/insights/patch/advisories?{query_params}{/content-button-href}
+{#content-button-service-name}Advisories - Patch{/content-button-service-name}
 {/include}
