@@ -115,7 +115,7 @@ public class SubscriptionRepositoryTest {
         resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-03", eventTypeC, SubscriptionType.INSTANT);
         resourceHelpers.createEventTypeEmailSubscription(ORG_ID, "User-04", eventTypeA, SubscriptionType.INSTANT);
 
-        // All users how subscribed to eventTypeA must be returned
+        // All users who subscribed to eventTypeA must be returned
         List<String> listRecipients = subscriptionRepository.getSubscribers(ORG_ID, eventTypeA.getId(), SubscriptionType.INSTANT, Optional.empty());
         assertEquals(new HashSet<>(listRecipients), Set.of("User-01", "User-02", "User-04"));
 
