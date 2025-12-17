@@ -30,7 +30,7 @@ public class SubscriptionRepository {
     private List<String> getSubscriptions(String orgId, UUID eventTypeId, SubscriptionType subscriptionType, boolean subscribed, Optional<Severity> severity) {
         if (severity.isPresent()) {
             String sql = "SELECT user_id FROM email_subscriptions WHERE org_id = :orgId AND subscription_type = :subscriptionType AND event_type_id = :eventTypeId "
-                + "AND ((severities is null AND subscribed = :subscribed) OR ((severities ->> :severity) = CAST(:subscribed AS TEXT)))";
+                + "AND ((severities is null AND subscribed = :subscribed) OR ((severities ->> :severity)::boolean = :subscribed))";
 
             return entityManager.createNativeQuery(sql)
                 .setParameter("orgId", orgId)
