@@ -296,7 +296,7 @@ public class EventConsumer {
                      * The event is not a duplicate. We can now persist it.
                      */
                     event.setHasAuthorizationCriterion(null != recipientsAuthorizationCriterionExtractor.extract(event));
-                    updateSeverity(event, eventType);
+                    updateSeverity(event);
 
                     if (event.getId() == null) {
                         // NOTIF-499 If there is no ID provided whatsoever we create one.
@@ -337,18 +337,14 @@ public class EventConsumer {
         }
     }
 
-    private void updateSeverity(Event event, EventType eventType) {
-        Severity severity = Severity.UNDEFINED;
-        if (config.isIgnoreSeverityForApplicationsEnabled(event.getApplicationId())) {
-            Log.debugf("Ignoring provided severity level for [bundle=%s, application=%s]",
-                eventType.getApplication().getBundle().getName(), eventType.getApplication().getName());
-        } else {
-            severity = severityTransformer.getSeverity(event);
-        }
-
+    private void updateSeverity(Event event) {
+        final Severity severity = severityTransformer.getSeverity(event);
         event.setSeverity(severity);
+
         if (event.getEventWrapper() instanceof EventWrapperAction evtAction) {
-            evtAction.getEvent().setSeverity(severity.name());
+            if (severity != null) {
+                evtAction.getEvent().setSeverity(severity.name());
+            }
         }
     }
 

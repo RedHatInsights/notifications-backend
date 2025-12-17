@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
@@ -58,10 +59,8 @@ import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MES
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.AdditionalMatchers.or;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -237,12 +236,10 @@ public class EventConsumerTest {
     @Test
     void testValidPayloadWithIgnoredSeverityForApplication() {
         boolean severityIgnored = true;
-        when(config.isIgnoreSeverityForApplicationsEnabled(or(any(UUID.class), isNull())))
-                .thenReturn(severityIgnored);
 
-        EventType eventType = mockGetEventTypeAndCreateEvent();
+        mockGetEventTypeAndCreateEvent(false, false);
         Action action = buildValidAction(false);
-        action.setSeverity(Severity.CRITICAL.name());
+        action.setSeverity(null);
         String payload = serializeAction(action);
         UUID messageId = UUID.randomUUID();
         Message<String> message = buildMessageWithId(messageId.toString().getBytes(UTF_8), payload);
@@ -433,6 +430,10 @@ public class EventConsumerTest {
         EventType eventType = new EventType();
         eventType.setDisplayName("Event type");
         eventType.setApplication(app);
+        if (shouldHaveSeverity) {
+            eventType.setDefaultSeverity(Severity.MODERATE);
+            eventType.setAvailableSeverities(Set.of(Severity.values()));
+        }
         when(eventTypeRepository.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(eventType);
         when(eventRepository.create(any(Event.class))).thenAnswer(invocation -> {
             assertEquals(shouldHaveAuthorizationCriterion, ((Event) invocation.getArgument(0)).hasAuthorizationCriterion());
@@ -474,8 +475,8 @@ public class EventConsumerTest {
         ArgumentCaptor<Event> argumentCaptor = ArgumentCaptor.forClass(Event.class);
         verify(endpointProcessor, times(1)).process(argumentCaptor.capture());
         if (severityIgnored) {
-            assertEquals(Severity.UNDEFINED, argumentCaptor.getValue().getSeverity());
-            assertEquals(Severity.UNDEFINED.name(), ((Action) argumentCaptor.getValue().getEventWrapper().getEvent()).getSeverity());
+            assertNull(argumentCaptor.getValue().getSeverity());
+            assertNull(((Action) argumentCaptor.getValue().getEventWrapper().getEvent()).getSeverity());
         } else {
             assertEquals(action.getSeverity(), argumentCaptor.getValue().getSeverity().name());
             assertEquals(action.getSeverity(), ((Action) argumentCaptor.getValue().getEventWrapper().getEvent()).getSeverity());

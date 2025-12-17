@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -91,6 +92,8 @@ public class ResourceHelpers {
         eventType.setName(eventTypeName);
         eventType.setDisplayName("Policies will take care of the rules");
         eventType.setDescription("Policies is super cool, you should use it");
+        eventType.setDefaultSeverity(Severity.MODERATE);
+        eventType.setAvailableSeverities(Set.of(Severity.values()));
         entityManager.persist(eventType);
         return eventType;
     }
