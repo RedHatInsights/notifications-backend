@@ -123,7 +123,7 @@ public class SubscriptionRepositoryTest {
         listRecipients = subscriptionRepository.getSubscribers(ORG_ID, eventTypeA.getId(), SubscriptionType.INSTANT, Optional.of(Severity.MODERATE));
         assertEquals(new HashSet<>(listRecipients), Set.of("User-01", "User-04"));
 
-        // Only users how subscribed to eventTypeA + severity LOW and use how subscribed without any severity details (db column severities = null) must be returned
+        // Only users who subscribed to eventTypeA + severity LOW and users who subscribed without any severity details (db column severities = null) must be returned
         listRecipients = subscriptionRepository.getSubscribers(ORG_ID, eventTypeA.getId(), SubscriptionType.INSTANT, Optional.of(Severity.LOW));
         assertEquals(new HashSet<>(listRecipients), Set.of("User-04"));
 
