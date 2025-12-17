@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.processors.drawer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
@@ -25,6 +26,7 @@ import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -97,8 +99,13 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         // get default endpoint
         DrawerEntryPayload drawerEntryPayload = buildJsonPayloadFromEvent(event);
 
+        Optional<Severity> eventSeverity = Optional.empty();
+        if (engineConfig.isIncludeSeverityToFilterRecipientsEnabled(event.getOrgId())) {
+            eventSeverity = Optional.ofNullable(event.getSeverity());
+        }
+
         final Set<String> unsubscribers =
-                Set.copyOf(subscriptionRepository.getUnsubscribers(event.getOrgId(), event.getEventType().getId(), DRAWER));
+                Set.copyOf(subscriptionRepository.getUnsubscribers(event.getOrgId(), event.getEventType().getId(), DRAWER, eventSeverity));
         final Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(event, endpoints);
 
         // Prepare all the data to be sent to the connector.
