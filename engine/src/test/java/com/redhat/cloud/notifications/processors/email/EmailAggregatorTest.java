@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -116,12 +117,14 @@ class EmailAggregatorTest {
             return users.stream().map(usrStr -> {
                 User usr = new User();
                 usr.setEmail(usrStr);
+                usr.setUsername(usrStr);
                 return usr;
             }).collect(Collectors.toSet());
         });
 
         // Test user subscription based on event type
         Map<User, Map<String, Object>> result = null;
+        User user = null;
         result = aggregate();
 
         verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
@@ -140,17 +143,95 @@ class EmailAggregatorTest {
         verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(5), eq(emailAggregator.maxPageSize));
 
         assertEquals(1, result.size());
-        User user = result.keySet().stream().findFirst().get();
+        user = result.keySet().stream().findFirst().get();
         assertTrue(user.getEmail().equals("user-2"));
         assertEquals(8, ((LinkedHashMap) result.get(user).get("policies")).size());
         verify(recipientsResolverService, times(8)).getRecipients(any(RecipientsQuery.class));
+
+        // enable filter on severity without any config
+        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString())).thenReturn(true);
+        clearInvocations(recipientsResolverService); // just reset mockito counter
+        clearInvocations(emailAggregationRepository);
+        resourceHelpers.clearEvents();
+
+        result = aggregate();
+
+        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
+
+        assertEquals(1, result.size());
+        user = result.keySet().stream().findFirst().get();
+        assertTrue(user.getEmail().equals("user-2"));
+        assertEquals(4, ((LinkedHashMap) result.get(user).get("policies")).size());
+        verify(recipientsResolverService, times(4)).getRecipients(any(RecipientsQuery.class));
+
+        // enable filter on "MODERATE" everity without any config
+        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString())).thenReturn(true);
+        clearInvocations(recipientsResolverService); // just reset mockito counter
+        clearInvocations(emailAggregationRepository);
+        resourceHelpers.clearEvents();
+
+        resourceHelpers.deleteEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY);
+        resourceHelpers.createEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY, Map.of(Severity.MODERATE, true));
+
+        result = aggregate();
+
+        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
+
+        assertEquals(1, result.size());
+        user = result.keySet().stream().findFirst().get();
+        assertTrue(user.getEmail().equals("user-2"));
+        assertEquals(1, ((LinkedHashMap) result.get(user).get("policies")).size());
+        verify(recipientsResolverService, times(4)).getRecipients(any(RecipientsQuery.class));
+
+        // enable only unsubscribe from all severities (don't make real sens, but just to check)
+        Map<Severity, Boolean> severities = new HashMap<>();
+        for (Severity severity : Severity.values()) {
+            severities.put(severity, false);
+        }
+
+        clearInvocations(recipientsResolverService); // just reset mockito counter
+        clearInvocations(emailAggregationRepository);
+        resourceHelpers.clearEvents();
+        resourceHelpers.deleteEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY);
+        resourceHelpers.createEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY, severities);
+        // because after the previous aggregate() call the email_aggregation DB table was not purged, we already have 4 records on database
+        result = aggregate();
+
+        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
+
+        assertEquals(1, result.size());
+        user = result.keySet().stream().findFirst().get();
+        assertTrue(user.getEmail().equals("user-2"));
+        assertEquals(0, ((LinkedHashMap) result.get(user).get("policies")).size());
+        verify(recipientsResolverService, times(4)).getRecipients(any(RecipientsQuery.class));
+
+        // disable the severity filtering
+        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString())).thenReturn(false);
+        clearInvocations(recipientsResolverService); // just reset mockito counter
+        clearInvocations(emailAggregationRepository);
+        resourceHelpers.clearEvents();
+
+        result = aggregate();
+
+        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
+
+        assertEquals(1, result.size());
+        user = result.keySet().stream().findFirst().get();
+        assertTrue(user.getEmail().equals("user-2"));
+        assertEquals(4, ((LinkedHashMap) result.get(user).get("policies")).size());
+        verify(recipientsResolverService, times(4)).getRecipients(any(RecipientsQuery.class));
     }
 
     private Map<User, Map<String, Object>> aggregate() {
         Map<User, Map<String, Object>> result = new HashMap<>();
 
         for (int i = 0; i < 4; i++) {
-            JsonObject payload = TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)).getPayload();
+            Severity severity = Severity.values()[i];
+            JsonObject payload = TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), severity, eventType1.getId()).getPayload();
             // the base transformer adds a "source" element which should not be present in an original event payload
             payload.remove(BaseTransformer.SOURCE);
 
@@ -168,7 +249,7 @@ class EmailAggregatorTest {
                 payload.getJsonArray("events").add(jso2);
                 payload.put("context", contextAsString);
             }
-            resourceHelpers.addEventEmailAggregation("org-1", "rhel", "policies", payload, false);
+            resourceHelpers.addEventEmailAggregation("org-1", "rhel", "policies", payload, false, severity);
         }
         JsonObject payload = TestHelpers.createEmailAggregation("org-2", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)).getPayload();
         // the base transformer adds a "source" element which should not be present in an original event payload

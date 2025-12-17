@@ -1,70 +1,34 @@
 package com.redhat.cloud.notifications.models;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.redhat.cloud.notifications.db.converters.JsonObjectConverter;
+import com.redhat.cloud.notifications.Severity;
 import io.vertx.core.json.JsonObject;
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import java.util.Objects;
+import java.util.UUID;
 
-import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
-import static jakarta.persistence.GenerationType.SEQUENCE;
 
-@Entity
-@Table(name = "email_aggregation")
-public class EmailAggregation extends CreationTimestamped {
+public class EmailAggregation {
 
-    private static final String SEQUENCE_GENERATOR = "email-aggregation-sequence-generator";
-
-    @Id
-    @GeneratedValue(strategy = SEQUENCE, generator = SEQUENCE_GENERATOR)
-    @SequenceGenerator(name = SEQUENCE_GENERATOR, sequenceName = "email_aggregation_id_seq")
-    @JsonProperty(access = READ_ONLY)
-    private Integer id;
-
-    @NotNull
-    @Size(max = 50)
     private String orgId;
 
-    @NotNull
-    @Size(max = 255)
-    @Column(name = "bundle")
-    @JsonProperty("bundle")
     private String bundleName;
 
-    @NotNull
-    @Size(max = 255)
-    @Column(name = "application")
-    @JsonProperty("application")
     private String applicationName;
 
-    @NotNull
-    @Convert(converter = JsonObjectConverter.class)
     private JsonObject payload;
+
+    private Severity severity;
+
+    private UUID eventTypeId;
 
     public EmailAggregation() {
     }
 
-    public EmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload) {
+    public EmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload, Severity severity, UUID eventTypeId) {
         this.orgId = orgId;
         this.bundleName = bundleName;
         this.applicationName = applicationName;
         this.payload = payload;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
+        this.severity = severity;
+        this.eventTypeId = eventTypeId;
     }
 
     public String getOrgId() {
@@ -99,20 +63,19 @@ public class EmailAggregation extends CreationTimestamped {
         this.payload = payload;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o instanceof EmailAggregation) {
-            EmailAggregation other = (EmailAggregation) o;
-            return Objects.equals(id, other.id);
-        }
-        return false;
+    public Severity getSeverity() {
+        return severity;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
+    public UUID getEventTypeId() {
+        return eventTypeId;
+    }
+
+    public void setEventTypeId(UUID eventTypeId) {
+        this.eventTypeId = eventTypeId;
+    }
+
+    public void setSeverity(Severity severity) {
+        this.severity = severity;
     }
 }
