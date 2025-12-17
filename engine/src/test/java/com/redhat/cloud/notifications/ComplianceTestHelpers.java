@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static java.time.ZoneOffset.UTC;
 
 public class ComplianceTestHelpers {
 
@@ -20,7 +19,6 @@ public class ComplianceTestHelpers {
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
         aggregation.setOrgId(DEFAULT_ORG_ID);
-        aggregation.setCreated(LocalDateTime.now(UTC).minusHours(5L));
 
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(bundle);
