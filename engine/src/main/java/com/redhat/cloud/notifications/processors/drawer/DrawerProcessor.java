@@ -129,6 +129,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         drawerEntryPayload.setSource(String.format("%s - %s", event.getApplicationDisplayName(), event.getBundleDisplayName()));
         drawerEntryPayload.setBundle(bundleRepository.getBundle(event.getBundleId()).getName());
         drawerEntryPayload.setEventId(event.getId());
+        if (event.getSeverity() != null) {
+            drawerEntryPayload.setSeverity(event.getSeverity().name());
+        }
         return drawerEntryPayload;
     }
 

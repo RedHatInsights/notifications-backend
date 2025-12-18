@@ -31,6 +31,8 @@ public class DrawerEntryPayload {
 
     private String bundle;
 
+    private String severity;
+
     public DrawerEntryPayload() {
     }
 
@@ -88,5 +90,13 @@ public class DrawerEntryPayload {
 
     public void setBundle(String bundle) {
         this.bundle = bundle;
+    }
+
+    public String getSeverity() {
+        return severity;
+    }
+
+    public void setSeverity(String severity) {
+        this.severity = severity;
     }
 }
