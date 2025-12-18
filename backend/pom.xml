@@ -15,7 +15,7 @@
 
     <properties>
         <json-schema-validator-tests.version>6.0.0</json-schema-validator-tests.version>
-        <io-swagger-parser-v3-swagger-parser.version>2.1.36</io-swagger-parser-v3-swagger-parser.version>
+        <io-swagger-parser-v3-swagger-parser.version>2.1.37</io-swagger-parser-v3-swagger-parser.version>
     </properties>
 
     <dependencies>
