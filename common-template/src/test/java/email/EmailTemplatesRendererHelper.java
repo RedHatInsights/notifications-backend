@@ -49,7 +49,7 @@ public abstract class EmailTemplatesRendererHelper {
     @Inject
     Mailer mailer;
 
-    @Inject
+    @InjectSpy
     Environment environment;
 
     @InjectSpy
