@@ -25,6 +25,7 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransf
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.ORG_ID;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PAYLOAD;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PD_DATE_TIME_FORMATTER;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.RED_HAT_SEVERITY;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SEVERITY;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SOURCE;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SOURCE_NAMES;
@@ -82,7 +83,7 @@ public class PagerDutyTestUtils {
         payload.put(SOURCE, source);
         payload.put(INVENTORY_URL, "https://console.redhat.com/insights/inventory/8a4a4f75-5319-4255-9eb5-1ee5a92efd7f?from=notifications&integration=pagerduty");
         payload.put(APPLICATION_URL, "https://console.redhat.com/insights/default-application?from=notifications&integration=pagerduty");
-        payload.put(SEVERITY, PagerDutySeverity.WARNING);
+        payload.put(SEVERITY, "MODERATE"); // maps to "Warning"
         cloudEventData.put(PAYLOAD, payload);
 
         return cloudEventData;
@@ -108,7 +109,8 @@ public class PagerDutyTestUtils {
             }
         }
 
-        newInnerPayload.put(SEVERITY, PagerDutySeverity.fromJson(oldInnerPayload.getString(SEVERITY)));
+        newInnerPayload.put(RED_HAT_SEVERITY, oldInnerPayload.getString(SEVERITY));
+        newInnerPayload.put(SEVERITY, PagerDutySeverity.fromSecuritySeverity(oldInnerPayload.getString(SEVERITY)));
         newInnerPayload.put(SOURCE, oldInnerPayload.getString(APPLICATION));
         newInnerPayload.put(GROUP, oldInnerPayload.getString(BUNDLE));
 

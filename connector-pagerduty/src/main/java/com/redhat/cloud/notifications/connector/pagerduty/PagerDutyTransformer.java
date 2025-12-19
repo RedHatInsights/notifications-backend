@@ -41,6 +41,7 @@ public class PagerDutyTransformer implements Processor {
     public static final String INVENTORY_URL = "inventory_url";
     public static final String LINKS = "links";
     public static final String ORG_ID = "org_id";
+    public static final String RED_HAT_SEVERITY = "red_hat_severity";
     public static final String SEVERITY = "severity";
     public static final String SOURCE = "source";
     public static final String SOURCE_NAMES = "source_names";
@@ -71,7 +72,8 @@ public class PagerDutyTransformer implements Processor {
             Log.warnf(e, "Timestamp %s was successfully parsed, but could not be reformatted for PagerDuty, dropped from payload", timestamp);
         }
 
-        messagePayload.put(SEVERITY, PagerDutySeverity.fromJson(cloudEventPayload.getString(SEVERITY)));
+        messagePayload.put(RED_HAT_SEVERITY, cloudEventPayload.getString(SEVERITY));
+        messagePayload.put(SEVERITY, PagerDutySeverity.fromSecuritySeverity(cloudEventPayload.getString(SEVERITY)));
         messagePayload.put(SOURCE, cloudEventPayload.getString(APPLICATION));
         messagePayload.put(GROUP, cloudEventPayload.getString(BUNDLE));
 
@@ -109,17 +111,6 @@ public class PagerDutyTransformer implements Processor {
         String source = cloudEventPayload.getString(APPLICATION);
         if (source == null || source.isEmpty()) {
             throw new IllegalArgumentException("Application must be specified for PagerDuty payload source");
-        }
-
-        String severity = cloudEventPayload.getString(SEVERITY);
-        if (severity == null || severity.isEmpty()) {
-            throw new IllegalArgumentException("Severity must be specified for PagerDuty payload");
-        } else {
-            try {
-                PagerDutySeverity.fromJson(severity);
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid severity value provided for PagerDuty payload: " + severity);
-            }
         }
     }
 
