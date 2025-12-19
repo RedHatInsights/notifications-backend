@@ -22,7 +22,6 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransf
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENT_TYPE;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.INVENTORY_URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PAYLOAD;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SEVERITY;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SOURCE;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.TIMESTAMP;
 import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
@@ -73,15 +72,6 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     }
 
     @Test
-    void testMissingSeverity() {
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        cloudPayload.remove(SEVERITY);
-        cloudEventData.put(PAYLOAD, cloudPayload);
-
-        verifyTransformExceptionThrown(cloudEventData, IllegalArgumentException.class, "Severity must be specified for PagerDuty payload");
-    }
-
-    @Test
     void testSuccessfulPayloadTransform() {
         JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
         validatePayloadTransform(cloudEventData, expectedPayload);
@@ -113,7 +103,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
         cloudEventPayload.put("recipients", JsonArray.of());
         // No inventory_url generated
         cloudEventPayload.put("application_url", "https://console.redhat.com/settings/integrations?from=notifications&integration=pagerduty");
-        cloudEventPayload.put("severity", "warning");
+        cloudEventPayload.put("severity", "MODERATE"); // maps to "Warning"
         cloudEventData.put(PAYLOAD, cloudEventPayload);
 
         JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
@@ -145,7 +135,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
         );
         cloudEventPayload.put("inventory_url", "https://localhost/insights/inventory/85094ed1-1c52-4bc5-8e3e-4ea3869a17ce?from=notifications&integration=pagerduty");
         cloudEventPayload.put("application_url", "https://localhost/insights/inventory?from=notifications&integration=pagerduty");
-        cloudEventPayload.put("severity", "error");
+        cloudEventPayload.put("severity", "IMPORTANT"); // maps to "Error"
         cloudEventData.put("payload", cloudEventPayload);
 
         JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);

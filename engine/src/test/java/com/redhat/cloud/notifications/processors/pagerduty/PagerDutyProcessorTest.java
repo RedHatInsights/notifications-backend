@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.pagerduty;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
@@ -122,7 +123,6 @@ public class PagerDutyProcessorTest {
 
         final JsonObject payloadToSend = transformer.toJsonObject(event);
         payloadToSend.put("application_url", "https://localhost/insights/PagerDutyTest?from=notifications&integration=pagerduty");
-        payloadToSend.put("severity", PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_PAGERDUTY_COUNTER, 1);
@@ -140,6 +140,7 @@ public class PagerDutyProcessorTest {
         pagerDutyActionMessage.setEventType("new-system-registered");
         pagerDutyActionMessage.setAccountId(DEFAULT_ACCOUNT_ID);
         pagerDutyActionMessage.setOrgId(DEFAULT_ORG_ID);
+        pagerDutyActionMessage.setSeverity(Severity.NONE.name());
 
         Context context = new Context.ContextBuilder()
                 .withAdditionalProperty("inventory_id", "85094ed1-1c52-4bc5-8e3e-4ea3869a17ce")
@@ -184,7 +185,6 @@ public class PagerDutyProcessorTest {
         final JsonObject payloadToSend = transformer.toJsonObject(event);
         payloadToSend.put("inventory_url", "https://localhost/insights/inventory/85094ed1-1c52-4bc5-8e3e-4ea3869a17ce?from=notifications&integration=pagerduty");
         payloadToSend.put("application_url", "https://localhost/insights/inventory?from=notifications&integration=pagerduty");
-        payloadToSend.put("severity", PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_PAGERDUTY_COUNTER, 1);
