@@ -5,7 +5,6 @@ import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingExceptio
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
-import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.events.EventWrapper;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
@@ -42,6 +41,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -66,9 +66,6 @@ public class EmailAggregator {
     SubscriptionRepository subscriptionRepository;
 
     @Inject
-    EventTypeRepository eventTypeRepository;
-
-    @Inject
     ActionParser actionParser;
 
     @Inject
@@ -80,7 +77,6 @@ public class EmailAggregator {
     ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
     // This is manually used from the JSON payload instead of converting it to an Action and using getEventType()
-    private static final String EVENT_TYPE_KEY = "event_type";
     private static final String RECIPIENTS_KEY = "recipients";
 
     @Inject
@@ -97,7 +93,12 @@ public class EmailAggregator {
         Map<String, Set<String>> unsubscribersByEventType = subscriptionRepository
                 .getUnsubscribersByEventType(aggregationKey.getOrgId(), appId, subscriptionType);
 
-        aggregationBasedOnEvent(aggregationKey, start, end, subscribersByEventType, unsubscribersByEventType, aggregated);
+        Optional<Map<String, Set<SubscribedEventTypeSeverities>>> subscribersWithSeverities = Optional.empty();
+        if (engineConfig.isIncludeSeverityToFilterRecipientsEnabled(aggregationKey.getOrgId())) {
+            subscribersWithSeverities = Optional.of(subscriptionRepository.getSubscriptionsByEventTypeWithSeverities(aggregationKey.getOrgId(), appId, subscriptionType));
+        }
+
+        aggregationBasedOnEvent(aggregationKey, start, end, subscribersByEventType, unsubscribersByEventType, subscribersWithSeverities, aggregated);
 
         return aggregated.entrySet().stream()
                 .filter(entry -> !entry.getValue().isEmpty())
@@ -112,6 +113,7 @@ public class EmailAggregator {
                                          LocalDateTime end,
                                          Map<String, Set<String>> subscribersByEventType,
                                          Map<String, Set<String>> unsubscribersByEventType,
+                                         Optional<Map<String, Set<SubscribedEventTypeSeverities>>> subscribersWithSeverities,
                                          Map<User, AbstractEmailPayloadAggregator> aggregated) {
         int offset = 0;
         int totalAggregatedElements = 0;
@@ -140,6 +142,7 @@ public class EmailAggregator {
 
                 Set<String> subscribers = subscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
                 Set<String> unsubscribers = unsubscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
+
                 aggregation.setEventWrapper(getEventWrapper(aggregation.getPayload()));
                 RecipientsAuthorizationCriterion externalAuthorizationCriterion = recipientsAuthorizationCriterionExtractor.extract(aggregation);
 
@@ -162,11 +165,19 @@ public class EmailAggregator {
                  * Let's populate the Map that will be returned by the method.
                  */
                 recipients.forEach(recipient -> {
+                    final Set<SubscribedEventTypeSeverities> userSubscribedSeverities;
+                    if (subscribersWithSeverities.isPresent() && subscribersWithSeverities.get().containsKey(recipient.getUsername())) {
+                        userSubscribedSeverities = subscribersWithSeverities.get().get(recipient.getUsername());
+                    } else {
+                        userSubscribedSeverities = null;
+                    }
+
                     // We may or may not have already initialized an aggregator for the recipient.
                     AbstractEmailPayloadAggregator aggregator = aggregated
-                        .computeIfAbsent(recipient, ignored -> EmailPayloadAggregatorFactory.by(eventAggregationCriteria, start, end));
+                        .computeIfAbsent(recipient, notUsed -> EmailPayloadAggregatorFactory.by(eventAggregationCriteria, recipient.getUsername(), userSubscribedSeverities));
+
                     // It's aggregation time!
-                    EmailAggregation eventDataToAggregate = new EmailAggregation(aggregation.getOrgId(), eventAggregationCriteria.getBundle(), eventAggregationCriteria.getApplication(), baseTransformer.toJsonObject(aggregation));
+                    EmailAggregation eventDataToAggregate = new EmailAggregation(aggregation.getOrgId(), eventAggregationCriteria.getBundle(), eventAggregationCriteria.getApplication(), baseTransformer.toJsonObject(aggregation), aggregation.getSeverity(), aggregation.getEventType().getId());
                     aggregator.aggregate(eventDataToAggregate);
                 });
             }
@@ -194,10 +205,6 @@ public class EmailAggregator {
                 throw actionParseException;
             }
         }
-    }
-
-    private String getEventType(EmailAggregation aggregation) {
-        return aggregation.getPayload().getString(EVENT_TYPE_KEY);
     }
 
     private Stream<ActionRecipientSettings> getActionRecipientSettings(JsonObject payload) {
