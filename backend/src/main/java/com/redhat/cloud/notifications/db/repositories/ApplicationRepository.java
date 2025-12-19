@@ -21,6 +21,7 @@ import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -99,6 +100,9 @@ public class ApplicationRepository {
 
     @Transactional
     public EventType createEventType(EventType eventType) {
+        if (eventType.getAvailableSeverities() == null) {
+            eventType.setAvailableSeverities(new HashSet<>());
+        }
         Application app = entityManager.find(Application.class, eventType.getApplicationId());
         if (app == null) {
             throw new NotFoundException();
@@ -221,13 +225,27 @@ public class ApplicationRepository {
 
     @Transactional
     public int updateEventType(UUID id, EventType eventType) {
-        String eventTypeQuery = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description, fullyQualifiedName = :fullyQualifiedName, subscribedByDefault = :subscribedByDefault, subscriptionLocked = :subscriptionLocked, visible = :visible, restrictToRecipientsIntegrations = :restrictToRecipientsIntegrations WHERE id = :id";
+        String eventTypeQuery = "UPDATE EventType SET " +
+            "name = :name, " +
+            "displayName = :displayName, " +
+            "description = :description, " +
+            "fullyQualifiedName = :fullyQualifiedName, " +
+            "subscribedByDefault = :subscribedByDefault, " +
+            "subscriptionLocked = :subscriptionLocked, " +
+            "visible = :visible, " +
+            "restrictToRecipientsIntegrations = :restrictToRecipientsIntegrations, " +
+            "defaultSeverity = :defaultSeverity, " +
+            "availableSeverities = :availableSeverities " +
+            "WHERE id = :id";
         EventType eventTypeFromDatabase = entityManager.find(EventType.class, id);
         if (eventTypeFromDatabase == null) {
             return 0;
         }
         boolean eventTypeDisplayNameChanged = !eventTypeFromDatabase.getDisplayName().equals(eventType.getDisplayName());
 
+        if (eventType.getAvailableSeverities() == null) {
+            eventType.setAvailableSeverities(new HashSet<>());
+        }
         int rowCount = entityManager.createQuery(eventTypeQuery)
                 .setParameter("name", eventType.getName())
                 .setParameter("fullyQualifiedName", eventType.getFullyQualifiedName())
@@ -237,6 +255,8 @@ public class ApplicationRepository {
                 .setParameter("subscriptionLocked", eventType.isSubscriptionLocked())
                 .setParameter("visible", eventType.isVisible())
                 .setParameter("restrictToRecipientsIntegrations", eventType.isRestrictToRecipientsIntegrations())
+                .setParameter("defaultSeverity", eventType.getDefaultSeverity())
+                .setParameter("availableSeverities", eventType.getAvailableSeverities())
                 .setParameter("id", id)
                 .executeUpdate();
 

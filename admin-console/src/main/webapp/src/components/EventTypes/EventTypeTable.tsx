@@ -46,7 +46,7 @@ type EventTypeTableLayoutProps = Pick<EventTypeTableBaseProps, 'hasPermissions' 
 
 export type EventTypeTableProps = Omit<EventTypeTableBaseProps, 'eventTypes'> & Partial<Pick<EventTypeTableBaseProps, 'eventTypes'>>;
 
-const numberOfColumns = 5;
+const numberOfColumns = 7;
 const skeletonRows = 5;
 
 /**
@@ -68,6 +68,8 @@ const EventTypeTableLayout: React.FunctionComponent<EventTypeTableLayoutProps> =
                 <Th>Event Type</Th>
                 <Th>Name</Th>
                 <Th>Instant email</Th>
+                <Th>Default Severity</Th>
+                <Th>Available Severities</Th>
                 <Th>Subscribed by default?</Th>
                 <Th>Subscription locked?</Th>
                 <Th>Is visible?</Th>
@@ -114,6 +116,8 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                             onClick={ () => !eventType.instantEmail.isLoading && props.onUpdateInstantTemplate(eventType.instantEmail) }
                         />
                     </Td>
+                    <Td>{ eventType.defaultSeverity ?? '-' }</Td>
+                    <Td>{ eventType.availableSeverities?.join(', ') ?? '-' }</Td>
                     <Td>
                         { eventType.subscribedByDefault ? <CheckCircleIcon /> : <TimesIcon /> }
                     </Td>
@@ -150,7 +154,7 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                 </Tr>
                 <Tr key={ `${eventType.id}-expanded-row` } isExpanded={ props.tableData[eventType.id]?.isExpanded }>
                     <Td />
-                    <Td colSpan={ 4 }>
+                    <Td colSpan={ 6 }>
                         <ExpandableRowContent>
                             <EventTypeExpandableRow eventType={ eventType } />
                         </ExpandableRowContent>
