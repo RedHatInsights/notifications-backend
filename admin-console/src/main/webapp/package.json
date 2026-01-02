@@ -43,7 +43,7 @@
     "eslint-plugin-jsx-a11y": "^6.10.0",
     "eslint-plugin-react": "^7.37.0",
     "eslint-plugin-react-hooks": "^7.0.0",
-    "globals": "^16.0.0",
+    "globals": "^17.0.0",
     "monaco-editor-webpack-plugin": "7.1.1",
     "openapi2typescript-cli": "0.7.1",
     "react-scripts": "5.0.1",
