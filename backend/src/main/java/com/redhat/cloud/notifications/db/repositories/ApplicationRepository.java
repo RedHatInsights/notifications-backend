@@ -21,6 +21,7 @@ import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -99,6 +100,9 @@ public class ApplicationRepository {
 
     @Transactional
     public EventType createEventType(EventType eventType) {
+        if (eventType.getAvailableSeverities() == null) {
+            eventType.setAvailableSeverities(new HashSet<>());
+        }
         Application app = entityManager.find(Application.class, eventType.getApplicationId());
         if (app == null) {
             throw new NotFoundException();
@@ -221,12 +225,30 @@ public class ApplicationRepository {
 
     @Transactional
     public int updateEventType(UUID id, EventType eventType) {
-        String eventTypeQuery = "UPDATE EventType SET name = :name, displayName = :displayName, description = :description, fullyQualifiedName = :fullyQualifiedName, subscribedByDefault = :subscribedByDefault, subscriptionLocked = :subscriptionLocked, visible = :visible, restrictToRecipientsIntegrations = :restrictToRecipientsIntegrations WHERE id = :id";
+        String eventTypeQuery = "UPDATE EventType SET " +
+            "name = :name, " +
+            "displayName = :displayName, " +
+            "description = :description, " +
+            "fullyQualifiedName = :fullyQualifiedName, " +
+            "subscribedByDefault = :subscribedByDefault, " +
+            "subscriptionLocked = :subscriptionLocked, " +
+            "visible = :visible, " +
+            "restrictToRecipientsIntegrations = :restrictToRecipientsIntegrations, " +
+            "defaultSeverity = :defaultSeverity, " +
+            "availableSeverities = :availableSeverities " +
+            "WHERE id = :id";
         EventType eventTypeFromDatabase = entityManager.find(EventType.class, id);
         if (eventTypeFromDatabase == null) {
             return 0;
         }
         boolean eventTypeDisplayNameChanged = !eventTypeFromDatabase.getDisplayName().equals(eventType.getDisplayName());
+        if (eventType.getAvailableSeverities() == null) {
+            eventType.setAvailableSeverities(new HashSet<>());
+        }
+
+        eventTypeFromDatabase.getAvailableSeverities().removeAll(eventType.getAvailableSeverities());
+
+        boolean eventTypeAvailableSeveritiesChanged = !eventTypeFromDatabase.getAvailableSeverities().isEmpty();
 
         int rowCount = entityManager.createQuery(eventTypeQuery)
                 .setParameter("name", eventType.getName())
@@ -237,6 +259,8 @@ public class ApplicationRepository {
                 .setParameter("subscriptionLocked", eventType.isSubscriptionLocked())
                 .setParameter("visible", eventType.isVisible())
                 .setParameter("restrictToRecipientsIntegrations", eventType.isRestrictToRecipientsIntegrations())
+                .setParameter("defaultSeverity", eventType.getDefaultSeverity())
+                .setParameter("availableSeverities", eventType.getAvailableSeverities())
                 .setParameter("id", id)
                 .executeUpdate();
 
@@ -247,6 +271,46 @@ public class ApplicationRepository {
                 .setParameter("displayName", eventType.getDisplayName())
                 .setParameter("eventTypeId", id)
                 .setParameter("applicationId", eventTypeFromDatabase.getApplicationId())
+                .executeUpdate();
+        }
+
+        if (eventTypeAvailableSeveritiesChanged) {
+            // Convert removed severities Set to String array for PostgreSQL
+            String[] removedSeveritiesArray = eventTypeFromDatabase.getAvailableSeverities().stream()
+                    .map(Enum::name)
+                    .toArray(String[]::new);
+
+            /*
+             * Update email_subscriptions.severities JSONB column to set removed severities to false.
+             *
+             * This query rebuilds the severities JSONB object for each subscription by:
+             * 1. Iterating through all existing severity key-value pairs in the JSONB (jsonb_each_text)
+             * 2. For each severity key:
+             *    - If the key matches a removed severity (:severityKeys), set its value to false
+             *    - Otherwise, keep the original value unchanged
+             * 3. Reconstructing the JSONB object with updated values (jsonb_object_agg)
+             *
+             * Example:
+             *   Before: {"CRITICAL": true, "IMPORTANT": true, "MODERATE": true}
+             *   After removing MODERATE: {"CRITICAL": true, "IMPORTANT": true, "MODERATE": false}
+             */
+            String emailSubscriptionUpdates = "UPDATE email_subscriptions es " +
+                "SET severities = ( " +
+                    "SELECT jsonb_object_agg(" +  // Aggregate key-value pairs back into a JSONB object
+                        "key," +  // The severity name (e.g., "CRITICAL", "MODERATE")
+                        "CASE " +
+                            "WHEN key = ANY(CAST(:severityKeys AS text[])) " +  // Check if this severity was removed
+                                "THEN to_jsonb(CAST(:severityValue AS boolean)) " +  // Set to false if removed
+                            "ELSE value::jsonb " +  // Keep original value if not removed
+                        "END" +
+                    ") " +
+                    "FROM jsonb_each_text(COALESCE(es.severities, '[]'::jsonb))" +  // Iterate through each severity in the JSONB, default to empty if null
+                ") WHERE es.event_type_id = :eventTypeId";  // Only update subscriptions for this specific event type
+
+            entityManager.createNativeQuery(emailSubscriptionUpdates)
+                .setParameter("severityKeys", removedSeveritiesArray)  // Array of removed severity names
+                .setParameter("severityValue", false)  // Set removed severities to false
+                .setParameter("eventTypeId", id)  // The event type being updated
                 .executeUpdate();
         }
         return rowCount;

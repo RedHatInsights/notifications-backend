@@ -51,6 +51,8 @@ export interface EventType {
     subscribedByDefault: boolean;
     subscriptionLocked: boolean;
     visible: boolean;
+    defaultSeverity?: string;
+    availableSeverities?: string[];
 }
 
 type InstantEmailTemplateRow = {
