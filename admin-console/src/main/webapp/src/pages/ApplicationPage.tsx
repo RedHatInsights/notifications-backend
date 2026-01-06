@@ -122,7 +122,9 @@ export const ApplicationPage: React.FunctionComponent = () => {
             applicationId: applicationId!,
             subscribedByDefault: eventType.subscribedByDefault,
             subscriptionLocked: eventType.subscriptionLocked,
-            visible: eventType.visible
+            visible: eventType.visible,
+            defaultSeverity: eventType.defaultSeverity,
+            availableSeverities: eventType.availableSeverities
 
         }).then(eventTypesQuery.reload);
 

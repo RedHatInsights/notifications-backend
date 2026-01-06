@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.internal;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.StartupUtils;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.db.repositories.AggregationOrgConfigRepository;
@@ -74,6 +75,7 @@ import org.jboss.resteasy.reactive.RestPath;
 import java.net.URI;
 import java.time.LocalTime;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -160,6 +162,14 @@ public class InternalResource {
             Log.infof("Git commit hash not found: %s", gitProperties);
             return "Git commit hash not found";
         }
+    }
+
+    @GET
+    @Path("/severities")
+    @Produces(APPLICATION_JSON)
+    @PermitAll
+    public Set<Severity> getSeverities() {
+        return EnumSet.allOf(Severity.class);
     }
 
     @POST

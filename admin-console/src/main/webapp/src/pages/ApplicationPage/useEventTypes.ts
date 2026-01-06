@@ -29,7 +29,17 @@ export const useEventTypes = (applicationId: string): EventTypesController => {
     useEffect(() => {
         if (eventTypesQuery.payload?.status === 200) {
             const eventTypes = eventTypesQuery.payload.value.map<EventTypeRow>(e => ({
-                ...e,
+                id: e.id,
+                name: e.name,
+                displayName: e.displayName,
+                description: e.description,
+                applicationId: e.applicationId,
+                fullyQualifiedName: e.fullyQualifiedName,
+                subscribedByDefault: e.subscribedByDefault,
+                subscriptionLocked: e.subscriptionLocked,
+                visible: e.visible,
+                defaultSeverity: e.defaultSeverity,
+                availableSeverities: e.availableSeverities,
                 instantEmail: {
                     isLoading: true
                 }
