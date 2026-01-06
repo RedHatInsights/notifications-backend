@@ -304,7 +304,7 @@ public class ApplicationRepository {
                             "ELSE value::jsonb " +  // Keep original value if not removed
                         "END" +
                     ") " +
-                    "FROM jsonb_each_text(COALESCE(es.severities, '[]'::jsonb))" +  // Iterate through each severity in the JSONB, default to empty if null
+                    "FROM jsonb_each_text(COALESCE(es.severities, '{}'::jsonb))" +  // Iterate through each severity in the JSONB, default to empty if null
                 ") WHERE es.event_type_id = :eventTypeId";  // Only update subscriptions for this specific event type
 
             entityManager.createNativeQuery(emailSubscriptionUpdates)
