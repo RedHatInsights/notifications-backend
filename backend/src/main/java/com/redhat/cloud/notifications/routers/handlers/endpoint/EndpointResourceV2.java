@@ -92,7 +92,7 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
 
         return new Page<>(
             commonMapper.notificationHistoryListToNotificationHistoryDTOList(notificationHistory),
-            PageLinksBuilder.build(uriInfo.getPath(), notificationHistoryCount, query.getLimit().getLimit(), query.getLimit().getOffset()),
+            PageLinksBuilder.build(uriInfo, notificationHistoryCount, query.getLimit().getLimit(), query.getLimit().getOffset()),
             new Meta(notificationHistoryCount)
         );
     }

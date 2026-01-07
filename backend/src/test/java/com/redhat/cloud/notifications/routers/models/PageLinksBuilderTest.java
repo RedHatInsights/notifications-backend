@@ -1,11 +1,17 @@
 package com.redhat.cloud.notifications.routers.models;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.UriInfo;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 public class PageLinksBuilderTest {
 
@@ -52,5 +58,23 @@ public class PageLinksBuilderTest {
         assertEquals("test?limit=3&offset=9", links.get("last"));
         assertEquals("test?limit=3&offset=6", links.get("prev"));
         assertFalse(links.containsKey("next"));
+    }
+
+    @Test
+    void testUriInfoPreservesQueryParameters() {
+        UriInfo uriInfo = Mockito.mock(UriInfo.class);
+        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
+        queryParams.putSingle("startDate", "2024-01-01");
+        queryParams.putSingle("limit", "10");
+        queryParams.putSingle("offset", "0");
+
+        when(uriInfo.getPath()).thenReturn("test");
+        when(uriInfo.getQueryParameters()).thenReturn(queryParams);
+
+        Map<String, String> links = PageLinksBuilder.build(uriInfo, 50, 10, 0);
+
+        assertTrue(links.get("first").contains("startDate=2024-01-01"));
+        assertTrue(links.get("next").contains("startDate=2024-01-01"));
+        assertTrue(links.get("next").contains("offset=10"));
     }
 }
