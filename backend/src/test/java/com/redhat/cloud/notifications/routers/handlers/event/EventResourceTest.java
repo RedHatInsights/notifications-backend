@@ -1136,7 +1136,7 @@ public class EventResourceTest extends DbIsolatedTest {
         Action action = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
         action.setSeverity(com.redhat.cloud.notifications.Severity.CRITICAL.name());
         String payload = Parser.encode(action);
-        Event event = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, payload, false);
+        Event event = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, payload, false, null);
 
         // Verify severity is included in the response
         Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false);
