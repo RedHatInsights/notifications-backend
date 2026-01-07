@@ -41,7 +41,7 @@ public abstract class AbstractEmailPayloadAggregator {
         if (shouldAggregateThisEvent) {
             processEmailAggregation(aggregation);
         } else {
-            Log.debugf("Event will be skipped for user '%s' because he didn't subscribed to priority %s", userName, aggregation.getSeverity());
+            Log.debugf("Event will be skipped for user '%s' because they didn't subscribe to severity %s", userName, aggregation.getSeverity());
         }
     }
 

@@ -92,13 +92,11 @@ class EmailAggregatorTest {
 
     @AfterEach
     void afterEach() {
-        resourceHelpers.deleteEventTypeEmailSubscription("org-1", "user-2", eventType2, DAILY);
-        resourceHelpers.deleteEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY);
+        resourceHelpers.clearEmailSubscriptions();
         resourceHelpers.clearEvents();
     }
 
-    @Test
-    void shouldTestRecipientsFromSubscription() {
+    private void initDataForSubscriptionTests() {
         // init test environment
         application = resourceHelpers.findOrCreateApplication("rhel", "policies");
         eventType1 = resourceHelpers.findOrCreateEventType(application.getId(), TestHelpers.eventType);
@@ -121,109 +119,106 @@ class EmailAggregatorTest {
                 return usr;
             }).collect(Collectors.toSet());
         });
+    }
+
+    @Test
+    void shouldTestNoRecipientSubscribedToTheRightEventType() {
+        initDataForSubscriptionTests();
 
         // Test user subscription based on event type
-        Map<User, Map<String, Object>> result = null;
-        User user = null;
-        result = aggregate();
+        Map<User, Map<String, Object>> result = aggregate();
 
         verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
         verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
 
         // nobody subscribed to the right event type yet
         assertEquals(0, result.size());
-        clearInvocations(recipientsResolverService); // just reset mockito counter
-        clearInvocations(emailAggregationRepository);
+    }
+
+    @Test
+    void shouldTestOneRecipientSubscribed() {
+        initDataForSubscriptionTests();
+
         resourceHelpers.createEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY);
-        // because after the previous aggregate() call the email_aggregation DB table was not purged, we already have 4 records on database
-        result = aggregate();
-
-        verify(emailAggregationRepository, times(2)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
-        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
-        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(5), eq(emailAggregator.maxPageSize));
-
-        assertEquals(1, result.size());
-        user = result.keySet().stream().findFirst().get();
-        assertTrue(user.getEmail().equals("user-2"));
-        assertEquals(8, ((LinkedHashMap) result.get(user).get("policies")).size());
-        verify(recipientsResolverService, times(8)).getRecipients(any(RecipientsQuery.class));
-
-        // enable filter on severity without any config
-        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString())).thenReturn(true);
-        clearInvocations(recipientsResolverService); // just reset mockito counter
-        clearInvocations(emailAggregationRepository);
-        resourceHelpers.clearEvents();
-
-        result = aggregate();
+        Map<User, Map<String, Object>> result = aggregate();
 
         verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
         verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
 
         assertEquals(1, result.size());
-        user = result.keySet().stream().findFirst().get();
-        assertTrue(user.getEmail().equals("user-2"));
-        assertEquals(4, ((LinkedHashMap) result.get(user).get("policies")).size());
+        assertTrue(result.keySet().stream().findFirst().isPresent());
+        User user = result.keySet().stream().findFirst().get();
+        assertEquals("user-2", user.getEmail());
+        assertEquals(4, ((LinkedHashMap<?, ?>) result.get(user).get("policies")).size());
         verify(recipientsResolverService, times(4)).getRecipients(any(RecipientsQuery.class));
+    }
 
-        // enable filter on "MODERATE" everity without any config
+    @Test
+    void shouldTestOneRecipientSubscribedSeverityEnabled() {
+        // enable filter on severity without any user severity subscription config
         when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString())).thenReturn(true);
-        clearInvocations(recipientsResolverService); // just reset mockito counter
-        clearInvocations(emailAggregationRepository);
-        resourceHelpers.clearEvents();
+        // nothing should change
+        shouldTestOneRecipientSubscribed();
+    }
 
-        resourceHelpers.deleteEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY);
+    @Test
+    void shouldTestOneRecipientSubscribedToModerateSeverity() {
+        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString())).thenReturn(true);
+        initDataForSubscriptionTests();
+
+        // enable filter on "MODERATE" severity
         resourceHelpers.createEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY, Map.of(Severity.MODERATE, true));
 
-        result = aggregate();
+        Map<User, Map<String, Object>> result = aggregate();
 
         verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
         verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
 
         assertEquals(1, result.size());
-        user = result.keySet().stream().findFirst().get();
-        assertTrue(user.getEmail().equals("user-2"));
-        assertEquals(1, ((LinkedHashMap) result.get(user).get("policies")).size());
+        assertTrue(result.keySet().stream().findFirst().isPresent());
+        User user = result.keySet().stream().findFirst().get();
+        assertEquals("user-2", user.getEmail());
+        // we should have only one result here because only one event have the "MODERATE" severity
+        assertEquals(1, ((LinkedHashMap<?, ?>) result.get(user).get("policies")).size());
         verify(recipientsResolverService, times(4)).getRecipients(any(RecipientsQuery.class));
+    }
 
-        // enable only unsubscribe from all severities (don't make real sens, but just to check)
+    @Test
+    void shouldTestOneRecipientUnsubscribedFromAllSeverities() {
+        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString())).thenReturn(true);
+        initDataForSubscriptionTests();
+
+        // User unsubscribe from all severities (don't make real sens, but just to check)
         Map<Severity, Boolean> severities = new HashMap<>();
         for (Severity severity : Severity.values()) {
             severities.put(severity, false);
         }
 
-        clearInvocations(recipientsResolverService); // just reset mockito counter
-        clearInvocations(emailAggregationRepository);
-        resourceHelpers.clearEvents();
-        resourceHelpers.deleteEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY);
         resourceHelpers.createEventTypeEmailSubscription("org-1", "user-2", eventType1, DAILY, severities);
         // because after the previous aggregate() call the email_aggregation DB table was not purged, we already have 4 records on database
-        result = aggregate();
+        Map<User, Map<String, Object>> result = aggregate();
 
         verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
         verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
 
         assertEquals(1, result.size());
-        user = result.keySet().stream().findFirst().get();
-        assertTrue(user.getEmail().equals("user-2"));
-        assertEquals(0, ((LinkedHashMap) result.get(user).get("policies")).size());
+        assertTrue(result.keySet().stream().findFirst().isPresent());
+        User user = result.keySet().stream().findFirst().get();
+        assertEquals("user-2", user.getEmail());
+        // we should have 0 result since user unsubscribed from all severities
+        assertEquals(0, ((LinkedHashMap<?, ?>) result.get(user).get("policies")).size());
         verify(recipientsResolverService, times(4)).getRecipients(any(RecipientsQuery.class));
 
         // disable the severity filtering
         when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString())).thenReturn(false);
-        clearInvocations(recipientsResolverService); // just reset mockito counter
-        clearInvocations(emailAggregationRepository);
-        resourceHelpers.clearEvents();
 
         result = aggregate();
 
-        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
-        verify(emailAggregationRepository, times(1)).getEmailAggregationBasedOnEvent(any(EventAggregationCriterion.class), any(LocalDateTime.class), any(LocalDateTime.class), eq(0), eq(emailAggregator.maxPageSize));
-
         assertEquals(1, result.size());
+        assertTrue(result.keySet().stream().findFirst().isPresent());
         user = result.keySet().stream().findFirst().get();
-        assertTrue(user.getEmail().equals("user-2"));
-        assertEquals(4, ((LinkedHashMap) result.get(user).get("policies")).size());
-        verify(recipientsResolverService, times(4)).getRecipients(any(RecipientsQuery.class));
+        assertEquals("user-2", user.getEmail());
+        assertEquals(8, ((LinkedHashMap<?, ?>) result.get(user).get("policies")).size());
     }
 
     private Map<User, Map<String, Object>> aggregate() {
@@ -231,7 +226,7 @@ class EmailAggregatorTest {
 
         for (int i = 0; i < 4; i++) {
             Severity severity = Severity.values()[i];
-            JsonObject payload = TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10), severity, eventType1.getId()).getPayload();
+            JsonObject payload = TestHelpers.createEmailAggregation("org-1", "rhel", "policies", RandomStringUtils.secure().next(10),  RandomStringUtils.secure().next(10), severity, eventType1.getId()).getPayload();
             // the base transformer adds a "source" element which should not be present in an original event payload
             payload.remove(BaseTransformer.SOURCE);
 
@@ -251,7 +246,7 @@ class EmailAggregatorTest {
             }
             resourceHelpers.addEventEmailAggregation("org-1", "rhel", "policies", payload, false, severity);
         }
-        JsonObject payload = TestHelpers.createEmailAggregation("org-2", "rhel", "policies", RandomStringUtils.random(10), RandomStringUtils.random(10)).getPayload();
+        JsonObject payload = TestHelpers.createEmailAggregation("org-2", "rhel", "policies",  RandomStringUtils.secure().next(10),  RandomStringUtils.secure().next(10)).getPayload();
         // the base transformer adds a "source" element which should not be present in an original event payload
         payload.remove(BaseTransformer.SOURCE);
         resourceHelpers.addEventEmailAggregation("org-2", "rhel", "policies", payload, false);

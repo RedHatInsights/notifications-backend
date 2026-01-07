@@ -318,6 +318,12 @@ public class ResourceHelpers {
     }
 
     @Transactional
+    public void clearEmailSubscriptions() {
+        entityManager.createQuery("DELETE FROM EventTypeEmailSubscription")
+            .executeUpdate();
+    }
+
+    @Transactional
     public void clearEvents() {
         entityManager.createQuery("DELETE FROM Event")
             .executeUpdate();
