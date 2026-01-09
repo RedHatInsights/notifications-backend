@@ -8,6 +8,7 @@ import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import io.quarkus.test.junit.QuarkusTest;
@@ -67,6 +68,24 @@ class SeverityTransformerTest {
         event.setEventType(DEFAULT_EVENT_TYPE);
 
         assertEquals(Severity.UNDEFINED, severityTransformer.getSeverity(event));
+    }
+
+    @Test
+    public void testPayloadWithSeverityNotMatchingWithAvailableSeverities() {
+        final Application application = new Application();
+        application.setName("test-severity-application");
+        final EventType testEventType = new EventType();
+        testEventType.setDefaultSeverity(Severity.MODERATE);
+        testEventType.setAvailableSeverities(Set.of(Severity.MODERATE, Severity.IMPORTANT));
+        testEventType.setApplication(application);
+
+        Action action = TestHelpers.createIntegrationsFailedAction();
+        action.setSeverity(Severity.CRITICAL.name());
+        Event event = new Event();
+        event.setEventWrapper(new EventWrapperAction(action));
+        event.setEventType(testEventType);
+
+        assertEquals(Severity.MODERATE, severityTransformer.getSeverity(event));
     }
 
     @Test
