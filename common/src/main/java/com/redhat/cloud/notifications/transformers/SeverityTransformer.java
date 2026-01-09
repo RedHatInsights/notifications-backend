@@ -38,9 +38,10 @@ public class SeverityTransformer {
                     && event.getEventType().getAvailableSeverities().contains(severityFromIncomingEvent.get())) {
                     severity = severityFromIncomingEvent.get();
                 } else {
-                    Log.errorf("Severity '%s' is not available for event type '%s', '%s' will be used as default value",
+                    Log.infof("Severity '%s' is not available for event type '%s' of application '%s', '%s' will be used as default value",
                         severityFromIncomingEvent.get(),
                         event.getEventType().getName(),
+                        event.getEventType().getApplication().getName(),
                         event.getEventType().getDefaultSeverity());
                 }
             }
