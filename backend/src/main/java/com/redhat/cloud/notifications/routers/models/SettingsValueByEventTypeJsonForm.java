@@ -102,13 +102,15 @@ public class SettingsValueByEventTypeJsonForm {
 
                 boolean subscribed = false;
                 Map<Severity, Boolean> severities = new LinkedHashMap<>();
-                if (subscriptionTypeDetails != null) {
+                if (subscriptionTypeDetails != null && !subscriptionTypeDetails.isEmpty()) {
                     subscribed = subscriptionTypeDetails.entrySet().stream().anyMatch(Map.Entry::getValue);
 
                     // sort severity Map according Severity enum order
                     for (Severity severity : Severity.values()) {
                         severities.put(severity, (subscriptionTypeDetails.get(severity) != null && subscriptionTypeDetails.get(severity)));
                     }
+                } else {
+                    subscribed = eventTypeSettingsValue.emailSubscriptionTypes.get(subscriptionType);
                 }
 
                 Field field = new Field();
