@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
 import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
-import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -35,7 +34,6 @@ public class BackendConfig {
     private static final String OIDC_SECRET = "notifications.oidc.secret";
     private static final String RBAC_URL = "notifications.rbac.url";
     private static final String RBAC_ENABLED = "rbac.enabled";
-    private static final String RBAC_PSKS = "notifications.rbac.psks";
     private static final String UNLEASH = "notifications.unleash.enabled";
     private static final String MAINTENANCE_MODE = "notifications.maintenance.mode";
 
@@ -49,13 +47,8 @@ public class BackendConfig {
     private String bypassBehaviorGroupMaxCreationLimitToggle;
     private String ignoreSourcesErrorOnEndpointDeleteToggle;
     private String useCommonTemplateModuleForUserPrefApisToggle;
-    private String rbacOidcAuthToggle;
     private String sourcesOidcAuthToggle;
     private String toggleUseBetaTemplatesEnabled;
-
-    private static String toggleName(String feature) {
-        return String.format("notifications-backend.%s.enabled", feature);
-    }
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -107,9 +100,6 @@ public class BackendConfig {
     @ConfigProperty(name = RBAC_ENABLED, defaultValue = "true")
     protected boolean rbacEnabled;
 
-    @ConfigProperty(name = RBAC_PSKS, defaultValue = "{\"notifications\": {\"secret\": \"development-psk-value\"}}")
-    protected String rbacPskSecrets;
-
     @ConfigProperty(name = MAINTENANCE_MODE, defaultValue = "false")
     boolean maintenanceModeEnabled;
 
@@ -132,7 +122,6 @@ public class BackendConfig {
         bypassBehaviorGroupMaxCreationLimitToggle = toggleRegistry.register("bypass-behavior-group-max-creation-limit", true);
         ignoreSourcesErrorOnEndpointDeleteToggle = toggleRegistry.register("ignore-sources-error-on-endpoint-delete", true);
         useCommonTemplateModuleForUserPrefApisToggle = toggleRegistry.register("use-common-template-module-for-user-pref-apis", true);
-        rbacOidcAuthToggle = toggleRegistry.register("rbac-oidc-auth", true);
         sourcesOidcAuthToggle = toggleRegistry.register("sources-oidc-auth", true);
         toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
     }
@@ -153,7 +142,6 @@ public class BackendConfig {
         config.put(RBAC_ENABLED, isRBACEnabled());
         config.put(SECURED_EMAIL_TEMPLATES, useSecuredEmailTemplates);
         config.put(UNLEASH, unleashEnabled);
-        config.put(rbacOidcAuthToggle, isRbacOidcAuthEnabled(null));
         config.put(sourcesOidcAuthToggle, isSourcesOidcAuthEnabled(null));
 
         Log.info("=== Startup configuration ===");
@@ -253,11 +241,6 @@ public class BackendConfig {
         return this.rbacEnabled;
     }
 
-    public JsonObject getRbacPskSecrets() {
-        return new JsonObject(this.rbacPskSecrets);
-    }
-
-
     private static UnleashContext buildUnleashContextWithOrgId(String orgId) {
         UnleashContext unleashContext = UnleashContext.builder()
             .addProperty("orgId", orgId)
@@ -302,15 +285,6 @@ public class BackendConfig {
             final UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
 
             return unleash.isEnabled(bypassBehaviorGroupMaxCreationLimitToggle, unleashContext, false);
-        } else {
-            return false;
-        }
-    }
-
-    public boolean isRbacOidcAuthEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(rbacOidcAuthToggle, unleashContext, false);
         } else {
             return false;
         }
