@@ -13,11 +13,15 @@ RUN ./mvnw clean package -Dquarkus.package.type=native -Dquarkus.native.containe
 # Build the container with minimal runtime (UBI9-based)
 FROM quay.io/quarkus/ubi9-quarkus-micro-image:2.0
 
-# Konflux preflight check requires a license
-COPY --from=build /home/jboss/LICENSE.txt /licenses/LICENSE
+WORKDIR /
+USER root
+
+# Create licenses directory and copy license file
+RUN mkdir -p /licenses
+COPY --from=build --chown=185:0 /home/jboss/LICENSE.txt /licenses/LICENSE
 
 # Copy the native executable (moved to a fixed location during build)
-COPY --from=build --chown=185 /home/jboss/application /application
+COPY --from=build --chown=185:0 /home/jboss/application /application
 
 EXPOSE 8080
 USER 185
