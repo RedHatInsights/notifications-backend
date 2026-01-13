@@ -41,6 +41,7 @@ import java.util.List;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
+import static com.redhat.cloud.notifications.processors.pagerduty.PagerDutyProcessor.PAGERDUTY_STATIC_SEVERITY;
 import static com.redhat.cloud.notifications.processors.pagerduty.PagerDutyProcessor.PROCESSED_PAGERDUTY_COUNTER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -123,6 +124,7 @@ public class PagerDutyProcessorTest {
 
         final JsonObject payloadToSend = transformer.toJsonObject(event);
         payloadToSend.put("application_url", "https://localhost/insights/PagerDutyTest?from=notifications&integration=pagerduty");
+        payloadToSend.put(PAGERDUTY_STATIC_SEVERITY, PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_PAGERDUTY_COUNTER, 1);
@@ -185,6 +187,7 @@ public class PagerDutyProcessorTest {
         final JsonObject payloadToSend = transformer.toJsonObject(event);
         payloadToSend.put("inventory_url", "https://localhost/insights/inventory/85094ed1-1c52-4bc5-8e3e-4ea3869a17ce?from=notifications&integration=pagerduty");
         payloadToSend.put("application_url", "https://localhost/insights/inventory?from=notifications&integration=pagerduty");
+        payloadToSend.put(PAGERDUTY_STATIC_SEVERITY, PagerDutySeverity.ERROR);
         assertEquals(payloadToSend, payload.getJsonObject("payload"));
 
         micrometerAssertionHelper.assertCounterIncrement(PROCESSED_PAGERDUTY_COUNTER, 1);

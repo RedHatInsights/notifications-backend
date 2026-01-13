@@ -15,12 +15,24 @@ public enum PagerDutySeverity {
     @JsonProperty("info")
     INFO;
 
+    /**
+     * Default value of {@link PagerDutySeverity#WARNING} indicates that action may be required, without triggering high-urgency notification rules,
+     * based on <a href="https://support.pagerduty.com/main/docs/dynamic-notifications#severity-and-urgency-mapping">PagerDuty documentation</a>
+     */
+    public static PagerDutySeverity defaultValue() {
+        return PagerDutySeverity.WARNING;
+    }
+
     /** Parses the lowercase or uppercase severity into this enum
      *
      * @return a {@link PagerDutySeverity} constant
      */
     public static PagerDutySeverity fromJson(String value) {
-        return valueOf(value.toUpperCase(Locale.ENGLISH));
+        try {
+            return valueOf(value.toUpperCase(Locale.ENGLISH));
+        } catch (IllegalArgumentException ignored) {
+            return defaultValue();
+        }
     }
 
     /** Maps from security's {@code Severity} to PagerDuty-native levels. */
@@ -29,7 +41,8 @@ public enum PagerDutySeverity {
             case "CRITICAL" -> CRITICAL;
             case "IMPORTANT" -> ERROR;
             case "MODERATE" -> WARNING;
-            default -> INFO; // LOW, NONE, UNDEFINED
+            case "LOW", "NONE", "UNDEFINED" -> INFO;
+            default -> defaultValue();
         };
     }
 }

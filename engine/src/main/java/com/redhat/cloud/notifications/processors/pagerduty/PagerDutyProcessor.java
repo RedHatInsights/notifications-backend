@@ -28,6 +28,10 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
 
     public static final String PROCESSED_PAGERDUTY_COUNTER = "processor.pagerduty.processed";
 
+    /** Legacy user-provided severity levels, to be replaced by tenant-provided severity levels. */
+    @Deprecated(forRemoval = true, since = "RHCLOUD-41561: after user-provided severity levels are removed.")
+    public static final String PAGERDUTY_STATIC_SEVERITY = "pagerduty_static_severity";
+
     @Inject
     BaseTransformer transformer;
 
@@ -75,6 +79,8 @@ public class PagerDutyProcessor extends EndpointTypeProcessor {
         JsonObject transformedEvent = transformer.toJsonObject(event);
         insightsUrlsBuilder.buildInventoryUrl(transformedEvent, endpoint.getType().name()).ifPresent(url -> transformedEvent.put("inventory_url", url));
         transformedEvent.put("application_url", insightsUrlsBuilder.buildApplicationUrl(transformedEvent, endpoint.getType().name()));
+        // TODO RHCLOUD-41561: remove once fully migrated to tenant-provided severity levels
+        transformedEvent.put(PAGERDUTY_STATIC_SEVERITY, properties.getSeverity());
 
         connectorData.put(PAYLOAD, transformedEvent);
 
