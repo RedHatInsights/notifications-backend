@@ -88,7 +88,7 @@ public class DrawerResource {
         Meta meta = new Meta();
         meta.setCount(count);
 
-        Map<String, String> links = PageLinksBuilder.build(uriInfo.getPath(), count, query);
+        Map<String, String> links = PageLinksBuilder.build(uriInfo, count, query);
 
         Page<DrawerEntryPayload> page = new Page<>();
         page.setData(drawerEntries);

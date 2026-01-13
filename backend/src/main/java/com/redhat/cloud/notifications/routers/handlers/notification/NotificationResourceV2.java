@@ -66,7 +66,7 @@ public class NotificationResourceV2 {
 
         return new Page<>(
             behaviorGroups,
-            PageLinksBuilder.build(uriInfo.getPath(), behaviorGroupCount, query),
+            PageLinksBuilder.build(uriInfo, behaviorGroupCount, query),
             new Meta(behaviorGroupCount)
         );
     }

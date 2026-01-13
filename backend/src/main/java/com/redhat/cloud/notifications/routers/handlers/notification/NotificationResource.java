@@ -150,7 +150,7 @@ public class NotificationResource {
         Long count = applicationRepository.getEventTypesCount(applicationIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds);
         return new Page<>(
             eventTypes,
-            PageLinksBuilder.build(uriInfo.getPath(), count, query.getLimit().getLimit(), query.getLimit().getOffset()),
+            PageLinksBuilder.build(uriInfo, count, query.getLimit().getLimit(), query.getLimit().getOffset()),
             new Meta(count)
         );
     }
@@ -541,7 +541,7 @@ public class NotificationResource {
         List<EndpointDTO> endpointDTOS = endpoints.stream().map(endpoint -> endpointMapper.toDTO(endpoint)).toList();
         return new Page<>(
             endpointDTOS,
-            PageLinksBuilder.build(uriInfo.getPath(), endpointDTOS.size(), query),
+            PageLinksBuilder.build(uriInfo, endpointDTOS.size(), query),
             new Meta(Long.valueOf(endpointDTOS.size()))
         );
     }
