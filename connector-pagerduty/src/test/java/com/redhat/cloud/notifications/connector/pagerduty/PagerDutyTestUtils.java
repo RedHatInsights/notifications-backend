@@ -23,6 +23,7 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransf
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.GROUP;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.INVENTORY_URL;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.ORG_ID;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PAGERDUTY_STATIC_SEVERITY;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PAYLOAD;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PD_DATE_TIME_FORMATTER;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.RED_HAT_SEVERITY;
@@ -48,11 +49,15 @@ public class PagerDutyTestUtils {
     }
 
     static JsonObject createIncomingPayload() {
-        JsonObject cloudEventData = createCloudEventData();
-        return createIncomingPayload(cloudEventData);
+        return createIncomingPayload(true);
     }
 
-    static JsonObject createIncomingPayload(JsonObject cloudEventData) {
+    static JsonObject createIncomingPayload(boolean dynamicSeverity) {
+        JsonObject cloudEventData = createCloudEventData();
+        return createIncomingPayload(cloudEventData, dynamicSeverity);
+    }
+
+    static JsonObject createIncomingPayload(JsonObject cloudEventData, boolean dynamicSeverity) {
         JsonObject payload = new JsonObject();
         payload.put(ACCOUNT_ID, DEFAULT_ACCOUNT_ID);
         payload.put(APPLICATION, "default-application");
@@ -83,13 +88,21 @@ public class PagerDutyTestUtils {
         payload.put(SOURCE, source);
         payload.put(INVENTORY_URL, "https://console.redhat.com/insights/inventory/8a4a4f75-5319-4255-9eb5-1ee5a92efd7f?from=notifications&integration=pagerduty");
         payload.put(APPLICATION_URL, "https://console.redhat.com/insights/default-application?from=notifications&integration=pagerduty");
-        payload.put(SEVERITY, "MODERATE"); // maps to "Warning"
+        if (dynamicSeverity) {
+            payload.put(SEVERITY, "IMPORTANT"); // maps to "Error"
+        } else {
+            payload.put(PAGERDUTY_STATIC_SEVERITY, PagerDutySeverity.ERROR);
+        }
         cloudEventData.put(PAYLOAD, payload);
 
         return cloudEventData;
     }
 
     static JsonObject buildExpectedOutgoingPayload(final JsonObject incoming) {
+        return buildExpectedOutgoingPayload(incoming, true);
+    }
+
+    static JsonObject buildExpectedOutgoingPayload(final JsonObject incoming, boolean dynamicSeverity) {
         JsonObject expected = incoming.copy();
         expected.remove(PagerDutyCloudEventDataExtractor.AUTHENTICATION);
 
@@ -109,8 +122,6 @@ public class PagerDutyTestUtils {
             }
         }
 
-        newInnerPayload.put(RED_HAT_SEVERITY, oldInnerPayload.getString(SEVERITY));
-        newInnerPayload.put(SEVERITY, PagerDutySeverity.fromSecuritySeverity(oldInnerPayload.getString(SEVERITY)));
         newInnerPayload.put(SOURCE, oldInnerPayload.getString(APPLICATION));
         newInnerPayload.put(GROUP, oldInnerPayload.getString(BUNDLE));
 
@@ -124,6 +135,12 @@ public class PagerDutyTestUtils {
             customDetails.put(SOURCE_NAMES, newInnerSourceNames);
         }
 
+        newInnerPayload.put(SEVERITY, getSeverity(oldInnerPayload, dynamicSeverity));
+        String redHatSeverity = oldInnerPayload.getString(SEVERITY);
+        if (dynamicSeverity && redHatSeverity != null && !redHatSeverity.isEmpty()) {
+            customDetails.put(RED_HAT_SEVERITY, redHatSeverity);
+        }
+
         if (oldInnerPayload.containsKey(EVENTS)) {
             customDetails.put(EVENTS, oldInnerPayload.getJsonArray(EVENTS));
         }
@@ -132,5 +149,21 @@ public class PagerDutyTestUtils {
         expected.remove(PAYLOAD);
         expected.put(PAYLOAD, newInnerPayload);
         return expected;
+    }
+
+    static PagerDutySeverity getSeverity(final JsonObject oldInnerPayload, final boolean dynamicSeverity) {
+        String severity = oldInnerPayload.getString(SEVERITY);
+        if (dynamicSeverity) {
+            return PagerDutySeverity.fromSecuritySeverity(severity);
+        } else {
+            // `severity` is a required field, so this fallback is used while the internal field name changes.
+            // TODO RHCLOUD-41561: remove once fully migrated to tenant-provided severity levels
+            String staticSeverity = oldInnerPayload.getString(PAGERDUTY_STATIC_SEVERITY);
+            if (staticSeverity != null && !staticSeverity.isEmpty()) {
+                return PagerDutySeverity.fromJson(staticSeverity);
+            } else {
+                return PagerDutySeverity.fromJson(severity);
+            }
+        }
     }
 }

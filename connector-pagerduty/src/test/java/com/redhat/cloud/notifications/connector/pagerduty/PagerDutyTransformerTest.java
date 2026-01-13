@@ -21,12 +21,15 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransf
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENTS;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENT_TYPE;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.INVENTORY_URL;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PAGERDUTY_STATIC_SEVERITY;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PAYLOAD;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SEVERITY;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SOURCE;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.TIMESTAMP;
 import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
@@ -50,6 +53,7 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     @BeforeEach
     void init() {
         when(config.getPagerDutyUrl()).thenReturn(TEST_URL);
+        when(config.isDynamicPagerdutySeverityEnabled(anyString())).thenReturn(true);
         cloudEventData = createIncomingPayload();
     }
 
@@ -75,6 +79,15 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
     void testSuccessfulPayloadTransform() {
         JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
         validatePayloadTransform(cloudEventData, expectedPayload);
+    }
+
+    @Test
+    void testSuccessfulWithLegacyStaticSeverity() {
+        when(config.isDynamicPagerdutySeverityEnabled(anyString())).thenReturn(false);
+        JsonObject staticCloudEventData = createIncomingPayload(false);
+
+        JsonObject expectedPayload = buildExpectedOutgoingPayload(staticCloudEventData, false);
+        validatePayloadTransform(staticCloudEventData, expectedPayload);
     }
 
     /**
@@ -228,6 +241,20 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
         JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
         validatePayloadTransform(cloudEventData, expectedPayload);
     }
+
+    @Test
+    void testLegacyStaticSeverityFallback() {
+        when(config.isDynamicPagerdutySeverityEnabled(anyString())).thenReturn(false);
+        JsonObject staticCloudEventData = createIncomingPayload(false);
+
+        JsonObject cloudPayload = staticCloudEventData.getJsonObject(PAYLOAD);
+        String staticSeverity = cloudPayload.remove(PAGERDUTY_STATIC_SEVERITY).toString();
+        cloudPayload.put(SEVERITY, staticSeverity);
+
+        JsonObject expectedPayload = buildExpectedOutgoingPayload(staticCloudEventData, false);
+        validatePayloadTransform(staticCloudEventData, expectedPayload);
+    }
+
 
     void verifyTransformExceptionThrown(JsonObject cloudEventData, Class<? extends Throwable> exceptionType, String exceptionMessage) {
         Exchange exchange = createExchangeWithBody(context, "I am not used!");

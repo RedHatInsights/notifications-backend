@@ -28,8 +28,8 @@ public enum PagerDutySeverity {
         return switch (severity) {
             case "CRITICAL" -> CRITICAL;
             case "IMPORTANT" -> ERROR;
-            case "MODERATE" -> WARNING;
-            default -> INFO; // LOW, NONE, UNDEFINED
+            case "LOW", "NONE", "UNDEFINED" -> INFO;
+            default -> WARNING;
         };
     }
 }

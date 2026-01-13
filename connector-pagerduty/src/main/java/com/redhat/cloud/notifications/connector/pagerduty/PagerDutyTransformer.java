@@ -1,9 +1,11 @@
 package com.redhat.cloud.notifications.connector.pagerduty;
 
+import com.redhat.cloud.notifications.connector.pagerduty.config.PagerDutyConnectorConfig;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 
@@ -49,7 +51,14 @@ public class PagerDutyTransformer implements Processor {
     public static final String TIMESTAMP = "timestamp";
     public static final String TEXT = "text";
 
+    /** Legacy user-provided severity levels, to be replaced by tenant-provided severity levels. */
+    @Deprecated(forRemoval = true, since = "RHCLOUD-41561: after user-provided severity levels are removed.")
+    public static final String PAGERDUTY_STATIC_SEVERITY = "pagerduty_static_severity";
+
     public static final DateTimeFormatter PD_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS+0000");
+
+    @Inject
+    PagerDutyConnectorConfig connectorConfig;
 
     @Override
     public void process(Exchange exchange) {
@@ -72,20 +81,26 @@ public class PagerDutyTransformer implements Processor {
             Log.warnf(e, "Timestamp %s was successfully parsed, but could not be reformatted for PagerDuty, dropped from payload", timestamp);
         }
 
-        messagePayload.put(RED_HAT_SEVERITY, cloudEventPayload.getString(SEVERITY));
-        messagePayload.put(SEVERITY, PagerDutySeverity.fromSecuritySeverity(cloudEventPayload.getString(SEVERITY)));
         messagePayload.put(SOURCE, cloudEventPayload.getString(APPLICATION));
         messagePayload.put(GROUP, cloudEventPayload.getString(BUNDLE));
 
+        String orgId = cloudEventPayload.getString(ORG_ID);
         JsonObject customDetails = new JsonObject();
         customDetails.put(ACCOUNT_ID, cloudEventPayload.getString(ACCOUNT_ID));
-        customDetails.put(ORG_ID, cloudEventPayload.getString(ORG_ID));
+        customDetails.put(ORG_ID, orgId);
         customDetails.put(CONTEXT, cloudEventPayload.getJsonObject(CONTEXT));
 
         // Add source names, if provided
         JsonObject cloudSource = getSourceNames(cloudEventPayload.getJsonObject(SOURCE));
         if (cloudSource != null) {
             customDetails.put(SOURCE_NAMES, cloudSource);
+        }
+
+        // Set severity level
+        messagePayload.put(SEVERITY, getSeverity(cloudEventPayload, orgId));
+        String redHatSeverity = cloudEventPayload.getString(SEVERITY);
+        if (connectorConfig.isDynamicPagerdutySeverityEnabled(orgId) && redHatSeverity != null && !redHatSeverity.isEmpty()) {
+            customDetails.put(RED_HAT_SEVERITY, redHatSeverity);
         }
 
         // Keep events, if provided
@@ -166,5 +181,21 @@ public class PagerDutyTransformer implements Processor {
         }
 
         return null;
+    }
+
+    PagerDutySeverity getSeverity(final JsonObject cloudEventPayload, final String orgId) {
+        String severity = cloudEventPayload.getString(SEVERITY);
+        if (connectorConfig.isDynamicPagerdutySeverityEnabled(orgId)) {
+            return PagerDutySeverity.fromSecuritySeverity(severity);
+        } else {
+            // `severity` is a required field, so this fallback is used while the internal field name changes.
+            // TODO RHCLOUD-41561: remove once fully migrated to tenant-provided severity levels
+            String staticSeverity = cloudEventPayload.getString(PAGERDUTY_STATIC_SEVERITY);
+            if (staticSeverity != null && !staticSeverity.isEmpty()) {
+                return PagerDutySeverity.fromJson(staticSeverity);
+            } else {
+                return PagerDutySeverity.fromJson(severity);
+            }
+        }
     }
 }
