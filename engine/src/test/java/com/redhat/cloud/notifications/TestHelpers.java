@@ -45,14 +45,24 @@ public class TestHelpers {
     public static final String eventType = "policy-triggered";
 
     public static EmailAggregation createEmailAggregation(String orgId, String bundle, String application, String policyId, String inventory_id) {
-        return createEmailAggregation(orgId, bundle, application, policyId, inventory_id, null);
+        return createEmailAggregation(orgId, bundle, application, policyId, inventory_id, null, null);
+    }
+
+    public static EmailAggregation createEmailAggregation(String orgId, String bundle, String application, String policyId, String inventory_id, Severity severity, UUID eventTypeId) {
+        return createEmailAggregation(orgId, bundle, application, policyId, inventory_id, null, severity, eventTypeId);
     }
 
     public static EmailAggregation createEmailAggregation(String orgId, String bundle, String application, String policyId, String inventory_id, String extraRecipient) {
+        return createEmailAggregation(orgId, bundle, application, policyId, inventory_id, extraRecipient, null, null);
+    }
+
+    public static EmailAggregation createEmailAggregation(String orgId, String bundle, String application, String policyId, String inventory_id, String extraRecipient, Severity severity, UUID eventTypeId) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName(bundle);
         aggregation.setApplicationName(application);
         aggregation.setOrgId(orgId);
+        aggregation.setSeverity(severity);
+        aggregation.setEventTypeId(eventTypeId);
 
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(bundle);

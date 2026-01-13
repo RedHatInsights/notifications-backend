@@ -293,6 +293,10 @@ public class ResourceHelpers {
     }
 
     public com.redhat.cloud.notifications.models.Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload, boolean addUserSubscription) {
+        return addEventEmailAggregation(orgId, bundleName, applicationName, payload, addUserSubscription, null);
+    }
+
+    public com.redhat.cloud.notifications.models.Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, JsonObject payload, boolean addUserSubscription, Severity severity) {
         Application application = findOrCreateApplication(bundleName, applicationName);
         EventType eventType = findOrCreateEventType(application.getId(), TestHelpers.eventType);
         if (addUserSubscription) {
@@ -306,10 +310,17 @@ public class ResourceHelpers {
         event.setEventType(eventType);
         event.setPayload(payload.toString());
         event.setCreated(LocalDateTime.now(UTC));
+        event.setSeverity(severity);
 
         Event retevent = createEvent(event);
 
         return retevent;
+    }
+
+    @Transactional
+    public void clearEmailSubscriptions() {
+        entityManager.createQuery("DELETE FROM EventTypeEmailSubscription")
+            .executeUpdate();
     }
 
     @Transactional
