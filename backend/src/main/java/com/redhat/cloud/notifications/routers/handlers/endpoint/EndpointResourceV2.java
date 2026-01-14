@@ -72,6 +72,7 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
             )
         }
     )
+    @Operation(operationId = "EndpointResource$V2_getEndpointHistory")
     @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
     public Page<NotificationHistoryDTO> getEndpointHistory(
         @Context SecurityContext sec,
@@ -100,7 +101,7 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
     @GET
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
+    @Operation(operationId = "EndpointResource$V2_getEndpoint", summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
     @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
     public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
         return internalGetEndpoint(sec, id, true);
@@ -108,7 +109,7 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
 
     @GET
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "List endpoints", description = "Provides a list of endpoints. Use this endpoint to find specific endpoints.")
+    @Operation(operationId = "EndpointResource$V2_getEndpoints", summary = "List endpoints", description = "Provides a list of endpoints. Use this endpoint to find specific endpoints.")
     @Parameters(
         {
             @Parameter(
