@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.routers.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.models.EndpointType;
 import jakarta.validation.constraints.NotNull;
@@ -24,6 +25,7 @@ public class EventLogEntryAction {
 
     @NotNull
     @Deprecated
+    @JsonProperty("invocation_result")
     private Boolean invocationResult;
 
     @NotNull
@@ -36,6 +38,7 @@ public class EventLogEntryAction {
     private Map<String, Object> details;
 
     @Nullable
+    @JsonProperty("recipients_count")
     private Integer recipientsCount;
 
     public UUID getId() {
