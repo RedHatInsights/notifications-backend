@@ -55,10 +55,12 @@ public class BehaviorGroup extends CreationUpdateTimestamped {
 
     @NotNull
     @NotBlank
+    @JsonProperty("display_name")
     private String displayName;
 
     @NotNull
     @Transient
+    @JsonProperty("bundle_id")
     private UUID bundleId;
 
     @ManyToOne(fetch = LAZY, optional = false)

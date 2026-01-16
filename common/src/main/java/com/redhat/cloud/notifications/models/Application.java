@@ -40,10 +40,12 @@ public class Application extends CreationUpdateTimestamped {
     private String name;
 
     @NotNull
+    @JsonProperty("display_name")
     private String displayName;
 
     @NotNull
     @Transient
+    @JsonProperty("bundle_id")
     private UUID bundleId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

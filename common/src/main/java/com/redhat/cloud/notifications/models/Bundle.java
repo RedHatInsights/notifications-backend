@@ -39,6 +39,7 @@ public class Bundle extends CreationUpdateTimestamped {
     private String name;
 
     @NotNull
+    @JsonProperty("display_name")
     private String displayName;
 
     @OneToMany(mappedBy = "bundle", cascade = CascadeType.REMOVE)

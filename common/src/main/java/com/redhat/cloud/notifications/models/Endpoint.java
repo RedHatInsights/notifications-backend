@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.persistence.CascadeType;
@@ -83,6 +84,7 @@ public class Endpoint extends CreationUpdateTimestamped {
     private final CompositeEndpointType compositeType = new CompositeEndpointType();
 
     @Min(0)
+    @JsonProperty("server_errors")
     private int serverErrors;
 
     @Transient
@@ -192,6 +194,7 @@ public class Endpoint extends CreationUpdateTimestamped {
         return compositeType.getSubType();
     }
 
+    @JsonProperty("sub_type")
     public void setSubType(String subType) {
         compositeType.setSubType(subType);
     }
