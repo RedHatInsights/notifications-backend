@@ -75,7 +75,7 @@
         <wiremock.version>3.13.2</wiremock.version>
 
         <insights-notification-schemas-java.version>1.0.1</insights-notification-schemas-java.version>
-        <clowder-quarkus-config-source.version>2.7.1</clowder-quarkus-config-source.version>
+        <clowder-quarkus-config-source.version>2.8.1</clowder-quarkus-config-source.version>
 
         <quarkus-logging-cloudwatch.version>6.14.2</quarkus-logging-cloudwatch.version>
         <quarkus-logging-sentry.version>2.3.0</quarkus-logging-sentry.version>
