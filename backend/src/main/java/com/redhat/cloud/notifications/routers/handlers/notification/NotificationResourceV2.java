@@ -51,7 +51,7 @@ public class NotificationResourceV2 {
         description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
         schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
     )
-    @Operation(summary = "Retrieve the behavior groups linked to an event type.")
+    @Operation(operationId = "NotificationResource$V2_getLinkedBehaviorGroups", summary = "Retrieve the behavior groups linked to an event type.")
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW)
     public Page<BehaviorGroup> getLinkedBehaviorGroups(
         @Context SecurityContext sec,
