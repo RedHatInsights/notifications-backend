@@ -84,7 +84,7 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.30.6</quarkus.platform.version>
-        <redhat.event-schemas.version>1.4.12</redhat.event-schemas.version>
+        <redhat.event-schemas.version>1.4.14</redhat.event-schemas.version>
         <com.networknt.json-schema-validator.version>1.5.9</com.networknt.json-schema-validator.version>
 
         <sonar.maven.plugin.version>5.5.0.6356</sonar.maven.plugin.version>
