@@ -28,5 +28,11 @@
     "org_id": "12345",
     "ebs_account_number": "645878",
     "subscription": ["instant"]
+  },
+  {
+    "principal": "f",
+    "org_id": "12345",
+    "ebs_account_number": "645878",
+    "subscription": ["instant"]
   }
 ]
