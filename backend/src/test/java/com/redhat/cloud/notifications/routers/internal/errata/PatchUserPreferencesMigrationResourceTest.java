@@ -32,6 +32,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
@@ -89,6 +90,10 @@ public class PatchUserPreferencesMigrationResourceTest extends DbIsolatedTest {
         // test when a user has already setup some preferences
         subscriptionRepository.subscribe(DEFAULT_ORG_ID, "d", eventTypeNewAdvisory.getId(), DAILY);
 
+        // test when a user didn't already setup some preferences
+        subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, "f", eventTypeNewAdvisory.getId(), INSTANT, false, null);
+        subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, "f", eventTypeNewAdvisory.getId(), DAILY, false, null);
+
         // org id should not have any endpoint linked to patch event type
         List<Endpoint> endpointAssociatedToEventTypeList = endpointEventTypeRepository.findEndpointsByEventTypeId(DEFAULT_ORG_ID, eventTypeNewAdvisory.getId(), null);
         assertEquals(0, endpointAssociatedToEventTypeList.size());
@@ -135,6 +140,9 @@ public class PatchUserPreferencesMigrationResourceTest extends DbIsolatedTest {
         final List<EventTypeEmailSubscription> userECreatedSubscriptions = subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser("54321", "e");
         assertEmailSubscriptionDataIsCorrect(Set.of(INSTANT, DAILY), "e", userECreatedSubscriptions, eventTypeNewAdvisory.getId(), "54321");
 
+        final List<EventTypeEmailSubscription> userFCreatedSubscriptions = subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(DEFAULT_ORG_ID, "f");
+        assertEmailSubscriptionDataIsCorrect(Set.of(INSTANT), "f", userFCreatedSubscriptions, eventTypeNewAdvisory.getId(), DEFAULT_ORG_ID);
+
         endpointAssociatedToEventTypeList = endpointEventTypeRepository.findEndpointsByEventTypeId(DEFAULT_ORG_ID, eventTypeNewAdvisory.getId(), null);
         assertEquals(1, endpointAssociatedToEventTypeList.size());
         assertEquals(EndpointType.EMAIL_SUBSCRIPTION, endpointAssociatedToEventTypeList.getFirst().getType());
@@ -148,7 +156,8 @@ public class PatchUserPreferencesMigrationResourceTest extends DbIsolatedTest {
     }
 
 
-    private void assertEmailSubscriptionDataIsCorrect(final Set<SubscriptionType> subscriptions, final String expectedUsername, List<EventTypeEmailSubscription> createdEmailSubscriptions, UUID patchNewAdvisoryId, String expectedOrgId) {
+    private void assertEmailSubscriptionDataIsCorrect(final Set<SubscriptionType> subscriptions, final String expectedUsername, List<EventTypeEmailSubscription> emailSubscriptions, UUID patchNewAdvisoryId, String expectedOrgId) {
+        final Set<EventTypeEmailSubscription> createdEmailSubscriptions = emailSubscriptions.stream().filter(EventTypeEmailSubscription::isSubscribed).collect(Collectors.toSet());
         assertEquals(
             subscriptions.size(),
             createdEmailSubscriptions.size());
@@ -158,7 +167,7 @@ public class PatchUserPreferencesMigrationResourceTest extends DbIsolatedTest {
             assertEquals(expectedOrgId, emailSubscription.getOrgId());
 
             assertTrue(
-                subscriptions.contains(emailSubscription.getSubscriptionType()));
+                subscriptions.contains(emailSubscription.getSubscriptionType()), emailSubscription.getSubscriptionType() + " is not part of expected type(s): " + subscriptions);
 
             assertEquals(emailSubscription.getEventType().getId(), patchNewAdvisoryId);
         }
