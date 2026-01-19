@@ -107,9 +107,9 @@ public class SeverityTransformer {
                 });
                 case "errata-notifications" -> events.stream().map(event -> {
                     try {
-                        return Severity.valueOf(
-                            event.getPayload().getAdditionalProperties().get(SEVERITY).toString().toUpperCase()
-                        );
+                        return (event.getPayload().getAdditionalProperties().containsKey(SEVERITY) ?
+                            Severity.valueOf(
+                                event.getPayload().getAdditionalProperties().get(SEVERITY).toString().toUpperCase()) : null);
                     } catch (Exception ex) {
                         Log.errorf(ex, "Error extracting 'errata-notifications' severity from event '%s'", event);
                         return null;
