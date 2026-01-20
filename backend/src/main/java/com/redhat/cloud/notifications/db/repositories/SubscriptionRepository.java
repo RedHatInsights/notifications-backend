@@ -128,7 +128,7 @@ public class SubscriptionRepository {
 
     public Map<String /* Org ID */, List<String>/* List of usernames */> getEmailSubscribersByEventType(UUID eventType) {
         String query = "SELECT org_id, string_agg(DISTINCT user_id, ',') FROM email_subscriptions " +
-            "WHERE event_type_id = :eventType and subscribed is true " +
+            "WHERE event_type_id = :eventType and subscribed is true and subscription_type != 'DRAWER'" +
             "group by org_id";
 
         List<Object[]> records = entityManager.createNativeQuery(query)
