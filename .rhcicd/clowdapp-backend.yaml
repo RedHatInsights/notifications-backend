@@ -136,6 +136,8 @@ objects:
           value: ${KESSEL_ENABLED}
         - name: NOTIFICATIONS_KESSEL_INSECURE_CLIENT_ENABLED
           value: ${KESSEL_INSECURE_CLIENT_ENABLED}
+        - name: NOTIFICATIONS_KESSEL_TIMEOUT_MS
+          value: ${KESSEL_TIMEOUT_MS}
         - name: NOTIFICATIONS_UNLEASH_ENABLED
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: QUARKUS_REST_CLIENT_RBAC_AUTHENTICATION_READ_TIMEOUT
@@ -288,6 +290,9 @@ parameters:
 - name: KESSEL_INSECURE_CLIENT_ENABLED
   description: Is the insecure client enabled for Kessel?
   value: "false"
+- name: KESSEL_TIMEOUT_MS
+  description: Timeout in milliseconds for Kessel gRPC calls
+  value: "30000"
 - name: NOTIFICATIONS_UNLEASH_ENABLED
   value: "false"
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT

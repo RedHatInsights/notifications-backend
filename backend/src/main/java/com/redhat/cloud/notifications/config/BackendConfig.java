@@ -28,6 +28,7 @@ public class BackendConfig {
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
     private static final String KESSEL_ENABLED = "notifications.kessel.enabled";
     private static final String KESSEL_INSECURE_CLIENT_ENABLED = "notifications.kessel.insecure-client.enabled";
+    private static final String KESSEL_TIMEOUT_MS = "notifications.kessel.timeout-ms";
     private static final String KESSEL_URL = "notifications.kessel.url";
     private static final String OIDC_CLIENT_ID = "notifications.oidc.client-id";
     private static final String OIDC_ISSUER = "notifications.oidc.issuer";
@@ -78,6 +79,9 @@ public class BackendConfig {
 
     @ConfigProperty(name = KESSEL_INSECURE_CLIENT_ENABLED, defaultValue = "false")
     boolean kesselInsecureClientEnabled;
+
+    @ConfigProperty(name = KESSEL_TIMEOUT_MS, defaultValue = "30000")
+    long kesselTimeoutMs;
 
     @ConfigProperty(name = KESSEL_URL)
     String kesselUrl;
@@ -135,6 +139,7 @@ public class BackendConfig {
         config.put(ERRATA_MIGRATION_BATCH_SIZE, getErrataMigrationBatchSize());
         config.put(KESSEL_DOMAIN, kesselDomain);
         config.put(KESSEL_ENABLED, isKesselEnabled(null));
+        config.put(KESSEL_TIMEOUT_MS, getKesselTimeoutMs());
         config.put(KESSEL_URL, kesselUrl);
         config.put(OIDC_ISSUER, oidcIssuer);
         config.put(RBAC_URL, rbacUrl);
@@ -189,6 +194,10 @@ public class BackendConfig {
 
     public boolean isKesselInsecureClientEnabled() {
         return kesselInsecureClientEnabled;
+    }
+
+    public long getKesselTimeoutMs() {
+        return kesselTimeoutMs;
     }
 
     public String getKesselUrl() {
