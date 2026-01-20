@@ -24,6 +24,7 @@ import org.project_kessel.api.inventory.v1beta2.KesselInventoryServiceGrpc;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.redhat.cloud.notifications.auth.kessel.KesselCheckClient.KESSEL_CHANNEL_INIT_COUNTER_NAME;
 import static com.redhat.cloud.notifications.auth.kessel.KesselCheckClient.KESSEL_CHANNEL_INIT_TAG_REASON;
@@ -32,6 +33,7 @@ import static com.redhat.cloud.notifications.auth.kessel.KesselCheckClient.KESSE
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -197,6 +199,19 @@ public class KesselCheckClientTest {
     }
 
     @Test
+    void testCheckUsesConfiguredTimeout() {
+        CheckResponse successResponse = CheckResponse.newBuilder()
+            .setAllowed(Allowed.ALLOWED_TRUE)
+            .build();
+        when(mockStub.check(any())).thenReturn(successResponse);
+
+        kesselCheckClient.check(CheckRequest.getDefaultInstance());
+
+        // Verify timeout from config (5000ms in test profile) is used
+        verify(mockStub).withDeadlineAfter(eq(5000L), eq(TimeUnit.MILLISECONDS));
+    }
+
+    @Test
     void testCheckForUpdateSuccessfulCallNoRetry() {
         CheckForUpdateResponse successResponse = CheckForUpdateResponse.newBuilder()
             .setAllowed(Allowed.ALLOWED_TRUE)
@@ -271,6 +286,19 @@ public class KesselCheckClientTest {
     }
 
     @Test
+    void testCheckForUpdateUsesConfiguredTimeout() {
+        CheckForUpdateResponse successResponse = CheckForUpdateResponse.newBuilder()
+            .setAllowed(Allowed.ALLOWED_TRUE)
+            .build();
+        when(mockStub.checkForUpdate(any())).thenReturn(successResponse);
+
+        kesselCheckClient.checkForUpdate(CheckForUpdateRequest.getDefaultInstance());
+
+        // Verify timeout from config (5000ms in test profile) is used
+        verify(mockStub).withDeadlineAfter(eq(5000L), eq(TimeUnit.MILLISECONDS));
+    }
+
+    @Test
     void testUnauthenticatedTriggersChannelReinit() {
         // UNAUTHENTICATED triggers channel reinitialization
         when(mockStub.check(any()))
@@ -304,5 +332,20 @@ public class KesselCheckClientTest {
         // Verify channel was reinitialized due to unhealthy channel
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(
             KESSEL_CHANNEL_INIT_COUNTER_NAME, KESSEL_CHANNEL_INIT_TAG_REASON, "unhealthy_channel", 1);
+    }
+
+    @Test
+    void testChannelReinitShutsDownOldChannel() {
+        // Simulate channel in SHUTDOWN state to trigger reinit
+        when(mockChannel.getState(false)).thenReturn(ConnectivityState.SHUTDOWN);
+
+        // This will trigger getClient() -> initializeChannel("unhealthy_channel")
+        // which should shutdown the old channel
+        assertThrows(KesselTransientException.class, () ->
+            kesselCheckClient.check(CheckRequest.getDefaultInstance())
+        );
+
+        // Verify old channel was shutdown
+        verify(mockChannel).shutdown();
     }
 }
