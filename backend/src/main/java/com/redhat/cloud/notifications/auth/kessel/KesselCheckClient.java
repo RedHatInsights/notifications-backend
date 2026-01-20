@@ -52,6 +52,7 @@ public class KesselCheckClient {
 
     // These codes indicate temporary issues that may resolve on retry.
     private static final List<Status.Code> TRANSIENT_FAILURE_CODES = List.of(UNAVAILABLE, DEADLINE_EXCEEDED, RESOURCE_EXHAUSTED, ABORTED);
+    private static final long CHANNEL_SHUTDOWN_TIMEOUT_SECONDS = 30;
 
     @Inject
     MeterRegistry meterRegistry;
@@ -146,14 +147,14 @@ public class KesselCheckClient {
 
         // UNAUTHENTICATED usually means the OAuth2 token expired. Recreate channel with fresh credentials.
         if (code == UNAUTHENTICATED) {
-            Log.warnf("Transient gRPC error from Kessel (will retry): %s - %s. Recreating channel with fresh credentials.", code, e.getMessage());
+            Log.warnf("Transient gRPC error from Kessel (may retry): %s - %s. Recreating channel with fresh credentials.", code, e.getMessage());
             initializeChannel("unauthenticated");
             return new KesselTransientException(e);
         }
 
         // Other transient failures may resolve on retry.
         if (TRANSIENT_FAILURE_CODES.contains(code)) {
-            Log.warnf("Transient gRPC error from Kessel (will retry): %s - %s", code, e.getMessage());
+            Log.warnf("Transient gRPC error from Kessel (may retry): %s - %s", code, e.getMessage());
             return new KesselTransientException(e);
         }
 
@@ -171,7 +172,7 @@ public class KesselCheckClient {
         }
         grpcChannel.shutdown();
         try {
-            if (!grpcChannel.awaitTermination(backendConfig.getKesselTimeoutMs() + 1000, TimeUnit.MILLISECONDS)) {
+            if (!grpcChannel.awaitTermination(CHANNEL_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 Log.warn("Kessel gRPC channel did not terminate gracefully, forcing shutdown");
                 grpcChannel.shutdownNow();
             }
