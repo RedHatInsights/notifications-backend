@@ -142,20 +142,23 @@ public class KesselCheckClient {
     private RuntimeException handleGrpcException(StatusRuntimeException e) {
         Status.Code code = e.getStatus().getCode();
 
-        Log.errorf("gRPC call to Kessel failed: %s - %s", code, e.getMessage());
         meterRegistry.counter(KESSEL_GRPC_ERROR_COUNTER_NAME, Tags.of(KESSEL_GRPC_ERROR_TAG_ERROR_TYPE, code.name())).increment();
 
         // UNAUTHENTICATED usually means the OAuth2 token expired. Recreate channel with fresh credentials.
         if (code == UNAUTHENTICATED) {
-            Log.warn("Received UNAUTHENTICATED from Kessel, recreating channel with fresh credentials");
+            Log.warnf("Transient gRPC error from Kessel (will retry): %s - %s. Recreating channel with fresh credentials.", code, e.getMessage());
             initializeChannel("unauthenticated");
             return new KesselTransientException(e);
         }
 
         // Other transient failures may resolve on retry.
         if (TRANSIENT_FAILURE_CODES.contains(code)) {
+            Log.warnf("Transient gRPC error from Kessel (will retry): %s - %s", code, e.getMessage());
             return new KesselTransientException(e);
         }
+
+        // Only non-transient errors are logged at error level.
+        Log.errorf("gRPC call to Kessel failed: %s - %s", code, e.getMessage());
 
         // Non-transient errors (PERMISSION_DENIED, NOT_FOUND, etc.) are not retried.
         return e;
