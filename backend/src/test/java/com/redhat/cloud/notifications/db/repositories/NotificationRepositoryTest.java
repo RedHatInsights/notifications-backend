@@ -61,7 +61,6 @@ public class NotificationRepositoryTest {
         final String eventDisplayName = "test-count-event-display-name";
         final String eventPayload = "test-count-payload";
         final Event event = new Event();
-        event.setId(UUID.randomUUID());
         event.setAccountId(notUsedField);
         event.setEventType(eventType);
         event.setPayload(eventPayload);

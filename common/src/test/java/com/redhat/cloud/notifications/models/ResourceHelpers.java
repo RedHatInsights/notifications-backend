@@ -73,7 +73,6 @@ public abstract class ResourceHelpers {
     @Transactional
     public Event createEvent(EventType eventType) {
         Event event = new Event();
-        event.setId(UUID.randomUUID());
         event.setAccountId("account-id");
         event.setOrgId(DEFAULT_ORG_ID);
         event.setEventType(eventType);
@@ -88,9 +87,6 @@ public abstract class ResourceHelpers {
 
     @Transactional
     public Event createEvent(Event event) {
-        if (event.getId() == null) {
-            event.setOrgId(DEFAULT_ORG_ID);
-        }
         event.setAccountId("account-id");
         event.setEventTypeDisplayName(event.getEventType().getDisplayName());
         event.setApplicationId(event.getEventType().getApplication().getId());

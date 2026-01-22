@@ -22,7 +22,6 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -66,7 +65,6 @@ public class EventRepositoryTest {
         for (int i = 0; i < 5; i++) {
             final Event event = new Event();
 
-            event.setId(UUID.randomUUID());
             event.setAccountId("account-id");
             event.setOrgId(DEFAULT_ORG_ID);
             event.setEventType(this.createdEventType);

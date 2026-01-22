@@ -273,7 +273,7 @@ public class EventConsumer {
                  * The EventType was found. It's time to create an Event from the current message.
                  */
                 Optional<String> sourceEnvironmentHeader = kafkaHeaders.get(SOURCE_ENVIRONMENT_HEADER);
-                Event event = new Event(eventType, payload, eventWrapperToProcess, sourceEnvironmentHeader);
+                Event event = new Event(eventType, payload, eventWrapperToProcess, sourceEnvironmentHeader, messageId);
 
                 /*
                  * Step 6
@@ -296,9 +296,6 @@ public class EventConsumer {
                      */
                     event.setHasAuthorizationCriterion(null != recipientsAuthorizationCriterionExtractor.extract(event));
                     updateSeverity(event);
-
-                    event.setExternalId(messageId);
-                    event.setId(UUID.randomUUID());
 
                     eventRepository.create(event);
 

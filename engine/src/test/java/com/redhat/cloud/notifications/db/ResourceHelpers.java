@@ -114,7 +114,6 @@ public class ResourceHelpers {
     @Transactional
     public Event createEvent(EventType eventType, String orgId, LocalDateTime created, String payload) {
         Event event = new Event();
-        event.setId(UUID.randomUUID());
         event.setAccountId("account-id");
         event.setOrgId(orgId);
         event.setEventType(eventType);
@@ -304,7 +303,6 @@ public class ResourceHelpers {
         }
 
         com.redhat.cloud.notifications.models.Event event = new com.redhat.cloud.notifications.models.Event();
-        event.setId(UUID.randomUUID());
         event.setOrgId(orgId);
         eventType.setApplication(application);
         event.setEventType(eventType);

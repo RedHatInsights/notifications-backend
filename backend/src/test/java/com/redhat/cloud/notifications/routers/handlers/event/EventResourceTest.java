@@ -860,7 +860,6 @@ public class EventResourceTest extends DbIsolatedTest {
     @Transactional
     Event createEvent(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created, String payload, boolean hasAuthorizationCriterion, UUID externalId) {
         Event event = new Event();
-        event.setId(UUID.randomUUID());
         event.setExternalId(externalId);
         event.setAccountId(accountId);
         event.setOrgId(orgId);

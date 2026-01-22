@@ -113,7 +113,6 @@ public class EndpointProcessorTest {
 
         final Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(rawAction));
-        event.setId(rawAction.getId());
         event.setOrgId(orgId);
         event.setEventType(new EventType());
 
@@ -145,7 +144,6 @@ public class EndpointProcessorTest {
         final Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(testAction));
         event.setEventType(eventType);
-        event.setId(testAction.getId());
         event.setOrgId(orgId);
 
         this.endpointProcessor.process(event);
@@ -174,7 +172,6 @@ public class EndpointProcessorTest {
         eventType.setId(UUID.randomUUID());
 
         Event event = new Event();
-        event.setId(UUID.randomUUID());
         event.setEventWrapper(new EventWrapperAction(action));
         event.setEventType(eventType);
         event.setOrgId(orgId);
@@ -244,7 +241,6 @@ public class EndpointProcessorTest {
 
         final Event event = new Event();
         event.setEventWrapper(new EventWrapperAction(rawAction));
-        event.setId(rawAction.getId());
         event.setOrgId(orgId);
         event.setEventType(new EventType());
         event.getEventType().setRestrictToRecipientsIntegrations(isEventTypeRestrictedToRecipientsIntegrations);
@@ -301,7 +297,6 @@ public class EndpointProcessorTest {
         eventType.setId(UUID.randomUUID());
 
         Event event = new Event();
-        event.setId(UUID.randomUUID());
         event.setEventWrapper(new EventWrapperAction(action));
         event.setEventType(eventType);
         event.setOrgId(orgId);
