@@ -1,21 +1,20 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import com.redhat.cloud.notifications.processors.email.SubscribedEventTypeSeverities;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 
-import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 public abstract class AbstractEmailPayloadAggregator {
 
-    private static final String START_TIME_KEY = "start_time";
-    private static final String END_TIME_KEY = "end_time";
-
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
     private String orgId;
-    private int processedAggregations;
 
+    public String userName;
+    public Set<SubscribedEventTypeSeverities> userSeverities;
     JsonObject context = new JsonObject();
 
     abstract void processEmailAggregation(EmailAggregation aggregation);
@@ -27,15 +26,27 @@ public abstract class AbstractEmailPayloadAggregator {
             throw new RuntimeException("Invalid aggregation using different orgIds");
         }
 
-        processEmailAggregation(aggregation);
-        ++processedAggregations;
+        boolean shouldAggregateThisEvent = true;
+        if (userSeverities != null) {
+            Optional<SubscribedEventTypeSeverities> userPrevForThisEventType = userSeverities.stream()
+                .filter(userSeverity -> aggregation.getEventTypeId().equals(userSeverity.eventTypeId())).findFirst();
+
+            if (userPrevForThisEventType.isPresent() && userPrevForThisEventType.get().severities().containsKey(aggregation.getSeverity())) {
+                shouldAggregateThisEvent = userPrevForThisEventType.get().severities().get(aggregation.getSeverity());
+            } else {
+                shouldAggregateThisEvent = false;
+            }
+        }
+
+        if (shouldAggregateThisEvent) {
+            processEmailAggregation(aggregation);
+        } else {
+            Log.debugf("Event will be skipped for user '%s' because they didn't subscribe to severity %s", userName, aggregation.getSeverity());
+        }
     }
 
     public Map<String, Object> getContext() {
-        Map<String, Object> payload = this.context.mapTo(Map.class);
-        payload.put(START_TIME_KEY, this.startTime);
-        payload.put(END_TIME_KEY, this.endTime);
-        return payload;
+        return context.mapTo(Map.class);
     }
 
     public boolean isEmpty() {
@@ -46,19 +57,7 @@ public abstract class AbstractEmailPayloadAggregator {
         to.put(field, from.getString(field));
     }
 
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
-    }
-
-    public void setEndTimeKey(LocalDateTime endTime) {
-        this.endTime = endTime;
-    }
-
     String getOrgId() {
         return orgId;
-    }
-
-    public int getProcessedAggregations() {
-        return this.processedAggregations;
     }
 }
