@@ -7,9 +7,10 @@ FROM quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21 AS build
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
+# '-Dquarkus.native.container-build=false' option disables containerized native image building, because the build is already running inside the Mandrel builder container
 RUN ./mvnw clean package \
     -Dquarkus.package.type=native \
-    -Dquarkus.native.container-build=false \ # Disables containerized native image building, because the build is already running inside the Mandrel builder container
+    -Dquarkus.native.container-build=false \
     -Dmaven.test.skip \
     -Dcheckstyle.skip \
     -pl :notifications-connector-drawer -am --no-transfer-progress && \
