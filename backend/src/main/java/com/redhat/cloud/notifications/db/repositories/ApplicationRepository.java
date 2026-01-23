@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.db.builder.JoinBuilder;
@@ -248,7 +249,14 @@ public class ApplicationRepository {
 
         eventTypeFromDatabase.getAvailableSeverities().removeAll(eventType.getAvailableSeverities());
 
-        boolean eventTypeAvailableSeveritiesChanged = !eventTypeFromDatabase.getAvailableSeverities().isEmpty();
+        Set<String> availableSeveritiesToRemove = new HashSet<>();
+        for (Severity severity : eventTypeFromDatabase.getAvailableSeverities()) {
+            if (!eventType.getAvailableSeverities().contains(severity)) {
+                availableSeveritiesToRemove.add(severity.name());
+            }
+        }
+
+        boolean eventTypeAvailableSeveritiesChanged = !availableSeveritiesToRemove.isEmpty();
 
         int rowCount = entityManager.createQuery(eventTypeQuery)
                 .setParameter("name", eventType.getName())
@@ -276,9 +284,7 @@ public class ApplicationRepository {
 
         if (eventTypeAvailableSeveritiesChanged) {
             // Convert removed severities Set to String array for PostgreSQL
-            String[] removedSeveritiesArray = eventTypeFromDatabase.getAvailableSeverities().stream()
-                    .map(Enum::name)
-                    .toArray(String[]::new);
+            String[] removedSeveritiesArray = availableSeveritiesToRemove.toArray(String[]::new);
 
             /*
              * Update email_subscriptions.severities JSONB column to set removed severities to false.
