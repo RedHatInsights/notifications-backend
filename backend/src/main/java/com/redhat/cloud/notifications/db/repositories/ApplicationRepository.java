@@ -247,8 +247,6 @@ public class ApplicationRepository {
             eventType.setAvailableSeverities(new HashSet<>());
         }
 
-        eventTypeFromDatabase.getAvailableSeverities().removeAll(eventType.getAvailableSeverities());
-
         Set<String> availableSeveritiesToRemove = new HashSet<>();
         for (Severity severity : eventTypeFromDatabase.getAvailableSeverities()) {
             if (!eventType.getAvailableSeverities().contains(severity)) {
