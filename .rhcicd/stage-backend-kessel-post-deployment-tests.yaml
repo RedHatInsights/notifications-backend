@@ -1,0 +1,30 @@
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name: notifications-backend-kessel-post-deployment-tests
+objects:
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdJobInvocation
+  metadata:
+    name: notifications-backend-kessel-tests-${UID}
+  spec:
+    appName: notifications-backend
+    testing:
+      iqe:
+        debug: false
+        env:
+          - name: 'ENV_FOR_DYNACONF'
+            value: 'stage_post_deploy'
+          - name: 'DYNACONF_DEFAULT_USER'
+            value: 'kessel_notifications_admin'
+          - name: 'IQE_MARKER_EXPRESSION'
+            value: 'notif_backend and api'
+parameters:
+- name: IMAGE_TAG
+  value: ''
+  required: true
+- name: UID
+  description: "Unique CJI name suffix"
+  generate: expression
+  from: "[a-z0-9]{6}"
