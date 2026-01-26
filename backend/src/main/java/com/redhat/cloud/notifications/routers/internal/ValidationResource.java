@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers.internal;
 
-import com.networknt.schema.ValidationMessage;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventValidationException;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
@@ -91,8 +90,8 @@ public class ValidationResource {
             Parser.validate(action);
         } catch (ParsingException parsingException) {
             MessageValidationResponse responseMessage = new MessageValidationResponse();
-            for (ValidationMessage message : parsingException.getValidationMessages()) {
-                responseMessage.addError(message.getProperty(), message.getMessage());
+            for (ParsingException.ErrorWrapper message : parsingException.getValidationMessages()) {
+                responseMessage.addError(message.getError().getProperty(), message.getMessage());
             }
             return Response.status(BAD_REQUEST).entity(responseMessage).build();
         }
@@ -121,8 +120,8 @@ public class ValidationResource {
             consoleCloudEventParser.validate(action);
         } catch (ConsoleCloudEventValidationException exception) {
             MessageValidationResponse responseMessage = new MessageValidationResponse();
-            for (ValidationMessage message : exception.getValidationMessages()) {
-                responseMessage.addError(message.getProperty(), message.getMessage());
+            for (ConsoleCloudEventValidationException.ErrorWrapper message : exception.getValidationMessages()) {
+                responseMessage.addError(message.getError().getProperty(), message.getMessage());
             }
             return Response.status(BAD_REQUEST).entity(responseMessage).build();
         }
