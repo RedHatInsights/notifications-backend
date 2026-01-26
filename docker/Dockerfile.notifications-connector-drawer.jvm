@@ -3,9 +3,38 @@
 ###
 
 # Build the project with Mandrel (UBI9-based)
-# There isn't currently a UBI9-based Mandrel builder image in the Red Hat registries, but the UBI8-based ones from registry.access.redhat.com/quarkus/ are the official equivalents to the community quay.io/quarkus/ubi9-quarkus-mandrel-builder-image.
-FROM registry.access.redhat.com/quarkus/mandrel-for-jdk-21-rhel8:latest AS build
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS build
 USER root
+
+# Install required dependencies for native-image compilation
+# Note: curl-minimal is already installed in ubi9-minimal
+RUN microdnf install -y \
+  gcc \
+  glibc-devel \
+  zlib-devel \
+  gcc-c++ \
+  tar \
+  gzip \
+  findutils \
+  && microdnf clean all
+
+# Set Mandrel version and architecture
+# Using latest Mandrel release for Java 21 (as of Nov 2025)
+ENV MANDREL_VERSION=23.1.9.0-Final
+ENV JAVA_VERSION=21
+ENV ARCH=linux-amd64
+
+# Download and install Mandrel
+RUN curl -L -o /tmp/mandrel.tar.gz \
+  https://github.com/graalvm/mandrel/releases/download/mandrel-${MANDREL_VERSION}/mandrel-java${JAVA_VERSION}-${ARCH}-${MANDREL_VERSION}.tar.gz \
+  && tar -xzf /tmp/mandrel.tar.gz -C /usr/local \
+  && rm /tmp/mandrel.tar.gz
+
+# Set environment variables
+ENV JAVA_HOME=/usr/local/mandrel-java${JAVA_VERSION}-${MANDREL_VERSION}
+ENV GRAALVM_HOME=${JAVA_HOME}
+ENV PATH=${JAVA_HOME}/bin:${PATH}
+
 COPY . /home/jboss
 WORKDIR /home/jboss
 # '-Dquarkus.native.container-build=false' option disables containerized native image building, because the build is already running inside the Mandrel builder container
@@ -18,12 +47,13 @@ RUN ./mvnw clean package \
     find /home/jboss/connector-drawer/target -name "*-runner" -exec mv {} /home/jboss/application \;
 
 # Build the container with minimal runtime (UBI9-based)
-FROM registry.access.redhat.com/ubi9-minimal:latest
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 WORKDIR /
 USER root
 
 # Create licenses directory and copy license file
+RUN microdnf install -y ca-certificates && microdnf clean all
 RUN mkdir -p /licenses
 COPY --from=build --chown=185:0 /home/jboss/LICENSE.txt /licenses/LICENSE
 
