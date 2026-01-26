@@ -3,7 +3,8 @@
 ###
 
 # Build the project with Mandrel (UBI9-based)
-FROM quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-21 AS build
+# There isn't currently a UBI9-based Mandrel builder image in the Red Hat registries, but the UBI8-based ones from registry.access.redhat.com/quarkus/ are the official equivalents to the community quay.io/quarkus/ubi9-quarkus-mandrel-builder-image.
+FROM registry.access.redhat.com/quarkus/mandrel-for-jdk-21-rhel8:latest AS build
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
@@ -17,7 +18,7 @@ RUN ./mvnw clean package \
     find /home/jboss/connector-drawer/target -name "*-runner" -exec mv {} /home/jboss/application \;
 
 # Build the container with minimal runtime (UBI9-based)
-FROM quay.io/quarkus/ubi9-quarkus-micro-image:2.0
+FROM registry.access.redhat.com/ubi9-minimal:latest
 
 WORKDIR /
 USER root
