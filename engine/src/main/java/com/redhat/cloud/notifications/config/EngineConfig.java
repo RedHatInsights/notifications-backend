@@ -57,7 +57,6 @@ public class EngineConfig {
     private String toggleBlacklistedEndpoints;
     private String toggleBlacklistedEventTypes;
     private String toggleKafkaOutgoingHighVolumeTopic;
-    private String toggleEventDeduplication;
     private String toggleIncludeSeverityToFilterRecipients;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
@@ -158,7 +157,6 @@ public class EngineConfig {
         toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
         toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
         toggleBlacklistedEventTypes = toggleRegistry.register("blacklisted-event-types", true);
-        toggleEventDeduplication = toggleRegistry.register("event-deduplication", true);
         toggleIncludeSeverityToFilterRecipients = toggleRegistry.register("include-severity-to-filter-recipients", true);
     }
 
@@ -313,15 +311,6 @@ public class EngineConfig {
             return this.unleash.isEnabled(this.toggleKafkaOutgoingHighVolumeTopic, false);
         } else {
             return this.outgoingKafkaHighVolumeTopicEnabled;
-        }
-    }
-
-    public boolean isEventDeduplicationEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = UnleashContextBuilder.buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(toggleEventDeduplication, unleashContext, false);
-        } else {
-            return false;
         }
     }
 

@@ -51,7 +51,6 @@ public class EventConsumer {
     public static final String PROCESSING_ERROR_COUNTER_NAME = "input.processing.error";
     public static final String PROCESSING_BLACKLISTED_COUNTER_NAME = "input.processing.blacklisted";
     public static final String PROCESSING_EXCEPTION_COUNTER_NAME = "input.processing.exception";
-    public static final String DUPLICATE_COUNTER_NAME = "input.duplicate";
     public static final String DUPLICATE_EVENT_COUNTER_NAME = "input.duplicate.event";
     public static final String CONSUMED_TIMER_NAME = "input.consumed";
 
@@ -106,7 +105,6 @@ public class EventConsumer {
 
     private Counter rejectedCounter;
     private Counter processingErrorCounter;
-    private Counter duplicateCounter;
     private Counter processingExceptionCounter;
     private ExecutorService executor;
 
@@ -115,7 +113,6 @@ public class EventConsumer {
         rejectedCounter = registry.counter(REJECTED_COUNTER_NAME);
         processingErrorCounter = registry.counter(PROCESSING_ERROR_COUNTER_NAME);
         processingExceptionCounter = registry.counter(PROCESSING_EXCEPTION_COUNTER_NAME);
-        duplicateCounter = registry.counter(DUPLICATE_COUNTER_NAME);
 
         /*
          * The ThreadPoolExecutor#submit method from this executor is blocking. If it is called while all threads from
@@ -206,112 +203,96 @@ public class EventConsumer {
 
             /*
              * Step 3
-             * It's time to check if the message ID is already known.
-             * If the ID is new, it will be persisted and the current message
-             * will never be processed again as long as its ID stays in the DB.
-             * For now, messages without an ID (messageId == null) are always considered new.
+             * We need to retrieve an EventType from the DB using the bundle/app/eventType triplet from the
+             * parsed Action.
              */
-            if (!kafkaMessageDeduplicator.isNew(messageId)) {
-                /*
-                 * The message ID is already known which means we already processed the current
-                 * message and sent notifications. The message is therefore ignored.
-                 */
-                Log.debugf(" [kafka_message_id: %s] Duplicated Kafka message ignored", messageId);
-                duplicateCounter.increment();
-            } else {
-                /*
-                 * Step 4
-                 * We need to retrieve an EventType from the DB using the bundle/app/eventType triplet from the
-                 * parsed Action.
-                 */
-                EventType eventType;
-                EventWrapper<?, ?> eventWrapperToProcess = eventWrapper;
-                try {
-                    eventType = eventTypeRepository.getEventType(eventWrapperToProcess.getKey());
+            EventType eventType;
+            EventWrapper<?, ?> eventWrapperToProcess = eventWrapper;
+            try {
+                eventType = eventTypeRepository.getEventType(eventWrapperToProcess.getKey());
 
-                    if (eventWrapperToProcess instanceof EventWrapperCloudEvent) {
-                        // We loaded a cloud event and identified the event-type it belongs to
-                        // At this point, lets check if we have a transformation available for this event
-                        // If we do, transform the event - Later this will be done on a by-integration basis
-                        Optional<CloudEventTransformer> transformer = cloudEventTransformerFactory.getTransformerIfSupported((EventWrapperCloudEvent) eventWrapperToProcess);
-                        if (transformer.isPresent()) {
-                            eventWrapperToProcess = new EventWrapperAction(
-                                    transformer.get().toAction(
-                                            (EventWrapperCloudEvent) eventWrapperToProcess,
-                                            eventType.getApplication().getBundle().getName(),
-                                            eventType.getApplication().getName(),
-                                            eventType.getName()
-                            ));
-                        }
+                if (eventWrapperToProcess instanceof EventWrapperCloudEvent) {
+                    // We loaded a cloud event and identified the event-type it belongs to
+                    // At this point, lets check if we have a transformation available for this event
+                    // If we do, transform the event - Later this will be done on a by-integration basis
+                    Optional<CloudEventTransformer> transformer = cloudEventTransformerFactory.getTransformerIfSupported((EventWrapperCloudEvent) eventWrapperToProcess);
+                    if (transformer.isPresent()) {
+                        eventWrapperToProcess = new EventWrapperAction(
+                                transformer.get().toAction(
+                                        (EventWrapperCloudEvent) eventWrapperToProcess,
+                                        eventType.getApplication().getBundle().getName(),
+                                        eventType.getApplication().getName(),
+                                        eventType.getName()
+                        ));
                     }
-
-                    tags.computeIfAbsent(TAG_KEY_BUNDLE, key -> eventType.getApplication().getBundle().getName());
-                    tags.computeIfAbsent(TAG_KEY_APPLICATION, key -> eventType.getApplication().getName());
-                    tags.computeIfAbsent(TAG_KEY_EVENT_TYPE, key -> eventType.getName());
-
-                    if (config.isBlacklistedEventType(eventType.getId())) {
-                        Log.debugf("Skipping event type [id=%s, name=%s] because it was blacklisted", eventType.getId(), eventType.getName());
-                        registry.counter(
-                            PROCESSING_BLACKLISTED_COUNTER_NAME,
-                            TAG_KEY_BUNDLE, tags.getOrDefault(TAG_KEY_BUNDLE, ""),
-                            TAG_KEY_APPLICATION, tags.getOrDefault(TAG_KEY_APPLICATION, ""),
-                            TAG_KEY_EVENT_TYPE, tags.getOrDefault(TAG_KEY_EVENT_TYPE, ""),
-                            TAG_KEY_EVENT_TYPE_FQN, tags.getOrDefault(TAG_KEY_EVENT_TYPE_FQN, ""))
-                            .increment();
-                        return;
-                    }
-                } catch (NoResultException | IllegalArgumentException e) {
-                    /*
-                     * A NoResultException was thrown because no EventType was found. The message is therefore
-                     * considered rejected.
-                     */
-                    rejectedCounter.increment();
-                    throw new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, eventWrapperToProcess.getKey()));
                 }
+
+                tags.computeIfAbsent(TAG_KEY_BUNDLE, key -> eventType.getApplication().getBundle().getName());
+                tags.computeIfAbsent(TAG_KEY_APPLICATION, key -> eventType.getApplication().getName());
+                tags.computeIfAbsent(TAG_KEY_EVENT_TYPE, key -> eventType.getName());
+
+                if (config.isBlacklistedEventType(eventType.getId())) {
+                    Log.debugf("Skipping event type [id=%s, name=%s] because it was blacklisted", eventType.getId(), eventType.getName());
+                    registry.counter(
+                        PROCESSING_BLACKLISTED_COUNTER_NAME,
+                        TAG_KEY_BUNDLE, tags.getOrDefault(TAG_KEY_BUNDLE, ""),
+                        TAG_KEY_APPLICATION, tags.getOrDefault(TAG_KEY_APPLICATION, ""),
+                        TAG_KEY_EVENT_TYPE, tags.getOrDefault(TAG_KEY_EVENT_TYPE, ""),
+                        TAG_KEY_EVENT_TYPE_FQN, tags.getOrDefault(TAG_KEY_EVENT_TYPE_FQN, ""))
+                        .increment();
+                    return;
+                }
+            } catch (NoResultException | IllegalArgumentException e) {
                 /*
-                 * Step 5
-                 * The EventType was found. It's time to create an Event from the current message.
+                 * A NoResultException was thrown because no EventType was found. The message is therefore
+                 * considered rejected.
                  */
-                Optional<String> sourceEnvironmentHeader = kafkaHeaders.get(SOURCE_ENVIRONMENT_HEADER);
-                Event event = new Event(eventType, payload, eventWrapperToProcess, sourceEnvironmentHeader, messageId);
+                rejectedCounter.increment();
+                throw new NoResultException(String.format(EVENT_TYPE_NOT_FOUND_MSG, eventWrapperToProcess.getKey()));
+            }
+            /*
+             * Step 4
+             * The EventType was found. It's time to create an Event from the current message.
+             */
+            Optional<String> sourceEnvironmentHeader = kafkaHeaders.get(SOURCE_ENVIRONMENT_HEADER);
+            Event event = new Event(eventType, payload, eventWrapperToProcess, sourceEnvironmentHeader, messageId);
+
+            /*
+             * Step 5
+             * Before we persist the event into the DB and process it, we need to check whether the event is
+             * a duplicate using the custom event deduplication logic tenants might have implemented.
+             */
+            if (!eventDeduplicator.isNew(event)) {
+                // The event is already known and should therefore be ignored.
+                Log.debug("Duplicated event ignored");
+                registry.counter(DUPLICATE_EVENT_COUNTER_NAME,
+                    TAG_KEY_BUNDLE, tags.getOrDefault(TAG_KEY_BUNDLE, ""),
+                    TAG_KEY_APPLICATION, tags.getOrDefault(TAG_KEY_APPLICATION, ""),
+                    TAG_KEY_EVENT_TYPE, tags.getOrDefault(TAG_KEY_EVENT_TYPE, ""))
+                    .increment();
+            } else {
 
                 /*
                  * Step 6
-                 * Before we persist the event into the DB and process it, we need to check whether the event is
-                 * a duplicate using the custom event deduplication logic tenants might have implemented.
+                 * The event is not a duplicate. We can now persist it.
                  */
-                if (engineConfig.isEventDeduplicationEnabled(event.getOrgId()) && !eventDeduplicator.isNew(event)) {
-                    // The event is already known and should therefore be ignored.
-                    Log.debug("Duplicated event ignored");
-                    registry.counter(DUPLICATE_EVENT_COUNTER_NAME,
-                        TAG_KEY_BUNDLE, tags.getOrDefault(TAG_KEY_BUNDLE, ""),
-                        TAG_KEY_APPLICATION, tags.getOrDefault(TAG_KEY_APPLICATION, ""),
-                        TAG_KEY_EVENT_TYPE, tags.getOrDefault(TAG_KEY_EVENT_TYPE, ""))
-                        .increment();
-                } else {
+                event.setHasAuthorizationCriterion(null != recipientsAuthorizationCriterionExtractor.extract(event));
+                updateSeverity(event);
 
+                eventRepository.create(event);
+
+                /*
+                 * Step 7
+                 * The Event and the Action it contains are processed by all relevant endpoint processors.
+                 */
+                try {
+                    endpointProcessor.process(event);
+                } catch (Exception e) {
                     /*
-                     * Step 7
-                     * The event is not a duplicate. We can now persist it.
+                     * The Event processing failed.
                      */
-                    event.setHasAuthorizationCriterion(null != recipientsAuthorizationCriterionExtractor.extract(event));
-                    updateSeverity(event);
-
-                    eventRepository.create(event);
-
-                    /*
-                     * Step 8
-                     * The Event and the Action it contains are processed by all relevant endpoint processors.
-                     */
-                    try {
-                        endpointProcessor.process(event);
-                    } catch (Exception e) {
-                        /*
-                         * The Event processing failed.
-                         */
-                        processingErrorCounter.increment();
-                        throw e;
-                    }
+                    processingErrorCounter.increment();
+                    throw e;
                 }
             }
         } catch (Exception e) {

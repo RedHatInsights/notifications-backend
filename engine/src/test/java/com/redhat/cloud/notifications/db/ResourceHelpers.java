@@ -326,4 +326,13 @@ public class ResourceHelpers {
         entityManager.createQuery("DELETE FROM Event")
             .executeUpdate();
     }
+
+    @Transactional
+    public void updateEventType(final EventType eventType) {
+        entityManager.createQuery("UPDATE EventType SET defaultSeverity = :severity, availableSeverities = :availableSeverities WHERE id = :eventTypeId")
+            .setParameter("eventTypeId", eventType.getId())
+            .setParameter("availableSeverities", eventType.getAvailableSeverities())
+            .setParameter("severity", eventType.getDefaultSeverity())
+            .executeUpdate();
+    }
 }

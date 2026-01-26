@@ -97,8 +97,8 @@ public class Event {
 
     public Event() { }
 
-    public Event(EventType eventType, String payload, EventWrapper<?, ?> eventWrapper, Optional<String> sourceEnvironment, UUID externalId) {
-        this(eventWrapper.getAccountId(), eventWrapper.getOrgId(), eventType, eventWrapper.getId(), externalId);
+    public Event(EventType eventType, String payload, EventWrapper<?, ?> eventWrapper, Optional<String> sourceEnvironment, @Deprecated(forRemoval = true) UUID messageId) {
+        this(eventWrapper.getAccountId(), eventWrapper.getOrgId(), eventType, eventWrapper.getId(), messageId);
         this.payload = payload;
         this.eventWrapper = eventWrapper;
         if (sourceEnvironment.isPresent()) {
@@ -106,11 +106,11 @@ public class Event {
         }
     }
 
-    public Event(String accountId, String orgId, EventType eventType, UUID eventId, UUID externalId) {
+    public Event(String accountId, String orgId, EventType eventType, UUID eventId, @Deprecated(forRemoval = true) UUID messageId) {
         this.accountId = accountId;
         this.orgId = orgId;
         this.eventType = eventType;
-        this.externalId = eventId != null ? eventId : externalId;
+        this.externalId = eventId != null ? eventId : messageId;
         bundleId = eventType.getApplication().getBundle().getId();
         bundleDisplayName = eventType.getApplication().getBundle().getDisplayName();
         applicationId = eventType.getApplication().getId();
