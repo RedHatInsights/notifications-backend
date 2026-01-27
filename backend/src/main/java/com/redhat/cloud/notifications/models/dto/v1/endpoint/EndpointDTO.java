@@ -97,6 +97,9 @@ public final class EndpointDTO {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Set<UUID> eventTypes;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean readOnly;
+
     public UUID getId() {
         return id;
     }
@@ -175,6 +178,14 @@ public final class EndpointDTO {
 
     public void setUpdated(final LocalDateTime updated) {
         this.updated = updated;
+    }
+
+    public Boolean getReadOnly() {
+        return readOnly;
+    }
+
+    public void setReadOnly(Boolean readOnly) {
+        this.readOnly = readOnly;
     }
 
     public EndpointPropertiesDTO getProperties() {

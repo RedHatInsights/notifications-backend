@@ -89,7 +89,7 @@ public class EndpointRepository {
         return endpoint;
     }
 
-    public List<Endpoint> getEndpointsPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
+    public List<Endpoint> getEndpointsPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter, boolean includeSystemIntegrations) {
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Optional<Sort> sort = limiter == null ? Optional.empty() : Sort.getSort(limiter, null, Endpoint.SORT_FIELDS);
 
@@ -99,6 +99,15 @@ public class EndpointRepository {
                 .sort(sort)
                 .build(entityManager::createQuery)
                 .getResultList();
+
+        if (includeSystemIntegrations) {
+            endpoints.addAll(EndpointRepository.queryBuilderEndpointsPerType(null, name, type, activeOnly)
+                .limit(limit)
+                .sort(sort)
+                .build(entityManager::createQuery)
+                .getResultList());
+        }
+
         loadProperties(endpoints);
 
         Log.debugf("[org_id: %s] Returning list of endpoints: %s", orgId, endpoints);
@@ -120,7 +129,7 @@ public class EndpointRepository {
 
     @Transactional
     public Optional<Endpoint> getSystemSubscriptionEndpoint(String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
-        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null);
+        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null, false);
         loadProperties(endpoints);
         return endpoints
             .stream()
@@ -134,7 +143,7 @@ public class EndpointRepository {
         if (EndpointType.DRAWER == endpointType) {
             label = "Drawer";
         }
-        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null);
+        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null, false);
         loadProperties(endpoints);
         Optional<Endpoint> endpointOptional = endpoints
             .stream()
@@ -163,10 +172,17 @@ public class EndpointRepository {
         return createEndpoint(endpoint);
     }
 
-    public Long getEndpointsCountPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly) {
-        return EndpointRepository.queryBuilderEndpointsPerType(orgId, name, type, activeOnly)
+    public Long getEndpointsCountPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, boolean includeSystemIntegrations) {
+        Long count = EndpointRepository.queryBuilderEndpointsPerType(orgId, name, type, activeOnly)
                 .buildCount(entityManager::createQuery)
                 .getSingleResult();
+
+        if (includeSystemIntegrations) {
+            count += EndpointRepository.queryBuilderEndpointsPerType(null, name, type, activeOnly)
+                .buildCount(entityManager::createQuery)
+                .getSingleResult();
+        }
+        return count;
     }
 
     public Endpoint getEndpoint(String orgId, UUID id) {
@@ -371,12 +387,19 @@ public class EndpointRepository {
         }
     }
 
-    public Optional<Endpoint> getEndpointWithLinkedEventTypes(String orgId, UUID id) {
+    public Optional<Endpoint> getEndpointWithLinkedEventTypes(String orgId, UUID id, boolean includeSystemIntegrationFlag) {
         String query = "SELECT e FROM Endpoint e " +
             "LEFT JOIN FETCH e.eventTypes ep " +
             "LEFT JOIN FETCH ep.application ap " +
             "LEFT JOIN FETCH ap.bundle " +
-            "WHERE e.orgId = :orgId AND e.id = :id";
+            "WHERE e.id = :id AND ";
+
+        String orgIdCriterion = "e.orgId = :orgId";
+        if (includeSystemIntegrationFlag) {
+            orgIdCriterion = "(e.orgId = :orgId or e.orgId is null)";
+        }
+        query += orgIdCriterion;
+
         try {
             Endpoint endpoint = entityManager.createQuery(query, Endpoint.class)
                 .setParameter("id", id)

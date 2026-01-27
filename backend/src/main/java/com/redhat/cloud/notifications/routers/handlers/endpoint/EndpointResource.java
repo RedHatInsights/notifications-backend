@@ -209,7 +209,7 @@ public class EndpointResource extends EndpointResourceCommon {
         @QueryParam("active")   Boolean activeOnly,
         @QueryParam("name")     String name
     ) {
-        return internalGetEndpoints(sec, query, targetType, activeOnly, name, false);
+        return internalGetEndpoints(sec, query, targetType, activeOnly, name, false, false);
     }
 
     @POST
@@ -405,7 +405,7 @@ public class EndpointResource extends EndpointResourceCommon {
     @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
     @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
     public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
-        return internalGetEndpoint(sec, id, false);
+        return internalGetEndpoint(sec, id, false, false);
     }
 
     @DELETE
