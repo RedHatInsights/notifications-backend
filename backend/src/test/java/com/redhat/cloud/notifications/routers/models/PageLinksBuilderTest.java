@@ -1,11 +1,11 @@
 package com.redhat.cloud.notifications.routers.models;
 
-import jakarta.ws.rs.core.MultivaluedHashMap;
-import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.net.URI;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -63,13 +63,12 @@ public class PageLinksBuilderTest {
     @Test
     void testUriInfoPreservesQueryParameters() {
         UriInfo uriInfo = Mockito.mock(UriInfo.class);
-        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
-        queryParams.putSingle("startDate", "2024-01-01");
-        queryParams.putSingle("limit", "10");
-        queryParams.putSingle("offset", "0");
 
-        when(uriInfo.getPath()).thenReturn("test");
-        when(uriInfo.getQueryParameters()).thenReturn(queryParams);
+        // Create a real UriBuilder from a URI with query parameters
+        URI requestUri = URI.create("http://localhost/test?startDate=2024-01-01&limit=10&offset=0");
+        UriBuilder uriBuilder = UriBuilder.fromUri(requestUri);
+
+        when(uriInfo.getRequestUriBuilder()).thenReturn(uriBuilder);
 
         Map<String, String> links = PageLinksBuilder.build(uriInfo, 50, 10, 0);
 
