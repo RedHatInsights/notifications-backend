@@ -23,7 +23,7 @@ public class PageLinksBuilder {
         // Use UriBuilder to properly handle URL encoding of query parameters
         UriBuilder baseBuilder = uriInfo.getRequestUriBuilder()
                 .replaceQueryParam("limit", limit)
-                .replaceQueryParam("offset", (Object) null); // Remove offset, will be added per link
+                .replaceQueryParam("offset", new Object[0]); // Remove offset, will be added per link
 
         return buildLinks(baseBuilder, count, limit, currentOffset);
     }
