@@ -33,12 +33,6 @@ import java.util.stream.Stream;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.clearInvocations;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @QuarkusTest
 public class EndpointRepositoryTest {
@@ -120,59 +114,57 @@ public class EndpointRepositoryTest {
 
     @Test
     void queryBuilderTest() {
-        TypedQuery<Endpoint> query = mock(TypedQuery.class);
 
-        // types with subtype and without it
-        EndpointRepository.queryBuilderEndpointsPerType(
-                null,
-                null,
-                Set.of(
-                        new CompositeEndpointType(EndpointType.WEBHOOK),
-                        new CompositeEndpointType(EndpointType.CAMEL, "splunk")
-                ),
-                null
-        ).build((hql, endpointClass) -> {
-            assertEquals("SELECT e FROM Endpoint e WHERE e.orgId IS NULL AND (e.compositeType.type IN (:endpointType) OR e.compositeType IN (:compositeTypes))", hql);
-            return query;
-        });
-
-        verify(query, times(2)).setParameter((String) any(), any());
-        verifyNoMoreInteractions(query);
-        clearInvocations(query);
+        TypedQuery<Endpoint> query = endpointRepository.buildEndpointQuery(
+            null,
+            null,
+            Set.of(
+                new CompositeEndpointType(EndpointType.WEBHOOK),
+                new CompositeEndpointType(EndpointType.CAMEL, "splunk")
+            ),
+            null,
+            null,
+            Optional.empty(),
+            false
+        );
+        org.hibernate.query.Query<Endpoint> hibernateQuery = query.unwrap(org.hibernate.query.Query.class);
+        String queryString = hibernateQuery.getQueryString();
+        assertEquals("SELECT e FROM Endpoint e WHERE e.orgId IS NULL AND (e.compositeType.type IN (:endpointType) OR e.compositeType IN (:compositeTypes))", queryString);
+        assertEquals(2, hibernateQuery.getParameters().size());
 
         // without sub-types
-        EndpointRepository.queryBuilderEndpointsPerType(
-                null,
-                null,
-                Set.of(
-                        new CompositeEndpointType(EndpointType.WEBHOOK)
-                ),
-                null
-        ).build((hql, endpointClass) -> {
-            assertEquals("SELECT e FROM Endpoint e WHERE e.orgId IS NULL AND (e.compositeType.type IN (:endpointType))", hql);
-            return query;
-        });
-
-        verify(query, times(1)).setParameter((String) any(), any());
-        verifyNoMoreInteractions(query);
-        clearInvocations(query);
+        query = endpointRepository.buildEndpointQuery(
+            null,
+            null,
+            Set.of(
+                new CompositeEndpointType(EndpointType.WEBHOOK)
+            ),
+            null,
+            null,
+            Optional.empty(),
+            false
+        );
+        hibernateQuery = query.unwrap(org.hibernate.query.Query.class);
+        queryString = hibernateQuery.getQueryString();
+        assertEquals("SELECT e FROM Endpoint e WHERE e.orgId IS NULL AND (e.compositeType.type IN (:endpointType))", queryString);
+        assertEquals(1, hibernateQuery.getParameters().size());
 
         // with sub-types
-        EndpointRepository.queryBuilderEndpointsPerType(
-                null,
-                null,
-                Set.of(
-                        new CompositeEndpointType(EndpointType.CAMEL, "splunk")
-                ),
-                null
-        ).build((hql, endpointClass) -> {
-            assertEquals("SELECT e FROM Endpoint e WHERE e.orgId IS NULL AND (e.compositeType IN (:compositeTypes))", hql);
-            return query;
-        });
-
-        verify(query, times(1)).setParameter((String) any(), any());
-        verifyNoMoreInteractions(query);
-        clearInvocations(query);
+        query = endpointRepository.buildEndpointQuery(
+            null,
+            null,
+            Set.of(
+                new CompositeEndpointType(EndpointType.CAMEL, "splunk")
+            ),
+            null,
+            null,
+            Optional.empty(),
+            false
+        );
+        hibernateQuery = query.unwrap(org.hibernate.query.Query.class);
+        queryString = hibernateQuery.getQueryString();
+        assertEquals("SELECT e FROM Endpoint e WHERE e.orgId IS NULL AND (e.compositeType IN (:compositeTypes))", queryString);
+        assertEquals(1, hibernateQuery.getParameters().size());
     }
 
     /**
