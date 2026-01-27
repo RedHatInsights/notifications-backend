@@ -76,7 +76,7 @@ public class EndpointRepositoryTest {
                 CompositeEndpointType.fromString("pagerduty")
         );
 
-        Function<Query, List<Endpoint>> provider = query -> endpointRepository.getEndpointsPerCompositeType(orgId, null, compositeEndpointTypes, null, query);
+        Function<Query, List<Endpoint>> provider = query -> endpointRepository.getEndpointsPerCompositeType(orgId, null, compositeEndpointTypes, null, query, false);
         TestHelpers.testSorting(
                 "id",
                 provider,
