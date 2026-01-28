@@ -1,11 +1,17 @@
 package com.redhat.cloud.notifications.routers.models;
 
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
+import java.net.URI;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 public class PageLinksBuilderTest {
 
@@ -52,5 +58,22 @@ public class PageLinksBuilderTest {
         assertEquals("test?limit=3&offset=9", links.get("last"));
         assertEquals("test?limit=3&offset=6", links.get("prev"));
         assertFalse(links.containsKey("next"));
+    }
+
+    @Test
+    void testUriInfoPreservesQueryParameters() {
+        UriInfo uriInfo = Mockito.mock(UriInfo.class);
+
+        // Create a real UriBuilder from a URI with query parameters
+        URI requestUri = URI.create("http://localhost/test?startDate=2024-01-01&limit=10&offset=0");
+        UriBuilder uriBuilder = UriBuilder.fromUri(requestUri);
+
+        when(uriInfo.getRequestUriBuilder()).thenReturn(uriBuilder);
+
+        Map<String, String> links = PageLinksBuilder.build(uriInfo, 50, 10, 0);
+
+        assertTrue(links.get("first").contains("startDate=2024-01-01"));
+        assertTrue(links.get("next").contains("startDate=2024-01-01"));
+        assertTrue(links.get("next").contains("offset=10"));
     }
 }
