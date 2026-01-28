@@ -22,4 +22,14 @@ public enum PagerDutySeverity {
     public static PagerDutySeverity fromJson(String value) {
         return valueOf(value.toUpperCase(Locale.ENGLISH));
     }
+
+    /** Maps from security's {@code Severity} to PagerDuty-native levels. */
+    public static PagerDutySeverity fromSecuritySeverity(String severity) {
+        return switch (severity) {
+            case "CRITICAL" -> CRITICAL;
+            case "IMPORTANT" -> ERROR;
+            case "LOW", "NONE", "UNDEFINED" -> INFO;
+            default -> WARNING;
+        };
+    }
 }
