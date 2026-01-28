@@ -5,8 +5,7 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.EngineConfig;
-import com.redhat.cloud.notifications.db.repositories.EventRepository;
-import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
+import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.events.deduplication.EventDeduplicator;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
@@ -14,8 +13,6 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.EventTypeKey;
-import com.redhat.cloud.notifications.transformers.SeverityTransformer;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -25,8 +22,6 @@ import io.smallrye.reactive.messaging.kafka.api.OutgoingKafkaRecordMetadata;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
@@ -41,7 +36,6 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static com.redhat.cloud.notifications.events.EventConsumer.CONSUMED_TIMER_NAME;
-import static com.redhat.cloud.notifications.events.EventConsumer.DUPLICATE_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.DUPLICATE_EVENT_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.events.EventConsumer.PROCESSING_BLACKLISTED_COUNTER_NAME;
@@ -58,6 +52,7 @@ import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MES
 import static com.redhat.cloud.notifications.events.KafkaMessageDeduplicator.MESSAGE_ID_VALID_COUNTER_NAME;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -72,8 +67,8 @@ import static org.mockito.Mockito.when;
 public class EventConsumerTest {
 
     private static final String BUNDLE = "my-bundle";
-    private static final String APP = "Policies";
-    private static final String EVENT_TYPE = "Any";
+    private static final String APP = "my-app";
+    private static final String EVENT_TYPE = "my-event-type";
 
     @Inject
     @Any
@@ -81,15 +76,6 @@ public class EventConsumerTest {
 
     @InjectMock
     EndpointProcessor endpointProcessor;
-
-    @InjectMock
-    EventTypeRepository eventTypeRepository;
-
-    @InjectMock
-    EventRepository eventRepository;
-
-    @InjectSpy
-    KafkaMessageDeduplicator kafkaMessageDeduplicator;
 
     @InjectSpy
     EventDeduplicator eventDeduplicator;
@@ -103,11 +89,8 @@ public class EventConsumerTest {
     @InjectSpy
     EngineConfig config;
 
-    @InjectSpy
-    SeverityTransformer severityTransformer;
-
     @Inject
-    EntityManager entityManager;
+    ResourceHelpers resourceHelpers;
 
     @BeforeEach
     void beforeEach() {
@@ -115,7 +98,6 @@ public class EventConsumerTest {
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 PROCESSING_EXCEPTION_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
                 DUPLICATE_EVENT_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
@@ -124,8 +106,6 @@ public class EventConsumerTest {
         );
         micrometerAssertionHelper.removeDynamicTimer(CONSUMED_TIMER_NAME);
 
-        // Connect the real method for all tests - this test only does the wiring for the cloud-events and the regular notification
-        when(eventTypeRepository.getEventType((EventTypeKey) any())).thenCallRealMethod();
         when(config.isBlacklistedEventType(any())).thenReturn(false);
     }
 
@@ -133,11 +113,12 @@ public class EventConsumerTest {
     void clear() {
         micrometerAssertionHelper.clearSavedValues();
         micrometerAssertionHelper.removeDynamicTimer(CONSUMED_TIMER_NAME);
+        resourceHelpers.deleteBundle(BUNDLE);
     }
 
     @Test
     void testValidPayloadWithMessageId() {
-        EventType eventType = mockGetEventTypeAndCreateEvent(true, true);
+        EventType eventType = mockGetEventTypeAndCreateEvent(true);
         Action action = buildValidAction(true);
         RecipientsAuthorizationCriterion authorizationCriterion = EventPayloadTestHelper.buildRecipientsAuthorizationCriterion();
         action.setRecipientsAuthorizationCriterion(authorizationCriterion);
@@ -154,22 +135,21 @@ public class EventConsumerTest {
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 PROCESSING_EXCEPTION_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
                 MESSAGE_ID_MISSING_COUNTER_NAME,
                 PROCESSING_BLACKLISTED_COUNTER_NAME
         );
 
-        verifyExactlyOneProcessing(eventType, payload, action, true);
+        final Event processedEvent = verifyExactlyOneProcessing(eventType, payload, action, true);
         verifySeverity(action, false);
-        verify(kafkaMessageDeduplicator, times(1)).isNew(messageId);
-        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
-        verify(eventDeduplicator, never()).isNew(any(Event.class));
+        verify(eventDeduplicator, times(1)).isNew(any(Event.class));
+        assertEquals(messageId, processedEvent.getExternalId());
+        assertNotEquals(messageId, processedEvent.getId());
     }
 
     @Test
     void testValidPayloadWithBlacklistedEventType() {
-        EventType eventType = mockGetEventTypeAndCreateEvent(true, false);
+        EventType eventType = mockGetEventTypeAndCreateEvent(false);
         Action action = buildValidAction(true);
         RecipientsAuthorizationCriterion authorizationCriterion = EventPayloadTestHelper.buildRecipientsAuthorizationCriterion();
         action.setRecipientsAuthorizationCriterion(authorizationCriterion);
@@ -196,15 +176,11 @@ public class EventConsumerTest {
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 PROCESSING_EXCEPTION_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
                 MESSAGE_ID_MISSING_COUNTER_NAME
         );
 
         verify(endpointProcessor, never()).process(any(Event.class));
-
-        verify(kafkaMessageDeduplicator, times(1)).isNew(messageId);
-        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
         verify(eventDeduplicator, never()).isNew(any(Event.class));
     }
 
@@ -222,22 +198,19 @@ public class EventConsumerTest {
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 PROCESSING_EXCEPTION_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
                 PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
-        verify(kafkaMessageDeduplicator, times(1)).isNew(null);
-        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
-        verify(eventDeduplicator, never()).isNew(any(Event.class));
+        verify(eventDeduplicator, times(1)).isNew(any(Event.class));
     }
 
     @Test
     void testValidPayloadWithIgnoredSeverityForApplication() {
         boolean severityIgnored = true;
 
-        mockGetEventTypeAndCreateEvent(false, false);
+        mockGetEventTypeAndCreateEvent(false);
         Action action = buildValidAction(false);
         action.setSeverity(null);
         String payload = serializeAction(action);
@@ -252,7 +225,6 @@ public class EventConsumerTest {
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 PROCESSING_EXCEPTION_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
                 MESSAGE_ID_MISSING_COUNTER_NAME,
                 PROCESSING_BLACKLISTED_COUNTER_NAME
@@ -271,20 +243,18 @@ public class EventConsumerTest {
         micrometerAssertionHelper.assertCounterIncrement(PROCESSING_EXCEPTION_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 PROCESSING_ERROR_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
                 MESSAGE_ID_MISSING_COUNTER_NAME,
                 PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verify(endpointProcessor, never()).process(any(Event.class));
-        verify(kafkaMessageDeduplicator, never()).isNew(any(UUID.class));
         verify(eventDeduplicator, never()).isNew(any(Event.class));
     }
 
     @Test
     void testUnknownEventTypeWithoutMessageId() {
-        mockGetUnknownEventType();
+        resourceHelpers.deleteBundle(BUNDLE);
         Action action = buildValidAction(false);
         String payload = serializeAction(action);
         inMemoryConnector.source(INGRESS_CHANNEL).send(payload);
@@ -296,14 +266,11 @@ public class EventConsumerTest {
         micrometerAssertionHelper.assertCounterIncrement(PROCESSING_EXCEPTION_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 PROCESSING_ERROR_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
                 PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verify(endpointProcessor, never()).process(any(Event.class));
-        verify(kafkaMessageDeduplicator, times(1)).isNew(null);
-        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
         verify(eventDeduplicator, never()).isNew(any(Event.class));
     }
 
@@ -321,15 +288,12 @@ public class EventConsumerTest {
         micrometerAssertionHelper.assertCounterIncrement(PROCESSING_ERROR_COUNTER_NAME, 1);
         assertNoCounterIncrement(
                 REJECTED_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
                 PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
-        verify(kafkaMessageDeduplicator, times(1)).isNew(null);
-        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
-        verify(eventDeduplicator, never()).isNew(any(Event.class));
+        verify(eventDeduplicator, times(1)).isNew(any(Event.class));
     }
 
     @Test
@@ -345,7 +309,6 @@ public class EventConsumerTest {
         micrometerAssertionHelper.awaitAndAssertTimerIncrement(CONSUMED_TIMER_NAME, 2);
         assertEquals(2L, getTimerCount(action.getBundle(), action.getApplication(), action.getEventType()));
         micrometerAssertionHelper.assertCounterIncrement(MESSAGE_ID_VALID_COUNTER_NAME, 2);
-        micrometerAssertionHelper.assertCounterIncrement(DUPLICATE_COUNTER_NAME, 1);
         // TODO DUPLICATE_EVENT_COUNTER_NAME will be increased to 1 when kafkaMessageDeduplicator is removed.
         micrometerAssertionHelper.assertCounterIncrement(DUPLICATE_EVENT_COUNTER_NAME, 0);
         assertNoCounterIncrement(
@@ -357,9 +320,7 @@ public class EventConsumerTest {
                 PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
-        verify(kafkaMessageDeduplicator, times(2)).isNew(messageId);
-        // TODO eventDeduplicator will be called twice when kafkaMessageDeduplicator is removed.
-        verify(eventDeduplicator, never()).isNew(any(Event.class));
+        verify(eventDeduplicator, times(2)).isNew(any(Event.class));
 
     }
 
@@ -378,15 +339,12 @@ public class EventConsumerTest {
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 PROCESSING_EXCEPTION_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_INVALID_COUNTER_NAME,
                 PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
-        verify(kafkaMessageDeduplicator, times(1)).isNew(null);
-        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
-        verify(eventDeduplicator, never()).isNew(any(Event.class));
+        verify(eventDeduplicator, times(1)).isNew(any(Event.class));
     }
 
     @Test
@@ -404,52 +362,31 @@ public class EventConsumerTest {
                 REJECTED_COUNTER_NAME,
                 PROCESSING_ERROR_COUNTER_NAME,
                 PROCESSING_EXCEPTION_COUNTER_NAME,
-                DUPLICATE_COUNTER_NAME,
                 MESSAGE_ID_VALID_COUNTER_NAME,
                 MESSAGE_ID_MISSING_COUNTER_NAME,
                 PROCESSING_BLACKLISTED_COUNTER_NAME
         );
         verifyExactlyOneProcessing(eventType, payload, action, false);
-        verify(kafkaMessageDeduplicator, times(1)).isNew(null);
-        // TODO eventDeduplicator will be called once when kafkaMessageDeduplicator is removed.
-        verify(eventDeduplicator, never()).isNew(any(Event.class));
+        verify(eventDeduplicator, times(1)).isNew(any(Event.class));
     }
 
     private EventType mockGetEventTypeAndCreateEvent() {
-        return mockGetEventTypeAndCreateEvent(false, true);
+        return mockGetEventTypeAndCreateEvent(true);
     }
 
-    private EventType mockGetEventTypeAndCreateEvent(final boolean shouldHaveAuthorizationCriterion, final boolean shouldHaveSeverity) {
-        Bundle bundle = new Bundle();
-        bundle.setDisplayName("Bundle");
+    private EventType mockGetEventTypeAndCreateEvent(final boolean shouldHaveSeverity) {
+        Bundle bundle = resourceHelpers.findOrCreateBundle(BUNDLE);
+        Application app = resourceHelpers.findOrCreateApplication(bundle.getName(), APP);
+        EventType eventType = resourceHelpers.findOrCreateEventType(app.getId(), EVENT_TYPE);
 
-        Application app = new Application();
-        app.setDisplayName("Application");
-        app.setBundle(bundle);
-
-        EventType eventType = new EventType();
-        eventType.setDisplayName("Event type");
-        eventType.setApplication(app);
         if (shouldHaveSeverity) {
             eventType.setDefaultSeverity(Severity.MODERATE);
             eventType.setAvailableSeverities(Set.of(Severity.values()));
+        } else {
+            eventType.setDefaultSeverity(null);
         }
-        when(eventTypeRepository.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenReturn(eventType);
-        when(eventRepository.create(any(Event.class))).thenAnswer(invocation -> {
-            assertEquals(shouldHaveAuthorizationCriterion, ((Event) invocation.getArgument(0)).hasAuthorizationCriterion());
-            return invocation.getArgument(0);
-        });
-        when(eventRepository.create(any(Event.class))).thenAnswer(invocation -> {
-            assertEquals(shouldHaveSeverity, ((Event) invocation.getArgument(0)).getSeverity() != null);
-            return invocation.getArgument(0);
-        });
+        resourceHelpers.updateEventType(eventType);
         return eventType;
-    }
-
-    private void mockGetUnknownEventType() {
-        when(eventTypeRepository.getEventType(eq(BUNDLE), eq(APP), eq(EVENT_TYPE))).thenThrow(
-                new NoResultException("I am a forced exception!")
-        );
     }
 
     private void mockProcessingFailure() {
@@ -457,7 +394,7 @@ public class EventConsumerTest {
                 .when(endpointProcessor).process(any(Event.class));
     }
 
-    private void verifyExactlyOneProcessing(EventType eventType, String payload, Action action, boolean withAccountId) {
+    private Event verifyExactlyOneProcessing(EventType eventType, String payload, Action action, boolean withAccountId) {
         ArgumentCaptor<Event> argumentCaptor = ArgumentCaptor.forClass(Event.class);
         verify(endpointProcessor, times(1)).process(argumentCaptor.capture());
         if (withAccountId) {
@@ -469,6 +406,7 @@ public class EventConsumerTest {
         assertEquals(eventType, argumentCaptor.getValue().getEventType());
         assertEquals(payload, argumentCaptor.getValue().getPayload());
         assertEquals(action, argumentCaptor.getValue().getEventWrapper().getEvent());
+        return argumentCaptor.getValue();
     }
 
     private void verifySeverity(Action action, boolean severityIgnored) {

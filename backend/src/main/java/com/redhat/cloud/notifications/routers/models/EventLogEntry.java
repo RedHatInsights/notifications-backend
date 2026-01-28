@@ -18,6 +18,8 @@ public class EventLogEntry {
     @NotNull
     private UUID id;
 
+    private UUID externalId;
+
     @NotNull
     @JsonFormat(shape = STRING)
     private LocalDateTime created;
@@ -100,5 +102,13 @@ public class EventLogEntry {
 
     public void setActions(List<EventLogEntryAction> actions) {
         this.actions = actions;
+    }
+
+    public UUID getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(UUID externalId) {
+        this.externalId = externalId;
     }
 }

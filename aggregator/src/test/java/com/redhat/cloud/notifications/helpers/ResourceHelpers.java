@@ -19,7 +19,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 @ApplicationScoped
 public class ResourceHelpers extends com.redhat.cloud.notifications.models.ResourceHelpers {
@@ -126,7 +125,6 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
         getOrCreateAggregationTemplate(application);
 
         Event event = new Event();
-        event.setId(UUID.randomUUID());
         event.setOrgId(orgId);
         eventType.setApplication(application);
         event.setEventType(eventType);

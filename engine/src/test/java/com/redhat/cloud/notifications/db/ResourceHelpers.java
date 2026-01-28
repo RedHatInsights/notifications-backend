@@ -114,7 +114,6 @@ public class ResourceHelpers {
     @Transactional
     public Event createEvent(EventType eventType, String orgId, LocalDateTime created, String payload) {
         Event event = new Event();
-        event.setId(UUID.randomUUID());
         event.setAccountId("account-id");
         event.setOrgId(orgId);
         event.setEventType(eventType);
@@ -304,7 +303,6 @@ public class ResourceHelpers {
         }
 
         com.redhat.cloud.notifications.models.Event event = new com.redhat.cloud.notifications.models.Event();
-        event.setId(UUID.randomUUID());
         event.setOrgId(orgId);
         eventType.setApplication(application);
         event.setEventType(eventType);
@@ -326,6 +324,15 @@ public class ResourceHelpers {
     @Transactional
     public void clearEvents() {
         entityManager.createQuery("DELETE FROM Event")
+            .executeUpdate();
+    }
+
+    @Transactional
+    public void updateEventType(final EventType eventType) {
+        entityManager.createQuery("UPDATE EventType SET defaultSeverity = :severity, availableSeverities = :availableSeverities WHERE id = :eventTypeId")
+            .setParameter("eventTypeId", eventType.getId())
+            .setParameter("availableSeverities", eventType.getAvailableSeverities())
+            .setParameter("severity", eventType.getDefaultSeverity())
             .executeUpdate();
     }
 }

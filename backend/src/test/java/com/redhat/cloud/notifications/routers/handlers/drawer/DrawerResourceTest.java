@@ -213,7 +213,6 @@ public class DrawerResourceTest extends DbIsolatedTest {
     @Transactional
     Event createEvent(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created, Severity severity) {
         Event event = new Event();
-        event.setId(UUID.randomUUID());
         event.setAccountId(accountId);
         event.setOrgId(orgId);
         event.setBundleId(bundle.getId());

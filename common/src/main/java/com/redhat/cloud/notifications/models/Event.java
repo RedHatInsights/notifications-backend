@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.events.EventWrapper;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -41,6 +42,7 @@ public class Event {
     );
 
     @Id
+    @GeneratedValue
     private UUID id;
 
     private Timestamp created;
@@ -91,10 +93,12 @@ public class Event {
     @Transient
     private EventWrapper<?, ?> eventWrapper;
 
+    private UUID externalId;
+
     public Event() { }
 
-    public Event(EventType eventType, String payload, EventWrapper<?, ?> eventWrapper, Optional<String> sourceEnvironment) {
-        this(eventWrapper.getAccountId(), eventWrapper.getOrgId(), eventType, eventWrapper.getId());
+    public Event(EventType eventType, String payload, EventWrapper<?, ?> eventWrapper, Optional<String> sourceEnvironment, @Deprecated(forRemoval = true) UUID messageId) {
+        this(eventWrapper.getAccountId(), eventWrapper.getOrgId(), eventType, eventWrapper.getId(), messageId);
         this.payload = payload;
         this.eventWrapper = eventWrapper;
         if (sourceEnvironment.isPresent()) {
@@ -102,11 +106,11 @@ public class Event {
         }
     }
 
-    public Event(String accountId, String orgId, EventType eventType, UUID eventId) {
+    public Event(String accountId, String orgId, EventType eventType, UUID eventId, @Deprecated(forRemoval = true) UUID messageId) {
         this.accountId = accountId;
         this.orgId = orgId;
         this.eventType = eventType;
-        this.id = eventId;
+        this.externalId = eventId != null ? eventId : messageId;
         bundleId = eventType.getApplication().getBundle().getId();
         bundleDisplayName = eventType.getApplication().getBundle().getDisplayName();
         applicationId = eventType.getApplication().getId();
@@ -139,6 +143,14 @@ public class Event {
 
     public void setId(UUID id) {
         this.id = id;
+    }
+
+    public UUID getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(UUID externalId) {
+        this.externalId = externalId;
     }
 
     public LocalDateTime getCreated() {

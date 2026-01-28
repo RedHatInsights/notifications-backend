@@ -8,7 +8,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -44,7 +43,7 @@ public class KafkaMessageDeduplicator {
      * Validates the message ID retrieved from the Kafka message headers. If multiple header values are available, the first one
      * will be used and the other ones will be ignored. An invalid header value will be counted and logged, but won't
      * interrupt the message processing: the deduplication will be disabled for the message.
-     * @deprecated The rh-message-id header will be replaced by the cloud events or actions id field soon.
+     * @deprecated The rh-message-id header will be replaced by actions id field soon.
      */
     @Deprecated(forRemoval = true)
     public UUID validateMessageId(EventTypeKey eventTypeKey, Optional<String> messageIdHeader) {
@@ -71,29 +70,5 @@ public class KafkaMessageDeduplicator {
         }
         // This will be returned if the message ID is either invalid or not found.
         return null;
-    }
-
-    /**
-     * Verifies that another Kafka consumer didn't already process the given message and then failed to commit its
-     * offset. Such failure can happen when a consumer is kicked out of its consumer group because it didn't poll new
-     * messages fast enough. We experienced that already in production.
-     */
-    @Transactional
-    public boolean isNew(UUID messageId) {
-        if (messageId == null) {
-            /*
-             * For now, messages without an ID are always considered new. This is necessary to give the onboarded apps
-             * time to change their integration and start sending the new header. The message ID may become mandatory later.
-             */
-            return true;
-        } else {
-            String sql = "INSERT INTO kafka_message(id) " +
-                    "VALUES (:messageId) " +
-                    "ON CONFLICT DO NOTHING";
-            int rowCount = entityManager.createNativeQuery(sql)
-                    .setParameter("messageId", messageId)
-                    .executeUpdate();
-            return rowCount > 0;
-        }
     }
 }

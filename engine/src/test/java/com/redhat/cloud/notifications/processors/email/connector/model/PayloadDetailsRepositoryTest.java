@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -45,7 +44,6 @@ public class PayloadDetailsRepositoryTest {
         final EventType eventType = this.resourceHelpers.createEventType(application.getId(), "test-sfd-payload-details");
 
         final Event event = new Event();
-        event.setId(UUID.randomUUID());
         event.setEventType(eventType);
 
         final Event createdEvent = this.resourceHelpers.createEvent(event);

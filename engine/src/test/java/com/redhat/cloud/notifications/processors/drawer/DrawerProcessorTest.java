@@ -40,7 +40,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import static com.redhat.cloud.notifications.processors.ConnectorSender.TOCAMEL_CHANNEL;
 import static org.awaitility.Awaitility.await;
@@ -154,7 +153,6 @@ class DrawerProcessorTest {
         EventType createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-engine-event-type");
         Event createdEvent = new Event();
         createdEvent.setEventType(createdEventType);
-        createdEvent.setId(UUID.randomUUID());
         createdEvent.setEventWrapper(new EventWrapperAction(
             new Action.ActionBuilder()
                 .withOrgId("123456")
