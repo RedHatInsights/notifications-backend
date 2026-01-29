@@ -1,10 +1,12 @@
 package com.redhat.cloud.notifications.routers.models;
 
 import com.redhat.cloud.notifications.db.Query;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class PageLinksBuilder {
@@ -21,10 +23,17 @@ public class PageLinksBuilder {
     // New method that preserves query parameters
     public static Map<String, String> build(UriInfo uriInfo, long count, long limit, long currentOffset) {
         // Use UriBuilder to properly handle URL encoding of query parameters
-        UriBuilder baseBuilder = uriInfo.getRequestUriBuilder()
-                .replaceQueryParam("limit", limit)
-                .replaceQueryParam("offset", new Object[0]); // Remove offset, will be added per link
+        UriBuilder baseBuilder = UriBuilder.fromPath(uriInfo.getPath());
 
+        // Add query parameters
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+        for (Map.Entry<String, List<String>> entry : queryParams.entrySet()) {
+            for (String value : entry.getValue()) {
+                baseBuilder.queryParam(entry.getKey(), value);
+            }
+        }
+
+        baseBuilder.replaceQueryParam("limit", limit);
         return buildLinks(baseBuilder, count, limit, currentOffset);
     }
 
@@ -50,10 +59,10 @@ public class PageLinksBuilder {
         }
 
         // first
-        links.put("first", baseBuilder.clone().queryParam("offset", 0).toTemplate());
+        links.put("first", baseBuilder.clone().replaceQueryParam("offset", 0).toTemplate());
 
         // last
-        links.put("last", baseBuilder.clone().queryParam("offset", lastOffset).toTemplate());
+        links.put("last", baseBuilder.clone().replaceQueryParam("offset", lastOffset).toTemplate());
 
         // prev
         if (currentOffset > 0) {
@@ -61,13 +70,13 @@ public class PageLinksBuilder {
             if (prevOffset < 0) {
                 prevOffset = 0;
             }
-            links.put("prev", baseBuilder.clone().queryParam("offset", prevOffset).toTemplate());
+            links.put("prev", baseBuilder.clone().replaceQueryParam("offset", prevOffset).toTemplate());
         }
 
         // next
         if (currentOffset < lastOffset) {
             long nextOffset = currentOffset + limit;
-            links.put("next", baseBuilder.clone().queryParam("offset", nextOffset).toTemplate());
+            links.put("next", baseBuilder.clone().replaceQueryParam("offset", nextOffset).toTemplate());
         }
 
         return links;
