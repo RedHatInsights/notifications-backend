@@ -38,11 +38,8 @@ export const Navigation: React.FunctionComponent<NavigationProps> = props => {
                     )) }
                 </NavExpandable>
                 <NavExpandable title="Utils" isExpanded>
-                    <EnhancedNavItem to={ linkTo.consoleCloudEventValidator() }>
-                        Console cloud event validator
-                    </EnhancedNavItem>
                     <EnhancedNavItem to={ linkTo.messageValidator() }>
-                        Old Notification validator
+                        Notification validator
                     </EnhancedNavItem>
                     <EnhancedNavItem to={ linkTo.email() }>
                         Email templates

@@ -14,9 +14,8 @@ import { produce } from 'immer';
 import * as React from 'react';
 import { useEffect } from 'react';
 
-import { EventType, EventTypeRow, InstantTemplate } from '../../types/Notifications';
+import { EventType, EventTypeRow } from '../../types/Notifications';
 import { EventTypeExpandableRow } from './Table/EventTypeExpandableRow';
-import { InstantEmailCell } from './Table/InstantEmailCell';
 
 interface EventTypeTableBaseProps {
     eventTypes: ReadonlyArray<EventTypeRow>;
@@ -24,7 +23,6 @@ interface EventTypeTableBaseProps {
     onCreateEventType: () => void;
     onEditEventType: (eventType: EventType) => void;
     onDeleteEventTypeModal: (eventType: EventType) => void;
-    onUpdateInstantTemplate: (instantTemplate: Partial<InstantTemplate>) => void;
 }
 
 type CreateEventTypeButtonProp = {
@@ -110,12 +108,6 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                     />
                     <Td>{ eventType.displayName }</Td>
                     <Td>{ eventType.name }</Td>
-                    <Td>
-                        <InstantEmailCell
-                            eventType={ eventType }
-                            onClick={ () => !eventType.instantEmail.isLoading && props.onUpdateInstantTemplate(eventType.instantEmail) }
-                        />
-                    </Td>
                     <Td>{ eventType.defaultSeverity ?? '-' }</Td>
                     <Td>{ eventType.availableSeverities?.join(', ') ?? '-' }</Td>
                     <Td>
