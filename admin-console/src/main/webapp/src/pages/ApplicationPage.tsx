@@ -167,7 +167,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
                     eventTypes={ eventTypesQuery.data }
                 />
             </PageSection>
-            { isAdmin && application }
             <CreateEditModal
                 isEdit={ isEdit }
                 initialEventType={ eventTypes }

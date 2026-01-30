@@ -62,16 +62,17 @@ const EventTypeTableLayout: React.FunctionComponent<EventTypeTableLayoutProps> =
         </Toolbar>
         <Table aria-label="Event types table">
             <Thead>
-                <Th />
-                <Th>Event Type</Th>
-                <Th>Name</Th>
-                <Th>Instant email</Th>
-                <Th>Default Severity</Th>
-                <Th>Available Severities</Th>
-                <Th>Subscribed by default?</Th>
-                <Th>Subscription locked?</Th>
-                <Th>Is visible?</Th>
-                <Th />
+                <Tr>
+                    <Th />
+                    <Th>Event Type</Th>
+                    <Th>Name</Th>
+                    <Th>Default Severity</Th>
+                    <Th>Available Severities</Th>
+                    <Th>Subscribed by default?</Th>
+                    <Th>Subscription locked?</Th>
+                    <Th>Is visible?</Th>
+                    <Th />
+                </Tr>
             </Thead>
             <Tbody>
                 { props.children }
