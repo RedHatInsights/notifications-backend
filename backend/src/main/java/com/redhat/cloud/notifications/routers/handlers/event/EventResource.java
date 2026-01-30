@@ -142,7 +142,7 @@ public class EventResource {
             Meta meta = new Meta();
             meta.setCount(0L);
 
-            Map<String, String> links = PageLinksBuilder.build(uriInfo.getPath(), 0, query);
+            Map<String, String> links = PageLinksBuilder.build(uriInfo, 0, query);
 
             Page<EventLogEntry> page = new Page<>();
             page.setData(new ArrayList<>());
@@ -190,7 +190,7 @@ public class EventResource {
         Meta meta = new Meta();
         meta.setCount(count);
 
-        Map<String, String> links = PageLinksBuilder.build(uriInfo.getPath(), count, query);
+        Map<String, String> links = PageLinksBuilder.build(uriInfo, count, query);
 
         Page<EventLogEntry> page = new Page<>();
         page.setData(eventLogEntries);
