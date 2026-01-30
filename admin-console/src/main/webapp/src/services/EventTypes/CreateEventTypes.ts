@@ -8,7 +8,6 @@ export type CreateEventType = {
     description: string;
     applicationId: string;
     name: string;
-    fullyQualifiedName: string;
     subscribedByDefault: boolean;
     subscriptionLocked: boolean;
     visible: boolean;
@@ -24,7 +23,6 @@ const actionCreator =  (params: CreateEventType) => {
             description: params.description,
             display_name: params.displayName,
             name: params.name,
-            fully_qualified_name: params.fullyQualifiedName,
             subscribed_by_default: params.subscribedByDefault,
             subscription_locked: params.subscriptionLocked,
             visible: params.visible

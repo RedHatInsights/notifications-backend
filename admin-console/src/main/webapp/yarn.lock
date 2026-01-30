@@ -1730,11 +1730,6 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@patternfly/patternfly@6.4.0":
-  version "6.4.0"
-  resolved "https://registry.yarnpkg.com/@patternfly/patternfly/-/patternfly-6.4.0.tgz#8ccc792573a525440f828ca1fb11eade864afb4d"
-  integrity sha512-4drFhg74sEc/fftark5wZevODIog17qR4pwLCdB3j5iK3Uu5oMA2SdLhsEeEQggalfnFzve/Km87MdVR0ghhvQ==
-
 "@patternfly/react-code-editor@6.4.1":
   version "6.4.1"
   resolved "https://registry.yarnpkg.com/@patternfly/react-code-editor/-/react-code-editor-6.4.1.tgz#15d5ac632c0c33e4246fcc7f2cf49442a58e60c2"
@@ -7020,7 +7015,7 @@ loader-runner@^4.3.1:
   resolved "https://registry.yarnpkg.com/loader-runner/-/loader-runner-4.3.1.tgz#6c76ed29b0ccce9af379208299f07f876de737e3"
   integrity sha512-IWqP2SCPhyVFTBtRcgMHdzlf9ul25NwaFx4wCEH/KjAXuuHY4yNjvPXsBokp8jCB936PyWRaPKUNh8NvylLp2Q==
 
-loader-utils@^2.0.0, loader-utils@^2.0.2, loader-utils@^2.0.4:
+loader-utils@^2.0.0, loader-utils@^2.0.4:
   version "2.0.4"
   resolved "https://registry.yarnpkg.com/loader-utils/-/loader-utils-2.0.4.tgz#8b5cb38b5c34a9a018ee1fc0e6a066d1dfcc528c"
   integrity sha512-xXqpXoINfFhgua9xiqD8fPFHgkoq1mmmpE92WlDbm9rNRd/EbRb+Gqf908T2DMfuHjjJlksiK2RbHVOdD/MqSw==
@@ -7282,13 +7277,6 @@ mkdirp@~0.5.1:
   integrity sha512-FP+p8RB8OWpF3YZBCrP5gtADmtXApB5AMLn+vdyA+PyxCjrCs00mjyUozssO33cwDeT3wNGdLxJ5M//YqtHAJw==
   dependencies:
     minimist "^1.2.6"
-
-monaco-editor-webpack-plugin@7.1.1:
-  version "7.1.1"
-  resolved "https://registry.yarnpkg.com/monaco-editor-webpack-plugin/-/monaco-editor-webpack-plugin-7.1.1.tgz#5c90c8ccfadd11a9168d439d1f5b96a397431553"
-  integrity sha512-WxdbFHS3Wtz4V9hzhe/Xog5hQRSMxmDLkEEYZwqMDHgJlkZo00HVFZR0j5d0nKypjTUkkygH3dDSXERLG4757A==
-  dependencies:
-    loader-utils "^2.0.2"
 
 monaco-editor@0.55.1:
   version "0.55.1"
@@ -8602,11 +8590,6 @@ react-is@^18.0.0, react-is@^18.3.1:
   version "18.3.1"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-18.3.1.tgz#e83557dc12eae63a99e003a46388b1dcbb44db7e"
   integrity sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==
-
-react-monaco-editor@0.59.0:
-  version "0.59.0"
-  resolved "https://registry.yarnpkg.com/react-monaco-editor/-/react-monaco-editor-0.59.0.tgz#a3cdef4a47fd0cb899f412c9d66b365c51a76096"
-  integrity sha512-SggqfZCdUauNk7GI0388bk5n25zYsQ1ai1i+VhxAgwbCH+MTGl7L1fBNTJ6V+oXeUApf+bpzikprHJEZm9J/zA==
 
 react-refresh@^0.11.0:
   version "0.11.0"

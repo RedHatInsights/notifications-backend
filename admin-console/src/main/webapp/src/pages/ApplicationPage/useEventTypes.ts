@@ -30,7 +30,6 @@ export const useEventTypes = (applicationId: string): EventTypesController => {
                 displayName: e.displayName,
                 description: e.description,
                 applicationId: e.applicationId,
-                fullyQualifiedName: e.fullyQualifiedName,
                 subscribedByDefault: e.subscribedByDefault,
                 subscriptionLocked: e.subscriptionLocked,
                 visible: e.visible,

@@ -47,7 +47,6 @@ export interface EventType {
     name: string;
     description: string;
     applicationId: string;
-    fullyQualifiedName: string;
     subscribedByDefault: boolean;
     subscriptionLocked: boolean;
     visible: boolean;

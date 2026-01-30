@@ -29,7 +29,7 @@ type ApplicationPageParams = {
 }
 
 export const ApplicationPage: React.FunctionComponent = () => {
-    const { hasPermission, isAdmin } = useUserPermissions();
+    const { hasPermission } = useUserPermissions();
     const { applicationId } = useParams<ApplicationPageParams>();
     const eventTypesQuery = useEventTypes(applicationId!);
     const applicationTypesQuery = useApplicationTypes(applicationId!);
@@ -89,7 +89,6 @@ export const ApplicationPage: React.FunctionComponent = () => {
             displayName: eventType.displayName ?? '',
             name: eventType.name ?? '',
             description: eventType.description ?? '',
-            fullyQualifiedName: eventType.fullyQualifiedName ?? '',
             applicationId: applicationId!,
             subscribedByDefault: eventType.subscribedByDefault,
             subscriptionLocked: eventType.subscriptionLocked,

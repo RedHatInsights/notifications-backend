@@ -161,7 +161,7 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
 /**
  * Provides skeleton rows
  */
-const EventTypeTableSkeleton: React.FunctionComponent<EventTypeTableProps> = () => {
+const EventTypeTableSkeleton: React.FunctionComponent = () => {
     return <>
         { Array.from(new Array(skeletonRows)).map((_, rowIndex) => <Tr key={ `skeleton-row-${rowIndex}` }>
             { Array.from(new Array(numberOfColumns)).map((_, colIndex) => <Td key={ `skeleton-cell-${rowIndex}-${colIndex}` }><Skeleton /></Td>) }
@@ -222,6 +222,6 @@ export const EventTypeTable: React.FunctionComponent<EventTypeTableProps> = prop
             onExpandToggle={ onExpandedToggle }
             tableData={ tableData }
             createEventTypeButton={ createEventTypeButton }
-        /> : <EventTypeTableSkeleton { ...props } /> }
+        /> : <EventTypeTableSkeleton /> }
     </EventTypeTableLayout>;
 };
