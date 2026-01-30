@@ -1771,6 +1771,18 @@
     react-dropzone "^14.3.5"
     tslib "^2.8.1"
 
+"@patternfly/react-core@^6.4.1":
+  version "6.4.1"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-core/-/react-core-6.4.1.tgz#219afce931b49804903f2e12156f9bb4d46f91b7"
+  integrity sha512-EUSV76Eifkt4R3q2JIaiB6/FHeQqOCttK1DQMXNoOCNa3ODkZ7H+KlMdminufMDfRzhwAgTVihZ62K9PFfc8Vg==
+  dependencies:
+    "@patternfly/react-icons" "^6.4.0"
+    "@patternfly/react-styles" "^6.4.0"
+    "@patternfly/react-tokens" "^6.4.0"
+    focus-trap "7.6.4"
+    react-dropzone "^14.3.5"
+    tslib "^2.8.1"
+
 "@patternfly/react-icons@6.4.0", "@patternfly/react-icons@^6.4.0":
   version "6.4.0"
   resolved "https://registry.yarnpkg.com/@patternfly/react-icons/-/react-icons-6.4.0.tgz#563d5a51e76084dea8c752b587fc479dfe10fc31"
@@ -1781,16 +1793,16 @@
   resolved "https://registry.yarnpkg.com/@patternfly/react-styles/-/react-styles-6.4.0.tgz#2e29d59a4e3df737e742de58dc1525a27287415d"
   integrity sha512-EXmHA67s5sy+Wy/0uxWoUQ52jr9lsH2wV3QcgtvVc5zxpyBX89gShpqv4jfVqaowznHGDoL6fVBBrSe9BYOliQ==
 
-"@patternfly/react-table@6.4.0":
-  version "6.4.0"
-  resolved "https://registry.yarnpkg.com/@patternfly/react-table/-/react-table-6.4.0.tgz#5bfa35f97000920749e38bbdd0a4108679860877"
-  integrity sha512-yv0sFOLGts8a2q9C1xUegjp50ayYyVRe0wKjMf+aMSNIK8sVYu8qu0yfBsCDybsUCldue7+qsYKRLFZosTllWQ==
+"@patternfly/react-table@6.4.1":
+  version "6.4.1"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-table/-/react-table-6.4.1.tgz#9074101de89d4c22abc49a7a90314cc9ffba2a71"
+  integrity sha512-dceS5X1I5gmhRfEf6gsLIdFhrQd5hY+SWRIYzEvI19rrdN9VwCVWg+bhSsNv05pQnGs8uOlzYVBI25p7PJtFeA==
   dependencies:
-    "@patternfly/react-core" "^6.4.0"
+    "@patternfly/react-core" "^6.4.1"
     "@patternfly/react-icons" "^6.4.0"
     "@patternfly/react-styles" "^6.4.0"
     "@patternfly/react-tokens" "^6.4.0"
-    lodash "^4.17.21"
+    lodash "^4.17.23"
     tslib "^2.8.1"
 
 "@patternfly/react-tokens@^6.4.0":
@@ -7086,7 +7098,7 @@ lodash.uniq@^4.5.0:
   resolved "https://registry.yarnpkg.com/lodash.uniq/-/lodash.uniq-4.5.0.tgz#d0225373aeb652adc1bc82e4945339a842754773"
   integrity sha512-xfBaXQd9ryd9dlSDvnvI0lvxfLJlYAZzXomUYzLKtUeOQvOP5piqAWuGtrhWeqaXK9hhoM/iyJc5AV+XfsX3HQ==
 
-lodash@^4.17.20, lodash@^4.17.21, lodash@^4.7.0:
+lodash@^4.17.20, lodash@^4.17.21, lodash@^4.17.23, lodash@^4.7.0:
   version "4.17.23"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.23.tgz#f113b0378386103be4f6893388c73d0bde7f2c5a"
   integrity sha512-LgVTMpQtIopCi79SJeDiP0TfWi5CNEc/L/aRdTh3yIvmZXTnheWpKjSZhnvMl8iXbC1tFg9gdHHDMLoV7CnG+w==
