@@ -137,8 +137,8 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         return result;
     }
 
-    private Map<SubscriptionType, Map<Severity, Boolean>> extractNotificationSubscriptionTypeDetails(List<SettingsValueByEventTypeJsonForm.EventType> eventTypes, String bundle, String application, String eventName) {
-        Map<SubscriptionType, Map<Severity, Boolean>> result = new HashMap<>();
+    private Map<SubscriptionType, Set<SettingsValueByEventTypeJsonForm.SeverityDetails>> extractNotificationSubscriptionTypeDetails(List<SettingsValueByEventTypeJsonForm.EventType> eventTypes, String bundle, String application, String eventName) {
+        Map<SubscriptionType, Set<SettingsValueByEventTypeJsonForm.SeverityDetails>> result = new HashMap<>();
         for (SettingsValueByEventTypeJsonForm.EventType eventType : eventTypes) {
             for (SettingsValueByEventTypeJsonForm.Field field : eventType.fields) {
                 for (SubscriptionType type : SubscriptionType.values()) {
@@ -262,7 +262,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         // We want to validate bundles and apps orders returned as a json string
         String mappedString = mapper.writeValueAsString(settingsValuesByEventType);
         final String RESULT = """
-            {"bundles":{"bundle-name2":{"applications":{"app-name3":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name2].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"appname"},"app-name2":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name2].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"appname3"},"app-name1":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name2].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"appnamez"}},"label":"abundle"},"bundle-name3":{"applications":{"app-name3":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name3].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"a-appname"},"app-name1":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name3].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"e-appname"},"app-name2":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name3].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"r-appname"}},"label":"bbundle"},"rhel":{"applications":{"policies":{"eventTypes":[{"name":"policy-triggered","label":"Policy triggered","fields":[{"name":"bundles[rhel].applications[policies].eventTypes[policy-triggered].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"Policies"}},"label":"Red Hat Enterprise Linux"},"bundle-name1":{"applications":{"app-name1":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name1].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"appname1"},"app-name3":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name1].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"appname3"},"app-name2":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name1].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":{"CRITICAL":false,"IMPORTANT":false,"MODERATE":false,"LOW":false,"NONE":false,"UNDEFINED":false}}]}],"label":"appname4"}},"label":"zbundle"}}}""";
+            {"bundles":{"bundle-name2":{"applications":{"app-name3":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name2].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":[{"name":"CRITICAL","initialValue":false,"disabled":false},{"name":"IMPORTANT","initialValue":false,"disabled":true},{"name":"MODERATE","initialValue":false,"disabled":false},{"name":"LOW","initialValue":false,"disabled":false},{"name":"NONE","initialValue":false,"disabled":true},{"name":"UNDEFINED","initialValue":false,"disabled":true}]}]}],"label":"appname"},"app-name2":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name2].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":[{"name":"CRITICAL","initialValue":false,"disabled":false},{"name":"IMPORTANT","initialValue":false,"disabled":true},{"name":"MODERATE","initialValue":false,"disabled":false},{"name":"LOW","initialValue":false,"disabled":false},{"name":"NONE","initialValue":false,"disabled":true},{"name":"UNDEFINED","initialValue":false,"disabled":true}]}]}],"label":"appname3"},"app-name1":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name2].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":[{"name":"CRITICAL","initialValue":false,"disabled":false},{"name":"IMPORTANT","initialValue":false,"disabled":true},{"name":"MODERATE","initialValue":false,"disabled":false},{"name":"LOW","initialValue":false,"disabled":false},{"name":"NONE","initialValue":false,"disabled":true},{"name":"UNDEFINED","initialValue":false,"disabled":true}]}]}],"label":"appnamez"}},"label":"abundle"},"bundle-name3":{"applications":{"app-name3":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name3].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":[{"name":"CRITICAL","initialValue":false,"disabled":false},{"name":"IMPORTANT","initialValue":false,"disabled":true},{"name":"MODERATE","initialValue":false,"disabled":false},{"name":"LOW","initialValue":false,"disabled":false},{"name":"NONE","initialValue":false,"disabled":true},{"name":"UNDEFINED","initialValue":false,"disabled":true}]}]}],"label":"a-appname"},"app-name1":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name3].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":[{"name":"CRITICAL","initialValue":false,"disabled":false},{"name":"IMPORTANT","initialValue":false,"disabled":true},{"name":"MODERATE","initialValue":false,"disabled":false},{"name":"LOW","initialValue":false,"disabled":false},{"name":"NONE","initialValue":false,"disabled":true},{"name":"UNDEFINED","initialValue":false,"disabled":true}]}]}],"label":"e-appname"},"app-name2":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name3].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":[{"name":"CRITICAL","initialValue":false,"disabled":false},{"name":"IMPORTANT","initialValue":false,"disabled":true},{"name":"MODERATE","initialValue":false,"disabled":false},{"name":"LOW","initialValue":false,"disabled":false},{"name":"NONE","initialValue":false,"disabled":true},{"name":"UNDEFINED","initialValue":false,"disabled":true}]}]}],"label":"r-appname"}},"label":"bbundle"},"rhel":{"applications":{"policies":{"eventTypes":[{"name":"policy-triggered","label":"Policy triggered","fields":[{"name":"bundles[rhel].applications[policies].eventTypes[policy-triggered].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":[{"name":"CRITICAL","initialValue":false,"disabled":true},{"name":"IMPORTANT","initialValue":false,"disabled":true},{"name":"MODERATE","initialValue":false,"disabled":true},{"name":"LOW","initialValue":false,"disabled":true},{"name":"NONE","initialValue":false,"disabled":true},{"name":"UNDEFINED","initialValue":false,"disabled":true}]}]}],"label":"Policies"}},"label":"Red Hat Enterprise Linux"},"bundle-name1":{"applications":{"app-name1":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name1].applications[app-name1].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":[{"name":"CRITICAL","initialValue":false,"disabled":false},{"name":"IMPORTANT","initialValue":false,"disabled":true},{"name":"MODERATE","initialValue":false,"disabled":false},{"name":"LOW","initialValue":false,"disabled":false},{"name":"NONE","initialValue":false,"disabled":true},{"name":"UNDEFINED","initialValue":false,"disabled":true}]}]}],"label":"appname1"},"app-name3":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name1].applications[app-name3].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":[{"name":"CRITICAL","initialValue":false,"disabled":false},{"name":"IMPORTANT","initialValue":false,"disabled":true},{"name":"MODERATE","initialValue":false,"disabled":false},{"name":"LOW","initialValue":false,"disabled":false},{"name":"NONE","initialValue":false,"disabled":true},{"name":"UNDEFINED","initialValue":false,"disabled":true}]}]}],"label":"appname3"},"app-name2":{"eventTypes":[{"name":"event-type-name","label":"Event type","fields":[{"name":"bundles[bundle-name1].applications[app-name2].eventTypes[event-type-name].emailSubscriptionTypes[INSTANT]","label":"Instant notification","description":"Immediate email for each triggered application event.","initialValue":false,"component":"descriptiveCheckbox","validate":[],"checkedWarning":"Opting into this notification may result in a large number of emails","disabled":false,"severities":[{"name":"CRITICAL","initialValue":false,"disabled":false},{"name":"IMPORTANT","initialValue":false,"disabled":true},{"name":"MODERATE","initialValue":false,"disabled":false},{"name":"LOW","initialValue":false,"disabled":false},{"name":"NONE","initialValue":false,"disabled":true},{"name":"UNDEFINED","initialValue":false,"disabled":true}]}]}],"label":"appname4"}},"label":"zbundle"}}}""";
         assertEquals(RESULT, mappedString);
 
         // delete created bundles, apps and event types
@@ -501,6 +501,9 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         String application = "policies";
         String eventType = "policy-triggered";
 
+        final Set<Severity> AVAILABLE_SEVERITY_SET = Set.of(Severity.MODERATE, Severity.CRITICAL, Severity.LOW, Severity.UNDEFINED);
+        updatePoliciesEventTypeAvailableSeverities(AVAILABLE_SEVERITY_SET);
+
         // Policy event should not be returned because it is not visible
         updatePoliciesEventTypeVisibility(false);
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = given()
@@ -555,9 +558,10 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         SettingsValueByEventTypeJsonForm settingsValue = getPreferencesByEventType(identityHeader);
         rhelPolicy = rhelPolicyForm(settingsValue);
-        Map<SubscriptionType, Map<Severity, Boolean>> policiesSubscriptionDetails = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, bundle, application, eventType);
+        Map<SubscriptionType, Set<SettingsValueByEventTypeJsonForm.SeverityDetails>> policiesSubscriptionDetails = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, bundle, application, eventType);
         assertEquals(Set.of(Severity.MODERATE, Severity.LOW), getSubscribedSeveritiesSet(policiesSubscriptionDetails.get(INSTANT)));
         assertEquals(Set.of(Severity.CRITICAL), getSubscribedSeveritiesSet(policiesSubscriptionDetails.get(DAILY)));
+        assertEquals(AVAILABLE_SEVERITY_SET, getAvailableSeveritiesSet(policiesSubscriptionDetails.get(INSTANT)));
 
         if (backendConfig.isDrawerEnabled()) {
             assertTrue(getSubscribedSeveritiesSet(policiesSubscriptionDetails.get(DRAWER)).isEmpty());
@@ -650,7 +654,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .extract().body().as(SettingsValueByEventTypeJsonForm.class);
         rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
         assertNotNull(rhelPolicy, "RHEL policies not found");
-        Map<SubscriptionType, Map<Severity, Boolean>> initialValues = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, "not-found-bundle-2", "not-found-app-2", eventType);
+        Map<SubscriptionType, Set<SettingsValueByEventTypeJsonForm.SeverityDetails>> initialValues = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, "not-found-bundle-2", "not-found-app-2", eventType);
         assertEquals(0, initialValues.size());
 
         // Does not add event type if is not supported by the templates
@@ -664,7 +668,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         rhelPolicy = rhelPolicyForm(settingsValueJsonForm);
         assertNotNull(rhelPolicy, "RHEL policies not found");
 
-        Map<SubscriptionType, Map<Severity, Boolean>> notificationPreferences = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, bundle, application, eventType);
+        Map<SubscriptionType, Set<SettingsValueByEventTypeJsonForm.SeverityDetails>> notificationPreferences = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, bundle, application, eventType);
 
         if (backendConfig.isDrawerEnabled()) {
             assertEquals(3, notificationPreferences.size());
@@ -675,11 +679,24 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertTrue(notificationPreferences.containsKey(INSTANT));
     }
 
-    private Set<Severity> getSubscribedSeveritiesSet(Map<Severity, Boolean> severitySubscriptionSet) {
+    private Set<Severity> getSubscribedSeveritiesSet(Set<SettingsValueByEventTypeJsonForm.SeverityDetails> severitySubscriptionSet) {
         if (severitySubscriptionSet == null) {
             return Set.of();
         }
-        return severitySubscriptionSet.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).collect(Collectors.toSet());
+        return severitySubscriptionSet.stream()
+            .filter(severity -> severity.initialValue)
+            .map(severity -> Severity.valueOf(severity.name))
+            .collect(Collectors.toSet());
+    }
+
+    private Set<Severity> getAvailableSeveritiesSet(Set<SettingsValueByEventTypeJsonForm.SeverityDetails> severitySubscriptionSet) {
+        if (severitySubscriptionSet == null) {
+            return Set.of();
+        }
+        return severitySubscriptionSet.stream()
+            .filter(severity -> !severity.disabled)
+            .map(severity -> Severity.valueOf(severity.name))
+            .collect(Collectors.toSet());
     }
 
     private void updateAndCheckUserPreferenceWithSeverities(Header identityHeader, String bundle, String application, String eventType, Map<SubscriptionType, Set<Severity>> severity) {
@@ -690,7 +707,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = getPreferencesByEventType(identityHeader);
         final SettingsValueByEventTypeJsonForm.Application rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
         assertNotNull(rhelPolicy, "RHEL policies not found");
-        Map<SubscriptionType, Map<Severity, Boolean>> initialValues = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, bundle, application, eventType);
+        Map<SubscriptionType, Set<SettingsValueByEventTypeJsonForm.SeverityDetails>> initialValues = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, bundle, application, eventType);
 
         final Set<Severity> expectedDailySeverities = severity.get(DAILY) == null ? Set.of() : severity.get(DAILY);
         final Set<Severity> expectedInstantSeverities = severity.get(INSTANT) == null ? Set.of() : severity.get(INSTANT);
@@ -717,7 +734,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .extract().body().as(SettingsValueByEventTypeJsonForm.Application.class);
 
         assertNotNull(preferences);
-        Map<SubscriptionType, Map<Severity, Boolean>> notificationPreferences = extractNotificationSubscriptionTypeDetails(preferences.eventTypes, bundle, application, eventType);
+        Map<SubscriptionType, Set<SettingsValueByEventTypeJsonForm.SeverityDetails>> notificationPreferences = extractNotificationSubscriptionTypeDetails(preferences.eventTypes, bundle, application, eventType);
         subscribedSeverities = getSubscribedSeveritiesSet(notificationPreferences.get(DAILY));
         assertEquals(expectedDailySeverities, subscribedSeverities);
 
@@ -765,6 +782,13 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     void updatePoliciesEventTypeVisibility(boolean visible) {
         entityManager.createQuery("UPDATE EventType SET visible = :visible where name='policy-triggered'")
             .setParameter("visible", visible)
+            .executeUpdate();
+    }
+
+    @Transactional
+    void updatePoliciesEventTypeAvailableSeverities(Set<Severity> availableSeverities) {
+        entityManager.createQuery("UPDATE EventType SET availableSeverities = :availableSeverities where name='policy-triggered'")
+            .setParameter("availableSeverities", availableSeverities)
             .executeUpdate();
     }
 
