@@ -34,12 +34,40 @@ public class EmailAggregationRepository {
     public List<AggregationCommand> getApplicationsWithPendingAggregationAccordingOrgPref(LocalDateTime now) {
         LocalDateTime currentTimeTwoDaysAgo = now.minusDays(2);
         List<Object[]> records;
-        final LocalDateTime startTime = LocalDateTime.now();
+        if (aggregatorConfig.isFetchAggregationsWithAtLeastOneSubscriber()) {
+            final LocalDateTime startTime = LocalDateTime.now();
+            String query = "SELECT DISTINCT ev.orgId, ev.bundleId, ev.applicationId, acp.lastRun, bu.name, ap.name FROM Event ev " +
+                "join Application ap on ev.applicationId = ap.id join Bundle bu on ev.bundleId = bu.id " +
+                "join AggregationOrgConfig acp on ev.orgId = acp.orgId WHERE " +
+                // check than at least one user of the org subscribed for daily digest with this event type
+                "EXISTS (SELECT 1 FROM EventTypeEmailSubscription es where ev.orgId = es.id.orgId and es.id.subscriptionType='DAILY' and es.eventType = ev.eventType and es.subscribed is true) " +
+                // check for linked email integration linked to this event type (to honor legacy mechanism)
+                "AND EXISTS (SELECT 1 FROM Endpoint ep, EndpointEventType eet where (ev.orgId = ep.orgId or ep.orgId is null) and ep.compositeType.type = 'EMAIL_SUBSCRIPTION' and eet.eventType = ev.eventType and eet.endpoint = ep) " +
+                // filter on new events since the latest run of this org aggregation, and not older than two days
+                "AND (ev.created > acp.lastRun OR acp.lastRun is null) AND ev.created > :twoDaysAgo AND ev.created <= :now " +
+                // filter on org scheduled execution time
+                "AND :nowTime = acp.scheduledExecutionTime";
+            Query hqlQuery = entityManager.createQuery(query)
+                .setParameter("nowTime", now.toLocalTime())
+                .setParameter("now", now)
+                .setParameter("twoDaysAgo", currentTimeTwoDaysAgo);
+
+            records = hqlQuery.getResultList();
+
+            Duration duration = Duration.between(startTime, LocalDateTime.now());
+            Log.infof("Fetching aggregations with pending aggregations with at least one subscriber took %d s for %d aggregations", duration.toSeconds(), records.size());
+        }
+
         String query = "SELECT DISTINCT ev.orgId, ev.bundleId, ev.applicationId, acp.lastRun, bu.name, ap.name FROM Event ev " +
             "join Application ap on ev.applicationId = ap.id join Bundle bu on ev.bundleId = bu.id " +
             "join AggregationOrgConfig acp on ev.orgId = acp.orgId WHERE " +
+
+            // check than a aggregation template exists for the event application
+            "EXISTS (SELECT 1 FROM AggregationEmailTemplate WHERE application.id = ev.applicationId and subscriptionType = 'DAILY') " +
+            // After prod validation phase, the previous AggregationEmailTemplate check should be remove in favor of:
             // check than at least one user of the org subscribed for daily digest with this event type
-            "EXISTS (SELECT 1 FROM EventTypeEmailSubscription es where ev.orgId = es.id.orgId and es.id.subscriptionType='DAILY' and es.eventType = ev.eventType and es.subscribed is true) " +
+            //"EXISTS (SELECT 1 FROM EventTypeEmailSubscription es where ev.orgId = es.id.orgId and es.id.subscriptionType='DAILY' and es.eventType = ev.eventType and es.subscribed is true) " + warning: need an new index on EventTypeEmailSubscription before being enabled
+
             // check for linked email integration linked to this event type (to honor legacy mechanism)
             "AND EXISTS (SELECT 1 FROM Endpoint ep, EndpointEventType eet where (ev.orgId = ep.orgId or ep.orgId is null) and ep.compositeType.type = 'EMAIL_SUBSCRIPTION' and eet.eventType = ev.eventType and eet.endpoint = ep) " +
             // filter on new events since the latest run of this org aggregation, and not older than two days
@@ -52,10 +80,6 @@ public class EmailAggregationRepository {
             .setParameter("twoDaysAgo", currentTimeTwoDaysAgo);
 
         records = hqlQuery.getResultList();
-
-        Duration duration = Duration.between(startTime, LocalDateTime.now());
-        Log.infof("Fetching aggregations with pending aggregations with at least one subscriber took %d s for %d aggregations", duration.toSeconds(), records.size());
-
         return records.stream()
             .map(emailAggregationRecord -> new AggregationCommand(
                 new EventAggregationCriterion(
