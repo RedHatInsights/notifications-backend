@@ -1152,7 +1152,7 @@ public class EventResourceTest extends DbIsolatedTest {
         Action action2 = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
         action2.setSeverity(Severity.IMPORTANT.name());
         String payload2 = Parser.encode(action2);
-        Event event2 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, payload2, false);
+        Event event2 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, payload2, false, null);
 
         // Verify severity is included in the response
         Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false);
