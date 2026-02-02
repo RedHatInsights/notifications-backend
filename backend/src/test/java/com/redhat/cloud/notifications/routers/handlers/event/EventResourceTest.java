@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers.handlers.event;
 
 import com.redhat.cloud.notifications.EventPayloadTestHelper;
 import com.redhat.cloud.notifications.MockServerConfig;
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.auth.kessel.KesselCheckClient;
@@ -912,6 +913,13 @@ public class EventResourceTest extends DbIsolatedTest {
                                                        LocalDateTime startDate, LocalDateTime endDate, Set<String> endpointTypes,
                                                        Set<Boolean> invocationResults, Set<EventLogEntryActionStatus> status, Integer limit,
                                                        Integer offset, String sortBy, boolean includePayload, boolean includeActions, String path) {
+        return getEventLogPage(identityHeader, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, status, limit, offset, sortBy, includePayload, includeActions, path, null);
+    }
+
+    private static Page<EventLogEntry> getEventLogPage(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+                                                       LocalDateTime startDate, LocalDateTime endDate, Set<String> endpointTypes,
+                                                       Set<Boolean> invocationResults, Set<EventLogEntryActionStatus> status, Integer limit,
+                                                       Integer offset, String sortBy, boolean includePayload, boolean includeActions, String path, Set<Severity> severities) {
         RequestSpecification request = given()
                 .header(identityHeader);
         if (bundleIds != null) {
@@ -953,6 +961,9 @@ public class EventResourceTest extends DbIsolatedTest {
         if (includeActions) {
             request.param("includeActions", true);
         }
+        if (severities != null) {
+            request.param("severities", severities);
+        }
         return request
                 .when().get(path)
                 .then()
@@ -971,6 +982,7 @@ public class EventResourceTest extends DbIsolatedTest {
         assertEquals(event.getApplicationDisplayName(), eventLogEntry.getApplication());
         assertEquals(event.getEventTypeDisplayName(), eventLogEntry.getEventType());
         // Severity should be present in the event log entry
+        assertEquals(eventLogEntry.getSeverity(), event.getSeverity());
         Assertions.assertNotNull(eventLogEntry.getSeverity(), "Severity should not be null");
         if (historyEntries == null) {
             assertTrue(eventLogEntry.getActions().isEmpty());
@@ -1133,16 +1145,44 @@ public class EventResourceTest extends DbIsolatedTest {
 
         // Create event with severity
         Action action = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
-        action.setSeverity(com.redhat.cloud.notifications.Severity.CRITICAL.name());
+        action.setSeverity(Severity.CRITICAL.name());
         String payload = Parser.encode(action);
         Event event = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, payload, false, null);
+
+        Action action2 = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
+        action2.setSeverity(Severity.IMPORTANT.name());
+        String payload2 = Parser.encode(action2);
+        Event event2 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, payload2, false);
 
         // Verify severity is included in the response
         Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false);
 
+        assertEquals(2, page.getMeta().getCount());
+        for (EventLogEntry entry : page.getData()) {
+            if (entry.getId().equals(event.getId())) {
+                assertEquals(Severity.CRITICAL, entry.getSeverity());
+            } else {
+                assertEquals(event2.getId(), entry.getId());
+                assertEquals(Severity.IMPORTANT, entry.getSeverity());
+            }
+        }
+
+        // Search for IMPORTANT severity only
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false, PATH, Set.of(Severity.IMPORTANT));
+
         assertEquals(1, page.getMeta().getCount());
-        EventLogEntry entry = page.getData().get(0);
-        assertEquals(event.getId(), entry.getId());
-        assertEquals(com.redhat.cloud.notifications.Severity.CRITICAL, entry.getSeverity());
+        assertEquals(Severity.IMPORTANT, page.getData().getFirst().getSeverity());
+
+        // search with empty Set of severities
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false, PATH, Set.of());
+        assertEquals(2, page.getMeta().getCount());
+
+        // search with both severities
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false, PATH, Set.of(Severity.IMPORTANT, Severity.CRITICAL));
+        assertEquals(2, page.getMeta().getCount());
+
+        // search with no matching severities
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false, PATH, Set.of(Severity.MODERATE));
+        assertEquals(0, page.getMeta().getCount());
     }
 }
