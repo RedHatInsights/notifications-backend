@@ -77,32 +77,6 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = pr
                             </HelperText>
                         ) }
                     </FormGroup>
-                    <FormGroup
-                        label="Event type name"
-                        fieldId="fullyQualifiedName"
-                        isRequired
-                    >
-                        <TextInput
-                            type="text"
-                            value={ eventType.fullyQualifiedName }
-                            onChange={ handleChange }
-                            id="fullyQualifiedName"
-                            name="fullyQualifiedName"
-                        />
-                        { props.isEdit ? (
-                            <HelperText>
-                                <HelperTextItem variant="warning">
-                                    If this field is modified it may affect existing behavior.
-                                </HelperTextItem>
-                            </HelperText>
-                        ) : (
-                            <HelperText>
-                                <HelperTextItem>
-                                    This is the fully qualified name for the event type. e.g. &apos;com.redhat.console.insights.policies.policy-triggered&apos;
-                                </HelperTextItem>
-                            </HelperText>
-                        ) }
-                    </FormGroup>
                     <FormGroup label="Display name" fieldId="display-name" isRequired>
                         <TextInput
                             type="text"

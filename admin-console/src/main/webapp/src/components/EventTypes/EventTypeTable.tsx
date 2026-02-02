@@ -14,9 +14,8 @@ import { produce } from 'immer';
 import * as React from 'react';
 import { useEffect } from 'react';
 
-import { EventType, EventTypeRow, InstantTemplate } from '../../types/Notifications';
+import { EventType, EventTypeRow } from '../../types/Notifications';
 import { EventTypeExpandableRow } from './Table/EventTypeExpandableRow';
-import { InstantEmailCell } from './Table/InstantEmailCell';
 
 interface EventTypeTableBaseProps {
     eventTypes: ReadonlyArray<EventTypeRow>;
@@ -24,7 +23,6 @@ interface EventTypeTableBaseProps {
     onCreateEventType: () => void;
     onEditEventType: (eventType: EventType) => void;
     onDeleteEventTypeModal: (eventType: EventType) => void;
-    onUpdateInstantTemplate: (instantTemplate: Partial<InstantTemplate>) => void;
 }
 
 type CreateEventTypeButtonProp = {
@@ -64,16 +62,17 @@ const EventTypeTableLayout: React.FunctionComponent<EventTypeTableLayoutProps> =
         </Toolbar>
         <Table aria-label="Event types table">
             <Thead>
-                <Th />
-                <Th>Event Type</Th>
-                <Th>Name</Th>
-                <Th>Instant email</Th>
-                <Th>Default Severity</Th>
-                <Th>Available Severities</Th>
-                <Th>Subscribed by default?</Th>
-                <Th>Subscription locked?</Th>
-                <Th>Is visible?</Th>
-                <Th />
+                <Tr>
+                    <Th />
+                    <Th>Event Type</Th>
+                    <Th>Name</Th>
+                    <Th>Default Severity</Th>
+                    <Th>Available Severities</Th>
+                    <Th>Subscribed by default?</Th>
+                    <Th>Subscription locked?</Th>
+                    <Th>Is visible?</Th>
+                    <Th />
+                </Tr>
             </Thead>
             <Tbody>
                 { props.children }
@@ -110,12 +109,6 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                     />
                     <Td>{ eventType.displayName }</Td>
                     <Td>{ eventType.name }</Td>
-                    <Td>
-                        <InstantEmailCell
-                            eventType={ eventType }
-                            onClick={ () => !eventType.instantEmail.isLoading && props.onUpdateInstantTemplate(eventType.instantEmail) }
-                        />
-                    </Td>
                     <Td>{ eventType.defaultSeverity ?? '-' }</Td>
                     <Td>{ eventType.availableSeverities?.join(', ') ?? '-' }</Td>
                     <Td>
@@ -168,7 +161,7 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
 /**
  * Provides skeleton rows
  */
-const EventTypeTableSkeleton: React.FunctionComponent<EventTypeTableProps> = () => {
+const EventTypeTableSkeleton: React.FunctionComponent = () => {
     return <>
         { Array.from(new Array(skeletonRows)).map((_, rowIndex) => <Tr key={ `skeleton-row-${rowIndex}` }>
             { Array.from(new Array(numberOfColumns)).map((_, colIndex) => <Td key={ `skeleton-cell-${rowIndex}-${colIndex}` }><Skeleton /></Td>) }
@@ -229,6 +222,6 @@ export const EventTypeTable: React.FunctionComponent<EventTypeTableProps> = prop
             onExpandToggle={ onExpandedToggle }
             tableData={ tableData }
             createEventTypeButton={ createEventTypeButton }
-        /> : <EventTypeTableSkeleton { ...props } /> }
+        /> : <EventTypeTableSkeleton /> }
     </EventTypeTableLayout>;
 };
