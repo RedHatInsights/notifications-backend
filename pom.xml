@@ -74,7 +74,7 @@
 
         <wiremock.version>3.13.2</wiremock.version>
 
-        <insights-notification-schemas-java.version>1.0.3</insights-notification-schemas-java.version>
+        <insights-notification-schemas-java.version>1.1.0</insights-notification-schemas-java.version>
         <clowder-quarkus-config-source.version>2.9.1</clowder-quarkus-config-source.version>
 
         <quarkus-logging-cloudwatch.version>6.15.0</quarkus-logging-cloudwatch.version>
@@ -84,8 +84,8 @@
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.30.8</quarkus.platform.version>
-        <redhat.event-schemas.version>1.4.14</redhat.event-schemas.version>
-        <com.networknt.json-schema-validator.version>1.5.9</com.networknt.json-schema-validator.version>
+        <redhat.event-schemas.version>1.5.0</redhat.event-schemas.version>
+        <com.networknt.json-schema-validator.version>2.0.1</com.networknt.json-schema-validator.version>
 
         <sonar.maven.plugin.version>5.5.0.6356</sonar.maven.plugin.version>
         <jacoco.output.directory>${project.build.directory}/jacoco-report</jacoco.output.directory>

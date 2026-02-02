@@ -4,24 +4,24 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.networknt.schema.AnnotationKeyword;
-import com.networknt.schema.JsonMetaSchema;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.dialect.Dialect;
+import com.networknt.schema.dialect.Dialects;
+import com.networknt.schema.keyword.AnnotationKeyword;
 import com.redhat.cloud.notifications.ingress.ParsingException;
 import com.redhat.cloud.notifications.jackson.LocalDateTimeModule;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
-import java.util.Set;
+import java.util.List;
 
 public class AdaptiveCardValidatorHelper {
 
     static final ObjectMapper objectMapper = new ObjectMapper();
-    static final JsonSchema adaptiveCardJsonSchema;
-    static final JsonSchema incomingWebhookJsonSchema;
+    static final Schema adaptiveCardJsonSchema;
+    static final Schema incomingWebhookJsonSchema;
 
     // Specific MS Adaptive Card schema
     static final String MS_ADAPTIVE_CARD_SCHEMA_PATH = "/templates/ms_teams/Common/adaptive-card-schema.json";
@@ -31,15 +31,14 @@ public class AdaptiveCardValidatorHelper {
 
     static {
         // MS Adaptive Card schema uses specific "id" annotation while it should be labeled as $id according json specs
-        JsonMetaSchema metaSchema = JsonMetaSchema.builder(JsonMetaSchema.getV6())
+        Dialect customDialect = Dialect.builder(Dialects.getDraft6())
             .keyword(new AnnotationKeyword("id")).build();
-        JsonSchemaFactory schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V6,
-            builder -> builder.metaSchema(metaSchema));
+        SchemaRegistry schemaRegistry = SchemaRegistry.withDialect(customDialect);
 
-        adaptiveCardJsonSchema = schemaFactory.getSchema(
+        adaptiveCardJsonSchema = schemaRegistry.getSchema(
             TemplateService.class.getResourceAsStream(MS_ADAPTIVE_CARD_SCHEMA_PATH));
 
-        incomingWebhookJsonSchema = schemaFactory.getSchema(
+        incomingWebhookJsonSchema = schemaRegistry.getSchema(
             TemplateService.class.getResourceAsStream(MS_TEAMS_WEBHOOK_SCHEMA_PATH));
 
         objectMapper.registerModule(new LocalDateTimeModule());
@@ -57,7 +56,7 @@ public class AdaptiveCardValidatorHelper {
             JsonNode jsonNode = objectMapper.readTree(messageJson);
 
             // this validates the global message structure includes an array of attachments
-            Set<ValidationMessage> errors = incomingWebhookJsonSchema.validate(jsonNode);
+            List<Error> errors = incomingWebhookJsonSchema.validate(jsonNode);
             if (!errors.isEmpty()) {
                 throw new ParsingException(errors);
             }

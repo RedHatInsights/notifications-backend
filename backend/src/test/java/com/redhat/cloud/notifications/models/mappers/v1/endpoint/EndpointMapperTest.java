@@ -1,10 +1,10 @@
 package com.redhat.cloud.notifications.models.mappers.v1.endpoint;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.SpecVersion;
-import com.networknt.schema.ValidationMessage;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaRegistry;
+import com.networknt.schema.SpecificationVersion;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointProperties;
@@ -33,7 +33,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @QuarkusTest
@@ -48,11 +47,11 @@ public class EndpointMapperTest {
     /**
      * Schema to use when we want to validate the "endpoint create" payloads.
      */
-    final JsonSchema schemaEndpointCreate;
+    final Schema schemaEndpointCreate;
     /**
      * Schema to use when we want to validate the "endpoint read" payloads.
      */
-    final JsonSchema schemaEndpointRead;
+    final Schema schemaEndpointRead;
     final ObjectMapper objectMapper;
 
     /**
@@ -70,14 +69,14 @@ public class EndpointMapperTest {
         this.objectMapper = objectMapper;
 
         // Load the JSON Schema.
-        final JsonSchemaFactory jsonSchemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+        final SchemaRegistry schemaRegistry = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12);
 
         // Create the corresponding schemas.
         final String schemaContentsEndpointCreate = this.readStringFromClasspathResource(SCHEMA_PATH_ENDPOINT_CREATE);
-        this.schemaEndpointCreate = jsonSchemaFactory.getSchema(schemaContentsEndpointCreate);
+        this.schemaEndpointCreate = schemaRegistry.getSchema(schemaContentsEndpointCreate);
 
         final String schemaContentsEndpointRead = this.readStringFromClasspathResource(SCHEMA_PATH_ENDPOINT_READ);
-        this.schemaEndpointRead = jsonSchemaFactory.getSchema(schemaContentsEndpointRead);
+        this.schemaEndpointRead = schemaRegistry.getSchema(schemaContentsEndpointRead);
     }
 
     /**
@@ -131,7 +130,7 @@ public class EndpointMapperTest {
             final EndpointDTO endpointDTO = this.endpointMapper.toDTO(endpoint);
 
             // Turn it into JSON and validate it against the schema.
-            final Set<ValidationMessage> validationMessages = this.schemaEndpointRead.validate(this.objectMapper.valueToTree(endpointDTO));
+            final List<Error> validationMessages = this.schemaEndpointRead.validate(this.objectMapper.valueToTree(endpointDTO));
 
             // Any errors are unexpected since the resulting JSON should be conforming to the defined schema.
             this.assertNoSchemaValidationErrors(validationMessages);
@@ -150,7 +149,7 @@ public class EndpointMapperTest {
         final String endpointCamelJSON = this.readStringFromClasspathResource(ENDPOINT_CAMEL_CREATE_JSON);
 
         // Assert that the JSON file complies with the defined schema.
-        final Set<ValidationMessage> validationMessages = this.schemaEndpointCreate.validate(this.objectMapper.readTree(endpointCamelJSON));
+        final List<Error> validationMessages = this.schemaEndpointCreate.validate(this.objectMapper.readTree(endpointCamelJSON));
         this.assertNoSchemaValidationErrors(validationMessages);
 
         // Attempt reading the JSON into a DTO, which should succeed.
@@ -209,7 +208,7 @@ public class EndpointMapperTest {
         final String endpointWebhookJson = this.readStringFromClasspathResource(ENDPOINT_WEBHOOK_CREATE_JSON);
 
         // Assert that the JSON file complies with the defined schema.
-        final Set<ValidationMessage> validationMessages = this.schemaEndpointCreate.validate(this.objectMapper.readTree(endpointWebhookJson));
+        final List<Error> validationMessages = this.schemaEndpointCreate.validate(this.objectMapper.readTree(endpointWebhookJson));
         this.assertNoSchemaValidationErrors(validationMessages);
 
         // Attempt reading the JSON into a DTO, which should succeed.
@@ -271,7 +270,7 @@ public class EndpointMapperTest {
         final String endpointPagerDutyJson = this.readStringFromClasspathResource(ENDPOINT_PAGERDUTY_CREATE_JSON);
 
         // Assert that the JSON file complies with the defined schema.
-        final Set<ValidationMessage> validationMessages = this.schemaEndpointCreate.validate(this.objectMapper.readTree(endpointPagerDutyJson));
+        final List<Error> validationMessages = this.schemaEndpointCreate.validate(this.objectMapper.readTree(endpointPagerDutyJson));
         this.assertNoSchemaValidationErrors(validationMessages);
 
         // Attempt reading the JSON into a DTO, which should succeed.
@@ -312,9 +311,9 @@ public class EndpointMapperTest {
         Assertions.assertEquals("p8g3rduty-sup3r-s3cr3t-t0k3n", pagerDutyProperties.getSecretToken(), "the secret token was not properly deserialized");
     }
 
-    private void assertNoSchemaValidationErrors(final Set<ValidationMessage> validationMessages) {
+    private void assertNoSchemaValidationErrors(final List<Error> validationMessages) {
         // Any errors are unexpected since the resulting JSON should be conforming to the defined schema.
-        for (final ValidationMessage validationMessage : validationMessages) {
+        for (final Error validationMessage : validationMessages) {
             Assertions.fail(String.format("unexpected validation failure \"%s\"", validationMessage));
         }
     }
