@@ -30,6 +30,8 @@ spec:
     value: ./docker/Dockerfile.notifications-engine.jvm
   - name: path-context
     value: .
+  - name: buildah-format
+    value: oci
   pipelineRef:
     name: docker-build
   taskRunTemplate:
