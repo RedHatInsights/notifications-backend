@@ -8,7 +8,7 @@ FROM quay.io/hummingbird/openjdk:21-builder AS build
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
-RUN ./mvnw clean package -DskipTests -pl :notifications-engine -am --no-transfer-progress
+RUN JAVA_HOME=/usr/lib/jvm/java-21 ./mvnw clean package -DskipTests -pl :notifications-engine -am --no-transfer-progress
 
 # Build the container
 # FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest
