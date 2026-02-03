@@ -4,7 +4,7 @@
 
 # Build the project
 # FROM registry.access.redhat.com/ubi9/openjdk-21:latest AS build
-FROM quay.io/hummingbird/openjdk:21 AS builder
+FROM quay.io/hummingbird/openjdk:21-builder AS builder
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
@@ -12,7 +12,7 @@ RUN ./mvnw clean package -DskipTests -pl :notifications-engine -am --no-transfer
 
 # Build the container
 # FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest
-FROM quay.io/hummingbird/openjdk:21-runtime
+FROM quay.io/hummingbird/openjdk:21-runtime-builder
 
 # Update the base image packages
 USER root
