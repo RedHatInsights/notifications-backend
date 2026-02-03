@@ -17,8 +17,10 @@ FROM quay.io/hummingbird/openjdk:21-runtime
 # Update the base image packages
 USER root
 # See https://www.mankier.com/8/microdnf
-RUN microdnf upgrade --refresh --nodocs --setopt=install_weak_deps=0 -y
-RUN microdnf clean all
+# RUN microdnf upgrade --refresh --nodocs --setopt=install_weak_deps=0 -y
+# RUN microdnf clean all
+RUN dnf upgrade --refresh --nodocs --setopt=install_weak_deps=0 -y
+RUN dnf clean all
 USER jboss
 
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
