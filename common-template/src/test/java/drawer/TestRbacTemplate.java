@@ -3,8 +3,8 @@ package drawer;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
-import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import helpers.RbacTestHelpers;
+import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,7 +30,7 @@ class TestRbacTemplate {
     static final String PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM = "platform-default-group-turned-into-custom";
 
     @Inject
-    TemplateService templateService;
+    TestHelpers testHelpers;
 
     @ValueSource(strings = { RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED, CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS, CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM })
     @ParameterizedTest
@@ -68,7 +68,7 @@ class TestRbacTemplate {
                 assertEquals("Custom platform default access group has been updated by testUser1.", result);
                 break;
             case GROUP_CREATED:
-                assertEquals("A custom group **testRoleName** has been created by testUser1.", result);
+                assertEquals("A custom group **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286)** has been created by testUser1.", result);
                 break;
             case GROUP_UPDATED:
                 assertEquals("Custom group has been updated by testUser1.", result);
@@ -86,6 +86,6 @@ class TestRbacTemplate {
 
     String renderTemplate(final String eventType, final Action action) {
         TemplateDefinition templateConfig = new TemplateDefinition(IntegrationType.DRAWER, "console", "rbac", eventType);
-        return templateService.renderTemplate(templateConfig, action);
+        return testHelpers.renderTemplate(templateConfig, action);
     }
 }

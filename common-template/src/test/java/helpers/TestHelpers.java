@@ -1,5 +1,6 @@
 package helpers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -11,11 +12,14 @@ import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
+import email.pojo.Environment;
+import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -30,6 +34,12 @@ public class TestHelpers {
 
     @Inject
     ObjectMapper objectMapper;
+
+    @Inject
+    BaseTransformer baseTransformer;
+
+    @Inject
+    Environment environment;
 
     public static final String expectedTestEnvUrlValue = "https://localhost";
 
@@ -419,5 +429,18 @@ public class TestHelpers {
         map.put("application_url", applicationUrl);
         map.put("source", TestHelpers.buildSourceParameter("Red Hat Enterprise Linux", "Policies", NOT_USE_EVENT_TYPE));
         return templateService.renderTemplate(templateConfig, map);
+    }
+
+    public String renderTemplate(final TemplateDefinition templateConfig, final Action action) {
+        JsonObject data = baseTransformer.toJsonObject(action);
+
+        Map<String, Object> dataAsMap = new HashMap<>();
+        try {
+            dataAsMap.put("data", objectMapper.readValue(data.encode(), Map.class));
+            dataAsMap.put("environment", JsonObject.mapFrom(environment));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Drawer notification data transformation failed", e);
+        }
+        return templateService.renderTemplateWithCustomDataMap(templateConfig, dataAsMap);
     }
 }

@@ -37,6 +37,7 @@ public class RbacTestHelpers {
                         .withAdditionalProperty("role", new TestRole("myRole"))
                         .withAdditionalProperty("username", "testUser1")
                         .withAdditionalProperty("operation", "added")
+                        .withAdditionalProperty("uuid", "616ace4f-6024-4197-868a-2d0a2ac61286")
                         // Used by request-access
                         .withAdditionalProperty("url_path", "https://console.redhat.com/stuff")
                         .withAdditionalProperty("user", Map.of(
@@ -55,6 +56,7 @@ public class RbacTestHelpers {
                         .withAdditionalProperty("username", "testUser1")
                         .withAdditionalProperty("principal", "testUser1")
                         .withAdditionalProperty("operation", "removed")
+                        .withAdditionalProperty("uuid", "616ace4f-6024-4197-868a-2d0a2ac6128a")
                         // Used by request-access
                         .withAdditionalProperty("url_path", "https://console.redhat.com/stuff")
                         .withAdditionalProperty("user", Map.of(

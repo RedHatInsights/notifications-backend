@@ -30,6 +30,11 @@ public class Environment {
         return this.ocmUrl;
     }
 
+    // add regular getters for jackson serialization
+    public String getUrl() {
+        return url;
+    }
+
     /**
      * Checks if the "ENV_NAME" environment variable is set to "local-dev".
      * @return true if the "ENV_NAME" environment variable is set to "local-dev".

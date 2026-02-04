@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
+import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
@@ -57,6 +58,7 @@ public class IntegrationDisabledNotifier {
         }
 
         Event event = new Event.EventBuilder()
+                .withMetadata(new Metadata())
                 .withPayload(new Payload.PayloadBuilder().build())
                 .build();
 
