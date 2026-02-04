@@ -3,7 +3,6 @@ package drawer;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
-import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -24,7 +23,7 @@ class TestCostManagementTemplate {
     private static final Action ACTION = TestHelpers.createCostManagementAction();
 
     @Inject
-    TemplateService templateService;
+    TestHelpers testHelpers;
 
     @Test
     void testRenderedTemplateMissingCostModel() {
@@ -70,6 +69,6 @@ class TestCostManagementTemplate {
 
     String renderTemplate(final String eventType, final Action action) {
         TemplateDefinition templateConfig = new TemplateDefinition(IntegrationType.DRAWER, "openshift", "cost-management", eventType);
-        return templateService.renderTemplate(templateConfig, action);
+        return testHelpers.renderTemplate(templateConfig, action);
     }
 }

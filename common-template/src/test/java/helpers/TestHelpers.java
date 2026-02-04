@@ -389,6 +389,7 @@ public class TestHelpers {
 
         Event event = new Event.EventBuilder()
             .withPayload(new Payload.PayloadBuilder().build())
+            .withMetadata(new Metadata.MetadataBuilder().build())
             .build();
 
         Recipient recipients = new Recipient.RecipientBuilder()

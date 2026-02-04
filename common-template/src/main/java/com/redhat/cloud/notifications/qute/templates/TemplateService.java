@@ -159,14 +159,6 @@ public class TemplateService {
         return engine.getTemplate(filePath);
     }
 
-    @Deprecated(forRemoval = true) // used by unit tests only
-    public String renderTemplate(final TemplateDefinition config, final Action action) {
-        String result = compileTemplate(config)
-            .data("data", action)
-            .render();
-        return result.trim();
-    }
-
     public String renderTemplate(final TemplateDefinition config, final Map<String, Object> action) {
         String result = compileTemplate(config)
             .data("data", action)
