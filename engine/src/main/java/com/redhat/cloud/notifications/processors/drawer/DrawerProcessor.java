@@ -87,9 +87,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         // build event thought qute template
         JsonObject data = baseTransformer.toJsonObject(event);
 
-        Map<String, Object> dataAsMap;
+        Map<String, Object> dataAsMap = new HashMap<>();
         try {
-            dataAsMap = objectMapper.readValue(data.encode(), Map.class);
+            dataAsMap.put("data", objectMapper.readValue(data.encode(), Map.class));
             dataAsMap.put("environment", JsonObject.mapFrom(environment));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Drawer notification data transformation failed", e);
@@ -143,10 +143,10 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     public String buildNotificationMessage(Map<String, Object> dataAsMap) {
         TemplateDefinition templateDefinition = new TemplateDefinition(
             IntegrationType.DRAWER,
-            dataAsMap.get(BUNDLE).toString(),
-            dataAsMap.get(APPLICATION).toString(),
-            dataAsMap.get(EVENT_TYPE).toString());
-        return templateService.renderTemplate(templateDefinition, dataAsMap);
+            ((Map<String, Object>) dataAsMap.get("data")).get(BUNDLE).toString(),
+            ((Map<String, Object>) dataAsMap.get("data")).get(APPLICATION).toString(),
+            ((Map<String, Object>) dataAsMap.get("data")).get(EVENT_TYPE).toString());
+        return templateService.renderTemplateWithCustomDataMap(templateDefinition, dataAsMap);
     }
 
     public void manageConnectorDrawerReturnsIfNeeded(Map<String, Object> decodedPayload, UUID historyId) {
