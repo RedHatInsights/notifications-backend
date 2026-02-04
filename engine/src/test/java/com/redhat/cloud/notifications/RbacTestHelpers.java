@@ -39,6 +39,7 @@ public class RbacTestHelpers {
                         .withAdditionalProperty("username", "testUser1")
                         .withAdditionalProperty("principal", "testUser1")
                         .withAdditionalProperty("operation", "added")
+                        .withAdditionalProperty("uuid", "d69ef18d-22d8-4b08-ac9b-096d13148407")
                         // Used by request-access
                         .withAdditionalProperty("url_path", "https://console.redhat.com/stuff")
                         .withAdditionalProperty("user", Map.of(

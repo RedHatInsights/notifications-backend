@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.db.repositories.NotificationHistoryReposit
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
@@ -71,6 +72,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     @Inject
     TemplateService templateService;
 
+    @Inject
+    Environment environment;
+
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
         if (!engineConfig.isDrawerEnabled()) {
@@ -86,6 +90,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         Map<String, Object> dataAsMap;
         try {
             dataAsMap = objectMapper.readValue(data.encode(), Map.class);
+            dataAsMap.put("environment", JsonObject.mapFrom(environment));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Drawer notification data transformation failed", e);
         }

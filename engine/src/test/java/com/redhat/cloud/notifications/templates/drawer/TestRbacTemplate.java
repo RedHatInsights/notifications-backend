@@ -79,7 +79,7 @@ class TestRbacTemplate extends DrawerTemplatesHelper {
                 assertEquals("Custom platform default access group has been updated by testUser1.", result);
                 break;
             case GROUP_CREATED:
-                assertEquals("A custom group **testRoleName** has been created by testUser1.", result);
+                assertEquals("A custom group **[testRoleName](https://localhost/iam/user-access/groups/detail/d69ef18d-22d8-4b08-ac9b-096d13148407)** has been created by testUser1.", result);
                 break;
             case GROUP_UPDATED:
                 assertEquals("Custom group has been updated by testUser1.", result);
