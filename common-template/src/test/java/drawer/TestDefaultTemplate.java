@@ -3,7 +3,6 @@ package drawer;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
-import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -15,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class TestDefaultTemplate {
 
     @Inject
-    TemplateService templateService;
+    TestHelpers testHelpers;
 
     @Test
     void testRenderedDefaultTemplate() {
@@ -26,6 +25,6 @@ class TestDefaultTemplate {
 
     String renderTemplate(final String eventType, final Action action) {
         TemplateDefinition templateConfig = new TemplateDefinition(IntegrationType.DRAWER, "rhel", "unknown-app", eventType);
-        return templateService.renderTemplate(templateConfig, action);
+        return testHelpers.renderTemplate(templateConfig, action);
     }
 }

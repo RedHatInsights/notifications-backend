@@ -3,8 +3,8 @@ package drawer;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
-import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import helpers.PatchTestHelpers;
+import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,7 @@ class TestPatchTemplate {
     private static final Action ACTION = PatchTestHelpers.createPatchAction();
 
     @Inject
-    TemplateService templateService;
+    TestHelpers testHelpers;
 
     @Test
     void testRenderedTemplateNewAdvisory() {
@@ -29,6 +29,6 @@ class TestPatchTemplate {
 
     String renderTemplate(final String eventType, final Action action) {
         TemplateDefinition templateConfig = new TemplateDefinition(IntegrationType.DRAWER, "rhel", "patch", eventType);
-        return templateService.renderTemplate(templateConfig, action);
+        return testHelpers.renderTemplate(templateConfig, action);
     }
 }

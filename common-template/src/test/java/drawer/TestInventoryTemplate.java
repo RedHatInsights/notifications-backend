@@ -3,8 +3,8 @@ package drawer;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
-import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import helpers.InventoryTestHelpers;
+import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,7 @@ class TestInventoryTemplate {
     private static final String EVENT_TYPE_NAME = "validation-error";
 
     @Inject
-    TemplateService templateService;
+    TestHelpers testHelpers;
 
     @Test
     void testRenderedTemplateValidationError() {
@@ -28,6 +28,6 @@ class TestInventoryTemplate {
 
     String renderTemplate(final String eventType, final Action action) {
         TemplateDefinition templateConfig = new TemplateDefinition(IntegrationType.DRAWER, "rhel", "inventory", eventType);
-        return templateService.renderTemplate(templateConfig, action);
+        return testHelpers.renderTemplate(templateConfig, action);
     }
 }

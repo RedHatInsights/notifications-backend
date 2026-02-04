@@ -3,8 +3,8 @@ package drawer;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
-import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import helpers.ErrataTestHelpers;
+import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -21,7 +21,7 @@ class TestErrataNotificationsTemplate {
     private static final Action ACTION = ErrataTestHelpers.createErrataAction();
 
     @Inject
-    TemplateService templateService;
+    TestHelpers testHelpers;
 
     @ValueSource(strings = { BUGFIX_ERRATA, SECURITY_ERRATA, ENHANCEMENT_ERRATA })
     @ParameterizedTest
@@ -32,7 +32,7 @@ class TestErrataNotificationsTemplate {
 
     String renderTemplate(final String eventType, final Action action) {
         TemplateDefinition templateConfig = new TemplateDefinition(IntegrationType.DRAWER, "subscription-services", "errata-notifications", eventType);
-        return templateService.renderTemplate(templateConfig, action);
+        return testHelpers.renderTemplate(templateConfig, action);
     }
 
     private void checkResult(String eventType, String result) {

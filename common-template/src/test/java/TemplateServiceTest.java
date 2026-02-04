@@ -1,7 +1,6 @@
 
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
-import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -19,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 class TemplateServiceTest {
 
     @Inject
-    TemplateService templateService;
+    TestHelpers testHelpers;
 
     @Test
     void testBetaToGaFallback() {
@@ -27,13 +26,13 @@ class TemplateServiceTest {
 
         // Render default drawer notification
         final TemplateDefinition defaultDrawerTemplateDefinition = new TemplateDefinition(DRAWER, null, null, null);
-        final String defaultTemplateResult = templateService.renderTemplate(defaultDrawerTemplateDefinition, action);
+        final String defaultTemplateResult = testHelpers.renderTemplate(defaultDrawerTemplateDefinition, action);
 
         // Render default drawer notification
         TemplateDefinition templateDefinition = new TemplateDefinition(DRAWER, BUNDLE_NAME, INTEGRATIONS_APP_NAME, INTEGRATIONS_INTEGRATION_DISABLED, true);
 
         // specified beta version don't exist, but its GA version exists
-        String result = templateService.renderTemplate(templateDefinition, action);
+        String result = testHelpers.renderTemplate(templateDefinition, action);
 
         assertFalse(result.isEmpty());
         // rendered template must be different than default one
@@ -41,7 +40,7 @@ class TemplateServiceTest {
 
         // define an not existing beta template, without existing GA version
         templateDefinition = new TemplateDefinition(DRAWER, BUNDLE_NAME, INTEGRATIONS_APP_NAME, "I don't exist", true);
-        result = templateService.renderTemplate(templateDefinition, action);
+        result = testHelpers.renderTemplate(templateDefinition, action);
 
         // rendered template must be the same as default one
         assertEquals(result, defaultTemplateResult);
