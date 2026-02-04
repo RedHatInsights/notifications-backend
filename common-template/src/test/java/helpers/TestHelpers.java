@@ -437,7 +437,7 @@ public class TestHelpers {
         Map<String, Object> dataAsMap = new HashMap<>();
         try {
             dataAsMap.put("data", objectMapper.readValue(data.encode(), Map.class));
-            dataAsMap.put("environment", environment);
+            dataAsMap.put("environment", JsonObject.mapFrom(environment));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Drawer notification data transformation failed", e);
         }
