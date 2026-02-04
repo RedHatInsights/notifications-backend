@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,7 +39,7 @@ public class SettingsValuesByEventType {
         public Map<SubscriptionType, Map<Severity, Boolean>> subscriptionTypes = new HashMap<>();
         public boolean hasForcedEmail;
         public boolean subscriptionLocked;
-        public Set<Severity> availableSeverities;
+        public Set<Severity> availableSeverities = new HashSet<>();
     }
 
     public Map<String, BundleSettingsValue> bundles = new HashMap<>();

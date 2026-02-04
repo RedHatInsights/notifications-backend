@@ -118,7 +118,7 @@ public class SettingsValueByEventTypeJsonForm {
                         SeverityDetails severityDetails = new SeverityDetails();
                         severityDetails.name = severity.name();
                         severityDetails.initialValue = (subscriptionTypeDetails.get(severity) != null && subscriptionTypeDetails.get(severity));
-                        severityDetails.disabled = !eventTypeSettingsValue.availableSeverities.contains(severity);
+                        severityDetails.disabled = eventTypeSettingsValue.availableSeverities == null || !eventTypeSettingsValue.availableSeverities.contains(severity);
                         severities.add(severityDetails);
                     }
                 } else {
