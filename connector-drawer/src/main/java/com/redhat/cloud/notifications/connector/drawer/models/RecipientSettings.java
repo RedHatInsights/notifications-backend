@@ -2,10 +2,12 @@ package com.redhat.cloud.notifications.connector.drawer.models;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+@RegisterForReflection
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class RecipientSettings {
 
