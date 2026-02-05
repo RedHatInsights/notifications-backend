@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.connector.drawer.recipients.pojo;
 
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.connector.drawer.models.RecipientSettings;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.vertx.core.json.JsonObject;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,6 +10,7 @@ import java.util.Set;
 
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
+@RegisterForReflection
 @JsonNaming(SnakeCaseStrategy.class)
 public class RecipientsQuery {
 

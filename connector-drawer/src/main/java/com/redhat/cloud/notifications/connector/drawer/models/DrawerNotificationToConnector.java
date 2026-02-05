@@ -2,10 +2,12 @@ package com.redhat.cloud.notifications.connector.drawer.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.redhat.cloud.notifications.connector.v2.models.NotificationToConnector;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.vertx.core.json.JsonObject;
 import java.util.Map;
 import java.util.Set;
 
+@RegisterForReflection
 public class DrawerNotificationToConnector extends NotificationToConnector {
 
     @JsonProperty("drawer_entry_payload")
