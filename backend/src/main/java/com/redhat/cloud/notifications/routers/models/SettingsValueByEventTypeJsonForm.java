@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.Severity;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,7 +39,14 @@ public class SettingsValueByEventTypeJsonForm {
         public String infoMessage;
         public boolean disabled;
         @JsonInclude(Include.NON_NULL)
-        public Map<Severity, Boolean> severities;
+        public LinkedHashSet<SeverityDetails> severities;
+    }
+
+    @JsonAutoDetect(fieldVisibility = Visibility.ANY)
+    public static class SeverityDetails {
+        public String name;
+        public boolean initialValue;
+        public boolean disabled;
     }
 
     @JsonAutoDetect(fieldVisibility = Visibility.ANY)
@@ -101,13 +109,17 @@ public class SettingsValueByEventTypeJsonForm {
             eventTypeSettingsValue.subscriptionTypes.forEach((subscriptionType, subscriptionTypeDetails) -> {
 
                 boolean subscribed = false;
-                Map<Severity, Boolean> severities = new LinkedHashMap<>();
+                LinkedHashSet<SeverityDetails> severities = new LinkedHashSet<>();
                 if (subscriptionTypeDetails != null && !subscriptionTypeDetails.isEmpty()) {
                     subscribed = subscriptionTypeDetails.entrySet().stream().anyMatch(Map.Entry::getValue);
 
                     // sort severity Map according Severity enum order
                     for (Severity severity : Severity.values()) {
-                        severities.put(severity, (subscriptionTypeDetails.get(severity) != null && subscriptionTypeDetails.get(severity)));
+                        SeverityDetails severityDetails = new SeverityDetails();
+                        severityDetails.name = severity.name();
+                        severityDetails.initialValue = (subscriptionTypeDetails.get(severity) != null && subscriptionTypeDetails.get(severity));
+                        severityDetails.disabled = eventTypeSettingsValue.availableSeverities == null || !eventTypeSettingsValue.availableSeverities.contains(severity);
+                        severities.add(severityDetails);
                     }
                 } else {
                     subscribed = eventTypeSettingsValue.emailSubscriptionTypes.get(subscriptionType);

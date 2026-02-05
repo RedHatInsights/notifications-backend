@@ -246,6 +246,7 @@ public class UserConfigResource {
                 eventTypeSettingsValue.displayName = eventType.getDisplayName();
                 eventTypeSettingsValue.hasForcedEmail = withForcedEmails;
                 eventTypeSettingsValue.subscriptionLocked = eventType.isSubscriptionLocked();
+                eventTypeSettingsValue.availableSeverities = eventType.getAvailableSeverities();
                 for (SubscriptionType subscriptionType : SubscriptionType.values()) {
                     if (backendConfig.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
                         boolean supported = isTemplateSupported(bundle.getName(), application.getName(), eventType, subscriptionType, orgId);
