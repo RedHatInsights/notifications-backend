@@ -220,7 +220,6 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit-mockito</artifactId>
-            <version>3.31.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
