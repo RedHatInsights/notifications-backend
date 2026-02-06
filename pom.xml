@@ -65,8 +65,7 @@
         <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
         <jacoco-plugin.version>0.8.14</jacoco-plugin.version>
         <checkstyle.version>13.2.0</checkstyle.version>
-
-        <testcontainers.version>1.21.4</testcontainers.version>
+        <testcontainers.version>2.0.3</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
         <swagger-v3-core.version>2.2.42</swagger-v3-core.version>
@@ -83,7 +82,7 @@
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.30.8</quarkus.platform.version>
+        <quarkus.platform.version>3.31.2</quarkus.platform.version>
         <redhat.event-schemas.version>1.5.0</redhat.event-schemas.version>
         <com.networknt.json-schema-validator.version>2.0.1</com.networknt.json-schema-validator.version>
 

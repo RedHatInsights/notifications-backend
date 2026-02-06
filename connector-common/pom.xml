@@ -131,14 +131,14 @@
         <!-- Camel -->
         <dependency>
             <groupId>org.apache.camel.quarkus</groupId>
-            <artifactId>camel-quarkus-junit5</artifactId>
+            <artifactId>camel-quarkus-junit</artifactId>
             <scope>test</scope>
         </dependency>
 
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-junit5-mockito</artifactId>
+            <artifactId>quarkus-junit-mockito</artifactId>
             <scope>test</scope>
         </dependency>
 

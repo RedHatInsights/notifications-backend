@@ -13,7 +13,7 @@ import org.mockito.Mockito;
 import java.net.SocketTimeoutException;
 import java.util.List;
 
-import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
+import static org.apache.camel.test.junit6.TestSupport.createExchangeWithBody;
 
 @QuarkusTest
 public class HttpRedeliveryPredicateTest extends CamelQuarkusTestSupport {

@@ -26,7 +26,7 @@ import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransf
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SEVERITY;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SOURCE;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.TIMESTAMP;
-import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
+import static org.apache.camel.test.junit6.TestSupport.createExchangeWithBody;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
