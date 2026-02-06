@@ -4,9 +4,11 @@ import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
+import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -345,12 +347,13 @@ public class BehaviorGroupRepository {
         /*
          * Lock related rows to avoid deadlocks
          */
-        String lockQuery = "SELECT id.eventTypeId FROM EventTypeBehavior " +
+        String lockQuery = "FROM EventTypeBehavior " +
                 "WHERE id.behaviorGroupId = :behaviorGroupId";
-        List<UUID> eventTypesFromDb = entityManager.createQuery(lockQuery, UUID.class)
+        List<UUID> eventTypesFromDb = entityManager.createQuery(lockQuery, EventTypeBehavior.class)
                 .setParameter("behaviorGroupId", behaviorGroupId)
                 .setLockMode(PESSIMISTIC_WRITE)
-                .getResultList();
+                .getResultList()
+                .stream().map(evt -> evt.getId().eventTypeId).toList();
 
         /*
         * Delete the event type links that were not provided
@@ -411,13 +414,14 @@ public class BehaviorGroupRepository {
              * Before changing the DB data, we need to lock the existing rows "for update" to prevent them
              * from being modified or deleted by other transactions. Otherwise, DB deadlocks could happen.
              */
-            String lockQuery = "SELECT behaviorGroup.id FROM EventTypeBehavior " +
+            String lockQuery = "FROM EventTypeBehavior " +
                     "WHERE behaviorGroup.orgId = :orgId AND eventType.id = :eventTypeId";
-            List<UUID> behaviorsFromDb = entityManager.createQuery(lockQuery, UUID.class)
+            List<UUID> behaviorsFromDb = entityManager.createQuery(lockQuery, EventTypeBehavior.class)
                     .setParameter("orgId", orgId)
                     .setParameter("eventTypeId", eventTypeId)
                     .setLockMode(PESSIMISTIC_WRITE)
-                    .getResultList();
+                    .getResultList()
+                    .stream().map(evt -> evt.getId().behaviorGroupId).toList();
 
             /*
              * All event type behaviors that should no longer exist must be deleted.
@@ -661,15 +665,15 @@ public class BehaviorGroupRepository {
          * Before changing the DB data, we need to lock the existing rows "for update" to prevent them
          * from being modified or deleted by other transactions. Otherwise, DB deadlocks could happen.
          */
-        String lockHql = "SELECT endpoint.id FROM BehaviorGroupAction " +
+        String lockHql = "FROM BehaviorGroupAction " +
                 "WHERE behaviorGroup.orgId " + (orgId == null ? "IS NULL" : "= :orgId") + " AND behaviorGroup.id = :behaviorGroupId";
-        TypedQuery<UUID> lockQuery = entityManager.createQuery(lockHql, UUID.class)
+        TypedQuery<BehaviorGroupAction> lockQuery = entityManager.createQuery(lockHql, BehaviorGroupAction.class)
                 .setParameter("behaviorGroupId", behaviorGroupId)
                 .setLockMode(PESSIMISTIC_WRITE);
         if (orgId != null) {
             lockQuery = lockQuery.setParameter("orgId", orgId);
         }
-        List<UUID> actionsFromDb = lockQuery.getResultList();
+        List<UUID> actionsFromDb = lockQuery.getResultList().stream().map(bga -> bga.getId().endpointId).toList();
 
         /*
          * All behavior group actions that should no longer exist must be deleted.

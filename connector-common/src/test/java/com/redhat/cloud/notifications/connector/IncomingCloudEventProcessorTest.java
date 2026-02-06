@@ -19,7 +19,7 @@ import static com.redhat.cloud.notifications.connector.ExchangeProperty.TYPE;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_DATA;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_ID;
 import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.CLOUD_EVENT_TYPE;
-import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
+import static org.apache.camel.test.junit6.TestSupport.createExchangeWithBody;
 
 @QuarkusTest
 public class IncomingCloudEventProcessorTest extends CamelQuarkusTestSupport {

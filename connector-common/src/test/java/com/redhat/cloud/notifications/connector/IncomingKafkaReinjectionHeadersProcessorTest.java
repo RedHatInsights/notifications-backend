@@ -7,7 +7,7 @@ import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.apache.camel.test.junit5.TestSupport.createExchangeWithBody;
+import static org.apache.camel.test.junit6.TestSupport.createExchangeWithBody;
 
 @QuarkusTest
 public class IncomingKafkaReinjectionHeadersProcessorTest extends CamelQuarkusTestSupport {
