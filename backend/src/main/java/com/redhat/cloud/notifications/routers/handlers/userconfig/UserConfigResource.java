@@ -131,13 +131,17 @@ public class UserConfigResource {
     }
 
     private Map<Severity, Boolean> buildAllSeveritiesUpdateDetails(boolean subscribed, Set<Severity> availableSeverities) {
+        if (availableSeverities == null || availableSeverities.isEmpty()) {
+            // Legacy: no severity support → no per-severity entries
+            return new HashMap<>();
+        }
+
         Map<Severity, Boolean> severitySubscriptionMap = new HashMap<>();
         for (Severity severity : Severity.values()) {
-            if (availableSeverities.contains(severity)) {
-                severitySubscriptionMap.put(severity, subscribed);
-            } else if (!availableSeverities.isEmpty()) { // if the event type don't have any severity, we must ignore on for user subscriptions
-                severitySubscriptionMap.put(severity, false);
-            }
+            severitySubscriptionMap.put(
+                severity,
+                availableSeverities.contains(severity) ? subscribed : false
+            );
         }
         return severitySubscriptionMap;
     }
@@ -170,8 +174,10 @@ public class UserConfigResource {
             // if the event type don't support severities, then read the subscription status from the legacy structure
             if (!eventType.get().getAvailableSeverities().isEmpty()) {
                 subscribed = !subscribedSeverities.isEmpty();
-            } else {
+            } else if (eventTypeValue.emailSubscriptionTypes != null && eventTypeValue.emailSubscriptionTypes.containsKey(subscriptionType)) {
                 subscribed = eventTypeValue.emailSubscriptionTypes.get(subscriptionType);
+            } else {
+                subscribed = false;
             }
 
             subscriptionRepository.updateSubscription(orgId, userName, eventType.get().getId(), subscriptionType, subscribed, subscriptionTypeDetails);
