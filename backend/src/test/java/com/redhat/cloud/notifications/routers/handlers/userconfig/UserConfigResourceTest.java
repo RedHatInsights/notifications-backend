@@ -297,6 +297,9 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         String aggregationTemplateId = CrudTestHelpers.createAggregationTemplate(bundle, application, applicationRepository, adminRole);
         resourceHelpers.createDrawerTemplate(bundle, application, eventType);
 
+        // Test legacy mode, without any severity available
+        updatePoliciesEventTypeAvailableSeverities(Set.of());
+
         updatePoliciesEventTypeVisibility(false);
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = given()
             .header(identityHeader)
@@ -656,6 +659,10 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertNotNull(rhelPolicy, "RHEL policies not found");
         Map<SubscriptionType, Set<SettingsValueByEventTypeJsonForm.SeverityDetails>> initialValues = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, "not-found-bundle-2", "not-found-app-2", eventType);
         assertEquals(0, initialValues.size());
+
+        // does not add if we try to subscribe to unavailable severity
+        SettingsValuesByEventType settingsValuesUnavailableSeverity = createSettingsValueWithSeverity(bundle, application, eventType,  Set.of(Severity.IMPORTANT, Severity.LOW), Set.of(Severity.CRITICAL), Set.of());
+        postPreferencesByEventType(identityHeader, settingsValuesUnavailableSeverity, 404);
 
         // Does not add event type if is not supported by the templates
         SettingsValueByEventTypeJsonForm settingsValueJsonForm = given()
