@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
@@ -129,10 +130,18 @@ public class UserConfigResource {
         return Response.ok().build();
     }
 
-    private Map<Severity, Boolean> buildAllSeveritiesUpdateDetails(boolean subscribed) {
+    private Map<Severity, Boolean> buildAllSeveritiesUpdateDetails(boolean subscribed, Set<Severity> availableSeverities) {
+        if (availableSeverities == null || availableSeverities.isEmpty()) {
+            // Legacy: no severity support → no per-severity entries
+            return new HashMap<>();
+        }
+
         Map<Severity, Boolean> severitySubscriptionMap = new HashMap<>();
         for (Severity severity : Severity.values()) {
-            severitySubscriptionMap.put(severity, subscribed);
+            severitySubscriptionMap.put(
+                severity,
+                availableSeverities.contains(severity) ? subscribed : false
+            );
         }
         return severitySubscriptionMap;
     }
@@ -143,7 +152,7 @@ public class UserConfigResource {
         if (eventTypeValue.subscriptionTypes == null || eventTypeValue.subscriptionTypes.isEmpty()) {
             eventTypeValue.subscriptionTypes = new HashMap<>();
             eventTypeValue.emailSubscriptionTypes.forEach((key, value) ->
-                eventTypeValue.subscriptionTypes.put(key, buildAllSeveritiesUpdateDetails(value)));
+                eventTypeValue.subscriptionTypes.put(key, buildAllSeveritiesUpdateDetails(value, eventType.get().getAvailableSeverities())));
         }
 
         eventTypeValue.subscriptionTypes.forEach((subscriptionType, subscriptionTypeDetails) -> {
@@ -153,7 +162,23 @@ public class UserConfigResource {
                 throw new NotFoundException(String.format("Event type '%s' doesn't support '%s' subscription", eventType.get().getId(), subscriptionType.name()));
             }
 
-            boolean subscribed = subscriptionTypeDetails.entrySet().stream().anyMatch(Map.Entry::getValue);
+            // Check it the user subscribed to available severities regarding the event type config
+            Set<Severity> subscribedSeverities = subscriptionTypeDetails.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).collect(Collectors.toSet());
+            for (Severity severity : subscribedSeverities) {
+                if (!eventType.get().getAvailableSeverities().contains(severity)) {
+                    throw new NotFoundException(String.format("Event type '%s' doesn't support '%s' severity", eventType.get().getId(), severity.name()));
+                }
+            }
+
+            boolean subscribed;
+            // if the event type don't support severities, then read the subscription status from the legacy structure
+            if (!eventType.get().getAvailableSeverities().isEmpty()) {
+                subscribed = !subscribedSeverities.isEmpty();
+            } else if (eventTypeValue.emailSubscriptionTypes != null && eventTypeValue.emailSubscriptionTypes.containsKey(subscriptionType)) {
+                subscribed = eventTypeValue.emailSubscriptionTypes.get(subscriptionType);
+            } else {
+                subscribed = false;
+            }
 
             subscriptionRepository.updateSubscription(orgId, userName, eventType.get().getId(), subscriptionType, subscribed, subscriptionTypeDetails);
         });
@@ -254,7 +279,7 @@ public class UserConfigResource {
                         if (supported) {
                             boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
                             eventTypeSettingsValue.emailSubscriptionTypes.put(subscriptionType, subscribedByDefault);
-                            eventTypeSettingsValue.subscriptionTypes.put(subscriptionType, buildAllSeveritiesUpdateDetails(subscribedByDefault));
+                            eventTypeSettingsValue.subscriptionTypes.put(subscriptionType, buildAllSeveritiesUpdateDetails(subscribedByDefault, eventType.getAvailableSeverities()));
                         }
                     }
                 }
