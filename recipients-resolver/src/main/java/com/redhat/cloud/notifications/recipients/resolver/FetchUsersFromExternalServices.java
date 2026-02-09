@@ -125,6 +125,7 @@ public class FetchUsersFromExternalServices {
     @CacheResult(cacheName = "recipients-users-provider-get-users")
     public List<User> getUsers(String orgId, boolean adminsOnly) {
         Timer.Sample getUsersTotalTimer = Timer.start(meterRegistry);
+        LocalDateTime globalStartTime = LocalDateTime.now();
 
         List<User> users;
         String supplier;
@@ -182,7 +183,10 @@ public class FetchUsersFromExternalServices {
 
         // Micrometer doesn't like when tags are null and throws a NPE.
         String orgIdTag = orgId == null ? "" : orgId;
-        getUsersTotalTimer.stop(meterRegistry.timer("user-provider.get-users.total", "supplier", supplier, "orgId", orgIdTag));
+        getUsersTotalTimer.stop(meterRegistry.timer("user-provider.get-users.total", "supplier", supplier));
+        Duration duration = Duration.between(globalStartTime, LocalDateTime.now());
+        Log.tracef("Supplier %s took %dms to fetch users of org %s", supplier, duration.toMillis(), orgIdTag);
+
         getRbacUsersGauge(orgIdTag).set(users.size());
 
         return users;
