@@ -176,10 +176,7 @@ public class EventConsumer {
                 process(message);
                 replayedMessageCounter.increment();
             }
-        } else {
-            Log.debug("Timestamp is missing");
         }
-
         return message.ack();
     }
 
