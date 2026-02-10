@@ -102,7 +102,7 @@ objects:
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
-          failureThreshold: 3
+          failureThreshold: ${{READINESS_FAILURE_THRESHOLD}}
         livenessProbe:
           httpGet:
             path: /health/live
@@ -112,7 +112,7 @@ objects:
           periodSeconds: 10
           timeoutSeconds: 1
           successThreshold: 1
-          failureThreshold: 3
+          failureThreshold: ${{LIVENESS_FAILURE_THRESHOLD}}
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
@@ -326,8 +326,12 @@ parameters:
   value: "false"
 - name: READINESS_INITIAL_DELAY
   value: "40"
+- name: READINESS_FAILURE_THRESHOLD
+  value: "3"
 - name: LIVENESS_INITIAL_DELAY
   value: "40"
+- name: LIVENESS_FAILURE_THRESHOLD
+  value: "3"
 - name: OIDC_CLIENT_ENABLED
   description: If true, the OIDC client will be enabled.
   value: "false"
