@@ -3,15 +3,16 @@ package com.redhat.cloud.notifications.routers;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.ListOffsetsResult;
 import org.apache.kafka.clients.admin.OffsetSpec;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.jboss.resteasy.reactive.RestQuery;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -50,7 +51,7 @@ public class KafkaOffsetResetResource {
     @POST
     @Path("/reset-to-timestamp")
     @Produces(APPLICATION_JSON)
-    public OffsetResetResponse resetToTimestamp(@QueryParam("epochMillis") Long epochMillis) {
+    public OffsetResetResponse resetToTimestamp(@RestQuery Long epochMillis) {
         if (epochMillis == null || epochMillis <= 0) {
             throw new BadRequestException("epochMillis query parameter is required and must be positive");
         }
@@ -127,7 +128,7 @@ public class KafkaOffsetResetResource {
      * Get the current committed offsets and latest offsets for the ingress topic.
      * Use this to inspect the current state before performing a reset.
      */
-    @POST
+    @GET
     @Path("/describe")
     @Produces(APPLICATION_JSON)
     public Map<String, PartitionOffsetInfo> describeOffsets() {
@@ -207,11 +208,11 @@ public class KafkaOffsetResetResource {
             long estimatedMessagesToReplay,
             String status,
             Map<String, PartitionOffsetInfo> partitions
-    ) {}
+    ) { }
 
     public record PartitionOffsetInfo(
             long previousOffset,
             long newOffset,
             long messagesToReplay
-    ) {}
+    ) { }
 }
