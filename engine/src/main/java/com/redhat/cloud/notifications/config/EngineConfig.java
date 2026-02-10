@@ -58,6 +58,8 @@ public class EngineConfig {
     private String toggleBlacklistedEventTypes;
     private String toggleKafkaOutgoingHighVolumeTopic;
     private String toggleIncludeSeverityToFilterRecipients;
+    private String toggleAddDelayOnReplayService;
+    private String toggleSkipProcessingMessagesOnReplayService;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -158,6 +160,8 @@ public class EngineConfig {
         toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
         toggleBlacklistedEventTypes = toggleRegistry.register("blacklisted-event-types", true);
         toggleIncludeSeverityToFilterRecipients = toggleRegistry.register("include-severity-to-filter-recipients", true);
+        toggleAddDelayOnReplayService = toggleRegistry.register("add-delay-on-replay-service", true);
+        toggleSkipProcessingMessagesOnReplayService = toggleRegistry.register("skip-processing-on-replay-service", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -183,6 +187,8 @@ public class EngineConfig {
         config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
         config.put(asyncEventProcessingToggle, isAsyncEventProcessing());
         config.put(toggleIncludeSeverityToFilterRecipients, isIncludeSeverityToFilterRecipientsEnabled(""));
+        config.put(toggleAddDelayOnReplayService, isAddDelayOnReplayService());
+        config.put(toggleSkipProcessingMessagesOnReplayService, isSkipMessageProcessing());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -321,4 +327,21 @@ public class EngineConfig {
             return false;
         }
     }
+
+    public boolean isAddDelayOnReplayService() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleAddDelayOnReplayService, true);
+        } else {
+            return true;
+        }
+    }
+
+    public boolean isSkipMessageProcessing() {
+        if (unleashEnabled) {
+            return unleash.isEnabled(toggleSkipProcessingMessagesOnReplayService, true);
+        } else {
+            return true;
+        }
+    }
+
 }
