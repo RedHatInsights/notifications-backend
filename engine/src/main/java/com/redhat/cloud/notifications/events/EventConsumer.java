@@ -171,12 +171,10 @@ public class EventConsumer {
         }
         Optional<KafkaMessageMetadata> metadata = message.getMetadata(KafkaMessageMetadata.class);
         if (metadata.isPresent()) {
-            Instant kafkaTimestamp  = metadata.get().getTimestamp();
-            if (kafkaTimestamp.isAfter(startTime) && kafkaTimestamp.isBefore(endTime)) {
+            Instant kafkaTimestamp = metadata.get().getTimestamp();
+            if (kafkaTimestamp != null && kafkaTimestamp.isAfter(startTime) && kafkaTimestamp.isBefore(endTime)) {
                 process(message);
                 replayedMessageCounter.increment();
-            } else {
-                Log.debug("Message ignored");
             }
         } else {
             Log.debug("Timestamp is missing");
