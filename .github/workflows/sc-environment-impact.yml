@@ -1,0 +1,17 @@
+---
+# This workflow is non-blocking and runs to check PRs for changes that could impact the security compliance environment.
+# #team-rosa-core will be notified so they can take a look and ensure they have the necessary changes in place in their environment before their release cycle.
+name: SC Environment Check
+
+on:
+  pull_request_target:
+    branches: [ master ]
+
+jobs:
+  call-reusable-workflow:
+    permissions:
+      pull-requests: write
+      contents: read
+    uses: RedHatInsights/shared-workflows/.github/workflows/sc-environment-impact-check.yml@master
+    secrets:
+      SC_ASSESSOR_SLACK_URL: ${{ secrets.SC_ASSESSOR_SLACK_URL }}
