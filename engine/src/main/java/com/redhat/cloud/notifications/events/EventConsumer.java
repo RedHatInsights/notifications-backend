@@ -32,6 +32,7 @@ import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
@@ -116,7 +117,7 @@ public class EventConsumer {
     Instant startTime = Instant.parse("2026-02-10T09:02:00Z");
     Instant endTime = Instant.parse("2026-02-10T09:22:00Z");
     private Counter replayedMessageCounter;
-    final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneOffset.UTC);
 
     @PostConstruct
     public void init() {
@@ -175,11 +176,13 @@ public class EventConsumer {
         Optional<KafkaMessageMetadata> metadata = message.getMetadata(KafkaMessageMetadata.class);
         if (metadata.isPresent()) {
             Instant kafkaTimestamp = metadata.get().getTimestamp();
-            Log.tracef("Consuming replay event from ingress, timestamp: %s", formatter.format(kafkaTimestamp));
-            if (kafkaTimestamp != null && kafkaTimestamp.isAfter(startTime) && kafkaTimestamp.isBefore(endTime)) {
-                Log.trace("Replaying event");
-                process(message);
-                replayedMessageCounter.increment();
+            if (kafkaTimestamp != null) {
+                Log.tracef("Consuming replay event from ingress, timestamp: %s", formatter.format(kafkaTimestamp));
+                if (kafkaTimestamp.isAfter(startTime) && kafkaTimestamp.isBefore(endTime)) {
+                    Log.trace("Replaying event");
+                    process(message);
+                    replayedMessageCounter.increment();
+                }
             }
         }
         return message.ack();
