@@ -46,6 +46,8 @@ public class EngineConfig {
     private static final String NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE = "notifications.email.sender.hybrid.cloud.console";
     private static final String NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE = "notifications.email.sender.openshift.stage";
     private static final String NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD = "notifications.email.sender.openshift.prod";
+    private static final String NOTIFICATIONS_INGRESSREPLAY_START_TIME = "notifications.ingressreplay.start.time";
+    private static final String NOTIFICATIONS_INGRESSREPLAY_END_TIME = "notifications.ingressreplay.end.time";
 
     /*
      * Unleash configuration
@@ -58,7 +60,6 @@ public class EngineConfig {
     private String toggleBlacklistedEventTypes;
     private String toggleKafkaOutgoingHighVolumeTopic;
     private String toggleIncludeSeverityToFilterRecipients;
-    private String toggleAddDelayOnReplayService;
     private String toggleSkipProcessingMessagesOnReplayService;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
@@ -144,6 +145,12 @@ public class EngineConfig {
     @ConfigProperty(name = NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, defaultValue = OPENSHIFT_SENDER_PROD_NOREPLY_REDHAT)
     String rhOpenshiftSenderProd;
 
+    @ConfigProperty(name = NOTIFICATIONS_INGRESSREPLAY_START_TIME, defaultValue = "2025-12-15T09:00:00Z")
+    String replayStartTime;
+
+    @ConfigProperty(name = NOTIFICATIONS_INGRESSREPLAY_END_TIME, defaultValue = "2025-12-15T09:30:00Z")
+    String replayEndTime;
+
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -160,7 +167,6 @@ public class EngineConfig {
         toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
         toggleBlacklistedEventTypes = toggleRegistry.register("blacklisted-event-types", true);
         toggleIncludeSeverityToFilterRecipients = toggleRegistry.register("include-severity-to-filter-recipients", true);
-        toggleAddDelayOnReplayService = toggleRegistry.register("add-delay-on-replay-service", true);
         toggleSkipProcessingMessagesOnReplayService = toggleRegistry.register("skip-processing-on-replay-service", true);
     }
 
@@ -184,10 +190,11 @@ public class EngineConfig {
         config.put(NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE, rhHccSender);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE, rhOpenshiftSenderStage);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, rhOpenshiftSenderProd);
+        config.put(NOTIFICATIONS_INGRESSREPLAY_START_TIME, replayStartTime);
+        config.put(NOTIFICATIONS_INGRESSREPLAY_END_TIME, replayEndTime);
         config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
         config.put(asyncEventProcessingToggle, isAsyncEventProcessing());
         config.put(toggleIncludeSeverityToFilterRecipients, isIncludeSeverityToFilterRecipientsEnabled(""));
-        config.put(toggleAddDelayOnReplayService, isAddDelayOnReplayService());
         config.put(toggleSkipProcessingMessagesOnReplayService, isSkipMessageProcessing());
 
         Log.info("=== Startup configuration ===");
@@ -328,14 +335,6 @@ public class EngineConfig {
         }
     }
 
-    public boolean isAddDelayOnReplayService() {
-        if (unleashEnabled) {
-            return unleash.isEnabled(toggleAddDelayOnReplayService, true);
-        } else {
-            return true;
-        }
-    }
-
     public boolean isSkipMessageProcessing() {
         if (unleashEnabled) {
             return unleash.isEnabled(toggleSkipProcessingMessagesOnReplayService, true);
@@ -344,4 +343,11 @@ public class EngineConfig {
         }
     }
 
+    public String getReplayStartTime() {
+        return replayStartTime;
+    }
+
+    public String getReplayEndTime() {
+        return replayEndTime;
+    }
 }
