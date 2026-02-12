@@ -22,7 +22,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.annotations.Blocking;
-import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
@@ -31,9 +30,6 @@ import jakarta.persistence.NoResultException;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -51,14 +47,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class EventConsumer {
 
     public static final String INGRESS_CHANNEL = "ingress";
-    public static final String INGRESS_REPLAY_CHANNEL = "ingressreplay";
     public static final String REJECTED_COUNTER_NAME = "input.rejected";
     public static final String PROCESSING_ERROR_COUNTER_NAME = "input.processing.error";
     public static final String PROCESSING_BLACKLISTED_COUNTER_NAME = "input.processing.blacklisted";
     public static final String PROCESSING_EXCEPTION_COUNTER_NAME = "input.processing.exception";
     public static final String DUPLICATE_EVENT_COUNTER_NAME = "input.duplicate.event";
     public static final String CONSUMED_TIMER_NAME = "input.consumed";
-    public static final String REPLAYED_MESSAGE_COUNTER_NAME = "input.processing.replayed";
 
     static final String TAG_KEY_BUNDLE = "bundle";
     static final String TAG_KEY_APPLICATION = "application";
@@ -114,17 +108,11 @@ public class EventConsumer {
     private Counter processingExceptionCounter;
     private ExecutorService executor;
 
-    Instant startTime = Instant.parse("2026-02-10T09:02:00Z");
-    Instant endTime = Instant.parse("2026-02-10T09:22:00Z");
-    private Counter replayedMessageCounter;
-    final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneOffset.UTC);
-
     @PostConstruct
     public void init() {
         rejectedCounter = registry.counter(REJECTED_COUNTER_NAME);
         processingErrorCounter = registry.counter(PROCESSING_ERROR_COUNTER_NAME);
         processingExceptionCounter = registry.counter(PROCESSING_EXCEPTION_COUNTER_NAME);
-        replayedMessageCounter = registry.counter(REPLAYED_MESSAGE_COUNTER_NAME);
 
         /*
          * The ThreadPoolExecutor#submit method from this executor is blocking. If it is called while all threads from
@@ -159,33 +147,6 @@ public class EventConsumer {
                 }
             }
         };
-    }
-
-    @Incoming(INGRESS_REPLAY_CHANNEL)
-    @Blocking
-    public CompletionStage<Void> consumeReplay(Message<String> message) throws InterruptedException {
-
-        Log.trace("Consuming replay event from ingress");
-        if (config.isSkipMessageProcessing()) {
-            return message.ack();
-        }
-
-        if (config.isAddDelayOnReplayService()) {
-            Thread.sleep(1000);
-        }
-        Optional<KafkaMessageMetadata> metadata = message.getMetadata(KafkaMessageMetadata.class);
-        if (metadata.isPresent()) {
-            Instant kafkaTimestamp = metadata.get().getTimestamp();
-            if (kafkaTimestamp != null) {
-                Log.tracef("Consuming replay event from ingress, timestamp: %s", formatter.format(kafkaTimestamp));
-                if (kafkaTimestamp.isAfter(startTime) && kafkaTimestamp.isBefore(endTime)) {
-                    Log.trace("Replaying event");
-                    process(message);
-                    replayedMessageCounter.increment();
-                }
-            }
-        }
-        return message.ack();
     }
 
     @Incoming(INGRESS_CHANNEL)
