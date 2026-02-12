@@ -1,8 +1,14 @@
 package com.redhat.cloud.notifications.connector.v2.http;
 
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import com.redhat.cloud.notifications.connector.v2.BaseConnectorIntegrationTest;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Test;
+import java.util.List;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
 
 /**
  * Base class for connector integration tests using the new Quarkus-based architecture.
@@ -39,13 +45,18 @@ public abstract class BaseHttpConnectorIntegrationTest extends BaseConnectorInte
         // Assert metrics
         assertMetricsIncrement(1, 1, 0);
 
+        // Check what was actually sent to the original endpoint
+        List<LoggedRequest> originalRequests = getClient().findAll(
+            postRequestedFor(urlEqualTo(getRemoteServerPath()))
+        );
+
         // Hook for subclasses
-        afterSuccessfulNotification();
+        afterSuccessfulNotification(originalRequests);
     }
 
     @Test
     protected void testFailedNotificationError500() {
-        testFailedNotificationWithError(500, "My custom internal error", "Internal Server Error");
+        testFailedNotificationWithError(500, "My custom internal error", "Received: 'Server Error, status code 500'");
     }
 
     @Test
@@ -82,14 +93,14 @@ public abstract class BaseHttpConnectorIntegrationTest extends BaseConnectorInte
         String cloudEventId = sendCloudEventMessage(incomingPayload);
 
         // Assert failed response
-        assertFailedOutgoingMessage(cloudEventId, "Connection", "closed");
+        assertFailedOutgoingMessage(cloudEventId, "Connection reset");
 
         // Assert metrics
         assertMetricsIncrement(1, 0, 1);
     }
 
     // Hook methods for subclasses to override
-    protected void afterSuccessfulNotification() {
+    protected void afterSuccessfulNotification(List<LoggedRequest> loggedRequests) {
         // Override in subclasses if needed
     }
 }
