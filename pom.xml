@@ -20,6 +20,7 @@
         <module>connector-common-authentication</module>
         <module>connector-common-http</module>
         <module>connector-common-v2</module>
+        <module>connector-common-authentication-v2</module>
         <module>connector-common-http-v2</module>
         <module>connector-drawer</module>
         <module>connector-email</module>
@@ -30,6 +31,7 @@
         <module>connector-slack</module>
         <module>connector-splunk</module>
         <module>connector-webhook</module>
+        <module>connector-webhook-v2</module>
         <module>database</module>
         <module>engine</module>
         <module>recipients-resolver</module>
