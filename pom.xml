@@ -31,7 +31,6 @@
         <module>connector-slack</module>
         <module>connector-splunk</module>
         <module>connector-webhook</module>
-        <module>connector-webhook-v2</module>
         <module>database</module>
         <module>engine</module>
         <module>recipients-resolver</module>
