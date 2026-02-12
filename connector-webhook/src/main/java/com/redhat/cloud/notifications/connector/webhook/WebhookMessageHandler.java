@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.webhook.v2;
+package com.redhat.cloud.notifications.connector.webhook;
 
 import com.redhat.cloud.notifications.connector.authentication.v2.AuthenticationLoader;
 import com.redhat.cloud.notifications.connector.authentication.v2.AuthenticationResult;
@@ -52,7 +52,7 @@ public class WebhookMessageHandler extends MessageHandler {
             }
         }
         try (Response response = webhookRestClient.post(insightToken, bearerToken, notification.getEndpointProperties().getTargetUrl(), notification.getPayload().encode())) {
-            Log.info(response.getStatus());
+            Log.debug(response.getStatus());
         }
         HandledHttpMessageDetails handledMessageDetails = new HandledHttpMessageDetails();
         handledMessageDetails.targetUrl = notification.getEndpointProperties().getTargetUrl();

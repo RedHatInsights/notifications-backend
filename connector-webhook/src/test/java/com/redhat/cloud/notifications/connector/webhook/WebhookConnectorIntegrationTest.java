@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.webhook.v2;
+package com.redhat.cloud.notifications.connector.webhook;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.http.HttpHeaders;
@@ -21,7 +21,7 @@ import java.util.List;
 
 import static com.redhat.cloud.notifications.connector.authentication.v2.AuthenticationType.BEARER;
 import static com.redhat.cloud.notifications.connector.authentication.v2.AuthenticationType.SECRET_TOKEN;
-import static com.redhat.cloud.notifications.connector.webhook.v2.WebhookMessageHandler.X_INSIGHT_TOKEN_HEADER;
+import static com.redhat.cloud.notifications.connector.webhook.WebhookMessageHandler.X_INSIGHT_TOKEN_HEADER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
