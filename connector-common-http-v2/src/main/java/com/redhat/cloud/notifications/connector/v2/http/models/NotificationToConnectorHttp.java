@@ -12,6 +12,9 @@ public class NotificationToConnectorHttp extends NotificationToConnector {
     @JsonProperty("payload")
     private JsonObject payload;
 
+    @JsonProperty("authentication")
+    private JsonObject authentication;
+
     public static class EndpointProperties {
         @JsonProperty("url")
         private String targetUrl;
@@ -39,5 +42,13 @@ public class NotificationToConnectorHttp extends NotificationToConnector {
 
     public void setPayload(JsonObject payload) {
         this.payload = payload;
+    }
+
+    public JsonObject getAuthentication() {
+        return authentication;
+    }
+
+    public void setAuthentication(JsonObject authentication) {
+        this.authentication = authentication;
     }
 }
