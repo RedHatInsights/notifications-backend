@@ -1,7 +1,9 @@
 package com.redhat.cloud.notifications.connector.v2.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
+@RegisterForReflection
 public class NotificationToConnector {
     @JsonProperty("org_id")
     private String orgId;
