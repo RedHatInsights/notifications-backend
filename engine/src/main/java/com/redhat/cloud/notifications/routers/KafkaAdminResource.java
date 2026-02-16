@@ -1,24 +1,33 @@
 package com.redhat.cloud.notifications.routers;
 
 import io.quarkus.logging.Log;
+import io.smallrye.reactive.messaging.kafka.KafkaClientService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.ListGroupsResult;
+import org.apache.kafka.common.PartitionInfo;
 import org.eclipse.microprofile.config.Config;
 
+import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_REPLAY_CHANNEL;
 
 @Path(API_INTERNAL + "/kafka-admin")
 public class KafkaAdminResource {
 
     @Inject
     Config config;
+
+    @Inject
+    KafkaClientService kafkaClientService;
 
     private AdminClient createAdminClient() {
         Map<String, Object> adminConfig = new HashMap<>();
@@ -66,23 +75,29 @@ public class KafkaAdminResource {
 
     @GET
     @Path("/consumer-groups")
-    public Response listConsumerGroups() {
+    public Response listConsumerGroups() throws ExecutionException, InterruptedException {
         Log.info("Listing all consumer groups");
 
-        try (AdminClient adminClient = createAdminClient()) {
-            // Use listGroups without filter (will return all groups)
-            ListGroupsResult result = adminClient.listGroups();
+        AdminClient adminClient = createAdminClient();
+        // Use listGroups without filter (will return all groups)
+        ListGroupsResult result = adminClient.listGroups();
 
-            long groups = result.all().get().size();
+        long groups = result.all().get().size();
 
-            Log.infof("Found consumer groups: %d", groups);
-            return Response.ok(groups).build();
+        Log.infof("Found consumer groups: %d", groups);
+        return Response.ok().build();
+    }
 
-        } catch (Exception e) {
-            Log.errorf(e, "Failed to list consumer groups");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity("Failed to list consumer groups")
-                .build();
-        }
+    @GET
+    @Path("/listTopics")
+    public Response listTopics() {
+        var consumer = kafkaClientService.getConsumer(INGRESS_REPLAY_CHANNEL);
+
+        // Most operations must run on the polling thread
+        consumer.runOnPollingThread(kafkaConsumer -> {
+            Map<String, List<PartitionInfo>> topics = kafkaConsumer.listTopics();
+            Log.infof("Found %d topics", topics.size());
+        }).await().atMost(Duration.ofSeconds(30));
+        return Response.ok().build();
     }
 }
