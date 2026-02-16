@@ -6,13 +6,11 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.GroupListing;
 import org.apache.kafka.clients.admin.ListGroupsResult;
 import org.eclipse.microprofile.config.Config;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 
@@ -36,13 +34,13 @@ public class KafkaAdminResource {
         config.getOptionalValue("kafka.security.protocol", String.class)
             .ifPresent(val -> {
                 adminConfig.put("security.protocol", val);
-                Log.infof("Security.protocol config found and applied");
+                Log.info("Security.protocol config found and applied");
             });
 
         config.getOptionalValue("kafka.sasl.mechanism", String.class)
             .ifPresent(val -> {
                 adminConfig.put("sasl.mechanism", val);
-                Log.infof("Sasl.mechanism config found and applied", val);
+                Log.info("Sasl.mechanism config found and applied");
             });
 
         config.getOptionalValue("kafka.sasl.jaas.config", String.class)
@@ -54,13 +52,13 @@ public class KafkaAdminResource {
         config.getOptionalValue("kafka.ssl.truststore.location", String.class)
             .ifPresent(val -> {
                 adminConfig.put("ssl.truststore.location", val);
-                Log.infof("Ssl.truststore.location config found and applied", val);
+                Log.info("Ssl.truststore.location config found and applied");
             });
 
         config.getOptionalValue("kafka.ssl.truststore.type", String.class)
             .ifPresent(val -> {
                 adminConfig.put("ssl.truststore.type", val);
-                Log.infof("Ssl.truststore.type config found and applied", val);
+                Log.info("Ssl.truststore.type config found and applied");
             });
 
         return AdminClient.create(adminConfig);
@@ -75,11 +73,9 @@ public class KafkaAdminResource {
             // Use listGroups without filter (will return all groups)
             ListGroupsResult result = adminClient.listGroups();
 
-            String groups = result.all().get().stream()
-                .map(GroupListing::groupId)
-                .collect(Collectors.joining(", "));
+            long groups = result.all().get().size();
 
-            Log.infof("Found consumer groups: %s", groups);
+            Log.infof("Found consumer groups: %d", groups);
             return Response.ok(groups).build();
 
         } catch (Exception e) {
