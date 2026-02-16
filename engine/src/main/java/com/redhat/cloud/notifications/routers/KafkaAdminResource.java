@@ -81,7 +81,7 @@ public class KafkaAdminResource {
         } catch (Exception e) {
             Log.errorf(e, "Failed to list consumer groups");
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity("Failed to list consumer groups: " + e.getMessage())
+                .entity("Failed to list consumer groups")
                 .build();
         }
     }
