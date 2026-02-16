@@ -89,7 +89,7 @@ public class KafkaAdminResource {
     }
 
     @GET
-    @Path("/listTopics")
+    @Path("/list-topics")
     public Response listTopics() {
         var consumer = kafkaClientService.getConsumer(INGRESS_REPLAY_CHANNEL);
 
