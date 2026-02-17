@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_REPLAY_CHANNEL;
+import static com.redhat.cloud.notifications.events.ReplayEventConsumer.INGRESS_REPLAY_CHANNEL;
 
 @Path(API_INTERNAL + "/kafka-admin")
 public class KafkaAdminResource {
