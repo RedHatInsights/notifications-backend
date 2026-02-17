@@ -3,19 +3,26 @@ package com.redhat.cloud.notifications.routers;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.kafka.KafkaClientService;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.DeleteConsumerGroupsResult;
 import org.apache.kafka.clients.admin.ListGroupsResult;
 import org.apache.kafka.common.PartitionInfo;
 import org.eclipse.microprofile.config.Config;
+import org.jboss.resteasy.reactive.RestPath;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_REPLAY_CHANNEL;
@@ -99,5 +106,34 @@ public class KafkaAdminResource {
             Log.infof("Found %d topics", topics.size());
         }).await().atMost(Duration.ofSeconds(30));
         return Response.ok().build();
+    }
+
+    @DELETE
+    @Path("/consumer-group/{groupId}")
+    public Response deleteConsumerGroup(@NotNull @RestPath("groupId") String groupId) {
+        Log.infof("Attempting to delete consumer group: %s", groupId);
+
+        try (AdminClient adminClient = createAdminClient()) {
+            DeleteConsumerGroupsResult result = adminClient.deleteConsumerGroups(
+                Collections.singletonList(groupId)
+            );
+
+            // Wait for the operation to complete
+            result.all().get(30, TimeUnit.SECONDS);
+
+            Log.infof("Successfully deleted consumer group: %s", groupId);
+            return Response.ok("Consumer group '" + groupId + "' deleted successfully").build();
+
+        } catch (ExecutionException e) {
+            Log.errorf(e, "Failed to delete consumer group: %s", groupId);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("Failed to delete consumer group")
+                .build();
+        } catch (Exception e) {
+            Log.errorf(e, "Error deleting consumer group: %s", groupId);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("Error deleting consumer group: %s " + groupId)
+                .build();
+        }
     }
 }
