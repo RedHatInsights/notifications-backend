@@ -98,12 +98,18 @@ objects:
           value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_INTERVAL_MS}
         - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS
           value: ${MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS}
+        - name: MP_MESSAGING_INCOMING_INGRESSREPLAY_ENABLED
+          value: ${MP_MESSAGING_INCOMING_INGRESSREPLAY_ENABLED}
         - name: MP_MESSAGING_INCOMING_INGRESSREPLAY_GROUP_ID
           value: ${MP_MESSAGING_INCOMING_INGRESSREPLAY_GROUP_ID}
         - name: MP_MESSAGING_INCOMING_INGRESSREPLAY_MAX_POLL_INTERVAL_MS
           value: ${MP_MESSAGING_INCOMING_INGRESSREPLAY_MAX_POLL_INTERVAL_MS}
         - name: MP_MESSAGING_INCOMING_INGRESSREPLAY_MAX_POLL_RECORDS
           value: ${MP_MESSAGING_INCOMING_INGRESSREPLAY_MAX_POLL_RECORDS}
+        - name: NOTIFICATIONS_INGRESSREPLAY_START_TIME
+          value: ${NOTIFICATIONS_INGRESSREPLAY_START_TIME}
+        - name: NOTIFICATIONS_INGRESSREPLAY_END_TIME
+          value: ${NOTIFICATIONS_INGRESSREPLAY_END_TIME}
         - name: MP_MESSAGING_INCOMING_INGRESS_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS
           value: ${MP_MESSAGING_INCOMING_INGRESS_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS}
         - name: MP_MESSAGING_OUTGOING_TOCAMEL_ENABLED
@@ -294,6 +300,9 @@ parameters:
 - name: MP_MESSAGING_INCOMING_INGRESS_MAX_POLL_RECORDS
   description: Maximum number of records returned in a single call to poll()
   value: "500"
+- name: MP_MESSAGING_INCOMING_INGRESSREPLAY_ENABLED
+  description: Ingress replay enabled
+  value: "false"
 - name: MP_MESSAGING_INCOMING_INGRESSREPLAY_GROUP_ID
   description: Ingress replay Group id
   value: "ingress-replay"
@@ -303,6 +312,12 @@ parameters:
 - name: MP_MESSAGING_INCOMING_INGRESSREPLAY_MAX_POLL_RECORDS
   description: Maximum number of records returned in a single call to poll()
   value: "100"
+- name: NOTIFICATIONS_INGRESSREPLAY_START_TIME
+  description: UTC Start time for ingress event to replay
+  value: "2025-12-15T09:00:00Z"
+- name: NOTIFICATIONS_INGRESSREPLAY_END_TIME
+  description: UTC End time for ingress event to replay
+  value: "2025-12-15T09:30:00Z"
 - name: MP_MESSAGING_INCOMING_INGRESS_THROTTLED_UNPROCESSED_RECORD_MAX_AGE_MS
   description: Max age in milliseconds that an unprocessed message can be before the connector is marked as unhealthy
   value: "60000"
