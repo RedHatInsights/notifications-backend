@@ -17,6 +17,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
@@ -69,10 +73,18 @@ public class ReplayEventConsumerTest {
     }
 
     @Test
-    void testKafkaTimestampOutOfTimeWindow() throws InterruptedException {
-        Message<String> message = buildMessageWithTimestamp(Instant.now());
+    void testKafkaTimestampOutOfTimeWindow() throws ExecutionException, TimeoutException, InterruptedException {
+        CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+        Message<String> message =  buildMessageWithTimestamp(Instant.now())
+            .withAck(() -> {
+                ackFuture.complete(null);
+                return CompletableFuture.completedFuture(null);
+            });
+
         inMemoryConnector.source(INGRESS_REPLAY_CHANNEL).send(message);
-        Thread.sleep(200);
+
+        // Wait for the message to be acknowledged (with timeout)
+        ackFuture.get(200, TimeUnit.MILLISECONDS);
 
         verify(replayEventConsumer, times(1)).consume(any());
         verifyNoInteractions(eventConsumer);
@@ -90,11 +102,17 @@ public class ReplayEventConsumerTest {
     }
 
     @Test
-    void testKafkaTimestampInTimeWindowButSkipMessageEnabled() throws InterruptedException  {
+    void testKafkaTimestampInTimeWindowButSkipMessageEnabled() throws ExecutionException, TimeoutException, InterruptedException {
         when(config.isSkipMessageProcessing()).thenReturn(true);
-        Message<String> message = buildMessageWithTimestamp(Instant.parse("2022-01-01T00:00:00Z"));
+        CompletableFuture<Void> ackFuture = new CompletableFuture<>();
+        Message<String> message = buildMessageWithTimestamp(Instant.parse("2022-01-01T00:00:00Z")).withAck(() -> {
+            ackFuture.complete(null);
+            return CompletableFuture.completedFuture(null);
+        });
         inMemoryConnector.source(INGRESS_REPLAY_CHANNEL).send(message);
-        Thread.sleep(200);
+
+        // Wait for the message to be acknowledged (with timeout)
+        ackFuture.get(200, TimeUnit.MILLISECONDS);
 
         verify(replayEventConsumer, times(1)).consume(any());
         verifyNoInteractions(eventConsumer);
