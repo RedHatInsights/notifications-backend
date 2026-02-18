@@ -1,17 +1,15 @@
-{@boolean renderSection1=true}
 {#include email/Common/insightsEmailBody}
-{#content-title}
+{#content-header-title}
     Cost Management - OpenShift
+{/content-header-title}
+{#content-title}
+    Missing OpenShift Cost Model
 {/content-title}
-{#content-title-section1}
-    Missing Cost Model
-{/content-title-section1}
-{#content-body-section1}
-    <p>
-        OpenShift source {action.context.source_name} has no assigned cost model.
+{#content-body}
+    <p style="{body-section-p-style}">
+        The OpenShift <a style="{body-section-underline-link-style}" href="{environment.url}/settings/sources/detail/{action.context.source_id}"><b>{action.context.source_name}</b></a> integration has no assigned cost model. To assign your integration to a cost model, go to <a style="{body-section-underline-link-style}" href="{environment.url}/openshift/cost-management/cost-models/">cost models</a>.
     </p>
-    <p>
-        Please go to the <a href="{environment.url}/openshift/cost-management/cost-models/">Cost Models page</a> and assign your source to a cost model.
-    </p>
-{/content-body-section1}
+{/content-body}
+{#content-button-href}{environment.url}/openshift/cost-management?{query_params}{/content-button-href}
+{#content-button-service-name}Cost Management{/content-button-service-name}
 {/include}

@@ -83,27 +83,16 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_1"));
         assertTrue(result.contains("Active rule 1</a>"));
         assertTrue(result.contains("https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png"));
-        if (useBetaTemplate) {
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important_v2.png"));
-        } else {
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important.png"));
-        }
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important_v2.png"));
+
         assertTrue(result.contains("Resolved Recommendation"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
         assertTrue(result.contains("Active rule 2</a>"));
-        if (useBetaTemplate) {
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low_v2.png"));
-        } else {
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
-        }
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low_v2.png"));
         assertTrue(result.contains("Deactivated Recommendations"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_3"));
         assertTrue(result.contains("Active rule 3</a>"));
-        if (useBetaTemplate) {
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical_v2.png"));
-        } else {
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
-        }
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical_v2.png"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -179,18 +168,10 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("Resolved Recommendation"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
         assertTrue(result.contains("Active rule 2</a>"));
-        if (useBetaTemplate) {
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low_v2.png"));
-        } else {
-            assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low.png"));
-        }
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low_v2.png"));
         assertFalse(result.contains("New Recommendation"));
         assertFalse(result.contains("Deactivated Recommendation"));
-        if (useBetaTemplate) {
-            assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical_v2.png"));
-        } else {
-            assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical.png"));
-        }
+        assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical_v2.png"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -238,17 +219,10 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
             );
         });
 
-        if (useBetaTemplate) {
-            assertTrue(result.contains("alt=\"Low\""), "Body should contain low severity rule image");
-            assertTrue(result.contains("alt=\"Moderate\""), "Body should contain moderate severity rule image");
-            assertTrue(result.contains("alt=\"Important\""), "Body should contain important severity rule image");
-            assertTrue(result.contains("alt=\"Critical\""), "Body should contain critical severity rule image");
-        } else {
-            assertTrue(result.contains("alt=\"Low severity\""), "Body should contain low severity rule image");
-            assertTrue(result.contains("alt=\"Moderate severity\""), "Body should contain moderate severity rule image");
-            assertTrue(result.contains("alt=\"Important severity\""), "Body should contain important severity rule image");
-            assertTrue(result.contains("alt=\"Critical severity\""), "Body should contain critical severity rule image");
-        }
+        assertTrue(result.contains("alt=\"Low\""), "Body should contain low severity rule image");
+        assertTrue(result.contains("alt=\"Moderate\""), "Body should contain moderate severity rule image");
+        assertTrue(result.contains("alt=\"Important\""), "Body should contain important severity rule image");
+        assertTrue(result.contains("alt=\"Critical\""), "Body should contain critical severity rule image");
 
         // Display name
         assertTrue(result.contains("My Host"), "Body should contain the display_name");
@@ -269,7 +243,7 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
     public void testInstantEmailBodyForDeactivatedRecommendation(boolean useBetaTemplate) {
         Action action = TestHelpers.createAdvisorAction("123456", ADVISOR_DEACTIVATED_RECOMMENDATION);
         String result = generateEmailBody(ADVISOR_DEACTIVATED_RECOMMENDATION, action, useBetaTemplate);
-        checkDeactivatedRecommendationResults(action, result, useBetaTemplate);
+        checkDeactivatedRecommendationResults(action, result);
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -282,7 +256,7 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
-    private void checkDeactivatedRecommendationResults(Action action, final String result, boolean useBetaTemplate) {
+    private void checkDeactivatedRecommendationResults(Action action, final String result) {
         action.getEvents().forEach(event -> {
             assertTrue(result.contains(event.getPayload().getAdditionalProperties().get("rule_description").toString()),
                 "Body should contain rule description" + event.getPayload().getAdditionalProperties().get("rule_description"));
@@ -292,12 +266,7 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
                 "Body should contain deactivation reason" + event.getPayload().getAdditionalProperties().get("deactivation_reason"));
         });
 
-        if (useBetaTemplate) {
-            assertTrue(result.contains("alt=\"Low\""), "Body should contain low severity rule image");
-            assertTrue(result.contains("alt=\"Moderate\""), "Body should contain moderate severity rule image");
-        } else {
-            assertTrue(result.contains("alt=\"Low severity\""), "Body should contain low severity rule image");
-            assertTrue(result.contains("alt=\"Moderate severity\""), "Body should contain moderate severity rule image");
-        }
+        assertTrue(result.contains("alt=\"Low\""), "Body should contain low severity rule image");
+        assertTrue(result.contains("alt=\"Moderate\""), "Body should contain moderate severity rule image");
     }
 }

@@ -1,38 +1,34 @@
 {@boolean renderSection1=true}
-{@boolean renderButtonSection1=true}
+{@boolean renderTitleRightPart=true}
 {#include email/Common/insightsEmailBodyLight}
-{#content-title}
-    Daily digest - Policies - Red Hat Enterprise Linux
-{/content-title}
 {#content-title-section1}
     Policies triggered
 {/content-title-section1}
-{#content-subtitle-section1}
-    {action.context.policies.size()} {#if action.context.policies.size() == 1}policy{#else}policies{/if} triggered on your {action.context.unique_system_count} {#if action.context.unique_system_count == 1}system{#else}systems{/if}
-{/content-subtitle-section1}
-{#content-title-right-part-section1}
-    <a target="_blank" href="{environment.url}/insights/policies?{query_params}">{action.context.policies.size()}</a>
-{/content-title-right-part-section1}
-{#content-button-section1}
-    <a target="_blank" href="{environment.url}/insights/policies?{query_params}">Open Policies in Red Hat Lightspeed</a>
-{/content-button-section1}
+{#content-title-counter}
+({action.context.policies.size()})
+{/content-title-counter}
+{#content-title-right-part}
+{action.context.policies.size()}
+{/content-title-right-part}
 {#content-body-section1}
-    <p>Review the {action.context.policies.size()} {#if action.context.policies.size() == 1}policy{#else}policies{/if} that triggered {action.context.unique_system_count} {#if action.context.unique_system_count == 1}system{#else}unique systems{/if}</p>
-    <table class="rh-data-table-bordered">
+    <p style="{body-section-p-style}">Review the {action.context.policies.size()} {#if action.context.policies.size() == 1}policy{#else}policies{/if} that triggered {action.context.unique_system_count} {#if action.context.unique_system_count == 1}system{#else}unique systems{/if}:</p>
+    <table style="{body-section-table-style}">
         <thead>
             <tr>
-                <th>Policy</th>
-                <th>Systems</th>
+                <th style="{body-section-table-th-style}">Policy</th>
+                <th style="{body-section-table-th-style}">Systems</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody style="{body-section-table-tbody-style}">
             {#for key in action.context.policies.keySet()}
                 <tr>
-                    <td><a href="{environment.url}/insights/policies/policy/{action.context.policies.get(key).policy_id}" target="_blank">{action.context.policies.get(key).policy_name}</a></td>
-                    <td>{action.context.policies.get(key).unique_system_count}</td>
+                    <td style="{body-section-table-td-style}"><a style="{body-section-table-td-a-style}" href="{environment.url}/insights/policies/policy/{action.context.policies.get(key).policy_id}" target="_blank">{action.context.policies.get(key).policy_name}</a></td>
+                    <td style="{body-section-table-td-style}">{action.context.policies.get(key).unique_system_count}</td>
                 </tr>
             {/for}
         </tbody>
     </table>
 {/content-body-section1}
+{#content-button-href}{environment.url}/insights/policies?{query_params}{/content-button-href}
+{#content-button-service-name}Policies{/content-button-service-name}
 {/include}

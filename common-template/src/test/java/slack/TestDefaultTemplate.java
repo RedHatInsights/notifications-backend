@@ -13,7 +13,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,28 +52,19 @@ class TestDefaultTemplate {
             useBetaTemplate
         );
 
-        if (useBetaTemplate) {
-            assertTrue(result.contains(TestHelpers.NOT_USE_EVENT_TYPE + " - " + APP_BUNDLE_HEADER));
-            if (severity == null) {
-                assertFalse(result.contains("\"type\": \"context\","));
-            } else {
-                assertTrue(result.contains("\uD83D\uDFE0 Severity: Important"));
-            }
-
-            assertTrue(result.contains(
-                    String.format(SLACK_EXPECTED_MAIN_MSG,
-                            action.getContext().getAdditionalProperties().get("display_name"),
-                            action.getEvents().size(),
-                            action.getEvents().size() != 1 ? "s" : StringUtils.EMPTY)));
-            assertTrue(result.contains(String.format(SLACK_EXPECTED_EXPLORE_APP_MSG,
-                    action.getEvents().size() != 1 ? "these" : "this")));
+        assertTrue(result.contains(TestHelpers.NOT_USE_EVENT_TYPE + " - " + APP_BUNDLE_HEADER));
+        if (severity == null) {
+            assertFalse(result.contains("\"type\": \"context\","));
         } else {
-            final String expectedMessage = String.format(SLACK_EXPECTED_MAIN_MSG + " from " + APP_BUNDLE_HEADER + ". " + SLACK_EXPECTED_OPEN_APP_MSG,
-                    action.getContext().getAdditionalProperties().get("display_name"),
-                    action.getEvents().size(),
-                    action.getEvents().size() != 1 ? "s" : StringUtils.EMPTY);
-
-            assertEquals(expectedMessage, result);
+            assertTrue(result.contains("\uD83D\uDFE0 Severity: Important"));
         }
+
+        assertTrue(result.contains(
+                String.format(SLACK_EXPECTED_MAIN_MSG,
+                        action.getContext().getAdditionalProperties().get("display_name"),
+                        action.getEvents().size(),
+                        action.getEvents().size() != 1 ? "s" : StringUtils.EMPTY)));
+        assertTrue(result.contains(String.format(SLACK_EXPECTED_EXPLORE_APP_MSG,
+                action.getEvents().size() != 1 ? "these" : "this")));
     }
 }

@@ -1,20 +1,17 @@
-{@boolean renderSection1=true}
-{@boolean renderButtonSection1=true}
 {#include email/Common/insightsEmailBody}
+{#content-header-title}
+    Tasks - Automation Toolkit - Red Hat Enterprise Linux
+{/content-header-title}
 {#content-title}
-    Tasks - Red Hat Enterprise Linux
-{/content-title}
-{#content-title-section1}
     Job failed
-{/content-title-section1}
-{#content-body-section1}
+{/content-title}
+{#content-body}
 {#let payload=action.events[0].payload}
-    <p>
-        Job <b>{payload.display_name}</b> from task <b>{action.context.task_name}</b> has failed with status {payload.status}.
+    <p style="{body-section-p-style}">
+        The <a style="{body-section-underline-link-style}" href="{environment.url}/insights/tasks/executed/{action.context.executed_task_id}?{query_params}" target="_blank">{payload.display_name}</a> job from the <strong>{action.context.task_name}</strong> task failed with the <strong>{payload.status}</strong> status.
     </p>
 {/let}
-{/content-body-section1}
-{#content-button-section1}
-    <a target="_blank" href="{environment.url}/insights/tasks/executed/{action.context.executed_task_id}?{query_params}">Check this task in Red Hat Lightspeed</a>
-{/content-button-section1}
+{/content-body}
+{#content-button-href}{environment.url}/insights/tasks/executed/{action.context.executed_task_id}?{query_params}{/content-button-href}
+{#content-button-service-name}Tasks - Automation Toolkit{/content-button-service-name}
 {/include}
