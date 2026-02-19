@@ -8,21 +8,28 @@ USER root
 
 # Install required dependencies for native-image compilation
 # Note: curl-minimal is already installed in ubi9-minimal
-RUN microdnf install -y \
-  gcc \
-  glibc-devel \
-  zlib-devel \
-  gcc-c++ \
-  tar \
-  gzip \
-  findutils \
-  && microdnf clean all
 
 # Set Mandrel version and architecture
 # Using latest Mandrel release for Java 21 (as of Nov 2025)
 ENV MANDREL_VERSION=23.1.9.0-Final
 ENV JAVA_VERSION=21
 ENV ARCH=linux-amd64
+
+# Install Mandrel 23.1.10.0-Final requested dependencies (list available at https://github.com/graalvm/mandrel/releases/tag/mandrel-23.1.10.0-Final)
+RUN microdnf install -y \
+  glibc-devel \
+  zlib-devel \
+  gcc \
+  freetype-devel \
+  libstdc++-static \
+  && microdnf clean all
+
+# Install additional dependencies to unzip Mandrel artefact
+RUN microdnf install -y \
+  tar \
+  gzip \
+  findutils \
+  && microdnf clean all
 
 # Download and install Mandrel
 RUN curl -L -o /tmp/mandrel.tar.gz \
@@ -51,10 +58,13 @@ RUN ./mvnw clean package \
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 WORKDIR /
+# Update the base image packages
 USER root
+# See https://www.mankier.com/8/microdnf
+RUN microdnf upgrade --refresh --nodocs --setopt=install_weak_deps=0 -y
+RUN microdnf clean all
 
 # Create licenses directory and copy license file
-RUN microdnf install -y ca-certificates && microdnf clean all
 RUN mkdir -p /licenses
 COPY --from=build --chown=185:0 /home/jboss/LICENSE.txt /licenses/LICENSE
 
