@@ -358,4 +358,15 @@ public class EventConsumer {
 
         return messageId;
     }
+
+    /**
+     * Exposes the executor for graceful shutdown management.
+     * Used by GracefulShutdownManager to drain in-flight tasks before
+     * the EntityManager is closed during pod shutdown.
+     *
+     * @return the ThreadPoolExecutor instance, or null if async processing is disabled
+     */
+    public ExecutorService getExecutor() {
+        return executor;
+    }
 }
