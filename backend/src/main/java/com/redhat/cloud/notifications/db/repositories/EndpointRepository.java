@@ -2,8 +2,6 @@ package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.Sort;
-import com.redhat.cloud.notifications.db.builder.QueryBuilder;
-import com.redhat.cloud.notifications.db.builder.WhereBuilder;
 import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -31,7 +29,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.models.EndpointStatus.READY;
@@ -89,21 +86,93 @@ public class EndpointRepository {
         return endpoint;
     }
 
-    public List<Endpoint> getEndpointsPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter) {
+    public List<Endpoint> getEndpointsPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, Query limiter, boolean includeSystemIntegrations) {
         Query.Limit limit = limiter == null ? null : limiter.getLimit();
         Optional<Sort> sort = limiter == null ? Optional.empty() : Sort.getSort(limiter, null, Endpoint.SORT_FIELDS);
 
         Log.debugf("[org_id: %s][name: %s][composite_type: %s][active_only: %s][query: %s] Looking up endpoints in our database", orgId, name, type, activeOnly, limiter);
-        List<Endpoint> endpoints = EndpointRepository.queryBuilderEndpointsPerType(orgId, name, type, activeOnly)
-                .limit(limit)
-                .sort(sort)
-                .build(entityManager::createQuery)
-                .getResultList();
+
+        List<Endpoint> endpoints = buildEndpointQuery(orgId, name, type, activeOnly, limit, sort, includeSystemIntegrations).getResultList();
+
         loadProperties(endpoints);
 
         Log.debugf("[org_id: %s] Returning list of endpoints: %s", orgId, endpoints);
 
         return endpoints;
+    }
+
+    protected TypedQuery<Endpoint> buildEndpointQuery(String orgId, String name, Set<CompositeEndpointType> type, Boolean activeOnly, Query.Limit limit, Optional<Sort> sort, boolean includeSystemIntegrations) {
+        Set<EndpointType> basicTypes = type.stream().filter(c -> c.getSubType() == null).map(CompositeEndpointType::getType).collect(Collectors.toSet());
+        Set<CompositeEndpointType> compositeTypes = type.stream().filter(c -> c.getSubType() != null).collect(Collectors.toSet());
+
+        StringBuilder hql = new StringBuilder("SELECT e FROM Endpoint e WHERE ");
+
+        // OrgId filter
+        if (orgId == null) {
+            hql.append("e.orgId IS NULL");
+        } else {
+            if (includeSystemIntegrations) {
+                // Build query for system integrations (orgId is null)
+                hql.append("(e.orgId = :orgId OR e.orgId IS NULL)");
+            } else {
+                hql.append("e.orgId = :orgId");
+            }
+        }
+
+        // Type filter
+        if (!basicTypes.isEmpty() || !compositeTypes.isEmpty()) {
+            hql.append(" AND (");
+            if (!basicTypes.isEmpty()) {
+                hql.append("e.compositeType.type IN (:endpointType)");
+                if (!compositeTypes.isEmpty()) {
+                    hql.append(" OR ");
+                }
+            }
+            if (!compositeTypes.isEmpty()) {
+                hql.append("e.compositeType IN (:compositeTypes)");
+            }
+            hql.append(")");
+        }
+
+        // Active filter
+        if (activeOnly != null) {
+            hql.append(" AND e.enabled = :enabled");
+        }
+
+        // Name filter
+        if (name != null && !name.isEmpty()) {
+            hql.append(" AND LOWER(e.name) LIKE :name");
+        }
+
+        // Sort
+        sort.ifPresent(value -> hql.append(" ").append(value.getSortQuery()));
+
+        TypedQuery<Endpoint> query = entityManager.createQuery(hql.toString(), Endpoint.class);
+
+        // Set parameters
+        if (orgId != null) {
+            query.setParameter("orgId", orgId);
+        }
+        if (!basicTypes.isEmpty()) {
+            query.setParameter("endpointType", basicTypes);
+        }
+        if (!compositeTypes.isEmpty()) {
+            query.setParameter("compositeTypes", compositeTypes);
+        }
+        if (activeOnly != null) {
+            query.setParameter("enabled", activeOnly);
+        }
+        if (name != null && !name.isEmpty()) {
+            query.setParameter("name", "%" + name.toLowerCase() + "%");
+        }
+
+        // Set limit and offset
+        if (limit != null) {
+            query.setFirstResult(limit.getOffset());
+            query.setMaxResults(limit.getLimit());
+        }
+
+        return query;
     }
 
     public EndpointType getEndpointTypeById(String orgId, UUID endpointId) {
@@ -120,7 +189,7 @@ public class EndpointRepository {
 
     @Transactional
     public Optional<Endpoint> getSystemSubscriptionEndpoint(String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
-        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null);
+        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null, false);
         loadProperties(endpoints);
         return endpoints
             .stream()
@@ -134,7 +203,7 @@ public class EndpointRepository {
         if (EndpointType.DRAWER == endpointType) {
             label = "Drawer";
         }
-        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null);
+        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null, false);
         loadProperties(endpoints);
         Optional<Endpoint> endpointOptional = endpoints
             .stream()
@@ -163,10 +232,72 @@ public class EndpointRepository {
         return createEndpoint(endpoint);
     }
 
-    public Long getEndpointsCountPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly) {
-        return EndpointRepository.queryBuilderEndpointsPerType(orgId, name, type, activeOnly)
-                .buildCount(entityManager::createQuery)
-                .getSingleResult();
+    public Long getEndpointsCountPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, boolean includeSystemIntegrations) {
+        Set<EndpointType> basicTypes = type.stream().filter(c -> c.getSubType() == null).map(CompositeEndpointType::getType).collect(Collectors.toSet());
+        Set<CompositeEndpointType> compositeTypes = type.stream().filter(c -> c.getSubType() != null).collect(Collectors.toSet());
+
+        return buildAndExecuteEndpointCountQuery(orgId, name, basicTypes, compositeTypes, activeOnly, includeSystemIntegrations);
+    }
+
+    private Long buildAndExecuteEndpointCountQuery(String orgId, String name, Set<EndpointType> basicTypes, Set<CompositeEndpointType> compositeTypes, Boolean activeOnly, boolean includeSystemIntegrations) {
+        StringBuilder hql = new StringBuilder("SELECT COUNT(e) FROM Endpoint e WHERE ");
+
+        // OrgId filter
+        if (orgId == null) {
+            hql.append("e.orgId IS NULL");
+        } else {
+            if (includeSystemIntegrations) {
+                hql.append("(e.orgId = :orgId OR e.orgId IS NULL)");
+            } else {
+                hql.append("e.orgId = :orgId");
+            }
+        }
+
+        // Type filter
+        if (!basicTypes.isEmpty() || !compositeTypes.isEmpty()) {
+            hql.append(" AND (");
+            if (!basicTypes.isEmpty()) {
+                hql.append("e.compositeType.type IN (:endpointType)");
+                if (!compositeTypes.isEmpty()) {
+                    hql.append(" OR ");
+                }
+            }
+            if (!compositeTypes.isEmpty()) {
+                hql.append("e.compositeType IN (:compositeTypes)");
+            }
+            hql.append(")");
+        }
+
+        // Active filter
+        if (activeOnly != null) {
+            hql.append(" AND e.enabled = :enabled");
+        }
+
+        // Name filter
+        if (name != null && !name.isEmpty()) {
+            hql.append(" AND LOWER(e.name) LIKE :name");
+        }
+
+        TypedQuery<Long> query = entityManager.createQuery(hql.toString(), Long.class);
+
+        // Set parameters
+        if (orgId != null) {
+            query.setParameter("orgId", orgId);
+        }
+        if (!basicTypes.isEmpty()) {
+            query.setParameter("endpointType", basicTypes);
+        }
+        if (!compositeTypes.isEmpty()) {
+            query.setParameter("compositeTypes", compositeTypes);
+        }
+        if (activeOnly != null) {
+            query.setParameter("enabled", activeOnly);
+        }
+        if (name != null && !name.isEmpty()) {
+            query.setParameter("name", "%" + name.toLowerCase() + "%");
+        }
+
+        return query.getSingleResult();
     }
 
     public Endpoint getEndpoint(String orgId, UUID id) {
@@ -306,33 +437,6 @@ public class EndpointRepository {
         }
     }
 
-    static QueryBuilder<Endpoint> queryBuilderEndpointsPerType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly) {
-        Set<EndpointType> basicTypes = type.stream().filter(c -> c.getSubType() == null).map(CompositeEndpointType::getType).collect(Collectors.toSet());
-        Set<CompositeEndpointType> compositeTypes = type.stream().filter(c -> c.getSubType() != null).collect(Collectors.toSet());
-        return QueryBuilder
-                .builder(Endpoint.class)
-                .alias("e")
-                .where(
-                        WhereBuilder.builder()
-                                .ifElse(
-                                        orgId == null,
-                                        WhereBuilder.builder().and("e.orgId IS NULL"),
-                                        WhereBuilder.builder().and("e.orgId = :orgId", "orgId", orgId)
-                                )
-                                .and(
-                                        WhereBuilder.builder()
-                                                .ifOr(basicTypes.size() > 0, "e.compositeType.type IN (:endpointType)", "endpointType", basicTypes)
-                                                .ifOr(compositeTypes.size() > 0, "e.compositeType IN (:compositeTypes)", "compositeTypes", compositeTypes)
-                                )
-                                .ifAnd(activeOnly != null, "e.enabled = :enabled", "enabled", activeOnly)
-                                .ifAnd(
-                                        name != null && !name.isEmpty(),
-                                        "LOWER(e.name) LIKE :name",
-                                        "name", (Supplier<String>) () -> "%" + name.toLowerCase() + "%"
-                                )
-                );
-    }
-
     public Endpoint loadProperties(Endpoint endpoint) {
         if (endpoint == null) {
             Log.warn("Endpoint properties loading attempt with a null endpoint. It should never happen, this is a bug.");
@@ -371,12 +475,19 @@ public class EndpointRepository {
         }
     }
 
-    public Optional<Endpoint> getEndpointWithLinkedEventTypes(String orgId, UUID id) {
+    public Optional<Endpoint> getEndpointWithLinkedEventTypes(String orgId, UUID id, boolean includeSystemIntegrationFlag) {
         String query = "SELECT e FROM Endpoint e " +
             "LEFT JOIN FETCH e.eventTypes ep " +
             "LEFT JOIN FETCH ep.application ap " +
             "LEFT JOIN FETCH ap.bundle " +
-            "WHERE e.orgId = :orgId AND e.id = :id";
+            "WHERE e.id = :id AND ";
+
+        String orgIdCriterion = "e.orgId = :orgId";
+        if (includeSystemIntegrationFlag) {
+            orgIdCriterion = "(e.orgId = :orgId or e.orgId is null)";
+        }
+        query += orgIdCriterion;
+
         try {
             Endpoint endpoint = entityManager.createQuery(query, Endpoint.class)
                 .setParameter("id", id)
@@ -417,18 +528,4 @@ public class EndpointRepository {
             .setMaxResults(limit)
             .getResultList();
     }
-
-    public List<String> getOrgIdWithEndpoints() {
-        String query = "SELECT distinct(orgId) FROM Endpoint where orgId IS NOT null";
-        return entityManager.createQuery(query, String.class)
-                .getResultList();
-    }
-
-    public List<UUID> getEndpointsUUIDsByOrgId(final String orgId) {
-        String query = "SELECT id FROM Endpoint where orgId = :orgId ";
-        return entityManager.createQuery(query, UUID.class)
-            .setParameter("orgId", orgId)
-            .getResultList();
-    }
-
 }
