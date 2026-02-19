@@ -57,12 +57,10 @@ class TestErrataNotificationsTemplate {
         String result = templateService.renderTemplate(templateConfig, action);
         ErrataTestHelpers.checkErrataChatTemplateContent(eventType, result, RAW_ACTION, "slack");
 
-        if (useBetaTemplate) {
-            if (eventType.equals(SECURITY_ERRATA)) {
-                assertTrue(result.contains("\uD83D\uDFE0 Highest severity: Important"));
-            } else  {
-                assertTrue(result.contains("\uD83D\uDFE0 Severity: Important"));
-            }
+        if (eventType.equals(SECURITY_ERRATA)) {
+            assertTrue(result.contains("\uD83D\uDFE0 Highest severity: Important"));
+        } else  {
+            assertTrue(result.contains("\uD83D\uDFE0 Severity: Important"));
         }
     }
 

@@ -83,7 +83,7 @@ class TestOcmTemplate {
     @MethodSource("eventTypesAndBeta")
     void testRenderedOcmTemplates(final String eventType, final boolean useBetaTemplate) {
         String result = renderTemplate(eventType, useBetaTemplate);
-        checkResult(result, useBetaTemplate);
+        checkResult(result);
     }
 
     String renderTemplate(final String eventType, final boolean useBetaTemplate) {
@@ -97,19 +97,11 @@ class TestOcmTemplate {
         }
     }
 
-    private void checkResult(String result, final boolean useBetaTemplate) {
-        if (useBetaTemplate) {
-            assertTrue(result.contains("Test instant email subscription - Cluster Manager - OpenShift"));
-            assertTrue(result.contains("\u2796 Severity: None"));
-            assertTrue(result.contains("1 event triggered."));
-            assertTrue(result.contains("Explore this and others in **Cluster Manager**."));
-            assertTrue(result.contains(CLUSTER_MANAGER_DEFAULT_EVENT_URL));
-        } else {
-            // check content from parent template
-            AdaptiveCardValidatorHelper.validate(result);
-
-            // check text message
-            assertTrue(result.contains(EXPECTED_NOTIFICATION_TEXT_MESSAGE));
-        }
+    private void checkResult(String result) {
+        assertTrue(result.contains("Test instant email subscription - Cluster Manager - OpenShift"));
+        assertTrue(result.contains("\u2796 Severity: None"));
+        assertTrue(result.contains("1 event triggered."));
+        assertTrue(result.contains("Explore this and others in **Cluster Manager**."));
+        assertTrue(result.contains(CLUSTER_MANAGER_DEFAULT_EVENT_URL));
     }
 }

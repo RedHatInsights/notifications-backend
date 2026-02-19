@@ -53,13 +53,9 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
     @ValueSource(booleans = {true, false})
     public void testInstantMissingCostModelEmailBody(boolean useBetaTemplate) {
         String result = generateEmailBody(MISSING_COST_MODEL, ACTION, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("The OpenShift"));
-            assertTrue(result.contains("Dummy source name"));
-            assertTrue(result.contains("integration has no assigned cost model."));
-        } else {
-            assertTrue(result.contains("OpenShift source Dummy source name has no assigned cost model"));
-        }
+        assertTrue(result.contains("The OpenShift"));
+        assertTrue(result.contains("Dummy source name"));
+        assertTrue(result.contains("integration has no assigned cost model."));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -91,11 +87,7 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
     @ValueSource(booleans = {true, false})
     public void testInstantCostModelUpdateEmailBody(boolean useBetaTemplate) {
         String result = generateEmailBody(COST_MODEL_UPDATE, ACTION, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("Cost model <b>Sample model</b> has been updated"));
-        } else {
-            assertTrue(result.contains("Cost model Sample model has been updated"));
-        }
+        assertTrue(result.contains("Cost model <b>Sample model</b> has been updated"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -110,11 +102,7 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
     @ValueSource(booleans = {true, false})
     public void testInstantCostModelRemoveEmailBody(boolean useBetaTemplate) {
         String result = generateEmailBody(COST_MODEL_REMOVE, ACTION, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("Cost model <b>Sample model</b> has been removed"));
-        } else {
-            assertTrue(result.contains("Cost model Sample model has been removed"));
-        }
+        assertTrue(result.contains("Cost model <b>Sample model</b> has been removed"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -161,11 +149,7 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
     @ValueSource(booleans = {true, false})
     public void testInstantCostModelOperatorDataReceivedEmailBody(boolean useBetaTemplate) {
         String result = generateEmailBody(CM_OPERATOR_DATA_RECEIVED, ACTION, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("OpenShift source <b>Dummy source name</b> has received a new payload and processing should begin shortly"));
-        } else {
-            assertTrue(result.contains("OpenShift source Dummy source name has received a new payload and processing should begin shortly"));
-        }
+        assertTrue(result.contains("OpenShift source <b>Dummy source name</b> has received a new payload and processing should begin shortly"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }

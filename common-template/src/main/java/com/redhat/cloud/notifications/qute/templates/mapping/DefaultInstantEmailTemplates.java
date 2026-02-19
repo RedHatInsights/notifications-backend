@@ -10,7 +10,6 @@ import static java.util.Map.entry;
 public class DefaultInstantEmailTemplates {
 
     public static final Map<TemplateDefinition, String> templatesMap = Map.ofEntries(
-        entry(new TemplateDefinition(EMAIL_BODY, null, null, null), "Default/instantEmailBody.html"),
-        entry(new TemplateDefinition(EMAIL_BODY, null, null, null, true), "Default/beta/instantEmailBody.html")
+        entry(new TemplateDefinition(EMAIL_BODY, null, null, null), "Default/instantEmailBody.html")
     );
 }

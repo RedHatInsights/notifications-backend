@@ -70,10 +70,6 @@ public class TestSubscriptionsUsageTemplate extends EmailTemplatesRendererHelper
         assertTrue(result.contains(">sockets<") || result.contains("sockets</td>"));
         assertTrue(result.contains(">105%<") || result.contains("105%</td>"));
 
-        if (!useBetaTemplate) {
-            // Find out more section with link text
-            assertTrue(result.contains("Find out more"));
-        }
         assertTrue(result.contains("Getting Started with the Subscriptions Usage Service"));
     }
 }

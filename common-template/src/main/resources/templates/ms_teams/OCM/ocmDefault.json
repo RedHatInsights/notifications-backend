@@ -1,2 +1,4 @@
-{#include ms_teams/Common/commonMsAdaptiveCard.json}
-{#content-body}{data.events.size()} event{#if data.events.size() > 1}s{/if} triggered from {data.source.application.display_name} - {data.source.bundle.display_name}. [Open {data.source.application.display_name}](https://cloud.redhat.com/openshift/details/s/{data.events[0].payload.global_vars.subscription_id}?from=notifications&integration=teams){/content-body}
+{#include ms_teams/Common/commonMsAdaptiveCardHighLevelStructure.json}
+  {#content-intro}{data.events.size()} event{#if data.events.size() != 1}s{/if} triggered.{/content-intro}
+  {#action-url}https://cloud.redhat.com/openshift/details/s/{data.events[0].payload.global_vars.subscription_id}?from=notifications&integration=teams{/action-url}
+{/include}

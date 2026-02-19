@@ -42,11 +42,7 @@ public class TestTasksTemplate extends EmailTemplatesRendererHelper {
         Action action = TasksTestHelpers.createTasksExecutedTaskCompletedAction(EVENT_TYPE_EXECUTED_TASK_COMPLETED);
         String result = generateEmailBody(EVENT_TYPE_EXECUTED_TASK_COMPLETED, action, useBetaTemplate);
         assertTrue(result.contains("Executed task completed"));
-        if (useBetaTemplate) {
-            assertTrue(result.contains("was executed and completed with the"));
-        } else {
-            assertTrue(result.contains("has been executed and ended with status"));
-        }
+        assertTrue(result.contains("was executed and completed with the"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -64,12 +60,7 @@ public class TestTasksTemplate extends EmailTemplatesRendererHelper {
         Action action = TasksTestHelpers.createTasksJobFailedAction(EVENT_TYPE_JOB_FAILED);
         String result = generateEmailBody(EVENT_TYPE_JOB_FAILED, action, useBetaTemplate);
         assertTrue(result.contains("Job failed"));
-        if (useBetaTemplate) {
-            assertTrue(result.contains("task failed with the"));
-        } else {
-            assertTrue(result.contains("from task"));
-            assertTrue(result.contains("has failed"));
-        }
+        assertTrue(result.contains("task failed with the"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }

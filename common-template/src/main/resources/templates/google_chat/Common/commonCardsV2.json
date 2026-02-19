@@ -3,7 +3,60 @@
     {
       "cardId": "notificationsCard",
       "card": {
-        {#insert content-body}{/}
+        "header": {
+          "title": "{#insert content-header}{data.source.event_type.display_name} - {data.source.application.display_name} - {data.source.bundle.display_name}{/}"
+        },
+        "sections": [
+          {
+            "collapsible": false,
+            "widgets": [
+              {#if data.severity??}
+              {
+                "decoratedText": {
+                  "startIcon": {
+                    "iconUrl": "https://console.redhat.com/apps/frontend-assets/email-assets/severities/{data.severity.asPatternFlySeverity}.png"
+                  },
+                  "text": "{#insert severity-label}Severity:{/insert} {#if data.severity.toUpperCase == 'CRITICAL'}<font color=\"#B1380B\"><b>{data.severity.toTitleCase}</b></font>{#else}{data.severity.toTitleCase}{/if}"
+                }
+              },
+              {/if}
+              {
+                "textParagraph": {
+                  "text": "{#insert content-intro}{#if data.context.display_name??}<a href=\"{data.inventory_url.raw}\">{data.context.display_name}</a> triggered {data.events.size()} event{#if data.events.size() != 1}s{/if}{#else}{data.events.size()} event{#if data.events.size() != 1}s{/if} triggered{/if}.{/}"
+                }
+              },
+              {
+                "divider": {}
+              },
+              {#insert content-body}{/}
+              {
+                "textParagraph": {
+                  "text": "Explore {#if data.events.size() != 1}these{#else}this{/if} and others in <b>{#insert explore-location}{data.source.application.display_name}{/}</b>."
+                }
+              },
+              {
+                "buttonList": {
+                  "buttons": [
+                    {
+                      "text": "{#insert button-title}Open {data.source.application.display_name}{/}",
+                      "type": "FILLED",
+                      "color": {
+                        "red": 0,
+                        "green": 0.396,
+                        "blue": 0.796
+                      },
+                      "onClick": {
+                        "openLink": {
+                          "url": "{#insert button-url}{data.application_url.raw}{/}"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       }
     }
   ]

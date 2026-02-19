@@ -393,7 +393,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
     void testValidEmailTemplateRendering() {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
-        final String EXPECTED_RESULT = "<h1>Hello this test is awesome!</h1>";
+        final String EXPECTED_RESULT = "Hello this test is awesome!";
 
         String testAction = "{" +
             "    \"version\":\"v1.1.0\"," +
