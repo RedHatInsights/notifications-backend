@@ -56,11 +56,9 @@ public class GracefulShutdownManager {
      * and BEFORE Quarkus infrastructure (EntityManager, datasource) shutdown.
      *
      * The priority value of 100 ensures this executes early in the shutdown
-     * sequence (lower numbers = higher priority), giving us control over the
-     * shutdown order. Default is 2000 (APPLICATION level).
+     * sequence (lower numbers = higher priority). Default is 2500.
      */
-    @Priority(100)
-    void onShutdown(@Observes ShutdownEvent event) {
+    void onShutdown(@Observes @Priority(100) ShutdownEvent event) {
         Log.info("=== Starting graceful shutdown sequence ===");
 
         // Step 1: Stop all Kafka consumers from fetching new messages
