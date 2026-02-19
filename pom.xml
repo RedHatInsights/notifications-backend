@@ -20,6 +20,7 @@
         <module>connector-common-authentication</module>
         <module>connector-common-http</module>
         <module>connector-common-v2</module>
+        <module>connector-common-authentication-v2</module>
         <module>connector-common-http-v2</module>
         <module>connector-drawer</module>
         <module>connector-email</module>
