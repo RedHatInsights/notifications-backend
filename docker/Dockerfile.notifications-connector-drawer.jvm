@@ -10,7 +10,7 @@ USER root
 # Note: curl-minimal is already installed in ubi9-minimal
 
 # Set Mandrel version and architecture
-# Using latest Mandrel release for Java 21 (as of Nov 2025)
+# Using latest Mandrel release for Java 21 (as of Feb 2026)
 ENV MANDREL_VERSION=23.1.10.0-Final
 ENV JAVA_VERSION=21
 ENV ARCH=linux-amd64
