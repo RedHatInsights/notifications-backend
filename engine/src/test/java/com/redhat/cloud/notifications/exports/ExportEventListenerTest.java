@@ -19,7 +19,6 @@ import io.vertx.core.json.JsonArray;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
 import org.apache.http.HttpStatus;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -47,15 +46,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 public class ExportEventListenerTest {
-    @ConfigProperty(name = "export-service.psk")
-    String exportServicePsk;
 
     @InjectMock
     EventRepository eventRepository;
 
     @InjectMock
     @RestClient
-    ExportService exportService;
+    ExportServicePsk exportService;
 
     @Any
     @Inject
@@ -360,17 +357,13 @@ public class ExportEventListenerTest {
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
         // Assert that the export service was called as expected.
-        final ArgumentCaptor<String> capturedPsk = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<UUID> capturedExportUuid = ArgumentCaptor.forClass(UUID.class);
         final ArgumentCaptor<String> capturedApplication = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<UUID> capturedResourceUuid = ArgumentCaptor.forClass(UUID.class);
         final ArgumentCaptor<String> capturedJSONContents = ArgumentCaptor.forClass(String.class);
 
         // Wait at most 10 seconds before failing.
-        Mockito.verify(this.exportService, Mockito.timeout(10000).times(1)).uploadJSONExport(capturedPsk.capture(), capturedExportUuid.capture(), capturedApplication.capture(), capturedResourceUuid.capture(), capturedJSONContents.capture());
-
-        // Assert that the PSK is correct.
-        Assertions.assertEquals(this.exportServicePsk, capturedPsk.getValue(), "unexpected PSK sent to the export service");
+        Mockito.verify(this.exportService, Mockito.timeout(10000).times(1)).uploadJSONExport(capturedExportUuid.capture(), capturedApplication.capture(), capturedResourceUuid.capture(), capturedJSONContents.capture());
 
         // Assert that the export request's UUID is correct.
         Assertions.assertEquals(ExportEventTestHelper.EXPORT_CE_EXPORT_UUID, capturedExportUuid.getValue(), "unexpected export request UUID sent to the export service");
@@ -433,17 +426,13 @@ public class ExportEventListenerTest {
         exportIn.send(consoleCloudEventParser.toJson(cee));
 
         // Assert that the export service was called as expected.
-        final ArgumentCaptor<String> capturedPsk = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<UUID> capturedExportUuid = ArgumentCaptor.forClass(UUID.class);
         final ArgumentCaptor<String> capturedApplication = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<UUID> capturedResourceUuid = ArgumentCaptor.forClass(UUID.class);
         final ArgumentCaptor<String> capturedCSVContents = ArgumentCaptor.forClass(String.class);
 
         // Wait at most 10 seconds before failing.
-        Mockito.verify(this.exportService, Mockito.timeout(10000).times(1)).uploadCSVExport(capturedPsk.capture(), capturedExportUuid.capture(), capturedApplication.capture(), capturedResourceUuid.capture(), capturedCSVContents.capture());
-
-        // Assert that the PSK is correct.
-        Assertions.assertEquals(this.exportServicePsk, capturedPsk.getValue(), "unexpected PSK sent to the export service");
+        Mockito.verify(this.exportService, Mockito.timeout(10000).times(1)).uploadCSVExport(capturedExportUuid.capture(), capturedApplication.capture(), capturedResourceUuid.capture(), capturedCSVContents.capture());
 
         // Assert that the export request's UUID is correct.
         Assertions.assertEquals(ExportEventTestHelper.EXPORT_CE_EXPORT_UUID, capturedExportUuid.getValue(), "unexpected export request UUID sent to the export service");
@@ -478,17 +467,13 @@ public class ExportEventListenerTest {
      */
     void assertErrorNotificationIsCorrect(final int expectedStatusCode, final String expectedErrorMessage) {
         // Assert that the export service was called as expected.
-        final ArgumentCaptor<String> capturedPsk = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<UUID> capturedExportUuid = ArgumentCaptor.forClass(UUID.class);
         final ArgumentCaptor<String> capturedApplication = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<UUID> capturedResourceUuid = ArgumentCaptor.forClass(UUID.class);
         final ArgumentCaptor<ExportError> capturedError = ArgumentCaptor.forClass(ExportError.class);
 
         // Wait at most 10 seconds before failing.
-        Mockito.verify(this.exportService, Mockito.timeout(10000).times(1)).notifyErrorExport(capturedPsk.capture(), capturedExportUuid.capture(), capturedApplication.capture(), capturedResourceUuid.capture(), capturedError.capture());
-
-        // Assert that the PSK is correct.
-        Assertions.assertEquals(this.exportServicePsk, capturedPsk.getValue(), "unexpected PSK sent to the export service");
+        Mockito.verify(this.exportService, Mockito.timeout(10000).times(1)).notifyErrorExport(capturedExportUuid.capture(), capturedApplication.capture(), capturedResourceUuid.capture(), capturedError.capture());
 
         // Assert that the export request's UUID is correct.
         Assertions.assertEquals(ExportEventTestHelper.EXPORT_CE_EXPORT_UUID, capturedExportUuid.getValue(), "unexpected export request UUID sent to the export service");

@@ -188,6 +188,20 @@ objects:
               name: export-service-psk
               key: psk
               optional: true
+        - name: QUARKUS_OIDC_CLIENT_AUTH_SERVER_URL
+          value: ${OIDC_ISSUER}
+        - name: QUARKUS_OIDC_CLIENT_CLIENT_ENABLED
+          value: ${OIDC_CLIENT_ENABLED}
+        - name: QUARKUS_OIDC_CLIENT_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: oidc-authentication
+              key: client-id
+        - name: QUARKUS_OIDC_CLIENT_CREDENTIALS_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: oidc-authentication
+              key: secret
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS_EXPORTS_EXPORTEVENTLISTENER__LEVEL
           value: ${EXPORT_EVENT_LISTENER_LOG_LEVEL}
         - name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
@@ -422,3 +436,9 @@ parameters:
   value: P2D
 - name: NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES
   value: "false"
+- name: OIDC_CLIENT_ENABLED
+  description: If true, the OIDC client will be enabled.
+  value: "false"
+- name: OIDC_ISSUER
+  description: The issuer of the OIDC tokens.
+  value: https://redhat.com/realms/redhat-external

@@ -55,6 +55,7 @@ public class EngineConfig {
     private String asyncAggregationToggle;
     private String asyncEventProcessingToggle;
     private String drawerToggle;
+    private String exportServiceOidcAuthToggle;
     private String kafkaConsumedTotalCheckerToggle;
     private String toggleBlacklistedEndpoints;
     private String toggleBlacklistedEventTypes;
@@ -162,6 +163,7 @@ public class EngineConfig {
         asyncAggregationToggle = toggleRegistry.register("async-aggregation", true);
         asyncEventProcessingToggle = toggleRegistry.register("async-event-processing", true);
         drawerToggle = toggleRegistry.register("drawer", true);
+        exportServiceOidcAuthToggle = toggleRegistry.register("export-service-oidc-auth", true);
         kafkaConsumedTotalCheckerToggle = toggleRegistry.register("kafka-consumed-total-checker", true);
         toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
         toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
@@ -176,6 +178,7 @@ public class EngineConfig {
         config.put(asyncAggregationToggle, isAsyncAggregationEnabled());
         config.put(DEFAULT_TEMPLATE, isDefaultTemplateEnabled());
         config.put(drawerToggle, isDrawerEnabled());
+        config.put(exportServiceOidcAuthToggle, isExportServiceOidcAuthEnabled(null));
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(EVENT_CONSUMER_CORE_THREAD_POOL_SIZE, eventConsumerCoreThreadPoolSize);
         config.put(EVENT_CONSUMER_MAX_THREAD_POOL_SIZE, eventConsumerMaxThreadPoolSize);
@@ -349,5 +352,13 @@ public class EngineConfig {
 
     public String getReplayEndTime() {
         return replayEndTime;
+    }
+
+    public boolean isExportServiceOidcAuthEnabled(String orgId) {
+        if (unleashEnabled) {
+            return unleash.isEnabled(exportServiceOidcAuthToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+        } else {
+            return false;
+        }
     }
 }

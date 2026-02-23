@@ -6,6 +6,7 @@ import com.redhat.cloud.event.apps.exportservice.v1.ResourceRequestClass;
 import com.redhat.cloud.event.parser.ConsoleCloudEvent;
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.exports.filters.FilterExtractionException;
 import com.redhat.cloud.notifications.exports.transformers.TransformationException;
 import com.redhat.cloud.notifications.exports.transformers.UnsupportedFormatException;
@@ -21,7 +22,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
@@ -109,16 +109,35 @@ public class ExportEventListener {
     Counter successesCounter;
 
     @Inject
+    EngineConfig engineConfig;
+
+    @Inject
     EventExporterService eventExporterService;
 
+    @Inject
     @RestClient
-    ExportService exportService;
+    ExportServicePsk exportServicePsk;
+
+    @Inject
+    @RestClient
+    ExportServiceOidc exportServiceOidc;
+
+    /**
+     * Returns the appropriate export service client based on the feature toggle.
+     * @param orgId the organization ID to check the feature toggle for.
+     */
+    private ExportService getExportServiceClient(String orgId) {
+        if (engineConfig.isExportServiceOidcAuthEnabled(orgId)) {
+            Log.debug("Using OIDC Export Service client");
+            return exportServiceOidc;
+        } else {
+            Log.debug("Using PSK Export Service client");
+            return exportServicePsk;
+        }
+    }
 
     @Inject
     MeterRegistry meterRegistry;
-
-    @ConfigProperty(name = "export-service.psk")
-    String exportServicePsk;
 
     @PostConstruct
     void postConstruct() {
@@ -182,6 +201,7 @@ public class ExportEventListener {
             final String application = resourceRequest.getApplication();
             final UUID exportRequestUuid = resourceRequest.getExportRequestUUID();
             final UUID resourceUuid = resourceRequest.getUUID();
+            final String orgId = receivedEvent.getOrgId();
 
             // If the application target isn't Notifications, then we can simply
             // skip the payload.
@@ -199,13 +219,12 @@ public class ExportEventListener {
                 this.unsupportedResourceTypeFailuresCounter.increment();
 
                 final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, "the specified resource type is unsupported by this application");
-                this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+                getExportServiceClient(orgId).notifyErrorExport(exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
                 return;
             }
 
             final Format format = resourceRequest.getFormat();
-            final String orgId = receivedEvent.getOrgId();
 
             // Handle exporting the requested resource type.
             final String exportedContents;
@@ -215,7 +234,7 @@ public class ExportEventListener {
                 this.unableExtractFiltersFailuresCounter.increment();
 
                 final ExportError exportError = new ExportError(HttpStatus.SC_BAD_REQUEST, e.getMessage());
-                this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+                getExportServiceClient(orgId).notifyErrorExport(exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
                 return;
             } catch (TransformationException e) {
@@ -224,7 +243,7 @@ public class ExportEventListener {
                 this.unableTransformDataFailuresCounter.increment();
 
                 final ExportError exportError = new ExportError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "unable to serialize payload in the correct format");
-                this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+                getExportServiceClient(orgId).notifyErrorExport(exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
                 return;
             } catch (UnsupportedFormatException e) {
@@ -236,7 +255,7 @@ public class ExportEventListener {
                     HttpStatus.SC_BAD_REQUEST,
                     String.format("the specified format '%s' is unsupported for the request", format)
                 );
-                this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+                getExportServiceClient(orgId).notifyErrorExport(exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
                 return;
             }
@@ -245,8 +264,8 @@ public class ExportEventListener {
 
             // Send the contents to the export service.
             switch (format) {
-                case CSV -> this.exportService.uploadCSVExport(this.exportServicePsk, exportRequestUuid, encodedAppName, resourceUuid, exportedContents);
-                case JSON -> this.exportService.uploadJSONExport(this.exportServicePsk, exportRequestUuid, encodedAppName, resourceUuid, exportedContents);
+                case CSV -> getExportServiceClient(orgId).uploadCSVExport(exportRequestUuid, encodedAppName, resourceUuid, exportedContents);
+                case JSON -> getExportServiceClient(orgId).uploadJSONExport(exportRequestUuid, encodedAppName, resourceUuid, exportedContents);
                 default -> {
                     Log.debugf("[export_request_uuid: %s][resource_uuid: %s][requested_format: %s] unsupported format", exportRequestUuid, resourceUuid, format);
 
@@ -255,7 +274,7 @@ public class ExportEventListener {
                         String.format("the specified format '%s' is unsupported for the request", format)
                     );
 
-                    this.exportService.notifyErrorExport(this.exportServicePsk, exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
+                    getExportServiceClient(orgId).notifyErrorExport(exportRequestUuid, APPLICATION_NAME, resourceUuid, exportError);
 
                     return;
                 }
