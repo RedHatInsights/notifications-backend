@@ -17,6 +17,56 @@ createdb -U postgres notifications
 # Start Redis
 redis-server --daemonize yes
 
+# Start Redpanda (Kafka-compatible)
+echo "Starting Redpanda..."
+mkdir -p /tmp/redpanda/data
+
+# Use rpk to start Redpanda in container mode
+# Change Schema Registry and Pandaproxy to non-conflicting ports if port 8081/8082 are in use
+nohup rpk redpanda start \
+  --node-id 0 \
+  --kafka-addr 0.0.0.0:9092 \
+  --advertise-kafka-addr localhost:9092 \
+  --schema-registry-addr 0.0.0.0:18081 \
+  --pandaproxy-addr 0.0.0.0:18082 \
+  --set redpanda.data_directory=/tmp/redpanda/data \
+  --set redpanda.empty_seed_starts_cluster=true \
+  --set redpanda.auto_create_topics_enabled=true \
+  > /tmp/redpanda.log 2>&1 &
+
+REDPANDA_PID=$!
+echo "Redpanda started with PID $REDPANDA_PID"
+
+# Wait for Redpanda to be ready (check if process is running and port is listening)
+echo "Waiting for Redpanda to be ready..."
+for i in {1..60}; do
+  # Check if process is still running
+  if ! kill -0 $REDPANDA_PID 2>/dev/null; then
+    echo "ERROR: Redpanda process died!"
+    echo "=== Redpanda logs ==="
+    cat /tmp/redpanda.log
+    exit 1
+  fi
+
+  # Check if port 9092 is listening using bash TCP test
+  if timeout 1 bash -c "cat < /dev/null > /dev/tcp/localhost/9092" 2>/dev/null; then
+    echo "Redpanda is ready on port 9092!"
+    break
+  fi
+
+  if [ $i -eq 60 ]; then
+    echo "ERROR: Redpanda failed to start after 60 seconds"
+    echo "=== Redpanda logs ==="
+    cat /tmp/redpanda.log
+    echo "=== Process status ==="
+    ps aux | grep redpanda || true
+    exit 1
+  fi
+
+  echo "Waiting for Redpanda... ($i/60)"
+  sleep 1
+done
+
 #
 # On the master branch there is no need to give the pull request details.
 #
