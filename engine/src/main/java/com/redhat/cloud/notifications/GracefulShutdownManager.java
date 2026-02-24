@@ -111,7 +111,7 @@ public class GracefulShutdownManager {
                         Log.debugf("  - Channel already paused: %s", channelName);
                     }
                 } else {
-                    Log.debugf("  - Channel not found or not pausable: %s", channelName);
+                    Log.debugf("  - Channel not found or not marked as pausable in application.properties: %s", channelName);
                 }
             } catch (Exception e) {
                 Log.warnf(e, "  ✗ Failed to pause channel: %s", channelName);
