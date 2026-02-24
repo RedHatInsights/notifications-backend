@@ -339,8 +339,8 @@ public class ApplicationRepository {
         return rowCount > 0;
     }
 
-    public List<EventType> getEventTypes(Query limiter, Set<UUID> appIds, UUID bundleId, String eventTypeName, boolean excludeMutedTypes, List<UUID> unmutedEventTypeIds) {
-        return getEventTypesQueryBuilder(appIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds)
+    public List<EventType> getEventTypes(Query limiter, Set<UUID> appIds, UUID bundleId, String eventTypeName, boolean excludeMutedTypes, List<UUID> unmutedEventTypeIds, boolean showHiddenEventTypes) {
+        return getEventTypesQueryBuilder(appIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds, showHiddenEventTypes)
                 .join(JoinBuilder.builder().leftJoinFetch("e.application"))
                 .limit(limiter != null ? limiter.getLimit() : null)
                 .sort(limiter != null ? Sort.getSort(limiter, null, EventType.SORT_FIELDS) : null)
@@ -348,8 +348,8 @@ public class ApplicationRepository {
                 .getResultList();
     }
 
-    public Long getEventTypesCount(Set<UUID> appIds, UUID bundleId, String eventTypeName, boolean excludeMutedTypes, List<UUID> unmutedEventTypeIds) {
-        return getEventTypesQueryBuilder(appIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds)
+    public Long getEventTypesCount(Set<UUID> appIds, UUID bundleId, String eventTypeName, boolean excludeMutedTypes, List<UUID> unmutedEventTypeIds, boolean showHiddenEventTypes) {
+        return getEventTypesQueryBuilder(appIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds, showHiddenEventTypes)
                 .buildCount(entityManager::createQuery)
                 .getSingleResult();
     }
@@ -387,18 +387,21 @@ public class ApplicationRepository {
         }
     }
 
-    private QueryBuilder<EventType> getEventTypesQueryBuilder(Set<UUID> appIds, UUID bundleId, String eventTypeName, boolean excludeMutedTypes, List<UUID> unmutedEventTypeIds) {
+    private QueryBuilder<EventType> getEventTypesQueryBuilder(Set<UUID> appIds, UUID bundleId, String eventTypeName, boolean excludeMutedTypes, List<UUID> unmutedEventTypeIds, boolean showHiddenEventTypes) {
+
+        WhereBuilder whereBuilder = WhereBuilder
+            .builder()
+            .ifAnd(appIds != null && appIds.size() > 0, "e.application.id IN (:appIds)", "appIds", appIds)
+            .ifAnd(bundleId != null, "e.application.bundle.id = :bundleId", "bundleId", bundleId)
+            .ifAnd(eventTypeName != null, "(LOWER(e.displayName) LIKE :eventTypeName OR LOWER(e.name) LIKE :eventTypeName)", "eventTypeName", (Supplier<String>) () -> "%" + eventTypeName.toLowerCase() + "%")
+            .ifAnd(excludeMutedTypes, "e.id IN (:unmutedEventTypeIds)", "unmutedEventTypeIds", unmutedEventTypeIds);
+        if (!showHiddenEventTypes) {
+            whereBuilder.and("e.visible = true");
+        }
+
         return QueryBuilder
                 .builder(EventType.class)
                 .alias("e")
-                .where(
-                        WhereBuilder
-                                .builder()
-                                .ifAnd(appIds != null && appIds.size() > 0, "e.application.id IN (:appIds)", "appIds", appIds)
-                                .ifAnd(bundleId != null, "e.application.bundle.id = :bundleId", "bundleId", bundleId)
-                                .ifAnd(eventTypeName != null, "(LOWER(e.displayName) LIKE :eventTypeName OR LOWER(e.name) LIKE :eventTypeName)", "eventTypeName", (Supplier<String>) () -> "%" + eventTypeName.toLowerCase() + "%")
-                                .ifAnd(excludeMutedTypes, "e.id IN (:unmutedEventTypeIds)", "unmutedEventTypeIds", unmutedEventTypeIds)
-                                .and("e.visible = true")
-                );
+                .where(whereBuilder);
     }
 }

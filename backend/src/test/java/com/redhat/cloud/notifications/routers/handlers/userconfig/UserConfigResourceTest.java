@@ -71,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -309,6 +310,22 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         SettingsValueByEventTypeJsonForm.Application rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
         assertNull(rhelPolicy, "RHEL policies found");
+
+        // the event type is not visible but the org have "show hidden event types" privilege
+        when(backendConfig.isShowHiddenEventTypes(eq(orgId))).thenReturn(true);
+        settingsValuesByEventType = given()
+            .header(identityHeader)
+            .queryParam("bundleName", bundle)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+
+        rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
+        assertNotNull(rhelPolicy, "RHEL policies not found");
+        // remove extra privilege
+        when(backendConfig.isShowHiddenEventTypes(eq(orgId))).thenReturn(false);
 
         updatePoliciesEventTypeVisibility(true);
         settingsValuesByEventType = given()

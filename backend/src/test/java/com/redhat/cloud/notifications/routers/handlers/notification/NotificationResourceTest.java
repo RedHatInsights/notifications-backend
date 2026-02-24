@@ -271,6 +271,62 @@ public class NotificationResourceTest extends DbIsolatedTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
+    void testEventTypeVisibility(boolean kesselEnabled) {
+
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
+        if (kesselEnabled) {
+            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+        }
+
+        Bundle bundle = helpers.createBundle("test-event-type-visibility-bundle", "...");
+        Application app1 = helpers.createApplication(bundle.getId(), "test-event-type-visibility-application", "...");
+        EventType visibleEventType = helpers.createEventType(app1.getId(), "visible", "visible", "...", false, true);
+        EventType hiddenEventType = helpers.createEventType(app1.getId(), "not-visible", "not-visible", "...", false, false);
+
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, RbacAccess.FULL_ACCESS);
+
+        Response response = given()
+            .when()
+            .header(identityHeader)
+            .queryParam("applicationIds", app1.getId())
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
+
+        JsonObject page = new JsonObject(response.getBody().asString());
+        JsonArray eventTypes = page.getJsonArray("data");
+        assertEquals(1, eventTypes.size());
+        assertEquals(visibleEventType.getId(), UUID.fromString(eventTypes.getJsonObject(0).getString("id")));
+
+        when(backendConfig.isShowHiddenEventTypes(DEFAULT_ORG_ID)).thenReturn(true);
+        response = given()
+            .when()
+            .header(identityHeader)
+            .queryParam("applicationIds", app1.getId())
+            .get("/notifications/eventTypes")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().response();
+
+        page = new JsonObject(response.getBody().asString());
+        eventTypes = page.getJsonArray("data");
+        assertEquals(2, eventTypes.size());
+
+        Set<UUID> returnedUUID = new HashSet<>();
+        for (int i = 0; i < eventTypes.size(); i++) {
+            returnedUUID.add(
+                UUID.fromString(eventTypes.getJsonObject(i).getString("id"))
+            );
+        }
+
+        assertEquals(Set.of(visibleEventType.getId(), hiddenEventType.getId()), returnedUUID);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
     void testEventTypeFetchingByBundle(boolean kesselEnabled) {
 
         when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);

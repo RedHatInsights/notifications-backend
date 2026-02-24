@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers.handlers.notification;
 
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
@@ -102,6 +103,9 @@ public class NotificationResource {
     @Inject
     EventTypeRepository eventTypeRepository;
 
+    @Inject
+    BackendConfig backendConfig;
+
     @Path(API_NOTIFICATIONS_V_1_0 + "/notifications")
     public static class V1 extends NotificationResource {
     }
@@ -146,8 +150,10 @@ public class NotificationResource {
             ? behaviorGroupRepository.findUnmutedEventTypes(getOrgId(securityContext), bundleId)
             : null;
 
-        List<EventType> eventTypes = applicationRepository.getEventTypes(query, applicationIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds);
-        Long count = applicationRepository.getEventTypesCount(applicationIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds);
+        final String orgId = getOrgId(securityContext);
+        final boolean showHiddenEventTypes = backendConfig.isShowHiddenEventTypes(orgId);
+        List<EventType> eventTypes = applicationRepository.getEventTypes(query, applicationIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds, showHiddenEventTypes);
+        Long count = applicationRepository.getEventTypesCount(applicationIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds, showHiddenEventTypes);
         return new Page<>(
             eventTypes,
             PageLinksBuilder.build(uriInfo, count, query.getLimit().getLimit(), query.getLimit().getOffset()),

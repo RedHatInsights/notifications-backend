@@ -241,7 +241,7 @@ public class UserConfigResource {
         SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = new SettingsValuesByEventType.ApplicationSettingsValue();
         applicationSettingsValue.displayName = application.getDisplayName();
         for (EventType eventType : application.getEventTypes()) {
-            if (eventType.isVisible()) {
+            if (eventType.isVisible() || backendConfig.isShowHiddenEventTypes(orgId)) {
                 SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
                 eventTypeSettingsValue.displayName = eventType.getDisplayName();
                 eventTypeSettingsValue.hasForcedEmail = withForcedEmails;

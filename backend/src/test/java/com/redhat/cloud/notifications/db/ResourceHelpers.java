@@ -123,12 +123,17 @@ public class ResourceHelpers {
     }
 
     public EventType createEventType(UUID applicationId, String name, String displayName, String description, boolean isRestrictToRecipientsIntegrations) {
+        return createEventType(applicationId, name, displayName, description, isRestrictToRecipientsIntegrations, true);
+    }
+
+    public EventType createEventType(UUID applicationId, String name, String displayName, String description, boolean isRestrictToRecipientsIntegrations, boolean isVisible) {
         EventType eventType = new EventType();
         eventType.setName(name);
         eventType.setDisplayName(displayName);
         eventType.setDescription(description);
         eventType.setApplicationId(applicationId);
         eventType.setRestrictToRecipientsIntegrations(isRestrictToRecipientsIntegrations);
+        eventType.setVisible(isVisible);
         return applicationRepository.createEventType(eventType);
     }
 

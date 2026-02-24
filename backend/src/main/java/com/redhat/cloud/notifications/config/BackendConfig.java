@@ -50,6 +50,7 @@ public class BackendConfig {
     private String useCommonTemplateModuleForUserPrefApisToggle;
     private String sourcesOidcAuthToggle;
     private String toggleUseBetaTemplatesEnabled;
+    private String showHiddenEventTypesToggle;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -128,6 +129,7 @@ public class BackendConfig {
         useCommonTemplateModuleForUserPrefApisToggle = toggleRegistry.register("use-common-template-module-for-user-pref-apis", true);
         sourcesOidcAuthToggle = toggleRegistry.register("sources-oidc-auth", true);
         toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
+        showHiddenEventTypesToggle = toggleRegistry.register("show-hidden-event-types", true);
     }
 
     void logConfigAtStartup(@Observes Startup event) {
@@ -148,6 +150,7 @@ public class BackendConfig {
         config.put(SECURED_EMAIL_TEMPLATES, useSecuredEmailTemplates);
         config.put(UNLEASH, unleashEnabled);
         config.put(sourcesOidcAuthToggle, isSourcesOidcAuthEnabled(null));
+        config.put(showHiddenEventTypesToggle, isShowHiddenEventTypes(null));
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -303,6 +306,14 @@ public class BackendConfig {
         if (unleashEnabled) {
             UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
             return unleash.isEnabled(sourcesOidcAuthToggle, unleashContext, false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isShowHiddenEventTypes(String orgId) {
+        if (unleashEnabled) {
+            return unleash.isEnabled(showHiddenEventTypesToggle, buildUnleashContextWithOrgId(orgId), false);
         } else {
             return false;
         }
