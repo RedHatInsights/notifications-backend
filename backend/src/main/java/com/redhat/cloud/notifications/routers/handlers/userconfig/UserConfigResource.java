@@ -240,8 +240,9 @@ public class UserConfigResource {
         Bundle bundle = application.getBundle();
         SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = new SettingsValuesByEventType.ApplicationSettingsValue();
         applicationSettingsValue.displayName = application.getDisplayName();
+        boolean showHiddenEventTypes = backendConfig.isShowHiddenEventTypes(orgId);
         for (EventType eventType : application.getEventTypes()) {
-            if (eventType.isVisible() || backendConfig.isShowHiddenEventTypes(orgId)) {
+            if (eventType.isVisible() || showHiddenEventTypes) {
                 SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
                 eventTypeSettingsValue.displayName = eventType.getDisplayName();
                 eventTypeSettingsValue.hasForcedEmail = withForcedEmails;
