@@ -166,7 +166,7 @@ public class UserConfigResource {
             Set<Severity> subscribedSeverities = subscriptionTypeDetails.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).collect(Collectors.toSet());
             for (Severity severity : subscribedSeverities) {
                 if (!eventType.get().getAvailableSeverities().contains(severity)) {
-                    throw new NotFoundException(String.format("Event type '%s' doesn't support '%s' severity", eventType.get().getId(), severity.name()));
+                    throw new NotFoundException(String.format("Event type '%s' doesn't support '%s' severity", eventType.get().getDisplayName(), severity.name()));
                 }
             }
 
