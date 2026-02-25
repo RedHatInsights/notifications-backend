@@ -1,10 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.config.EngineConfig;
-import com.redhat.cloud.notifications.events.ConnectorReceiver;
 import com.redhat.cloud.notifications.events.EventConsumer;
-import com.redhat.cloud.notifications.events.ReplayEventConsumer;
-import com.redhat.cloud.notifications.exports.ExportEventListener;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.ShutdownEvent;
 import io.smallrye.reactive.messaging.ChannelRegistry;
@@ -14,7 +11,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 
-import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -84,41 +81,47 @@ public class GracefulShutdownManager {
 
     /**
      * Pauses all Kafka consumer channels to prevent fetching new messages.
+     * Automatically discovers all incoming channels using the ChannelRegistry,
+     * but only pauses those that are actually pausable (Kafka consumers, not emitters).
      */
     private void pauseAllKafkaConsumers() {
         Log.info("Pausing all Kafka consumer channels...");
 
-        /**
-         * All pausable Kafka consumer channels in the application.
-         */
-        List<String> KAFKA_CHANNELS = List.of(
-            EventConsumer.INGRESS_CHANNEL,              // "ingress"
-            ReplayEventConsumer.INGRESS_REPLAY_CHANNEL, // "ingressreplay"
-            ConnectorReceiver.FROMCAMEL_CHANNEL,        // "fromcamel"
-            ExportEventListener.EXPORT_CHANNEL          // Export requests
-        );
+        // Get only emitter names (these are outgoing)
+        Set<String> emitterNames = channelRegistry.getEmitterNames();
+
+        // Filter incoming names by excluding emitters
+        Set<String> incomingChannels = channelRegistry.getIncomingNames();
+        incomingChannels.removeAll(emitterNames);
+
+        Log.infof("  Found %d incoming channel(s) to process", incomingChannels.size());
 
         int pausedCount = 0;
-        for (String channelName : KAFKA_CHANNELS) {
+        int skippedCount = 0;
+        for (String channelName : incomingChannels) {
             try {
                 PausableChannel channel = channelRegistry.getPausable(channelName);
                 if (channel != null) {
+                    // This is an actual pausable Kafka consumer channel
                     if (!channel.isPaused()) {
                         channel.pause();
                         pausedCount++;
-                        Log.infof("  ✓ Paused channel: %s", channelName);
+                        Log.infof("  ✓ Paused Kafka consumer: %s", channelName);
                     } else {
-                        Log.debugf("  - Channel already paused: %s", channelName);
+                        Log.infof("  - Channel already paused: %s", channelName);
                     }
                 } else {
-                    Log.debugf("  - Channel not found or not marked as pausable in application.properties: %s", channelName);
+                    // Not a pausable channel (e.g., emitter-based channels like toCamel)
+                    // These don't consume from Kafka, so no need to pause
+                    skippedCount++;
+                    Log.infof("  - Skipped non-pausable channel: %s (not configured as pausable in application.properties file)", channelName);
                 }
             } catch (Exception e) {
-                Log.warnf(e, "  ✗ Failed to pause channel: %s", channelName);
+                Log.warnf(e, "  ✗ Failed to pause channel: %s - Messages may be lost during shutdown!", channelName);
             }
         }
 
-        Log.infof("Paused %d Kafka channel(s)", pausedCount);
+        Log.infof("Successfully paused %d Kafka consumer(s), skipped %d non-pausable channel(s)", pausedCount, skippedCount);
 
         // Give Kafka a brief moment to stop in-flight fetch requests
         try {
