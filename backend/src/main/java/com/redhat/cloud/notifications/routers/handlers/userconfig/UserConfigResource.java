@@ -159,7 +159,7 @@ public class UserConfigResource {
             boolean supported = isTemplateSupported(bundleName, applicationName, eventType.get(), subscriptionType, orgId);
 
             if (!supported) {
-                throw new NotFoundException(String.format("Event type '%s' doesn't support '%s' subscription", eventType.get().getId(), subscriptionType.name()));
+                throw new NotFoundException(String.format("Event type '%s' doesn't support '%s' subscription", eventType.get().getDisplayName(), subscriptionType.name()));
             }
 
             // Check it the user subscribed to available severities regarding the event type config
