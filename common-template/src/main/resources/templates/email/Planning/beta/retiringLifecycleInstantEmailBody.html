@@ -1,0 +1,71 @@
+{@boolean renderSection1=true}
+{@boolean renderSection2=true}
+{@boolean renderTitleRightPart=true}
+{#include email/Common/insightsEmailBodyLightV2}
+{#content-header}
+Red Hat Enterprise Linux - Lifecycle Biweekly report - {action.context.lifecycle.report_date}
+{/content-header}
+{#content-title-section1}
+    Upcoming retirements
+{/content-title-section1}
+{#content-body-section1}
+<table style="width: 100%; border: 0">
+<tr><td>
+<table style="width: 100%; border: 0; margin-bottom: 16px;">
+<tr>
+{#if action.context.lifecycle.rhel_systems_expiring_soon.orEmpty.data.size > 0}
+<td style="width: 50%; padding-right: 8px;">
+    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 16px; width: 100%;"><tr><td>
+        <strong style="font-size: 14px;">RHEL</strong><br/>
+        <span style="font-size: 24px; font-weight: 600; line-height: 32px;">{action.context.lifecycle.rhel_systems_expiring_soon.meta.count}</span><br/>
+        <span style="font-size: 14px; color: #6a6e73;">In next 3 months</span>
+    </td></tr></table>
+</td>
+{/if}
+{#if action.context.lifecycle.appstream_packages_expiring_soon.orEmpty.data.size > 0}
+<td style="width: 50%; padding-left: 8px;">
+    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 16px; width: 100%;"><tr><td>
+        <strong style="font-size: 14px;">App streams</strong><br/>
+        <span style="font-size: 24px; font-weight: 600; line-height: 32px;">{action.context.lifecycle.appstream_packages_expiring_soon.meta.count}</span><br/>
+        <span style="font-size: 14px; color: #6a6e73;">In next 6 months</span>
+    </td></tr></table>
+</td>
+{/if}
+</tr>
+</table>
+</td></tr>
+</table>
+{/content-body-section1}
+{#content-title-section2}
+    Past retirements
+{/content-title-section2}
+{#content-body-section2}
+<table style="width: 100%; border: 0">
+<tr><td>
+<table style="width: 100%; border: 0;">
+<tr>
+{#if action.context.lifecycle.rhel_systems_retired.orEmpty.data.size > 0}
+<td style="width: 50%; padding-right: 8px;">
+    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 16px; width: 100%;"><tr><td>
+        <strong style="font-size: 14px;">RHEL</strong><br/>
+        <span style="font-size: 24px; font-weight: 600; line-height: 32px;">{action.context.lifecycle.rhel_systems_retired.meta.count}</span>
+    </td></tr></table>
+</td>
+{/if}
+{#if action.context.lifecycle.appstream_packages_retired.orEmpty.data.size > 0}
+<td style="width: 50%; padding-left: 8px;">
+    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 16px; width: 100%;"><tr><td>
+        <strong style="font-size: 14px;">App streams</strong><br/>
+        <span style="font-size: 24px; font-weight: 600; line-height: 32px;">{action.context.lifecycle.appstream_packages_retired.meta.count}</span>
+    </td></tr></table>
+</td>
+{/if}
+</tr>
+</table>
+</td></tr>
+</table>
+{/content-body-section2}
+{#content-button-href}{environment.url}/insights/planning/lifecycle?{query_params}{/content-button-href}
+{#content-button-service-name}Lifecycle - Planning{/content-button-service-name}
+{/include}
+
