@@ -9,4 +9,6 @@ public class EventType {
     public String name;
     public String displayName;
     public String description;
+    public String defaultSeverity;
+    public string[] availableSeverities;
 }
