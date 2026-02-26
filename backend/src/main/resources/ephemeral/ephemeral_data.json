@@ -99,7 +99,7 @@
               "display_name": "Deactivated recommendation",
               "description": "Notifications when there is a deactivated recommendation",
               "default_severity": "NONE",
-              "available_severities": ["CRITICAL, IMPORTANT, MODERATE, LOW, NONE"]
+              "available_severities": ["CRITICAL", "IMPORTANT", "MODERATE", "LOW", "NONE"]
             }
           ]
         },
