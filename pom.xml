@@ -82,7 +82,7 @@
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.31.4</quarkus.platform.version>
+        <quarkus.platform.version>3.32.1</quarkus.platform.version>
         <redhat.event-schemas.version>1.5.0</redhat.event-schemas.version>
         <com.networknt.json-schema-validator.version>2.0.1</com.networknt.json-schema-validator.version>
 
