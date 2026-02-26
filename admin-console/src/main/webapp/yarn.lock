@@ -2236,9 +2236,9 @@
     "@types/node" "*"
 
 "@types/node@*":
-  version "25.3.0"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-25.3.0.tgz#749b1bd4058e51b72e22bd41e9eab6ebd0180470"
-  integrity sha512-4K3bqJpXpqfg2XKGK9bpDTc6xO/xoUP/RBWS7AtRMug6zZFaRekiLzjVtAoZMquxoAbzBvy5nxQ7veS5eYzf8A==
+  version "25.3.2"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-25.3.2.tgz#cbc4b963e1b3503eb2bcf7c55bf48c95204918d1"
+  integrity sha512-RpV6r/ij22zRRdyBPcxDeKAzH43phWVKEjL2iksqo1Vz3CuBUrgmPpPhALKiRfU7OMCmeeO9vECBMsV0hMTG8Q==
   dependencies:
     undici-types "~7.18.0"
 
@@ -10314,15 +10314,15 @@ webpack-sources@^2.2.0:
     source-list-map "^2.0.1"
     source-map "^0.6.1"
 
-webpack-sources@^3.3.3:
+webpack-sources@^3.3.4:
   version "3.3.4"
   resolved "https://registry.yarnpkg.com/webpack-sources/-/webpack-sources-3.3.4.tgz#a338b95eb484ecc75fbb196cbe8a2890618b4891"
   integrity sha512-7tP1PdV4vF+lYPnkMR0jMY5/la2ub5Fc/8VQrrU+lXkiM6C4TjVfGw7iKfyhnTQOsD+6Q/iKw0eFciziRgD58Q==
 
 webpack@^5.11.0, webpack@^5.64.4:
-  version "5.105.2"
-  resolved "https://registry.yarnpkg.com/webpack/-/webpack-5.105.2.tgz#f3b76f9fc36f1152e156e63ffda3bbb82e6739ea"
-  integrity sha512-dRXm0a2qcHPUBEzVk8uph0xWSjV/xZxenQQbLwnwP7caQCYpqG1qddwlyEkIDkYn0K8tvmcrZ+bOrzoQ3HxCDw==
+  version "5.105.3"
+  resolved "https://registry.yarnpkg.com/webpack/-/webpack-5.105.3.tgz#307ad95bafffd08bc81049d6519477b16e42e7ba"
+  integrity sha512-LLBBA4oLmT7sZdHiYE/PeVuifOxYyE2uL/V+9VQP7YSYdJU7bSf7H8bZRRxW8kEPMkmVjnrXmoR3oejIdX0xbg==
   dependencies:
     "@types/eslint-scope" "^3.7.7"
     "@types/estree" "^1.0.8"
@@ -10330,7 +10330,7 @@ webpack@^5.11.0, webpack@^5.64.4:
     "@webassemblyjs/ast" "^1.14.1"
     "@webassemblyjs/wasm-edit" "^1.14.1"
     "@webassemblyjs/wasm-parser" "^1.14.1"
-    acorn "^8.15.0"
+    acorn "^8.16.0"
     acorn-import-phases "^1.0.3"
     browserslist "^4.28.1"
     chrome-trace-event "^1.0.2"
@@ -10348,7 +10348,7 @@ webpack@^5.11.0, webpack@^5.64.4:
     tapable "^2.3.0"
     terser-webpack-plugin "^5.3.16"
     watchpack "^2.5.1"
-    webpack-sources "^3.3.3"
+    webpack-sources "^3.3.4"
 
 websocket-driver@>=0.5.1, websocket-driver@^0.7.4:
   version "0.7.4"
