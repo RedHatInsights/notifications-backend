@@ -124,6 +124,8 @@ public class EphemeralDataInitializer {
                                     eventType.setDescription(et.description);
                                     eventType.setApplication(app);
                                     eventType.setApplicationId(app.getId());
+                                    eventType.setDefaultSeverity(et.defaultSeverity);
+                                    eventType.setAvailableSeverities(et.availableSeverities);
                                     entityManager.persist(eventType);
                                 }
                             }

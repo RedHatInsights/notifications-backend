@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.ephemeral;
 
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.redhat.cloud.notifications.Severity;
+import java.util.Set;
 
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
@@ -9,4 +11,6 @@ public class EventType {
     public String name;
     public String displayName;
     public String description;
+    public Severity defaultSeverity;
+    public Set<Severity> availableSeverities;
 }
