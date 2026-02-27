@@ -3,10 +3,10 @@ package com.redhat.cloud.notifications;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.events.EventConsumer;
 import io.quarkus.logging.Log;
-import io.quarkus.runtime.ShutdownEvent;
+import io.quarkus.runtime.ShutdownDelayInitiatedEvent;
 import io.smallrye.reactive.messaging.ChannelRegistry;
 import io.smallrye.reactive.messaging.PausableChannel;
-import jakarta.annotation.Priority;
+import io.smallrye.reactive.messaging.kafka.KafkaClientService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
@@ -48,6 +48,9 @@ public class GracefulShutdownManager {
     @Inject
     EngineConfig engineConfig;
 
+    @Inject
+    KafkaClientService kafkaClientService;
+
     /**
      * High-priority shutdown observer that runs BEFORE @PreDestroy methods
      * and BEFORE Quarkus infrastructure (EntityManager, datasource) shutdown.
@@ -55,7 +58,7 @@ public class GracefulShutdownManager {
      * The priority value of 100 ensures this executes early in the shutdown
      * sequence (lower numbers = higher priority). Default is 2500.
      */
-    void onShutdown(@Observes @Priority(100) ShutdownEvent event) {
+    void onShutdown(@Observes ShutdownDelayInitiatedEvent event) {
         Log.info("=== Starting graceful shutdown sequence ===");
 
         // Step 1: Stop all Kafka consumers from fetching new messages
@@ -67,13 +70,9 @@ public class GracefulShutdownManager {
             Log.info("Async event processing is ENABLED - draining executor");
             drainEventConsumerExecutor();
         } else {
-            Log.info("Async event processing is DISABLED - EventConsumer processes synchronously");
-            Log.info("  Messages are fully processed before acknowledgment (already safe)");
+            Log.debug("Async event processing is DISABLED - EventConsumer processes synchronously");
+            Log.debug("  Messages are fully processed before acknowledgment (already safe)");
         }
-
-        // Step 3: @Blocking consumers (ConnectorReceiver, ExportEventListener) use POST_PROCESSING
-        // acknowledgment, so Quarkus will naturally wait for them to complete their current message
-        // No additional action needed - they're handled by the framework
 
         Log.info("=== Graceful shutdown sequence completed ===");
         Log.info("EntityManager and datasource can now safely shut down");
@@ -87,13 +86,8 @@ public class GracefulShutdownManager {
     private void pauseAllKafkaConsumers() {
         Log.info("Pausing all Kafka consumer channels...");
 
-        // Get only emitter names (these are outgoing)
-        Set<String> emitterNames = channelRegistry.getEmitterNames();
-
         // Filter incoming names by excluding emitters
-        Set<String> incomingChannels = channelRegistry.getIncomingNames();
-        incomingChannels.removeAll(emitterNames);
-
+        Set<String> incomingChannels = kafkaClientService.getConsumerChannels();
         Log.infof("  Found %d incoming channel(s) to process", incomingChannels.size());
 
         int pausedCount = 0;
@@ -125,6 +119,7 @@ public class GracefulShutdownManager {
 
         // Give Kafka a brief moment to stop in-flight fetch requests
         try {
+            Log.infof("Waiting 5s to process already pulled messages", pausedCount, skippedCount);
             Thread.sleep(5000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
