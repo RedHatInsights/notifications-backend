@@ -12,14 +12,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DefaultEventDeduplicationConfigTest {
 
+    private final DefaultEventDeduplicationConfig deduplicationConfig = new DefaultEventDeduplicationConfig();
+
     @Test
     void testGetDeduplicationKeyWithNullEventId() {
 
         Event event = new Event();
         // Event ID is null by default.
 
-        DefaultEventDeduplicationConfig deduplicationConfig = new DefaultEventDeduplicationConfig(event);
-        Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey();
+        Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey(event);
 
         assertTrue(deduplicationKey.isEmpty(), "The default deduplication key should be empty when event ID is null");
     }
@@ -31,8 +32,7 @@ class DefaultEventDeduplicationConfigTest {
         Event event = new Event();
         event.setId(eventId);
 
-        DefaultEventDeduplicationConfig deduplicationConfig = new DefaultEventDeduplicationConfig(event);
-        Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey();
+        Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey(event);
 
         assertTrue(deduplicationKey.isPresent());
         assertEquals(eventId.toString(), deduplicationKey.get());
@@ -45,15 +45,13 @@ class DefaultEventDeduplicationConfigTest {
         Event event1 = new Event();
         event1.setId(eventId1);
 
-        DefaultEventDeduplicationConfig deduplicationConfig1 = new DefaultEventDeduplicationConfig(event1);
-        Optional<String> deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
+        Optional<String> deduplicationKey1 = deduplicationConfig.getDeduplicationKey(event1);
 
         UUID eventId2 = UUID.randomUUID();
         Event event2 = new Event();
         event2.setId(eventId2);
 
-        DefaultEventDeduplicationConfig deduplicationConfig2 = new DefaultEventDeduplicationConfig(event2);
-        Optional<String> deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
+        Optional<String> deduplicationKey2 = deduplicationConfig.getDeduplicationKey(event2);
 
         assertTrue(deduplicationKey1.isPresent());
         assertTrue(deduplicationKey2.isPresent());
@@ -68,14 +66,12 @@ class DefaultEventDeduplicationConfigTest {
         Event event1 = new Event();
         event1.setId(eventId);
 
-        DefaultEventDeduplicationConfig deduplicationConfig1 = new DefaultEventDeduplicationConfig(event1);
-        Optional<String> deduplicationKey1 = deduplicationConfig1.getDeduplicationKey();
+        Optional<String> deduplicationKey1 = deduplicationConfig.getDeduplicationKey(event1);
 
         Event event2 = new Event();
         event2.setId(eventId);
 
-        DefaultEventDeduplicationConfig deduplicationConfig2 = new DefaultEventDeduplicationConfig(event2);
-        Optional<String> deduplicationKey2 = deduplicationConfig2.getDeduplicationKey();
+        Optional<String> deduplicationKey2 = deduplicationConfig.getDeduplicationKey(event2);
 
         assertTrue(deduplicationKey1.isPresent());
         assertTrue(deduplicationKey2.isPresent());
