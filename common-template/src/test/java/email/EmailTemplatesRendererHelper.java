@@ -92,6 +92,10 @@ public abstract class EmailTemplatesRendererHelper {
         return generateEmail(templateDefinition, event, pendo, ignoreUserPreferences);
     }
 
+    protected String generateAggregatedEmailBody(String jsonContext) throws JsonProcessingException {
+        return generateAggregatedEmailBody(objectMapper.readValue(jsonContext, new TypeReference<Map<String, Object>>() { }), false);
+    }
+
     protected String generateAggregatedEmailBody(String jsonContext, boolean useBetaTemplate) throws JsonProcessingException {
         return generateAggregatedEmailBody(objectMapper.readValue(jsonContext, new TypeReference<Map<String, Object>>() { }), useBetaTemplate);
     }

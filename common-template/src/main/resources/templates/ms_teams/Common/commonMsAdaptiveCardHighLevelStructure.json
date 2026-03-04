@@ -9,7 +9,48 @@
         "type":"AdaptiveCard",
         "version":"1.5",
         "body":[
+          {
+            "type": "TextBlock",
+            "text": "{data.source.event_type.display_name} - {data.source.application.display_name} - {data.source.bundle.display_name}",
+            "style": "heading",
+            "wrap": true
+          },
+          {#if data.severity??}
+          {
+            "type": "Badge",
+            "text": "{data.severity.asSeverityEmoji} {#insert severity-label}Severity:{/} {data.severity.toTitleCase}",
+            "size": "Large",
+            {#if data.severity.toUpperCase == "CRITICAL"}
+            "style": "Attention",
+            "appearance": "Tint"
+            {#else}
+            "style": "Subtle"
+            {/if}
+          },
+          {/if}
+          {
+            "type": "TextBlock",
+            "text": "{#insert content-intro}{#if data.context.display_name??}[{data.context.display_name}]({data.inventory_url.raw}) triggered {data.events.size()} event{#if data.events.size() != 1}s{/if}{#else}{data.events.size()} event{#if data.events.size() != 1}s{/if} triggered{/if}.{/}",
+            "wrap": true
+          },
           {#insert content-body}{/}
+          {
+            "type": "TextBlock",
+            "text": "Explore {#if data.events.size() != 1}these{#else}this{/if} and others in **{#insert explore-location}{data.source.application.display_name}{/}**.",
+            "wrap": true,
+            "spacing": "Padding",
+            "separator": true
+          },
+          {
+            "type": "ActionSet",
+            "actions": [
+              {
+                "type": "Action.OpenUrl",
+                "url": "{#insert action-url}{data.application_url.raw}{/}",
+                "title": "{#insert action-title}Open {data.source.application.display_name}{/}"
+              }
+            ]
+          }
         ],
         "msteams": {
           "width": "full"

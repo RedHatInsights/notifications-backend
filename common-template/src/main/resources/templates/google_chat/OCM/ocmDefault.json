@@ -1,1 +1,4 @@
-{"text":"{data.events.size()} event{#if data.events.size() > 1}s{/if} triggered from {data.source.application.display_name} - {data.source.bundle.display_name}. <https://cloud.redhat.com/openshift/details/s/{data.events[0].payload.global_vars.subscription_id}?from=notifications&integration=google_chat|Open {data.source.application.display_name}>"}
+{#include google_chat/Common/commonCardsV2.json}
+  {#content-intro}{data.events.size()} event{#if data.events.size() != 1}s{/if} triggered.{/content-intro}
+  {#button-url}https://cloud.redhat.com/openshift/details/s/{data.events[0].payload.global_vars.subscription_id}?from=notifications&integration=google_chat{/button-url}
+{/include}

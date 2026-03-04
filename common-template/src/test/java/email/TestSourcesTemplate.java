@@ -40,11 +40,7 @@ public class TestSourcesTemplate extends EmailTemplatesRendererHelper {
     @ValueSource(booleans = {true, false})
     public void testAvailabilityStatusEmailBody(boolean useBetaTemplate) {
         String result = generateEmailBody(AVAILABILITY_STATUS, ACTION, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("The availability of integration"));
-        } else {
-            assertTrue(result.contains("availability status was changed"));
-        }
+        assertTrue(result.contains("The availability of integration"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 

@@ -123,15 +123,10 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
     public void testInstantEmailBody(boolean useBetaTemplate) {
         Action action = InventoryTestHelpers.createInventoryAction("", "", "", "FooEvent");
         String result = generateEmailBody(EVENT_TYPE_VALIDATION_ERROR, action, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("Data in a payload from insights-client was unable to be processed in the inventory due to corrupted data, incorrect values, or another issue."));
-            // Overall severity icon in body with no custom border
-            assertFalse(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
-            assertTrue(result.contains("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/severities/important.png\" alt=\"[Important]\""));
-        } else {
-            assertTrue(result.contains(InventoryTestHelpers.DISPLAY_NAME_1), "Body should contain host display name" + InventoryTestHelpers.DISPLAY_NAME_1);
-            assertTrue(result.contains(InventoryTestHelpers.ERROR_MESSAGE_1), "Body should contain error message" + InventoryTestHelpers.ERROR_MESSAGE_1);
-        }
+        assertTrue(result.contains("Data in a payload from insights-client was unable to be processed in the inventory due to corrupted data, incorrect values, or another issue."));
+        // Overall severity icon in body with no custom border
+        assertFalse(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
+        assertTrue(result.contains("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/severities/important.png\" alt=\"[Important]\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -242,11 +237,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
         final String result = generateEmailBody(EVENT_TYPE_NEW_SYSTEM_REGISTERED, action, useBetaTemplate);
 
         Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
-        if (useBetaTemplate) {
-            Assertions.assertTrue(result.contains("was registered in the inventory."), "the message body should indicate that the system was registered");
-        } else {
-            Assertions.assertTrue(result.contains("was registered in Inventory."), "the message body should indicate that the system was registered");
-        }
+        Assertions.assertTrue(result.contains("was registered in the inventory."), "the message body should indicate that the system was registered");
 
         assertOpenInventoryInsightsButtonPresent(result, true, useBetaTemplate);
     }
@@ -281,23 +272,13 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
 
         Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
 
-        if (useBetaTemplate) {
-            Assertions.assertTrue(
-                Pattern
-                    .compile(String.format("The state of system.+%s.+changed to stale in the inventory", hostDisplayName))
-                    .matcher(result)
-                    .find(),
-                "the message body should indicate that the system was registered"
-            );
-        } else {
-            Assertions.assertTrue(
-                Pattern
-                    .compile(String.format("The state of system.+%s.+changed to stale in Inventory", hostDisplayName))
-                    .matcher(result)
-                    .find(),
-                "the message body should indicate that the system was registered"
-            );
-        }
+        Assertions.assertTrue(
+            Pattern
+                .compile(String.format("The state of system.+%s.+changed to stale in the inventory", hostDisplayName))
+                .matcher(result)
+                .find(),
+            "the message body should indicate that the system was registered"
+        );
 
         assertOpenInventoryInsightsButtonPresent(result, true, useBetaTemplate);
     }
@@ -331,11 +312,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
         final String result = generateEmailBody(EVENT_TYPE_SYSTEM_DELETED, action, useBetaTemplate);
 
         Assertions.assertTrue(result.contains(hostDisplayName), "the message body should contain the host's display name");
-        if (useBetaTemplate) {
-            Assertions.assertTrue(result.contains("was deleted from the inventory."), "the message body should indicate that the system was deleted");
-        } else {
-            Assertions.assertTrue(result.contains("was deleted from Inventory."), "the message body should indicate that the system was deleted");
-        }
+        Assertions.assertTrue(result.contains("was deleted from the inventory."), "the message body should indicate that the system was deleted");
 
         assertOpenInventoryInsightsButtonPresent(result, true, useBetaTemplate);
     }
@@ -347,27 +324,15 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
      * @param instant_email specifies query parameter for instant or aggregation email
      */
     private void assertOpenInventoryInsightsButtonPresent(final String result, final boolean instant_email, final boolean useBetaTemplate) {
-        if (useBetaTemplate) {
-            Assertions.assertTrue(
-                result.contains(
-                    String.format(
-                        "<a href=\"%s/insights/inventory/%s\" target=\"_blank\"",
-                        environment.url(),
-                        instant_email ? "?from=notifications&integration=instant_email" : "?from=notifications&integration=daily_digest"
-                    )
+        Assertions.assertTrue(
+            result.contains(
+                String.format(
+                    "<a href=\"%s/insights/inventory/%s\" target=\"_blank\"",
+                    environment.url(),
+                    instant_email ? "?from=notifications&integration=instant_email" : "?from=notifications&integration=daily_digest"
                 )
-            );
-        } else {
-            Assertions.assertTrue(
-                result.contains(
-                    String.format(
-                        "<a target=\"_blank\" href=\"%s/insights/inventory/%s\">Open Inventory in Red Hat Lightspeed</a>",
-                        environment.url(),
-                        instant_email ? "?from=notifications&integration=instant_email" : "?from=notifications&integration=daily_digest"
-                    )
-                )
-            );
-        }
+            )
+        );
     }
 
     /**

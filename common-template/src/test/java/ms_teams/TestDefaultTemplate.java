@@ -27,7 +27,6 @@ class TestDefaultTemplate {
     private static final String APP_BUNDLE_HEADER = "Policies - Red Hat Enterprise Linux";
 
     private static final String TEAMS_EXPECTED_MAIN_MSG = "[%s](" + INVENTORY_URL + ") triggered %d event%s";
-    private static final String TEAMS_EXPECTED_INLINE_URL_MSG = "[Open Policies](" + APPLICATION_URL + ")";
     private static final String TEAMS_EXPECTED_EXPLORE_APP_MSG = "Explore %s and others in **Policies**.";
 
     private static Stream<Arguments> betaAndSeverity() {
@@ -53,52 +52,35 @@ class TestDefaultTemplate {
             useBetaTemplates
         );
 
-        if (useBetaTemplates) {
-            // The JSON schema is not up to date with the preferred formatting of Teams.
-            // Validated using https://adaptivecards.microsoft.com/designer.html
-
-            assertTrue(result.contains(TestHelpers.NOT_USE_EVENT_TYPE + " - " + APP_BUNDLE_HEADER));
-            switch (severity) {
-                case null -> assertFalse(result.contains("\"type\": \"Badge\""));
-                case "LOW" -> {
-                    assertTrue(result.contains("\u26AB Severity: Low"));
-                    assertTrue(result.contains("\"style\": \"Subtle\""));
-                }
-                case "CRITICAL" -> {
-                    assertTrue(result.contains("\u203C\uFE0F Severity: Critical"));
-                    assertTrue(result.contains("\"appearance\": \"Tint\""));
-                    assertTrue(result.contains("\"style\": \"Attention\""));
-                }
-                default -> {
-                    // Nothing
-                }
+        assertTrue(result.contains(TestHelpers.NOT_USE_EVENT_TYPE + " - " + APP_BUNDLE_HEADER));
+        switch (severity) {
+            case null -> assertFalse(result.contains("\"type\": \"Badge\""));
+            case "LOW" -> {
+                assertTrue(result.contains("\u26AB Severity: Low"));
+                assertTrue(result.contains("\"style\": \"Subtle\""));
             }
-
-            assertTrue(result.contains(
-                    String.format(TEAMS_EXPECTED_MAIN_MSG,
-                            action.getContext().getAdditionalProperties().get("display_name"),
-                            action.getEvents().size(),
-                            action.getEvents().size() != 1 ? "s" : StringUtils.EMPTY
-                    )));
-            assertTrue(result.contains(String.format(TEAMS_EXPECTED_EXPLORE_APP_MSG,
-                    action.getEvents().size() != 1 ? "these" : "this")));
-
-            // Open Policies button
-            assertTrue(result.contains("\"type\": \"Action.OpenUrl\""));
-            assertTrue(result.contains("\"url\": \"" + APPLICATION_URL + "\""));
-            assertTrue(result.contains("\"title\": \"Open Policies\""));
-        } else {
-            final String expectedMessage = String.format(TEAMS_EXPECTED_MAIN_MSG + " from " + APP_BUNDLE_HEADER + ". " + TEAMS_EXPECTED_INLINE_URL_MSG,
-                    action.getContext().getAdditionalProperties().get("display_name"),
-                    action.getEvents().size(),
-                    action.getEvents().size() != 1 ? "s" : StringUtils.EMPTY);
-
-            // check notification body
-            assertTrue(result.contains(expectedMessage));
-
-            // check content from parent template
-            AdaptiveCardValidatorHelper.validate(result);
+            case "CRITICAL" -> {
+                assertTrue(result.contains("\u203C\uFE0F Severity: Critical"));
+                assertTrue(result.contains("\"appearance\": \"Tint\""));
+                assertTrue(result.contains("\"style\": \"Attention\""));
+            }
+            default -> {
+                // Nothing
+            }
         }
 
+        assertTrue(result.contains(
+                String.format(TEAMS_EXPECTED_MAIN_MSG,
+                        action.getContext().getAdditionalProperties().get("display_name"),
+                        action.getEvents().size(),
+                        action.getEvents().size() != 1 ? "s" : StringUtils.EMPTY
+                )));
+        assertTrue(result.contains(String.format(TEAMS_EXPECTED_EXPLORE_APP_MSG,
+                action.getEvents().size() != 1 ? "these" : "this")));
+
+        // Open Policies button
+        assertTrue(result.contains("\"type\": \"Action.OpenUrl\""));
+        assertTrue(result.contains("\"url\": \"" + APPLICATION_URL + "\""));
+        assertTrue(result.contains("\"title\": \"Open Policies\""));
     }
 }
