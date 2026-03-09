@@ -1,71 +1,170 @@
 {@boolean renderSection1=true}
-{@boolean renderSection2=true}
 {@boolean renderTitleRightPart=true}
 {#include email/Common/insightsEmailBodyLightV2}
 {#content-header}
-Red Hat Enterprise Linux - Lifecycle Biweekly report - {action.context.lifecycle.report_date}
+Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle.report_date}
 {/content-header}
 {#content-title-section1}
-    Upcoming retirements
+    Life cycle
 {/content-title-section1}
 {#content-body-section1}
-<table style="width: 100%; border: 0">
+{#let hasRhelRetired = action.events[0].payload.rhel_retired.orEmpty.meta.systems_count > 0}
+{#let hasRhelExpiring = action.events[0].payload.rhel_near_retirement.orEmpty.meta.systems_count > 0}
+{#let rhel10RetiredCount = action.events[0].payload.appstream_retired.orEmpty.meta.rhel10_appstreams_count.or(0)}
+{#let rhel10ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.meta.rhel10_appstreams_count.or(0)}
+{#let rhel9RetiredCount = action.events[0].payload.appstream_retired.orEmpty.meta.rhel9_appstreams_count.or(0)}
+{#let rhel9ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.meta.rhel9_appstreams_count.or(0)}
+{#let rhel8RetiredCount = action.events[0].payload.appstream_retired.orEmpty.meta.rhel8_appstreams_count.or(0)}
+{#let rhel8ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.meta.rhel8_appstreams_count.or(0)}
+{#let rhel10RetiredSystemsCount = action.events[0].payload.appstream_retired.orEmpty.meta.rhel10_systems_count.or(0)}
+{#let rhel10ExpiringSystemsCount = action.events[0].payload.appstream_near_retirement.orEmpty.meta.rhel10_systems_count.or(0)}
+{#let rhel9RetiredSystemsCount = action.events[0].payload.appstream_retired.orEmpty.meta.rhel9_systems_count.or(0)}
+{#let rhel9ExpiringSystemsCount = action.events[0].payload.appstream_near_retirement.orEmpty.meta.rhel9_systems_count.or(0)}
+{#let rhel8RetiredSystemsCount = action.events[0].payload.appstream_retired.orEmpty.meta.rhel8_systems_count.or(0)}
+{#let rhel8ExpiringSystemsCount = action.events[0].payload.appstream_near_retirement.orEmpty.meta.rhel8_systems_count.or(0)}
+{#let hasRhel10Retired = rhel10RetiredSystemsCount > 0}
+{#let hasRhel10Expiring = rhel10ExpiringSystemsCount > 0}
+{#let hasRhel9Retired = rhel9RetiredSystemsCount > 0}
+{#let hasRhel9Expiring = rhel9ExpiringSystemsCount > 0}
+{#let hasRhel8Retired = rhel8RetiredSystemsCount > 0}
+{#let hasRhel8Expiring = rhel8ExpiringSystemsCount > 0}
+
+{! RHEL life cycle section !}
+{#if hasRhelRetired || hasRhelExpiring}
+<table style="width: 100%; border: 0; margin-bottom: 24px;">
 <tr><td>
-<table style="width: 100%; border: 0; margin-bottom: 16px;">
-<tr>
-{#if action.context.lifecycle.rhel_systems_expiring_soon.orEmpty.data.size > 0}
-<td style="width: 50%; padding-right: 8px;">
-    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 16px; width: 100%;"><tr><td>
-        <strong style="font-size: 14px;">RHEL</strong><br/>
-        <span style="font-size: 24px; font-weight: 600; line-height: 32px;">{action.context.lifecycle.rhel_systems_expiring_soon.meta.count}</span><br/>
-        <span style="font-size: 14px; color: #6a6e73;">In next 3 months</span>
-    </td></tr></table>
-</td>
-{/if}
-{#if action.context.lifecycle.appstream_packages_expiring_soon.orEmpty.data.size > 0}
-<td style="width: 50%; padding-left: 8px;">
-    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 16px; width: 100%;"><tr><td>
-        <strong style="font-size: 14px;">App streams</strong><br/>
-        <span style="font-size: 24px; font-weight: 600; line-height: 32px;">{action.context.lifecycle.appstream_packages_expiring_soon.meta.count}</span><br/>
-        <span style="font-size: 14px; color: #6a6e73;">In next 6 months</span>
-    </td></tr></table>
-</td>
-{/if}
-</tr>
-</table>
+    <table style="border: solid 1px #d2d3d5; border-radius: 8px; padding: 16px; width: 100%; background-color: #f0f0f0;">
+    <tr>
+        <td colspan="2" style="padding-bottom: 16px;">
+            <strong style="font-size: 14px;">RHEL life cycle</strong>
+        </td>
+    </tr>
+    <tr>
+        <td style="width: 50%; padding-right: 8px; vertical-align: top;">
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;">{action.events[0].payload.rhel_retired.orEmpty.meta.systems_count}</div>
+            <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
+                <span style="color: #c9190b; font-size: 16px; margin-right: 4px;">●</span> Releases past retirement
+            </div>
+        </td>
+        <td style="width: 50%; padding-left: 8px; vertical-align: top;">
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;">{action.events[0].payload.rhel_near_retirement.orEmpty.meta.systems_count}</div>
+            <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
+                <span style="color: #f0ab00; font-size: 16px; margin-right: 4px;">▲</span> Releases retiring within 3 months
+            </div>
+        </td>
+    </tr>
+    </table>
 </td></tr>
 </table>
+{/if}
+
+{! RHEL 10 application streams life cycle section !}
+{#if hasRhel10Retired || hasRhel10Expiring}
+<table style="width: 100%; border: 0; margin-bottom: 24px;">
+<tr><td>
+    <table style="border: solid 1px #d2d3d5; border-radius: 8px; padding: 16px; width: 100%; background-color: #f0f0f0;">
+    <tr>
+        <td colspan="2" style="padding-bottom: 16px;">
+            <strong style="font-size: 14px;">RHEL 10 application streams life cycle</strong>
+        </td>
+    </tr>
+    <tr>
+        <td style="width: 50%; padding-right: 8px; vertical-align: top;">
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;">{rhel10RetiredCount}</div>
+            <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
+                <span style="color: #c9190b; font-size: 16px; margin-right: 4px;">●</span> Releases past retirement
+            </div>
+        </td>
+        <td style="width: 50%; padding-left: 8px; vertical-align: top;">
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;">{rhel10ExpiringCount}</div>
+            <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
+                <span style="color: #f0ab00; font-size: 16px; margin-right: 4px;">▲</span> Releases retiring within 6 months
+            </div>
+        </td>
+    </tr>
+    </table>
+</td></tr>
+</table>
+{/if}
+
+{! RHEL 9 application streams life cycle section !}
+{#if hasRhel9Retired || hasRhel9Expiring}
+<table style="width: 100%; border: 0; margin-bottom: 24px;">
+<tr><td>
+    <table style="border: solid 1px #d2d3d5; border-radius: 8px; padding: 16px; width: 100%; background-color: #f0f0f0;">
+    <tr>
+        <td colspan="2" style="padding-bottom: 16px;">
+            <strong style="font-size: 14px;">RHEL 9 application streams life cycle</strong>
+        </td>
+    </tr>
+    <tr>
+        <td style="width: 50%; padding-right: 8px; vertical-align: top;">
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;">{rhel9RetiredCount}</div>
+            <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
+                <span style="color: #c9190b; font-size: 16px; margin-right: 4px;">●</span> Releases past retirement
+            </div>
+        </td>
+        <td style="width: 50%; padding-left: 8px; vertical-align: top;">
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;">{rhel9ExpiringCount}</div>
+            <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
+                <span style="color: #f0ab00; font-size: 16px; margin-right: 4px;">▲</span> Releases retiring within 6 months
+            </div>
+        </td>
+    </tr>
+    </table>
+</td></tr>
+</table>
+{/if}
+
+{! RHEL 8 application streams life cycle section !}
+{#if hasRhel8Retired || hasRhel8Expiring}
+<table style="width: 100%; border: 0; margin-bottom: 24px;">
+<tr><td>
+    <table style="border: solid 1px #d2d3d5; border-radius: 8px; padding: 16px; width: 100%; background-color: #f0f0f0;">
+    <tr>
+        <td colspan="2" style="padding-bottom: 16px;">
+            <strong style="font-size: 14px;">RHEL 8 application streams life cycle</strong>
+        </td>
+    </tr>
+    <tr>
+        <td style="width: 50%; padding-right: 8px; vertical-align: top;">
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;">{rhel8RetiredCount}</div>
+            <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
+                <span style="color: #c9190b; font-size: 16px; margin-right: 4px;">●</span> Releases past retirement
+            </div>
+        </td>
+        <td style="width: 50%; padding-left: 8px; vertical-align: top;">
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;">{rhel8ExpiringCount}</div>
+            <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
+                <span style="color: #f0ab00; font-size: 16px; margin-right: 4px;">▲</span> Releases retiring within 6 months
+            </div>
+        </td>
+    </tr>
+    </table>
+</td></tr>
+</table>
+{/if}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
+{/let}
 {/content-body-section1}
-{#content-title-section2}
-    Past retirements
-{/content-title-section2}
-{#content-body-section2}
-<table style="width: 100%; border: 0">
-<tr><td>
-<table style="width: 100%; border: 0;">
-<tr>
-{#if action.context.lifecycle.rhel_systems_retired.orEmpty.data.size > 0}
-<td style="width: 50%; padding-right: 8px;">
-    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 16px; width: 100%;"><tr><td>
-        <strong style="font-size: 14px;">RHEL</strong><br/>
-        <span style="font-size: 24px; font-weight: 600; line-height: 32px;">{action.context.lifecycle.rhel_systems_retired.meta.count}</span>
-    </td></tr></table>
-</td>
-{/if}
-{#if action.context.lifecycle.appstream_packages_retired.orEmpty.data.size > 0}
-<td style="width: 50%; padding-left: 8px;">
-    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 16px; width: 100%;"><tr><td>
-        <strong style="font-size: 14px;">App streams</strong><br/>
-        <span style="font-size: 24px; font-weight: 600; line-height: 32px;">{action.context.lifecycle.appstream_packages_retired.meta.count}</span>
-    </td></tr></table>
-</td>
-{/if}
-</tr>
-</table>
-</td></tr>
-</table>
-{/content-body-section2}
 {#content-button-href}{environment.url}/insights/planning/lifecycle?{query_params}{/content-button-href}
 {#content-button-service-name}Lifecycle - Planning{/content-button-service-name}
 {/include}
-
