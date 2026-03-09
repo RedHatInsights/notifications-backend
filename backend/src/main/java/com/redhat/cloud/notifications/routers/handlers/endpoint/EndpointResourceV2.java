@@ -104,7 +104,7 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
     @Operation(operationId = "EndpointResource$V2_getEndpoint", summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
     @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
     public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
-        return internalGetEndpoint(sec, id, true);
+        return internalGetEndpoint(sec, id, true, true);
     }
 
     @GET
@@ -134,6 +134,6 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
         @QueryParam("active")   Boolean activeOnly,
         @QueryParam("name")     String name
     ) {
-        return internalGetEndpoints(sec, query, targetType, activeOnly, name, true);
+        return internalGetEndpoints(sec, query, targetType, activeOnly, name, true, true);
     }
 }
