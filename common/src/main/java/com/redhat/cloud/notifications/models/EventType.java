@@ -211,9 +211,13 @@ public class EventType {
         return restrictToRecipientsIntegrations;
     }
 
-    public void setIncludeInDrawer(boolean includeInDrawer) { this.includeInDrawer = includeInDrawer; }
+    public void setIncludeInDrawer(boolean includeInDrawer) {
+        this.includeInDrawer = includeInDrawer;
+    }
 
-    public boolean isIncludeInDrawer() { return includeInDrawer; }
+    public boolean isIncludeInDrawer() {
+        return includeInDrawer;
+    }
 
     public void setRestrictToRecipientsIntegrations(boolean restrictToNamedRecipients) {
         this.restrictToRecipientsIntegrations = restrictToNamedRecipients;
