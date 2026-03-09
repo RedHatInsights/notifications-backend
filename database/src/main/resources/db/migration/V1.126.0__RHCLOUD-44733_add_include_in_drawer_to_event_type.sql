@@ -1,0 +1,2 @@
+ALTER TABLE event_type
+    ADD COLUMN include_in_drawer BOOLEAN NOT NULL DEFAULT FALSE;
