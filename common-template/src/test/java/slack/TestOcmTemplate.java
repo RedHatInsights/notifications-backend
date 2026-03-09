@@ -15,7 +15,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.SLACK;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -35,7 +34,10 @@ class TestOcmTemplate {
     @ValueSource(booleans = {true, false})
     void testRenderedOcmTemplates(boolean useBetaTemplate) {
         String result = renderTemplate(null, MESSAGE, useBetaTemplate);
-        checkResult(null, result, useBetaTemplate);
+        assertTrue(result.contains(" - Cluster Manager - OpenShift"));
+        assertTrue(result.contains("\u203C\uFE0F Severity: Critical"));
+        assertTrue(result.contains("1 event triggered."));
+        assertTrue(result.contains("Explore this and others in *<" + CLUSTER_MANAGER_DEFAULT_EVENT_URL + "|Cluster Manager>*."));
     }
 
     String renderTemplate(final String eventType, final JsonObject message, boolean useBetaTemplate) {
@@ -46,21 +48,6 @@ class TestOcmTemplate {
             return templateService.renderTemplate(templateConfig, messageAsMap);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("OCM notification data transformation failed", e);
-        }
-    }
-
-    private void checkResult(String eventType, String result, boolean useBetaTemplate) {
-        if (useBetaTemplate) {
-            assertTrue(result.contains(" - Cluster Manager - OpenShift"));
-            assertTrue(result.contains("\u203C\uFE0F Severity: Critical"));
-            assertTrue(result.contains("1 event triggered."));
-            assertTrue(result.contains("Explore this and others in *<" + CLUSTER_MANAGER_DEFAULT_EVENT_URL + "|Cluster Manager>*."));
-        } else {
-            switch (eventType) {
-                case null ->
-                    assertEquals("1 event triggered from Cluster Manager - OpenShift. <" + CLUSTER_MANAGER_DEFAULT_EVENT_URL + "|Open Cluster Manager>", result);
-                default -> throw new IllegalArgumentException(eventType + "is not a valid event type");
-            }
         }
     }
 }

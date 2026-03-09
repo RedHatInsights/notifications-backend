@@ -1,41 +1,50 @@
-{@boolean renderSection1=true}
-{@boolean renderSection2=true}
+{@boolean renderTitleRightPart=true}
+{@String renderLowTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; border-color: #5e40be; border-width: 1px; border-style: solid; background-color: #ffffff; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/minor-purple.png" height="10px" style="margin-right: 4px;">Low</td></tr></table>'}
+{@String renderModerateTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; border-color: #dba614; border-width: 1px; border-style: solid; background-color: #ffffff; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/moderate.png" height="10px" style="margin-right: 4px;">Moderate</td></tr></table>'}
+{@String renderImportantTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; background-color: #ffcd17; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400;"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/important-black.png" height="10px" style="margin-right: 4px;">Important</td></tr></table>'}
+{@String renderCriticalTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; background-color: #b0370b; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400; color: #ffffff;"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/critical-white.png" height="10px" style="margin-right: 4px;">Critical</td></tr></table>'}
 {#include email/Common/insightsEmailBody}
-{#content-title}
+{#content-header-title}
     Errata - Subscription Services
+{/content-header-title}
+{#content-title}
+    New subscription security updates available
 {/content-title}
-{#content-title-section1}
-    Security updates
-{/content-title-section1}
-{#content-subtitle-section1}
-    There {#if action.events.size() == 1}is 1 security update{#else}are {action.events.size()} security updates{/if} affecting your subscriptions.
-{/content-subtitle-section1}
-{#content-body-section1}
-    <table class="rh-data-table-bordered">
+{#content-title-right-part}
+    <a target="_blank" style="{title-right-part-link-style}" href="https://access.redhat.com/errata-search?{query_params}">{action.events.size()}</a>
+{/content-title-right-part}
+{#content-body}
+    <p style="{body-section-p-style}">There {#if action.events.size() == 1}is 1 security update{#else}are {action.events.size()} security updates{/if} available for your subscriptions.</p>
+    <table style="{body-section-table-style}">
         <thead>
             <tr>
-              <th style="width: 30%">Security update</th>
-              <th style="width: 15%">Severity</th>
-              <th style="width: 45%">Synopsis</th>
+              <th style="{body-section-table-th-style}">Security update</th>
+              <th style="{body-section-table-th-style} min-width: 90px;">Severity</th>
+              <th style="{body-section-table-th-style}">Synopsis</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody style="{body-section-table-tbody-style}">
             {#if action.events.size() > 0}
                 {#each action.events}
-                <tr style="font-size: 14px;">
-                    <td><a href="{action.context.base_url}{it.payload.id}" target="_blank">{it.payload.id}</a></td>
-                    <td>{it.payload.severity}</td>
-                    <td>{it.payload.synopsis}</td>
+                <tr style="{body-section-table-tr-style}">
+                    <td style="{body-section-table-td-style}"><a style="{body-section-table-td-a-style}" href="{action.context.base_url}{it.payload.id}" target="_blank">{it.payload.id}</a></td>
+                    <td style="{body-section-table-td-style}">
+                        {#switch it.payload.severity.toLowerCase}
+                            {#case 'low'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v2.png" alt="Low" width="55" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderLowTag}<!--<![endif]-->
+                            {#case 'moderate'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v2.png" alt="Moderate" width="85" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderModerateTag}<!--<![endif]-->
+                            {#case 'important'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v2.png" alt="Important" width="86" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderImportantTag}<!--<![endif]-->
+                            {#case 'critical'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v2.png" alt="Critical" width="70" border="0"><![endif]--><!--[if !mso]><!-->{renderCriticalTag}<!--<![endif]-->
+                        {/switch}
+                    </td>
+                    <td style="{body-section-table-td-style}">{it.payload.synopsis}</td>
                 </tr>
                 {/each}
             {/if}
         </tbody>
     </table>
-{/content-body-section1}
-{#content-title-section2}
-Contact
-{/content-title-section2}
-{#content-body-section2}
-The Red Hat security contact is <a href="mailto:secalert@redhat.com">secalert@redhat.com</a>. More contact details at <a href="https://access.redhat.com/security/team/contact/">https://access.redhat.com/security/team/contact/</a>.
-{/content-body-section2}
+    <br/>
+    <p style="{body-section-p-style}">The Red Hat security contact is <a style="{body-section-underline-link-style}" href="mailto:secalert@redhat.com">secalert@redhat.com</a>. See more contact details at <a style="{body-section-table-td-a-style}" href="https://access.redhat.com/security/team/contact/">https://access.redhat.com/security/team/contact/</a>.</p>
+{/content-body}
+{#content-button-href}{environment.url}/subscriptions/inventory?{query_params}{/content-button-href}
+{#content-button-service-name}Subscriptions Inventory{/content-button-service-name}
 {/include}

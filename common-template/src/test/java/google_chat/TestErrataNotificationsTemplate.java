@@ -57,14 +57,12 @@ class TestErrataNotificationsTemplate {
         String result = templateService.renderTemplate(templateConfig, action);
         ErrataTestHelpers.checkErrataChatTemplateContent(eventType, result, RAW_ACTION, "google_chat");
 
-        if (useBetaTemplate) {
-            if (eventType.equals(SECURITY_ERRATA)) {
-                assertTrue(result.contains("Highest severity: Moderate"));
-            } else {
-                assertTrue(result.contains("Severity: Moderate"));
-            }
-            assertTrue(result.contains("\"text\": \"Explore these and others in <b>errata search</b>.\""));
-            assertTrue(result.contains("\"url\": \"https://access.redhat.com/errata-search/?from=notifications&integration=google_chat\""));
+        if (eventType.equals(SECURITY_ERRATA)) {
+            assertTrue(result.contains("Highest severity: Moderate"));
+        } else {
+            assertTrue(result.contains("Severity: Moderate"));
         }
+        assertTrue(result.contains("\"text\": \"Explore these and others in <b>errata search</b>.\""));
+        assertTrue(result.contains("\"url\": \"https://access.redhat.com/errata-search/?from=notifications&integration=google_chat\""));
     }
 }

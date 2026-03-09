@@ -61,7 +61,7 @@ public class SlackConnectorRoutesTest extends ConnectorRoutesTest {
             JsonObject outgoingPayload = new JsonObject(exchange.getIn().getBody(String.class));
             verify(templateService, times(1)).renderTemplate(any(TemplateDefinition.class), anyMap());
 
-            boolean textMessageMatch = !outgoingPayload.getString("text").isEmpty();
+            boolean textMessageMatch = !outgoingPayload.getJsonArray("blocks").getJsonObject(0).getString("text").isEmpty();
             if (!testWithoutChannel) {
                 return textMessageMatch && outgoingPayload.getString(ExchangeProperty.CHANNEL).equals(incomingPayload.getString(ExchangeProperty.CHANNEL));
             }

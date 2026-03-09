@@ -1,171 +1,143 @@
 {@boolean renderSection1=true}
-{@boolean renderSection2=true}
-{@boolean renderButtonSection2=true}
-{@boolean hideSubtitleSection2=true}
+{@boolean renderTitleRightPart=true}
+{@String renderLowTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; border-color: #5e40be; border-width: 1px; border-style: solid; background-color: #ffffff; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/minor-purple.png" height="10px" style="margin-right: 4px;">Low</td></tr></table>'}
+{@String renderModerateTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; border-color: #dba614; border-width: 1px; border-style: solid; background-color: #ffffff; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/moderate.png" height="10px" style="margin-right: 4px;">Moderate</td></tr></table>'}
+{@String renderImportantTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; background-color: #ffcd17; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400;"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/important-black.png" height="10px" style="margin-right: 4px;">Important</td></tr></table>'}
+{@String renderCriticalTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; background-color: #b0370b; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400; color: #ffffff;"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/critical-white.png" height="10px" style="margin-right: 4px;">Critical</td></tr></table>'}
 {#include email/Common/insightsEmailBodyLight}
-{#extra-css}
-    .inline-16px{
-        width: 16px;
-        height: 16px;
-        vertical-align: -2px;
-        display: inline-block;
-    }
-    .incident-col-16px{
-        padding: 10px 0px 10px 10px !important;
-        border-right: 0px !important;
-    }
-    .incident-col-16-padding{
-        border-right: 0px !important;
-        padding: 10px 16px 10px 10px !important;
-    }
-    .recommendation-col{
-        width: 60%;
-        word-wrap: anywhere;
-        padding: 10px 10px 10px 3px !important;
-        border-left: 0px !important;
-    }
-{/extra-css}
-{#content-title}
-    Daily digest - Advisor - Red Hat Enterprise Linux
-{/content-title}
 {#content-title-section1}
     Recommendation{#if action.context.advisor.total_recommendation > 1}s{/if}
 {/content-title-section1}
-{#content-subtitle-section1}
-    {action.context.advisor.total_incident} total incident{#if action.context.advisor.total_incident > 1}s{/if}
-{/content-subtitle-section1}
-{#content-title-right-part-section1}
-    <a target="_blank" href="{environment.url}/insights/advisor?{query_params}">{action.context.advisor.total_recommendation}</a>
-{/content-title-right-part-section1}
+{#content-title-counter}
+({action.context.advisor.total_recommendation})
+{/content-title-counter}
+{#content-title-right-part}
+{action.context.advisor.total_recommendation}
+{/content-title-right-part}
 {#content-body-section1}
+<p style="{body-section-p-style}">{action.context.advisor.total_incident} total incident{#if action.context.advisor.total_incident > 1}s{/if}</p>
+
+<table style="width: 100%; border: 0">
 {#if action.context.advisor.new_recommendations.orEmpty.size > 0}
-    <table class="rh-data-table-bordered">
+    <tr><td>
+    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 0 8px 0 8px; width: 100%;"><tr><td>
+        <table style="{body-section-table-style}">
         <thead>
-        <tr>
-            <th class="incident-col-16px"></th>
-            <th class="recommendation-col">New Recommendation{#if action.context.advisor.new_recommendations.orEmpty.size > 1}s{/if}</th>
-            <th style="width: 20%">Total Risk</th>
-            <th style="width: 20%">Systems</th>
-        </tr>
-        </thead>
-        <tbody>
-        {#for rec in action.context.advisor.new_recommendations.keySet()}
-        <tr>
-            {#let isIncident = action.context.advisor.new_recommendations.get(rec).has_incident.or("false")}
-                {#if isIncident && (true == isIncident || "true" == isIncident)}
-                    <td class="incident-col-16px">
-                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" class="inline-16px" border="0" width="16" />
-                    </td>
-                {#else}
-                    <td class="incident-col-16-padding"></td>
-                {/if}
-            {/let}
-            <td class="recommendation-col">
-                <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}?{query_params}">{action.context.advisor.new_recommendations.get(rec).rule_description}</a>
-            </td>
-            <td>
-                {#switch action.context.advisor.new_recommendations.get(rec).total_risk}
-                {#case "1"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
-                {#case "2"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
-                {#case "3"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important.png" alt="Important severity" width="86" border="0">
-                {#case "4"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical.png" alt="Critical severity" width="70" border="0">
-                {/switch}
-            </td>
-            <td>{action.context.advisor.new_recommendations.get(rec).systems}</td>
-        </tr>
-        {/for}
-        </tbody>
-    </table>
+            <tr>
+                <th style="{body-section-table-th-style}">New Recommendation{#if action.context.advisor.new_recommendations.orEmpty.size > 1}s{/if}</th>
+                <th style="{body-section-table-th-style} width: 90px">Total Risk</th>
+                <th style="{body-section-table-th-style} width: 50px">Systems</th>
+            </tr>
+            </thead>
+            <tbody style="{body-section-table-tbody-style}">
+            {#for rec in action.context.advisor.new_recommendations.keySet()}
+            <tr>
+                <td style="{body-section-table-td-style}">
+                    {#let isIncident = action.context.advisor.new_recommendations.get(rec).has_incident.or("false")}
+                        {#if isIncident && (true == isIncident || "true" == isIncident)}
+                            <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" border="0" width="15" style="vertical-align: -2px;"/>&#xA0;
+                        {/if}
+                    {/let}
+                    <a style="{body-section-table-td-a-style}" target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}?{query_params}">{action.context.advisor.new_recommendations.get(rec).rule_description}</a>
+                </td>
+                <td style="{body-section-table-td-style}">
+                    {#switch action.context.advisor.new_recommendations.get(rec).total_risk}
+                    {#case "1"}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v2.png" alt="Low" width="55" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderLowTag}<!--<![endif]-->
+                    {#case "2"}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v2.png" alt="Moderate" width="85" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderModerateTag}<!--<![endif]-->
+                    {#case "3"}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v2.png" alt="Important" width="86" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderImportantTag}<!--<![endif]-->
+                    {#case "4"}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v2.png" alt="Critical" width="70" border="0"><![endif]--><!--[if !mso]><!-->{renderCriticalTag}<!--<![endif]-->
+                    {/switch}
+                </td>
+                <td style="{body-section-table-td-style}">{action.context.advisor.new_recommendations.get(rec).systems}</td>
+            </tr>
+            {/for}
+            </tbody>
+        </table>
+    </td></tr></table>
+    </td></tr>
     {#if action.context.advisor.deactivated_recommendations.orEmpty.size > 0 || action.context.advisor.resolved_recommendations.orEmpty.size > 0}
-        <div style="height: 24px">&nbsp;</div>
+    <tr><td style="line-height: 24px">&#xA0;</td></tr>
     {/if}
 {/if}
 {#if action.context.advisor.resolved_recommendations.orEmpty.size > 0}
-    <table class="rh-data-table-bordered">
-        <thead>
-        <tr>
-          <th class="incident-col-16px"></th>
-          <th class="recommendation-col">Resolved Recommendation{#if action.context.advisor.resolved_recommendations.orEmpty.size > 1}s{/if}</th>
-          <th style="width: 20%">Total Risk</th>
-          <th style="width: 20%">Systems</th>
-        </tr>
-        </thead>
-        <tbody>
-        {#for rec in action.context.advisor.resolved_recommendations.keySet()}
-          <tr>
-            {#let isIncident = action.context.advisor.resolved_recommendations.get(rec).has_incident.or("false")}
-                {#if isIncident && (true == isIncident || "true" == isIncident)}
-                    <td class="incident-col-16px">
-                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" class="inline-16px" width="16"/>
-                    </td>
-                {#else}
-                        <td class="incident-col-16-padding"></td>
-                {/if}
-            {/let}
-            <td class="recommendation-col">
-              <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}?{query_params}">{action.context.advisor.resolved_recommendations.get(rec).rule_description}</a>
-            </td>
-            <td>
-              {#switch action.context.advisor.resolved_recommendations.get(rec).total_risk}
-                {#case "1"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
-                {#case "2"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
-                {#case "3"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important.png" alt="Important severity" width="86" border="0">
-                {#case "4"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical.png" alt="Critical severity" width="70" border="0">
-              {/switch}
-            </td>
-            <td>{action.context.advisor.resolved_recommendations.get(rec).systems}</td>
-          </tr>
-        {/for}
-        </tbody>
-      </table>
+    <tr><td>
+    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 0 8px 0px 8px; width: 100%;"><tr><td>
+        <table style="{body-section-table-style}">
+            <thead>
+            <tr>
+              <th style="{body-section-table-th-style}">Resolved Recommendation{#if action.context.advisor.resolved_recommendations.orEmpty.size > 1}s{/if}</th>
+              <th style="{body-section-table-th-style} width: 90px;">Total Risk</th>
+              <th style="{body-section-table-th-style} width: 50px;">Systems</th>
+            </tr>
+            </thead>
+            <tbody style="{body-section-table-tbody-style}">
+            {#for rec in action.context.advisor.resolved_recommendations.keySet()}
+              <tr>
+                <td style="{body-section-table-td-style}">
+                    {#let isIncident = action.context.advisor.resolved_recommendations.get(rec).has_incident.or("false")}
+                        {#if isIncident && (true == isIncident || "true" == isIncident)}
+                            <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" border="0" width="15" style="vertical-align: -2px;"/>&#xA0;
+                        {/if}
+                    {/let}
+                    <a style="{body-section-table-td-a-style}" target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}?{query_params}">{action.context.advisor.resolved_recommendations.get(rec).rule_description}</a>
+                </td>
+                <td style="{body-section-table-td-style}">
+                  {#switch action.context.advisor.resolved_recommendations.get(rec).total_risk}
+                    {#case "1"}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v2.png" alt="Low" width="55" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderLowTag}<!--<![endif]-->
+                    {#case "2"}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v2.png" alt="Moderate" width="85" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderModerateTag}<!--<![endif]-->
+                    {#case "3"}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v2.png" alt="Important" width="86" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderImportantTag}<!--<![endif]-->
+                    {#case "4"}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v2.png" alt="Critical" width="70" border="0"><![endif]--><!--[if !mso]><!-->{renderCriticalTag}<!--<![endif]-->
+                  {/switch}
+                </td>
+                <td style="{body-section-table-td-style}">{action.context.advisor.resolved_recommendations.get(rec).systems}</td>
+              </tr>
+            {/for}
+            </tbody>
+          </table>
+      </td></tr></table>
+      </td></tr>
       {#if action.context.advisor.deactivated_recommendations.orEmpty.size > 0}
-        <div style="height: 24px">&nbsp;</div>
+        <tr><td style="line-height: 24px">&#xA0;</td></tr>
       {/if}
 {/if}
 {#if action.context.advisor.deactivated_recommendations.orEmpty.size > 0}
-    <table class="rh-data-table-bordered">
-       <thead>
-        <tr>
-          <th class="incident-col-16px"></th>
-          <th class="recommendation-col">Deactivated Recommendation{#if action.context.advisor.deactivated_recommendations.orEmpty.size > 1}s{/if}</th>
-          <th style="width: 40%">Total Risk</th>
-        </tr>
-        </thead>
-        <tbody>
-        {#for rec in action.context.advisor.deactivated_recommendations.keySet()}
-          <tr>
-            {#let isIncident = action.context.advisor.deactivated_recommendations.get(rec).has_incident.or("false")}
-                {#if isIncident && (true == isIncident || "true" == isIncident)}
-                    <td class="incident-col-16px">
-                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" class="inline-16px" border="0" width="16" />
-                    </td>
-                {#else}
-                    <td class="incident-col-16-padding"></td>
-                {/if}
-            {/let}
-            <td class="recommendation-col">
-                <a target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}?{query_params}">{action.context.advisor.deactivated_recommendations.get(rec).rule_description}</a>
-            </td>
-            <td>
-              {#switch action.context.advisor.deactivated_recommendations.get(rec).total_risk}
-                {#case "1"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low.png" alt="Low severity" width="55" border="0">
-                {#case "2"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate.png" alt="Moderate severity" width="85" border="0">
-                {#case "3"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important.png" alt="Important severity" width="86" border="0">
-                {#case "4"}<img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical.png" alt="Critical severity" width="70" border="0">
-              {/switch}
-            </td>
-          </tr>
-        {/for}
-        </tbody>
-    </table>
+    <tr><td>
+    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 0 8px 0 8px; width: 100%;"><tr><td>
+        <table style="{body-section-table-style}">
+           <thead>
+            <tr>
+              <th style="{body-section-table-th-style}">Deactivated Recommendation{#if action.context.advisor.deactivated_recommendations.orEmpty.size > 1}s{/if}</th>
+              <th style="{body-section-table-th-style} width: 90px;">Total Risk</th>
+            </tr>
+            </thead>
+            <tbody style="{body-section-table-tbody-style}">
+            {#for rec in action.context.advisor.deactivated_recommendations.keySet()}
+              <tr>
+                <td style="{body-section-table-td-style}">
+                {#let isIncident = action.context.advisor.deactivated_recommendations.get(rec).has_incident.or("false")}
+                    {#if isIncident && (true == isIncident || "true" == isIncident)}
+                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" title="Incident" alt="Incident" border="0" width="15" style="vertical-align: -2px;"/>&#xA0;
+                    {/if}
+                {/let}
+                    <a style="{body-section-table-td-a-style}" target="_blank" href="{environment.url}/insights/advisor/recommendations/{rec}?{query_params}">{action.context.advisor.deactivated_recommendations.get(rec).rule_description}</a>
+                </td>
+                <td style="{body-section-table-td-style}">
+                  {#switch action.context.advisor.deactivated_recommendations.get(rec).total_risk}
+                    {#case "1"}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v2.png" alt="Low" width="55" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderLowTag}<!--<![endif]-->
+                    {#case "2"}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v2.png" alt="Moderate" width="85" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderModerateTag}<!--<![endif]-->
+                    {#case "3"}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v2.png" alt="Important" width="86" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderImportantTag}<!--<![endif]-->
+                    {#case "4"}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v2.png" alt="Critical" width="70" border="0"><![endif]--><!--[if !mso]><!-->{renderCriticalTag}<!--<![endif]-->
+                  {/switch}
+                </td>
+              </tr>
+            {/for}
+            </tbody>
+        </table>
+    </td></tr></table>
+    </td></tr>
 {/if}
+</table>
 {/content-body-section1}
-{#content-body-section2}
-    <p>
-    If you want to see more details, go to Red Hat Lightspeed Advisor for Red Hat Enterprise Linux.
-    </p>
-{/content-body-section2}
-{#content-button-section2}
-    <a target="_blank" href="{environment.url}/insights/advisor?{query_params}">Open Red Hat Lightspeed Advisor</a>
-{/content-button-section2}
+{#content-button-href}{environment.url}/insights/advisor?{query_params}{/content-button-href}
+{#content-button-service-name}Recommendations - Advisor{/content-button-service-name}
 {/include}

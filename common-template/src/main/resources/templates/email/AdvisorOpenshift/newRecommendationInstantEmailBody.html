@@ -1,50 +1,52 @@
-{@boolean renderSection1=true}
-{@boolean renderButtonSection1=true}
+{@boolean renderTitleRightPart=true}
 {#include email/Common/insightsEmailBody}
-{#content-title}
+{#content-header-title}
     Advisor - OpenShift
+{/content-header-title}
+
+{#content-title}
+    New recommendation
 {/content-title}
-{#content-title-section1}
-    New recommendations
-{/content-title-section1}
-{#content-title-right-part-section1}
-    <a href="{action.context.host_url}" target="_blank">{action.events.size()}</a>
-{/content-title-right-part-section1}
-{#content-button-section1}
-    <a target="_blank" href="{action.context.host_url}">Go to cluster page</a>
-{/content-button-section1}
-{#content-body-section1}
-<p><b>{action.context.display_name}</b> has {action.events.size()} new {#if action.events.size() is 1}recommendation{#else}recommendations{/if}.</p>
-<table class="rh-data-table-bordered">
+{#content-title-right-part}
+    <a style="{title-right-part-link-style}" href="{action.context.host_url}" target="_blank">{action.events.size()}</a>
+{/content-title-right-part}
+
+{#content-body}
+<p style="{body-section-p-style}">The <a style="{body-section-underline-link-style}" target="_blank" href="{action.context.host_url}"><b>{action.context.display_name}</b></a> has {action.events.size()} new {#if action.events.size() is 1}recommendation{#else}recommendations{/if}.</p>
+<table style="{body-section-table-style}">
     <thead>
     <tr>
-        <th style="width: 60%">Recommendation</th>
-        <th style="width: 20%">Total Risk</th>
-        <th style="width: 20%">Added</th>
+        <th style="{body-section-table-th-style}">Recommendation</th>
+        <th style="{body-section-table-th-style}">Total Risk</th>
+        <th style="{body-section-table-th-style}">Added</th>
     </tr>
     </thead>
-    <tbody>
+    <tbody style="{body-section-table-tbody-style}">
     {#each action.events}
         <tr>
-            <td>
-                <a href="{it.payload.rule_url}">{it.payload.rule_description}</a>
+            <td style="{body-section-table-td-style}">
+                <a style="{body-section-table-td-a-style}" href="{it.payload.rule_url}">{it.payload.rule_description}</a>
             </td>
-            <td>
+            <td style="{body-section-table-td-style}">
                 {#switch it.payload.total_risk}
                 {#case '1'}
-                <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_low.png" alt="Low severity" width="55" border="0">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v2.png" alt="Low severity" width="55" border="0">
                 {#case '2'}
-                <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_moderate.png" alt="Moderate severity" width="85" border="0">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v2.png" alt="Moderate severity" width="85" border="0">
                 {#case '3'}
-                <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_important.png" alt="Important severity" width="86" border="0">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v2.png" alt="Important severity" width="86" border="0">
                 {#case '4'}
-                <img src="https://eoa-editor.s3.amazonaws.com/f9388bed35977299312ddd671606ecd0fa89a82c%2FInsights%2Fimg_critical.png" alt="Critical severity" width="70" border="0">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v2.png" alt="Critical severity" width="70" border="0">
                 {/switch}
             </td>
-            <td>{it.payload.publish_date.toTimeAgo()}</td>
+            <td style="{body-section-table-td-style}">{it.payload.publish_date.toTimeAgo()}</td>
         </tr>
     {/each}
     </tbody>
 </table>
-{/content-body-section1}
+{/content-body}
+
+{#content-button-href}{environment.url}/openshift/insights/advisor?{query_params}{/content-button-href}
+{#content-button-service-name}Recommendations - Advisor{/content-button-service-name}
+
 {/include}

@@ -1,18 +1,15 @@
-{@boolean renderSection1=true}
-{@boolean renderButtonSection1=true}
 {#include email/Common/insightsEmailBody}
-{#content-title}
+{#content-header-title}
     User Access - Console
+{/content-header-title}
+{#content-title}
+    Platform default group turned into custom
 {/content-title}
-{#content-title-section1}
-    User Access platform group
-{/content-title-section1}
-{#content-body-section1}
-    <p>
-        Platform default group is modified by {action.events[0].payload.username} and Red Hat will not be responsible for managing it from now on.
+{#content-body}
+    <p style="{body-section-p-style}">
+        <a style="{body-section-underline-link-style}" href="{environment.url}/iam/user-access/users/detail/{action.events[0].payload.username}"><b>{action.events[0].payload.username}</b></a> changed the Default access group. The group is now called <a style="{body-section-underline-link-style}" href="{environment.url}/iam/user-access/groups/detail/{action.events[0].payload.uuid}"><b>{action.events[0].payload.name}</b></a> and will be managed by the Organization Administrator. It will receive no further updates from Red Hat Hybrid Cloud Console.
     </p>
-{/content-body-section1}
-{#content-button-section1}
-    <a target="_blank" href="{environment.url}/iam/user-access/groups/detail/{action.events[0].payload.uuid}?{query_params}">Check custom platform default group in Red Hat Lightspeed</a>
-{/content-button-section1}
+{/content-body}
+{#content-button-href}{environment.url}/iam/user-access/overview?{query_params}{/content-button-href}
+{#content-button-service-name}User Access{/content-button-service-name}
 {/include}

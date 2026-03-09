@@ -73,11 +73,7 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
     @ValueSource(booleans = {true, false})
     public void testNewSubscriptionBugfixErrataEmailBody(boolean useBetaTemplate) {
         String result = generateEmailBody(NEW_SUBSCRIPTION_BUGFIX_ERRATA, ACTION, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("There are 4 bug fixes available for your subscriptions."));
-        } else {
-            assertTrue(result.contains("There are 4 bug fixes affecting your subscriptions."));
-        }
+        assertTrue(result.contains("There are 4 bug fixes available for your subscriptions."));
         assertTrue(result.contains("href=\"https://access.redhat.com/errata/RHSA-2024:3843\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("secalert@redhat.com"));
@@ -96,26 +92,23 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
         Action criticalAction = ErrataTestHelpers.createErrataAction();
         criticalAction.setSeverity(severity);
         String result = generateEmailBody(NEW_SUBSCRIPTION_SECURITY_UPDATE_ERRATA, criticalAction, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("There are 4 security updates available for your subscriptions."));
+        assertTrue(result.contains("There are 4 security updates available for your subscriptions."));
 
-            // Check for presence of overall severity icon (and border for critical)
-            if (severity == null) {
-                assertFalse(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
-                assertFalse(result.contains("alt=\"["));
-            } else if (severity.equals(Severity.CRITICAL.name())) {
-                assertTrue(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
-                assertTrue(result.contains("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/severities/critical.png\" alt=\"[Critical]\""));
-            } else {
-                assertFalse(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
-                assertTrue(result.contains(
-                        String.format("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/severities/%s.png\" alt=\"[%s]\"",
-                                SeverityExtension.asPatternFlySeverity(severity),
-                                SeverityExtension.toTitleCase(severity))));
-            }
+        // Check for presence of overall severity icon (and border for critical)
+        if (severity == null) {
+            assertFalse(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
+            assertFalse(result.contains("alt=\"["));
+        } else if (severity.equals(Severity.CRITICAL.name())) {
+            assertTrue(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
+            assertTrue(result.contains("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/severities/critical.png\" alt=\"[Critical]\""));
         } else {
-            assertTrue(result.contains("There are 4 security updates affecting your subscriptions."));
+            assertFalse(result.contains("border-width: 2px; border-style: solid; border-color: rgb(177, 56, 11);"));
+            assertTrue(result.contains(
+                    String.format("<img src=\"https://console.redhat.com/apps/frontend-assets/email-assets/severities/%s.png\" alt=\"[%s]\"",
+                            SeverityExtension.asPatternFlySeverity(severity),
+                            SeverityExtension.toTitleCase(severity))));
         }
+
         assertTrue(result.contains("href=\"https://access.redhat.com/errata/RHSA-2024:3843\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("secalert@redhat.com"));
@@ -133,11 +126,7 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
     @ValueSource(booleans = {true, false})
     public void testNewSubscriptionEnhancementErrataEmailBody(boolean useBetaTemplate) {
         String result = generateEmailBody(NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA, ACTION, useBetaTemplate);
-        if (useBetaTemplate) {
-            assertTrue(result.contains("There are 4 enhancements available for your subscriptions."));
-        } else {
-            assertTrue(result.contains("There are 4 enhancements affecting your subscriptions."));
-        }
+        assertTrue(result.contains("There are 4 enhancements available for your subscriptions."));
         assertTrue(result.contains("href=\"https://access.redhat.com/errata/RHSA-2024:3843\""));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("secalert@redhat.com"));

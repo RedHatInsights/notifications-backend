@@ -1,4 +1,0 @@
-{#include ms_teams/Common/beta/commonMsAdaptiveCardHighLevelStructure.json}
-  {#content-intro}{data.events.size()} event{#if data.events.size() != 1}s{/if} triggered.{/content-intro}
-  {#action-url}https://cloud.redhat.com/openshift/details/s/{data.events[0].payload.global_vars.subscription_id}?from=notifications&integration=teams{/action-url}
-{/include}

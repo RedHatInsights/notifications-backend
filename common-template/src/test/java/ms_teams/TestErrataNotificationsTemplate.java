@@ -59,16 +59,12 @@ class TestErrataNotificationsTemplate {
         // check content from parent template
         ErrataTestHelpers.checkErrataChatTemplateContent(eventType, result, RAW_ACTION, "teams");
 
-        if (useBetaTemplate) {
-            if (eventType.equals(SECURITY_ERRATA)) {
-                assertTrue(result.contains("\u2753 Highest severity: Undefined"));
-            } else  {
-                assertTrue(result.contains("\u2753 Severity: Undefined"));
-            }
-            assertTrue(result.contains("\"text\": \"Explore these and others in **errata search**.\""));
-            assertTrue(result.contains("\"url\": \"https://access.redhat.com/errata-search/?from=notifications&integration=teams\""));
-        } else {
-            AdaptiveCardValidatorHelper.validate(result);
+        if (eventType.equals(SECURITY_ERRATA)) {
+            assertTrue(result.contains("\u2753 Highest severity: Undefined"));
+        } else  {
+            assertTrue(result.contains("\u2753 Severity: Undefined"));
         }
+        assertTrue(result.contains("\"text\": \"Explore these and others in **errata search**.\""));
+        assertTrue(result.contains("\"url\": \"https://access.redhat.com/errata-search/?from=notifications&integration=teams\""));
     }
 }

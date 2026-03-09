@@ -1,33 +1,32 @@
-{@boolean renderSection1=true}
-{@boolean renderButtonSection1=true}
 {#include email/Common/insightsEmailBody}
-{#content-title}
+{#content-header-title}
     Integrations - Console
-{/content-title}
-{#content-title-section1}
+{/content-header-title}
+{#content-title}
     Your Microsoft Teams integrations need attention
-{/content-title-section1}
-{#content-body-section1}
-    <p>Dear Red Hat customer,</p>
-    <p>We are contacting you because you have the following Microsoft Teams integrations set up for your organization in the <a target="_blank" href="https://console.redhat.com">Red Hat Hybrid Cloud Console</a>:</p>
+{/content-title}
+{#content-body}
+    <p style="{body-section-p-style}">Dear Red Hat customer,</p>
+    <p style="{body-section-p-style}">We are contacting you because you have the following Microsoft Teams integrations set up for your organization in the <a style="{body-section-underline-link-style}" target="_blank" href="https://console.redhat.com">Red Hat Hybrid Cloud Console</a>:</p>
     <ul>
         {#for integrationName in action.events[0].payload.integration_names}
         <li>{integrationName}</li>
         {/for}
     </ul>
-    <p>
-        Microsoft is <a target="_blank" href="https://devblogs.microsoft.com/microsoft365dev/retirement-of-office-365-connectors-within-microsoft-teams/#why-are-we-retiring-office-365-connectors">retiring Office 365 connectors in favor of Power Automate workflows</a>,
+    <p style="{body-section-p-style}">
+        Microsoft is <a style="{body-section-underline-link-style}" target="_blank" href="https://devblogs.microsoft.com/microsoft365dev/retirement-of-office-365-connectors-within-microsoft-teams/#why-are-we-retiring-office-365-connectors">retiring Office 365 connectors in favor of Power Automate workflows</a>,
         and they are requesting that their customers transition from <i>Office 365 connectors</i> they have set up to <i>Workflows</i>.
         Please review the Microsoft Teams integrations identified above and update them if needed, to avoid service interruption when Microsoft retires the old connectors.
         <strong>If you have already updated your integrations to <i>Microsoft Workflows</i>, you can safely ignore this email</strong>.
     </p>
-    <p>You can update your Microsoft Teams integrations by following the steps in <a target="_blank" href="https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/integrating_the_red_hat_hybrid_cloud_console_with_third-party_applications/index#assembly-configuring-integration-with-teams_integrating-communications">Integrating communications applications with the Hybrid Cloud Console</a> in the Red Hat documentation.</p>
-    <p>Following the above steps will ensure that you will continue receiving the alerts and notifications in the Microsoft Teams channel that you have configured.</p>
-    <p>Thank you for your attention.</p>
-    <p>Kind regards,</p>
-    <p>Red Hat Hybrid Cloud Console</p>
-{/content-body-section1}
-{#content-button-section1}
-    <a target="_blank" href="{environment.url}/settings/integrations?category={action.context.integration_category}&{query_params}">Open Integrations</a>
-{/content-button-section1}
+    <p style="{body-section-p-style}">You can update your Microsoft Teams integrations by following the steps in <a style="{body-section-underline-link-style}" target="_blank" href="https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/integrating_the_red_hat_hybrid_cloud_console_with_third-party_applications/index#assembly-configuring-integration-with-teams_integrating-communications">Integrating communications applications with the Hybrid Cloud Console</a> in the Red Hat documentation.</p>
+    <p style="{body-section-p-style}">Following the above steps will ensure that you will continue receiving the alerts and notifications in the Microsoft Teams channel that you have configured.</p>
+    <p style="{body-section-p-style}">Thank you for your attention.</p>
+    <p style="{body-section-p-style}">Kind regards,</p>
+    <p style="{body-section-p-style}">Red Hat Hybrid Cloud Console</p>
+{/content-body}
+
+{#content-button-href}{environment.url}/settings/integrations?category={action.context.integration_category}&{query_params}{/content-button-href}
+{#content-button-service-name}Integrations{/content-button-service-name}
+
 {/include}
