@@ -24,6 +24,7 @@ import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtr
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +84,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         if (endpoints == null || endpoints.isEmpty()) {
             return;
         }
+        if (!event.getEventType().isIncludeInDrawer()) {
+            return;
+        }
 
         // build event thought qute template
         JsonObject data = baseTransformer.toJsonObject(event);
@@ -115,12 +119,12 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
         // Prepare all the data to be sent to the connector.
         final DrawerNotificationToConnector drawerNotificationToConnector = new DrawerNotificationToConnector(
-            event.getOrgId(),
-            drawerEntryPayload,
-            recipientSettings,
-            unsubscribers,
-            recipientsAuthorizationCriterionExtractor.extract(event),
-            dataAsMap
+                event.getOrgId(),
+                drawerEntryPayload,
+                recipientSettings,
+                unsubscribers,
+                recipientsAuthorizationCriterionExtractor.extract(event),
+                dataAsMap
         );
 
         connectorSender.send(event, endpoints.getFirst(), JsonObject.mapFrom(drawerNotificationToConnector));
@@ -142,10 +146,10 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     public String buildNotificationMessage(Map<String, Object> dataAsMap) {
         TemplateDefinition templateDefinition = new TemplateDefinition(
-            IntegrationType.DRAWER,
-            ((Map<String, Object>) dataAsMap.get("data")).get(BUNDLE).toString(),
-            ((Map<String, Object>) dataAsMap.get("data")).get(APPLICATION).toString(),
-            ((Map<String, Object>) dataAsMap.get("data")).get(EVENT_TYPE).toString());
+                IntegrationType.DRAWER,
+                ((Map<String, Object>) dataAsMap.get("data")).get(BUNDLE).toString(),
+                ((Map<String, Object>) dataAsMap.get("data")).get(APPLICATION).toString(),
+                ((Map<String, Object>) dataAsMap.get("data")).get(EVENT_TYPE).toString());
         return templateService.renderTemplateWithCustomDataMap(templateDefinition, dataAsMap);
     }
 
