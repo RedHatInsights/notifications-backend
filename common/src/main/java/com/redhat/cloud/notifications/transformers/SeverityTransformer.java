@@ -62,7 +62,8 @@ public class SeverityTransformer {
     public Optional<Severity> getSeverity(Action action) {
         if (action.getSeverity() != null) {
             try {
-                return Optional.of(Severity.valueOf(action.getSeverity().toUpperCase()));
+                Severity severity = Severity.valueOf(action.getSeverity().toUpperCase());
+                return Optional.of(severity);
             } catch (IllegalArgumentException ex) {
                 Log.errorf(ex, "Invalid severity: %s", action.getSeverity());
                 return Optional.empty();

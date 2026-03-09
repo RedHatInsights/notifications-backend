@@ -71,6 +71,14 @@ class SeverityTransformerTest {
     }
 
     @Test
+    public void testActionWithInvalidSeverity() {
+        Action action = TestHelpers.createIntegrationsFailedAction();
+        action.setSeverity("this is not a valid severity level");
+
+        assertEquals(Optional.empty(), severityTransformer.getSeverity(action));
+    }
+
+    @Test
     public void testPayloadWithSeverityNotMatchingWithAvailableSeverities() {
         final Application application = new Application();
         application.setName("test-severity-application");
