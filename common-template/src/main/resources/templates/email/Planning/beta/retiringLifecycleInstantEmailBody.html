@@ -1,6 +1,6 @@
 {@boolean renderSection1=true}
 {@boolean renderTitleRightPart=true}
-{#include email/Common/insightsEmailBodyLightV2}
+{#include email/Common/insightsEmailBody}
 {#content-header}
 Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle.report_date}
 {/content-header}
@@ -8,26 +8,28 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
     Life cycle
 {/content-title-section1}
 {#content-body-section1}
-{#let hasRhelRetired = action.events[0].payload.rhel_retired.orEmpty.meta.systems_count > 0}
-{#let hasRhelExpiring = action.events[0].payload.rhel_near_retirement.orEmpty.meta.systems_count > 0}
-{#let rhel10RetiredCount = action.events[0].payload.appstream_retired.orEmpty.meta.rhel10_appstreams_count.or(0)}
-{#let rhel10ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.meta.rhel10_appstreams_count.or(0)}
-{#let rhel9RetiredCount = action.events[0].payload.appstream_retired.orEmpty.meta.rhel9_appstreams_count.or(0)}
-{#let rhel9ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.meta.rhel9_appstreams_count.or(0)}
-{#let rhel8RetiredCount = action.events[0].payload.appstream_retired.orEmpty.meta.rhel8_appstreams_count.or(0)}
-{#let rhel8ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.meta.rhel8_appstreams_count.or(0)}
-{#let rhel10RetiredSystemsCount = action.events[0].payload.appstream_retired.orEmpty.meta.rhel10_systems_count.or(0)}
-{#let rhel10ExpiringSystemsCount = action.events[0].payload.appstream_near_retirement.orEmpty.meta.rhel10_systems_count.or(0)}
-{#let rhel9RetiredSystemsCount = action.events[0].payload.appstream_retired.orEmpty.meta.rhel9_systems_count.or(0)}
-{#let rhel9ExpiringSystemsCount = action.events[0].payload.appstream_near_retirement.orEmpty.meta.rhel9_systems_count.or(0)}
-{#let rhel8RetiredSystemsCount = action.events[0].payload.appstream_retired.orEmpty.meta.rhel8_systems_count.or(0)}
-{#let rhel8ExpiringSystemsCount = action.events[0].payload.appstream_near_retirement.orEmpty.meta.rhel8_systems_count.or(0)}
-{#let hasRhel10Retired = rhel10RetiredSystemsCount > 0}
-{#let hasRhel10Expiring = rhel10ExpiringSystemsCount > 0}
-{#let hasRhel9Retired = rhel9RetiredSystemsCount > 0}
-{#let hasRhel9Expiring = rhel9ExpiringSystemsCount > 0}
-{#let hasRhel8Retired = rhel8RetiredSystemsCount > 0}
-{#let hasRhel8Expiring = rhel8ExpiringSystemsCount > 0}
+{#let
+    hasRhelRetired = action.events[0].payload.rhel_retired.orEmpty.systems_count > 0
+    hasRhelExpiring = action.events[0].payload.rhel_near_retirement.orEmpty.systems_count > 0
+    rhel10RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty.count.or(0)
+    rhel10ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel10.orEmpty.count.or(0)
+    rhel9RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty.count.or(0)
+    rhel9ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel9.orEmpty.count.or(0)
+    rhel8RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.count.or(0)
+    rhel8ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel8.orEmpty.count.or(0)
+    rhel10RetiredSystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty.systems_count.or(0)
+    rhel10ExpiringSystemsCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel10.orEmpty.systems_count.or(0)
+    rhel9RetiredSystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty.systems_count.or(0)
+    rhel9ExpiringSystemsCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel9.orEmpty.systems_count.or(0)
+    rhel8RetiredSystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.systems_count.or(0)
+    rhel8ExpiringSystemsCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel8.orEmpty.systems_count.or(0)
+    hasRhel10Retired = rhel10RetiredSystemsCount > 0
+    hasRhel10Expiring = rhel10ExpiringSystemsCount > 0
+    hasRhel9Retired = rhel9RetiredSystemsCount > 0
+    hasRhel9Expiring = rhel9ExpiringSystemsCount > 0
+    hasRhel8Retired = rhel8RetiredSystemsCount > 0
+    hasRhel8Expiring = rhel8ExpiringSystemsCount > 0
+}
 
 {! RHEL life cycle section !}
 {#if hasRhelRetired || hasRhelExpiring}
@@ -41,13 +43,13 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
     </tr>
     <tr>
         <td style="width: 50%; padding-right: 8px; vertical-align: top;">
-            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;">{action.events[0].payload.rhel_retired.orEmpty.meta.systems_count}</div>
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;">{action.events[0].payload.rhel_retired.orEmpty.systems_count}</div>
             <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
                 <span style="color: #c9190b; font-size: 16px; margin-right: 4px;">●</span> Releases past retirement
             </div>
         </td>
         <td style="width: 50%; padding-left: 8px; vertical-align: top;">
-            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;">{action.events[0].payload.rhel_near_retirement.orEmpty.meta.systems_count}</div>
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;">{action.events[0].payload.rhel_near_retirement.orEmpty.systems_count}</div>
             <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
                 <span style="color: #f0ab00; font-size: 16px; margin-right: 4px;">▲</span> Releases retiring within 3 months
             </div>
@@ -144,25 +146,6 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
 </td></tr>
 </table>
 {/if}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
-{/let}
 {/let}
 {/content-body-section1}
 {#content-button-href}{environment.url}/insights/planning/lifecycle?{query_params}{/content-button-href}
