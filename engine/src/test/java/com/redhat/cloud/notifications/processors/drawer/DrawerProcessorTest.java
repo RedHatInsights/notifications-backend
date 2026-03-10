@@ -100,6 +100,21 @@ class DrawerProcessorTest {
         verify(drawerNotificationRepository, never()).create(any(Event.class), any(String.class));
     }
 
+
+    @Test
+    void shouldNotProcessWhenIncludeInDrawerIsFalse() {
+        Event createdEvent = createEvent(false);
+
+        Endpoint endpoint = new Endpoint();
+        endpoint.setProperties(new SystemSubscriptionProperties());
+        endpoint.setType(EndpointType.DRAWER);
+
+        when(engineConfig.isDrawerEnabled()).thenReturn(true);
+        testee.process(createdEvent, List.of(endpoint));
+
+        verify(drawerNotificationRepository, never()).create(any(Event.class), any(String.class));
+    }
+
     @Test
     void shouldCreateTwoDrawerNotifications() {
         User user1 = new User();
@@ -112,7 +127,7 @@ class DrawerProcessorTest {
         when(externalRecipientsResolver.recipientUsers(any(), any(), any(), any(), eq(true), any(RecipientsAuthorizationCriterion.class)))
                 .thenReturn(Set.of(user1, user2));
 
-        Event createdEvent = createEvent();
+        Event createdEvent = createEvent(true);
 
         Endpoint endpoint = new Endpoint();
         endpoint.setProperties(new SystemSubscriptionProperties());
@@ -147,33 +162,34 @@ class DrawerProcessorTest {
     }
 
     @Transactional
-    Event createEvent() {
+    Event createEvent(boolean includeInDrawer) {
         Bundle createdBundle = resourceHelpers.createBundle("test-drawer-engine-event-bundle");
         Application createdApplication = resourceHelpers.createApp(createdBundle.getId(), "test-drawer-engine-event-application");
         EventType createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-engine-event-type");
+        createdEventType.setIncludeInDrawer(includeInDrawer);
         Event createdEvent = new Event();
         createdEvent.setEventType(createdEventType);
         createdEvent.setEventWrapper(new EventWrapperAction(
-            new Action.ActionBuilder()
-                .withOrgId("123456")
-                .withEventType("triggered")
-                .withApplication("policies")
-                .withBundle("rhel")
-                .withTimestamp(LocalDateTime.of(2022, 8, 24, 13, 30, 0, 0))
-                .withSeverity(Severity.CRITICAL.name())
-                .withContext(
-                    new Context.ContextBuilder()
-                        .withAdditionalProperty("foo", "im foo")
-                        .withAdditionalProperty("bar", Map.of("baz", "im baz"))
+                new Action.ActionBuilder()
+                        .withOrgId("123456")
+                        .withEventType("triggered")
+                        .withApplication("policies")
+                        .withBundle("rhel")
+                        .withTimestamp(LocalDateTime.of(2022, 8, 24, 13, 30, 0, 0))
+                        .withSeverity(Severity.CRITICAL.name())
+                        .withContext(
+                                new Context.ContextBuilder()
+                                        .withAdditionalProperty("foo", "im foo")
+                                        .withAdditionalProperty("bar", Map.of("baz", "im baz"))
+                                        .build()
+                        )
+                        .withEvents(List.of(
+                                new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                                        .withMetadata(new Metadata())
+                                        .withPayload(new Payload())
+                                        .build()
+                        ))
                         .build()
-                )
-                .withEvents(List.of(
-                    new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
-                        .withMetadata(new Metadata())
-                        .withPayload(new Payload())
-                        .build()
-                ))
-                .build()
         ));
 
         return resourceHelpers.createEvent(createdEvent);
