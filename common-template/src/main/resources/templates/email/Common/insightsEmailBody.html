@@ -104,6 +104,8 @@
                                 </tr>
                                 <tr>
                                     <td id="app-body" style="max-width: 100%; overflow: hidden; padding: 0px 20px 0px 20px; background-color: #fff;">
+                                        <!-- add timestamp as span to make emails unique to some email client such as Google Group -->
+                                        <span style="display:none;font-size:0;height:0;width:0;line-height:0;opacity:0;">{action.timestamp.or('')}</span>
                                         {#insert content-body}{/}
                                     </td>
                                 </tr>
