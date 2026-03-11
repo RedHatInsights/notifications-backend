@@ -26,8 +26,8 @@ public class Rhel {
     public static final String PATCH_APP_NAME = "patch";
     public static final String PATCH_FOLDER_NAME = "Patch/";
 
-    public static final String PLANNING_APP_NAME = "planning";
-    public static final String PLANNING_FOLDER_NAME = "Planning/";
+    public static final String LIFECYCLE_APP_NAME = "life-cycle";
+    public static final String LIFECYCLE_FOLDER_NAME = "Lifecycle/";
 
     public static final String POLICIES_APP_NAME = "policies";
     public static final String POLICY_FOLDER_NAME = "Policies/";
@@ -103,8 +103,8 @@ public class Rhel {
 
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, PATCH_APP_NAME, null), PATCH_FOLDER_NAME + "dailyEmailBody.html"),
 
-        // Planning
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, PLANNING_APP_NAME, RETIRING_LIFECYCLE), PLANNING_FOLDER_NAME + "retiringLifecycleInstantEmailBody.html"),
+        // Lifecycle
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, LIFECYCLE_APP_NAME, RETIRING_LIFECYCLE), LIFECYCLE_FOLDER_NAME + "retiringLifecycleInstantEmailBody.html"),
 
         // Policies
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, POLICIES_APP_NAME, POLICIES_POLICY_TRIGGERED), POLICY_FOLDER_NAME + "policyTriggeredBody.md"),
