@@ -33,6 +33,7 @@ export const useEventTypes = (applicationId: string): EventTypesController => {
                 subscribedByDefault: e.subscribedByDefault,
                 subscriptionLocked: e.subscriptionLocked,
                 visible: e.visible,
+                includeInDrawer: e.includeInDrawer,
                 defaultSeverity: e.defaultSeverity,
                 availableSeverities: e.availableSeverities,
                 instantEmail: {

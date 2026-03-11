@@ -187,6 +187,19 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = pr
                             </HelperTextItem>
                         </HelperText>
                     </FormGroup>
+                    <FormGroup label="Include in drawer?" fieldId="includeInDrawer">
+                        <Checkbox
+                            id="includeInDrawer"
+                            name="includeInDrawer"
+                            isChecked={ eventType.includeInDrawer }
+                            onChange={ (_event, isChecked) => setEventType(prev => ({ ...prev, includeInDrawer: isChecked })) }
+                        />
+                        <HelperText>
+                            <HelperTextItem>
+                                Should the event be included in drawer?
+                            </HelperTextItem>
+                        </HelperText>
+                    </FormGroup>
                 </Form>
             </ModalBody>
             <ModalFooter>
