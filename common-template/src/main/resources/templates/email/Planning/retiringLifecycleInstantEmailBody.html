@@ -1,0 +1,109 @@
+{#include email/Common/insightsEmailBody}
+{#content-header-title}
+Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle.report_date}
+{/content-header-title}
+{#content-title}
+    Life cycle
+{/content-title}
+{#content-body}
+{#let
+    rhelRetiredCount = action.events[0].payload.rhel_retired.orEmpty.systems_count.or(0)
+    rhelExpiringCount = action.events[0].payload.rhel_near_retirement.orEmpty.systems_count.or(0)
+    rhel10RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty.count.or(0)
+    rhel10ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel10.orEmpty.count.or(0)
+    rhel9RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty.count.or(0)
+    rhel9ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel9.orEmpty.count.or(0)
+    rhel8RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.count.or(0)
+    rhel8ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel8.orEmpty.count.or(0)
+    rhel10RetiredSystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty.systems_count.or(0)
+    rhel10ExpiringSystemsCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel10.orEmpty.systems_count.or(0)
+    rhel9RetiredSystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty.systems_count.or(0)
+    rhel9ExpiringSystemsCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel9.orEmpty.systems_count.or(0)
+    rhel8RetiredSystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.systems_count.or(0)
+    rhel8ExpiringSystemsCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel8.orEmpty.systems_count.or(0)
+}
+<table style="width: 100%; border: 0">
+{! RHEL life cycle section !}
+{#if rhelRetiredCount > 0 || rhelExpiringCount > 0}
+    {#let
+        sub-section-title = 'RHEL life cycle'
+        sub-section-retired-count = rhelRetiredCount
+        sub-section-expiring-count = rhelExpiringCount
+        sub-section-expiring-months = 3
+        sub-section-not-the-last = (rhel10RetiredCount + rhel10ExpiringCount + rhel9RetiredCount + rhel9ExpiringCount + rhel8RetiredCount + rhel8ExpiringCount)
+        }
+    {#insert content-common-section}{/}
+    {/let}
+{/if}
+
+{! RHEL 10 application streams life cycle section !}
+{#if rhel10RetiredCount > 0 || rhel10ExpiringCount > 0}
+    {#let
+        sub-section-title = 'RHEL 10 application streams life cycle'
+        sub-section-retired-count = rhel10RetiredCount
+        sub-section-expiring-count = rhel10ExpiringCount
+        sub-section-expiring-months = 6
+        sub-section-not-the-last = (rhel9RetiredCount + rhel9ExpiringCount + rhel8RetiredCount + rhel8ExpiringCount)
+        }
+    {#insert content-common-section}{/}
+    {/let}
+{/if}
+
+{! RHEL 9 application streams life cycle section !}
+{#if rhel9RetiredCount > 0 || rhel9ExpiringCount > 0}
+    {#let
+        sub-section-title = 'RHEL 9 application streams life cycle'
+        sub-section-retired-count = rhel9RetiredCount
+        sub-section-expiring-count = rhel9ExpiringCount
+        sub-section-expiring-months = 6
+        sub-section-not-the-last = (rhel8RetiredCount + rhel8ExpiringCount)
+        }
+    {#insert content-common-section}{/}
+    {/let}
+{/if}
+
+{! RHEL 8 application streams life cycle section !}
+{#if rhel8RetiredCount > 0 || rhel8ExpiringCount > 0}
+    {#let
+        sub-section-title = 'RHEL 8 application streams life cycle'
+        sub-section-retired-count = rhel8RetiredCount
+        sub-section-expiring-count = rhel8ExpiringCount
+        sub-section-expiring-months = 6
+        }
+    {#insert content-common-section}{/}
+    {/let}
+{/if}
+</table>
+{/let}
+{/content-body}
+{#content-common-section}
+<tr><td>
+    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 16px; width: 100%;">
+    <tr>
+        <td colspan="2" style="padding-bottom: 0">
+            <strong style="font-size: 14px;">{sub-section-title}</strong>
+        </td>
+    </tr>
+    <tr>
+        <td style="width: 50%; padding-right: 8px; vertical-align: top;">
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;"><a style="{body-section-table-td-a-style}" href="{environment.url}/insights/planning/lifecycle?{query_params}" target="_blank">{sub-section-retired-count}</a></div>
+            <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" alt="" style="width:16px; height:16px; vertical-align:-2px; display: inline-block; margin-right: 4px;" border="0" width="16"/><!--[if mso]>&nbsp;&nbsp;<![endif]-->Releases past retirement
+            </div>
+        </td>
+        <td style="width: 50%; padding-left: 8px; vertical-align: top;">
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;"><a style="{body-section-table-td-a-style}" href="{environment.url}/insights/planning/lifecycle?{query_params}" target="_blank">{sub-section-expiring-count}</a></div>
+            <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_info.png" alt="" style="width:16px; height:16px; vertical-align:-2px; display: inline-block; margin-right: 4px;" border="0" width="16"/><!--[if mso]>&nbsp;&nbsp;<![endif]-->Releases retiring within {sub-section-expiring-months} months
+            </div>
+        </td>
+    </tr>
+    </table>
+</td></tr>
+{#if sub-section-not-the-last.or(0) > 0}
+<tr><td style="line-height: 24px">&#xA0;</td></tr>
+{/if}
+{/content-common-section}
+{#content-button-href}{environment.url}/insights/planning/lifecycle?{query_params}{/content-button-href}
+{#content-button-service-name}Lifecycle - Planning{/content-button-service-name}
+{/include}

@@ -26,6 +26,9 @@ public class Rhel {
     public static final String PATCH_APP_NAME = "patch";
     public static final String PATCH_FOLDER_NAME = "Patch/";
 
+    public static final String PLANNING_APP_NAME = "planning";
+    public static final String PLANNING_FOLDER_NAME = "Planning/";
+
     public static final String POLICIES_APP_NAME = "policies";
     public static final String POLICY_FOLDER_NAME = "Policies/";
 
@@ -54,6 +57,7 @@ public class Rhel {
 
     public static final String PATCH_NEW_ADVISORY = "new-advisory";
 
+    public static final String RETIRING_LIFECYCLE = "retiring-lifecycle";
     public static final String POLICIES_POLICY_TRIGGERED = "policy-triggered";
 
     public static final String TASK_EXECUTED_TASK_COMPLETED = "executed-task-completed";
@@ -98,6 +102,9 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, PATCH_APP_NAME, PATCH_NEW_ADVISORY), PATCH_FOLDER_NAME + "newAdvisoriesInstantEmailBody.html"),
 
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, PATCH_APP_NAME, null), PATCH_FOLDER_NAME + "dailyEmailBody.html"),
+
+        // Planning
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, PLANNING_APP_NAME, RETIRING_LIFECYCLE), PLANNING_FOLDER_NAME + "retiringLifecycleInstantEmailBody.html"),
 
         // Policies
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, POLICIES_APP_NAME, POLICIES_POLICY_TRIGGERED), POLICY_FOLDER_NAME + "policyTriggeredBody.md"),
