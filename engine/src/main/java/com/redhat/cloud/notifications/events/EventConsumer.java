@@ -158,10 +158,21 @@ public class EventConsumer {
              * from the pool is available.
              */
             executor.submit(() -> process(message));
+            return message.ack();
         } else {
-            process(message);
+            /*
+             * For synchronous processing, call process directly.
+             * If processing fails, nack the message to trigger DLQ.
+             */
+            try {
+                process(message);
+                return message.ack();
+            } catch (Exception e) {
+                // Nack the message with the exception to trigger Smallrye Reactive Messaging's DLQ mechanism
+                Log.errorf(e, "Message processing failed, nacking to trigger DLQ");
+                return message.nack(e);
+            }
         }
-        return message.ack();
     }
 
     @ActivateRequestContext
