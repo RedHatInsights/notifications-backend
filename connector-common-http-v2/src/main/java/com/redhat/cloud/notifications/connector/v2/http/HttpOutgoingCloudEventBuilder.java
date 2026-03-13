@@ -42,8 +42,14 @@ public class HttpOutgoingCloudEventBuilder extends OutgoingCloudEventBuilder {
     public JsonObject buildSuccess(HandledMessageDetails processedMessageDetails) {
         JsonObject details = new JsonObject();
         if (processedMessageDetails instanceof HandledHttpMessageDetails processedHttpMessageDetails) {
-            if (null != processedHttpMessageDetails.targetUrl) {
-                details.put("details", new JsonObject().put("target", processedHttpMessageDetails.targetUrl));
+            if (null != processedHttpMessageDetails.targetUrl || null != processedHttpMessageDetails.httpStatus) {
+                details.put("details", new JsonObject());
+                if (null != processedHttpMessageDetails.targetUrl) {
+                    details.getJsonObject("details").put("target", processedHttpMessageDetails.targetUrl);
+                }
+                if (null != processedHttpMessageDetails.httpStatus) {
+                    details.getJsonObject("details").put("http_status_code", processedHttpMessageDetails.httpStatus);
+                }
             }
         }
         return details;

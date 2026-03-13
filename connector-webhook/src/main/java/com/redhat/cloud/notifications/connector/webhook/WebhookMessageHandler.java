@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.connector.v2.MessageHandler;
 import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpMessageDetails;
 import com.redhat.cloud.notifications.connector.v2.http.models.NotificationToConnectorHttp;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
-import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -46,16 +45,18 @@ public class WebhookMessageHandler extends MessageHandler {
         String insightToken = null;
         if (authenticationResultOptional.isPresent()) {
             if (BEARER == authenticationResultOptional.get().authenticationType) {
-                bearerToken = authenticationResultOptional.get().password;
+                bearerToken = "Bearer " + authenticationResultOptional.get().password;
             } else if (SECRET_TOKEN == authenticationResultOptional.get().authenticationType) {
                 insightToken = authenticationResultOptional.get().password;
             }
         }
-        try (Response response = webhookRestClient.post(insightToken, bearerToken, notification.getEndpointProperties().getTargetUrl(), notification.getPayload().encode())) {
-            Log.debug(response.getStatus());
-        }
+
         HandledHttpMessageDetails handledMessageDetails = new HandledHttpMessageDetails();
         handledMessageDetails.targetUrl = notification.getEndpointProperties().getTargetUrl();
+        try (Response response = webhookRestClient.post(insightToken, bearerToken, notification.getEndpointProperties().getTargetUrl(), notification.getPayload().encode())) {
+            handledMessageDetails.httpStatus = response.getStatus();
+        }
+
         return handledMessageDetails;
     }
 }

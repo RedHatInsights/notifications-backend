@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.connector.authentication.v2;
 
 import com.redhat.cloud.notifications.connector.authentication.v2.sources.SourcesPskClient;
-import com.redhat.cloud.notifications.connector.authentication.v2.sources.SourcesSecretResult;
+import com.redhat.cloud.notifications.connector.authentication.v2.sources.SourcesSecretResponse;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
@@ -39,7 +39,7 @@ public class AuthenticationLoaderTest {
 
     @Test
     void testWithSecretId() {
-        SourcesSecretResult sourcesSecret = new SourcesSecretResult();
+        SourcesSecretResponse sourcesSecret = new SourcesSecretResponse();
         sourcesSecret.username = "john_doe";
         sourcesSecret.password = "passw0rd";
         when(sourcesClient.getById(anyString(), anyString(), anyLong())).thenReturn(sourcesSecret);

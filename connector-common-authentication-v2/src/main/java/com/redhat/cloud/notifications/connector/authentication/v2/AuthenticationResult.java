@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.connector.authentication.v2;
 
-import com.redhat.cloud.notifications.connector.authentication.v2.sources.SourcesSecretResult;
+import com.redhat.cloud.notifications.connector.authentication.v2.sources.SourcesSecretResponse;
 
 public class AuthenticationResult {
 
@@ -8,7 +8,7 @@ public class AuthenticationResult {
     public String password;
     public AuthenticationType authenticationType;
 
-    public AuthenticationResult(final SourcesSecretResult secretResult, final AuthenticationType authenticationType) {
+    public AuthenticationResult(final SourcesSecretResponse secretResult, final AuthenticationType authenticationType) {
         this.username = secretResult.username;
         this.password = secretResult.password;
         this.authenticationType = authenticationType;

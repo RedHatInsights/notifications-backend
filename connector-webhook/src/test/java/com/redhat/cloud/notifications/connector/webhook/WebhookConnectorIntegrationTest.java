@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.http.HttpHeaders;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import com.redhat.cloud.notifications.connector.authentication.v2.sources.SourcesPskClient;
-import com.redhat.cloud.notifications.connector.authentication.v2.sources.SourcesSecretResult;
+import com.redhat.cloud.notifications.connector.authentication.v2.sources.SourcesSecretResponse;
 import com.redhat.cloud.notifications.connector.v2.TestLifecycleManager;
 import com.redhat.cloud.notifications.connector.v2.http.BaseHttpConnectorIntegrationTest;
 import com.redhat.cloud.notifications.connector.v2.http.models.NotificationToConnectorHttp;
@@ -76,7 +76,7 @@ class WebhookConnectorIntegrationTest extends BaseHttpConnectorIntegrationTest {
 
     @Test
     void testSuccessfulNotificationWithInsightHeader() {
-        SourcesSecretResult sourcesSecret = new SourcesSecretResult();
+        SourcesSecretResponse sourcesSecret = new SourcesSecretResponse();
         sourcesSecret.username = "john_doe";
         sourcesSecret.password = "passw0rd_insightHeader";
         when(sourcesClient.getById(anyString(), anyString(), anyLong())).thenReturn(sourcesSecret);
@@ -90,7 +90,7 @@ class WebhookConnectorIntegrationTest extends BaseHttpConnectorIntegrationTest {
 
     @Test
     void testSuccessfulNotificationWithBearerToken() {
-        SourcesSecretResult sourcesSecret = new SourcesSecretResult();
+        SourcesSecretResponse sourcesSecret = new SourcesSecretResponse();
         sourcesSecret.username = "john_doe";
         sourcesSecret.password = "passw0rd_bearer";
         when(sourcesClient.getById(anyString(), anyString(), anyLong())).thenReturn(sourcesSecret);
@@ -138,7 +138,7 @@ class WebhookConnectorIntegrationTest extends BaseHttpConnectorIntegrationTest {
                 assertFalse(headers.keys().contains(X_INSIGHT_TOKEN_HEADER));
             }
             if (addBearerToken) {
-                assertEquals("passw0rd_bearer", headers.getHeader("Authorization").firstValue());
+                assertEquals("Bearer passw0rd_bearer", headers.getHeader("Authorization").firstValue());
             } else {
                 assertFalse(headers.keys().contains("Authorization"));
             }

@@ -61,7 +61,7 @@ public class SourcesOidcClientTest {
      * </ul>
      *
      * <p><strong>Success Criteria:</strong><br>
-     * No exception is thrown and a valid {@link SourcesSecretResult} object is returned with the expected
+     * No exception is thrown and a valid {@link SourcesSecretResponse} object is returned with the expected
      * username and password, confirming that OIDC authentication headers were properly included.</p>
      *
      * <p><strong>Failure Scenario:</strong><br>

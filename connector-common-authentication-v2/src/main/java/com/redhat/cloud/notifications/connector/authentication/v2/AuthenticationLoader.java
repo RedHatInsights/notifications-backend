@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.connector.authentication.v2;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.connector.authentication.v2.sources.SourcesOidcClient;
 import com.redhat.cloud.notifications.connector.authentication.v2.sources.SourcesPskClient;
-import com.redhat.cloud.notifications.connector.authentication.v2.sources.SourcesSecretResult;
+import com.redhat.cloud.notifications.connector.authentication.v2.sources.SourcesSecretResponse;
 import com.redhat.cloud.notifications.connector.v2.ConnectorConfig;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -51,25 +51,25 @@ public class AuthenticationLoader {
         Log.debugf("Calling Sources to retrieve a secret [orgId=%s, secretId=%d]", orgId, secretRequest.secretId);
 
         Timer.Sample timer = Timer.start(meterRegistry);
-        SourcesSecretResult sourcesSecretResult;
+        SourcesSecretResponse sourcesSecretResponse;
 
         if (connectorConfig.isSourcesOidcAuthEnabled(orgId)) {
             Log.debug("Using OIDC Sources client");
-            sourcesSecretResult = sourcesOidcClient.getById(orgId, secretRequest.secretId);
+            sourcesSecretResponse = sourcesOidcClient.getById(orgId, secretRequest.secretId);
         } else {
             Log.debug("Using PSK Sources client");
-            sourcesSecretResult = sourcesPskClient.getById(orgId, sourcesApiPsk, secretRequest.secretId);
+            sourcesSecretResponse = sourcesPskClient.getById(orgId, sourcesApiPsk, secretRequest.secretId);
         }
         timer.stop(meterRegistry.timer(SOURCES_TIMER));
 
-        if (sourcesSecretResult.username != null && !sourcesSecretResult.username.isBlank()) {
+        if (sourcesSecretResponse.username != null && !sourcesSecretResponse.username.isBlank()) {
             Log.debug("Found a secret username in the response from Sources");
         }
 
-        if (sourcesSecretResult.password != null && !sourcesSecretResult.password.isBlank()) {
+        if (sourcesSecretResponse.password != null && !sourcesSecretResponse.password.isBlank()) {
             Log.debug("Found a secret password in the response from Sources");
         }
-        return Optional.of(new AuthenticationResult(sourcesSecretResult, secretRequest.authenticationType));
+        return Optional.of(new AuthenticationResult(sourcesSecretResponse, secretRequest.authenticationType));
     }
 
     static void validate(AuthenticationRequest secretRequest) {

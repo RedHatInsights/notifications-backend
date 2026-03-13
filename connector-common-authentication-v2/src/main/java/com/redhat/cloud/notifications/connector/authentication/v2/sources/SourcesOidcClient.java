@@ -24,7 +24,7 @@ import org.jboss.resteasy.reactive.RestPath;
  * <p>Please be aware of the following:</p>
  *
  * <ul>
- *     <li>If sources is using a database backend, only the {@link SourcesSecretResult#password} field will get encrypted.</li>
+ *     <li>If sources is using a database backend, only the {@link SourcesSecretResponse#password} field will get encrypted.</li>
  *     <li>On the other hand, if sources is using the AWS Secrets Manager, then the whole secret will get encrypted.</li>
  * </ul>
  *
@@ -41,12 +41,12 @@ public interface SourcesOidcClient {
      * requests coming from inside the cluster— to be able to get the password of these secrets.
      * @param xRhSourcesOrgId the organization id related to this operation for the tenant identification.
      * @param id the secret id.
-     * @return a {@link SourcesSecretResult} instance.
+     * @return a {@link SourcesSecretResponse} instance.
      */
     @GET
     @Path("/internal/v2.0/secrets/{id}")
     @Retry
-    SourcesSecretResult getById(
+    SourcesSecretResponse getById(
         @HeaderParam("x-rh-sources-org-id") @NotBlank String xRhSourcesOrgId,
         @RestPath long id
     );
@@ -60,6 +60,6 @@ public interface SourcesOidcClient {
     static RuntimeException toException(final Response response) {
         final var errMessage = String.format("Sources responded with a %s status: %s", response.getStatus(), response.readEntity(String.class));
 
-        throw new WebApplicationException(errMessage, response);
+        return new WebApplicationException(errMessage, response);
     }
 }

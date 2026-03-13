@@ -137,7 +137,7 @@ public abstract class BaseConnectorIntegrationTest {
     /**
      * Asserts that the outgoing message matches expected patterns
      */
-    protected void assertSuccessfulOutgoingMessage(String expectedCloudEventId, String expectedTargetUrl) {
+    protected void assertSuccessfulOutgoingMessage(String expectedCloudEventId, String expectedTargetUrl, Integer statusCode) {
         JsonObject data = waitForOutgoingMessage(expectedCloudEventId);
 
         assertEquals(true, data.getBoolean("successful"));
@@ -147,6 +147,9 @@ public abstract class BaseConnectorIntegrationTest {
         assertNotNull(details.getString("type"));
         if (expectedTargetUrl != null) {
             assertEquals(expectedTargetUrl, details.getString("target"));
+        }
+        if (expectedTargetUrl != null) {
+            assertEquals(statusCode, details.getInteger("http_status_code"));
         }
     }
 

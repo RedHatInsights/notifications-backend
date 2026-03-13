@@ -23,7 +23,7 @@ import org.jboss.resteasy.reactive.RestPath;
  * <p>Please be aware of the following:</p>
  *
  * <ul>
- *     <li>If sources is using a database backend, only the {@link SourcesSecretResult#password} field will get encrypted.</li>
+ *     <li>If sources is using a database backend, only the {@link SourcesSecretResponse#password} field will get encrypted.</li>
  *     <li>On the other hand, if sources is using the AWS Secrets Manager, then the whole secret will get encrypted.</li>
  * </ul>
  *
@@ -40,12 +40,12 @@ public interface SourcesPskClient {
      * @param xRhSourcesOrgId the organization id related to this operation for the tenant identification.
      * @param xRhSourcesPsk the sources PSK required for the authorization.
      * @param id the secret id.
-     * @return a {@link SourcesSecretResult} instance.
+     * @return a {@link SourcesSecretResponse} instance.
      */
     @GET
     @Path("/internal/v2.0/secrets/{id}")
     @Retry
-    SourcesSecretResult getById(
+    SourcesSecretResponse getById(
         @HeaderParam("x-rh-sources-org-id") @NotBlank String xRhSourcesOrgId,
         @HeaderParam("x-rh-sources-psk") @NotBlank String xRhSourcesPsk,
         @RestPath long id
@@ -60,6 +60,6 @@ public interface SourcesPskClient {
     static RuntimeException toException(final Response response) {
         final var errMessage = String.format("Sources responded with a %s status: %s", response.getStatus(), response.readEntity(String.class));
 
-        throw new WebApplicationException(errMessage, response);
+        return new WebApplicationException(errMessage, response);
     }
 }
