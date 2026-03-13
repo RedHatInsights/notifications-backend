@@ -110,7 +110,7 @@ class DrawerConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         assertEquals(0, inMemoryDrawerSink.received().size());
 
         // Assert successful response
-        assertSuccessfulOutgoingMessage(cloudEventId, null);
+        assertSuccessfulOutgoingMessage(cloudEventId, null, null);
 
         // Check metrics
         assertMetricsIncrement(1, 1, 0);
@@ -140,7 +140,7 @@ class DrawerConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         assertDrawerMessage(inMemoryDrawerSink.received().get(0), 2);
 
         // Assert successful response
-        assertSuccessfulOutgoingMessage(cloudEventId, null);
+        assertSuccessfulOutgoingMessage(cloudEventId, null, null);
 
         // Check metrics
         assertMetricsIncrement(1, 1, 0);

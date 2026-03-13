@@ -4,4 +4,5 @@ import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetail
 
 public class HandledHttpMessageDetails extends HandledExceptionDetails {
     public String targetUrl;
+    public Integer httpStatus;
 }
