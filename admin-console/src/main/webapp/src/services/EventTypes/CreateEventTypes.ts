@@ -11,6 +11,7 @@ export type CreateEventType = {
     subscribedByDefault: boolean;
     subscriptionLocked: boolean;
     visible: boolean;
+    includedInDrawer: boolean;
     defaultSeverity?: string;
     availableSeverities?: string[];
 }
@@ -25,7 +26,8 @@ const actionCreator =  (params: CreateEventType) => {
             name: params.name,
             subscribed_by_default: params.subscribedByDefault,
             subscription_locked: params.subscriptionLocked,
-            visible: params.visible
+            visible: params.visible,
+            included_in_drawer: params.includedInDrawer
         };
 
         if (params.defaultSeverity && params.defaultSeverity !== '') {

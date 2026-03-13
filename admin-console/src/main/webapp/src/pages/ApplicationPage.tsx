@@ -78,7 +78,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
     const createEventType = () => {
         setShowModal(true);
         setIsEdit(false);
-        setEventTypes({ visible: true });
+        setEventTypes({ visible: true, includedInDrawer: false });
     };
 
     const handleSubmit = React.useCallback(eventType => {
@@ -93,6 +93,7 @@ export const ApplicationPage: React.FunctionComponent = () => {
             subscribedByDefault: eventType.subscribedByDefault,
             subscriptionLocked: eventType.subscriptionLocked,
             visible: eventType.visible,
+            includedInDrawer: eventType.includedInDrawer,
             defaultSeverity: eventType.defaultSeverity,
             availableSeverities: eventType.availableSeverities
 

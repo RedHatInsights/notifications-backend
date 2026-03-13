@@ -23,6 +23,7 @@ export const useEventTypes = (applicationId: string) => {
                 subscribedByDefault: !!value.subscribed_by_default,
                 subscriptionLocked: !!value.subscription_locked,
                 visible: !!value.visible,
+                includedInDrawer: !!value.included_in_drawer,
                 defaultSeverity: value.default_severity,
                 availableSeverities: value.available_severities
             }));

@@ -50,6 +50,7 @@ export interface EventType {
     subscribedByDefault: boolean;
     subscriptionLocked: boolean;
     visible: boolean;
+    includedInDrawer: boolean;
     defaultSeverity?: string;
     availableSeverities?: string[];
 }

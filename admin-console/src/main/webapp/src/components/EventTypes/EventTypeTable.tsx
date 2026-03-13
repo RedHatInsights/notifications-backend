@@ -44,7 +44,7 @@ type EventTypeTableLayoutProps = Pick<EventTypeTableBaseProps, 'hasPermissions' 
 
 export type EventTypeTableProps = Omit<EventTypeTableBaseProps, 'eventTypes'> & Partial<Pick<EventTypeTableBaseProps, 'eventTypes'>>;
 
-const numberOfColumns = 7;
+const numberOfColumns = 8;
 const skeletonRows = 5;
 
 /**
@@ -71,6 +71,7 @@ const EventTypeTableLayout: React.FunctionComponent<EventTypeTableLayoutProps> =
                     <Th>Subscribed by default?</Th>
                     <Th>Subscription locked?</Th>
                     <Th>Is visible?</Th>
+                    <Th>Is included in drawer?</Th>
                     <Th />
                 </Tr>
             </Thead>
@@ -121,6 +122,9 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                         { eventType.visible ? <CheckCircleIcon /> : <TimesIcon /> }
                     </Td>
                     <Td>
+                        { eventType.includedInDrawer ? <CheckCircleIcon /> : <TimesIcon /> }
+                    </Td>
+                    <Td>
                         <ActionList isIconList>
                             <ActionListItem>
                                 <Button
@@ -147,7 +151,7 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                 </Tr>
                 <Tr key={ `${eventType.id}-expanded-row` } isExpanded={ props.tableData[eventType.id]?.isExpanded }>
                     <Td />
-                    <Td colSpan={ 6 }>
+                    <Td colSpan={ 7 }>
                         <ExpandableRowContent>
                             <EventTypeExpandableRow eventType={ eventType } />
                         </ExpandableRowContent>
