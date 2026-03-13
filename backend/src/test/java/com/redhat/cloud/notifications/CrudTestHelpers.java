@@ -353,7 +353,7 @@ public abstract class CrudTestHelpers {
             assertEquals(eventType.isSubscribedByDefault(), jsonEventType.getBoolean("subscribed_by_default"));
             assertEquals(eventType.isSubscriptionLocked(), jsonEventType.getBoolean("subscription_locked"));
             assertEquals(eventType.isVisible(), jsonEventType.getBoolean("visible"));
-            assertEquals(eventType.isIncludedInDrawer(), jsonEventType.getBoolean("include_in_drawer"));
+            assertEquals(eventType.isIncludedInDrawer(), jsonEventType.getBoolean("included_in_drawer"));
 
             return Optional.of(jsonEventType.getString("id"));
         } else {
@@ -417,7 +417,7 @@ public abstract class CrudTestHelpers {
                     assertEquals(eventType.isSubscribedByDefault(), jsonEventType.getBoolean("subscribed_by_default"));
                     assertEquals(eventType.isSubscriptionLocked(), jsonEventType.getBoolean("subscription_locked"));
                     assertEquals(eventType.isVisible(), jsonEventType.getBoolean("visible"));
-                    assertEquals(eventType.isIncludedInDrawer(), jsonEventType.getBoolean("include_in_drawer"));
+                    assertEquals(eventType.isIncludedInDrawer(), jsonEventType.getBoolean("included_in_drawer"));
                     break;
                 }
                 if (i == jsonEventTypes.size() - 1) {
