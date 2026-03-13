@@ -170,26 +170,26 @@ class DrawerProcessorTest {
         Event createdEvent = new Event();
         createdEvent.setEventType(createdEventType);
         createdEvent.setEventWrapper(new EventWrapperAction(
-                new Action.ActionBuilder()
-                        .withOrgId("123456")
-                        .withEventType("triggered")
-                        .withApplication("policies")
-                        .withBundle("rhel")
-                        .withTimestamp(LocalDateTime.of(2022, 8, 24, 13, 30, 0, 0))
-                        .withSeverity(Severity.CRITICAL.name())
-                        .withContext(
-                                new Context.ContextBuilder()
-                                        .withAdditionalProperty("foo", "im foo")
-                                        .withAdditionalProperty("bar", Map.of("baz", "im baz"))
-                                        .build()
-                        )
-                        .withEvents(List.of(
-                                new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
-                                        .withMetadata(new Metadata())
-                                        .withPayload(new Payload())
-                                        .build()
-                        ))
+            new Action.ActionBuilder()
+                .withOrgId("123456")
+                .withEventType("triggered")
+                .withApplication("policies")
+                .withBundle("rhel")
+                .withTimestamp(LocalDateTime.of(2022, 8, 24, 13, 30, 0, 0))
+                .withSeverity(Severity.CRITICAL.name())
+                .withContext(
+                    new Context.ContextBuilder()
+                        .withAdditionalProperty("foo", "im foo")
+                        .withAdditionalProperty("bar", Map.of("baz", "im baz"))
                         .build()
+                )
+                .withEvents(List.of(
+                    new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                        .withMetadata(new Metadata())
+                        .withPayload(new Payload())
+                        .build()
+                ))
+                .build()
         ));
 
         return resourceHelpers.createEvent(createdEvent);
