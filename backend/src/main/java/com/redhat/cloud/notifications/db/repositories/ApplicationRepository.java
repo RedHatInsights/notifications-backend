@@ -237,7 +237,7 @@ public class ApplicationRepository {
             "restrictToRecipientsIntegrations = :restrictToRecipientsIntegrations, " +
             "defaultSeverity = :defaultSeverity, " +
             "availableSeverities = :availableSeverities, " +
-            "includeInDrawer = :includeInDrawer " +
+            "includedInDrawer = :includedInDrawer " +
             "WHERE id = :id";
         EventType eventTypeFromDatabase = entityManager.find(EventType.class, id);
         if (eventTypeFromDatabase == null) {
@@ -268,7 +268,7 @@ public class ApplicationRepository {
                 .setParameter("restrictToRecipientsIntegrations", eventType.isRestrictToRecipientsIntegrations())
                 .setParameter("defaultSeverity", eventType.getDefaultSeverity())
                 .setParameter("availableSeverities", eventType.getAvailableSeverities())
-                .setParameter("includeInDrawer", eventType.isIncludeInDrawer())
+                .setParameter("includedInDrawer", eventType.isIncludedInDrawer())
                 .setParameter("id", id)
                 .executeUpdate();
 

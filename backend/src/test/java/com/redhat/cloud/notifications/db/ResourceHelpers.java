@@ -138,7 +138,7 @@ public class ResourceHelpers {
         eventType.setApplicationId(applicationId);
         eventType.setRestrictToRecipientsIntegrations(isRestrictToRecipientsIntegrations);
         eventType.setVisible(isVisible);
-        eventType.setIncludeInDrawer(includeInDrawer);
+        eventType.setIncludedInDrawer(includeInDrawer);
         return applicationRepository.createEventType(eventType);
     }
 

@@ -166,7 +166,7 @@ class DrawerProcessorTest {
         Bundle createdBundle = resourceHelpers.createBundle("test-drawer-engine-event-bundle");
         Application createdApplication = resourceHelpers.createApp(createdBundle.getId(), "test-drawer-engine-event-application");
         EventType createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-engine-event-type");
-        createdEventType.setIncludeInDrawer(includeInDrawer);
+        createdEventType.setIncludedInDrawer(includeInDrawer);
         Event createdEvent = new Event();
         createdEvent.setEventType(createdEventType);
         createdEvent.setEventWrapper(new EventWrapperAction(

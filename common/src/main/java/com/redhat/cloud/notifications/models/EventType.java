@@ -97,7 +97,7 @@ public class EventType {
 
     private boolean restrictToRecipientsIntegrations;
 
-    private boolean includeInDrawer = false;
+    private boolean includedInDrawer;
 
     @OneToMany(mappedBy = "eventType", cascade = CascadeType.REMOVE)
     @JsonIgnore
@@ -211,12 +211,12 @@ public class EventType {
         return restrictToRecipientsIntegrations;
     }
 
-    public void setIncludeInDrawer(boolean includeInDrawer) {
-        this.includeInDrawer = includeInDrawer;
+    public void setIncludedInDrawer(boolean includeInDrawer) {
+        this.includedInDrawer = includeInDrawer;
     }
 
-    public boolean isIncludeInDrawer() {
-        return includeInDrawer;
+    public boolean isIncludedInDrawer() {
+        return includedInDrawer;
     }
 
     public void setRestrictToRecipientsIntegrations(boolean restrictToNamedRecipients) {

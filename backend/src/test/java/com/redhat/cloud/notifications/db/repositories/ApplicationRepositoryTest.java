@@ -311,7 +311,7 @@ public class ApplicationRepositoryTest extends DbIsolatedTest {
         EventType originalEventType = entityManager.find(EventType.class, eventType.getId());
         assertEquals("original-event-type", originalEventType.getName());
         assertEquals("Original Event Type", originalEventType.getDisplayName());
-        assertTrue(originalEventType.isIncludeInDrawer());
+        assertTrue(originalEventType.isIncludedInDrawer());
 
         // Prepare updated event type
         EventType updatedEventType = new EventType();
@@ -322,7 +322,7 @@ public class ApplicationRepositoryTest extends DbIsolatedTest {
         updatedEventType.setSubscribedByDefault(true);
         updatedEventType.setSubscriptionLocked(true);
         updatedEventType.setVisible(false);
-        updatedEventType.setIncludeInDrawer(false);
+        updatedEventType.setIncludedInDrawer(false);
         updatedEventType.setRestrictToRecipientsIntegrations(true);
         updatedEventType.setDefaultSeverity(Severity.CRITICAL);
         Set<Severity> severities = new HashSet<>();
@@ -347,7 +347,7 @@ public class ApplicationRepositoryTest extends DbIsolatedTest {
         assertTrue(result.isSubscribedByDefault());
         assertTrue(result.isSubscriptionLocked());
         assertFalse(result.isVisible());
-        assertFalse(result.isIncludeInDrawer());
+        assertFalse(result.isIncludedInDrawer());
         assertTrue(result.isRestrictToRecipientsIntegrations());
         assertEquals(Severity.CRITICAL, result.getDefaultSeverity());
         assertEquals(2, result.getAvailableSeverities().size());
