@@ -19,9 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
-public class TestPlanningTemplate extends EmailTemplatesRendererHelper {
+public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
 
-    public static Action createPlanningAction() {
+    public static Action createLifecycleAction() {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(StringUtils.EMPTY);
         emailActionMessage.setApplication(StringUtils.EMPTY);
@@ -57,24 +57,24 @@ public class TestPlanningTemplate extends EmailTemplatesRendererHelper {
 
     @Override
     protected String getApp() {
-        return "planning";
+        return "life-cycle";
     }
 
     @Override
     protected String getAppDisplayName() {
-        return "Planning";
+        return "Life Cycle";
     }
 
     @Test
     public void testRetiringLifecycleEmailTitle() {
-        eventTypeDisplayName = "Lifecycle Biweekly report";
-        String result = generateEmailSubject(RETIRING_LIFECYCLE, createPlanningAction());
-        assertEquals("Instant notification - Lifecycle Biweekly report - Planning - Red Hat Enterprise Linux", result);
+        eventTypeDisplayName = "life cycle monthly report";
+        String result = generateEmailSubject(RETIRING_LIFECYCLE, createLifecycleAction());
+        assertEquals("Instant notification - lifecycle monthly report - Planning - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testRetiringLifecycleEmailBody() {
-        String result = generateEmailBody(RETIRING_LIFECYCLE, createPlanningAction());
+        String result = generateEmailBody(RETIRING_LIFECYCLE, createLifecycleAction());
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }
