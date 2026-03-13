@@ -83,6 +83,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         if (endpoints == null || endpoints.isEmpty()) {
             return;
         }
+        if (!event.getEventType().isIncludedInDrawer()) {
+            return;
+        }
 
         // build event thought qute template
         JsonObject data = baseTransformer.toJsonObject(event);

@@ -305,12 +305,13 @@ public class ApplicationRepositoryTest extends DbIsolatedTest {
         // Create test fixtures
         Bundle bundle = resourceHelpers.createBundle("update-event-type-bundle", "Update Event Type Bundle");
         Application application = resourceHelpers.createApplication(bundle.getId(), "update-event-type-app", "Update Event Type App");
-        EventType eventType = resourceHelpers.createEventType(application.getId(), "original-event-type", "Original Event Type", "Original Description");
+        EventType eventType = resourceHelpers.createEventType(application.getId(), "original-event-type", "Original Event Type", "Original Description", false, true, true);
 
         // Verify original state
         EventType originalEventType = entityManager.find(EventType.class, eventType.getId());
         assertEquals("original-event-type", originalEventType.getName());
         assertEquals("Original Event Type", originalEventType.getDisplayName());
+        assertTrue(originalEventType.isIncludedInDrawer());
 
         // Prepare updated event type
         EventType updatedEventType = new EventType();
@@ -321,6 +322,7 @@ public class ApplicationRepositoryTest extends DbIsolatedTest {
         updatedEventType.setSubscribedByDefault(true);
         updatedEventType.setSubscriptionLocked(true);
         updatedEventType.setVisible(false);
+        updatedEventType.setIncludedInDrawer(false);
         updatedEventType.setRestrictToRecipientsIntegrations(true);
         updatedEventType.setDefaultSeverity(Severity.CRITICAL);
         Set<Severity> severities = new HashSet<>();
@@ -345,6 +347,7 @@ public class ApplicationRepositoryTest extends DbIsolatedTest {
         assertTrue(result.isSubscribedByDefault());
         assertTrue(result.isSubscriptionLocked());
         assertFalse(result.isVisible());
+        assertFalse(result.isIncludedInDrawer());
         assertTrue(result.isRestrictToRecipientsIntegrations());
         assertEquals(Severity.CRITICAL, result.getDefaultSeverity());
         assertEquals(2, result.getAvailableSeverities().size());
