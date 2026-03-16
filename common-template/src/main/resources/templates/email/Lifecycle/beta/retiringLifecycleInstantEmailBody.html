@@ -31,6 +31,8 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
         sub-section-expiring-count = rhelExpiringCount
         sub-section-expiring-months = 3
         sub-section-not-the-last = (rhel10RetiredCount + rhel10ExpiringCount + rhel9RetiredCount + rhel9ExpiringCount + rhel8RetiredCount + rhel8ExpiringCount)
+        sub-section-retired-url = 'https://console.redhat.com/insights/planning?lifecycleDropdown=Red+Hat+Enterprise+Linux&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Retired'
+        sub-section-expiring-url = 'https://console.redhat.com/insights/planning?lifecycleDropdown=Red+Hat+Enterprise+Linux&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Near+retirement'
         }
     {#insert content-common-section}{/}
     {/let}
@@ -44,6 +46,8 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
         sub-section-expiring-count = rhel10ExpiringCount
         sub-section-expiring-months = 6
         sub-section-not-the-last = (rhel9RetiredCount + rhel9ExpiringCount + rhel8RetiredCount + rhel8ExpiringCount)
+        sub-section-retired-url = 'https://console.redhat.com/insights/planning?lifecycleDropdown=RHEL+10+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Retired'
+        sub-section-expiring-url = 'https://console.redhat.com/insights/planning?lifecycleDropdown=RHEL+10+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Near+retirement'
         }
     {#insert content-common-section}{/}
     {/let}
@@ -57,6 +61,8 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
         sub-section-expiring-count = rhel9ExpiringCount
         sub-section-expiring-months = 6
         sub-section-not-the-last = (rhel8RetiredCount + rhel8ExpiringCount)
+        sub-section-retired-url = 'https://console.redhat.com/insights/planning?lifecycleDropdown=RHEL+9+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Retired'
+        sub-section-expiring-url = 'https://console.redhat.com/insights/planning?lifecycleDropdown=RHEL+9+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Near+retirement'
         }
     {#insert content-common-section}{/}
     {/let}
@@ -69,6 +75,8 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
         sub-section-retired-count = rhel8RetiredCount
         sub-section-expiring-count = rhel8ExpiringCount
         sub-section-expiring-months = 6
+        sub-section-retired-url = 'https://console.redhat.com/insights/planning?lifecycleDropdown=RHEL+8+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Retired'
+        sub-section-expiring-url = 'https://console.redhat.com/insights/planning?lifecycleDropdown=RHEL+8+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Near+retirement'
         }
     {#insert content-common-section}{/}
     {/let}
@@ -86,13 +94,13 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
     </tr>
     <tr>
         <td style="width: 50%; padding-right: 8px; vertical-align: top;">
-            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;"><a style="{body-section-table-td-a-style}" href="{environment.url}/insights/planning/lifecycle?{query_params}" target="_blank">{sub-section-retired-count}</a></div>
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;"><a style="{body-section-table-td-a-style}" href="{sub-section-retired-url}" target="_blank">{sub-section-retired-count}</a></div>
             <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
                 <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png" alt="" style="width:16px; height:16px; vertical-align:-2px; display: inline-block; margin-right: 4px;" border="0" width="16"/><!--[if mso]>&nbsp;&nbsp;<![endif]-->Releases past retirement
             </div>
         </td>
         <td style="width: 50%; padding-left: 8px; vertical-align: top;">
-            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;"><a style="{body-section-table-td-a-style}" href="{environment.url}/insights/planning/lifecycle?{query_params}" target="_blank">{sub-section-expiring-count}</a></div>
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;"><a style="{body-section-table-td-a-style}" href="{sub-section-expiring-url}" target="_blank">{sub-section-expiring-count}</a></div>
             <div style="font-size: 14px; color: #6a6e73; margin-top: 4px;">
                 <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_warning.png" alt="" style="width:16px; height:16px; vertical-align:-2px; display: inline-block; margin-right: 4px;" border="0" width="16"/><!--[if mso]>&nbsp;&nbsp;<![endif]-->Releases retiring within {sub-section-expiring-months} months
             </div>
