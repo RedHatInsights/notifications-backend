@@ -16,6 +16,7 @@ import java.util.Map;
 import static com.redhat.cloud.notifications.qute.templates.mapping.Rhel.RETIRING_LIFECYCLE;
 import static helpers.TestHelpers.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -69,7 +70,7 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
     public void testRetiringLifecycleEmailTitle() {
         eventTypeDisplayName = "life cycle monthly report";
         String result = generateEmailSubject(RETIRING_LIFECYCLE, createLifecycleAction());
-        assertEquals("Instant notification - lifecycle monthly report - Planning - Red Hat Enterprise Linux", result);
+        assertEquals("Instant notification - life cycle monthly report - Life Cycle - Red Hat Enterprise Linux", result);
     }
 
     @Test
@@ -78,10 +79,10 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         // Verify RHEL retired data is present
         assertTrue(result.contains("6"), "Body should contain rhel_versions_count");
-        assertTrue(result.contains("5"), "Body should contain systems_count for retired RHEL");
+        assertTrue(result.contains("id=\"rhelRetiredCount\">5<"), "Body should contain systems_count for retired RHEL");
         // Verify RHEL near retirement data is present
         assertTrue(result.contains("1"), "Body should contain rhel_versions_count for near retirement");
-        assertTrue(result.contains("3"), "Body should contain systems_count for near retirement RHEL");
+        assertTrue(result.contains("id=\"rhelExpiringCount\">3<"), "Body should contain systems_count for near retirement RHEL");
     }
 
     @Test
@@ -94,20 +95,17 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
     public void testRetiringLifecycleEmailBodyContainsAppstreamData() {
         String result = generateEmailBody(RETIRING_LIFECYCLE, createLifecycleAction());
         // Verify appstream retired data
-        assertTrue(result.contains("2"), "Body should contain appstream retired count for rhel8");
+        assertTrue(result.contains("id=\"rhel8RetiredCount\">2<"), "Body should contain appstream retired count for rhel8");
+        assertTrue(result.contains("id=\"rhel9RetiredCount\">2<"), "Body should contain appstream retired count for rhel9");
         assertTrue(result.contains("8"), "Body should contain systems_count for rhel9");
         // Verify appstream near retirement data
-        assertTrue(result.contains("22"), "Body should contain appstream near retirement count");
+        assertTrue(result.contains("id=\"rhel8ExpiringCount\">5<"), "Body should contain appstream near retirement count for rhel8");
+        assertTrue(result.contains("id=\"rhel9ExpiringCount\">22<"), "Body should contain appstream near retirement count for rhel9");
     }
 
     @Test
     public void testRetiringLifecycleEmailBodyWithOnlyRetiredRhel() {
-        Action action = new Action();
-        action.setBundle(StringUtils.EMPTY);
-        action.setApplication(StringUtils.EMPTY);
-        action.setTimestamp(LocalDateTime.of(2022, 10, 3, 15, 22, 13, 25));
-        action.setEventType(StringUtils.EMPTY);
-        action.setRecipients(List.of());
+        Action action = createLifecycleAction();
 
         action.setContext(
             new Context.ContextBuilder()
@@ -126,23 +124,17 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        action.setAccountId(StringUtils.EMPTY);
-        action.setOrgId(DEFAULT_ORG_ID);
-
         String result = generateEmailBody(RETIRING_LIFECYCLE, action);
         assertTrue(result.contains("3"), "Body should contain retired rhel_versions_count");
-        assertTrue(result.contains("10"), "Body should contain retired systems_count");
+        assertTrue(result.contains("id=\"rhelRetiredCount\">10<"), "Body should contain retired systems_count");
+        assertTrue(result.contains("id=\"rhelExpiringCount\">0<"), "Body should contain near retirement count systems_count");
+        assertFalse(result.contains("application streams life cycle"), "Body shouldn't contain any appstreams section");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testRetiringLifecycleEmailBodyWithOnlyNearRetirementRhel() {
-        Action action = new Action();
-        action.setBundle(StringUtils.EMPTY);
-        action.setApplication(StringUtils.EMPTY);
-        action.setTimestamp(LocalDateTime.of(2022, 10, 3, 15, 22, 13, 25));
-        action.setEventType(StringUtils.EMPTY);
-        action.setRecipients(List.of());
+        Action action = createLifecycleAction();
 
         action.setContext(
             new Context.ContextBuilder()
@@ -161,23 +153,17 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        action.setAccountId(StringUtils.EMPTY);
-        action.setOrgId(DEFAULT_ORG_ID);
-
         String result = generateEmailBody(RETIRING_LIFECYCLE, action);
         assertTrue(result.contains("2"), "Body should contain near retirement rhel_versions_count");
-        assertTrue(result.contains("7"), "Body should contain near retirement systems_count");
+        assertTrue(result.contains("id=\"rhelRetiredCount\">0<"), "Body should contain retired systems_count");
+        assertTrue(result.contains("id=\"rhelExpiringCount\">7<"), "Body should contain near retirement count systems_count");
+        assertFalse(result.contains("application streams life cycle"), "Body shouldn't contain any appstreams section");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testRetiringLifecycleEmailBodyWithZeroCounts() {
-        Action action = new Action();
-        action.setBundle(StringUtils.EMPTY);
-        action.setApplication(StringUtils.EMPTY);
-        action.setTimestamp(LocalDateTime.of(2022, 10, 3, 15, 22, 13, 25));
-        action.setEventType(StringUtils.EMPTY);
-        action.setRecipients(List.of());
+        Action action = createLifecycleAction();
 
         action.setContext(
             new Context.ContextBuilder()
@@ -197,22 +183,15 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        action.setAccountId(StringUtils.EMPTY);
-        action.setOrgId(DEFAULT_ORG_ID);
-
         String result = generateEmailBody(RETIRING_LIFECYCLE, action);
-        // Template should still render without errors
+        assertFalse(result.contains("RHEL life cycle"), "Body shouldn't contain 'RHEL life cycle' section");
+        assertFalse(result.contains("application streams life cycle"), "Body shouldn't contain any appstreams section");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testRetiringLifecycleEmailBodyWithAppstreamOnly() {
-        Action action = new Action();
-        action.setBundle(StringUtils.EMPTY);
-        action.setApplication(StringUtils.EMPTY);
-        action.setTimestamp(LocalDateTime.of(2022, 10, 3, 15, 22, 13, 25));
-        action.setEventType(StringUtils.EMPTY);
-        action.setRecipients(List.of());
+        Action action = createLifecycleAction();
 
         action.setContext(
             new Context.ContextBuilder()
@@ -232,25 +211,21 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        action.setAccountId(StringUtils.EMPTY);
-        action.setOrgId(DEFAULT_ORG_ID);
-
         String result = generateEmailBody(RETIRING_LIFECYCLE, action);
-        assertTrue(result.contains("3"), "Body should contain appstream retired count");
+        assertTrue(result.contains("id=\"rhel8RetiredCount\">3<"), "Body should contain appstream retired count for rhel8");
+        assertTrue(result.contains("id=\"rhel8ExpiringCount\">0<"), "Body should contain near retirement count for rhel8");
         assertTrue(result.contains("4"), "Body should contain appstream retired systems_count");
-        assertTrue(result.contains("10"), "Body should contain appstream near retirement count");
+        assertTrue(result.contains("id=\"rhel9RetiredCount\">0<"), "Body should contain appstream retired count for rhel9");
+        assertTrue(result.contains("id=\"rhel9ExpiringCount\">10<"), "Body should contain appstream near retirement count for rhel9");
         assertTrue(result.contains("12"), "Body should contain appstream near retirement systems_count");
+        assertFalse(result.contains("RHEL life cycle"), "Body shouldn't contain 'RHEL life cycle' section");
+        assertFalse(result.contains("RHEL 10 application streams life cycle"), "Body shouldn't contain any appstreams section");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testRetiringLifecycleEmailBodyWithMultipleRhelVersions() {
-        Action action = new Action();
-        action.setBundle(StringUtils.EMPTY);
-        action.setApplication(StringUtils.EMPTY);
-        action.setTimestamp(LocalDateTime.of(2022, 10, 3, 15, 22, 13, 25));
-        action.setEventType(StringUtils.EMPTY);
-        action.setRecipients(List.of());
+        Action action = createLifecycleAction();
 
         action.setContext(
             new Context.ContextBuilder()
@@ -273,14 +248,15 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        action.setAccountId(StringUtils.EMPTY);
-        action.setOrgId(DEFAULT_ORG_ID);
-
         String result = generateEmailBody(RETIRING_LIFECYCLE, action);
         // Verify all RHEL versions are present
-        assertTrue(result.contains("5"), "Body should contain count for rhel8");
-        assertTrue(result.contains("3"), "Body should contain count for rhel9");
-        assertTrue(result.contains("2"), "Body should contain count for rhel10");
+        assertTrue(result.contains("id=\"rhel8RetiredCount\">5<"), "Body should contain appstream retired count for rhel8");
+        assertTrue(result.contains("id=\"rhel9RetiredCount\">3<"), "Body should contain appstream retired count for rhel9");
+        assertTrue(result.contains("id=\"rhel10RetiredCount\">2<"), "Body should contain appstream retired count for rhel10");
+        assertTrue(result.contains("id=\"rhel8ExpiringCount\">0<"), "Body should contain near retirement count for rhel8");
+        assertTrue(result.contains("id=\"rhel9ExpiringCount\">0<"), "Body should contain near retirement count for rhel9");
+        assertTrue(result.contains("id=\"rhel9ExpiringCount\">0<"), "Body should contain near retirement count for rhel10");
+        assertFalse(result.contains("RHEL life cycle"), "Body shouldn't contain 'RHEL life cycle' section");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 }
