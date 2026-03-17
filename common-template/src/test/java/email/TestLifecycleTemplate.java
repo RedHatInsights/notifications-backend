@@ -143,6 +143,7 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
                 .withMetadata(new Metadata.MetadataBuilder().build())
                 .withPayload(
                     new Payload.PayloadBuilder()
+                        .withAdditionalProperty("rhel_retired", Map.of("rhel_versions_count", 0, "systems_count", 7))
                         .withAdditionalProperty("rhel_near_retirement", Map.of("rhel_versions_count", 2, "systems_count", 7))
                         .build()
                 )
@@ -199,8 +200,8 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
                 .withMetadata(new Metadata.MetadataBuilder().build())
                 .withPayload(
                     new Payload.PayloadBuilder()
-                        .withAdditionalProperty("appstream_retired", Map.of("rhel8", Map.of("count", 3, "systems_count", 4)))
-                        .withAdditionalProperty("appstream_near_retirement", Map.of("rhel9", Map.of("count", 10, "systems_count", 12)))
+                        .withAdditionalProperty("appstream_retired", Map.of("rhel8", Map.of("count", 3, "systems_count", 4), "rhel9", Map.of("count", 0, "systems_count", 12)))
+                        .withAdditionalProperty("appstream_near_retirement", Map.of("rhel8", Map.of("count", 0, "systems_count", 4), "rhel9", Map.of("count", 10, "systems_count", 12)))
                         .build()
                 )
                 .build()
