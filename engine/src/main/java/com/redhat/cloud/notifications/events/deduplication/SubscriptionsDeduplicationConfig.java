@@ -54,6 +54,8 @@ public class SubscriptionsDeduplicationConfig implements EventDeduplicationConfi
         deduplicationKey.put("product_id", context.getString("product_id"));
         deduplicationKey.put("metric_id", context.getString("metric_id"));
         deduplicationKey.put("billing_account_id", context.getString("billing_account_id"));
+        deduplicationKey.put("service_level", context.getString("service_level", ""));
+        deduplicationKey.put("usage", context.getString("usage", ""));
         deduplicationKey.put("month", event.getTimestamp().format(MONTH_FORMATTER));
         if (engineConfig.isSubscriptionsDeduplicationWillBeNotifiedEnabled(event.getOrgId())) {
             deduplicationKey.put("will_be_notified", willBeNotified(event.getOrgId(), event.getEventType().getId()));

@@ -63,8 +63,10 @@ class SubscriptionsDeduplicationConfigTest {
         String productId = "product-456";
         String metricId = "metric-789";
         String billingAccountId = "billing-abc";
+        String serviceLevel = "Premium";
+        String usage = "Production";
 
-        Event event = givenSubscriptionEvent(orgId, productId, metricId, billingAccountId);
+        Event event = givenSubscriptionEvent(orgId, productId, metricId, billingAccountId, serviceLevel, usage);
         Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey(event);
 
         assertTrue(deduplicationKey.isPresent());
@@ -75,6 +77,8 @@ class SubscriptionsDeduplicationConfigTest {
         assertEquals(productId, deduplicationKeyJson.getString("product_id"));
         assertEquals(metricId, deduplicationKeyJson.getString("metric_id"));
         assertEquals(billingAccountId, deduplicationKeyJson.getString("billing_account_id"));
+        assertEquals(serviceLevel, deduplicationKeyJson.getString("service_level"));
+        assertEquals(usage, deduplicationKeyJson.getString("usage"));
         assertEquals("2025-11", deduplicationKeyJson.getString("month"));
         assertEquals(false, deduplicationKeyJson.getBoolean("will_be_notified"));
     }
@@ -171,11 +175,93 @@ class SubscriptionsDeduplicationConfigTest {
                 "Deduplication keys should differ based on notification eligibility");
     }
 
+    @Test
+    void testGetDeduplicationKeyWithMissingServiceLevelAndUsage() {
+
+        String orgId = "test-org";
+        String productId = "product-123";
+        String metricId = "metric-456";
+        String billingAccountId = "billing-789";
+
+        // Create event without service_level and usage
+        Event event = givenSubscriptionEvent(orgId, productId, metricId, billingAccountId);
+        Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey(event);
+
+        assertTrue(deduplicationKey.isPresent());
+
+        // Verify that missing fields default to empty strings
+        JsonObject deduplicationKeyJson = new JsonObject(deduplicationKey.get());
+        assertEquals("", deduplicationKeyJson.getString("service_level"));
+        assertEquals("", deduplicationKeyJson.getString("usage"));
+    }
+
+    @Test
+    void testGetDeduplicationKeyDifferentServiceLevelProducesDifferentKey() {
+
+        Event event1 = givenSubscriptionEvent("org", "product", "metric", "billing", "Premium", "Production");
+        Optional<String> deduplicationKey1 = deduplicationConfig.getDeduplicationKey(event1);
+
+        Event event2 = givenSubscriptionEvent("org", "product", "metric", "billing", "Standard", "Production");
+        Optional<String> deduplicationKey2 = deduplicationConfig.getDeduplicationKey(event2);
+
+        assertTrue(deduplicationKey1.isPresent());
+        assertTrue(deduplicationKey2.isPresent());
+        assertNotEquals(deduplicationKey1.get(), deduplicationKey2.get(),
+                "Different service_level should produce different deduplication keys");
+    }
+
+    @Test
+    void testGetDeduplicationKeyDifferentUsageProducesDifferentKey() {
+
+        Event event1 = givenSubscriptionEvent("org", "product", "metric", "billing", "Premium", "Production");
+        Optional<String> deduplicationKey1 = deduplicationConfig.getDeduplicationKey(event1);
+
+        Event event2 = givenSubscriptionEvent("org", "product", "metric", "billing", "Premium", "Development/Test");
+        Optional<String> deduplicationKey2 = deduplicationConfig.getDeduplicationKey(event2);
+
+        assertTrue(deduplicationKey1.isPresent());
+        assertTrue(deduplicationKey2.isPresent());
+        assertNotEquals(deduplicationKey1.get(), deduplicationKey2.get(),
+                "Different usage should produce different deduplication keys");
+    }
+
+    @Test
+    void testGetDeduplicationKeySameServiceLevelAndUsageProducesSameKey() {
+
+        String orgId = "test-org";
+        String productId = "product-123";
+        String metricId = "metric-456";
+        String billingAccountId = "billing-789";
+        String serviceLevel = "Premium";
+        String usage = "Production";
+
+        Event event1 = givenSubscriptionEvent(orgId, productId, metricId, billingAccountId, serviceLevel, usage);
+        Optional<String> deduplicationKey1 = deduplicationConfig.getDeduplicationKey(event1);
+
+        Event event2 = givenSubscriptionEvent(orgId, productId, metricId, billingAccountId, serviceLevel, usage);
+        Optional<String> deduplicationKey2 = deduplicationConfig.getDeduplicationKey(event2);
+
+        assertTrue(deduplicationKey1.isPresent());
+        assertTrue(deduplicationKey2.isPresent());
+        assertEquals(deduplicationKey1.get(), deduplicationKey2.get(),
+                "Same service_level and usage should produce identical deduplication keys");
+    }
+
     private Event givenSubscriptionEvent(String orgId, String productId, String metricId, String billingAccountId) {
+        return givenSubscriptionEvent(orgId, productId, metricId, billingAccountId, null, null);
+    }
+
+    private Event givenSubscriptionEvent(String orgId, String productId, String metricId, String billingAccountId, String serviceLevel, String usage) {
         JsonObject context = new JsonObject();
         context.put("product_id", productId);
         context.put("metric_id", metricId);
         context.put("billing_account_id", billingAccountId);
+        if (serviceLevel != null) {
+            context.put("service_level", serviceLevel);
+        }
+        if (usage != null) {
+            context.put("usage", usage);
+        }
 
         EventType eventType = new EventType();
         eventType.setId(UUID.randomUUID());
