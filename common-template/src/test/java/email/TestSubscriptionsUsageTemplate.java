@@ -10,6 +10,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -59,6 +60,8 @@ public class TestSubscriptionsUsageTemplate extends EmailTemplatesRendererHelper
         assertTrue(result.contains("Subscriptions Usage - Subscription Services"));
         assertTrue(result.contains("Subscription threshold exceeded"));
         assertTrue(result.contains("Product variant: <b>RHEL for x86</b>"));
+        assertTrue(result.contains("SLA: <b>Premium</b>"));
+        assertTrue(result.contains("Usage: <b>Production</b>"));
         assertTrue(result.contains("Organization: <b>" + TestHelpers.DEFAULT_ORG_ID + "</b>"));
         // Usage information section
         assertTrue(result.contains("Usage information"));
@@ -69,7 +72,33 @@ public class TestSubscriptionsUsageTemplate extends EmailTemplatesRendererHelper
         // Table values
         assertTrue(result.contains(">sockets<") || result.contains("sockets</td>"));
         assertTrue(result.contains(">105%<") || result.contains("105%</td>"));
-
         assertTrue(result.contains("Getting Started with the Subscriptions Usage Service"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testUsageThresholdExceededEmailBodyWithSlaOnly(boolean useBetaTemplate) {
+        Action actionWithSlaOnly = SubscriptionsUsageTestHelpers.createSubscriptionsUsageActionWithSlaOnly();
+        String result = generateEmailBody(EXCEEDED_UTILIZATION_THRESHOLD, actionWithSlaOnly, useBetaTemplate);
+        assertTrue(result.contains("SLA: <b>Premium</b>"));
+        assertFalse(result.contains("Usage:"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testUsageThresholdExceededEmailBodyWithUsageOnly(boolean useBetaTemplate) {
+        Action actionWithUsageOnly = SubscriptionsUsageTestHelpers.createSubscriptionsUsageActionWithUsageOnly();
+        String result = generateEmailBody(EXCEEDED_UTILIZATION_THRESHOLD, actionWithUsageOnly, useBetaTemplate);
+        assertFalse(result.contains("SLA:"));
+        assertTrue(result.contains("Usage: <b>Production</b>"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testUsageThresholdExceededEmailBodyWithoutSlaAndUsage(boolean useBetaTemplate) {
+        Action actionWithoutSlaAndUsage = SubscriptionsUsageTestHelpers.createSubscriptionsUsageActionWithoutSlaAndUsage();
+        String result = generateEmailBody(EXCEEDED_UTILIZATION_THRESHOLD, actionWithoutSlaAndUsage, useBetaTemplate);
+        assertFalse(result.contains("SLA:"));
+        assertFalse(result.contains("Usage:"));
     }
 }

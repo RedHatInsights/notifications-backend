@@ -9,6 +9,16 @@
     <p style="{body-section-p-style}">
         Product variant: <b>{action.context.product_id}</b>
     </p>
+    {#if action.context.service_level??}
+    <p style="{body-section-p-style}">
+        SLA: <b>{action.context.service_level}</b>
+    </p>
+    {/if}
+    {#if action.context.usage??}
+    <p style="{body-section-p-style}">
+        Usage: <b>{action.context.usage}</b>
+    </p>
+    {/if}
     <p style="{body-section-p-style}">
         Organization: <b>{action.orgId}</b>
     </p>
