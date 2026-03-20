@@ -189,10 +189,10 @@ class SubscriptionsDeduplicationConfigTest {
 
         assertTrue(deduplicationKey.isPresent());
 
-        // Verify that missing fields default to empty strings
+        // Verify that missing fields are not present in the deduplication key
         JsonObject deduplicationKeyJson = new JsonObject(deduplicationKey.get());
-        assertEquals("", deduplicationKeyJson.getString("service_level"));
-        assertEquals("", deduplicationKeyJson.getString("usage"));
+        assertFalse(deduplicationKeyJson.containsKey("service_level"));
+        assertFalse(deduplicationKeyJson.containsKey("usage"));
     }
 
     @Test
