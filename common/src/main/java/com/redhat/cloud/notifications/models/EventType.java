@@ -97,6 +97,7 @@ public class EventType {
 
     private boolean restrictToRecipientsIntegrations;
 
+    // This is an internal field. Do not include it in DTOs used in the public REST API.
     private boolean includedInDrawer;
 
     @OneToMany(mappedBy = "eventType", cascade = CascadeType.REMOVE)
@@ -211,8 +212,8 @@ public class EventType {
         return restrictToRecipientsIntegrations;
     }
 
-    public void setIncludedInDrawer(boolean includeInDrawer) {
-        this.includedInDrawer = includeInDrawer;
+    public void setIncludedInDrawer(boolean includedInDrawer) {
+        this.includedInDrawer = includedInDrawer;
     }
 
     public boolean isIncludedInDrawer() {

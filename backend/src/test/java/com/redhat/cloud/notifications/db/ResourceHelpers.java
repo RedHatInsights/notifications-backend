@@ -130,7 +130,7 @@ public class ResourceHelpers {
         return createEventType(applicationId, name, displayName, description, isRestrictToRecipientsIntegrations, isVisible, false);
     }
 
-    public EventType createEventType(UUID applicationId, String name, String displayName, String description, boolean isRestrictToRecipientsIntegrations, boolean isVisible, boolean includeInDrawer) {
+    public EventType createEventType(UUID applicationId, String name, String displayName, String description, boolean isRestrictToRecipientsIntegrations, boolean isVisible, boolean includedInDrawer) {
         EventType eventType = new EventType();
         eventType.setName(name);
         eventType.setDisplayName(displayName);
@@ -138,7 +138,7 @@ public class ResourceHelpers {
         eventType.setApplicationId(applicationId);
         eventType.setRestrictToRecipientsIntegrations(isRestrictToRecipientsIntegrations);
         eventType.setVisible(isVisible);
-        eventType.setIncludedInDrawer(includeInDrawer);
+        eventType.setIncludedInDrawer(includedInDrawer);
         return applicationRepository.createEventType(eventType);
     }
 

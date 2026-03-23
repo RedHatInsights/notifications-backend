@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
+import io.quarkus.cache.CacheInvalidateAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -225,6 +226,8 @@ public class ApplicationRepository {
     }
 
     @Transactional
+    @CacheInvalidateAll(cacheName = "event-types-from-baet")
+    @CacheInvalidateAll(cacheName = "event-types-from-fqn")
     public int updateEventType(UUID id, EventType eventType) {
         String eventTypeQuery = "UPDATE EventType SET " +
             "name = :name, " +

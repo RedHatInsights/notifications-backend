@@ -21,6 +21,7 @@ import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
 import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
+import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -84,6 +85,8 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
             return;
         }
         if (!event.getEventType().isIncludedInDrawer()) {
+            Log.debugf("Event %s skipped because the event type %s not included in drawer",
+                    event.getId(), event.getEventType().getName());
             return;
         }
 
