@@ -171,11 +171,11 @@ class DrawerProcessorTest {
     }
 
     @Transactional
-    Event createEvent(boolean includeInDrawer) {
+    Event createEvent(boolean includedInDrawer) {
         Bundle createdBundle = resourceHelpers.createBundle("test-drawer-engine-event-bundle");
         Application createdApplication = resourceHelpers.createApp(createdBundle.getId(), "test-drawer-engine-event-application");
         EventType createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-engine-event-type");
-        createdEventType.setIncludedInDrawer(includeInDrawer);
+        createdEventType.setIncludedInDrawer(includedInDrawer);
         Event createdEvent = new Event();
         createdEvent.setEventType(createdEventType);
         createdEvent.setEventWrapper(new EventWrapperAction(
