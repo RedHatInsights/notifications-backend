@@ -80,7 +80,7 @@ class DrawerProcessorTest {
     @InjectMock
     EngineConfig engineConfig;
 
-    @InjectMock
+    @InjectSpy
     TemplateService templateService;
 
     @Inject
