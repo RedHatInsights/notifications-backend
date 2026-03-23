@@ -15,13 +15,6 @@
         {
             "type": "divider"
         },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "Explore {#if data.events.size() != 1}these{#else}this{/if} and others in the <https://access.redhat.com/errata-search/?from=notifications&integration=slack|errata search>."
-            }
-        }
     {/content-body}
     {#explore-url}https://access.redhat.com/errata-search/?from=notifications&integration=slack{/explore-url}
     {#explore-location}errata search{/explore-location}

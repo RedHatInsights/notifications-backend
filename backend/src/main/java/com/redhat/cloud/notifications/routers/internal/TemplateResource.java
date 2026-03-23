@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateRequest;
 import com.redhat.cloud.notifications.routers.models.RenderEmailTemplateResponse;
 import com.redhat.cloud.notifications.utils.ActionParser;
+import io.quarkus.logging.Log;
 import io.quarkus.qute.TemplateException;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -34,6 +35,8 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.jboss.resteasy.reactive.RestPath;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -262,7 +265,14 @@ public class TemplateResource {
             additionalContext.put("action", actionAsMap);
 
             for (int i = 0; i < templateContent.length; i++) {
-                renderedTemplate[i] = templateService.renderTemplateWithCustomDataMap(templateContent[i], additionalContext);
+                String currentTemplateContent;
+                try {
+                    currentTemplateContent = new String(Base64.getDecoder().decode(templateContent[i]), StandardCharsets.UTF_8);
+                } catch (Exception e) {
+                    Log.info("Template is not a base 64 format", e);
+                    currentTemplateContent = templateContent[i];
+                }
+                renderedTemplate[i] = templateService.renderTemplateWithCustomDataMap(currentTemplateContent, additionalContext);
             }
 
             return Response.ok(new RenderEmailTemplateResponse.Success(renderedTemplate)).build();

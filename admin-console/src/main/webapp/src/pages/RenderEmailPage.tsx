@@ -15,13 +15,12 @@ import * as React from 'react';
 import { useRenderEmailRequest } from '../services/RenderEmailRequest';
 
 const defaultSubjectTemplate = `
-Important email to {user.firstName} from MyCoolApp!
+Important email from MyCoolApp!
 `.trimLeft();
 
 const defaultBodyTemplate = `
-<div>Hello {user.firstName} {user.lastName},</div>
+<div>Hello,</div>
 <div>We have some important news for you, MyApp has a notification for you</div>
-<div>As a reminder, current user: {user.username}: is active? {user.isActive}; is admin? {user.isAdmin}</div>
 <div>
     System with name <strong>{action.context.display_name}</strong> (<strong>{action.context.inventory_id}</strong>) 
     did a check in at {action.context.system_check_in.toUtcFormat()}. 
@@ -77,6 +76,12 @@ type RenderedTemplateProps = {
     error: string;
 };
 
+const encodeBase64 = (str: string): string => {
+    const bytes = new TextEncoder().encode(str);
+    const binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join('');
+    return btoa(binString);
+};
+
 const RenderedTemplate: React.FunctionComponent<RenderedTemplateProps> = props => {
     if (props.isLoading) {
         return <Spinner />;
@@ -120,8 +125,8 @@ export const RenderEmailPage: React.FunctionComponent = () => {
     React.useEffect(() => {
         const mutate = emailTemplate.mutate;
         mutate({
-            subject: subjectTemplate ?? '',
-            body: bodyTemplate ?? '',
+            subject: encodeBase64(subjectTemplate ?? ''),
+            body: encodeBase64(bodyTemplate ?? ''),
             payload: payload ?? ''
         });
         // We only want to activate this once
@@ -157,8 +162,8 @@ export const RenderEmailPage: React.FunctionComponent = () => {
     const onRender = React.useCallback(() => {
         const mutate = emailTemplate.mutate;
         mutate({
-            subject: subjectTemplate ?? '',
-            body: bodyTemplate ?? '',
+            subject: encodeBase64(subjectTemplate ?? ''),
+            body: encodeBase64(bodyTemplate ?? ''),
             payload: payload ?? ''
         });
     }, [ emailTemplate.mutate, subjectTemplate, bodyTemplate, payload ]);
