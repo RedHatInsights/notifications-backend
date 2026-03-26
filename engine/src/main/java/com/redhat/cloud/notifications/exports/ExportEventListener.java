@@ -127,7 +127,7 @@ public class ExportEventListener {
      * @param orgId the organization ID to check the feature toggle for.
      */
     private ExportService getExportServiceClient(String orgId) {
-        if (engineConfig.isExportServiceOidcAuthEnabled(orgId)) {
+        if (engineConfig.isExportServiceHccClusterEnabled(orgId)) {
             Log.debug("Using OIDC Export Service client");
             return exportServiceOidc;
         } else {

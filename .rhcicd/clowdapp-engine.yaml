@@ -202,6 +202,8 @@ objects:
             secretKeyRef:
               name: oidc-authentication
               key: secret
+        - name: QUARKUS_REST_CLIENT_EXPORT_SERVICE_OIDC_URL
+          value: ${QUARKUS_REST_CLIENT_EXPORT_SERVICE_OIDC_URL}
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS_EXPORTS_EXPORTEVENTLISTENER__LEVEL
           value: ${EXPORT_EVENT_LISTENER_LOG_LEVEL}
         - name: QUARKUS_REST_CLIENT_LOGGING_SCOPE
@@ -436,6 +438,9 @@ parameters:
   value: P2D
 - name: NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES
   value: "false"
+- name: QUARKUS_REST_CLIENT_EXPORT_SERVICE_OIDC_URL
+  description: Override URL for the OIDC-authenticated Export Service REST client, used to point to the HCC cluster endpoint.
+  value: "http://localhost:10010"
 - name: OIDC_CLIENT_ENABLED
   description: If true, the OIDC client will be enabled.
   value: "false"
