@@ -84,7 +84,7 @@ Every new repository method that accesses tenant data must follow this pattern.
 - This validator (in `common` module) checks:
   - URL is well-formed (valid URL and URI)
   - Scheme is `http` or `https` only (rejects `ftp://`, etc.)
-  - Hostname does not resolve to a private/site-local IP (192.168.x.x, 172.16.x.x, 10.x.x.x)
+  - Hostname does not resolve to a private/site-local IP (uses `InetAddress.isSiteLocalAddress()` which covers 192.168.x.x, 172.16-31.x.x, 10.x.x.x ranges)
   - Hostname does not resolve to a loopback address (127.x.x.x, localhost) in non-dev/test modes
   - Hostname resolves to a known host
 - Applied on: `WebhookPropertiesDTO.url`, `CamelPropertiesDTO.url`
@@ -131,7 +131,7 @@ Every new repository method that accesses tenant data must follow this pattern.
 ## 7. Kessel gRPC Client Resilience
 
 The `KesselCheckClient` implements specific resilience patterns:
-- **Timeout**: All gRPC calls use a configurable deadline (`notifications.kessel.timeout-ms`, default 30s).
+- **Timeout**: All gRPC calls use a configurable deadline (`notifications.kessel.timeout-ms`, default 30000ms).
 - **Retry**: 3 retries with 100ms delay on transient failures (`UNAVAILABLE`, `DEADLINE_EXCEEDED`, `RESOURCE_EXHAUSTED`, `ABORTED`).
 - **Token refresh**: On `UNAUTHENTICATED` errors, the gRPC channel is recreated with fresh OAuth2 credentials (cache is cleared).
 - **Channel health**: If the gRPC channel enters `SHUTDOWN` state, it is automatically recreated.
@@ -147,7 +147,7 @@ The `KesselCheckClient` implements specific resilience patterns:
 
 When reviewing or implementing changes:
 
-1. Most public endpoint methods should have `@Authorization` with both `legacyRBACRole` and `workspacePermissions` (exceptions include endpoints marked with `@Tag(name = OApiFilter.PRIVATE)`).
+1. Public endpoint methods should have `@Authorization` with both `legacyRBACRole` and `workspacePermissions` (exceptions include endpoints marked with `@Tag(name = OApiFilter.PRIVATE)`).
 2. Every internal endpoint method has `@RolesAllowed` with appropriate admin/user role.
 3. Every database query for tenant data includes `orgId` in the WHERE clause.
 4. User-supplied URLs use `@ValidNonPrivateUrl`.

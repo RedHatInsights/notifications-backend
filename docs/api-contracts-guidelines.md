@@ -19,13 +19,13 @@ Rules and conventions for REST API contracts in `notifications-backend`, derived
   }
   ```
 - When v2 extends behavior, create a separate `*V2` class (e.g., `EndpointResourceV2`) with its own inner class `V2`. Factor shared logic into a `*Common` base class (e.g., `EndpointResourceCommon`).
-- V2 endpoints that overlap V1 must set an explicit `operationId` via `@Operation(operationId = "EndpointResource$V2_methodName")` to avoid OpenAPI ID collisions.
+- V2 endpoints that overlap V1 should set an explicit `operationId` via `@Operation(operationId = "EndpointResource$V2_methodName")` to avoid OpenAPI ID collisions.
 - The key V1-to-V2 difference is paginated responses: V1 returns raw `List<T>`, V2 returns `Page<T>` with links and meta.
 
 ## 2. OpenAPI / Swagger Annotations
 
 - Use **MicroProfile OpenAPI** annotations (`org.eclipse.microprofile.openapi.annotations.*`), not Swagger annotations.
-- Every public endpoint must have `@Operation(summary = "...", description = "...")`.
+- Public endpoints should have `@Operation(summary = "...", description = "...")`. Deprecated endpoints may use `@Operation(hidden = true)`.
 - Use `@APIResponse` / `@APIResponses` for non-default response codes (400, 404, 204).
 - Pagination query params are documented via `@Parameters` / `@Parameter` blocks with `in = ParameterIn.QUERY` and `@Schema(type = SchemaType.INTEGER)`.
 - Mark private/internal-only endpoints with `@Tag(name = OApiFilter.PRIVATE)`. These are filtered out of the public OpenAPI spec.
@@ -38,10 +38,10 @@ Rules and conventions for REST API contracts in `notifications-backend`, derived
 - DTOs live in the `backend` module under `com.redhat.cloud.notifications.models.dto.v1` (versioned package). Entity classes live in the `common` module under `com.redhat.cloud.notifications.models`.
 - DTO classes are `final` classes (e.g., `EndpointDTO`), not interfaces or records.
 - All DTO classes use `@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)` for snake_case JSON serialization.
-- MapStruct mappers use `@Mapper(componentModel = MappingConstants.ComponentModel.CDI)` for CDI injection.
+- MapStruct mappers use `@Mapper(componentModel = MappingConstants.ComponentModel.CDI)` for CDI injection. They are declared as interfaces.
 - Two mapper types exist:
   - `EndpointMapper` -- dedicated mapper for complex entities with polymorphic properties; uses `@Named` qualifiers and `default` methods with `switch` expressions for type dispatch.
-  - `CommonMapper` -- general mapper for simple entity-to-DTO conversions (Bundle, Application, EventType).
+  - `CommonMapper` -- general mapper for simple entity-to-DTO conversions (Bundle, Application, EventType, NotificationHistory).
 - When mapping entity-to-DTO, use `@Mapping(target = "fieldName", ignore = true)` for fields not present in the target (e.g., `accountId`, `orgId`, internal IDs).
 - Secrets/credentials mapped from Sources are excluded in DTO-to-entity direction: `@Mapping(target = "bearerAuthenticationSourcesId", ignore = true)`.
 - Polymorphic properties (e.g., `EndpointPropertiesDTO`) use Jackson `@JsonSubTypes` and `@JsonTypeInfo(use = Id.NAME, property = "type", include = As.EXTERNAL_PROPERTY)` on the DTO field.
@@ -59,8 +59,8 @@ Rules and conventions for REST API contracts in `notifications-backend`, derived
 
 ## 5. Pagination
 
-- Paginated list endpoints return `Page<T>` containing `data` (list), `links` (map of first/last/prev/next URLs), and `meta` (object with `count`).
-- The `Query` class is a `@BeanParam` binding `limit`, `pageNumber`, `offset`, and `sort_by` query params.
+- Paginated list endpoints return `Page<T>` (`com.redhat.cloud.notifications.routers.models.Page` in `common` module) containing `data` (list), `links` (map of first/last/prev/next URLs), and `meta` (object with `count`).
+- The `Query` class (`com.redhat.cloud.notifications.db.Query` in `backend` module) is a `@BeanParam` binding `limit`, `pageNumber`, `offset`, and `sort_by` query params.
 - Pagination defaults: `limit` defaults to 20, max 200, min 1. `offset` takes precedence over `pageNumber`.
 - `PageLinksBuilder.build(uriInfo, count, query)` constructs pagination links preserving all original query params.
 - Some V1 endpoints (e.g., `EndpointResource.getEndpoints`) return `EndpointPage` (a typed `Page<EndpointDTO>` subclass). Prefer generic `Page<T>` for new V2 endpoints.
@@ -86,7 +86,7 @@ Rules and conventions for REST API contracts in `notifications-backend`, derived
 
 - Request bodies: `@NotNull @Valid EndpointDTO endpointDTO`. The `@RequestBody` annotation is optional and used only for OpenAPI documentation.
 - Bean validation on DTO fields: `@NotNull`, `@Size(max = 255)`, `@Min(0)`, `@NotBlank`.
-- Custom cross-field validation uses `@JsonIgnore @AssertTrue(message = "...")` methods on DTOs (e.g., `isSubTypePresentWhenRequired()`).
+- Custom cross-field validation uses `@JsonIgnore @AssertTrue(message = "...")` or `@AssertFalse(message = "...")` methods on DTOs (e.g., `isSubTypePresentWhenRequired()`, `isDisplayNameNotNullAndBlank()`).
 - Custom validators: `@ValidNonPrivateUrl` on URL fields to reject private/internal URLs.
 - `Query` params validated with `@Min` / `@Max` annotations directly on fields.
 - `ConstraintViolationExceptionMapper` returns 400 with structured JSON: `{ "title", "description", "violations": [{ "field", "message" }] }`.
@@ -94,9 +94,9 @@ Rules and conventions for REST API contracts in `notifications-backend`, derived
 
 ## 9. Authorization
 
-- Every public endpoint must have `@Authorization(legacyRBACRole = RBAC_*, workspacePermissions = PERMISSION_*)`.
+- Most public endpoints should have `@Authorization(legacyRBACRole = RBAC_*, workspacePermissions = WorkspacePermission.*)`. Endpoints marked with `@Tag(name = OApiFilter.PRIVATE)` (e.g., UserConfigResource, DrawerResource, StatusResource) extract orgId/username from SecurityContext but do not use `@Authorization`.
 - Read endpoints use `RBAC_READ_*` / `*_VIEW` permissions; write endpoints use `RBAC_WRITE_*` / `*_EDIT`.
-- Internal endpoints use `@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL)` or `@PermitAll`.
+- Internal endpoints use `@RolesAllowed(RBAC_INTERNAL_ADMIN)` or `@RolesAllowed(RBAC_INTERNAL_USER)` or `@PermitAll`.
 - Credential redaction in responses is based on write permission: users without write access see `*****` for secrets.
 
 ## 10. Error Handling

@@ -7,7 +7,7 @@ Rules and conventions for database usage in `notifications-backend`, derived fro
 ### File Naming
 - Format: `V1.<sequence>.0__<JIRA-TICKET>_<description>.sql`
 - Example: `V1.118.0__RHCLOUD-43290_event_deduplication.sql`
-- The sequence number is monotonically increasing across the project (currently past 129)
+- The sequence number is monotonically increasing across the project (currently at 129)
 - Description uses underscores as word separators
 - Always include the Jira ticket ID (e.g., `RHCLOUD-43290`) after the double underscore
 
@@ -101,7 +101,7 @@ Rules and conventions for database usage in `notifications-backend`, derived fro
 ### Deadlock Prevention
 - Use `PESSIMISTIC_WRITE` lock mode before bulk updates to prevent deadlocks
 - Pattern: lock existing rows, compute diff, delete removed items, insert new items
-- Example in `BehaviorGroupRepository.updateBehaviorGroupActions()` and `updateEventTypeBehaviors()`
+- Example in `BehaviorGroupRepository.updateBehaviorGroupActions()` and `updateBehaviorEventTypes()`
 
 ## Transaction Management
 

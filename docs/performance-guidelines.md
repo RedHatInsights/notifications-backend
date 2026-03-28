@@ -11,12 +11,12 @@ The codebase uses `@CacheResult` / `@CacheInvalidate` from `io.quarkus.cache` wi
 | TTL tier | Use case | Examples |
 |---|---|---|
 | PT1M | Volatile data fetched per-request (resolved recipients) | `recipients-resolver-results` |
-| PT5M | Lookup data that changes infrequently (templates, event types) | `event-types-from-baet`, `event-types-from-fqn` |
+| PT5M | Lookup data that changes infrequently (templates, event types) | `event-types-from-baet`, `event-types-from-fqn`, `aggregation-target-email-subscription-endpoints` |
 | PT10M | External user directory responses | `recipients-users-provider-get-users`, `recipients-users-provider-get-group-users`, `find-recipients` |
 | PT60s | Status / health checks, maintenance mode | `maintenance` |
 | PT120s | RBAC authorization cache | `rbac-cache` |
 | PT60M | Quasi-static organizational data | `kessel-rbac-workspace-id` |
-| PT15M | Reference data (bundles, applications) | `get-bundle-by-id`, `get-app-by-name`, `aggregation-target-email-subscription-endpoints` |
+| PT15M | Reference data (bundles, applications) | `get-bundle-by-id`, `get-app-by-name` |
 | P7D | Credentials that rarely rotate | `kessel-oauth2-client-credentials` |
 
 **Rules:**
@@ -33,7 +33,7 @@ The codebase uses `@CacheResult` / `@CacheInvalidate` from `io.quarkus.cache` wi
 - Set `mp.messaging.outgoing.<channel>.merge=true` when multiple in-app emitters write to the same topic (see `egress` channel).
 - Use structured cloud-events mode for outgoing connector messages: `cloud-events-mode=structured`.
 - Monitor payload sizes with `DistributionSummary` before sending (see `ConnectorSender.recordMetrics`).
-- When a payload exceeds `mp.messaging.outgoing.tocamel.max.request.size` (default 10 MB), store it in the database and send only a reference ID (see `ConnectorSender.send` with `PayloadDetails`).
+- When a payload exceeds `mp.messaging.outgoing.tocamel.max.request.size` (configured as 10 MB in this application; Kafka default is 1 MB), store it in the database and send only a reference ID (see `ConnectorSender.send` with `PayloadDetails`).
 
 ### Consumer conventions
 - All Kafka consumers use `@Blocking` annotation to avoid starving the Vert.x event loop.

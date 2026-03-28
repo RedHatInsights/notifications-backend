@@ -7,7 +7,7 @@ Rules and conventions for integrations in `notifications-backend`, derived from 
 This repository has two connector framework generations running in parallel:
 
 - **V1 (Camel-based)**: Uses Apache Camel routes with `EngineToConnectorRouteBuilder` and SEDA queues. Connectors: Slack, PagerDuty, ServiceNow, Splunk, Email, Drawer, Google Chat, Microsoft Teams.
-- **V2 (SmallRye Reactive Messaging)**: Uses `@Incoming`/`@Outgoing` annotations with `MessageHandler` pattern. Connector: Webhook. New connectors should use V2.
+- **V2 (SmallRye Reactive Messaging)**: Uses `@Incoming`/`@Outgoing` annotations with `MessageHandler` pattern. Connectors: Webhook, Drawer. New connectors should use V2.
 
 ## Kafka Messaging Patterns
 
@@ -26,6 +26,7 @@ All messages use CloudEvents spec version `1.0` in structured mode.
 - `type`: `com.redhat.console.notification.toCamel.<connector-name>`
 - `id`: the notification history UUID
 - `data`: JSON with `org_id`, `endpoint_id`, plus connector-specific payload
+- Includes `TracingMetadata` for OpenTelemetry context propagation
 
 **Return to engine** (`OutgoingCloudEventBuilder`):
 - `type`: `com.redhat.console.notifications.history`
@@ -68,16 +69,20 @@ mp.messaging.outgoing.outgoingmessages.cloud-events-mode=structured
 - `OutgoingCloudEventBuilder` -- Override `buildSuccess(HandledMessageDetails)` and `buildFailure(HandledExceptionDetails)` to add metadata to the outgoing CloudEvent.
 - `ConnectorConfig` -- Extend to add connector-specific configuration.
 
-**Message flow**: `@Incoming("incomingmessages")` -> filter by connector header -> `MessageHandler.handle()` -> `OutgoingMessageSender.sendSuccess/sendFailure()` -> `@Channel("outgoingmessages")`.
+**Message flow**: `@Incoming("incomingmessages")` -> `@Blocking("connector-thread-pool")` + `@RunOnVirtualThread` -> filter by connector header -> `MessageHandler.handle()` -> `OutgoingMessageSender.sendSuccess/sendFailure()` -> `@Channel("outgoingmessages")` via `Emitter<String>`.
+
+**Threading model**: V2 `MessageConsumer.processMessage()` uses `@Blocking("connector-thread-pool")` combined with `@RunOnVirtualThread`. Configure concurrency per connector via `smallrye.messaging.worker.connector-thread-pool.max-concurrency` (e.g., 20 in connector-drawer).
 
 ### HTTP Connector Layers
 
 For HTTP-based connectors, use the shared HTTP infrastructure modules:
 
 - **V1**: Depend on `connector-common-http`. Provides `HttpConnectorConfig`, `HttpExceptionProcessor`, `HttpRedeliveryPredicate`, and `HttpOutgoingCloudEventBuilder`.
-- **V2**: Depend on `connector-common-http-v2`. Provides `HttpConnectorConfig`, `HttpExceptionHandler`, `HttpOutgoingCloudEventBuilder`, `HttpNotificationValidator`, and `HttpRestClient`.
+- **V2**: Depend on `connector-common-http-v2`. Provides `HttpConnectorConfig`, `HttpExceptionHandler`, `HttpOutgoingCloudEventBuilder`, `HttpNotificationValidator`, and `HttpRestClient` (in `connector-common-http-v2` module).
 
-HTTP connectors classify errors by type: `HTTP_3XX`, `HTTP_4XX`, `HTTP_5XX`, `SOCKET_TIMEOUT`, `SSL_HANDSHAKE`, `UNKNOWN_HOST`, `UNSUPPORTED_SSL_MESSAGE`. Status 429 (Too Many Requests) is grouped with 5XX for retry purposes.
+HTTP connectors classify errors by type: `SOCKET_TIMEOUT`, `CONNECT_TIMEOUT`, `CONNECTION_REFUSED`, `HTTP_3XX`, `HTTP_4XX`, `HTTP_5XX`, `SSL_HANDSHAKE`, `UNKNOWN_HOST`, `UNSUPPORTED_SSL_MESSAGE`. Status 429 (Too Many Requests) is grouped with 5XX for retry purposes.
+
+**V2 HTTP validation**: Use `HttpNotificationValidator.parseAndValidate(incomingCloudEvent)` to deserialize and validate `NotificationToConnectorHttp` with Bean Validation (`jakarta.validation`). Throws `ConstraintViolationException` on failure.
 
 ## REST Client Patterns
 
@@ -109,7 +114,7 @@ Use `@Url` from `io.quarkus.rest.client.reactive` for dynamic target URLs on RES
 3. **Kafka reinjection (V1 only)**: After redelivery exhaustion, messages are reinjected to the incoming Kafka topic with exponential backoff (10s, 30s, 60s). Maximum reinjections: 3 (configurable via `notifications.connector.kafka.maximum-reinjections`). After exhaustion, failure is reported to the engine.
 
 ### V2 error handling
-V2 connectors do not use Kafka reinjection. Exceptions thrown from `MessageHandler.handle()` are caught by `MessageConsumer`, processed through `ExceptionHandler`, and a failure response is sent back to the engine immediately.
+V2 connectors do not use Kafka reinjection. Exceptions thrown from `MessageHandler.handle()` are caught by `MessageConsumer`, processed through `ExceptionHandler`, and a failure response is sent back to the engine immediately. The message is always acknowledged (`message.ack()`) regardless of success or failure -- no Kafka-level retries.
 
 ## Authentication with Sources API
 
@@ -130,7 +135,8 @@ All connector config uses the `notifications.connector.*` namespace:
 - `notifications.connector.kafka.incoming.group-id` -- Consumer group
 - `notifications.connector.redelivery.max-attempts` -- Default: 2
 - `notifications.connector.redelivery.delay` -- Default: 1000ms
-- `notifications.connector.seda.concurrent-consumers` -- Default: 1 (V1 only)
+- `notifications.connector.seda.concurrent-consumers` -- Default: 1, typically overridden to 20 (V1 only)
+- `notifications.connector.seda.queue-size` -- Default: 1000, typically overridden to 20 (V1 only)
 
 ### Config Class Hierarchy
 Extend `ConnectorConfig` (or `HttpConnectorConfig` for HTTP connectors) using `@Priority` for precedence. Base priority is `0`; HTTP config uses `BASE_CONFIG_PRIORITY + 1`. Override `getLoggedConfiguration()` to include custom config in startup logs.
@@ -146,14 +152,19 @@ Extend `ConnectorRoutesTest` from `connector-common`. Implement:
 Tests use `CamelQuarkusTestSupport` with `AdviceWith` to mock Kafka endpoints and replace with `direct:` routes.
 
 ### V2 Integration Tests
-Extend `BaseConnectorIntegrationTest` from `connector-common-v2`. Implement:
+Extend `BaseConnectorIntegrationTest` (or `BaseHttpConnectorIntegrationTest` for HTTP connectors) from `connector-common-v2`. Implement:
 - `buildIncomingPayload(String targetUrl)` -- Build the CloudEvent data payload
-- `getConnectorSpecificTargetUrl()` -- Return the target URL path
+- `getConnectorSpecificTargetUrl()` -- Return the target URL (HTTP base provides this automatically)
+- `getRemoteServerPath()` -- Return the mock server path
+- `afterSuccessfulNotification(List<LoggedRequest>)` -- Optional hook for post-success assertions
 
-Tests use `InMemoryConnector` from SmallRye to replace Kafka with in-memory channels. Use `Awaitility` for async assertions. WireMock is used for external HTTP service mocking.
+Tests use `InMemoryConnector` from SmallRye to replace Kafka with in-memory channels. Use `Awaitility` for async assertions. WireMock is used for external HTTP service mocking. Send messages via `sendCloudEventMessage()`, assert with `assertSuccessfulOutgoingMessage()` / `assertFailedOutgoingMessage()`.
 
 ### Test Lifecycle
-Both V1 and V2 use `TestLifecycleManager` to manage WireMock server lifecycle via `@QuarkusTestResource`.
+Both V1 and V2 use `TestLifecycleManager` to manage WireMock server lifecycle via `@QuarkusTestResource`. Use `@InjectMock` / `@InjectSpy` for mocking injected dependencies (e.g., `@InjectMock @RestClient SourcesPskClient`).
+
+### Metrics Assertions
+Use `MicrometerAssertionHelper` for counter-based assertions. Standard metrics: `connector.messages.processed`, `connector.messages.succeeded`, `connector.messages.failed` (all tagged by `connector` name). Assert with `assertMetricsIncrement(processed, succeeded, failed)`.
 
 ## External Service Integration
 
@@ -168,3 +179,14 @@ Used by connectors requiring endpoint authentication (Webhook, PagerDuty, Servic
 
 ### Feature Toggles
 Uses Unleash for feature flags. Register toggles via `ToggleRegistry.register(name, defaultValue)` in `@PostConstruct`. Check with `unleash.isEnabled(toggle, context, defaultValue)`. Build context with `UnleashContextBuilder.buildUnleashContextWithOrgId(orgId)`.
+
+### Health Checks
+V2 connectors include a `LivenessService` (`@Liveness`) that integrates with Unleash-based pod restart requests via `PodRestartRequestedChecker`. This is provided by `connector-common-v2` and requires no custom implementation.
+
+### Large Payload Handling (Engine)
+When an email connector payload exceeds `engineConfig.getKafkaToCamelMaximumRequestSize()`, the engine stores the payload in the database via `PayloadDetailsRepository` and sends only a `payload_details_id` reference over Kafka. The connector fetches the full payload from the database.
+
+### Model Classes
+- Use `@RegisterForReflection` on model classes deserialized from JSON (required for native compilation).
+- Use Jackson `@JsonProperty` for JSON field mapping (e.g., `@JsonProperty("org_id")`).
+- V2 HTTP models use Bean Validation annotations for input validation.
