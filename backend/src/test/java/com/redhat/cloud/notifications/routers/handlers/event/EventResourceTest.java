@@ -245,12 +245,30 @@ public class EventResourceTest extends DbIsolatedTest {
         assertNotNull(event3.getExternalId());
 
         /*
-         * Test #1
+         * Test #1.1
          * Account: DEFAULT_ACCOUNT_ID
          * Request: No filter
+         * Context: Drawer disabled
          * Expected response: All event log entries from DEFAULT_ACCOUNT_ID should be returned
          */
         Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, true);
+        assertEquals(3, page.getMeta().getCount());
+        assertEquals(3, page.getData().size());
+        assertSameEvent(page.getData().get(0), event2, history3, history8);
+        assertSameEvent(page.getData().get(1), event3, history4, history5, history9);
+        assertSameEvent(page.getData().get(2), event1, history1, history2);
+        assertNull(page.getData().get(0).getPayload());
+        assertLinks(page.getLinks(), "first", "last");
+
+        when(backendConfig.isDrawerEnabled()).thenReturn(true);
+        /*
+         * Test #1.2
+         * Account: DEFAULT_ACCOUNT_ID
+         * Request: No filter
+         * Context: Drawer enabled
+         * Expected response: All event log entries from DEFAULT_ACCOUNT_ID should be returned
+         */
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, true);
         assertEquals(3, page.getMeta().getCount());
         assertEquals(3, page.getData().size());
         assertSameEvent(page.getData().get(0), event2, history3, history8);
@@ -1044,6 +1062,7 @@ public class EventResourceTest extends DbIsolatedTest {
     void testEventsWithKesselCriterion(boolean useNormalizedQueries) {
         when(backendConfig.isKesselChecksOnEventLogEnabled(anyString())).thenReturn(true);
         when(backendConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
+        when(backendConfig.isDrawerEnabled()).thenReturn(true);
 
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 

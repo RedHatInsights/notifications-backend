@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import io.quarkus.logging.Log;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static jakarta.persistence.LockModeType.PESSIMISTIC_WRITE;
 
@@ -173,12 +175,28 @@ public class BehaviorGroupRepository {
          * When PostgreSQL sorts a BOOLEAN column in DESC order, true comes first. That's not true for all DBMS.
          */
         String query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
+                "LEFT JOIN FETCH a.endpoint e " +
                 "WHERE (b.orgId = :orgId OR b.orgId IS NULL) AND b.bundle.id = :bundleId " +
                 "ORDER BY b.created DESC, a.position ASC";
+
         List<BehaviorGroup> behaviorGroups = entityManager.createQuery(query, BehaviorGroup.class)
                 .setParameter("orgId", orgId)
                 .setParameter("bundleId", bundleId)
                 .getResultList();
+
+        if (!backendConfig.isDrawerEnabled()) {
+            for (BehaviorGroup behaviorGroup : behaviorGroups) {
+                if (behaviorGroup.getActions() != null) {
+                    behaviorGroup.setActions(
+                            behaviorGroup.getActions().stream()
+                                    .filter(action -> action.getEndpoint() == null
+                                            || EndpointType.DRAWER != action.getEndpoint().getType())
+                                    .collect(Collectors.toList())
+                    );
+                }
+            }
+        }
+
         for (BehaviorGroup behaviorGroup : behaviorGroups) {
             behaviorGroup.filterOutBundle();
         }

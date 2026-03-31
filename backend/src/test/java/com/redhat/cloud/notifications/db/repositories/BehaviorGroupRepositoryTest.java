@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -44,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -378,6 +380,9 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         BehaviorGroup behaviorGroup = resourceHelpers.createBehaviorGroup(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "displayName", bundle.getId());
         Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DRAWER);
         Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DRAWER);
+        List<BehaviorGroupAction> bgActions = updateAndFetchBehaviorGroupActions(DEFAULT_ORG_ID, bundle.getId(), behaviorGroup.getId(), endpoint1.getId(), endpoint2.getId());
+        assertTrue(bgActions.isEmpty());
+        when(backendConfig.isDrawerEnabled()).thenReturn(true);
         updateAndCheckBehaviorGroupActions(DEFAULT_ORG_ID, bundle.getId(), behaviorGroup.getId(), endpoint1.getId(), endpoint2.getId());
     }
 
@@ -800,11 +805,15 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     @Transactional
-    void updateAndCheckBehaviorGroupActions(String orgId, UUID bundleId, UUID behaviorGroupId, UUID... endpointIds) {
+    List<BehaviorGroupAction> updateAndFetchBehaviorGroupActions(String orgId, UUID bundleId, UUID behaviorGroupId, UUID... endpointIds) {
         behaviorGroupRepository.updateBehaviorGroupActions(orgId, behaviorGroupId, Arrays.asList(endpointIds));
         entityManager.clear(); // We need to clear the session L1 cache before checking the update result.
         // If we expected a success, the behavior group actions should match exactly the given endpoint IDs.
-        List<BehaviorGroupAction> actions = findBehaviorGroupActions(orgId, bundleId, behaviorGroupId);
+        return findBehaviorGroupActions(orgId, bundleId, behaviorGroupId);
+    }
+
+    void updateAndCheckBehaviorGroupActions(String orgId, UUID bundleId, UUID behaviorGroupId, UUID... endpointIds) {
+        List<BehaviorGroupAction> actions = updateAndFetchBehaviorGroupActions(orgId, bundleId, behaviorGroupId, endpointIds);
         assertEquals(endpointIds.length, actions.size());
         for (int i = 0; i < endpointIds.length; i++) {
             assertEquals(endpointIds[i], actions.get(i).getEndpoint().getId());
@@ -812,9 +821,13 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
     }
 
     private List<BehaviorGroupAction> findBehaviorGroupActions(String orgId, UUID bundleId, UUID behaviorGroupId) {
-        return behaviorGroupRepository.findByBundleId(orgId, bundleId)
-                .stream().filter(behaviorGroup -> behaviorGroup.getId().equals(behaviorGroupId))
-                .findFirst().get().getActions();
+        final List<BehaviorGroup> behaviorGroups = behaviorGroupRepository.findByBundleId(orgId, bundleId)
+            .stream().filter(behaviorGroup -> behaviorGroup.getId().equals(behaviorGroupId)).toList();
+        if (behaviorGroups.isEmpty()) {
+            return new ArrayList<>();
+        } else {
+            return behaviorGroups.get(0).getActions();
+        }
     }
 
     private void findBehaviorGroupsByEndpointId(UUID endpointId, UUID... expectedBehaviorGroupIds) {
