@@ -46,7 +46,7 @@ public class GeneralCommunicationsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public SendGeneralCommunicationResponse sendGeneralCommunication() {
         // Find all the integration names and group them by organization ID.
-        final CompositeEndpointType compositeEndpointType = new CompositeEndpointType(EndpointType.CAMEL, "teams");
+        final CompositeEndpointType compositeEndpointType = new CompositeEndpointType(EndpointType.PAGERDUTY);
         final Map<String, List<String>> endpointNamesPerOrg = this.endpointRepository.findIntegrationNamesByTypeGroupedByOrganizationId(compositeEndpointType);
 
         // Send a "no content" response when there is nothing to do. It is not
