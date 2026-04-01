@@ -3,24 +3,25 @@
     Integrations - Console
 {/content-header-title}
 {#content-title}
-    Your Microsoft Teams integrations need attention
+    Your PagerDuty integrations will filter notifications soon
 {/content-title}
 {#content-body}
     <p style="{body-section-p-style}">Dear Red Hat customer,</p>
-    <p style="{body-section-p-style}">We are contacting you because you have the following Microsoft Teams integrations set up for your organization in the <a style="{body-section-underline-link-style}" target="_blank" href="https://console.redhat.com">Red Hat Hybrid Cloud Console</a>:</p>
+    <p style="{body-section-p-style}">We are contacting you because you have the following PagerDuty integrations set up for your organization in the <a style="{body-section-underline-link-style}" target="_blank" href="https://console.redhat.com">Red Hat Hybrid Cloud Console</a>:</p>
     <ul>
         {#for integrationName in action.events[0].payload.integration_names}
         <li>{integrationName}</li>
         {/for}
     </ul>
     <p style="{body-section-p-style}">
-        Microsoft is <a style="{body-section-underline-link-style}" target="_blank" href="https://devblogs.microsoft.com/microsoft365dev/retirement-of-office-365-connectors-within-microsoft-teams/#why-are-we-retiring-office-365-connectors">retiring Office 365 connectors in favor of Power Automate workflows</a>,
-        and they are requesting that their customers transition from <i>Office 365 connectors</i> they have set up to <i>Workflows</i>.
-        Please review the Microsoft Teams integrations identified above and update them if needed, to avoid service interruption when Microsoft retires the old connectors.
-        <strong>If you have already updated your integrations to <i>Microsoft Workflows</i>, you can safely ignore this email</strong>.
+        On [[ SCHEDULED UPGRADE DATE ]], these integrations will begin mapping and filtering alert severity based on the notification type.
+        For example, errata notifications will be mapped according to their <a href="https://access.redhat.com/security/updates/classification">Red Hat severity rating</a>.
     </p>
-    <p style="{body-section-p-style}">You can update your Microsoft Teams integrations by following the steps in <a style="{body-section-underline-link-style}" target="_blank" href="https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/integrating_the_red_hat_hybrid_cloud_console_with_third-party_applications/index#assembly-configuring-integration-with-teams_integrating-communications">Integrating communications applications with the Hybrid Cloud Console</a> in the Red Hat documentation.</p>
-    <p style="{body-section-p-style}">Following the above steps will ensure that you will continue receiving the alerts and notifications in the Microsoft Teams channel that you have configured.</p>
+    <p style="{body-section-p-style}">
+        Please <a href="[[ LINK TO SET NOTIF SEVERITY ]]">review your notifications</a> and select the severity level of notifications that you would like to receive.
+        The <a href="https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/configuring_notifications_on_the_red_hat_hybrid_cloud_console/index#con-notif-severity_notif-config-intro">documentation on severity levels</a> explains what kind of notifications should be expected.
+        <strong>If you have previously selected severity levels (such as to filter email notifications), no further action is required.</strong>
+    </p>
     <p style="{body-section-p-style}">Thank you for your attention.</p>
     <p style="{body-section-p-style}">Kind regards,</p>
     <p style="{body-section-p-style}">Red Hat Hybrid Cloud Console</p>
