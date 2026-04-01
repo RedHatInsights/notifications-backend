@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 # See https://docs.coderabbit.ai/reference/configuration for all fields and default values
 knowledge_base:
-  coding_guidelines:
-    file_patterns:
+  code_guidelines:
+    filePatterns:
       - "docs/*-guidelines.md"
