@@ -78,7 +78,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     @Override
     public void process(Event event, List<Endpoint> endpoints) {
-        if (!engineConfig.isDrawerEnabled()) {
+        if (!engineConfig.isDrawerEnabled(event.getOrgId())) {
             return;
         }
         if (endpoints == null || endpoints.isEmpty()) {

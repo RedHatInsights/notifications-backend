@@ -179,7 +179,7 @@ public class EngineConfig {
         Map<String, Object> config = new TreeMap<>();
         config.put(asyncAggregationToggle, isAsyncAggregationEnabled());
         config.put(DEFAULT_TEMPLATE, isDefaultTemplateEnabled());
-        config.put(drawerToggle, isDrawerEnabled());
+        config.put(drawerToggle, isDrawerEnabled(null));
         config.put(exportServiceHccClusterToggle, isExportServiceHccClusterEnabled(null));
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(EVENT_CONSUMER_CORE_THREAD_POOL_SIZE, eventConsumerCoreThreadPoolSize);
@@ -228,9 +228,10 @@ public class EngineConfig {
         return defaultTemplateEnabled;
     }
 
-    public boolean isDrawerEnabled() {
+    public boolean isDrawerEnabled(String orgId) {
         if (unleashEnabled) {
-            return unleash.isEnabled(drawerToggle, false);
+            UnleashContext unleashContext = UnleashContextBuilder.buildUnleashContextWithOrgId(orgId);
+            return unleash.isEnabled(drawerToggle, unleashContext, false);
         } else {
             return drawerEnabled;
         }

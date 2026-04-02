@@ -74,7 +74,7 @@ public class DrawerResource {
         LocalDateTime start = LocalDateTime.now();
         List<DrawerEntryPayload> drawerEntries = new ArrayList<>();
         Long count = 0L;
-        if (backendConfig.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             count = drawerRepository.count(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
             if (count > 0) {
                 drawerEntries = drawerRepository.getNotifications(orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus, query);

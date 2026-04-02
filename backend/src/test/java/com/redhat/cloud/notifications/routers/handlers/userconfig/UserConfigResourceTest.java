@@ -57,6 +57,7 @@ import static com.redhat.cloud.notifications.CrudTestHelpers.createTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.deleteAggregationEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.deleteBundle;
 import static com.redhat.cloud.notifications.CrudTestHelpers.deleteInstantEmailTemplate;
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
@@ -153,12 +154,12 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         return result;
     }
 
-    private SettingsValuesByEventType createSettingsValue(String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
+    private SettingsValuesByEventType createSettingsValue(String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer, String orgId) {
 
         SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
         eventTypeSettingsValue.emailSubscriptionTypes.put(DAILY, daily);
         eventTypeSettingsValue.emailSubscriptionTypes.put(INSTANT, instant);
-        if (backendConfig.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             eventTypeSettingsValue.emailSubscriptionTypes.put(DRAWER, drawer);
         }
 
@@ -186,13 +187,13 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         return result;
     }
 
-    private SettingsValuesByEventType createSettingsValueWithSeverity(String bundle, String application, String eventType, Set<Severity> instantSeverity, Set<Severity> dailySeverities, Set<Severity> drawerSeverities) {
+    private SettingsValuesByEventType createSettingsValueWithSeverity(String bundle, String application, String eventType, Set<Severity> instantSeverity, Set<Severity> dailySeverities, Set<Severity> drawerSeverities, String orgId) {
 
         SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
         eventTypeSettingsValue.subscriptionTypes.put(INSTANT, createSeveritySubscriptionDetails(instantSeverity));
         eventTypeSettingsValue.subscriptionTypes.put(DAILY, createSeveritySubscriptionDetails(dailySeverities));
 
-        if (backendConfig.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             eventTypeSettingsValue.subscriptionTypes.put(DRAWER, createSeveritySubscriptionDetails(drawerSeverities));
         }
 
@@ -278,7 +279,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
     @Test
     void testSettingsByEventTypeWithDrawerEnabled() {
-        when(backendConfig.isDrawerEnabled()).thenReturn(true);
+        when(backendConfig.isDrawerEnabled(anyString())).thenReturn(true);
         testSettingsByEventType();
     }
 
@@ -359,7 +360,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertNotNull(rhelPolicy.eventTypes.get(0).fields.get(0).infoMessage);
 
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(false);
-        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, true, true, false);
+        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, true, true, false, orgId);
         postPreferencesByEventType(identityHeader, settingsValues, 400);
 
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
@@ -375,50 +376,50 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
 
         // Daily and Instant to false
-        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DRAWER), List.of(DRAWER));
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DRAWER), List.of(DRAWER), orgId);
 
         // Daily to true
-        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, DRAWER), List.of(DAILY, DRAWER));
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, DRAWER), List.of(DAILY, DRAWER), orgId);
 
         // Instant to true
-        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(INSTANT, DRAWER), List.of(INSTANT, DRAWER));
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(INSTANT, DRAWER), List.of(INSTANT, DRAWER), orgId);
 
         // Both to true
-        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT, DRAWER), List.of(DAILY, INSTANT, DRAWER));
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT, DRAWER), List.of(DAILY, INSTANT, DRAWER), orgId);
 
         // Before this line, we're subscribed to everything. Now, we're locking the subscriptions.
         lockOrUnlockSubscriptionToPoliciesEventType(true);
         // Let's try to unsubscribe from everything. The subscriptions should remain the same.
-        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), List.of(DAILY, INSTANT, DRAWER));
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), List.of(DAILY, INSTANT, DRAWER), orgId);
         // We're now unlocking the subscriptions.
         lockOrUnlockSubscriptionToPoliciesEventType(false);
         // Unsubscribing from everything should work this time.
-        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), emptyList());
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), emptyList(), orgId);
 
-        if (backendConfig.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             // Daily, Instant and drawer to false
-            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), emptyList());
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), emptyList(), orgId);
 
             // Daily to true
-            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY), List.of(DAILY));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY), List.of(DAILY), orgId);
 
             // Instant to true
-            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(INSTANT), List.of(INSTANT));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(INSTANT), List.of(INSTANT), orgId);
 
             // Daily and instant to true
-            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT), List.of(DAILY, INSTANT));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT), List.of(DAILY, INSTANT), orgId);
 
             // Daily and Instant to false, drawer to true
-            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DRAWER), List.of(DRAWER));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DRAWER), List.of(DRAWER), orgId);
 
             // Daily to true
-            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, DRAWER), List.of(DAILY, DRAWER));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, DRAWER), List.of(DAILY, DRAWER), orgId);
 
             // Instant to true
-            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(INSTANT, DRAWER), List.of(INSTANT, DRAWER));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(INSTANT, DRAWER), List.of(INSTANT, DRAWER), orgId);
 
             // Daily and instant to true
-            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT, DRAWER), List.of(DAILY, INSTANT, DRAWER));
+            updateAndCheckUserPreference(identityHeader, bundle, application, eventType, List.of(DAILY, INSTANT, DRAWER), List.of(DAILY, INSTANT, DRAWER), orgId);
         }
 
         // Fail if we have unknown event type on subscribe, but nothing will be added on database
@@ -432,7 +433,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         });
 
         // does not add if we try to create unknown bundle/apps
-        settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", eventType, true, true, true);
+        settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", eventType, true, true, true, orgId);
         given()
             .header(identityHeader)
             .when()
@@ -467,7 +468,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         Map<SubscriptionType, Boolean> notificationPreferenes = extractNotificationValues(rhelPolicy.eventTypes, bundle, application, eventType);
 
-        if (backendConfig.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             assertEquals(2, notificationPreferenes.size());
             assertTrue(notificationPreferenes.containsKey(DRAWER));
         } else {
@@ -485,7 +486,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .contentType(JSON)
             .extract().body().as(SettingsValueByEventTypeJsonForm.class);
         rhelPolicy = rhelPolicyForm(settingsValueJsonForm);
-        if (backendConfig.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             // drawer type will be always supported
             assertNotNull(rhelPolicy);
             assertEquals(1, settingsValueJsonForm.bundles.size());
@@ -503,7 +504,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
     @Test
     void testSettingsByEventTypeWithSeverityAndDrawerEnabled() {
-        when(backendConfig.isDrawerEnabled()).thenReturn(true);
+        when(backendConfig.isDrawerEnabled(anyString())).thenReturn(true);
         testSettingsByEventTypeWithSeverity();
     }
 
@@ -568,7 +569,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertNotNull(rhelPolicy.eventTypes.get(0).fields.get(0).infoMessage);
 
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(false);
-        SettingsValuesByEventType settingsValues = createSettingsValueWithSeverity(bundle, application, eventType, Set.of(Severity.MODERATE, Severity.LOW), Set.of(Severity.CRITICAL), null);
+        SettingsValuesByEventType settingsValues = createSettingsValueWithSeverity(bundle, application, eventType, Set.of(Severity.MODERATE, Severity.LOW), Set.of(Severity.CRITICAL), null, orgId);
         // should return an error because we try to set a instant email preference, while the instantEmailsEnabled flag is false.
         postPreferencesByEventType(identityHeader, settingsValues, 400);
 
@@ -583,7 +584,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertEquals(Set.of(Severity.CRITICAL), getSubscribedSeveritiesSet(policiesSubscriptionDetails.get(DAILY)));
         assertEquals(AVAILABLE_SEVERITY_SET, getAvailableSeveritiesSet(policiesSubscriptionDetails.get(INSTANT)));
 
-        if (backendConfig.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             assertTrue(getSubscribedSeveritiesSet(policiesSubscriptionDetails.get(DRAWER)).isEmpty());
         }
 
@@ -599,50 +600,50 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
 
         // Daily and Instant to false
-        updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, new HashMap<>());
+        updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, new HashMap<>(), orgId);
 
         // Daily to true
-        updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.LOW, Severity.MODERATE), DAILY, Set.of(Severity.CRITICAL)));
+        updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.LOW, Severity.MODERATE), DAILY, Set.of(Severity.CRITICAL)), orgId);
 
         // Instant to true
-        updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(INSTANT, Set.of(Severity.CRITICAL), DRAWER, Set.of(Severity.LOW)));
+        updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(INSTANT, Set.of(Severity.CRITICAL), DRAWER, Set.of(Severity.LOW)), orgId);
 
         // Both to true
-        updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(INSTANT, Set.of(Severity.MODERATE, Severity.CRITICAL), DRAWER, Set.of(Severity.LOW, Severity.MODERATE), DAILY, Set.of(Severity.CRITICAL)));
+        updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(INSTANT, Set.of(Severity.MODERATE, Severity.CRITICAL), DRAWER, Set.of(Severity.LOW, Severity.MODERATE), DAILY, Set.of(Severity.CRITICAL)), orgId);
 
         // Before this line, we're subscribed to everything. Now, we're locking the subscriptions.
         lockOrUnlockSubscriptionToPoliciesEventType(true);
         // Let's try to unsubscribe from everything. The subscriptions should remain the same.
-        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), List.of(DAILY, INSTANT, DRAWER));
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), List.of(DAILY, INSTANT, DRAWER), orgId);
         // We're now unlocking the subscriptions.
         lockOrUnlockSubscriptionToPoliciesEventType(false);
         // Unsubscribing from everything should work this time.
-        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), emptyList());
+        updateAndCheckUserPreference(identityHeader, bundle, application, eventType, emptyList(), emptyList(), orgId);
 
-        if (backendConfig.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             // Daily, Instant and drawer to false
-            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, new HashMap<>());
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, new HashMap<>(), orgId);
 
             // Daily to true
-            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DAILY, Set.of(Severity.LOW, Severity.MODERATE)));
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DAILY, Set.of(Severity.LOW, Severity.MODERATE)), orgId);
 
             // Instant to true
-            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(INSTANT, Set.of(Severity.CRITICAL)));
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(INSTANT, Set.of(Severity.CRITICAL)), orgId);
 
             // Daily and instant to true
-            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(INSTANT, Set.of(Severity.MODERATE, Severity.CRITICAL), DAILY, Set.of(Severity.LOW, Severity.MODERATE)));
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(INSTANT, Set.of(Severity.MODERATE, Severity.CRITICAL), DAILY, Set.of(Severity.LOW, Severity.MODERATE)), orgId);
 
             // Daily and Instant to false, drawer to true
-            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.LOW, Severity.MODERATE)));
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.LOW, Severity.MODERATE)), orgId);
 
             // Daily to true
-            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.CRITICAL, Severity.MODERATE), DAILY, Set.of(Severity.LOW, Severity.MODERATE)));
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.CRITICAL, Severity.MODERATE), DAILY, Set.of(Severity.LOW, Severity.MODERATE)), orgId);
 
             // Instant to true
-            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.MODERATE, Severity.CRITICAL), INSTANT, Set.of(Severity.LOW, Severity.MODERATE)));
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.MODERATE, Severity.CRITICAL), INSTANT, Set.of(Severity.LOW, Severity.MODERATE)), orgId);
 
             // Daily and instant to true
-            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.MODERATE, Severity.CRITICAL), INSTANT, Set.of(Severity.LOW, Severity.MODERATE), DAILY, Set.of(Severity.UNDEFINED, Severity.LOW)));
+            updateAndCheckUserPreferenceWithSeverities(identityHeader, bundle, application, eventType, Map.of(DRAWER, Set.of(Severity.MODERATE, Severity.CRITICAL), INSTANT, Set.of(Severity.LOW, Severity.MODERATE), DAILY, Set.of(Severity.UNDEFINED, Severity.LOW)), orgId);
         }
 
         // Fail if we have unknown event type on subscribe, but nothing will be added on database
@@ -656,7 +657,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         });
 
         // does not add if we try to create unknown bundle/apps
-        settingsValues = createSettingsValueWithSeverity("not-found-bundle-2", "not-found-app-2", eventType, Set.of(Severity.MODERATE, Severity.LOW), Set.of(Severity.CRITICAL), Set.of(Severity.IMPORTANT, Severity.LOW));
+        settingsValues = createSettingsValueWithSeverity("not-found-bundle-2", "not-found-app-2", eventType, Set.of(Severity.MODERATE, Severity.LOW), Set.of(Severity.CRITICAL), Set.of(Severity.IMPORTANT, Severity.LOW), orgId);
         given()
             .header(identityHeader)
             .when()
@@ -678,7 +679,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertEquals(0, initialValues.size());
 
         // does not add if we try to subscribe to unavailable severity
-        SettingsValuesByEventType settingsValuesUnavailableSeverity = createSettingsValueWithSeverity(bundle, application, eventType,  Set.of(Severity.IMPORTANT, Severity.LOW), Set.of(Severity.CRITICAL), Set.of());
+        SettingsValuesByEventType settingsValuesUnavailableSeverity = createSettingsValueWithSeverity(bundle, application, eventType,  Set.of(Severity.IMPORTANT, Severity.LOW), Set.of(Severity.CRITICAL), Set.of(), orgId);
         postPreferencesByEventType(identityHeader, settingsValuesUnavailableSeverity, 404);
 
         // Does not add event type if is not supported by the templates
@@ -694,7 +695,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         Map<SubscriptionType, Set<SettingsValueByEventTypeJsonForm.SeverityDetails>> notificationPreferences = extractNotificationSubscriptionTypeDetails(rhelPolicy.eventTypes, bundle, application, eventType);
 
-        if (backendConfig.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             assertEquals(3, notificationPreferences.size());
             assertTrue(notificationPreferences.containsKey(DRAWER));
         } else {
@@ -723,8 +724,8 @@ public class UserConfigResourceTest extends DbIsolatedTest {
             .collect(Collectors.toSet());
     }
 
-    private void updateAndCheckUserPreferenceWithSeverities(Header identityHeader, String bundle, String application, String eventType, Map<SubscriptionType, Set<Severity>> severity) {
-        SettingsValuesByEventType settingsValues = createSettingsValueWithSeverity(bundle, application, eventType, severity.get(INSTANT), severity.get(DAILY), severity.get(DRAWER));
+    private void updateAndCheckUserPreferenceWithSeverities(Header identityHeader, String bundle, String application, String eventType, Map<SubscriptionType, Set<Severity>> severity, String orgId) {
+        SettingsValuesByEventType settingsValues = createSettingsValueWithSeverity(bundle, application, eventType, severity.get(INSTANT), severity.get(DAILY), severity.get(DRAWER), orgId);
         postPreferencesByEventType(identityHeader, settingsValues, 200);
 
         // verify get all preferences for all bundles and applications response
@@ -743,7 +744,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         subscribedSeverities = getSubscribedSeveritiesSet(initialValues.get(INSTANT));
         assertEquals(expectedInstantSeverities, subscribedSeverities);
 
-        if (backendConfig.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             subscribedSeverities = getSubscribedSeveritiesSet(initialValues.get(DRAWER));
             assertEquals(expectedDrawerSeverities, subscribedSeverities);
         }
@@ -765,14 +766,14 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         subscribedSeverities = getSubscribedSeveritiesSet(notificationPreferences.get(INSTANT));
         assertEquals(expectedInstantSeverities, subscribedSeverities);
 
-        if (backendConfig.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             subscribedSeverities = getSubscribedSeveritiesSet(notificationPreferences.get(DRAWER));
             assertEquals(expectedDrawerSeverities, subscribedSeverities);
         }
     }
 
-    private void updateAndCheckUserPreference(Header identityHeader, String bundle, String application, String eventType, List<SubscriptionType> subscriptionsToSet, List<SubscriptionType> expectedResult) {
-        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, subscriptionsToSet.contains(DAILY), subscriptionsToSet.contains(INSTANT), subscriptionsToSet.contains(DRAWER));
+    private void updateAndCheckUserPreference(Header identityHeader, String bundle, String application, String eventType, List<SubscriptionType> subscriptionsToSet, List<SubscriptionType> expectedResult, String orgId) {
+        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, subscriptionsToSet.contains(DAILY), subscriptionsToSet.contains(INSTANT), subscriptionsToSet.contains(DRAWER), orgId);
         postPreferencesByEventType(identityHeader, settingsValues, 200);
         SettingsValueByEventTypeJsonForm settingsValuesByEventType = getPreferencesByEventType(identityHeader);
         final SettingsValueByEventTypeJsonForm.Application rhelPolicy = rhelPolicyForm(settingsValuesByEventType);
@@ -781,7 +782,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         assertEquals(expectedResult.contains(DAILY), initialValues.get(DAILY));
         assertEquals(expectedResult.contains(INSTANT), initialValues.get(INSTANT));
-        if (backendConfig.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             assertEquals(expectedResult.contains(DRAWER), initialValues.get(DRAWER));
         }
 
@@ -797,7 +798,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         Map<SubscriptionType, Boolean> notificationPreferences = extractNotificationValues(preferences.eventTypes, bundle, application, eventType);
         assertEquals(expectedResult.contains(DAILY), notificationPreferences.get(DAILY));
         assertEquals(expectedResult.contains(INSTANT), notificationPreferences.get(INSTANT));
-        if (backendConfig.isDrawerEnabled()) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             assertEquals(expectedResult.contains(DRAWER), notificationPreferences.get(DRAWER));
         }
     }
@@ -893,16 +894,16 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         CrudTestHelpers.createAggregationTemplate(bundle, application, applicationRepository, adminRole);
 
         // Daily and Instant to false
-        updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, false, false, true);
+        updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, false, false, true, orgId);
 
         // Daily to true
-        updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, true, false, true);
+        updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, true, false, true, orgId);
 
         // Instant to true
-        updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, false, true, true);
+        updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, false, true, true, orgId);
 
         // Both to true
-        updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, true, true, true);
+        updateAndCheckUserPreferenceUsingDeprecatedApi(identityHeader, bundle, application, eventType, true, true, true, orgId);
 
         given()
             .header(identityHeader)
@@ -932,7 +933,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertTrue(response.contains("service account authentication"));
 
         //String path = TestConstants.API_NOTIFICATIONS_V_1_0 + "/user-config/notification-event-type-preference";
-        SettingsValuesByEventType settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", "eventType", true, true, true);
+        SettingsValuesByEventType settingsValues = createSettingsValue("not-found-bundle-2", "not-found-app-2", "eventType", true, true, true, DEFAULT_ORG_ID);
         response = given()
             .header(identityHeader)
             .when()
@@ -963,8 +964,8 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertTrue(response.contains("service account authentication"));
     }
 
-    private void updateAndCheckUserPreferenceUsingDeprecatedApi(Header identityHeader, String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
-        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, daily, instant, drawer);
+    private void updateAndCheckUserPreferenceUsingDeprecatedApi(Header identityHeader, String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer, String orgId) {
+        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, daily, instant, drawer, orgId);
         postPreferencesByEventType(identityHeader, settingsValues, 200);
 
         final UserConfigPreferences preferences = given()
@@ -979,5 +980,68 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         assertEquals(daily, preferences.getDailyEmail());
         assertEquals(instant, preferences.getInstantEmail());
+    }
+
+    @Test
+    void testDrawerEnabledForSpecificOrgOnly() {
+        final String ORG_WITH_DRAWER_ENABLED = "org-with-drawer-enabled";
+        final String ORG_WITH_DRAWER_DISABLED = "org-with-drawer-disabled";
+
+        when(backendConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_ENABLED))).thenReturn(true);
+        when(backendConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_DISABLED))).thenReturn(false);
+        when(backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()).thenReturn(false);
+
+        String bundle = "rhel";
+        String application = "policies";
+        String eventType = "policy-triggered";
+
+        // Setup templates
+        createInstantTemplate(bundle, application, eventType);
+        CrudTestHelpers.createAggregationTemplate(bundle, application, applicationRepository, adminRole);
+        resourceHelpers.createDrawerTemplate(bundle, application, eventType);
+
+        // Test org-with-drawer-enabled sees DRAWER
+        String identityHeaderValueEnabled = TestHelpers.encodeRHIdentityInfo("account-1", ORG_WITH_DRAWER_ENABLED, "user-enabled");
+        Header headerEnabled = TestHelpers.createRHIdentityHeader(identityHeaderValueEnabled);
+        MockServerConfig.addMockRbacAccess(identityHeaderValueEnabled, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        SettingsValueByEventTypeJsonForm settingsEnabled = given()
+            .header(headerEnabled)
+            .queryParam("bundleName", bundle)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+
+        // Verify DRAWER is available for org-with-drawer-enabled
+        SettingsValueByEventTypeJsonForm.Application rhelPolicyEnabled = rhelPolicyForm(settingsEnabled);
+        assertNotNull(rhelPolicyEnabled, "RHEL policies should be found for org-with-drawer-enabled");
+        Map<SubscriptionType, Boolean> notifValuesEnabled = extractNotificationValues(
+            rhelPolicyEnabled.eventTypes, bundle, application, eventType
+        );
+        assertTrue(notifValuesEnabled.containsKey(DRAWER), "org-with-drawer-enabled should have DRAWER option");
+
+        // Test org-with-drawer-disabled does NOT see DRAWER
+        String identityHeaderValueDisabled = TestHelpers.encodeRHIdentityInfo("account-2", ORG_WITH_DRAWER_DISABLED, "user-disabled");
+        Header headerDisabled = TestHelpers.createRHIdentityHeader(identityHeaderValueDisabled);
+        MockServerConfig.addMockRbacAccess(identityHeaderValueDisabled, MockServerConfig.RbacAccess.FULL_ACCESS);
+
+        SettingsValueByEventTypeJsonForm settingsDisabled = given()
+            .header(headerDisabled)
+            .queryParam("bundleName", bundle)
+            .when().get(PATH_EVENT_TYPE_PREFERENCE_API)
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+
+        // Verify DRAWER is NOT available for org-with-drawer-disabled
+        SettingsValueByEventTypeJsonForm.Application rhelPolicyDisabled = rhelPolicyForm(settingsDisabled);
+        assertNotNull(rhelPolicyDisabled, "RHEL policies should be found for org-with-drawer-disabled");
+        Map<SubscriptionType, Boolean> notifValuesDisabled = extractNotificationValues(
+            rhelPolicyDisabled.eventTypes, bundle, application, eventType
+        );
+        assertFalse(notifValuesDisabled.containsKey(DRAWER), "org-with-drawer-disabled should NOT have DRAWER option");
     }
 }

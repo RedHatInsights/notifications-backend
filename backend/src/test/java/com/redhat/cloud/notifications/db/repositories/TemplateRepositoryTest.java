@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationEmailTemplate;
@@ -9,6 +10,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.Template;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -17,9 +19,15 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -30,6 +38,9 @@ public class TemplateRepositoryTest extends DbIsolatedTest {
 
     @Inject
     TemplateRepository templateRepository;
+
+    @InjectMock
+    BackendConfig backendConfig;
 
     private Bundle bundle;
     private Application app1;
@@ -89,17 +100,40 @@ public class TemplateRepositoryTest extends DbIsolatedTest {
                                                    boolean app2Daily, boolean unknownAppInstant, boolean unknownAppDaily) {
 
         // bundle / app-1 / event-type-1
-        assertEquals(app1Instant, templateRepository.isSubscriptionTypeSupported(eventType1.getId(), INSTANT));
-        assertEquals(false, templateRepository.isSubscriptionTypeSupported(eventType2.getId(), INSTANT));
-        assertEquals(app1Daily, templateRepository.isSubscriptionTypeSupported(eventType1.getId(), DAILY));
-        assertEquals(app1Daily, templateRepository.isSubscriptionTypeSupported(eventType2.getId(), DAILY));
+        assertEquals(app1Instant, templateRepository.isSubscriptionTypeSupported(eventType1.getId(), INSTANT, DEFAULT_ORG_ID));
+        assertEquals(false, templateRepository.isSubscriptionTypeSupported(eventType2.getId(), INSTANT, DEFAULT_ORG_ID));
+        assertEquals(app1Daily, templateRepository.isSubscriptionTypeSupported(eventType1.getId(), DAILY, DEFAULT_ORG_ID));
+        assertEquals(app1Daily, templateRepository.isSubscriptionTypeSupported(eventType2.getId(), DAILY, DEFAULT_ORG_ID));
 
         // bundle / app-2 / event-type-2
-        assertEquals(app2Instant, templateRepository.isSubscriptionTypeSupported(app2eventType1.getId(), INSTANT));
-        assertEquals(app2Daily, templateRepository.isSubscriptionTypeSupported(app2eventType1.getId(), DAILY));
+        assertEquals(app2Instant, templateRepository.isSubscriptionTypeSupported(app2eventType1.getId(), INSTANT, DEFAULT_ORG_ID));
+        assertEquals(app2Daily, templateRepository.isSubscriptionTypeSupported(app2eventType1.getId(), DAILY, DEFAULT_ORG_ID));
 
         // unknown-bundle / unknown-app
-        assertEquals(unknownAppInstant, templateRepository.isSubscriptionTypeSupported(UUID.randomUUID(), INSTANT));
-        assertEquals(unknownAppDaily, templateRepository.isSubscriptionTypeSupported(UUID.randomUUID(), DAILY));
+        assertEquals(unknownAppInstant, templateRepository.isSubscriptionTypeSupported(UUID.randomUUID(), INSTANT, DEFAULT_ORG_ID));
+        assertEquals(unknownAppDaily, templateRepository.isSubscriptionTypeSupported(UUID.randomUUID(), DAILY, DEFAULT_ORG_ID));
+    }
+
+    @Test
+    void testIsSubscriptionTypeSupportedOrgSpecific() {
+        final String ORG_WITH_DRAWER_ENABLED = "org-with-drawer-enabled";
+        final String ORG_WITH_DRAWER_DISABLED = "org-with-drawer-disabled";
+
+        when(backendConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_ENABLED))).thenReturn(true);
+        when(backendConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_DISABLED))).thenReturn(false);
+        when(backendConfig.isDefaultTemplateEnabled()).thenReturn(false);
+
+        // Create drawer template
+        resourceHelpers.createDrawerTemplate(bundle.getName(), app1.getName(), eventType1.getName());
+
+        // Verify drawer supported for org-with-drawer-enabled
+        assertTrue(templateRepository.isSubscriptionTypeSupported(
+            eventType1.getId(), DRAWER, ORG_WITH_DRAWER_ENABLED
+        ), "Drawer should be supported for org-with-drawer-enabled");
+
+        // Verify drawer NOT supported for org-with-drawer-disabled
+        assertFalse(templateRepository.isSubscriptionTypeSupported(
+            eventType1.getId(), DRAWER, ORG_WITH_DRAWER_DISABLED
+        ), "Drawer should NOT be supported for org-with-drawer-disabled");
     }
 }

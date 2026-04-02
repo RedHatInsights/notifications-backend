@@ -302,7 +302,7 @@ public class UserConfigResource {
     private boolean isTemplateSupported(String bundleName, String applicationName, EventType eventType, SubscriptionType subscriptionType, final String orgId) {
         boolean supported;
         if (backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()) {
-            if (!backendConfig.isDrawerEnabled() && subscriptionType == DRAWER) {
+            if (!backendConfig.isDrawerEnabled(orgId) && subscriptionType == DRAWER) {
                 supported = false;
             } else {
                 boolean canUseTemplateBetaVersion = backendConfig.isUseBetaTemplatesEnabled(orgId);
@@ -310,7 +310,7 @@ public class UserConfigResource {
                 supported = templateService.isValidTemplateDefinition(templateDefinition);
             }
         } else {
-            supported = templateRepository.isSubscriptionTypeSupported(eventType.getId(), subscriptionType);
+            supported = templateRepository.isSubscriptionTypeSupported(eventType.getId(), subscriptionType, orgId);
         }
         return supported;
     }

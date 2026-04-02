@@ -50,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -115,7 +116,7 @@ class DrawerProcessorTest {
         endpoint.setProperties(new SystemSubscriptionProperties());
         endpoint.setType(EndpointType.DRAWER);
 
-        when(engineConfig.isDrawerEnabled()).thenReturn(true);
+        when(engineConfig.isDrawerEnabled(anyString())).thenReturn(true);
         testee.process(createdEvent, List.of(endpoint));
 
         verify(drawerNotificationRepository, never()).create(any(Event.class), any(String.class));
@@ -142,7 +143,7 @@ class DrawerProcessorTest {
         endpoint.setProperties(new SystemSubscriptionProperties());
         endpoint.setType(EndpointType.DRAWER);
 
-        when(engineConfig.isDrawerEnabled()).thenReturn(true);
+        when(engineConfig.isDrawerEnabled(anyString())).thenReturn(true);
         testee.process(createdEvent, List.of(endpoint));
 
         verify(notificationHistoryRepository, times(1)).createNotificationHistory(any(NotificationHistory.class));
@@ -210,6 +211,100 @@ class DrawerProcessorTest {
         entityManager.createQuery("DELETE FROM EventType WHERE id = :uuid").setParameter("uuid", event.getEventType().getId()).executeUpdate();
         entityManager.createQuery("DELETE FROM Application WHERE id = :uuid").setParameter("uuid", event.getEventType().getApplicationId()).executeUpdate();
         entityManager.createQuery("DELETE FROM Bundle WHERE id = :uuid").setParameter("uuid", event.getEventType().getApplication().getBundleId()).executeUpdate();
+        entityManager.createQuery("DELETE FROM DrawerNotification").executeUpdate();
+    }
+
+    @Test
+    void shouldProcessOnlyForOrgWithDrawerEnabled() {
+        final String ORG_WITH_DRAWER_ENABLED = "org-with-drawer-enabled";
+        final String ORG_WITH_DRAWER_DISABLED = "org-with-drawer-disabled";
+
+        when(engineConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_ENABLED))).thenReturn(true);
+        when(engineConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_DISABLED))).thenReturn(false);
+
+        User user = new User();
+        user.setId("test-user");
+        user.setUsername("test-user");
+
+        when(externalRecipientsResolver.recipientUsers(any(), any(), any(), any(), eq(true), any(RecipientsAuthorizationCriterion.class)))
+            .thenReturn(Set.of(user));
+
+        // Create schema once (bundle, app, eventType) and two events with different orgIds
+        EventType eventType = createSchemaForOrgTest();
+        Event eventWithDrawer = createEventWithOrgId(eventType, ORG_WITH_DRAWER_ENABLED);
+        Event eventWithoutDrawer = createEventWithOrgId(eventType, ORG_WITH_DRAWER_DISABLED);
+
+        Endpoint endpoint = new Endpoint();
+        endpoint.setProperties(new SystemSubscriptionProperties());
+        endpoint.setType(EndpointType.DRAWER);
+
+        testee.process(eventWithDrawer, List.of(endpoint));
+
+        // Verify notification history was created for org-with-drawer-enabled
+        verify(notificationHistoryRepository, times(1)).createNotificationHistory(any(NotificationHistory.class));
+
+        testee.process(eventWithoutDrawer, List.of(endpoint));
+
+        // Verify NO additional notification history created (still 1 total from first call)
+        verify(notificationHistoryRepository, times(1)).createNotificationHistory(any(NotificationHistory.class));
+
+        // Cleanup
+        deleteEventsAndSchema(List.of(eventWithDrawer, eventWithoutDrawer), eventType);
+    }
+
+    @Transactional
+    EventType createSchemaForOrgTest() {
+        Bundle bundle = resourceHelpers.createBundle("test-drawer-org-specific-bundle");
+        Application app = resourceHelpers.createApp(bundle.getId(), "test-drawer-org-specific-application");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "test-drawer-org-specific-event-type");
+        eventType.setIncludedInDrawer(true);
+        return eventType;
+    }
+
+    @Transactional
+    Event createEventWithOrgId(EventType eventType, String orgId) {
+        Event event = new Event();
+        event.setEventType(eventType);
+        event.setOrgId(orgId);
+        event.setEventWrapper(new EventWrapperAction(
+            new Action.ActionBuilder()
+                .withOrgId(orgId)
+                .withEventType("triggered")
+                .withApplication("policies")
+                .withBundle("rhel")
+                .withTimestamp(LocalDateTime.of(2022, 8, 24, 13, 30, 0, 0))
+                .withSeverity(Severity.CRITICAL.name())
+                .withContext(
+                    new Context.ContextBuilder()
+                        .withAdditionalProperty("foo", "im foo")
+                        .withAdditionalProperty("bar", Map.of("baz", "im baz"))
+                        .build()
+                )
+                .withEvents(List.of(
+                    new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                        .withMetadata(new Metadata())
+                        .withPayload(new Payload())
+                        .build()
+                ))
+                .build()
+        ));
+        return resourceHelpers.createEvent(event);
+    }
+
+    @Transactional
+    void deleteEventsAndSchema(List<Event> events, EventType eventType) {
+        entityManager.createQuery("DELETE FROM Event WHERE id IN :uuids")
+            .setParameter("uuids", events.stream().map(Event::getId).toList())
+            .executeUpdate();
+        entityManager.createQuery("DELETE FROM EventType WHERE id = :uuid")
+            .setParameter("uuid", eventType.getId())
+            .executeUpdate();
+        entityManager.createQuery("DELETE FROM Application WHERE id = :uuid")
+            .setParameter("uuid", eventType.getApplicationId())
+            .executeUpdate();
+        entityManager.createQuery("DELETE FROM Bundle WHERE id = :uuid")
+            .setParameter("uuid", eventType.getApplication().getBundleId())
+            .executeUpdate();
         entityManager.createQuery("DELETE FROM DrawerNotification").executeUpdate();
     }
 

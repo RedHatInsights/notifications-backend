@@ -42,6 +42,8 @@ import static io.restassured.http.ContentType.JSON;
 import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -62,7 +64,7 @@ public class DrawerResourceTest extends DbIsolatedTest {
 
     @Test
     void testMultiplePages() {
-        when(backendConfig.isDrawerEnabled()).thenReturn(true);
+        when(backendConfig.isDrawerEnabled(anyString())).thenReturn(true);
         final String USERNAME = "user-1";
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, USERNAME, FULL_ACCESS);
 
@@ -102,7 +104,7 @@ public class DrawerResourceTest extends DbIsolatedTest {
 
     @Test
     void testFilters() {
-        when(backendConfig.isDrawerEnabled()).thenReturn(true);
+        when(backendConfig.isDrawerEnabled(anyString())).thenReturn(true);
         Bundle createdBundle = resourceHelpers.createBundle("test-drawer-event-resource-bundle");
         Bundle createdBundle2 = resourceHelpers.createBundle("test-drawer-event-resource-bundle2");
         Application createdApplication = resourceHelpers.createApplication(createdBundle.getId(), "test-drawer-event-resource-application");
@@ -205,7 +207,8 @@ public class DrawerResourceTest extends DbIsolatedTest {
 
     @Transactional
     void createDrawerNotification(String userId, Event createdEvent) {
-        DrawerNotification notificationDrawer = new DrawerNotification(DEFAULT_ORG_ID, userId, entityManager.find(Event.class, createdEvent.getId()));
+        Event event = entityManager.find(Event.class, createdEvent.getId());
+        DrawerNotification notificationDrawer = new DrawerNotification(event.getOrgId(), userId, event);
         notificationDrawer.setCreated(createdEvent.getCreated());
         entityManager.persist(notificationDrawer);
     }
@@ -301,5 +304,40 @@ public class DrawerResourceTest extends DbIsolatedTest {
         for (String key : expectedKeys) {
             assertTrue(links.containsKey(key));
         }
+    }
+
+    @Test
+    void testDrawerNotificationsOrgSpecific() {
+        final String ORG_WITH_DRAWER_ENABLED = "org-with-drawer-enabled";
+        final String ORG_WITH_DRAWER_DISABLED = "org-with-drawer-disabled";
+        final String USERNAME = "user-test";
+
+        when(backendConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_ENABLED))).thenReturn(true);
+        when(backendConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_DISABLED))).thenReturn(false);
+
+        Bundle bundle = resourceHelpers.createBundle("bundle-org-test");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "app-org-test");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "event-type-org-test");
+
+        // Create events for both orgs
+        Event eventEnabled = createEvent("account-1", ORG_WITH_DRAWER_ENABLED, bundle, app, eventType,
+            LocalDateTime.now(UTC), Severity.LOW);
+        Event eventDisabled = createEvent("account-2", ORG_WITH_DRAWER_DISABLED, bundle, app, eventType,
+            LocalDateTime.now(UTC), Severity.LOW);
+
+        createDrawerNotification(USERNAME, eventEnabled);
+        createDrawerNotification(USERNAME, eventDisabled);
+
+        // Test org-with-drawer-enabled can see drawer entries
+        Header headerEnabled = mockRbac("account-1", ORG_WITH_DRAWER_ENABLED, USERNAME, FULL_ACCESS);
+        Page<DrawerEntryPayload> pageEnabled = getDrawerEntries(headerEnabled, null, null, null,
+            null, null, null, null, null, null);
+        assertEquals(1, pageEnabled.getMeta().getCount(), "org-with-drawer-enabled should see 1 drawer notification");
+
+        // Test org-with-drawer-disabled sees 0 entries (drawer disabled)
+        Header headerDisabled = mockRbac("account-2", ORG_WITH_DRAWER_DISABLED, USERNAME, FULL_ACCESS);
+        Page<DrawerEntryPayload> pageDisabled = getDrawerEntries(headerDisabled, null, null, null,
+            null, null, null, null, null, null);
+        assertEquals(0, pageDisabled.getMeta().getCount(), "org-with-drawer-disabled should see 0 drawer notifications");
     }
 }

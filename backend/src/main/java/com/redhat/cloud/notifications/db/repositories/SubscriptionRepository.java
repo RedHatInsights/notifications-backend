@@ -152,7 +152,7 @@ public class SubscriptionRepository {
             .setParameter("userId", username)
             .setParameter("bundleName", bundleName)
             .setParameter("applicationName", applicationName)
-            .setParameter("subscriptionTypes", getAvailableTypes())
+            .setParameter("subscriptionTypes", getAvailableTypes(orgId))
             .getResultList();
     }
 
@@ -162,12 +162,12 @@ public class SubscriptionRepository {
         return entityManager.createQuery(query, EventTypeEmailSubscription.class)
             .setParameter("orgId", orgId)
             .setParameter("userId", username)
-            .setParameter("subscriptionTypes", getAvailableTypes())
+            .setParameter("subscriptionTypes", getAvailableTypes(orgId))
             .getResultList();
     }
 
-    private List<SubscriptionType> getAvailableTypes() {
-        if (backendConfig.isDrawerEnabled()) {
+    private List<SubscriptionType> getAvailableTypes(String orgId) {
+        if (backendConfig.isDrawerEnabled(orgId)) {
             return List.of(INSTANT, DAILY, DRAWER);
         } else {
             return List.of(INSTANT, DAILY);

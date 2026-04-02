@@ -345,7 +345,7 @@ public class TemplateRepository {
         return template;
     }
 
-    public boolean isSubscriptionTypeSupported(final UUID eventTypeId, final SubscriptionType subscriptionType) {
+    public boolean isSubscriptionTypeSupported(final UUID eventTypeId, final SubscriptionType subscriptionType, final String orgId) {
         try {
             switch (subscriptionType) {
                 case DAILY:
@@ -358,7 +358,7 @@ public class TemplateRepository {
                     break;
                 case DRAWER:
                     checkIfExistDrawerTemplateByEventType(eventTypeId);
-                    return backendConfig.isDrawerEnabled();
+                    return backendConfig.isDrawerEnabled(orgId);
                 default:
                     Log.infof("Subscription type %s not checked", subscriptionType);
                     break;
