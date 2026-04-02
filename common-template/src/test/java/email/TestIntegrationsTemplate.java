@@ -79,7 +79,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
             "   \"timestamp\":\"2025-07-11T09:01:36.220643799\"," +
             "   \"org_id\":\"%s\"," +
             "   \"context\":{" +
-            "      \"integration_category\":\"Communications\"" +
+            "      \"integration_category\":\"Reporting\"" +
             "   }," +
             "   \"events\":[" +
             "      {" +
@@ -123,6 +123,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
         assertTrue(rendered.contains("https://access.redhat.com/security/updates/classification"));
         assertTrue(rendered.contains("https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/configuring_notifications_on_the_red_hat_hybrid_cloud_console/index#con-notif-severity_notif-config-intro"));
         assertTrue(rendered.contains("Red Hat Hybrid Cloud Console"));
+        assertTrue(rendered.contains("/settings/integrations?category=Reporting"));
     }
 
     private Action buildIntegrationDisabledAction(final String errorType, final String errorDetails, final int errorCount, final int errorStatusCode) {
