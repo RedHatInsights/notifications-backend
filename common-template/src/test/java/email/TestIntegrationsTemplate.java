@@ -84,7 +84,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
             "   \"events\":[" +
             "      {" +
             "         \"metadata\":{" +
-            "            \"communication-description\":\"General communication about customers' Microsoft Teams' URLs needing a review\"" +
+            "            \"communication-description\":\"General communication about customers' PagerDuty integrations switching to dynamic severity\"" +
             "         }," +
             "         \"payload\":{" +
             "            \"integration_names\":[%s]" +
@@ -115,13 +115,13 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
                 integrationNames.stream().map(integrationName -> "\"" +  integrationName + "\"").collect(Collectors.joining(",")))
         );
         final String rendered = generateEmailBody(INTEGRATIONS_GENERAL_COMMUNICATION, action, useBetaTemplate);
-        assertTrue(rendered.contains("We are contacting you because you have the following Microsoft Teams integrations set up for your organization in the"));
+        assertTrue(rendered.contains("We are contacting you because you have the following PagerDuty integrations set up for your organization in the"));
         assertTrue(rendered.contains("Integration one"));
         assertTrue(rendered.contains("Another integration"));
         assertTrue(rendered.contains("Third integration"));
-        assertTrue(rendered.contains("retiring Office 365 connectors in favor of Power Automate workflows"));
-        assertTrue(rendered.contains("https://devblogs.microsoft.com/microsoft365dev/retirement-of-office-365-connectors-within-microsoft-teams/#why-are-we-retiring-office-365-connectors"));
-        assertTrue(rendered.contains("https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/integrating_the_red_hat_hybrid_cloud_console_with_third-party_applications/index#assembly-configuring-integration-with-teams_integrating-communications"));
+        assertTrue(rendered.contains("begin mapping and filtering alert severity based on the notification type"));
+        assertTrue(rendered.contains("https://access.redhat.com/security/updates/classification"));
+        assertTrue(rendered.contains("https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/configuring_notifications_on_the_red_hat_hybrid_cloud_console/index#con-notif-severity_notif-config-intro"));
         assertTrue(rendered.contains("Red Hat Hybrid Cloud Console"));
     }
 
