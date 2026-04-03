@@ -171,30 +171,42 @@ public class BehaviorGroupRepository {
             throw new NotFoundException("Bundle not found");
         }
 
-        /*
-         * When PostgreSQL sorts a BOOLEAN column in DESC order, true comes first. That's not true for all DBMS.
-         */
-        String query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
+        List<BehaviorGroup> behaviorGroups;
+        if (backendConfig.isUseDrawerfilteredQuery(orgId)) {
+            String query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
                 "LEFT JOIN FETCH a.endpoint e " +
                 "WHERE (b.orgId = :orgId OR b.orgId IS NULL) AND b.bundle.id = :bundleId " +
                 "ORDER BY b.created DESC, a.position ASC";
 
-        List<BehaviorGroup> behaviorGroups = entityManager.createQuery(query, BehaviorGroup.class)
+            behaviorGroups = entityManager.createQuery(query, BehaviorGroup.class)
                 .setParameter("orgId", orgId)
                 .setParameter("bundleId", bundleId)
                 .getResultList();
 
-        if (!backendConfig.isDrawerEnabled()) {
-            for (BehaviorGroup behaviorGroup : behaviorGroups) {
-                if (behaviorGroup.getActions() != null) {
-                    behaviorGroup.setActions(
+            if (!backendConfig.isDrawerEnabled()) {
+                for (BehaviorGroup behaviorGroup : behaviorGroups) {
+                    if (behaviorGroup.getActions() != null) {
+                        behaviorGroup.setActions(
                             behaviorGroup.getActions().stream()
-                                    .filter(action -> action.getEndpoint() == null
-                                            || EndpointType.DRAWER != action.getEndpoint().getType())
-                                    .collect(Collectors.toList())
-                    );
+                                .filter(action -> action.getEndpoint() == null
+                                    || EndpointType.DRAWER != action.getEndpoint().getType())
+                                .collect(Collectors.toList())
+                        );
+                    }
                 }
             }
+        } else {
+            /*
+             * When PostgreSQL sorts a BOOLEAN column in DESC order, true comes first. That's not true for all DBMS.
+             */
+            String query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
+                "WHERE (b.orgId = :orgId OR b.orgId IS NULL) AND b.bundle.id = :bundleId " +
+                "ORDER BY b.created DESC, a.position ASC";
+
+            behaviorGroups = entityManager.createQuery(query, BehaviorGroup.class)
+                .setParameter("orgId", orgId)
+                .setParameter("bundleId", bundleId)
+                .getResultList();
         }
 
         for (BehaviorGroup behaviorGroup : behaviorGroups) {

@@ -51,6 +51,7 @@ public class BackendConfig {
     private String sourcesHccClusterToggle;
     private String toggleUseBetaTemplatesEnabled;
     private String showHiddenEventTypesToggle;
+    private String useDrawerfilteredQuery;
     private String normalizedQueriesToggle;
 
     @ConfigProperty(name = UNLEASH, defaultValue = "false")
@@ -131,6 +132,7 @@ public class BackendConfig {
         sourcesHccClusterToggle = toggleRegistry.register("sources-hcc-cluster", true);
         toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
         showHiddenEventTypesToggle = toggleRegistry.register("show-hidden-event-types", true);
+        useDrawerfilteredQuery = toggleRegistry.register("remove-drawer-endpoint-from-behavior-group", true);
         normalizedQueriesToggle = toggleRegistry.register("normalized-queries", true);
     }
 
@@ -153,6 +155,7 @@ public class BackendConfig {
         config.put(UNLEASH, unleashEnabled);
         config.put(sourcesHccClusterToggle, isSourcesHccClusterEnabled(null));
         config.put(showHiddenEventTypesToggle, isShowHiddenEventTypes(null));
+        config.put(useDrawerfilteredQuery, isUseDrawerfilteredQuery(null));
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -325,6 +328,14 @@ public class BackendConfig {
     public boolean isNormalizedQueriesEnabled(String orgId) {
         if (unleashEnabled) {
             return unleash.isEnabled(normalizedQueriesToggle, buildUnleashContextWithOrgId(orgId), false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isUseDrawerfilteredQuery(String orgId) {
+        if (unleashEnabled) {
+            return unleash.isEnabled(useDrawerfilteredQuery, buildUnleashContextWithOrgId(orgId), false);
         } else {
             return false;
         }

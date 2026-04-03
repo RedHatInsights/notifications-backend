@@ -42,9 +42,11 @@ import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPT
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -381,6 +383,11 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         Endpoint endpoint1 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DRAWER);
         Endpoint endpoint2 = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DRAWER);
         List<BehaviorGroupAction> bgActions = updateAndFetchBehaviorGroupActions(DEFAULT_ORG_ID, bundle.getId(), behaviorGroup.getId(), endpoint1.getId(), endpoint2.getId());
+        assertFalse(bgActions.isEmpty());
+        updateAndCheckBehaviorGroupActions(DEFAULT_ORG_ID, bundle.getId(), behaviorGroup.getId(), endpoint1.getId(), endpoint2.getId());
+
+        when(backendConfig.isUseDrawerfilteredQuery(eq(DEFAULT_ORG_ID))).thenReturn(true);
+        bgActions = updateAndFetchBehaviorGroupActions(DEFAULT_ORG_ID, bundle.getId(), behaviorGroup.getId(), endpoint1.getId(), endpoint2.getId());
         assertTrue(bgActions.isEmpty());
         when(backendConfig.isDrawerEnabled()).thenReturn(true);
         updateAndCheckBehaviorGroupActions(DEFAULT_ORG_ID, bundle.getId(), behaviorGroup.getId(), endpoint1.getId(), endpoint2.getId());
