@@ -1,0 +1,106 @@
+---
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: notifications-mcp
+objects:
+- apiVersion: cloud.redhat.com/v1alpha1
+  kind: ClowdApp
+  metadata:
+    name: notifications-mcp
+    labels:
+      app: notifications-mcp
+  spec:
+    envName: ${ENV_NAME}
+    featureFlags: true
+    deployments:
+    - name: service
+      minReplicas: ${{MIN_REPLICAS}}
+      webServices:
+        public:
+          enabled: false
+      podSpec:
+        image: ${IMAGE}:${IMAGE_TAG}
+        resources:
+          requests:
+            cpu: ${CPU_REQUEST}
+            memory: ${MEMORY_REQUEST}
+          limits:
+            cpu: ${CPU_LIMIT}
+            memory: ${MEMORY_LIMIT}
+        readinessProbe:
+          httpGet:
+            path: /q/health/ready
+            port: ${{QUARKUS_HTTP_PORT}}
+            scheme: HTTP
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 5
+        livenessProbe:
+          httpGet:
+            path: /q/health/live
+            port: ${{QUARKUS_HTTP_PORT}}
+            scheme: HTTP
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 5
+        env:
+        - name: ENV_NAME
+          value: ${ENV_NAME}
+        - name: HOST_NAME
+          value: ${HOSTNAME}
+        - name: QUARKUS_HTTP_PORT
+          value: ${QUARKUS_HTTP_PORT}
+        - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
+          value: ${NOTIFICATIONS_LOG_LEVEL}
+        - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
+          value: ${CLOUDWATCH_ENABLED}
+        - name: QUARKUS_LOG_SENTRY_ENABLED
+          value: ${SENTRY_ENABLED}
+        - name: QUARKUS_LOG_SENTRY_DSN
+          value: ${SENTRY_DSN}${ENV_NAME}
+        - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
+          value: ${ENV_NAME}
+        - name: QUARKUS_LOG_CLOUDWATCH_SERVICE_ENVIRONMENT
+          value: ${ENV_NAME}
+parameters:
+- name: CLOUDWATCH_ENABLED
+  description: Enable Cloudwatch (or not)
+  value: "false"
+- name: CPU_LIMIT
+  description: CPU limit
+  value: 200m
+- name: CPU_REQUEST
+  description: CPU request
+  value: 100m
+- name: ENV_NAME
+  description: ClowdEnvironment name (ephemeral, stage, prod)
+  required: true
+- name: IMAGE
+  description: Image URL
+  value: quay.io/redhat-services-prod/hcc-integrations-tenant/notifications/notifications-mcp
+- name: IMAGE_TAG
+  value: latest
+- name: MEMORY_LIMIT
+  description: Memory limit
+  value: 500Mi
+- name: MEMORY_REQUEST
+  description: Memory request
+  value: 250Mi
+- name: MIN_REPLICAS
+  value: "3"
+- name: NOTIFICATIONS_LOG_LEVEL
+  description: Log level for com.redhat.cloud.notifications
+  value: INFO
+- name: QUARKUS_HTTP_PORT
+  description: Quarkus HTTP server port
+  value: "8000"
+- name: SENTRY_DSN
+  description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
+- name: SENTRY_ENABLED
+  description: Enable Sentry (or not)
+  value: "false"
