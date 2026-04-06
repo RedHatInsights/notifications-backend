@@ -21,6 +21,9 @@ public class Console {
     static final String SOURCES_APP_NAME = "sources";
     static final String SOURCES_FOLDER_NAME = "Sources/";
 
+    static final String SCHEDULER_APP_NAME = "scheduler";
+    static final String SCHEDULER_FOLDER_NAME = "Scheduler/";
+
     public static final String INTEGRATIONS_INTEGRATION_DISABLED = "integration-disabled";
     public static final String INTEGRATIONS_GENERAL_COMMUNICATION = "general-communication";
 
@@ -41,6 +44,10 @@ public class Console {
     public static final String RBAC_RH_NEW_TAM_REQUEST_CREATED = "rh-new-tam-request-created";
 
     public static final String SOURCES_AVAILABILITY_STATUS = "availability-status";
+
+    public static final String SCHEDULER_EXPORT_COMPLETE = "export-complete";
+    public static final String SCHEDULER_JOB_FAILED = "job-failed";
+    public static final String SCHEDULER_JOB_FAILED_PAUSED = "job-failed-paused";
 
     public static final Map<TemplateDefinition, String> templatesMap = Map.ofEntries(
         // Integration
@@ -83,6 +90,14 @@ public class Console {
 
         // Sources
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, SOURCES_APP_NAME, SOURCES_AVAILABILITY_STATUS), SOURCES_FOLDER_NAME + "availabilityStatusBody.md"),
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SOURCES_APP_NAME, SOURCES_AVAILABILITY_STATUS), SOURCES_FOLDER_NAME + "availabilityStatusEmailBody.html")
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SOURCES_APP_NAME, SOURCES_AVAILABILITY_STATUS), SOURCES_FOLDER_NAME + "availabilityStatusEmailBody.html"),
+
+        // Scheduler
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, SCHEDULER_APP_NAME, SCHEDULER_EXPORT_COMPLETE), SCHEDULER_FOLDER_NAME + "exportCompleteBody.md"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SCHEDULER_APP_NAME, SCHEDULER_EXPORT_COMPLETE), SCHEDULER_FOLDER_NAME + "exportCompleteEmailBody.html"),
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, SCHEDULER_APP_NAME, SCHEDULER_JOB_FAILED), SCHEDULER_FOLDER_NAME + "jobFailedBody.md"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SCHEDULER_APP_NAME, SCHEDULER_JOB_FAILED), SCHEDULER_FOLDER_NAME + "jobFailedEmailBody.html"),
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, SCHEDULER_APP_NAME, SCHEDULER_JOB_FAILED_PAUSED), SCHEDULER_FOLDER_NAME + "jobFailedPausedBody.md"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SCHEDULER_APP_NAME, SCHEDULER_JOB_FAILED_PAUSED), SCHEDULER_FOLDER_NAME + "jobFailedPausedEmailBody.html")
     );
 }

@@ -1,0 +1,21 @@
+{#include email/Common/insightsEmailBody}
+{#content-header-title}
+    Scheduler - Console
+{/content-header-title}
+{#content-title}
+    Scheduler job failed
+{/content-title}
+{#content-body}
+    <p style="{body-section-p-style}">
+        The <a style="{body-section-underline-link-style}" href="{environment.url}/insights/jobs/{action.context.job_id}" target="_blank">{action.context.job_name}</a> scheduled job has failed and been automatically paused.
+    </p>
+    {#if action.context.error_message}
+    <p style="{body-section-p-style}">
+        <strong>Error:</strong> {action.context.error_message}
+    </p>
+    {/if}
+    <p style="{body-section-p-style}">
+        The scheduled job has been paused to prevent further failures. Please review and resolve the issue before resuming the scheduled job.
+    </p>
+{/content-body}
+{/include}
