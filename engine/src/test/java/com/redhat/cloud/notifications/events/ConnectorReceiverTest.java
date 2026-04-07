@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
@@ -37,7 +36,6 @@ import static com.redhat.cloud.notifications.events.ConnectorReceiver.MESSAGES_P
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -62,9 +60,6 @@ public class ConnectorReceiverTest {
 
     @InjectSpy
     EndpointRepository endpointRepository;
-
-    @InjectMock
-    EngineConfig engineConfig;
 
     @InjectSpy
     DrawerProcessor drawerProcessor;
@@ -197,8 +192,8 @@ public class ConnectorReceiverTest {
     }
 
     @Test
-    void testDrawerCallbackProcessedWhenEnabledForOrg() {
-        String orgId = "org-with-drawer-enabled";
+    void testDrawerCallbackProcessed() {
+        String orgId = "org-with-drawer";
         String historyId = UUID.randomUUID().toString();
 
         Endpoint endpoint = new Endpoint();
@@ -214,7 +209,6 @@ public class ConnectorReceiverTest {
             .thenReturn(endpoint);
         Mockito.when(notificationHistoryRepository.getEventIdFromHistoryId(eq(UUID.fromString(historyId))))
             .thenReturn(event);
-        Mockito.when(engineConfig.isDrawerEnabled(eq(orgId))).thenReturn(true);
 
         HashMap<String, Object> dataMap = new HashMap<>(Map.of(
             "duration", 1000L,
@@ -254,59 +248,14 @@ public class ConnectorReceiverTest {
     }
 
     @Test
-    void testDrawerCallbackNotProcessedWhenDisabledForOrg() {
-        String orgId = "org-with-drawer-disabled";
+    void testNonDrawerCallbackHandled() {
         String historyId = UUID.randomUUID().toString();
 
         Endpoint endpoint = new Endpoint();
         endpoint.setId(UUID.fromString(historyId));
-        endpoint.setOrgId(orgId);
 
         Mockito.when(notificationHistoryRepository.getEndpointForHistoryId(eq(historyId)))
             .thenReturn(endpoint);
-        Mockito.when(engineConfig.isDrawerEnabled(eq(orgId))).thenReturn(false);
-
-        HashMap<String, Object> dataMap = new HashMap<>(Map.of(
-            "duration", 1000L,
-            "finishTime", 1639476503209L,
-            "details", Map.of(
-                "type", "com.redhat.console.notification.toCamel.drawer",
-                "resolved_recipient_list", List.of("user1", "user2")
-            ),
-            "successful", true
-        ));
-
-        String payload = Json.encode(Map.of(
-            "specversion", "1.0",
-            "source", "drawer-connector",
-            "type", "com.redhat.cloud.notifications.history",
-            "time", "2021-12-14T10:08:23.217Z",
-            "id", historyId,
-            "content-type", "application/json",
-            "data", Json.encode(dataMap)
-        ));
-
-        inMemoryConnector.source(FROMCAMEL_CHANNEL).send(payload);
-
-        micrometerAssertionHelper.awaitAndAssertCounterIncrement(MESSAGES_PROCESSED_COUNTER_NAME, 1);
-        micrometerAssertionHelper.assertCounterIncrement(MESSAGES_ERROR_COUNTER_NAME, 0);
-
-        verify(drawerProcessor, never()).manageConnectorDrawerReturnsIfNeeded(any(), any());
-        verify(notificationHistoryRepository, times(1)).updateHistoryItem(any(NotificationHistory.class));
-    }
-
-    @Test
-    void testNonDrawerCallbackDoesNotTriggerDrawerProcessing() {
-        String orgId = "org-with-drawer-enabled";
-        String historyId = UUID.randomUUID().toString();
-
-        Endpoint endpoint = new Endpoint();
-        endpoint.setId(UUID.fromString(historyId));
-        endpoint.setOrgId(orgId);
-
-        Mockito.when(notificationHistoryRepository.getEndpointForHistoryId(eq(historyId)))
-            .thenReturn(endpoint);
-        Mockito.when(engineConfig.isDrawerEnabled(eq(orgId))).thenReturn(true);
 
         HashMap<String, Object> dataMap = new HashMap<>(Map.of(
             "duration", 1000L,

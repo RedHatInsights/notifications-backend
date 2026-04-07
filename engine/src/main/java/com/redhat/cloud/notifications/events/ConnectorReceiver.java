@@ -70,9 +70,8 @@ public class ConnectorReceiver {
             String historyId = (String) decodedPayload.get("historyId");
             final Endpoint endpoint = notificationHistoryRepository.getEndpointForHistoryId(historyId);
 
-            if (endpoint != null && engineConfig.isDrawerEnabled(endpoint.getOrgId())) {
-                drawerProcessor.manageConnectorDrawerReturnsIfNeeded(decodedPayload, UUID.fromString(historyId));
-            }
+            drawerProcessor.manageConnectorDrawerReturnsIfNeeded(decodedPayload, UUID.fromString(historyId));
+
             boolean updated = camelHistoryFillerHelper.updateHistoryItem(decodedPayload);
             if (!updated) {
                 Log.warnf("Camel notification history update failed because no record was found with [id=%s]", decodedPayload.get("historyId"));
