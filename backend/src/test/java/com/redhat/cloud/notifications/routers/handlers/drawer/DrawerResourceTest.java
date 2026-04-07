@@ -310,34 +310,54 @@ public class DrawerResourceTest extends DbIsolatedTest {
     void testDrawerNotificationsOrgSpecific() {
         final String ORG_WITH_DRAWER_ENABLED = "org-with-drawer-enabled";
         final String ORG_WITH_DRAWER_DISABLED = "org-with-drawer-disabled";
+        final String ANOTHER_ORG_WITH_DRAWER_ENABLED = "another-org-with-drawer-enabled";
         final String USERNAME = "user-test";
 
         when(backendConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_ENABLED))).thenReturn(true);
         when(backendConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_DISABLED))).thenReturn(false);
+        when(backendConfig.isDrawerEnabled(eq(ANOTHER_ORG_WITH_DRAWER_ENABLED))).thenReturn(true);
 
         Bundle bundle = resourceHelpers.createBundle("bundle-org-test");
         Application app = resourceHelpers.createApplication(bundle.getId(), "app-org-test");
         EventType eventType = resourceHelpers.createEventType(app.getId(), "event-type-org-test");
 
-        // Create events for both orgs
-        Event eventEnabled = createEvent("account-1", ORG_WITH_DRAWER_ENABLED, bundle, app, eventType,
+        // Create events for all three orgs with the SAME username
+        // This tests data isolation - ensuring orgs can't see each other's data
+        Event eventOrg1 = createEvent("account-1", ORG_WITH_DRAWER_ENABLED, bundle, app, eventType,
             LocalDateTime.now(UTC), Severity.LOW);
-        Event eventDisabled = createEvent("account-2", ORG_WITH_DRAWER_DISABLED, bundle, app, eventType,
-            LocalDateTime.now(UTC), Severity.LOW);
+        Event eventOrg2 = createEvent("account-2", ORG_WITH_DRAWER_DISABLED, bundle, app, eventType,
+            LocalDateTime.now(UTC), Severity.MODERATE);
+        Event eventOrg3 = createEvent("account-3", ANOTHER_ORG_WITH_DRAWER_ENABLED, bundle, app, eventType,
+            LocalDateTime.now(UTC), Severity.IMPORTANT);
 
-        createDrawerNotification(USERNAME, eventEnabled);
-        createDrawerNotification(USERNAME, eventDisabled);
+        // Create drawer notifications for the same user across all orgs
+        createDrawerNotification(USERNAME, eventOrg1);
+        createDrawerNotification(USERNAME, eventOrg2);
+        createDrawerNotification(USERNAME, eventOrg3);
 
-        // Test org-with-drawer-enabled can see drawer entries
-        Header headerEnabled = mockRbac("account-1", ORG_WITH_DRAWER_ENABLED, USERNAME, FULL_ACCESS);
-        Page<DrawerEntryPayload> pageEnabled = getDrawerEntries(headerEnabled, null, null, null,
+        // Test Org 1: should see only their own notification (Severity.LOW), not Org 3's data
+        Header headerOrg1 = mockRbac("account-1", ORG_WITH_DRAWER_ENABLED, USERNAME, FULL_ACCESS);
+        Page<DrawerEntryPayload> pageOrg1 = getDrawerEntries(headerOrg1, null, null, null,
             null, null, null, null, null, null);
-        assertEquals(1, pageEnabled.getMeta().getCount(), "org-with-drawer-enabled should see 1 drawer notification");
+        assertEquals(1, pageOrg1.getMeta().getCount(),
+            "Org 1 should see exactly 1 notification (their own), not cross-org data");
+        assertEquals("LOW", pageOrg1.getData().get(0).getSeverity(),
+            "Org 1 should see their own event with Severity.LOW");
 
-        // Test org-with-drawer-disabled sees 0 entries (drawer disabled)
-        Header headerDisabled = mockRbac("account-2", ORG_WITH_DRAWER_DISABLED, USERNAME, FULL_ACCESS);
-        Page<DrawerEntryPayload> pageDisabled = getDrawerEntries(headerDisabled, null, null, null,
+        // Test Org 2: drawer disabled, should see 0 entries
+        Header headerOrg2 = mockRbac("account-2", ORG_WITH_DRAWER_DISABLED, USERNAME, FULL_ACCESS);
+        Page<DrawerEntryPayload> pageOrg2 = getDrawerEntries(headerOrg2, null, null, null,
             null, null, null, null, null, null);
-        assertEquals(0, pageDisabled.getMeta().getCount(), "org-with-drawer-disabled should see 0 drawer notifications");
+        assertEquals(0, pageOrg2.getMeta().getCount(),
+            "Org 2 with drawer disabled should see 0 notifications");
+
+        // Test Org 3: should see only their own notification (Severity.HIGH), proving data isolation
+        Header headerOrg3 = mockRbac("account-3", ANOTHER_ORG_WITH_DRAWER_ENABLED, USERNAME, FULL_ACCESS);
+        Page<DrawerEntryPayload> pageOrg3 = getDrawerEntries(headerOrg3, null, null, null,
+            null, null, null, null, null, null);
+        assertEquals(1, pageOrg3.getMeta().getCount(),
+            "Org 3 should see exactly 1 notification (their own), proving org isolation");
+        assertEquals("IMPORTANT", pageOrg3.getData().get(0).getSeverity(),
+            "Org 3 should see their own event with Severity.IMPORTANT, not Org 1's data");
     }
 }
