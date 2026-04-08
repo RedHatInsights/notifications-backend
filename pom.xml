@@ -80,7 +80,7 @@
 
         <quarkus-logging-cloudwatch.version>6.16.0</quarkus-logging-cloudwatch.version>
         <quarkus-logging-sentry.version>2.3.1</quarkus-logging-sentry.version>
-        <quarkus-mcp-server.version>1.11.0</quarkus-mcp-server.version>
+        <quarkus-mcp-server.version>1.11.1</quarkus-mcp-server.version>
         <quarkus-unleash.version>1.13.0</quarkus-unleash.version>
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
