@@ -41,7 +41,7 @@ public class McpAuthMechanism implements HttpAuthenticationMechanism {
         String path = routingContext.normalizedPath();
 
         for (String anonymousPath : ANONYMOUS_PATHS) {
-            if (path.startsWith(anonymousPath)) {
+            if (path.equals(anonymousPath) || path.startsWith(anonymousPath + "/")) {
                 return Uni.createFrom().item(QuarkusSecurityIdentity.builder()
                         .setPrincipal(() -> "anonymous")
                         .setAnonymous(true)

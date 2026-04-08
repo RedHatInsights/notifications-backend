@@ -32,7 +32,7 @@ The authentication mechanism validates:
 
 All tools require a valid `x-rh-identity` header (enforced by `McpAuthMechanism` at the HTTP level).
 
-#### `serverInfo`
+### `serverInfo`
 
 Returns server status and version information. Does not use identity data.
 
@@ -49,7 +49,7 @@ Returns server status and version information. Does not use identity data.
 }
 ```
 
-#### `whoami`
+### `whoami`
 
 Returns information about the authenticated user from the x-rh-identity header.
 
@@ -67,7 +67,7 @@ Returns information about the authenticated user from the x-rh-identity header.
 ```
 
 **Response:**
-```
+```text
 Authenticated as:
   Organization ID: 12345
   User ID: user-abc-123
@@ -153,7 +153,7 @@ curl -X POST http://localhost:9010/mcp \
 
 ### Components
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │  HCC Gateway                                 │
 │  - OIDC token validation                    │
