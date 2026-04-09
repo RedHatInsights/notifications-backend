@@ -1,1 +1,1 @@
-A scheduled export ({action.context.job_name}) has failed
+A scheduled export ({data.context.job_name}) has failed.
