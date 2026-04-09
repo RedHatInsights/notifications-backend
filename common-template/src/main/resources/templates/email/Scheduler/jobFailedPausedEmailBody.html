@@ -7,7 +7,7 @@
 {/content-title}
 {#content-body}
     <p style="{body-section-p-style}">
-        The <a style="{body-section-underline-link-style}" href="{environment.url}/insights/jobs/{action.context.job_id}" target="_blank">{action.context.job_name}</a> scheduled job has failed and been automatically paused.
+        The <a style="{body-section-underline-link-style}" href="{environment.url}/insights/jobs/{action.context.job_id}?{query_params}" target="_blank">{action.context.job_name}</a> scheduled job has failed and been automatically paused.
     </p>
     {#if action.context.error_message}
     <p style="{body-section-p-style}">
