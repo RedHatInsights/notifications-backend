@@ -1,1 +1,1 @@
-Your PagerDuty integrations will filter notifications soon
+Your PagerDuty integrations will soon filter notifications by severity level
