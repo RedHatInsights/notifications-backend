@@ -1,0 +1,51 @@
+package drawer;
+
+import com.redhat.cloud.notifications.ingress.Action;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
+import helpers.TestHelpers;
+import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import org.junit.jupiter.api.Test;
+
+import static com.redhat.cloud.notifications.qute.templates.mapping.Console.SCHEDULER_EXPORT_COMPLETE;
+import static com.redhat.cloud.notifications.qute.templates.mapping.Console.SCHEDULER_JOB_FAILED;
+import static com.redhat.cloud.notifications.qute.templates.mapping.Console.SCHEDULER_JOB_FAILED_PAUSED;
+import static helpers.SchedulerTestHelpers.createSchedulerExportCompleteAction;
+import static helpers.SchedulerTestHelpers.createSchedulerJobFailedAction;
+import static helpers.SchedulerTestHelpers.createSchedulerJobFailedPausedAction;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@QuarkusTest
+class TestSchedulerTemplate {
+
+    @Inject
+    TestHelpers testHelpers;
+
+    @Test
+    void testRenderedTemplateExportComplete() {
+        Action action = createSchedulerExportCompleteAction();
+        String result = renderTemplate(SCHEDULER_EXPORT_COMPLETE, action);
+        assertEquals("A scheduled export (Test Export Job) has completed.", result);
+    }
+
+    @Test
+    void testRenderedTemplateJobFailed() {
+        Action action = createSchedulerJobFailedAction();
+        String result = renderTemplate(SCHEDULER_JOB_FAILED, action);
+        assertEquals("A scheduled export (Test Failed Job) has failed.", result);
+    }
+
+    @Test
+    void testRenderedTemplateJobFailedPaused() {
+        Action action = createSchedulerJobFailedPausedAction();
+        String result = renderTemplate(SCHEDULER_JOB_FAILED_PAUSED, action);
+        assertTrue(result.contains("A scheduled export (Test Paused Job) has failed and been automatically paused"));
+    }
+
+    String renderTemplate(final String eventType, final Action action) {
+        TemplateDefinition templateConfig = new TemplateDefinition(IntegrationType.DRAWER, "console", "scheduler", eventType);
+        return testHelpers.renderTemplate(templateConfig, action);
+    }
+}
