@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "./static/css/main.462a62f0.css",
-    "main.js": "./static/js/main.e66ff37f.js",
+    "main.css": "./static/css/main.ba21fc03.css",
+    "main.js": "./static/js/main.750f7f2c.js",
     "static/media/RedHatDisplayVF-Italic.woff2": "./static/media/RedHatDisplayVF-Italic.813182e673c38ef5ee4b.woff2",
     "static/media/RedHatTextVF-Italic.woff2": "./static/media/RedHatTextVF-Italic.078865af129336cde269.woff2",
     "static/media/RedHatDisplayVF.woff2": "./static/media/RedHatDisplayVF.18ca482120faaa701d8b.woff2",
@@ -11,11 +11,11 @@
     "static/media/pf-v6-pficon.woff2": "./static/media/pf-v6-pficon.463d4ddeac4dae277fc4.woff2",
     "static/media/redhat-logo.svg": "./static/media/redhat-logo.17523dfc7fe104f77be1a39791c6d7c6.svg",
     "index.html": "./index.html",
-    "main.462a62f0.css.map": "./static/css/main.462a62f0.css.map",
-    "main.e66ff37f.js.map": "./static/js/main.e66ff37f.js.map"
+    "main.ba21fc03.css.map": "./static/css/main.ba21fc03.css.map",
+    "main.750f7f2c.js.map": "./static/js/main.750f7f2c.js.map"
   },
   "entrypoints": [
-    "static/css/main.462a62f0.css",
-    "static/js/main.e66ff37f.js"
+    "static/css/main.ba21fc03.css",
+    "static/js/main.750f7f2c.js"
   ]
 }
