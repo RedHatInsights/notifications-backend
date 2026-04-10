@@ -28,6 +28,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 /**
@@ -324,7 +325,8 @@ public class McpAuthTest {
 
         postMcp(validIdentity(), GET_SEVERITIES_BODY)
                 .statusCode(200)
-                .body("result.content[0].text", containsString("Severities could not be fetched."));
+                .body("error.code", is(-32603))
+                .body("error.message", containsString("Severities could not be fetched"));
         micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
     }
 
