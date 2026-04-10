@@ -107,7 +107,8 @@ public class McpIdentityProvider implements IdentityProvider<McpAuthenticationRe
             identity.getString("org_id"),
             identity.getString("account_number"),
             user != null ? user.getString("user_id") : null,
-            user != null ? user.getString("username") : null
+            user != null ? user.getString("username") : null,
+            xRhIdentityHeader
         );
     }
 }

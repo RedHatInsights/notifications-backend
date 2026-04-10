@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.mcp;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
+import com.redhat.cloud.notifications.MockServerLifecycleManager;
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
@@ -12,6 +14,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
@@ -28,6 +35,7 @@ import static org.hamcrest.Matchers.notNullValue;
  * Note: The MCP Streamable HTTP transport requires Accept: text/event-stream.
  */
 @QuarkusTest
+@QuarkusTestResource(TestLifecycleManager.class)
 public class McpAuthTest {
 
     private static final String MCP_ENDPOINT = "/mcp";
@@ -41,6 +49,7 @@ public class McpAuthTest {
 
     @BeforeEach
     void beforeEach() {
+        MockServerLifecycleManager.getClient().resetAll();
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AUTH_SUCCESS_COUNTER);
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(AUTH_FAILURE_COUNTER, "reason", "missing_header");
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(AUTH_FAILURE_COUNTER, "reason", "missing_org_id");
@@ -102,6 +111,18 @@ public class McpAuthTest {
                 "id": 3,
                 "params": {
                     "name": "whoami",
+                    "arguments": {}
+                }
+            }
+            """;
+
+    private static final String GET_SEVERITIES_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 5,
+                "params": {
+                    "name": "getSeverities",
                     "arguments": {}
                 }
             }
@@ -226,8 +247,8 @@ public class McpAuthTest {
     public void testToolsListWithValidIdentity() {
         postMcp(validIdentity(), TOOLS_LIST_BODY)
                 .statusCode(200)
-                .body("result.tools.size()", greaterThanOrEqualTo(2))
-                .body("result.tools.name", hasItems("serverInfo", "whoami"));
+                .body("result.tools.size()", greaterThanOrEqualTo(3))
+                .body("result.tools.name", hasItems("serverInfo", "whoami", "getSeverities"));
     }
 
     @Test
@@ -258,6 +279,53 @@ public class McpAuthTest {
         String identity = McpTestHelpers.encodeRHServiceAccountIdentityInfo(DEFAULT_ORG_ID, "sa-client-id", "sa-name");
         postMcp(identity, WHOAMI_BODY).statusCode(401);
         micrometerAssertionHelper.assertCounterIncrement(AUTH_FAILURE_COUNTER, 1, "reason", "invalid_header");
+    }
+
+    // --- getSeverities tool tests ---
+
+    @Test
+    public void testGetSeveritiesWithValidIdentity() {
+        String severitiesJson = "[\"CRITICAL\",\"IMPORTANT\",\"MODERATE\",\"LOW\",\"NONE\",\"UNDEFINED\"]";
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v2.0/notifications/severities"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(severitiesJson))
+        );
+
+        postMcp(validIdentity(), GET_SEVERITIES_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("CRITICAL"))
+                .body("result.content[0].text", containsString("IMPORTANT"))
+                .body("result.content[0].text", containsString("MODERATE"))
+                .body("result.content[0].text", containsString("LOW"))
+                .body("result.content[0].text", containsString("NONE"))
+                .body("result.content[0].text", containsString("UNDEFINED"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                getRequestedFor(urlPathEqualTo("/api/notifications/v2.0/notifications/severities"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testGetSeveritiesWithoutIdentityIsRejected() {
+        postMcp(null, GET_SEVERITIES_BODY).statusCode(401);
+    }
+
+    @Test
+    public void testGetSeveritiesWhenBackendReturnsError() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v2.0/notifications/severities"))
+                        .willReturn(aResponse().withStatus(500))
+        );
+
+        postMcp(validIdentity(), GET_SEVERITIES_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("Severities could not be fetched."));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
     }
 
     // --- Health/metrics bypass tests ---

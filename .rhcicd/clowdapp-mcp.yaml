@@ -13,6 +13,8 @@ objects:
   spec:
     envName: ${ENV_NAME}
     featureFlags: true
+    dependencies:
+    - notifications-backend
     deployments:
     - name: service
       minReplicas: ${{MIN_REPLICAS}}
@@ -67,7 +69,17 @@ objects:
           value: ${ENV_NAME}
         - name: QUARKUS_LOG_CLOUDWATCH_SERVICE_ENVIRONMENT
           value: ${ENV_NAME}
+        - name: QUARKUS_REST_CLIENT_NOTIFICATIONS_BACKEND_CONNECT_TIMEOUT
+          value: ${BACKEND_CONNECT_TIMEOUT}
+        - name: QUARKUS_REST_CLIENT_NOTIFICATIONS_BACKEND_READ_TIMEOUT
+          value: ${BACKEND_READ_TIMEOUT}
 parameters:
+- name: BACKEND_CONNECT_TIMEOUT
+  description: Delay in milliseconds before a backend connection attempt is interrupted
+  value: "2000"
+- name: BACKEND_READ_TIMEOUT
+  description: Delay in milliseconds before a backend request is interrupted
+  value: "2000"
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
   value: "false"

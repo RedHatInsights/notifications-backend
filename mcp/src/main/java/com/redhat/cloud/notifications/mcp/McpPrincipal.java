@@ -35,6 +35,10 @@ public class McpPrincipal implements Principal {
         return rhIdentity.type();
     }
 
+    public String getRawHeader() {
+        return rhIdentity.rawHeader();
+    }
+
     public RhIdentity getRhIdentity() {
         return rhIdentity;
     }

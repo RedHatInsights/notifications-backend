@@ -74,6 +74,30 @@ Authenticated as:
   Username: jdoe
 ```
 
+### `getSeverities`
+
+Returns the list of available notification severities. Calls the backend API via HTTP REST client, forwarding the caller's `x-rh-identity` header.
+
+Equivalent REST endpoint: `GET /api/notifications/v2.0/notifications/severities`
+
+**Example:**
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "id": 4,
+  "params": {
+    "name": "getSeverities",
+    "arguments": {}
+  }
+}
+```
+
+**Response:**
+```text
+["CRITICAL","IMPORTANT","MODERATE","LOW","NONE","UNDEFINED"]
+```
+
 ## Testing
 
 ### Running Tests
