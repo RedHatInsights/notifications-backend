@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.mcp;
 
+import io.quarkiverse.mcp.server.JsonRpcErrorCodes;
+import io.quarkiverse.mcp.server.McpException;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkus.logging.Log;
 import io.quarkus.security.identity.SecurityIdentity;
@@ -46,7 +48,7 @@ public class McpServerTools {
             return backendClient.getSeverities(principal.getRawHeader());
         } catch (Exception e) {
             Log.errorf(e, "Failed to fetch severities from backend for org %s, user %s", principal.getOrgId(), principal.getUserId());
-            return "Severities could not be fetched.";
+            throw new McpException("Severities could not be fetched", JsonRpcErrorCodes.INTERNAL_ERROR);
         }
     }
 }
