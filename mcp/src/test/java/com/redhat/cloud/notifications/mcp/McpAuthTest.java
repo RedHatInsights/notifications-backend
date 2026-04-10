@@ -317,7 +317,7 @@ public class McpAuthTest {
     }
 
     @Test
-    public void testGetSeveritiesWhenBackendReturnsError() {
+    public void testGetSeveritiesWhenBackendReturns500() {
         MockServerLifecycleManager.getClient().stubFor(
                 get(urlPathEqualTo("/api/notifications/v2.0/notifications/severities"))
                         .willReturn(aResponse().withStatus(500))
@@ -325,8 +325,36 @@ public class McpAuthTest {
 
         postMcp(validIdentity(), GET_SEVERITIES_BODY)
                 .statusCode(200)
-                .body("error.code", is(-32603))
-                .body("error.message", containsString("Severities could not be fetched"));
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Backend service error, try again later"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    @Test
+    public void testGetSeveritiesWhenBackendReturns403() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v2.0/notifications/severities"))
+                        .willReturn(aResponse().withStatus(403))
+        );
+
+        postMcp(validIdentity(), GET_SEVERITIES_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Access denied"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    @Test
+    public void testGetSeveritiesWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v2.0/notifications/severities"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), GET_SEVERITIES_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
         micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
     }
 
