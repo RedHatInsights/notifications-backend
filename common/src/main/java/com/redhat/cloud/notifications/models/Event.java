@@ -34,18 +34,29 @@ import static java.time.ZoneOffset.UTC;
 @Table(name = "event")
 public class Event {
 
+    public static final String SEVERITY_SORT_EXPRESSION = "CASE e.severity"
+        + " WHEN 'CRITICAL' THEN 0"
+        + " WHEN 'IMPORTANT' THEN 1"
+        + " WHEN 'MODERATE' THEN 2"
+        + " WHEN 'LOW' THEN 3"
+        + " WHEN 'NONE' THEN 4"
+        + " WHEN 'UNDEFINED' THEN 5"
+        + " ELSE 6 END";
+
     private static final Map<String, String> SORT_FIELDS_NORMALIZED = Map.of(
             "bundle", "bundle.displayName",
             "application", "app.displayName",
             "event", "et.displayName",
-            "created", "e.created"
+            "created", "e.created",
+            "severity", SEVERITY_SORT_EXPRESSION
     );
 
     private static final Map<String, String> SORT_FIELDS_DENORMALIZED = Map.of(
             "bundle", "e.bundleDisplayName",
             "application", "e.applicationDisplayName",
             "event", "e.eventTypeDisplayName",
-            "created", "e.created"
+            "created", "e.created",
+            "severity", SEVERITY_SORT_EXPRESSION
     );
 
     public static Map<String, String> getSortFields(boolean useNormalized) {

@@ -1310,6 +1310,18 @@ public class EventResourceTest extends DbIsolatedTest {
         // search with no matching severities
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false, PATH, Set.of(Severity.MODERATE));
         assertEquals(0, page.getMeta().getCount());
+
+        // sort by severity ascending (CRITICAL=0 < IMPORTANT=1 per enum severity order)
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, "severity:asc", false, false);
+        assertEquals(2, page.getMeta().getCount());
+        assertEquals(Severity.CRITICAL, page.getData().get(0).getSeverity());
+        assertEquals(Severity.IMPORTANT, page.getData().get(1).getSeverity());
+
+        // sort by severity descending
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, "severity:desc", false, false);
+        assertEquals(2, page.getMeta().getCount());
+        assertEquals(Severity.IMPORTANT, page.getData().get(0).getSeverity());
+        assertEquals(Severity.CRITICAL, page.getData().get(1).getSeverity());
     }
 
     @ParameterizedTest
