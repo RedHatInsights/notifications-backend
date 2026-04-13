@@ -18,4 +18,6 @@
         The scheduled job has been paused to prevent further failures. Please review and resolve the issue before resuming the scheduled job.
     </p>
 {/content-body}
+{#content-button-href}{environment.url}/insights/jobs/{action.context.job_id}{/content-button-href}
+{#content-button-service-name}Scheduled jobs{/content-button-service-name}
 {/include}

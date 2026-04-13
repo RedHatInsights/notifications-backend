@@ -11,4 +11,6 @@
         <a style="{body-section-underline-link-style}" href="{environment.url}/api/exports/v1/exports/{action.context.export_id}?{query_params}" target="_blank">Download exported data</a>.
     </p>
 {/content-body}
+{#content-button-href}{environment.url}/insights/jobs/{action.context.job_id}{/content-button-href}
+{#content-button-service-name}Scheduled jobs{/content-button-service-name}
 {/include}
