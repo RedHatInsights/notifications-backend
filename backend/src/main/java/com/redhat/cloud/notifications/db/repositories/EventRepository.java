@@ -433,4 +433,21 @@ public class EventRepository {
             .setParameter("limit", limit)
             .executeUpdate();
     }
+
+    @Transactional
+    public int backfillSeverityOrder(int limit) {
+        String backfillQuery = "UPDATE event SET severity_order = CASE severity" +
+            " WHEN 'CRITICAL' THEN 10" +
+            " WHEN 'IMPORTANT' THEN 20" +
+            " WHEN 'MODERATE' THEN 30" +
+            " WHEN 'LOW' THEN 40" +
+            " WHEN 'NONE' THEN 50" +
+            " WHEN 'UNDEFINED' THEN 60" +
+            " ELSE 70" +
+            " END" +
+            " WHERE id IN (SELECT id FROM event WHERE severity_order IS NULL LIMIT :limit)";
+        return entityManager.createNativeQuery(backfillQuery)
+            .setParameter("limit", limit)
+            .executeUpdate();
+    }
 }
