@@ -112,6 +112,9 @@ public class Event {
     @Column(length = 20)
     private Severity severity;
 
+    @Column(name = "severity_order", insertable = false, updatable = false)
+    private Short severityOrder;
+
     @Transient
     private EventWrapper<?, ?> eventWrapper;
 
