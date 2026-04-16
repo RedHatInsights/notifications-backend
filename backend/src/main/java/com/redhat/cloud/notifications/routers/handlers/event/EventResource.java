@@ -157,20 +157,23 @@ public class EventResource {
             if (!includeActions) {
                 actions = Collections.emptyList();
             } else {
-                actions = event.getHistoryEntries().stream().map(historyEntry -> {
-                    EventLogEntryAction action = new EventLogEntryAction();
-                    action.setId(historyEntry.getId());
-                    action.setEndpointId(historyEntry.getEndpointId());
-                    action.setEndpointType(historyEntry.getEndpointType());
-                    action.setEndpointSubType(historyEntry.getEndpointSubType());
-                    action.setInvocationResult(historyEntry.isInvocationResult());
-                    action.setStatus(fromNotificationStatus(historyEntry.getStatus()));
-                    if (includeDetails) {
-                        action.setDetails(historyEntry.getDetails());
-                    }
-                    getRecipientsCount(historyEntry).ifPresent(action::setRecipientsCount);
-                    return action;
-                }).collect(Collectors.toList());
+                boolean drawerEnabled = backendConfig.isDrawerEnabled(orgId);
+                actions = event.getHistoryEntries().stream()
+                    .filter(notificationHistory -> EndpointType.DRAWER != notificationHistory.getEndpointType() || drawerEnabled)
+                    .map(historyEntry -> {
+                        EventLogEntryAction action = new EventLogEntryAction();
+                        action.setId(historyEntry.getId());
+                        action.setEndpointId(historyEntry.getEndpointId());
+                        action.setEndpointType(historyEntry.getEndpointType());
+                        action.setEndpointSubType(historyEntry.getEndpointSubType());
+                        action.setInvocationResult(historyEntry.isInvocationResult());
+                        action.setStatus(fromNotificationStatus(historyEntry.getStatus()));
+                        if (includeDetails) {
+                            action.setDetails(historyEntry.getDetails());
+                        }
+                        getRecipientsCount(historyEntry).ifPresent(action::setRecipientsCount);
+                        return action;
+                    }).collect(Collectors.toList());
             }
 
             EventLogEntry entry = new EventLogEntry();
