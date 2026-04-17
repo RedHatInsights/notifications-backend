@@ -81,6 +81,91 @@ public class EventRepository {
         return eventAuthorizationCriterion;
     }
 
+     /**
+     * Get drawer events that have authorization criteria.
+     * Filters by event type IDs (from subscriptions) and includedInDrawer flag.
+     *
+     * @param orgId Organization ID
+     * @param eventTypeIds Set of event type UUIDs to filter by (from subscription query)
+     * @param startDate Start date filter (optional)
+     * @param endDate End date filter (optional)
+     * @return List of events with their authorization criteria
+     */
+    public List<EventAuthorizationCriterion> getDrawerEventsWithCriterion(String orgId, Set<UUID> eventTypeIds,
+                                                                           LocalDate startDate, LocalDate endDate) { //todo jbonsch refactor later
+
+        boolean useNormalized = backendConfig.isNormalizedQueriesEnabled(orgId);
+        boolean eventTypeIdsNotEmpty = eventTypeIds != null && !eventTypeIds.isEmpty();
+
+        String hql = "FROM Event e ";
+
+        // Add selective JOINs for normalized approach
+        if (useNormalized) {
+            hql += "JOIN FETCH e.eventType et JOIN FETCH et.application app JOIN FETCH app.bundle bundle ";
+        }
+
+        hql += "WHERE e.orgId = :orgId";
+
+        // Filter by includedInDrawer (drawer-specific)
+        if (useNormalized) {
+            hql += " AND et.includedInDrawer = true";
+        } else {
+            hql += " AND e.eventType.includedInDrawer = true";
+        }
+
+        // Filter by event type IDs (from subscription query)
+        if (eventTypeIdsNotEmpty) {
+            if (useNormalized) {
+                hql += " AND et.id IN (:eventTypeIds)";
+            } else {
+                hql += " AND e.eventType.id IN (:eventTypeIds)";
+            }
+        }
+
+        // Date range filtering
+        if (startDate != null && endDate != null) {
+            hql += " AND e.created BETWEEN :startDate AND :endDate";
+        } else if (startDate != null) {
+            hql += " AND e.created >= :startDate";
+        } else if (endDate != null) {
+            hql += " AND e.created <= :endDate";
+        }
+
+        // Drawer only cares about events with auth criterion
+        hql += " AND e.hasAuthorizationCriterion is true";
+
+        TypedQuery<Event> typedQuery = entityManager.createQuery(hql, Event.class);
+        typedQuery.setParameter("orgId", orgId);
+
+        if (eventTypeIdsNotEmpty) {
+            typedQuery.setParameter("eventTypeIds", eventTypeIds);
+        }
+
+        if (startDate != null) {
+            typedQuery.setParameter("startDate", Timestamp.valueOf(startDate.atStartOfDay()));
+        }
+        if (endDate != null) {
+            typedQuery.setParameter("endDate", Timestamp.valueOf(endDate.atTime(LocalTime.MAX)));
+        }
+
+        List<Event> eventsWithAuthorizationCriterion = typedQuery.getResultList();
+
+        // Populate denormalized display name fields from joined entities
+        if (useNormalized && !eventsWithAuthorizationCriterion.isEmpty()) {
+            for (Event event : eventsWithAuthorizationCriterion) {
+                event.setBundleDisplayName(event.getEventType().getApplication().getBundle().getDisplayName());
+                event.setApplicationDisplayName(event.getEventType().getApplication().getDisplayName());
+                event.setEventTypeDisplayName(event.getEventType().getDisplayName());
+            }
+        }
+
+        List<EventAuthorizationCriterion> eventAuthorizationCriterion = new ArrayList<>();
+        for (Event event : eventsWithAuthorizationCriterion) {
+            eventAuthorizationCriterion.add(new EventAuthorizationCriterion(event.getId(), recipientsAuthorizationCriterionExtractor.extract(event)));
+        }
+        return eventAuthorizationCriterion;
+    }
+
     public List<Event> getEvents(String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                       Set<Boolean> invocationResults, boolean fetchNotificationHistory, Set<NotificationStatus> status, Set<Severity> severities, Query query,
@@ -270,6 +355,7 @@ public class EventRepository {
                 hql += " AND LOWER(e.eventTypeDisplayName) LIKE :eventTypeDisplayName";
             }
         }
+
         if (startDate != null && endDate != null) {
             hql += " AND e.created BETWEEN :startDate AND :endDate";
         } else if (startDate != null) {

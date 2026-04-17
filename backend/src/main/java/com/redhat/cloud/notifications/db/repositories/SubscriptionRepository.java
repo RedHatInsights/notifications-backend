@@ -289,4 +289,30 @@ public class SubscriptionRepository {
                     e -> List.of(e[1].toString().split(","))
                 ));
     }
+
+    /**
+     * Get event type IDs that a user has UNSUBSCRIBED from for drawer notifications.
+     * DRAWER subscription type is subscribed-by-default
+     *
+     * @param orgId the organization ID
+     * @param userId the user ID
+     * @return Set of event type IDs the user explicitly unsubscribed from
+     */
+    public Set<UUID> getUnsubscribedDrawerEventTypeIds(String orgId, String userId) {
+        String sql = """
+            SELECT event_type_id
+            FROM email_subscriptions
+            WHERE org_id = :orgId
+              AND user_id = :userId
+              AND subscription_type = 'DRAWER'
+              AND subscribed = false
+            """;
+
+        List<UUID> results = entityManager.createNativeQuery(sql, UUID.class)
+            .setParameter("orgId", orgId)
+            .setParameter("userId", userId)
+            .getResultList();
+
+        return new HashSet<>(results);
+    }
 }
