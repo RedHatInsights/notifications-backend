@@ -11,7 +11,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 
 import static com.redhat.cloud.notifications.connector.drawer.constant.Constants.ADDITIONAL_ERROR_DETAILS;
-import static com.redhat.cloud.notifications.connector.drawer.constant.Constants.RESOLVED_RECIPIENT_LIST;
 
 @ApplicationScoped
 @Alternative
@@ -27,7 +26,6 @@ public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
         if (processedMessageDetails instanceof HandledDrawerMessageDetails processedDrawerMessageDetails) {
             data.put("details", new JsonObject());
 
-            data.getJsonObject("details").put(RESOLVED_RECIPIENT_LIST, processedDrawerMessageDetails.recipientsList);
             data.getJsonObject("details").put(TOTAL_RECIPIENTS_KEY, processedDrawerMessageDetails.recipientsList.size());
         }
         return data;
