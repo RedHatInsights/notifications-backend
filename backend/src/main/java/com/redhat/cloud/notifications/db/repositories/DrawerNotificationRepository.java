@@ -159,14 +159,14 @@ public class DrawerNotificationRepository {
         }
 
         // Add filters
-        hql = addDrawerHqlConditions(hql, useNormalized, bundlesNotEmpty, applicationsNotEmpty, eventTypesNotEmpty, excludeNotEmpty, startDate, endDate, readStatus);
+        hql = addHqlConditions(hql, useNormalized, bundlesNotEmpty, applicationsNotEmpty, eventTypesNotEmpty, excludeNotEmpty, startDate, endDate, readStatus);
 
         if (sort.isPresent()) {
             hql += " " + sort.get().getSortQuery();
         }
 
         TypedQuery<Object[]> typedQuery = entityManager.createQuery(hql, Object[].class);
-        setDrawerQueryParams(typedQuery, orgId, username, subscribedEventTypes, bundleIds, appIds, eventTypeIds, uuidToExclude, startDate, endDate, readStatus);
+        setQueryParams(typedQuery, orgId, username, subscribedEventTypes, bundleIds, appIds, eventTypeIds, uuidToExclude, startDate, endDate);
 
         Query.Limit limit = query.getLimit();
         typedQuery.setMaxResults(limit.getLimit());
@@ -243,82 +243,12 @@ public class DrawerNotificationRepository {
         }
 
         // Add filters (same as getNotifications)
-        hql = addDrawerHqlConditions(hql, useNormalized, bundlesNotEmpty, applicationsNotEmpty, eventTypesNotEmpty, excludeNotEmpty, startDate, endDate, readStatus);
+        hql = addHqlConditions(hql, useNormalized, bundlesNotEmpty, applicationsNotEmpty, eventTypesNotEmpty, excludeNotEmpty, startDate, endDate, readStatus);
 
         TypedQuery<Long> typedQuery = entityManager.createQuery(hql, Long.class);
-        setDrawerQueryParams(typedQuery, orgId, username, subscribedEventTypes, bundleIds, appIds, eventTypeIds, uuidToExclude, startDate, endDate, readStatus);
+        setQueryParams(typedQuery, orgId, username, subscribedEventTypes, bundleIds, appIds, eventTypeIds, uuidToExclude, startDate, endDate);
 
         return typedQuery.getSingleResult();
-    }
-
-    private static String addHqlConditions(String hql, boolean useNormalized,
-                                           boolean bundlesNotEmpty, boolean applicationsNotEmpty, boolean eventTypesNotEmpty,
-                                           LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
-
-        if (startDate != null && endDate != null) {
-            hql += " AND dn.created BETWEEN :startDate AND :endDate";
-        } else if (startDate != null) {
-            hql += " AND dn.created >= :startDate";
-        } else if (endDate != null) {
-            hql += " AND dn.created <= :endDate";
-        }
-
-        if (readStatus != null) {
-            hql += " AND dn.read = :readStatus";
-        }
-
-        if (!useNormalized) {
-            // add org id as criteria on event table to allow usage of
-            // index ix_event_org_id_bundle_id_application_id_event_type_display_nam
-            hql += " AND dn.event.orgId = :orgId";
-        }
-
-        if (eventTypesNotEmpty) {
-            if (useNormalized) {
-                hql += " AND et.id IN (:eventTypeIds)";
-            } else {
-                hql += " AND dn.event.eventType.id IN (:eventTypeIds)";
-            }
-        } else if (applicationsNotEmpty) {
-            if (useNormalized) {
-                hql += " AND app.id IN (:appIds)";
-            } else {
-                hql += " AND dn.event.applicationId IN (:appIds)";
-            }
-        } else if (bundlesNotEmpty) {
-            if (useNormalized) {
-                hql += " AND bundle.id IN (:bundleIds)";
-            } else {
-                hql += " AND dn.event.bundleId IN (:bundleIds)";
-            }
-        }
-
-        return hql;
-    }
-
-    private void setQueryParams(TypedQuery<?> query, String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
-                                LocalDateTime startDate, LocalDateTime endDate, Boolean status) {
-        query.setParameter("orgId", orgId);
-        query.setParameter("userid", username);
-
-        if (eventTypeIds != null && !eventTypeIds.isEmpty()) {
-            query.setParameter("eventTypeIds", eventTypeIds);
-        } else if (appIds != null && !appIds.isEmpty()) {
-            query.setParameter("appIds", appIds);
-        } else if (bundleIds != null && !bundleIds.isEmpty()) {
-            query.setParameter("bundleIds", bundleIds);
-        }
-
-        if (startDate != null) {
-            query.setParameter("startDate", startDate);
-        }
-        if (endDate != null) {
-            query.setParameter("endDate", endDate);
-        }
-
-        if  (status != null) {
-            query.setParameter("readStatus", status);
-        }
     }
 
     private String getOrderBy(Sort sort) {
@@ -329,9 +259,9 @@ public class DrawerNotificationRepository {
         }
     }
 
-    private static String addDrawerHqlConditions(String hql, boolean useNormalized,
-                                                 boolean bundlesNotEmpty, boolean applicationsNotEmpty, boolean eventTypesNotEmpty,
-                                                 boolean excludeNotEmpty, LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
+    private static String addHqlConditions(String hql, boolean useNormalized,
+                                           boolean bundlesNotEmpty, boolean applicationsNotEmpty, boolean eventTypesNotEmpty,
+                                           boolean excludeNotEmpty, LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
 
         // Exclusion list from RBAC check
         if (excludeNotEmpty) {
@@ -380,9 +310,9 @@ public class DrawerNotificationRepository {
         return hql;
     }
 
-    private void setDrawerQueryParams(TypedQuery<?> query, String orgId, String username, Set<UUID> subscribedEventTypes,
-                                      Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
-                                      List<UUID> uuidToExclude, LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
+    private void setQueryParams(TypedQuery<?> query, String orgId, String username, Set<UUID> subscribedEventTypes,
+                                Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
+                                List<UUID> uuidToExclude, LocalDateTime startDate, LocalDateTime endDate) {
         query.setParameter("orgId", orgId);
         query.setParameter("userid", username);
         query.setParameter("subscribedEventTypes", subscribedEventTypes);
