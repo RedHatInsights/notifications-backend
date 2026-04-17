@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
-import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
-import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -30,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
 import static com.redhat.cloud.notifications.transformers.BaseTransformer.APPLICATION;
@@ -47,9 +44,6 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
     ObjectMapper objectMapper;
 
     @Inject
-    DrawerNotificationRepository drawerNotificationRepository;
-
-    @Inject
     EventRepository eventRepository;
 
     @Inject
@@ -60,9 +54,6 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     SubscriptionRepository subscriptionRepository;
-
-    @Inject
-    NotificationHistoryRepository notificationHistoryRepository;
 
     @Inject
     BundleRepository bundleRepository;
@@ -153,19 +144,5 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
             ((Map<String, Object>) dataAsMap.get("data")).get(APPLICATION).toString(),
             ((Map<String, Object>) dataAsMap.get("data")).get(EVENT_TYPE).toString());
         return templateService.renderTemplateWithCustomDataMap(templateDefinition, dataAsMap);
-    }
-
-    public void manageConnectorDrawerReturnsIfNeeded(Map<String, Object> decodedPayload, UUID historyId) {
-        Map<String, Object> details = (HashMap<String, Object>) decodedPayload.get("details");
-        if (null != details && "com.redhat.console.notification.toCamel.drawer".equals(details.get("type"))) {
-            com.redhat.cloud.notifications.models.Event event = notificationHistoryRepository.getEventIdFromHistoryId(historyId);
-            List<String> recipients = (List<String>) details.get("resolved_recipient_list");
-            if (null != recipients && recipients.size() > 0) {
-                String drawerNotificationIds = String.join(",", recipients);
-                drawerNotificationRepository.create(event, drawerNotificationIds);
-                details.remove("resolved_recipient_list");
-                details.put("new_drawer_entry_counter", recipients.size());
-            }
-        }
     }
 }
