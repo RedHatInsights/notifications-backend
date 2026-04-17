@@ -53,4 +53,17 @@ public class EventTypeRepository {
             .setParameter("eventTypeIds", eventTypeIds)
             .getResultList();
     }
+
+    /**
+     * Get all event type IDs where includedInDrawer = true.
+     * Used for drawer subscribe-by-default logic.
+     *
+     * @return Set of event type UUIDs that are included in drawer
+     */
+    public Set<UUID> getEventTypeIdsByIncludedInDrawer() {
+        String query = "SELECT id FROM EventType WHERE includedInDrawer = true";
+        List<UUID> results = entityManager.createQuery(query, UUID.class)
+            .getResultList();
+        return Set.copyOf(results);
+    }
 }
