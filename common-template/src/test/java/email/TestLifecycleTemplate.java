@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static com.redhat.cloud.notifications.qute.templates.mapping.Rhel.RETIRING_LIFECYCLE;
+import static com.redhat.cloud.notifications.qute.templates.mapping.Rhel.RETIRING_LIFECYCLE_REPORT;
 import static helpers.TestHelpers.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -69,13 +69,13 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
     @Test
     public void testRetiringLifecycleEmailTitle() {
         eventTypeDisplayName = "life cycle monthly report";
-        String result = generateEmailSubject(RETIRING_LIFECYCLE, createLifecycleAction());
+        String result = generateEmailSubject(RETIRING_LIFECYCLE_REPORT, createLifecycleAction());
         assertEquals("Instant notification - life cycle monthly report - Life Cycle - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testRetiringLifecycleEmailBody() {
-        String result = generateEmailBody(RETIRING_LIFECYCLE, createLifecycleAction());
+        String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, createLifecycleAction());
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         // Verify RHEL retired data is present
         assertTrue(result.contains("id=\"rhelRetiredCount\">6<"), "Body should contain rhel_versions_count for retired RHEL");
@@ -85,13 +85,13 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testRetiringLifecycleEmailBodyContainsReportDate() {
-        String result = generateEmailBody(RETIRING_LIFECYCLE, createLifecycleAction());
+        String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, createLifecycleAction());
         assertTrue(result.contains("15th Dec 2025"), "Body should contain the report date");
     }
 
     @Test
     public void testRetiringLifecycleEmailBodyContainsAppstreamData() {
-        String result = generateEmailBody(RETIRING_LIFECYCLE, createLifecycleAction());
+        String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, createLifecycleAction());
         // Verify appstream retired data
         assertTrue(result.contains("id=\"rhel8RetiredCount\">2<"), "Body should contain appstream retired count for rhel8");
         assertTrue(result.contains("id=\"rhel9RetiredCount\">2<"), "Body should contain appstream retired count for rhel9");
@@ -121,7 +121,7 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        String result = generateEmailBody(RETIRING_LIFECYCLE, action);
+        String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
         assertTrue(result.contains("id=\"rhelRetiredCount\">3<"), "Body should contain retired rhel_versions_count");
         assertTrue(result.contains("id=\"rhelExpiringCount\">0<"), "Body should contain near retirement rhel_versions_count");
         assertFalse(result.contains("application streams life cycle"), "Body shouldn't contain any appstreams section");
@@ -150,7 +150,7 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        String result = generateEmailBody(RETIRING_LIFECYCLE, action);
+        String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
         assertTrue(result.contains("id=\"rhelRetiredCount\">0<"), "Body should contain retired rhel_versions_count");
         assertTrue(result.contains("id=\"rhelExpiringCount\">2<"), "Body should contain near retirement rhel_versions_count");
         assertFalse(result.contains("application streams life cycle"), "Body shouldn't contain any appstreams section");
@@ -179,7 +179,7 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        String result = generateEmailBody(RETIRING_LIFECYCLE, action);
+        String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
         assertFalse(result.contains("RHEL life cycle"), "Body shouldn't contain 'RHEL life cycle' section");
         assertFalse(result.contains("application streams life cycle"), "Body shouldn't contain any appstreams section");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
@@ -207,7 +207,7 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        String result = generateEmailBody(RETIRING_LIFECYCLE, action);
+        String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
         assertTrue(result.contains("id=\"rhel8RetiredCount\">3<"), "Body should contain appstream retired count for rhel8");
         assertTrue(result.contains("id=\"rhel8ExpiringCount\">0<"), "Body should contain near retirement count for rhel8");
         assertTrue(result.contains("id=\"rhel9RetiredCount\">0<"), "Body should contain appstream retired count for rhel9");
@@ -242,7 +242,7 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        String result = generateEmailBody(RETIRING_LIFECYCLE, action);
+        String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
         // Verify all RHEL versions are present
         assertTrue(result.contains("id=\"rhel8RetiredCount\">5<"), "Body should contain appstream retired count for rhel8");
         assertTrue(result.contains("id=\"rhel9RetiredCount\">3<"), "Body should contain appstream retired count for rhel9");
@@ -278,7 +278,7 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        String result = generateEmailBody(RETIRING_LIFECYCLE, action);
+        String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
         assertFalse(result.contains("RHEL life cycle"), "Body shouldn't contain 'RHEL life cycle' section when systems_count is 0");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
