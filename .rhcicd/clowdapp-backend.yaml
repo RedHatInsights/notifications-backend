@@ -258,7 +258,7 @@ parameters:
   required: true
 - name: IMAGE
   description: Image URL
-  value: quay.io/cloudservices/notifications-backend
+  value: quay.io/redhat-services-prod/hcc-integrations-tenant/notifications/notifications-backend
 - name: IMAGE_TAG
   value: latest
 - name: MEMORY_LIMIT

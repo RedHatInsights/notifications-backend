@@ -124,7 +124,7 @@ parameters:
   required: true
 - name: IMAGE
   description: Image URL
-  value: quay.io/cloudservices/notifications-connector-google-chat
+  value: quay.io/redhat-services-prod/hcc-integrations-tenant/notifications/notifications-connector-google-chat
 - name: IMAGE_TAG
   value: latest
 - name: KAFKA_CLIENT_LOG_LEVEL

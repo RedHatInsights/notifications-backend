@@ -86,7 +86,7 @@ parameters:
   value: "http://localhost:8080"
 - name: IMAGE
   description: Image URL
-  value: quay.io/cloudservices/notifications-aggregator
+  value: quay.io/redhat-services-prod/hcc-integrations-tenant/notifications/notifications-aggregator
 - name: IMAGE_TAG
   value: latest
 - name: MEMORY_LIMIT
