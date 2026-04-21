@@ -56,19 +56,19 @@ public class TestRoadmapTemplate extends EmailTemplatesRendererHelper {
 
     @Override
     protected String getApp() {
-        return "life-cycle";
+        return "roadmap";
     }
 
     @Override
     protected String getAppDisplayName() {
-        return "Life Cycle";
+        return "Roadmap";
     }
 
     @Test
     public void testRoadmapEmailTitle() {
         eventTypeDisplayName = "roadmap monthly report";
         String result = generateEmailSubject(ROADMAP_REPORT, createRoadmapAction());
-        assertEquals("Instant notification - roadmap monthly report - Life Cycle - Red Hat Enterprise Linux", result);
+        assertEquals("Instant notification - roadmap monthly report - Roadmap - Red Hat Enterprise Linux", result);
     }
 
     @Test

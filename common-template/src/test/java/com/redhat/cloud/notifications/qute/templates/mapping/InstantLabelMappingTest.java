@@ -10,7 +10,7 @@ class InstantLabelMappingTest {
 
     @Test
     void retiringLifecycleEventReturnsMonthlyNotification() {
-        InstantTemplateDetails details = InstantLabelMapping.buildInstantNotificationDescription("rhel", "life-cycle", "retiring-lifecycle");
+        InstantTemplateDetails details = InstantLabelMapping.buildInstantNotificationDescription("rhel", "life-cycle", "retiring-lifecycle-monthly-report");
 
         assertEquals("Monthly notification", details.label());
         assertEquals("Monthly summary of triggered application events.", details.description());
