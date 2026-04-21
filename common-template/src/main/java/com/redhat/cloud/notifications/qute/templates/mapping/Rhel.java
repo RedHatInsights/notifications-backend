@@ -111,7 +111,7 @@ public class Rhel {
 
         // Lifecycle
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, LIFECYCLE_APP_NAME, RETIRING_LIFECYCLE_REPORT), LIFECYCLE_FOLDER_NAME + "retiringLifecycleInstantEmailBody.html"),
-        
+
         // Roadmap
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ROADMAP_APP_NAME, ROADMAP), ROADMAP_FOLDER_NAME + "roadmapInstantEmailBody.html"),
 
