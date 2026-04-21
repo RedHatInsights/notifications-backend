@@ -19,7 +19,7 @@ Red Hat Enterprise Linux - Roadmap monthly report - {action.context.roadmap.repo
         sub-section-count-id = 'deprecationsCount'
         sub-section-description = 'Deprecations that could affect your systems'
         sub-section-icon = 'img_incident.png'
-        sub-section-url = 'https://console.redhat.com/insights/planning/roadmap/?viewFilter=relevant&type=Deprecations&addedToRoadmap=lastMonthToDate'
+        sub-section-url = '{environment.url}/insights/planning/roadmap/?viewFilter=relevant&type=Deprecations&addedToRoadmap=lastMonthToDate'
         sub-section-not-the-last = 1
     }
     {#insert content-roadmap-section}{/}
@@ -32,7 +32,7 @@ Red Hat Enterprise Linux - Roadmap monthly report - {action.context.roadmap.repo
         sub-section-count-id = 'changesCount'
         sub-section-description = 'Changes that could affect your systems'
         sub-section-icon = 'img_warning.png'
-        sub-section-url = 'https://console.redhat.com/insights/planning/roadmap/?viewFilter=relevant&type=Changes&addedToRoadmap=lastMonthToDate'
+        sub-section-url = '{environment.url}/insights/planning/roadmap/?viewFilter=relevant&type=Changes&addedToRoadmap=lastMonthToDate'
         sub-section-not-the-last = 1
     }
     {#insert content-roadmap-section}{/}
@@ -45,7 +45,7 @@ Red Hat Enterprise Linux - Roadmap monthly report - {action.context.roadmap.repo
         sub-section-count-id = 'additionsCount'
         sub-section-description = 'Additions &amp; enhancements that could affect your systems'
         sub-section-icon = 'img_info.png'
-        sub-section-url = 'https://console.redhat.com/insights/planning/roadmap/?viewFilter=relevant&type=Addition&addedToRoadmap=lastMonthToDate'
+        sub-section-url = '{environment.url}/insights/planning/roadmap/?viewFilter=relevant&type=Addition&addedToRoadmap=lastMonthToDate'
         sub-section-not-the-last = 0
     }
     {#insert content-roadmap-section}{/}
@@ -55,11 +55,13 @@ Red Hat Enterprise Linux - Roadmap monthly report - {action.context.roadmap.repo
 <p style="font-size: 14px; color: #151515; margin-top: 16px;">
     Your inventory remained fully supported. A value of 0 indicates that no roadmap changes affected your systems this month.
 </p>
-{#else}{#if deprecationsCount == 0 || changesCount == 0 || additionsCount == 0}
-<p style="font-size: 14px; color: #151515; margin-top: 16px;">
-    Certain roadmap changes affected your systems. A value of 0 in any category indicated that no additional changes affected your inventory.
-</p>
-{/if}{/if}
+{#else}
+    {#if deprecationsCount == 0 || changesCount == 0 || additionsCount == 0}
+    <p style="font-size: 14px; color: #151515; margin-top: 16px;">
+        Certain roadmap changes affected your systems. A value of 0 in any category indicated that no additional changes affected your inventory.
+    </p>
+    {/if}
+{/if}
 {/let}
 {/content-body}
 {#content-roadmap-section}

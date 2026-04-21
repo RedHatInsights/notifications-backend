@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static com.redhat.cloud.notifications.qute.templates.mapping.Rhel.ROADMAP;
+import static com.redhat.cloud.notifications.qute.templates.mapping.Rhel.ROADMAP_REPORT;
 import static helpers.TestHelpers.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -67,13 +67,13 @@ public class TestRoadmapTemplate extends EmailTemplatesRendererHelper {
     @Test
     public void testRoadmapEmailTitle() {
         eventTypeDisplayName = "roadmap monthly report";
-        String result = generateEmailSubject(ROADMAP, createRoadmapAction());
+        String result = generateEmailSubject(ROADMAP_REPORT, createRoadmapAction());
         assertEquals("Instant notification - roadmap monthly report - Life Cycle - Red Hat Enterprise Linux", result);
     }
 
     @Test
     public void testRoadmapEmailBody() {
-        String result = generateEmailBody(ROADMAP, createRoadmapAction());
+        String result = generateEmailBody(ROADMAP_REPORT, createRoadmapAction());
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
         assertTrue(result.contains("id=\"deprecationsCount\">5<"), "Body should contain deprecations count");
         assertTrue(result.contains("id=\"changesCount\">3<"), "Body should contain changes count");
@@ -82,7 +82,7 @@ public class TestRoadmapTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testRoadmapEmailBodyContainsReportDate() {
-        String result = generateEmailBody(ROADMAP, createRoadmapAction());
+        String result = generateEmailBody(ROADMAP_REPORT, createRoadmapAction());
         assertTrue(result.contains("1st May 2026"), "Body should contain the report date");
     }
 
@@ -103,7 +103,7 @@ public class TestRoadmapTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        String result = generateEmailBody(ROADMAP, action);
+        String result = generateEmailBody(ROADMAP_REPORT, action);
         assertTrue(result.contains("Your inventory remained fully supported"), "Body should contain 'Your inventory remained fully supported' when all counts are 0");
         assertTrue(result.contains("A value of 0 indicates that no roadmap changes affected your systems this month"), "Body should contain explanation for all zeros");
         assertTrue(result.contains("id=\"deprecationsCount\">0<"), "Body should contain deprecations count 0");
@@ -128,7 +128,7 @@ public class TestRoadmapTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        String result = generateEmailBody(ROADMAP, action);
+        String result = generateEmailBody(ROADMAP_REPORT, action);
         assertTrue(result.contains("Certain roadmap changes affected your systems"), "Body should contain 'Certain roadmap changes affected your systems' when some counts are 0");
         assertTrue(result.contains("A value of 0 in any category indicated that no additional changes affected your inventory"), "Body should contain explanation for some zeros");
         assertTrue(result.contains("id=\"deprecationsCount\">5<"), "Body should contain deprecations count");
@@ -153,7 +153,7 @@ public class TestRoadmapTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        String result = generateEmailBody(ROADMAP, action);
+        String result = generateEmailBody(ROADMAP_REPORT, action);
         assertTrue(result.contains("id=\"deprecationsCount\">7<"), "Body should contain deprecations count");
         assertTrue(result.contains("id=\"changesCount\">0<"), "Body should contain changes count 0");
         assertTrue(result.contains("id=\"additionsCount\">0<"), "Body should contain additions count 0");
@@ -177,7 +177,7 @@ public class TestRoadmapTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        String result = generateEmailBody(ROADMAP, action);
+        String result = generateEmailBody(ROADMAP_REPORT, action);
         assertTrue(result.contains("id=\"deprecationsCount\">0<"), "Body should contain deprecations count 0");
         assertTrue(result.contains("id=\"changesCount\">8<"), "Body should contain changes count");
         assertTrue(result.contains("id=\"additionsCount\">0<"), "Body should contain additions count 0");
@@ -201,7 +201,7 @@ public class TestRoadmapTemplate extends EmailTemplatesRendererHelper {
                 .build()
         ));
 
-        String result = generateEmailBody(ROADMAP, action);
+        String result = generateEmailBody(ROADMAP_REPORT, action);
         assertTrue(result.contains("id=\"deprecationsCount\">0<"), "Body should contain deprecations count 0");
         assertTrue(result.contains("id=\"changesCount\">0<"), "Body should contain changes count 0");
         assertTrue(result.contains("id=\"additionsCount\">10<"), "Body should contain additions count");
@@ -210,7 +210,7 @@ public class TestRoadmapTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testRoadmapEmailBodyContainsAllSectionDescriptions() {
-        String result = generateEmailBody(ROADMAP, createRoadmapAction());
+        String result = generateEmailBody(ROADMAP_REPORT, createRoadmapAction());
         assertTrue(result.contains("Deprecations that could affect your systems"), "Body should contain deprecations description");
         assertTrue(result.contains("Changes that could affect your systems"), "Body should contain changes description");
         assertTrue(result.contains("Additions &amp; enhancements that could affect your systems"), "Body should contain additions description");
