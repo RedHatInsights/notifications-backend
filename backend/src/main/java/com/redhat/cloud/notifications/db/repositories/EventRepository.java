@@ -86,10 +86,8 @@ public class EventRepository {
      * @param endDate End date filter (optional)
      * @return List of events with their authorization criteria
      */
-    public List<EventAuthorizationCriterion> getDrawerEventsWithCriterion(String orgId, Set<UUID> eventTypeIds,
+    public List<EventAuthorizationCriterion> getDrawerEventsWithCriterion(String orgId, boolean useNormalized, Set<UUID> eventTypeIds,
                                                                            LocalDate startDate, LocalDate endDate) {
-
-        boolean useNormalized = backendConfig.isNormalizedQueriesEnabled(orgId);
         boolean eventTypeIdsNotEmpty = eventTypeIds != null && !eventTypeIds.isEmpty();
 
         String hql = "FROM Event e ";

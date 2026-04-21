@@ -106,7 +106,7 @@ public class EventRepositoryDrawerTest extends DbIsolatedTest {
         subscribedEventTypes.add(eventWithoutAuth.getEventType().getId());
 
         List<EventAuthorizationCriterion> result = eventRepository.getDrawerEventsWithCriterion(
-            DEFAULT_ORG_ID, subscribedEventTypes, null, null
+            DEFAULT_ORG_ID, false, subscribedEventTypes, null, null
         );
 
         // Should return ONLY the event with authorization criterion
@@ -128,7 +128,7 @@ public class EventRepositoryDrawerTest extends DbIsolatedTest {
         allEventTypes.add(nonDrawerEvent.getEventType().getId());
 
         List<EventAuthorizationCriterion> result = eventRepository.getDrawerEventsWithCriterion(
-            DEFAULT_ORG_ID, allEventTypes, null, null
+            DEFAULT_ORG_ID, false, allEventTypes, null, null
         );
 
         // Should return ONLY the drawer event
@@ -145,7 +145,7 @@ public class EventRepositoryDrawerTest extends DbIsolatedTest {
         Set<UUID> subscribedEventTypes = Set.of(event1.getEventType().getId());
 
         List<EventAuthorizationCriterion> result = eventRepository.getDrawerEventsWithCriterion(
-            DEFAULT_ORG_ID, subscribedEventTypes, null, null
+            DEFAULT_ORG_ID, false, subscribedEventTypes, null, null
         );
 
         assertEquals(1, result.size(), "Should return only events from subscribed event types");
@@ -178,7 +178,7 @@ public class EventRepositoryDrawerTest extends DbIsolatedTest {
         LocalDate endDate = now.toLocalDate();
 
         List<EventAuthorizationCriterion> result = eventRepository.getDrawerEventsWithCriterion(
-            DEFAULT_ORG_ID, subscribedEventTypes, startDate, endDate
+            DEFAULT_ORG_ID, false, subscribedEventTypes, startDate, endDate
         );
 
         assertEquals(1, result.size(), "Should return only events in date range");
@@ -197,7 +197,7 @@ public class EventRepositoryDrawerTest extends DbIsolatedTest {
 
         // Query for org1
         List<EventAuthorizationCriterion> result = eventRepository.getDrawerEventsWithCriterion(
-            org1, subscribedEventTypes, null, null
+            org1, false, subscribedEventTypes, null, null
         );
 
         assertEquals(1, result.size(), "Should return only events from org1");
@@ -206,13 +206,11 @@ public class EventRepositoryDrawerTest extends DbIsolatedTest {
 
     @Test
     void testGetDrawerEventsWithCriterion_NormalizedQueryPath() {
-        when(backendConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(true);
-
         Event event = createDrawerEventWithAuthCriterion(DEFAULT_ORG_ID);
         Set<UUID> subscribedEventTypes = Set.of(event.getEventType().getId());
 
         List<EventAuthorizationCriterion> result = eventRepository.getDrawerEventsWithCriterion(
-            DEFAULT_ORG_ID, subscribedEventTypes, null, null
+            DEFAULT_ORG_ID, true, subscribedEventTypes, null, null
         );
 
         assertEquals(1, result.size(), "Normalized query path should work");
@@ -230,7 +228,7 @@ public class EventRepositoryDrawerTest extends DbIsolatedTest {
         Set<UUID> subscribedEventTypes = Set.of(event.getEventType().getId());
 
         List<EventAuthorizationCriterion> result = eventRepository.getDrawerEventsWithCriterion(
-            DEFAULT_ORG_ID, subscribedEventTypes, null, null
+            DEFAULT_ORG_ID, false, subscribedEventTypes, null, null
         );
 
         assertEquals(1, result.size());
@@ -255,7 +253,7 @@ public class EventRepositoryDrawerTest extends DbIsolatedTest {
         Set<UUID> nonMatchingEventTypeIds = Set.of(UUID.randomUUID());
 
         List<EventAuthorizationCriterion> result = eventRepository.getDrawerEventsWithCriterion(
-            uniqueOrgId, nonMatchingEventTypeIds, null, null
+            uniqueOrgId, false, nonMatchingEventTypeIds, null, null
         );
 
         assertEquals(0, result.size(), "Should return empty list when no matching events");

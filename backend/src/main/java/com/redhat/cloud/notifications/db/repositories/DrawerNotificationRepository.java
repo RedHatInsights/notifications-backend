@@ -95,7 +95,7 @@ public class DrawerNotificationRepository {
         LocalDate startLocalDate = startDate != null ? startDate.toLocalDate() : null;
         LocalDate endLocalDate = endDate != null ? endDate.toLocalDate() : null;
 
-        List<UUID> uuidToExclude = getExcludedEventIds(securityContext, orgId, subscribedEventTypes, startLocalDate, endLocalDate);
+        List<UUID> uuidToExclude = getExcludedEventIds(securityContext, useNormalized, orgId, subscribedEventTypes, startLocalDate, endLocalDate);
 
         Optional<Sort> sort = Sort.getSort(query, "created:DESC", Event.getSortFields(useNormalized));
 
@@ -135,7 +135,7 @@ public class DrawerNotificationRepository {
         LocalDate startLocalDate = startDate != null ? startDate.toLocalDate() : null;
         LocalDate endLocalDate = endDate != null ? endDate.toLocalDate() : null;
 
-        List<UUID> uuidToExclude = getExcludedEventIds(securityContext, orgId, subscribedEventTypes, startLocalDate, endLocalDate);
+        List<UUID> uuidToExclude = getExcludedEventIds(securityContext, useNormalized, orgId, subscribedEventTypes, startLocalDate, endLocalDate);
 
         boolean bundlesNotEmpty = bundleIds != null && !bundleIds.isEmpty();
         boolean applicationsNotEmpty = appIds != null && !appIds.isEmpty();
@@ -164,7 +164,7 @@ public class DrawerNotificationRepository {
         return subscribedEventTypes;
     }
 
-    private List<UUID> getExcludedEventIds(SecurityContext securityContext, String orgId,
+    private List<UUID> getExcludedEventIds(SecurityContext securityContext, boolean useNormalized, String orgId,
                                           Set<UUID> subscribedEventTypes,
                                           LocalDate startDate, LocalDate endDate) {
         List<UUID> uuidToExclude = new ArrayList<>();
@@ -172,7 +172,7 @@ public class DrawerNotificationRepository {
         if (backendConfig.isKesselChecksOnEventLogEnabled(orgId)) {
             Log.info("Check for drawer events with authorization criterion");
             List<EventAuthorizationCriterion> listEventsAuthCriterion = eventRepository.getDrawerEventsWithCriterion(
-                orgId, subscribedEventTypes, startDate, endDate
+                orgId, useNormalized, subscribedEventTypes, startDate, endDate
             );
 
             Map<Integer, Boolean> criterionResultCache = new HashMap<>();
