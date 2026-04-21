@@ -297,7 +297,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         String instantTemplateId = createInstantTemplate(bundle, application, eventType);
         String aggregationTemplateId = CrudTestHelpers.createAggregationTemplate(bundle, application, applicationRepository, adminRole);
-        resourceHelpers.createDrawerTemplate(bundle, application, eventType);
+        resourceHelpers.createDrawerTemplate("Drawer template settings by event type", bundle, application, eventType);
 
         // Test legacy mode, without any severity available
         updatePoliciesEventTypeAvailableSeverities(Set.of());
@@ -998,7 +998,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         // Setup templates
         createInstantTemplate(bundle, application, eventType);
         CrudTestHelpers.createAggregationTemplate(bundle, application, applicationRepository, adminRole);
-        resourceHelpers.createDrawerTemplate(bundle, application, eventType);
+        resourceHelpers.createDrawerTemplate("Drawer template org specific", bundle, application, eventType);
 
         // Test org-with-drawer-enabled sees DRAWER
         String identityHeaderValueEnabled = TestHelpers.encodeRHIdentityInfo("account-1", ORG_WITH_DRAWER_ENABLED, "user-enabled");

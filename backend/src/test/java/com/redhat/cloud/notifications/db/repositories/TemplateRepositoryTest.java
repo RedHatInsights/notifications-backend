@@ -124,7 +124,7 @@ public class TemplateRepositoryTest extends DbIsolatedTest {
         when(backendConfig.isDefaultTemplateEnabled()).thenReturn(false);
 
         // Create drawer template
-        resourceHelpers.createDrawerTemplate(bundle.getName(), app1.getName(), eventType1.getName());
+        resourceHelpers.createDrawerTemplate("Drawer template subscription support", bundle.getName(), app1.getName(), eventType1.getName());
 
         // Verify drawer supported for org-with-drawer-enabled
         assertTrue(templateRepository.isSubscriptionTypeSupported(

@@ -68,6 +68,10 @@ public class DbCleaner {
         for (Class<?> entity : ENTITIES) {
             entityManager.createQuery("DELETE FROM " + entity.getSimpleName()).executeUpdate();
         }
+        // Delete non-DEFAULT IntegrationTemplates (test-created ones)
+        entityManager.createQuery("DELETE FROM IntegrationTemplate it WHERE it.templateKind IS NULL OR it.templateKind != :default")
+            .setParameter("default", IntegrationTemplate.TemplateKind.DEFAULT).executeUpdate();
+        // Delete Templates not referenced by DEFAULT IntegrationTemplates
         entityManager.createQuery("DELETE FROM Template templ where templ.id not in (select it.theTemplate.id from IntegrationTemplate it where it.templateKind = :default)")
             .setParameter("default", IntegrationTemplate.TemplateKind.DEFAULT).executeUpdate();
         Bundle bundle = new Bundle(DEFAULT_BUNDLE_NAME, DEFAULT_BUNDLE_DISPLAY_NAME);

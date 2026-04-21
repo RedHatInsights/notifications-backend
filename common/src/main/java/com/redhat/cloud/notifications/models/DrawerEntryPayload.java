@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.Severity;
 import jakarta.validation.constraints.NotNull;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -45,7 +46,8 @@ public class DrawerEntryPayload {
         read = (boolean) rawDrawerEntry[1];
         source = String.format("%s - %s", rawDrawerEntry[2], rawDrawerEntry[3]);
         title = (String) rawDrawerEntry[4];
-        created = (LocalDateTime) rawDrawerEntry[5];
+        // Event.created is a Timestamp field, convert to LocalDateTime
+        created = ((Timestamp) rawDrawerEntry[5]).toLocalDateTime();
         description = (String) rawDrawerEntry[6];
         bundle = (String) rawDrawerEntry[7];
         if (rawDrawerEntry[8] instanceof Severity) {
