@@ -10,6 +10,5 @@ CREATE TABLE IF NOT EXISTS drawer_read_status (
         ON DELETE CASCADE
 );
 
--- Index for efficient user queries
-CREATE INDEX IF NOT EXISTS ix_drawer_read_status_org_user
-    ON drawer_read_status (org_id, user_id, read_at DESC);
+CREATE INDEX IF NOT EXISTS ix_drawer_read_status_org_user ON drawer_read_status (org_id, user_id, read_at DESC);
+CREATE INDEX IF NOT EXISTS ix_drawer_read_status_event_id ON drawer_read_status (event_id);
