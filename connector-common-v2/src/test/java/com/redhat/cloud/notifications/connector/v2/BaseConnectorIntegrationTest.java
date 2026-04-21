@@ -208,6 +208,13 @@ public abstract class BaseConnectorIntegrationTest {
     }
 
     /**
+     * Gets the mock server HTTPS URL
+     */
+    protected String getMockServerHttpsUrl() {
+        return MockServerLifecycleManager.getMockServerHttpsUrl();
+    }
+
+    /**
      * Saves current metrics for later comparison
      */
     protected void saveConnectorMetrics() {

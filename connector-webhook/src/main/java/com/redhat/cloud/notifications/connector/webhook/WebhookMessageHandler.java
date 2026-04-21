@@ -23,7 +23,6 @@ import static com.redhat.cloud.notifications.connector.authentication.v2.Authent
 @ApplicationScoped
 public class WebhookMessageHandler extends MessageHandler {
 
-    public static final String JSON_UTF8 = "application/json; charset=utf-8";
     public static final String X_INSIGHT_TOKEN_HEADER = "X-Insight-Token";
 
     @Inject

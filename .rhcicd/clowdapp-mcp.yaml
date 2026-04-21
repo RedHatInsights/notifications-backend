@@ -20,7 +20,8 @@ objects:
       minReplicas: ${{MIN_REPLICAS}}
       webServices:
         public:
-          enabled: false
+          enabled: true
+          apiPath: notifications-mcp
       podSpec:
         image: ${IMAGE}:${IMAGE_TAG}
         resources:

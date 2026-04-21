@@ -25,7 +25,7 @@ public abstract class BaseHttpConnectorIntegrationTest extends BaseConnectorInte
 
     @Override
     protected String getConnectorSpecificTargetUrl() {
-        return useHttps() ? getMockServerUrl().replace("http:", "https:") : getMockServerUrl();
+        return useHttps() ? getMockServerHttpsUrl() : getMockServerUrl();
     }
 
     @Test

@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.Severity;
-import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.models.CompositeEndpointType;
@@ -35,14 +34,10 @@ public class EventRepository {
     @Inject
     RecipientsAuthorizationCriterionExtractor recipientsAuthorizationCriterionExtractor;
 
-    @Inject
-    BackendConfig backendConfig;
-
-    public List<EventAuthorizationCriterion> getEventsWithCriterion(String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+    public List<EventAuthorizationCriterion> getEventsWithCriterion(String orgId, boolean useNormalized, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                                                     LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                                                     Set<Boolean> invocationResults, Set<NotificationStatus> status) {
 
-        boolean useNormalized = backendConfig.isNormalizedQueriesEnabled(orgId);
         boolean bundlesNotEmpty = bundleIds != null && !bundleIds.isEmpty();
         boolean applicationsNotEmpty = appIds != null && !appIds.isEmpty();
         boolean eventTypeNameNotEmpty = eventTypeDisplayName != null;
@@ -166,12 +161,11 @@ public class EventRepository {
         return eventAuthorizationCriterion;
     }
 
-    public List<Event> getEvents(String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+    public List<Event> getEvents(String orgId, boolean useNormalized, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                       Set<Boolean> invocationResults, boolean fetchNotificationHistory, Set<NotificationStatus> status, Set<Severity> severities, Query query,
                                       Optional<List<UUID>> uuidToExclude, boolean includeEventsWithAuthCriterion) {
 
-        boolean useNormalized = backendConfig.isNormalizedQueriesEnabled(orgId);
         Optional<Sort> sort = Sort.getSort(query, "created:DESC", Event.getSortFields(useNormalized));
 
         List<UUID> eventIds = getEventIds(orgId, useNormalized, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, compositeEndpointTypes, invocationResults, status, severities, query, uuidToExclude, includeEventsWithAuthCriterion);
@@ -226,11 +220,10 @@ public class EventRepository {
         return events;
     }
 
-    public Long count(String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+    public Long count(String orgId, boolean useNormalized, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes,
                       Set<CompositeEndpointType> compositeEndpointTypes, Set<Boolean> invocationResults,
                       Set<NotificationStatus> status, Set<Severity> severities, Optional<List<UUID>> uuidToExclude, Boolean includeEventsWithAuthCriterion) {
-        boolean useNormalized = backendConfig.isNormalizedQueriesEnabled(orgId);
 
         // Calculate once for reuse
         boolean bundlesNotEmpty = bundleIds != null && !bundleIds.isEmpty();

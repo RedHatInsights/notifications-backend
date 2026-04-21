@@ -178,7 +178,7 @@ parameters:
 
 - name: IMAGE
   description: Image URL
-  value: quay.io/cloudservices/notifications-connector-email
+  value: quay.io/redhat-services-prod/hcc-integrations-tenant/notifications/notifications-connector-email
 - name: IMAGE_TAG
   value: latest
 

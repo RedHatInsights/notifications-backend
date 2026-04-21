@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.webhook;
+package com.redhat.cloud.notifications.connector.splunk;
 
 import io.quarkus.rest.client.reactive.Url;
 import jakarta.ws.rs.Consumes;
@@ -10,27 +10,14 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import java.time.temporal.ChronoUnit;
 
 import static com.redhat.cloud.notifications.connector.v2.http.CommonHttpConstants.JSON_UTF8;
-import static com.redhat.cloud.notifications.connector.webhook.WebhookMessageHandler.X_INSIGHT_TOKEN_HEADER;
 
 @RegisterRestClient(configKey = "connector-rest-client")
 @Retry(delay = 1, delayUnit = ChronoUnit.SECONDS, maxRetries = 2) // 1 initial + 2 retries = 3 attempts
-public interface WebhookRestClient {
-
+public interface SplunkRestClient {
 
     @POST
     @Consumes(JSON_UTF8)
-    Response postWithInsightToken(@HeaderParam(X_INSIGHT_TOKEN_HEADER) String xInsightTokenHeader,
+    Response post(@HeaderParam("Authorization") String authorization,
                   @Url String url,
-                  String body);
-
-    @POST
-    @Consumes(JSON_UTF8)
-    Response postWithBearer(@HeaderParam("Authorization") String bearer,
-                  @Url String url,
-                  String body);
-
-    @POST
-    @Consumes(JSON_UTF8)
-    Response post(@Url String url,
                   String body);
 }

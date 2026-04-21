@@ -5,7 +5,8 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.redhat.cloud.notifications.Severity;
-
+import com.redhat.cloud.notifications.qute.templates.InstantTemplateDetails;
+import com.redhat.cloud.notifications.qute.templates.mapping.InstantLabelMapping;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -138,9 +139,10 @@ public class SettingsValueByEventTypeJsonForm {
                         field.description =  "Daily summary of triggered application events in 24 hours span.";
                         break;
                     case INSTANT:
-                        field.label = "Instant notification";
-                        field.description = "Immediate email for each triggered application event.";
-                        field.checkedWarning = "Opting into this notification may result in a large number of emails";
+                        InstantTemplateDetails instantTemplateDetails = InstantLabelMapping.buildInstantNotificationDescription(bundleName, applicationName, eventTypeName);
+                        field.label = instantTemplateDetails.label();
+                        field.description = instantTemplateDetails.description();
+                        field.checkedWarning = instantTemplateDetails.checkedWarning();
                         break;
                     case DRAWER:
                         field.label = "Drawer notification";

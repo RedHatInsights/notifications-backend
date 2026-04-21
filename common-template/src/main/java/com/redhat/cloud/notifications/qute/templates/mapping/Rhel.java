@@ -29,6 +29,9 @@ public class Rhel {
     public static final String LIFECYCLE_APP_NAME = "life-cycle";
     public static final String LIFECYCLE_FOLDER_NAME = "Lifecycle/";
 
+    public static final String ROADMAP_APP_NAME = "roadmap";
+    public static final String ROADMAP_FOLDER_NAME = "Roadmap/";
+
     public static final String POLICIES_APP_NAME = "policies";
     public static final String POLICY_FOLDER_NAME = "Policies/";
 
@@ -58,6 +61,9 @@ public class Rhel {
     public static final String PATCH_NEW_ADVISORY = "new-advisory";
 
     public static final String RETIRING_LIFECYCLE = "retiring-lifecycle";
+
+    public static final String ROADMAP_MONTHLY_REPORT = "roadmap-monthly-report";
+
     public static final String POLICIES_POLICY_TRIGGERED = "policy-triggered";
 
     public static final String TASK_EXECUTED_TASK_COMPLETED = "executed-task-completed";

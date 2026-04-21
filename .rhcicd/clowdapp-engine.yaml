@@ -284,7 +284,7 @@ parameters:
   required: true
 - name: IMAGE
   description: Image URL
-  value: quay.io/cloudservices/notifications-engine
+  value: quay.io/redhat-services-prod/hcc-integrations-tenant/notifications/notifications-engine
 - name: IMAGE_TAG
   value: latest
 - name: KAFKA_CONSUMED_TOTAL_CHECKER_ENABLED

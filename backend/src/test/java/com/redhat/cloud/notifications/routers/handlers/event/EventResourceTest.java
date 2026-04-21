@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.routers.handlers.event;
 
 import com.redhat.cloud.notifications.EventPayloadTestHelper;
+import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestHelpers;
@@ -77,6 +78,8 @@ import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.EndpointType.PAGERDUTY;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
+import static com.redhat.cloud.notifications.routers.handlers.event.EventResource.GET_EVENTS_TIMER_NAME;
+import static com.redhat.cloud.notifications.routers.handlers.event.EventResource.NORMALIZED_QUERIES_TAG;
 import static com.redhat.cloud.notifications.routers.handlers.event.EventResource.TOTAL_RECIPIENTS;
 import static com.redhat.cloud.notifications.routers.handlers.event.EventResource.toNotificationStatus;
 import static io.restassured.RestAssured.given;
@@ -127,6 +130,8 @@ public class EventResourceTest extends DbIsolatedTest {
     @Inject
     EntityManager entityManager;
 
+    @Inject
+    MicrometerAssertionHelper micrometerAssertionHelper;
 
     @Inject
     KesselTestHelper kesselTestHelper;
@@ -1305,5 +1310,25 @@ public class EventResourceTest extends DbIsolatedTest {
         // search with no matching severities
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false, PATH, Set.of(Severity.MODERATE));
         assertEquals(0, page.getMeta().getCount());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void shouldIncrementTimerCountForEachGetEventsRequest(boolean useNormalizedQueries) {
+        when(backendConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
+
+        String tagValue = String.valueOf(useNormalizedQueries);
+        micrometerAssertionHelper.saveTimerCountFilteredByTagsBeforeTest(GET_EVENTS_TIMER_NAME, NORMALIZED_QUERIES_TAG, tagValue);
+
+        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        // First request
+        getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false);
+        micrometerAssertionHelper.awaitAndAssertTimerCountFilteredByTagsIncrement(GET_EVENTS_TIMER_NAME, NORMALIZED_QUERIES_TAG, tagValue, 1);
+
+        // Second request to verify increments
+        micrometerAssertionHelper.saveTimerCountFilteredByTagsBeforeTest(GET_EVENTS_TIMER_NAME, NORMALIZED_QUERIES_TAG, tagValue);
+        getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false);
+        micrometerAssertionHelper.awaitAndAssertTimerCountFilteredByTagsIncrement(GET_EVENTS_TIMER_NAME, NORMALIZED_QUERIES_TAG, tagValue, 1);
     }
 }

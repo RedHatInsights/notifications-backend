@@ -7425,9 +7425,9 @@ data:
         "exemplar": false,
         "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-splunk-service\", routeId=\"success\"}[5m]))",
         "instant": false,
-        "legendFormat": "Success",
+        "legendFormat": "Success (old)",
         "range": true,
-        "refId": "Success"
+        "refId": "Success (old)"
        },
        {
         "datasource": {
@@ -7438,9 +7438,9 @@ data:
         "expr": "sum(increase(camel_exchanges_failures_handled_total{service=\"notifications-connector-splunk-service\", routeId=\"splunk\"}[5m]))",
         "hide": false,
         "interval": "",
-        "legendFormat": "Failure",
+        "legendFormat": "Failure (old)",
         "range": true,
-        "refId": "Failure"
+        "refId": "Failure (old)"
        },
        {
         "datasource": {
@@ -7456,6 +7456,32 @@ data:
         "legendFormat": "Retry",
         "range": true,
         "refId": "Retry"
+       },
+       {
+        "datasource": {
+         "uid": "$datasource"
+        },
+        "editorMode": "code",
+        "exemplar": false,
+        "expr": "sum(increase(notifications_connector_messages_succeeded_total{connector=\"splunk\"}[5m]))",
+        "hide": false,
+        "instant": false,
+        "legendFormat": "Success",
+        "range": true,
+        "refId": "Success"
+       },
+       {
+        "datasource": {
+         "type": "prometheus",
+         "uid": "$datasource"
+        },
+        "editorMode": "code",
+        "expr": "sum(increase(notifications_connector_messages_failed_total{connector=\"splunk\"}[5m]))",
+        "hide": false,
+        "interval": "",
+        "legendFormat": "Failure",
+        "range": true,
+        "refId": "Failue"
        }
       ],
       "title": "Splunk",
@@ -10377,7 +10403,7 @@ data:
     "timezone": "",
     "title": "Notifications Dashboard",
     "uid": "KQIVyFuMk",
-    "version": 4
+    "version": 5
    }
 kind: ConfigMap
 metadata:
