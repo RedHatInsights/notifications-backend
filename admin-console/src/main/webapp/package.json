@@ -9,7 +9,7 @@
     "@patternfly/react-code-editor": "6.4.1",
     "@patternfly/react-core": "6.4.1",
     "@patternfly/react-icons": "6.4.0",
-    "@patternfly/react-table": "6.4.1",
+    "@patternfly/react-table": "6.4.3",
     "buffer": "^6.0.3",
     "immer": "11.1.4",
     "monaco-editor": "0.55.1",
