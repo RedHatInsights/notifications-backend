@@ -264,7 +264,7 @@ public class LifecycleITest extends DbIsolatedTest {
 
         // Lets subscribe the user to the email preferences
         CrudTestHelpers.createAggregationTemplate(BUNDLE_NAME, APP_NAME, applicationRepository, adminRole);
-        resourceHelpers.createDrawerTemplate(BUNDLE_NAME, APP_NAME, EVENT_TYPE_NAME);
+        resourceHelpers.createDrawerTemplate("Drawer template lifecycle test", BUNDLE_NAME, APP_NAME, EVENT_TYPE_NAME);
         subscribeUserPreferences(identityHeader, BUNDLE_NAME, APP_NAME);
 
         // Before the notifications split, a Kafka message was sent here.

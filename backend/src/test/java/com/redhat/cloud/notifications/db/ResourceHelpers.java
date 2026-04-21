@@ -514,9 +514,9 @@ public class ResourceHelpers {
     }
 
     @Transactional
-    public String createDrawerTemplate(String bundle, String application, String eventTypeName) {
+    public String createDrawerTemplate(String templateName, String bundle, String application, String eventTypeName) {
         Template drawerTemplate = new Template();
-        drawerTemplate.setName("Drawer template");
+        drawerTemplate.setName(templateName);
         drawerTemplate.setDescription("Drawer description");
         drawerTemplate.setData("test");
         entityManager.persist(drawerTemplate);

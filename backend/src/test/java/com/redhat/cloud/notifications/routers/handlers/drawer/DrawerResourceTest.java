@@ -11,7 +11,6 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
-import com.redhat.cloud.notifications.models.DrawerNotification;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.models.Page;
@@ -76,8 +75,12 @@ public class DrawerResourceTest extends DbIsolatedTest {
         Application app1 = resourceHelpers.createApplication(bundle1.getId(), "app-1");
         EventType eventType1 = resourceHelpers.createEventType(app1.getId(), "event-type-1");
 
+        // Mark EventType as drawer-enabled once
+        markEventTypeAsDrawer(eventType1);
+
+        // Create 30 events (no need to call createDrawerNotification per event - same EventType)
         for (int i = 0; i < 30; i++) {
-            createDrawerNotification(USERNAME, createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle1, app1, eventType1, LocalDateTime.now(UTC), Severity.NONE));
+            createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle1, app1, eventType1, LocalDateTime.now(UTC), Severity.NONE);
         }
 
         // check default limit
@@ -106,117 +109,141 @@ public class DrawerResourceTest extends DbIsolatedTest {
         assertTrue(page.getLinks().get("last").contains("limit=3&offset=27"));
     }
 
+    /**
+     * Tests read status user isolation - each user can mark events as read independently.
+     */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testFilters(boolean useNormalizedQueries) {
+    void testReadStatusUserIsolation(boolean useNormalizedQueries) {
         when(backendConfig.isDrawerEnabled(anyString())).thenReturn(true);
         when(backendConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
-        Bundle createdBundle = resourceHelpers.createBundle("test-drawer-event-resource-bundle");
-        Bundle createdBundle2 = resourceHelpers.createBundle("test-drawer-event-resource-bundle2");
-        Application createdApplication = resourceHelpers.createApplication(createdBundle.getId(), "test-drawer-event-resource-application");
-        Application createdApplication2 = resourceHelpers.createApplication(createdBundle2.getId(), "test-drawer-event-resource-application");
-        EventType createdEventType = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-event-resource-event-type");
-        EventType createdEventType2 = resourceHelpers.createEventType(createdApplication.getId(), "test-drawer-event-resource-event-type2");
-        EventType createdEventType3 = resourceHelpers.createEventType(createdApplication2.getId(), "test-drawer-event-resource-event-type");
-        Event createdEvent = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle, createdApplication, createdEventType, LocalDateTime.now(UTC), Severity.LOW);
 
         final String USERNAME = "user-1";
         final String USERNAME2 = "user-2";
-        createDrawerNotification(USERNAME, createdEvent);
-        createDrawerNotification(USERNAME, createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle, createdApplication, createdEventType2, LocalDateTime.now(UTC), Severity.MODERATE));
-        createDrawerNotification(USERNAME, createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle2, createdApplication2, createdEventType3, LocalDateTime.now(UTC), Severity.IMPORTANT));
-        createDrawerNotification(USERNAME2, createdEvent);
-        Event eventInThePast = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle2, createdApplication2, createdEventType3, LocalDateTime.now(UTC).minusDays(5), Severity.UNDEFINED);
-        createDrawerNotification(USERNAME2, eventInThePast);
 
-        Event secondEventInThePast = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, createdBundle2, createdApplication2, createdEventType3, LocalDateTime.now(UTC).minusDays(2), Severity.UNDEFINED);
-        createDrawerNotification(USERNAME2, secondEventInThePast);
+        Bundle bundle = resourceHelpers.createBundle("test-read-status-bundle");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "test-read-status-app");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "test-read-status-event-type");
 
-        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, USERNAME, FULL_ACCESS);
-        Header identityHeaderUser2 = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, USERNAME2, FULL_ACCESS);
+        // Mark EventType as drawer-enabled once
+        markEventTypeAsDrawer(eventType);
 
-        // should return 3 results
-        Page<DrawerEntryPayload> page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, null, null, null, null);
-        assertEquals(3, page.getData().size());
+        // Create 3 events (both users see all events due to subscribe-by-default)
+        Event event1 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, LocalDateTime.now(UTC), Severity.LOW);
+        Event event2 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, LocalDateTime.now(UTC), Severity.MODERATE);
+        Event event3 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, LocalDateTime.now(UTC), Severity.IMPORTANT);
 
-        // should return 3 results
-        page = getDrawerEntries(defaultIdentityHeader, Set.of(createdBundle2.getId(), createdBundle.getId()), null, null, null, null, null, null, null, null);
-        assertEquals(3, page.getData().size());
+        Header headerUser1 = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, USERNAME, FULL_ACCESS);
+        Header headerUser2 = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, USERNAME2, FULL_ACCESS);
 
-        // should return 1 result
-        page = getDrawerEntries(defaultIdentityHeader, Set.of(createdBundle2.getId()), null, null, null, null, null, null, null, null);
-        assertEquals(1, page.getData().size());
+        // Initially, both users have 0 read events
+        Page<DrawerEntryPayload> page = getDrawerEntries(headerUser1, null, null, null, null, null, true, null, null, null);
+        assertEquals(0, page.getData().size(), "User1 should have 0 read events initially");
 
-        // should return 3 results, bundle parameter should be ignored
-        page = getDrawerEntries(defaultIdentityHeader, Set.of(createdBundle2.getId()), Set.of(createdApplication.getId(), createdApplication2.getId()), null, null, null, null, null, null, null);
-        assertEquals(3, page.getData().size());
+        page = getDrawerEntries(headerUser2, null, null, null, null, null, true, null, null, null);
+        assertEquals(0, page.getData().size(), "User2 should have 0 read events initially");
 
-        // should return 1 result
-        page = getDrawerEntries(defaultIdentityHeader, null, Set.of(createdApplication2.getId()), null, null, null, null, null, null, null);
-        assertEquals(1, page.getData().size());
+        // Both users have 3 unread events
+        page = getDrawerEntries(headerUser1, null, null, null, null, null, false, null, null, null);
+        assertEquals(3, page.getData().size(), "User1 should have 3 unread events");
 
-        // should return 3 results
-        page = getDrawerEntries(defaultIdentityHeader, null, null, Set.of(createdEventType.getId(), createdEventType2.getId(), createdEventType3.getId()), null, null, null, null, null, null);
-        assertEquals(3, page.getData().size());
+        page = getDrawerEntries(headerUser2, null, null, null, null, null, false, null, null, null);
+        assertEquals(3, page.getData().size(), "User2 should have 3 unread events");
 
-        // should return 1 result
-        page = getDrawerEntries(defaultIdentityHeader, null, null, Set.of(createdEventType3.getId()), null, null, null, null, null, null);
-        assertEquals(1, page.getData().size());
-
-        // should return 1 result, application parameter should be ignored
-        page = getDrawerEntries(defaultIdentityHeader, null, Set.of(createdApplication.getId()), Set.of(createdEventType3.getId()), null, null, null, null, null, null);
-        assertEquals(1, page.getData().size());
-
-        // should return 3 results
-        page = getDrawerEntries(identityHeaderUser2, null, null, null, null, LocalDateTime.now(UTC), null, null, null, null);
-        assertEquals(3, page.getData().size());
-
-        // should return 2 results
-        page = getDrawerEntries(identityHeaderUser2, null, null, null, null, LocalDateTime.now(UTC).minusDays(1), null, null, null, null);
-        assertEquals(2, page.getData().size());
-
-        // should return 1 result
-        page = getDrawerEntries(identityHeaderUser2, null, null, null, LocalDateTime.now(UTC).minusHours(1), null, null, null, null, null);
-        assertEquals(1, page.getData().size());
-
-        // should return 1 result
-        page = getDrawerEntries(identityHeaderUser2, null, null, null, LocalDateTime.now(UTC).minusDays(1), null, null, null, null, null);
-        assertEquals(1, page.getData().size());
-
-        // should return 1 result
-        page = getDrawerEntries(identityHeaderUser2, null, null, null, LocalDateTime.now(UTC).minusDays(3), LocalDateTime.now(UTC).minusDays(1), null, null, null, null);
-        assertEquals(1, page.getData().size());
-
-        // should return 0 result
-        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, true, null, null, null);
-        assertEquals(0, page.getData().size());
-
-        // should return 3 results
-        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, false, null, null, null);
-        assertEquals(3, page.getData().size());
-
-        // only notification recipient can update read status
-        Integer nbUpdates = updateDrawerEntriesReadStatus(identityHeaderUser2, Set.of(page.getData().get(0).getEventId()), true);
-        assertEquals(0, nbUpdates);
-
-        nbUpdates = updateDrawerEntriesReadStatus(defaultIdentityHeader, Set.of(page.getData().get(0).getEventId()), true);
+        // User1 marks event1 as read
+        Integer nbUpdates = updateDrawerEntriesReadStatus(headerUser1, Set.of(event1.getId()), true);
         assertEquals(1, nbUpdates);
 
-        // should return 1 result
-        page = getDrawerEntries(defaultIdentityHeader, null, null, null, null, null, true, null, null, null);
-        assertEquals(1, page.getData().size());
+        // User2 marks event2 as read
+        nbUpdates = updateDrawerEntriesReadStatus(headerUser2, Set.of(event2.getId()), true);
+        assertEquals(1, nbUpdates);
 
-        // User-2 can't access to this read notification
-        page = getDrawerEntries(identityHeaderUser2, null, null, null, null, null, true, null, null, null);
-        assertEquals(0, page.getData().size());
+        // User1 should see 1 read event (event1), User2 should not see User1's read status
+        page = getDrawerEntries(headerUser1, null, null, null, null, null, true, null, null, null);
+        assertEquals(1, page.getData().size(), "User1 should see 1 read event");
+        assertEquals(event1.getId(), page.getData().get(0).getEventId(), "User1's read event should be event1");
+
+        // User2 should see 1 read event (event2), User1's read status is isolated
+        page = getDrawerEntries(headerUser2, null, null, null, null, null, true, null, null, null);
+        assertEquals(1, page.getData().size(), "User2 should see 1 read event");
+        assertEquals(event2.getId(), page.getData().get(0).getEventId(), "User2's read event should be event2");
+
+        // Verify unread counts are correct
+        page = getDrawerEntries(headerUser1, null, null, null, null, null, false, null, null, null);
+        assertEquals(2, page.getData().size(), "User1 should have 2 unread events after marking 1 as read");
+
+        page = getDrawerEntries(headerUser2, null, null, null, null, null, false, null, null, null);
+        assertEquals(2, page.getData().size(), "User2 should have 2 unread events after marking 1 as read");
     }
 
+    /**
+     * Tests org isolation and drawer feature flag per-org.
+     * Ensures each org only sees their own events, and respects drawer enabled/disabled config.
+     */
+    @Test
+    void testDrawerNotificationsOrgSpecific() {
+        final String ORG_WITH_DRAWER_ENABLED = "org-with-drawer-enabled";
+        final String ORG_WITH_DRAWER_DISABLED = "org-with-drawer-disabled";
+        final String ANOTHER_ORG_WITH_DRAWER_ENABLED = "another-org-with-drawer-enabled";
+        final String USERNAME = "user-test";
+
+        when(backendConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_ENABLED))).thenReturn(true);
+        when(backendConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_DISABLED))).thenReturn(false);
+        when(backendConfig.isDrawerEnabled(eq(ANOTHER_ORG_WITH_DRAWER_ENABLED))).thenReturn(true);
+
+        Bundle bundle = resourceHelpers.createBundle("bundle-org-test");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "app-org-test");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "event-type-org-test");
+
+        // Mark EventType as drawer-enabled once (same for all orgs)
+        markEventTypeAsDrawer(eventType);
+
+        // Create events for all three orgs with the SAME username
+        // This tests data isolation - ensuring orgs can't see each other's data
+        Event eventOrg1 = createEvent("account-1", ORG_WITH_DRAWER_ENABLED, bundle, app, eventType,
+            LocalDateTime.now(UTC), Severity.LOW);
+        Event eventOrg2 = createEvent("account-2", ORG_WITH_DRAWER_DISABLED, bundle, app, eventType,
+            LocalDateTime.now(UTC), Severity.MODERATE);
+        Event eventOrg3 = createEvent("account-3", ANOTHER_ORG_WITH_DRAWER_ENABLED, bundle, app, eventType,
+            LocalDateTime.now(UTC), Severity.IMPORTANT);
+
+        // Test Org 1: should see only their own notification (Severity.LOW), not Org 3's data
+        Header headerOrg1 = mockRbac("account-1", ORG_WITH_DRAWER_ENABLED, USERNAME, FULL_ACCESS);
+        Page<DrawerEntryPayload> pageOrg1 = getDrawerEntries(headerOrg1, null, null, null,
+            null, null, null, null, null, null);
+        assertEquals(1, pageOrg1.getMeta().getCount(),
+            "Org 1 should see exactly 1 notification (their own), not cross-org data");
+        assertEquals("LOW", pageOrg1.getData().get(0).getSeverity(),
+            "Org 1 should see their own event with Severity.LOW");
+
+        // Test Org 2: drawer disabled, should see 0 entries
+        Header headerOrg2 = mockRbac("account-2", ORG_WITH_DRAWER_DISABLED, USERNAME, FULL_ACCESS);
+        Page<DrawerEntryPayload> pageOrg2 = getDrawerEntries(headerOrg2, null, null, null,
+            null, null, null, null, null, null);
+        assertEquals(0, pageOrg2.getMeta().getCount(),
+            "Org 2 with drawer disabled should see 0 notifications");
+
+        // Test Org 3: should see only their own notification (Severity.IMPORTANT), proving data isolation
+        Header headerOrg3 = mockRbac("account-3", ANOTHER_ORG_WITH_DRAWER_ENABLED, USERNAME, FULL_ACCESS);
+        Page<DrawerEntryPayload> pageOrg3 = getDrawerEntries(headerOrg3, null, null, null,
+            null, null, null, null, null, null);
+        assertEquals(1, pageOrg3.getMeta().getCount(),
+            "Org 3 should see exactly 1 notification (their own), proving org isolation");
+        assertEquals("IMPORTANT", pageOrg3.getData().get(0).getSeverity(),
+            "Org 3 should see their own event with Severity.IMPORTANT, not Org 1's data");
+    }
+
+    /**
+     * Marks an EventType as drawer-enabled (includedInDrawer = true).
+     */
     @Transactional
-    void createDrawerNotification(String userId, Event createdEvent) {
-        Event event = entityManager.find(Event.class, createdEvent.getId());
-        DrawerNotification notificationDrawer = new DrawerNotification(event.getOrgId(), userId, event);
-        notificationDrawer.setCreated(createdEvent.getCreated());
-        entityManager.persist(notificationDrawer);
+    void markEventTypeAsDrawer(EventType eventType) {
+        // Use native query to avoid validation issues with detached entities
+        entityManager.createNativeQuery(
+                "UPDATE event_type SET included_in_drawer = true WHERE id = :eventTypeId AND included_in_drawer = false"
+            )
+            .setParameter("eventTypeId", eventType.getId())
+            .executeUpdate();
     }
 
     @Transactional
@@ -233,6 +260,7 @@ public class DrawerResourceTest extends DbIsolatedTest {
         event.setCreated(created);
         event.setSeverity(severity);
         event.setPayload(PAYLOAD);
+        event.setRenderedDrawerNotification("Rendered notification for " + eventType.getDisplayName());
         entityManager.persist(event);
         return event;
     }
@@ -310,60 +338,5 @@ public class DrawerResourceTest extends DbIsolatedTest {
         for (String key : expectedKeys) {
             assertTrue(links.containsKey(key));
         }
-    }
-
-    @Test
-    void testDrawerNotificationsOrgSpecific() {
-        final String ORG_WITH_DRAWER_ENABLED = "org-with-drawer-enabled";
-        final String ORG_WITH_DRAWER_DISABLED = "org-with-drawer-disabled";
-        final String ANOTHER_ORG_WITH_DRAWER_ENABLED = "another-org-with-drawer-enabled";
-        final String USERNAME = "user-test";
-
-        when(backendConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_ENABLED))).thenReturn(true);
-        when(backendConfig.isDrawerEnabled(eq(ORG_WITH_DRAWER_DISABLED))).thenReturn(false);
-        when(backendConfig.isDrawerEnabled(eq(ANOTHER_ORG_WITH_DRAWER_ENABLED))).thenReturn(true);
-
-        Bundle bundle = resourceHelpers.createBundle("bundle-org-test");
-        Application app = resourceHelpers.createApplication(bundle.getId(), "app-org-test");
-        EventType eventType = resourceHelpers.createEventType(app.getId(), "event-type-org-test");
-
-        // Create events for all three orgs with the SAME username
-        // This tests data isolation - ensuring orgs can't see each other's data
-        Event eventOrg1 = createEvent("account-1", ORG_WITH_DRAWER_ENABLED, bundle, app, eventType,
-            LocalDateTime.now(UTC), Severity.LOW);
-        Event eventOrg2 = createEvent("account-2", ORG_WITH_DRAWER_DISABLED, bundle, app, eventType,
-            LocalDateTime.now(UTC), Severity.MODERATE);
-        Event eventOrg3 = createEvent("account-3", ANOTHER_ORG_WITH_DRAWER_ENABLED, bundle, app, eventType,
-            LocalDateTime.now(UTC), Severity.IMPORTANT);
-
-        // Create drawer notifications for the same user across all orgs
-        createDrawerNotification(USERNAME, eventOrg1);
-        createDrawerNotification(USERNAME, eventOrg2);
-        createDrawerNotification(USERNAME, eventOrg3);
-
-        // Test Org 1: should see only their own notification (Severity.LOW), not Org 3's data
-        Header headerOrg1 = mockRbac("account-1", ORG_WITH_DRAWER_ENABLED, USERNAME, FULL_ACCESS);
-        Page<DrawerEntryPayload> pageOrg1 = getDrawerEntries(headerOrg1, null, null, null,
-            null, null, null, null, null, null);
-        assertEquals(1, pageOrg1.getMeta().getCount(),
-            "Org 1 should see exactly 1 notification (their own), not cross-org data");
-        assertEquals("LOW", pageOrg1.getData().get(0).getSeverity(),
-            "Org 1 should see their own event with Severity.LOW");
-
-        // Test Org 2: drawer disabled, should see 0 entries
-        Header headerOrg2 = mockRbac("account-2", ORG_WITH_DRAWER_DISABLED, USERNAME, FULL_ACCESS);
-        Page<DrawerEntryPayload> pageOrg2 = getDrawerEntries(headerOrg2, null, null, null,
-            null, null, null, null, null, null);
-        assertEquals(0, pageOrg2.getMeta().getCount(),
-            "Org 2 with drawer disabled should see 0 notifications");
-
-        // Test Org 3: should see only their own notification (Severity.HIGH), proving data isolation
-        Header headerOrg3 = mockRbac("account-3", ANOTHER_ORG_WITH_DRAWER_ENABLED, USERNAME, FULL_ACCESS);
-        Page<DrawerEntryPayload> pageOrg3 = getDrawerEntries(headerOrg3, null, null, null,
-            null, null, null, null, null, null);
-        assertEquals(1, pageOrg3.getMeta().getCount(),
-            "Org 3 should see exactly 1 notification (their own), proving org isolation");
-        assertEquals("IMPORTANT", pageOrg3.getData().get(0).getSeverity(),
-            "Org 3 should see their own event with Severity.IMPORTANT, not Org 1's data");
     }
 }

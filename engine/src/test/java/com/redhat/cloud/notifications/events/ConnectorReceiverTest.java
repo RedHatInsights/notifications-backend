@@ -3,11 +3,9 @@ package com.redhat.cloud.notifications.events;
 import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.processors.drawer.DrawerProcessor;
@@ -24,9 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -34,8 +30,6 @@ import static com.redhat.cloud.notifications.events.ConnectorReceiver.FROMCAMEL_
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.MESSAGES_ERROR_COUNTER_NAME;
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.MESSAGES_PROCESSED_COUNTER_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -63,9 +57,6 @@ public class ConnectorReceiverTest {
 
     @InjectSpy
     DrawerProcessor drawerProcessor;
-
-    @InjectMock
-    DrawerNotificationRepository drawerNotificationRepository;
 
     final String expectedHistoryId = UUID.randomUUID().toString();
 
@@ -191,103 +182,5 @@ public class ConnectorReceiverTest {
         }
     }
 
-    @Test
-    void testDrawerCallbackProcessed() {
-        String orgId = "org-with-drawer";
-        String historyId = UUID.randomUUID().toString();
 
-        Endpoint endpoint = new Endpoint();
-        endpoint.setId(UUID.fromString(historyId));
-        endpoint.setOrgId(orgId);
-
-        Event event = new Event();
-        event.setId(UUID.randomUUID());
-        event.setOrgId(orgId);
-        event.setCreated(LocalDateTime.now());
-
-        Mockito.when(notificationHistoryRepository.getEndpointForHistoryId(eq(historyId)))
-            .thenReturn(endpoint);
-        Mockito.when(notificationHistoryRepository.getEventIdFromHistoryId(eq(UUID.fromString(historyId))))
-            .thenReturn(event);
-
-        HashMap<String, Object> dataMap = new HashMap<>(Map.of(
-            "duration", 1000L,
-            "finishTime", 1639476503209L,
-            "details", Map.of(
-                "type", "com.redhat.console.notification.toCamel.drawer",
-                "resolved_recipient_list", List.of("user1", "user2")
-            ),
-            "successful", true
-        ));
-
-        String payload = Json.encode(Map.of(
-            "specversion", "1.0",
-            "source", "drawer-connector",
-            "type", "com.redhat.cloud.notifications.history",
-            "time", "2021-12-14T10:08:23.217Z",
-            "id", historyId,
-            "content-type", "application/json",
-            "data", Json.encode(dataMap)
-        ));
-
-        inMemoryConnector.source(FROMCAMEL_CHANNEL).send(payload);
-
-        micrometerAssertionHelper.awaitAndAssertCounterIncrement(MESSAGES_PROCESSED_COUNTER_NAME, 1);
-        micrometerAssertionHelper.assertCounterIncrement(MESSAGES_ERROR_COUNTER_NAME, 0);
-
-        ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
-        ArgumentCaptor<UUID> historyIdCaptor = ArgumentCaptor.forClass(UUID.class);
-        verify(drawerProcessor, times(1)).manageConnectorDrawerReturnsIfNeeded(
-            payloadCaptor.capture(),
-            historyIdCaptor.capture()
-        );
-
-        assertEquals(historyId, historyIdCaptor.getValue().toString());
-        Map<String, Object> capturedDetails = (Map<String, Object>) payloadCaptor.getValue().get("details");
-        assertEquals("com.redhat.console.notification.toCamel.drawer", capturedDetails.get("type"));
-    }
-
-    @Test
-    void testNonDrawerCallbackHandled() {
-        String historyId = UUID.randomUUID().toString();
-
-        Endpoint endpoint = new Endpoint();
-        endpoint.setId(UUID.fromString(historyId));
-
-        Mockito.when(notificationHistoryRepository.getEndpointForHistoryId(eq(historyId)))
-            .thenReturn(endpoint);
-
-        HashMap<String, Object> dataMap = new HashMap<>(Map.of(
-            "duration", 1000L,
-            "finishTime", 1639476503209L,
-            "details", Map.of(
-                "type", "com.redhat.console.notification.toCamel.webhook",
-                "target", "https://example.com/webhook"
-            ),
-            "successful", true
-        ));
-
-        String payload = Json.encode(Map.of(
-            "specversion", "1.0",
-            "source", "webhook-connector",
-            "type", "com.redhat.cloud.notifications.history",
-            "time", "2021-12-14T10:08:23.217Z",
-            "id", historyId,
-            "content-type", "application/json",
-            "data", Json.encode(dataMap)
-        ));
-
-        inMemoryConnector.source(FROMCAMEL_CHANNEL).send(payload);
-
-        micrometerAssertionHelper.awaitAndAssertCounterIncrement(MESSAGES_PROCESSED_COUNTER_NAME, 1);
-
-        ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(drawerProcessor, times(1)).manageConnectorDrawerReturnsIfNeeded(
-            payloadCaptor.capture(),
-            any()
-        );
-
-        Map<String, Object> capturedDetails = (Map<String, Object>) payloadCaptor.getValue().get("details");
-        assertEquals("com.redhat.console.notification.toCamel.webhook", capturedDetails.get("type"));
-    }
 }

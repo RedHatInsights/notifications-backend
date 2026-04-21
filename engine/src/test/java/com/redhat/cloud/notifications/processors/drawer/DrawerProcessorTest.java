@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.processors.drawer;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -63,9 +62,6 @@ class DrawerProcessorTest {
     @Inject
     DrawerProcessor testee;
 
-    @InjectSpy
-    DrawerNotificationRepository drawerNotificationRepository;
-
     @InjectMock
     ExternalRecipientsResolver externalRecipientsResolver;
 
@@ -98,13 +94,13 @@ class DrawerProcessorTest {
     @Test
     void shouldNotProcessWhenEndpointsAreNull() {
         testee.process(new Event(), null);
-        verify(drawerNotificationRepository, never()).create(any(Event.class), any(String.class));
+        // Test verifies no exception is thrown
     }
 
     @Test
     void shouldNotProcessWhenEndpointsAreEmpty() {
         testee.process(new Event(), List.of());
-        verify(drawerNotificationRepository, never()).create(any(Event.class), any(String.class));
+        // Test verifies no exception is thrown
     }
 
 
@@ -119,7 +115,6 @@ class DrawerProcessorTest {
         when(engineConfig.isDrawerEnabled(anyString())).thenReturn(true);
         testee.process(createdEvent, List.of(endpoint));
 
-        verify(drawerNotificationRepository, never()).create(any(Event.class), any(String.class));
         verify(templateService, never()).renderTemplateWithCustomDataMap(any(TemplateDefinition.class), anyMap());
 
         deleteEvent(createdEvent);
@@ -211,7 +206,6 @@ class DrawerProcessorTest {
         entityManager.createQuery("DELETE FROM EventType WHERE id = :uuid").setParameter("uuid", event.getEventType().getId()).executeUpdate();
         entityManager.createQuery("DELETE FROM Application WHERE id = :uuid").setParameter("uuid", event.getEventType().getApplicationId()).executeUpdate();
         entityManager.createQuery("DELETE FROM Bundle WHERE id = :uuid").setParameter("uuid", event.getEventType().getApplication().getBundleId()).executeUpdate();
-        entityManager.createQuery("DELETE FROM DrawerNotification").executeUpdate();
     }
 
     @Test
@@ -305,7 +299,6 @@ class DrawerProcessorTest {
         entityManager.createQuery("DELETE FROM Bundle WHERE id = :uuid")
             .setParameter("uuid", eventType.getApplication().getBundleId())
             .executeUpdate();
-        entityManager.createQuery("DELETE FROM DrawerNotification").executeUpdate();
     }
 
 }

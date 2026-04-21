@@ -221,4 +221,80 @@ public class SubscriptionRepositoryTest extends DbIsolatedTest {
             String.format("user ID \"%s\" should still have all the lowercase email subscriptions after deleting the mixed case ones", userId.toLowerCase())
         );
     }
+
+    /**
+     * Tests the getUnsubscribedDrawerEventTypeIds method for drawer subscribe-by-default logic.
+     * DRAWER subscription type: user sees all drawer events by default unless explicitly unsubscribed.
+     */
+    @Test
+    void testGetUnsubscribedDrawerEventTypeIds() {
+        String orgId = "test-org";
+        String userId = "test-user";
+
+        // Create drawer event types
+        Bundle bundle = resourceHelpers.createBundle("drawer-bundle");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "drawer-app");
+        EventType drawerEventType1 = resourceHelpers.createEventType(app.getId(), "drawer-event-1");
+        EventType drawerEventType2 = resourceHelpers.createEventType(app.getId(), "drawer-event-2");
+        EventType drawerEventType3 = resourceHelpers.createEventType(app.getId(), "drawer-event-3");
+
+        // Create drawer templates (required for drawer subscriptions)
+        resourceHelpers.createDrawerTemplate("Drawer template 1", bundle.getName(), app.getName(), drawerEventType1.getName());
+        resourceHelpers.createDrawerTemplate("Drawer template 2", bundle.getName(), app.getName(), drawerEventType2.getName());
+        resourceHelpers.createDrawerTemplate("Drawer template 3", bundle.getName(), app.getName(), drawerEventType3.getName());
+
+        // Initially, user has no unsubscriptions
+        Set<java.util.UUID> unsubscribed = subscriptionRepository.getUnsubscribedDrawerEventTypeIds(orgId, userId);
+        Assertions.assertEquals(0, unsubscribed.size(), "User should have no drawer unsubscriptions initially");
+
+        // User unsubscribes from drawerEventType1
+        subscriptionRepository.updateSubscription(orgId, userId, drawerEventType1.getId(), SubscriptionType.DRAWER, false, buildAllSeveritiesUpdateDetails(false));
+
+        unsubscribed = subscriptionRepository.getUnsubscribedDrawerEventTypeIds(orgId, userId);
+        Assertions.assertEquals(1, unsubscribed.size(), "User should have 1 drawer unsubscription");
+        Assertions.assertTrue(unsubscribed.contains(drawerEventType1.getId()), "Unsubscribed set should contain drawerEventType1");
+
+        // User subscribes to drawerEventType2 (explicit subscribe - still subscribed)
+        subscriptionRepository.updateSubscription(orgId, userId, drawerEventType2.getId(), SubscriptionType.DRAWER, true, buildAllSeveritiesUpdateDetails(true));
+
+        unsubscribed = subscriptionRepository.getUnsubscribedDrawerEventTypeIds(orgId, userId);
+        Assertions.assertEquals(1, unsubscribed.size(), "Explicit subscribe should not add to unsubscribed list");
+        Assertions.assertFalse(unsubscribed.contains(drawerEventType2.getId()), "drawerEventType2 should not be in unsubscribed list");
+
+        // User unsubscribes from drawerEventType3
+        subscriptionRepository.updateSubscription(orgId, userId, drawerEventType3.getId(), SubscriptionType.DRAWER, false, buildAllSeveritiesUpdateDetails(false));
+
+        unsubscribed = subscriptionRepository.getUnsubscribedDrawerEventTypeIds(orgId, userId);
+        Assertions.assertEquals(2, unsubscribed.size(), "User should have 2 drawer unsubscriptions");
+        Assertions.assertTrue(unsubscribed.contains(drawerEventType1.getId()), "Should contain drawerEventType1");
+        Assertions.assertTrue(unsubscribed.contains(drawerEventType3.getId()), "Should contain drawerEventType3");
+    }
+
+    /**
+     * Tests org isolation for drawer unsubscriptions.
+     */
+    @Test
+    void testGetUnsubscribedDrawerEventTypeIds_OrgIsolation() {
+        String org1 = "org1";
+        String org2 = "org2";
+        String userId = "test-user";
+
+        Bundle bundle = resourceHelpers.createBundle("drawer-bundle-isolation");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "drawer-app-isolation");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "drawer-event-isolation");
+
+        // Create drawer template (required for drawer subscriptions)
+        resourceHelpers.createDrawerTemplate("Drawer template org isolation", bundle.getName(), app.getName(), eventType.getName());
+
+        // User in org1 unsubscribes
+        subscriptionRepository.updateSubscription(org1, userId, eventType.getId(), SubscriptionType.DRAWER, false, buildAllSeveritiesUpdateDetails(false));
+
+        // Verify org1 has the unsubscription
+        Set<java.util.UUID> org1Unsubscribed = subscriptionRepository.getUnsubscribedDrawerEventTypeIds(org1, userId);
+        Assertions.assertEquals(1, org1Unsubscribed.size());
+
+        // Verify org2 does NOT have the unsubscription (org isolation)
+        Set<java.util.UUID> org2Unsubscribed = subscriptionRepository.getUnsubscribedDrawerEventTypeIds(org2, userId);
+        Assertions.assertEquals(0, org2Unsubscribed.size(), "Org2 should not see org1's unsubscriptions");
+    }
 }
