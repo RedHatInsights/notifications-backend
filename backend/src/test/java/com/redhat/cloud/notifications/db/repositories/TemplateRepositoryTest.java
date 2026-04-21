@@ -101,7 +101,7 @@ public class TemplateRepositoryTest extends DbIsolatedTest {
 
         // bundle / app-1 / event-type-1
         assertEquals(app1Instant, templateRepository.isSubscriptionTypeSupported(eventType1.getId(), INSTANT, DEFAULT_ORG_ID));
-        assertEquals(false, templateRepository.isSubscriptionTypeSupported(eventType2.getId(), INSTANT, DEFAULT_ORG_ID));
+        assertFalse(templateRepository.isSubscriptionTypeSupported(eventType2.getId(), INSTANT, DEFAULT_ORG_ID));
         assertEquals(app1Daily, templateRepository.isSubscriptionTypeSupported(eventType1.getId(), DAILY, DEFAULT_ORG_ID));
         assertEquals(app1Daily, templateRepository.isSubscriptionTypeSupported(eventType2.getId(), DAILY, DEFAULT_ORG_ID));
 

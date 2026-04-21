@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.EventPayloadTestHelper;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.auth.kessel.KesselCheckClient;
-import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -20,7 +19,6 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.handlers.event.EventAuthorizationCriterion;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -46,7 +44,6 @@ import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_FALSE;
 
 /**
  * Tests for EventRepository.getDrawerEventsWithCriterion() method.
- *
  * This method is used by DrawerNotificationRepository to fetch events that have
  * authorization criteria for Kessel RBAC checks.
  */
@@ -54,13 +51,9 @@ import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_FALSE;
 public class EventRepositoryDrawerTest extends DbIsolatedTest {
 
     private static final String DEFAULT_ORG_ID = "test-org-123";
-    private static final String DEFAULT_USER = "test-user";
 
     @Inject
     EventRepository eventRepository;
-
-    @Inject
-    EventTypeRepository eventTypeRepository;
 
     @Inject
     EntityManager entityManager;
@@ -85,9 +78,6 @@ public class EventRepositoryDrawerTest extends DbIsolatedTest {
      */
     @InjectMock
     WorkspaceUtils workspaceUtils;
-
-    @InjectSpy
-    KesselInventoryAuthorization kesselAuthorization;
 
     @BeforeEach
     void setUp() {
