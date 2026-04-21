@@ -50,15 +50,9 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
     @InjectMock
     BackendConfig backendConfig;
 
-    @Inject
-    EventTypeRepository eventTypeRepository;
-
-    @Inject
-    SubscriptionRepository subscriptionRepository;
-
     private SecurityContext securityContext;
-    private String orgId = "test-org-123";
-    private String username = "test-user";
+    private final String orgId = "test-org-123";
+    private final String username = "test-user";
 
     @BeforeEach
     void setup() {

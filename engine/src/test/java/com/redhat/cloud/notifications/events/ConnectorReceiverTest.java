@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.db.repositories.NotificationHistoryReposit
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.NotificationHistory;
 import com.redhat.cloud.notifications.models.NotificationStatus;
-import com.redhat.cloud.notifications.processors.drawer.DrawerProcessor;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -54,9 +53,6 @@ public class ConnectorReceiverTest {
 
     @InjectSpy
     EndpointRepository endpointRepository;
-
-    @InjectSpy
-    DrawerProcessor drawerProcessor;
 
     final String expectedHistoryId = UUID.randomUUID().toString();
 

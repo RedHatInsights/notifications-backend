@@ -55,7 +55,11 @@ public class DrawerResource {
     @GET
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve drawer notifications entries.", description =
-            "Allowed `sort_by` fields are `bundleIds`, `applicationIds`, `eventTypeIds`, `startTime`, `endTime` and `read`. The ordering can be optionally specified by appending `:asc` or `:desc` to the field, e.g. `bundle:desc`. Defaults to `desc` for the `created` field and to `asc` for all other fields."
+            "Retrieve paginated drawer notifications with optional filtering and sorting. " +
+            "Available filters: `bundleIds`, `appIds`, `eventTypeIds`, `startDate`, `endDate`, `readStatus`. " +
+            "Allowed `sort_by` fields: `bundle`, `application`, `event`, `created`. " +
+            "Sorting can be specified by appending `:asc` or `:desc` to the field, e.g. `bundle:desc`. " +
+            "Defaults to `created:desc`."
     )
     @Parameter(
         name = "limit",

@@ -83,86 +83,32 @@ public class DrawerNotificationRepository {
     }
 
     public List<DrawerEntryPayload> getNotifications(SecurityContext securityContext, String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
-                                              LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus, Query query) { //todo jbonsch understand
+                                              LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus, Query query) {
 
         boolean useNormalized = backendConfig.isNormalizedQueriesEnabled(orgId);
+        Set<UUID> subscribedEventTypes = GetSubscribedEventTypes(orgId, username);
 
-        // Step 1: Get all drawer event type IDs
-        Set<UUID> allDrawerEventTypes = eventTypeRepository.getEventTypeIdsByIncludedInDrawer();
-
-        // Step 2: Get user's unsubscriptions (DRAWER is subscribe-by-default)
-        Set<UUID> unsubscribedEventTypes = subscriptionRepository.getUnsubscribedDrawerEventTypeIds(orgId, username);
-
-        // Step 3: Calculate subscribed event types (all - unsubscribed)
-        Set<UUID> subscribedEventTypes = new HashSet<>(allDrawerEventTypes);
-        subscribedEventTypes.removeAll(unsubscribedEventTypes);
-
-        // If user unsubscribed from everything, return empty
         if (subscribedEventTypes.isEmpty()) {
             return new ArrayList<>();
         }
 
-        // Step 4: Convert LocalDateTime to LocalDate (EventRepository convention)
         LocalDate startLocalDate = startDate != null ? startDate.toLocalDate() : null;
         LocalDate endLocalDate = endDate != null ? endDate.toLocalDate() : null;
 
-        // Step 5: Get events with authorization criteria (copy event log RBAC pattern)
-        List<UUID> uuidToExclude = new ArrayList<>();
-        if (backendConfig.isKesselChecksOnEventLogEnabled(orgId)) {
-            Log.info("Check for drawer events with authorization criterion");
-            List<EventAuthorizationCriterion> listEventsAuthCriterion = eventRepository.getDrawerEventsWithCriterion(
-                orgId, subscribedEventTypes, startLocalDate, endLocalDate
-            );
+        List<UUID> uuidToExclude = getExcludedEventIds(securityContext, orgId, subscribedEventTypes, startLocalDate, endLocalDate);
 
-            // Step 6: Check Kessel authorization with caching (by criterion hashCode)
-            Map<Integer, Boolean> criterionResultCache = new HashMap<>();
-            for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
-                int criterionHashCode = eventAuthorizationCriterion.authorizationCriterion().hashCode();
-                if (!criterionResultCache.containsKey(criterionHashCode)) {
-                    criterionResultCache.put(criterionHashCode, kesselInventoryAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
-                }
-                if (!criterionResultCache.get(criterionHashCode)) {
-                    Log.infof("%s is not visible for current user", eventAuthorizationCriterion.id());
-                    uuidToExclude.add(eventAuthorizationCriterion.id());
-                }
-            }
-        }
-
-        // Step 7: Query full events with read status (LEFT JOIN on drawer_read_status)
         Optional<Sort> sort = Sort.getSort(query, "created:DESC", Event.getSortFields(useNormalized));
 
-        // Calculate filter flags
         boolean bundlesNotEmpty = bundleIds != null && !bundleIds.isEmpty();
         boolean applicationsNotEmpty = appIds != null && !appIds.isEmpty();
         boolean eventTypesNotEmpty = eventTypeIds != null && !eventTypeIds.isEmpty();
         boolean excludeNotEmpty = !uuidToExclude.isEmpty();
 
-        String hql;
-        if (useNormalized) {
-            hql = "SELECT e.id, " +
-                "CASE WHEN drs.readAt IS NOT NULL THEN true ELSE false END, " +
-                "bundle.displayName, app.displayName, et.displayName, e.created, e.renderedDrawerNotification, bundle.name, e.severity " +
-                "FROM Event e " +
-                "JOIN e.eventType et " +
-                "JOIN et.application app " +
-                "JOIN app.bundle bundle " +
-                "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.orgId = :orgId AND drs.id.userId = :userid " +
-                "WHERE e.orgId = :orgId AND et.includedInDrawer = true AND et.id IN (:subscribedEventTypes)";
-        } else {
-            hql = "SELECT e.id, " +
-                "CASE WHEN drs.readAt IS NOT NULL THEN true ELSE false END, " +
-                "e.bundleDisplayName, e.applicationDisplayName, e.eventTypeDisplayName, e.created, e.renderedDrawerNotification, bundle.name, e.severity " +
-                "FROM Event e " +
-                "JOIN Bundle bundle ON e.bundleId = bundle.id " +
-                "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.orgId = :orgId AND drs.id.userId = :userid " +
-                "WHERE e.orgId = :orgId AND e.eventType.includedInDrawer = true AND e.eventType.id IN (:subscribedEventTypes)";
-        }
-
-        // Add filters
+        String hql = buildBaseHql(useNormalized, false);
         hql = addHqlConditions(hql, useNormalized, bundlesNotEmpty, applicationsNotEmpty, eventTypesNotEmpty, excludeNotEmpty, startDate, endDate, readStatus);
 
         if (sort.isPresent()) {
-            hql += " " + sort.get().getSortQuery();
+            hql += getOrderBy(sort.get());
         }
 
         TypedQuery<Object[]> typedQuery = entityManager.createQuery(hql, Object[].class);
@@ -177,72 +123,26 @@ public class DrawerNotificationRepository {
     }
 
     public Long count(SecurityContext securityContext, String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
-                      LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) { // todo jbonsch understand
+                      LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
+
         boolean useNormalized = backendConfig.isNormalizedQueriesEnabled(orgId);
+        Set<UUID> subscribedEventTypes = GetSubscribedEventTypes(orgId, username);
 
-        // Step 1: Get all drawer event type IDs
-        Set<UUID> allDrawerEventTypes = eventTypeRepository.getEventTypeIdsByIncludedInDrawer();
-
-        // Step 2: Get user's unsubscriptions (DRAWER is subscribe-by-default)
-        Set<UUID> unsubscribedEventTypes = subscriptionRepository.getUnsubscribedDrawerEventTypeIds(orgId, username);
-
-        // Step 3: Calculate subscribed event types (all - unsubscribed)
-        Set<UUID> subscribedEventTypes = new HashSet<>(allDrawerEventTypes);
-        subscribedEventTypes.removeAll(unsubscribedEventTypes);
-
-        // If user unsubscribed from everything, return 0
         if (subscribedEventTypes.isEmpty()) {
             return 0L;
         }
 
-        // Step 4: Convert LocalDateTime to LocalDate (EventRepository convention)
         LocalDate startLocalDate = startDate != null ? startDate.toLocalDate() : null;
         LocalDate endLocalDate = endDate != null ? endDate.toLocalDate() : null;
 
-        // Step 5: Get events with authorization criteria (copy event log RBAC pattern)
-        List<UUID> uuidToExclude = new ArrayList<>();
-        if (backendConfig.isKesselChecksOnEventLogEnabled(orgId)) {
-            Log.info("Check for drawer events with authorization criterion (count)");
-            List<EventAuthorizationCriterion> listEventsAuthCriterion = eventRepository.getDrawerEventsWithCriterion(
-                orgId, subscribedEventTypes, startLocalDate, endLocalDate
-            );
+        List<UUID> uuidToExclude = getExcludedEventIds(securityContext, orgId, subscribedEventTypes, startLocalDate, endLocalDate);
 
-            // Step 6: Check Kessel authorization with caching (by criterion hashCode)
-            Map<Integer, Boolean> criterionResultCache = new HashMap<>();
-            for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
-                int criterionHashCode = eventAuthorizationCriterion.authorizationCriterion().hashCode();
-                if (!criterionResultCache.containsKey(criterionHashCode)) {
-                    criterionResultCache.put(criterionHashCode, kesselInventoryAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
-                }
-                if (!criterionResultCache.get(criterionHashCode)) {
-                    Log.infof("%s is not visible for current user (count)", eventAuthorizationCriterion.id());
-                    uuidToExclude.add(eventAuthorizationCriterion.id());
-                }
-            }
-        }
-
-        // Step 7: Count events with same filters as getNotifications()
         boolean bundlesNotEmpty = bundleIds != null && !bundleIds.isEmpty();
         boolean applicationsNotEmpty = appIds != null && !appIds.isEmpty();
         boolean eventTypesNotEmpty = eventTypeIds != null && !eventTypeIds.isEmpty();
         boolean excludeNotEmpty = !uuidToExclude.isEmpty();
 
-        String hql;
-        if (useNormalized) {
-            hql = "SELECT COUNT(e.id) FROM Event e " +
-                "JOIN e.eventType et " +
-                "JOIN et.application app " +
-                "JOIN app.bundle bundle " +
-                "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.orgId = :orgId AND drs.id.userId = :userid " +
-                "WHERE e.orgId = :orgId AND et.includedInDrawer = true AND et.id IN (:subscribedEventTypes)";
-        } else {
-            hql = "SELECT COUNT(e.id) FROM Event e " +
-                "JOIN Bundle bundle ON e.bundleId = bundle.id " +
-                "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.orgId = :orgId AND drs.id.userId = :userid " +
-                "WHERE e.orgId = :orgId AND e.eventType.includedInDrawer = true AND e.eventType.id IN (:subscribedEventTypes)";
-        }
-
-        // Add filters (same as getNotifications)
+        String hql = buildBaseHql(useNormalized, true);
         hql = addHqlConditions(hql, useNormalized, bundlesNotEmpty, applicationsNotEmpty, eventTypesNotEmpty, excludeNotEmpty, startDate, endDate, readStatus);
 
         TypedQuery<Long> typedQuery = entityManager.createQuery(hql, Long.class);
@@ -251,9 +151,88 @@ public class DrawerNotificationRepository {
         return typedQuery.getSingleResult();
     }
 
+    private Set<UUID> GetSubscribedEventTypes(String orgId, String username) {
+        // Get all drawer event type IDs
+        Set<UUID> allDrawerEventTypes = eventTypeRepository.getEventTypeIdsByIncludedInDrawer();
+
+        // Get user's unsubscriptions (DRAWER is subscribe-by-default)
+        Set<UUID> unsubscribedEventTypes = subscriptionRepository.getUnsubscribedDrawerEventTypeIds(orgId, username);
+
+        // Calculate subscribed event types (all - unsubscribed)
+        Set<UUID> subscribedEventTypes = new HashSet<>(allDrawerEventTypes);
+        subscribedEventTypes.removeAll(unsubscribedEventTypes);
+        return subscribedEventTypes;
+    }
+
+    private List<UUID> getExcludedEventIds(SecurityContext securityContext, String orgId,
+                                          Set<UUID> subscribedEventTypes,
+                                          LocalDate startDate, LocalDate endDate) {
+        List<UUID> uuidToExclude = new ArrayList<>();
+
+        if (backendConfig.isKesselChecksOnEventLogEnabled(orgId)) {
+            Log.info("Check for drawer events with authorization criterion");
+            List<EventAuthorizationCriterion> listEventsAuthCriterion = eventRepository.getDrawerEventsWithCriterion(
+                orgId, subscribedEventTypes, startDate, endDate
+            );
+
+            Map<Integer, Boolean> criterionResultCache = new HashMap<>();
+            for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
+                int criterionHashCode = eventAuthorizationCriterion.authorizationCriterion().hashCode();
+                if (!criterionResultCache.containsKey(criterionHashCode)) {
+                    criterionResultCache.put(criterionHashCode,
+                        kesselInventoryAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
+                }
+                if (!criterionResultCache.get(criterionHashCode)) {
+                    Log.infof("%s is not visible for current user", eventAuthorizationCriterion.id());
+                    uuidToExclude.add(eventAuthorizationCriterion.id());
+                }
+            }
+        }
+
+        return uuidToExclude;
+    }
+
+    private String buildBaseHql(boolean useNormalized, boolean isCountQuery) {
+        if (isCountQuery) {
+            if (useNormalized) {
+                return "SELECT COUNT(e.id) FROM Event e " +
+                    "JOIN e.eventType et " +
+                    "JOIN et.application app " +
+                    "JOIN app.bundle bundle " +
+                    "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.orgId = :orgId AND drs.id.userId = :userid " +
+                    "WHERE e.orgId = :orgId AND et.includedInDrawer = true AND et.id IN (:subscribedEventTypes)";
+            } else {
+                return "SELECT COUNT(e.id) FROM Event e " +
+                    "JOIN Bundle bundle ON e.bundleId = bundle.id " +
+                    "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.orgId = :orgId AND drs.id.userId = :userid " +
+                    "WHERE e.orgId = :orgId AND e.eventType.includedInDrawer = true AND e.eventType.id IN (:subscribedEventTypes)";
+            }
+        } else {
+            if (useNormalized) {
+                return "SELECT e.id, " +
+                    "CASE WHEN drs.readAt IS NOT NULL THEN true ELSE false END, " +
+                    "bundle.displayName, app.displayName, et.displayName, e.created, e.renderedDrawerNotification, bundle.name, e.severity " +
+                    "FROM Event e " +
+                    "JOIN e.eventType et " +
+                    "JOIN et.application app " +
+                    "JOIN app.bundle bundle " +
+                    "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.orgId = :orgId AND drs.id.userId = :userid " +
+                    "WHERE e.orgId = :orgId AND et.includedInDrawer = true AND et.id IN (:subscribedEventTypes)";
+            } else {
+                return "SELECT e.id, " +
+                    "CASE WHEN drs.readAt IS NOT NULL THEN true ELSE false END, " +
+                    "e.bundleDisplayName, e.applicationDisplayName, e.eventTypeDisplayName, e.created, e.renderedDrawerNotification, bundle.name, e.severity " +
+                    "FROM Event e " +
+                    "JOIN Bundle bundle ON e.bundleId = bundle.id " +
+                    "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.orgId = :orgId AND drs.id.userId = :userid " +
+                    "WHERE e.orgId = :orgId AND e.eventType.includedInDrawer = true AND e.eventType.id IN (:subscribedEventTypes)";
+            }
+        }
+    }
+
     private String getOrderBy(Sort sort) {
-        if (!sort.getSortColumn().equals("dn.created")) {
-            return " " + sort.getSortQuery() + ", dn.created DESC";
+        if (!sort.getSortColumn().equals("e.created")) {
+            return " " + sort.getSortQuery() + ", e.created DESC";
         } else {
             return " " + sort.getSortQuery();
         }
@@ -262,7 +241,6 @@ public class DrawerNotificationRepository {
     private static String addHqlConditions(String hql, boolean useNormalized,
                                            boolean bundlesNotEmpty, boolean applicationsNotEmpty, boolean eventTypesNotEmpty,
                                            boolean excludeNotEmpty, LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
-
         // Exclusion list from RBAC check
         if (excludeNotEmpty) {
             hql += " AND e.id NOT IN (:uuidToExclude)";
@@ -313,6 +291,7 @@ public class DrawerNotificationRepository {
     private void setQueryParams(TypedQuery<?> query, String orgId, String username, Set<UUID> subscribedEventTypes,
                                 Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
                                 List<UUID> uuidToExclude, LocalDateTime startDate, LocalDateTime endDate) {
+        //readStatus is handled in SQL via IS NULL / IS NOT NULL, not as a parameter
         query.setParameter("orgId", orgId);
         query.setParameter("userid", username);
         query.setParameter("subscribedEventTypes", subscribedEventTypes);
@@ -335,8 +314,6 @@ public class DrawerNotificationRepository {
         if (endDate != null) {
             query.setParameter("endDate", endDate);
         }
-
-        // Note: readStatus is handled in SQL via IS NULL / IS NOT NULL, not as a parameter
     }
 
     @Transactional

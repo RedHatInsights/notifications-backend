@@ -92,7 +92,7 @@ public class EventRepository {
      * @return List of events with their authorization criteria
      */
     public List<EventAuthorizationCriterion> getDrawerEventsWithCriterion(String orgId, Set<UUID> eventTypeIds,
-                                                                           LocalDate startDate, LocalDate endDate) { //todo jbonsch refactor later
+                                                                           LocalDate startDate, LocalDate endDate) {
 
         boolean useNormalized = backendConfig.isNormalizedQueriesEnabled(orgId);
         boolean eventTypeIdsNotEmpty = eventTypeIds != null && !eventTypeIds.isEmpty();
