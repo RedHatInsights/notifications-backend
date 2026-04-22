@@ -6,7 +6,7 @@
   "proxy": "http://localhost:8085/internal",
   "dependencies": {
     "@babel/core": "^7.18.6",
-    "@patternfly/react-code-editor": "6.4.1",
+    "@patternfly/react-code-editor": "6.4.3",
     "@patternfly/react-core": "6.4.1",
     "@patternfly/react-icons": "6.4.0",
     "@patternfly/react-table": "6.4.1",
