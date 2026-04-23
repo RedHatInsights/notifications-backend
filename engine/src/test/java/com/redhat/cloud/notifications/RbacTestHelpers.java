@@ -60,7 +60,7 @@ public class RbacTestHelpers {
 
     private static class TestRole {
         public String name;
-        public UUID uuid = UUID.randomUUID();
+        public UUID uuid = UUID.fromString("90d52d8b-614d-40f6-b073-1a88ee575f75");
 
         TestRole(String name) {
             this.name = name;

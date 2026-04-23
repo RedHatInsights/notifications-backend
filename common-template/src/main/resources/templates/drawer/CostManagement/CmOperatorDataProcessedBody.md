@@ -1,1 +1,1 @@
-Cost Management has completed processing for OpenShift source **{data.context.source_name}**.
+Cost Management has completed processing for OpenShift source **[{data.context.source_name}]({environment.url}/openshift/cost-management)**.
