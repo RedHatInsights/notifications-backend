@@ -14,7 +14,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.core.SecurityContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -50,13 +48,11 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
     @InjectMock
     BackendConfig backendConfig;
 
-    private SecurityContext securityContext;
     private final String orgId = "test-org-123";
     private final String username = "test-user";
 
     @BeforeEach
     void setup() {
-        securityContext = mock(SecurityContext.class);
         // Default: drawer enabled, normalized queries disabled, Kessel disabled
         when(backendConfig.isDrawerEnabled(anyString())).thenReturn(true);
         when(backendConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(false);
@@ -172,7 +168,7 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         Event nonDrawerEvent = createNonDrawerEvent(orgId, "bundle1", "app1", "event-type-2");
 
         List<DrawerEntryPayload> result = drawerNotificationRepository.getNotifications(
-            securityContext, orgId, username, null, null, null, null, null, null, new Query()
+            orgId, username, null, null, null, null, null, null, new Query(), null
         );
 
         assertEquals(1, result.size(), "Should return only drawer events");
@@ -186,7 +182,7 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         markAsRead(readEvent.getId(), orgId, username);
 
         List<DrawerEntryPayload> result = drawerNotificationRepository.getNotifications(
-            securityContext, orgId, username, null, null, null, null, null, false, new Query()
+            orgId, username, null, null, null, null, null, false, new Query(), null
         );
 
         assertEquals(1, result.size(), "Should return only unread events");
@@ -201,7 +197,7 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         markAsRead(readEvent.getId(), orgId, username);
 
         List<DrawerEntryPayload> result = drawerNotificationRepository.getNotifications(
-            securityContext, orgId, username, null, null, null, null, null, true, new Query()
+            orgId, username, null, null, null, null, null, true, new Query(), null
         );
 
         assertEquals(1, result.size(), "Should return only read events");
@@ -215,7 +211,7 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         unsubscribeFromEventType(orgId, username, eventType.getId());
 
         List<DrawerEntryPayload> result = drawerNotificationRepository.getNotifications(
-            securityContext, orgId, username, null, null, null, null, null, null, new Query()
+            orgId, username, null, null, null, null, null, null, new Query(), null
         );
 
         assertEquals(0, result.size(), "Should return empty when user unsubscribed from all drawer event types");
@@ -232,7 +228,7 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         setQueryField(query, "offset", 0);
 
         List<DrawerEntryPayload> page1 = drawerNotificationRepository.getNotifications(
-            securityContext, orgId, username, null, null, null, null, null, null, query
+            orgId, username, null, null, null, null, null, null, query, null
         );
 
         assertEquals(10, page1.size(), "First page should have 10 results");
@@ -240,7 +236,7 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         setQueryField(query, "pageSize", 10);
         setQueryField(query, "offset", 10);
         List<DrawerEntryPayload> page2 = drawerNotificationRepository.getNotifications(
-            securityContext, orgId, username, null, null, null, null, null, null, query
+            orgId, username, null, null, null, null, null, null, query, null
         );
 
         assertEquals(10, page2.size(), "Second page should have 10 results");
@@ -256,8 +252,8 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         Event recentEvent = createDrawerEventAtTime(orgId, "bundle1", "app1", "event-type-1", now.minusHours(1));
 
         List<DrawerEntryPayload> result = drawerNotificationRepository.getNotifications(
-            securityContext, orgId, username, null, null, null,
-            now.minusDays(2), now, null, new Query()
+            orgId, username, null, null, null,
+            now.minusDays(2), now, null, new Query(), null
         );
 
         assertEquals(1, result.size(), "Should return only events in date range");
@@ -273,8 +269,8 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         Event event2 = createDrawerEventInBundle(orgId, bundle2);
 
         List<DrawerEntryPayload> result = drawerNotificationRepository.getNotifications(
-            securityContext, orgId, username, Set.of(bundle1.getId()), null, null,
-            null, null, null, new Query()
+            orgId, username, Set.of(bundle1.getId()), null, null,
+            null, null, null, new Query(), null
         );
 
         assertEquals(1, result.size(), "Should return only events from bundle1");
@@ -290,7 +286,7 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         Event event2 = createDrawerEvent(org2, "bundle1", "app1", "event-type-1");
 
         List<DrawerEntryPayload> result = drawerNotificationRepository.getNotifications(
-            securityContext, org1, username, null, null, null, null, null, null, new Query()
+            org1, username, null, null, null, null, null, null, new Query(), null
         );
 
         assertEquals(1, result.size(), "Should return only events from org1");
@@ -304,7 +300,7 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         Event event = createDrawerEvent(orgId, "bundle1", "app1", "event-type-1");
 
         List<DrawerEntryPayload> result = drawerNotificationRepository.getNotifications(
-            securityContext, orgId, username, null, null, null, null, null, null, new Query()
+            orgId, username, null, null, null, null, null, null, new Query(), null
         );
 
         assertEquals(1, result.size(), "Normalized query path should return results");
@@ -318,12 +314,12 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         }
 
         Long count = drawerNotificationRepository.count(
-            securityContext, orgId, username, null, null, null, null, null, null
+            orgId, username, null, null, null, null, null, null, null
         );
 
         List<DrawerEntryPayload> all = drawerNotificationRepository.getNotifications(
-            securityContext, orgId, username, null, null, null, null, null, null,
-            createUnlimitedQuery()
+            orgId, username, null, null, null, null, null, null,
+            createUnlimitedQuery(), null
         );
 
         assertEquals(count, (long) all.size(), "count() should match getNotifications() size");
@@ -337,12 +333,12 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         markAsRead(readEvent.getId(), orgId, username);
 
         Long unreadCount = drawerNotificationRepository.count(
-            securityContext, orgId, username, null, null, null, null, null, false
+            orgId, username, null, null, null, null, null, false, null
         );
         assertEquals(2L, unreadCount, "Should count 2 unread events");
 
         Long readCount = drawerNotificationRepository.count(
-            securityContext, orgId, username, null, null, null, null, null, true
+            orgId, username, null, null, null, null, null, true, null
         );
         assertEquals(1L, readCount, "Should count 1 read event");
     }
@@ -353,7 +349,7 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         unsubscribeFromEventType(orgId, username, eventType.getId());
 
         Long count = drawerNotificationRepository.count(
-            securityContext, orgId, username, null, null, null, null, null, null
+            orgId, username, null, null, null, null, null, null, null
         );
 
         assertEquals(0L, count, "Should return 0 when user unsubscribed from all");
@@ -438,7 +434,7 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
     @Transactional
     void markAsRead(UUID eventId, String orgId, String userId) {
         entityManager.createNativeQuery(
-                "INSERT INTO drawer_read_status (org_id, user_id, event_id, read_at) VALUES (:orgId, :userId, :eventId, NOW())"
+                "INSERT INTO drawer_read_status (org_id, user_id, event_id) VALUES (:orgId, :userId, :eventId)"
             )
             .setParameter("orgId", orgId)
             .setParameter("userId", userId)

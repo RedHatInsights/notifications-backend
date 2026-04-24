@@ -1,9 +1,12 @@
 package com.redhat.cloud.notifications.routers.handlers.drawer;
 
+import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.repositories.DrawerNotificationRepository;
+import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
+import com.redhat.cloud.notifications.routers.handlers.event.EventAuthorizationCriterion;
 import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
 import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
@@ -29,6 +32,7 @@ import org.jboss.resteasy.reactive.RestQuery;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +55,12 @@ public class DrawerResource {
 
     @Inject
     BackendConfig backendConfig;
+
+    @Inject
+    EventRepository eventRepository;
+
+    @Inject
+    KesselInventoryAuthorization kesselInventoryAuthorization;
 
     @GET
     @Produces(APPLICATION_JSON)
@@ -79,9 +89,20 @@ public class DrawerResource {
         List<DrawerEntryPayload> drawerEntries = new ArrayList<>();
         Long count = 0L;
         if (backendConfig.isDrawerEnabled(orgId)) {
-            count = drawerRepository.count(securityContext, orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus);
+
+            List<UUID> excludedEventIds = computeExcludedEventIds(
+                securityContext, orgId, username, startDate, endDate
+            );
+
+            count = drawerRepository.count(
+                orgId, username, bundleIds, appIds, eventTypeIds,
+                startDate, endDate, readStatus, excludedEventIds
+            );
             if (count > 0) {
-                drawerEntries = drawerRepository.getNotifications(securityContext, orgId, username, bundleIds, appIds, eventTypeIds, startDate, endDate, readStatus, query);
+                drawerEntries = drawerRepository.getNotifications(
+                    orgId, username, bundleIds, appIds, eventTypeIds,
+                    startDate, endDate, readStatus, query, excludedEventIds
+                );
             }
         }
         LocalDateTime now = LocalDateTime.now();
@@ -111,5 +132,51 @@ public class DrawerResource {
         String orgId = getOrgId(securityContext);
         String username = getUsername(securityContext);
         return drawerRepository.updateReadStatus(orgId, username, drawerStatus.getNotificationIds(), drawerStatus.getReadStatus());
+    }
+
+    /**
+     * Compute excluded event IDs based on authorization checks.
+     */
+    private List<UUID> computeExcludedEventIds(SecurityContext securityContext,
+                                               String orgId,
+                                               String username,
+                                               LocalDateTime startDate,
+                                               LocalDateTime endDate) {
+        List<UUID> uuidToExclude = new ArrayList<>();
+
+        if (!backendConfig.isKesselChecksOnEventLogEnabled(orgId)) {
+            return uuidToExclude;
+        }
+
+        boolean useNormalized = backendConfig.isNormalizedQueriesEnabled(orgId);
+        Set<UUID> subscribedEventTypes = drawerRepository.getSubscribedEventTypes(orgId, username);
+
+        if (subscribedEventTypes.isEmpty()) {
+            return uuidToExclude;
+        }
+
+        Log.info("Check for drawer events with authorization criterion");
+        List<EventAuthorizationCriterion> listEventsAuthCriterion =
+            eventRepository.getDrawerEventsWithCriterion(
+                orgId, useNormalized, subscribedEventTypes, startDate, endDate
+            );
+
+        Map<Integer, Boolean> criterionResultCache = new HashMap<>();
+        for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
+            int criterionHashCode = eventAuthorizationCriterion.authorizationCriterion().hashCode();
+            if (!criterionResultCache.containsKey(criterionHashCode)) {
+                criterionResultCache.put(criterionHashCode,
+                    kesselInventoryAuthorization.hasPermissionOnResource(
+                        securityContext,
+                        eventAuthorizationCriterion.authorizationCriterion()
+                    ));
+            }
+            if (!criterionResultCache.get(criterionHashCode)) {
+                Log.infof("%s is not visible for current user", eventAuthorizationCriterion.id());
+                uuidToExclude.add(eventAuthorizationCriterion.id());
+            }
+        }
+
+        return uuidToExclude;
     }
 }

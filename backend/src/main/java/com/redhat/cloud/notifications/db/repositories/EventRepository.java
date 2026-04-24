@@ -17,6 +17,7 @@ import jakarta.transaction.Transactional;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,7 +88,7 @@ public class EventRepository {
      * @return List of events with their authorization criteria
      */
     public List<EventAuthorizationCriterion> getDrawerEventsWithCriterion(String orgId, boolean useNormalized, Set<UUID> eventTypeIds,
-                                                                           LocalDate startDate, LocalDate endDate) {
+                                                                           LocalDateTime startDate, LocalDateTime endDate) {
         boolean eventTypeIdsNotEmpty = eventTypeIds != null && !eventTypeIds.isEmpty();
 
         String hql = "FROM Event e ";
@@ -135,22 +136,13 @@ public class EventRepository {
         }
 
         if (startDate != null) {
-            typedQuery.setParameter("startDate", Timestamp.valueOf(startDate.atStartOfDay()));
+            typedQuery.setParameter("startDate", Timestamp.valueOf(startDate.toLocalDate().atStartOfDay()));
         }
         if (endDate != null) {
-            typedQuery.setParameter("endDate", Timestamp.valueOf(endDate.atTime(LocalTime.MAX)));
+            typedQuery.setParameter("endDate", Timestamp.valueOf(endDate.toLocalDate().atTime(LocalTime.MAX)));
         }
 
         List<Event> eventsWithAuthorizationCriterion = typedQuery.getResultList();
-
-        // Populate denormalized display name fields from joined entities
-        if (useNormalized && !eventsWithAuthorizationCriterion.isEmpty()) {
-            for (Event event : eventsWithAuthorizationCriterion) {
-                event.setBundleDisplayName(event.getEventType().getApplication().getBundle().getDisplayName());
-                event.setApplicationDisplayName(event.getEventType().getApplication().getDisplayName());
-                event.setEventTypeDisplayName(event.getEventType().getDisplayName());
-            }
-        }
 
         List<EventAuthorizationCriterion> eventAuthorizationCriterion = new ArrayList<>();
         for (Event event : eventsWithAuthorizationCriterion) {

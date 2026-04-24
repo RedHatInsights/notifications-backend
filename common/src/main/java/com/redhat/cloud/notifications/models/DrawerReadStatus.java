@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -9,9 +8,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotNull;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
@@ -34,16 +31,11 @@ public class DrawerReadStatus {
     @JoinColumn(name = "event_id")
     private Event event;
 
-    @NotNull
-    @Column(name = "read_at")
-    private LocalDateTime readAt;
-
     public DrawerReadStatus() {
     }
 
-    public DrawerReadStatus(String orgId, String userId, UUID eventId, LocalDateTime readAt) {
+    public DrawerReadStatus(String orgId, String userId, UUID eventId) {
         this.id = new DrawerReadStatusId(orgId, userId, eventId);
-        this.readAt = readAt;
     }
 
     public DrawerReadStatusId getId() {
@@ -60,13 +52,5 @@ public class DrawerReadStatus {
 
     public void setEvent(Event event) {
         this.event = event;
-    }
-
-    public LocalDateTime getReadAt() {
-        return readAt;
-    }
-
-    public void setReadAt(LocalDateTime readAt) {
-        this.readAt = readAt;
     }
 }

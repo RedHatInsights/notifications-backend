@@ -1,27 +1,19 @@
 package com.redhat.cloud.notifications.db.repositories;
 
-import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
-import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.db.Sort;
 import com.redhat.cloud.notifications.models.DrawerEntryPayload;
 import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.routers.handlers.event.EventAuthorizationCriterion;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.core.SecurityContext;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -34,19 +26,10 @@ public class DrawerNotificationRepository {
     EntityManager entityManager;
 
     @Inject
-    BackendConfig backendConfig;
-
-    @Inject
-    EventRepository eventRepository;
-
-    @Inject
     EventTypeRepository eventTypeRepository;
 
     @Inject
     SubscriptionRepository subscriptionRepository;
-
-    @Inject
-    KesselInventoryAuthorization kesselInventoryAuthorization;
 
     @Transactional
     public Integer updateReadStatus(String orgId, String username, Set<UUID> notificationIds, Boolean readStatus) {
@@ -54,8 +37,8 @@ public class DrawerNotificationRepository {
             // Mark as read: INSERT into drawer_read_status
             // Use unnest to insert multiple rows from the Set<UUID>
             String insertSql = """
-                INSERT INTO drawer_read_status (org_id, user_id, event_id, read_at)
-                SELECT :orgId, :userId, event_id, NOW()
+                INSERT INTO drawer_read_status (org_id, user_id, event_id)
+                SELECT :orgId, :userId, event_id
                 FROM unnest(CAST(:notificationIds AS uuid[])) AS event_id
                 ON CONFLICT (org_id, user_id, event_id) DO NOTHING
                 """;
@@ -82,37 +65,31 @@ public class DrawerNotificationRepository {
         }
     }
 
-    public List<DrawerEntryPayload> getNotifications(SecurityContext securityContext, String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
-                                              LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus, Query query) {
+    public List<DrawerEntryPayload> getNotifications(String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
+                                              LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus, Query query, List<UUID> excludedEventIds) {
 
-        boolean useNormalized = backendConfig.isNormalizedQueriesEnabled(orgId);
-        Set<UUID> subscribedEventTypes = GetSubscribedEventTypes(orgId, username);
+        Set<UUID> subscribedEventTypes = getSubscribedEventTypes(orgId, username);
 
         if (subscribedEventTypes.isEmpty()) {
             return new ArrayList<>();
         }
 
-        LocalDate startLocalDate = startDate != null ? startDate.toLocalDate() : null;
-        LocalDate endLocalDate = endDate != null ? endDate.toLocalDate() : null;
-
-        List<UUID> uuidToExclude = getExcludedEventIds(securityContext, useNormalized, orgId, subscribedEventTypes, startLocalDate, endLocalDate);
-
-        Optional<Sort> sort = Sort.getSort(query, "created:DESC", Event.getSortFields(useNormalized));
+        Optional<Sort> sort = Sort.getSort(query, "created:DESC", Event.getSortFields(true));
 
         boolean bundlesNotEmpty = bundleIds != null && !bundleIds.isEmpty();
         boolean applicationsNotEmpty = appIds != null && !appIds.isEmpty();
         boolean eventTypesNotEmpty = eventTypeIds != null && !eventTypeIds.isEmpty();
-        boolean excludeNotEmpty = !uuidToExclude.isEmpty();
+        boolean excludeNotEmpty = excludedEventIds != null && !excludedEventIds.isEmpty();
 
-        String hql = buildBaseHql(useNormalized, false);
-        hql = addHqlConditions(hql, useNormalized, bundlesNotEmpty, applicationsNotEmpty, eventTypesNotEmpty, excludeNotEmpty, startDate, endDate, readStatus);
+        String hql = buildBaseHql(false);
+        hql = addHqlConditions(hql, bundlesNotEmpty, applicationsNotEmpty, eventTypesNotEmpty, excludeNotEmpty, startDate, endDate, readStatus);
 
         if (sort.isPresent()) {
             hql += getOrderBy(sort.get());
         }
 
         TypedQuery<Object[]> typedQuery = entityManager.createQuery(hql, Object[].class);
-        setQueryParams(typedQuery, orgId, username, subscribedEventTypes, bundleIds, appIds, eventTypeIds, uuidToExclude, startDate, endDate);
+        setQueryParams(typedQuery, orgId, username, subscribedEventTypes, bundleIds, appIds, eventTypeIds, excludedEventIds, startDate, endDate);
 
         Query.Limit limit = query.getLimit();
         typedQuery.setMaxResults(limit.getLimit());
@@ -122,36 +99,30 @@ public class DrawerNotificationRepository {
         return results.stream().map(DrawerEntryPayload::new).collect(Collectors.toList());
     }
 
-    public Long count(SecurityContext securityContext, String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
-                      LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
+    public Long count(String orgId, String username, Set<UUID> bundleIds, Set<UUID> appIds, Set<UUID> eventTypeIds,
+                      LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus, List<UUID> excludedEventIds) {
 
-        boolean useNormalized = backendConfig.isNormalizedQueriesEnabled(orgId);
-        Set<UUID> subscribedEventTypes = GetSubscribedEventTypes(orgId, username);
+        Set<UUID> subscribedEventTypes = getSubscribedEventTypes(orgId, username);
 
         if (subscribedEventTypes.isEmpty()) {
             return 0L;
         }
 
-        LocalDate startLocalDate = startDate != null ? startDate.toLocalDate() : null;
-        LocalDate endLocalDate = endDate != null ? endDate.toLocalDate() : null;
-
-        List<UUID> uuidToExclude = getExcludedEventIds(securityContext, useNormalized, orgId, subscribedEventTypes, startLocalDate, endLocalDate);
-
         boolean bundlesNotEmpty = bundleIds != null && !bundleIds.isEmpty();
         boolean applicationsNotEmpty = appIds != null && !appIds.isEmpty();
         boolean eventTypesNotEmpty = eventTypeIds != null && !eventTypeIds.isEmpty();
-        boolean excludeNotEmpty = !uuidToExclude.isEmpty();
+        boolean excludeNotEmpty = excludedEventIds != null && !excludedEventIds.isEmpty();
 
-        String hql = buildBaseHql(useNormalized, true);
-        hql = addHqlConditions(hql, useNormalized, bundlesNotEmpty, applicationsNotEmpty, eventTypesNotEmpty, excludeNotEmpty, startDate, endDate, readStatus);
+        String hql = buildBaseHql(true);
+        hql = addHqlConditions(hql, bundlesNotEmpty, applicationsNotEmpty, eventTypesNotEmpty, excludeNotEmpty, startDate, endDate, readStatus);
 
         TypedQuery<Long> typedQuery = entityManager.createQuery(hql, Long.class);
-        setQueryParams(typedQuery, orgId, username, subscribedEventTypes, bundleIds, appIds, eventTypeIds, uuidToExclude, startDate, endDate);
+        setQueryParams(typedQuery, orgId, username, subscribedEventTypes, bundleIds, appIds, eventTypeIds, excludedEventIds, startDate, endDate);
 
         return typedQuery.getSingleResult();
     }
 
-    private Set<UUID> GetSubscribedEventTypes(String orgId, String username) {
+    public Set<UUID> getSubscribedEventTypes(String orgId, String username) {
         // Get all drawer event type IDs
         Set<UUID> allDrawerEventTypes = eventTypeRepository.getEventTypeIdsByIncludedInDrawer();
 
@@ -164,69 +135,25 @@ public class DrawerNotificationRepository {
         return subscribedEventTypes;
     }
 
-    private List<UUID> getExcludedEventIds(SecurityContext securityContext, boolean useNormalized, String orgId,
-                                          Set<UUID> subscribedEventTypes,
-                                          LocalDate startDate, LocalDate endDate) {
-        List<UUID> uuidToExclude = new ArrayList<>();
 
-        if (backendConfig.isKesselChecksOnEventLogEnabled(orgId)) {
-            Log.info("Check for drawer events with authorization criterion");
-            List<EventAuthorizationCriterion> listEventsAuthCriterion = eventRepository.getDrawerEventsWithCriterion(
-                orgId, useNormalized, subscribedEventTypes, startDate, endDate
-            );
-
-            Map<Integer, Boolean> criterionResultCache = new HashMap<>();
-            for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
-                int criterionHashCode = eventAuthorizationCriterion.authorizationCriterion().hashCode();
-                if (!criterionResultCache.containsKey(criterionHashCode)) {
-                    criterionResultCache.put(criterionHashCode,
-                        kesselInventoryAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
-                }
-                if (!criterionResultCache.get(criterionHashCode)) {
-                    Log.infof("%s is not visible for current user", eventAuthorizationCriterion.id());
-                    uuidToExclude.add(eventAuthorizationCriterion.id());
-                }
-            }
-        }
-
-        return uuidToExclude;
-    }
-
-    private String buildBaseHql(boolean useNormalized, boolean isCountQuery) {
+    private String buildBaseHql(boolean isCountQuery) {
         if (isCountQuery) {
-            if (useNormalized) {
-                return "SELECT COUNT(e.id) FROM Event e " +
-                    "JOIN e.eventType et " +
-                    "JOIN et.application app " +
-                    "JOIN app.bundle bundle " +
-                    "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.orgId = :orgId AND drs.id.userId = :userid " +
-                    "WHERE e.orgId = :orgId AND et.includedInDrawer = true AND et.id IN (:subscribedEventTypes)";
-            } else {
-                return "SELECT COUNT(e.id) FROM Event e " +
-                    "JOIN Bundle bundle ON e.bundleId = bundle.id " +
-                    "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.orgId = :orgId AND drs.id.userId = :userid " +
-                    "WHERE e.orgId = :orgId AND e.eventType.includedInDrawer = true AND e.eventType.id IN (:subscribedEventTypes)";
-            }
+            return "SELECT COUNT(e.id) FROM Event e " +
+                "JOIN e.eventType et " +
+                "JOIN et.application app " +
+                "JOIN app.bundle bundle " +
+                "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.userId = :userid " +
+                "WHERE e.orgId = :orgId AND et.includedInDrawer = true AND et.id IN (:subscribedEventTypes)";
         } else {
-            if (useNormalized) {
-                return "SELECT e.id, " +
-                    "CASE WHEN drs.readAt IS NOT NULL THEN true ELSE false END, " +
-                    "bundle.displayName, app.displayName, et.displayName, e.created, e.renderedDrawerNotification, bundle.name, e.severity " +
-                    "FROM Event e " +
-                    "JOIN e.eventType et " +
-                    "JOIN et.application app " +
-                    "JOIN app.bundle bundle " +
-                    "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.orgId = :orgId AND drs.id.userId = :userid " +
-                    "WHERE e.orgId = :orgId AND et.includedInDrawer = true AND et.id IN (:subscribedEventTypes)";
-            } else {
-                return "SELECT e.id, " +
-                    "CASE WHEN drs.readAt IS NOT NULL THEN true ELSE false END, " +
-                    "e.bundleDisplayName, e.applicationDisplayName, e.eventTypeDisplayName, e.created, e.renderedDrawerNotification, bundle.name, e.severity " +
-                    "FROM Event e " +
-                    "JOIN Bundle bundle ON e.bundleId = bundle.id " +
-                    "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.orgId = :orgId AND drs.id.userId = :userid " +
-                    "WHERE e.orgId = :orgId AND e.eventType.includedInDrawer = true AND e.eventType.id IN (:subscribedEventTypes)";
-            }
+            return "SELECT e.id, " +
+                "drs.id IS NOT NULL, " +
+                "bundle.displayName, app.displayName, et.displayName, e.created, e.renderedDrawerNotification, bundle.name, e.severity " +
+                "FROM Event e " +
+                "JOIN e.eventType et " +
+                "JOIN et.application app " +
+                "JOIN app.bundle bundle " +
+                "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.userId = :userid " +
+                "WHERE e.orgId = :orgId AND et.includedInDrawer = true AND et.id IN (:subscribedEventTypes)";
         }
     }
 
@@ -238,7 +165,7 @@ public class DrawerNotificationRepository {
         }
     }
 
-    private static String addHqlConditions(String hql, boolean useNormalized,
+    private static String addHqlConditions(String hql,
                                            boolean bundlesNotEmpty, boolean applicationsNotEmpty, boolean eventTypesNotEmpty,
                                            boolean excludeNotEmpty, LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
         // Exclusion list from RBAC check
@@ -258,31 +185,19 @@ public class DrawerNotificationRepository {
         // Read status filtering (via LEFT JOIN, not post-query - critical for pagination!)
         if (readStatus != null) {
             if (readStatus) {
-                hql += " AND drs.readAt IS NOT NULL";
+                hql += " AND drs.id IS NOT NULL";
             } else {
-                hql += " AND drs.readAt IS NULL";
+                hql += " AND drs.id IS NULL";
             }
         }
 
         // Additional filter by event type IDs (on top of subscription filter)
         if (eventTypesNotEmpty) {
-            if (useNormalized) {
-                hql += " AND et.id IN (:eventTypeIds)";
-            } else {
-                hql += " AND e.eventType.id IN (:eventTypeIds)";
-            }
+            hql += " AND et.id IN (:eventTypeIds)";
         } else if (applicationsNotEmpty) {
-            if (useNormalized) {
-                hql += " AND app.id IN (:appIds)";
-            } else {
-                hql += " AND e.applicationId IN (:appIds)";
-            }
+            hql += " AND app.id IN (:appIds)";
         } else if (bundlesNotEmpty) {
-            if (useNormalized) {
-                hql += " AND bundle.id IN (:bundleIds)";
-            } else {
-                hql += " AND e.bundleId IN (:bundleIds)";
-            }
+            hql += " AND bundle.id IN (:bundleIds)";
         }
 
         return hql;

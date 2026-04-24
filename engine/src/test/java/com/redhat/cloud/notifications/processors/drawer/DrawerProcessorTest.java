@@ -126,7 +126,7 @@ class DrawerProcessorTest {
         user1.setId("foo");
         user1.setUsername("foo");
         User user2 = new User();
-        user1.setId("bar");
+        user2.setId("bar");
         user2.setUsername("bar");
 
         when(externalRecipientsResolver.recipientUsers(any(), any(), any(), any(), eq(true), any(RecipientsAuthorizationCriterion.class)))

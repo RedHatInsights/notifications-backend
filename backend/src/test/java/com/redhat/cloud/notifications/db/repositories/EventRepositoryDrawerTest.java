@@ -28,7 +28,6 @@ import org.mockito.Mockito;
 import org.project_kessel.api.inventory.v1beta2.CheckForUpdateRequest;
 import org.project_kessel.api.inventory.v1beta2.CheckRequest;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -174,8 +173,8 @@ public class EventRepositoryDrawerTest extends DbIsolatedTest {
         Set<UUID> subscribedEventTypes = Set.of(eventType.getId());
 
         // Filter for events in last 2 days
-        LocalDate startDate = now.minusDays(2).toLocalDate();
-        LocalDate endDate = now.toLocalDate();
+        LocalDateTime startDate = now.minusDays(2);
+        LocalDateTime endDate = now;
 
         List<EventAuthorizationCriterion> result = eventRepository.getDrawerEventsWithCriterion(
             DEFAULT_ORG_ID, false, subscribedEventTypes, startDate, endDate
