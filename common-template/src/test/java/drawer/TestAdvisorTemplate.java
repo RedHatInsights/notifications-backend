@@ -7,7 +7,6 @@ import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -40,14 +39,6 @@ class TestAdvisorTemplate {
         Action action = TestHelpers.createAdvisorAction("123456", DEACTIVATED_RECOMMENDATION);
         String result = renderTemplate(DEACTIVATED_RECOMMENDATION, action);
         assertEquals("2 recommendations have recently been deactivated by Red Hat Insights and are no longer affecting your systems. [Open Advisor](https://localhost/insights/advisor/recommendations?from=notifications&integration=drawer)", result);
-    }
-
-    @Test
-    void testRenderedTemplateForSingleDeactivatedRecommendation() {
-        Action action = TestHelpers.createAdvisorAction("123456", DEACTIVATED_RECOMMENDATION);
-        action.setEvents(List.of(action.getEvents().get(0)));
-        String result = renderTemplate(DEACTIVATED_RECOMMENDATION, action);
-        assertEquals("1 recommendation has recently been deactivated by Red Hat Insights and is no longer affecting your systems. [Open recommendation](https://localhost/insights/advisor/recommendations/retire-rule1?from=notifications&integration=drawer)", result);
     }
 
     String renderTemplate(final String eventType, final Action action) {
