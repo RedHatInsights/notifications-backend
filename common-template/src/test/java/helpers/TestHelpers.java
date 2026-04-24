@@ -280,6 +280,7 @@ public class TestHelpers {
             new Context.ContextBuilder()
                 .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
                 .withAdditionalProperty("source_name", "Dummy source name")
+                .withAdditionalProperty("source_id", "12345")
                 .withAdditionalProperty("cost_model_name", "Sample model")
                 .withAdditionalProperty("cost_model_id", "4540543DGE")
                 .build()

@@ -1,1 +1,1 @@
-[{data.context.resource_display_name}]({environment.url}/settings/sources/detail/{data.context.source_id})'s availability status was changed from **{data.context.previous_availability_status}** to **{data.context.current_availability_status}**.
+[{data.context.resource_display_name}]({environment.url}/settings/sources/detail/{data.context.source_id}?from=notifications&integration=drawer)'s availability status was changed from **{data.context.previous_availability_status}** to **{data.context.current_availability_status}**.

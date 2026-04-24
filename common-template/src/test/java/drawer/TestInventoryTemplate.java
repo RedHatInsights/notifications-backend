@@ -23,7 +23,7 @@ class TestInventoryTemplate {
     void testRenderedTemplateValidationError() {
         Action action = InventoryTestHelpers.createInventoryAction("123456", "rhel", "inventory", "Host Validation Error");
         String result = renderTemplate(EVENT_TYPE_NAME, action);
-        assertEquals("If no hosts were created by this change, the error will not appear in the service. [Open Inventory](https://localhost/insights/inventory)", result);
+        assertEquals("If no hosts were created by this change, the error will not appear in the service. [Open Inventory](https://localhost/insights/inventory?from=notifications&integration=drawer)", result);
     }
 
     String renderTemplate(final String eventType, final Action action) {

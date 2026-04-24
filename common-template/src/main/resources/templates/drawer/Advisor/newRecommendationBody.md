@@ -1,1 +1,1 @@
-**[{data.context.display_name}]({environment.url}/insights/inventory/{data.context.inventory_id})** has {data.events.size()} new {#if data.events.size() is 1}recommendation{#else}recommendations{/if}.
+**[{data.context.display_name}]({environment.url}/insights/inventory/{data.context.inventory_id}?from=notifications&integration=drawer)** has {data.events.size()} new {#if data.events.size() is 1}recommendation{#else}recommendations{/if}.

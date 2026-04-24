@@ -24,7 +24,7 @@ class TestPatchTemplate {
     @Test
     void testRenderedTemplateNewAdvisory() {
         String result = renderTemplate(NEW_ADVISORY, ACTION);
-        assertEquals("Red Hat Insights has just released new [Advisories](https://localhost/insights/patch/advisories) for your organization. Please review the systems affected and all the details of each errata.", result);
+        assertEquals("Red Hat Insights has just released new [Advisories](https://localhost/insights/patch/advisories?from=notifications&integration=drawer) for your organization. Please review the systems affected and all the details of each errata.", result);
     }
 
     String renderTemplate(final String eventType, final Action action) {

@@ -24,21 +24,21 @@ class TestAdvisorTemplate {
     void testRenderedTemplateForResolvedRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", RESOLVED_RECOMMENDATION);
         String result = renderTemplate(RESOLVED_RECOMMENDATION, action);
-        assertEquals("**[My Host](https://localhost/insights/inventory/host-01)** has 4 resolved recommendations.", result);
+        assertEquals("**[My Host](https://localhost/insights/inventory/host-01?from=notifications&integration=drawer)** has 4 resolved recommendations.", result);
     }
 
     @Test
     void testRenderedTemplateForNewRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
         String result = renderTemplate(NEW_RECOMMENDATION, action);
-        assertEquals("**[My Host](https://localhost/insights/inventory/host-01)** has 4 new recommendations.", result);
+        assertEquals("**[My Host](https://localhost/insights/inventory/host-01?from=notifications&integration=drawer)** has 4 new recommendations.", result);
     }
 
     @Test
     void testRenderedTemplateForDeactivatedRecommendation() {
         Action action = TestHelpers.createAdvisorAction("123456", DEACTIVATED_RECOMMENDATION);
         String result = renderTemplate(DEACTIVATED_RECOMMENDATION, action);
-        assertEquals("2 recommendations have recently been deactivated by Red Hat Insights and are no longer affecting your systems. [Open Advisor](https://localhost/insights/advisor)", result);
+        assertEquals("2 recommendations have recently been deactivated by Red Hat Insights and are no longer affecting your systems. [Open Advisor](https://localhost/insights/advisor?from=notifications&integration=drawer)", result);
     }
 
     String renderTemplate(final String eventType, final Action action) {

@@ -22,6 +22,6 @@ class TestAdvisorOpenShiftTemplate {
     void testRenderedTemplateForNewRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
         String result = testHelpers.renderTemplate(new TemplateDefinition(IntegrationType.DRAWER, "openshift", "advisor", NEW_RECOMMENDATION), action);
-        assertEquals("**[My Host](this-is-my-host-url)** has 4 new recommendations.", result);
+        assertEquals("**[My Host](this-is-my-host-url?from=notifications&integration=drawer)** has 4 new recommendations.", result);
     }
 }

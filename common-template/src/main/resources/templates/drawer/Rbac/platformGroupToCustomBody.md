@@ -1,1 +1,1 @@
-Platform default group is modified by {data.events[0].payload.username} and Red Hat will not be responsible for managing it from now on. [Open User Access]({environment.url}/iam/user-access/overview)
+Platform default group is modified by {data.events[0].payload.username} and Red Hat will not be responsible for managing it from now on. [Open group details]({environment.url}/iam/user-access/groups/detail/{data.events[0].payload.uuid}?from=notifications&integration=drawer)

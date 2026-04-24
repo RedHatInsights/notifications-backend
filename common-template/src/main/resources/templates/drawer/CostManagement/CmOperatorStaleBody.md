@@ -1,1 +1,1 @@
-OpenShift source **[{data.context.source_name}]({environment.url}/openshift/cost-management)** has not received any payloads in the last 3 or more days.
+OpenShift source **[{data.context.source_name}]({environment.url}/settings/sources/detail/{data.context.source_id}?from=notifications&integration=drawer)** has not received any payloads in the last 3 or more days.

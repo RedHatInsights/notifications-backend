@@ -37,9 +37,9 @@ class TestErrataNotificationsTemplate {
 
     private void checkResult(String eventType, String result) {
         switch (eventType) {
-            case BUGFIX_ERRATA -> assertEquals("Red Hat published new bugfix errata that affect your products. Explore these and others in the [errata search](https://localhost/subscriptions/inventory).", result);
-            case SECURITY_ERRATA -> assertEquals("Red Hat published new security errata that affect your products. Explore these and others in the [errata search](https://localhost/subscriptions/inventory).", result);
-            case ENHANCEMENT_ERRATA -> assertEquals("Red Hat published new enhancement errata that affect your products. Explore these and others in the [errata search](https://localhost/subscriptions/inventory).", result);
+            case BUGFIX_ERRATA -> assertEquals("Red Hat published new bugfix errata that affect your products. Explore these and others in the [errata search](https://localhost/subscriptions/inventory?from=notifications&integration=drawer).", result);
+            case SECURITY_ERRATA -> assertEquals("Red Hat published new security errata that affect your products. Explore these and others in the [errata search](https://localhost/subscriptions/inventory?from=notifications&integration=drawer).", result);
+            case ENHANCEMENT_ERRATA -> assertEquals("Red Hat published new enhancement errata that affect your products. Explore these and others in the [errata search](https://localhost/subscriptions/inventory?from=notifications&integration=drawer).", result);
             default -> throw new IllegalArgumentException(eventType + "is not a valid event type");
         }
     }
