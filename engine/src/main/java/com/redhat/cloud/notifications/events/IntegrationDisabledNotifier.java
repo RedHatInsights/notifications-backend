@@ -88,7 +88,7 @@ public class IntegrationDisabledNotifier {
      */
     public static String getFrontendCategory(Endpoint endpoint) {
         return switch (endpoint.getType()) {
-            case ANSIBLE -> "Reporting";
+            case ANSIBLE, PAGERDUTY -> "Reporting";
             case CAMEL -> {
                 yield switch (endpoint.getSubType()) {
                         case "google_chat", "slack", "teams" -> "Communications";
