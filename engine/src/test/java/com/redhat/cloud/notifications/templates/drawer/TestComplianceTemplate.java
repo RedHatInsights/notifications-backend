@@ -30,7 +30,7 @@ class TestComplianceTemplate extends DrawerTemplatesHelper {
     void testRenderedTemplateBelowThreshold() {
 
         String result = generateDrawerTemplate(COMPLIANCE_BELOW_THRESHOLD, ACTION);
-        assertEquals("Your system, **[My test machine](https://localhost/insights/compliance/systems/host-01?from=notifications&integration=drawer)**, assigned to policy **[Tested name](https://localhost/insights/compliance/scappolicies/policy-01?from=notifications&integration=drawer)**, has been marked as non-compliant because its compliance score 20% dropped below the configured compliance threshold of 25% for this policy.", result);
+        assertEquals("Your system, **[My test machine](https://localhost/insights/compliance/systems/host-01?from=notifications&integration=drawer)**, assigned to policy **[Tested name](https://localhost/insights/compliance/scappolicies/Policy id 1?from=notifications&integration=drawer)**, has been marked as non-compliant because its compliance score 20% dropped below the configured compliance threshold of 25% for this policy.", result);
     }
 
     @Test

@@ -1,1 +1,1 @@
-**{data.events[0].payload.username}** has requested access to **[{data.events[0].payload.url_path}]({data.events[0].payload.url_path}?from=notifications&integration=drawer)**.
+**[{data.events[0].payload.username}]({environment.url}/iam/user-access/users/detail/{data.events[0].payload.username}?from=notifications&integration=drawer)** has requested access to **[{data.events[0].payload.url_path}]({data.events[0].payload.url_path}?from=notifications&integration=drawer)**.

@@ -52,13 +52,13 @@ class TestRbacTemplate {
                 assertEquals("Red Hat has updated the role **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)**.", result);
                 break;
             case CUSTOM_ROLE_CREATED:
-                assertEquals("A custom role **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** has been created by testUser1.", result);
+                assertEquals("A custom role **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** has been created by [testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer).", result);
                 break;
             case CUSTOM_ROLE_UPDATED:
-                assertEquals("Custom role **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** has been updated by testUser1.", result);
+                assertEquals("Custom role **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** has been updated by [testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer).", result);
                 break;
             case CUSTOM_ROLE_DELETED:
-                assertEquals("Custom role **testRoleName** has been deleted by testUser1 and is not available anymore. [Open User Access](https://localhost/iam/user-access/overview?from=notifications&integration=drawer)", result);
+                assertEquals("Custom role **testRoleName** has been deleted by [testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer) and is not available anymore. [Open User Access](https://localhost/iam/user-access/overview?from=notifications&integration=drawer)", result);
                 break;
             case RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS:
                 assertEquals("Red Hat added a role **[myRole](https://localhost/iam/user-access/roles/detail/90d52d8b-614d-40f6-b073-1a88ee575f75?from=notifications&integration=drawer)** to platform default access group.", result);
@@ -70,22 +70,22 @@ class TestRbacTemplate {
                 assertEquals("Custom platform default access group has been updated by testUser1. [Open User Access](https://localhost/iam/user-access/overview?from=notifications&integration=drawer)", result);
                 break;
             case GROUP_CREATED:
-                assertEquals("A custom group **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** has been created by testUser1.", result);
+                assertEquals("A custom group **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** has been created by [testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer).", result);
                 break;
             case GROUP_UPDATED:
-                assertEquals("Custom group has been updated by testUser1. [Open group details](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)", result);
+                assertEquals("Custom group **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** has been updated by [testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer).", result);
                 break;
             case GROUP_DELETED:
-                assertEquals("Custom group **testRoleName** has been deleted by testUser1 and is not available anymore. [Open User Access](https://localhost/iam/user-access/overview?from=notifications&integration=drawer)", result);
+                assertEquals("Custom group **testRoleName** has been deleted by [testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer) and is not available anymore. [Open User Access](https://localhost/iam/user-access/overview?from=notifications&integration=drawer)", result);
                 break;
             case PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM:
-                assertEquals("Platform default group is modified by testUser1 and Red Hat will not be responsible for managing it from now on. [Open group details](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)", result);
+                assertEquals("Platform default group **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** has been modified by **[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** and Red Hat will not be responsible for managing it from now on.", result);
                 break;
             case REQUEST_ACCESS:
-                assertEquals("**testUser1** has requested access to **[https://console.redhat.com/stuff](https://console.redhat.com/stuff?from=notifications&integration=drawer)**.", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** has requested access to **[https://console.redhat.com/stuff](https://console.redhat.com/stuff?from=notifications&integration=drawer)**.", result);
                 break;
             case TAM_ACCESS_REQUEST:
-                assertEquals("A Technical Account Manager **testUser1** requested to access your account. [Open Access Requests](https://localhost/iam/user-access/access-requests?from=notifications&integration=drawer)", result);
+                assertEquals("A Technical Account Manager **[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** requested to access your account. [Open Access Requests](https://localhost/iam/user-access/access-requests?from=notifications&integration=drawer)", result);
                 break;
             default:
                 break;

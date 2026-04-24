@@ -1,1 +1,1 @@
-Custom group has been updated by {data.events[0].payload.username}. [Open group details]({environment.url}/iam/user-access/groups/detail/{data.events[0].payload.uuid}?from=notifications&integration=drawer)
+Custom group **[{data.events[0].payload.name}]({environment.url}/iam/user-access/groups/detail/{data.events[0].payload.uuid}?from=notifications&integration=drawer)** has been updated by [{data.events[0].payload.username}]({environment.url}/iam/user-access/users/detail/{data.events[0].payload.username}?from=notifications&integration=drawer).

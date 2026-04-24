@@ -20,9 +20,9 @@ class TestIntegrationsTemplate {
 
     @Test
     void testRenderedTemplateIntegrationDisabled() {
-        Action action = TestHelpers.createIntegrationDisabledAction("HTTP_4XX", "Unreliable integration", 401);
+        Action action = TestHelpers.createIntegrationDisabledAction("HTTP_4XX", "Unreliable integration", "Communications", 401);
         String result = renderTemplate(INTEGRATION_DISABLED_EVENT_TYPE, action);
-        assertEquals("Integration **[Unreliable integration](https://localhost/settings/integrations?from=notifications&integration=drawer)** was disabled because the remote endpoint responded with an HTTP status code 401.", result);
+        assertEquals("Integration **[Unreliable integration](https://localhost/settings/integrations?category=Communications&name=Unreliable integration&from=notifications&integration=drawer)** was disabled because the remote endpoint responded with an HTTP status code 401.", result);
     }
 
     String renderTemplate(final String eventType, final Action action) {

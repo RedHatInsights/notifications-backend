@@ -1,1 +1,1 @@
-A Technical Account Manager **{data.events[0].payload.username}** requested to access your account. [Open Access Requests]({environment.url}/iam/user-access/access-requests?from=notifications&integration=drawer)
+A Technical Account Manager **[{data.events[0].payload.username}]({environment.url}/iam/user-access/users/detail/{data.events[0].payload.username}?from=notifications&integration=drawer)** requested to access your account. [Open Access Requests]({environment.url}/iam/user-access/access-requests?from=notifications&integration=drawer)
