@@ -3854,6 +3854,51 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testCreateThenReadRegularAndSystemEndpoint() {
+
+        // Create event type and endpoint
+        final Endpoint endpoint = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, EndpointType.WEBHOOK);
+        final Endpoint systemEndpoint = resourceHelpers.createEndpoint(null, null, EndpointType.EMAIL_SUBSCRIPTION);
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "username");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // System endpoint should be ignored using V1 API
+        EndpointDTO endpointDTO = fetchSingleEndpointV1(endpoint.getId(), identityHeader);
+        assertEquals(endpoint.getId(), endpointDTO.getId());
+        assertNull(endpointDTO.getReadOnly());
+
+        fetchSingleEndpointV1Raw(systemEndpoint.getId(), identityHeader, 404);
+
+        EndpointPage endpointPage = fetchEndpoints(identityHeader, TestConstants.API_INTEGRATIONS_V_1_0);
+        assertEquals(1L, endpointPage.getMeta().getCount());
+        assertEquals(endpointDTO.getId(), endpointPage.getData().getFirst().getId());
+        assertNull(endpointPage.getData().getFirst().getReadOnly());
+
+        // System endpoint should be present using V2 API
+        endpointDTO = fetchSingleEndpointV2(endpoint.getId(), identityHeader);
+        assertEquals(endpoint.getId(), endpointDTO.getId());
+        assertFalse(endpointDTO.getReadOnly());
+
+        EndpointDTO systemEndpointDTO = fetchSingleEndpointV2(systemEndpoint.getId(), identityHeader);
+        assertEquals(systemEndpoint.getId(), systemEndpointDTO.getId());
+        assertTrue(systemEndpointDTO.getReadOnly());
+
+        endpointPage = fetchEndpoints(identityHeader, TestConstants.API_INTEGRATIONS_V_2_0);
+        assertEquals(2L, endpointPage.getMeta().getCount());
+        for (EndpointDTO epDto : endpointPage.getData()) {
+            if (epDto.getId().equals(endpointDTO.getId())) {
+                assertFalse(epDto.getReadOnly());
+            } else {
+                assertEquals(epDto.getId(), systemEndpointDTO.getId());
+                assertTrue(epDto.getReadOnly());
+            }
+        }
+        resourceHelpers.deleteEndpoints();
+    }
+
+    @Test
     void testCreateThenDeleteEndpointToEventTypeRelationship() {
         final Bundle bundle1 = resourceHelpers.createBundle(RandomStringUtils.randomAlphabetic(10).toLowerCase(), "bundle 1");
 
@@ -3923,12 +3968,14 @@ public class EndpointResourceTest extends DbIsolatedTest {
         assertEquals(1L, endpointPage.getMeta().getCount());
         assertEquals(1, endpointPage.getData().size());
         assertEquals(1, endpointPage.getData().getFirst().getEventTypesGroupByBundlesAndApplications().size());
+        assertFalse(endpointPage.getData().getFirst().getReadOnly());
 
         // Check get all endpoints api V1 has not been updated
         endpointPage = fetchEndpoints(identityHeader, TestConstants.API_INTEGRATIONS_V_1);
         assertEquals(1L, endpointPage.getMeta().getCount());
         assertEquals(1, endpointPage.getData().size());
         assertNull(endpointPage.getData().getFirst().getEventTypesGroupByBundlesAndApplications());
+        assertNull(endpointPage.getData().getFirst().getReadOnly());
 
         behaviorGroups = resourceHelpers.findBehaviorGroupsByOrgId(DEFAULT_ORG_ID);
         assertEquals(1, behaviorGroups.size());
@@ -4242,6 +4289,24 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .extract().body().asString();
 
         return response;
+    }
+
+    private EndpointDTO fetchSingleEndpointV1(UUID endpointUuid, Header identityHeader) {
+        String response = fetchSingleEndpointV1Raw(endpointUuid, identityHeader, 200);
+
+        JsonObject endpoint = new JsonObject(response);
+        return endpoint.mapTo(EndpointDTO.class);
+    }
+
+    private String fetchSingleEndpointV1Raw(UUID endpointUuid, Header identityHeader, int expectedReturnCode) {
+        return given()
+            .basePath(TestConstants.API_INTEGRATIONS_V_1_0)
+            .header(identityHeader)
+            .pathParam("id", endpointUuid)
+            .when().get("/endpoints/{id}")
+            .then()
+            .statusCode(expectedReturnCode)
+            .extract().body().asString();
     }
 
     private EndpointPage fetchEndpoints(Header identityHeader, String basePath) {
@@ -4601,38 +4666,6 @@ public class EndpointResourceTest extends DbIsolatedTest {
                     .body("violations[0].message", Matchers.is("Only \"POST\" methods are allowed for the properties of a webhook"));
             }
         }
-    }
-
-    /**
-     * Asserts that no integrations are present in the database by issuing a
-     * query directly and by calling the "/endpoints" REST endpoint.
-     * @param identityHeader the identity header to be used when fetching the
-     *                       list of integrations via the REST endpoint.
-     */
-    void assertNoIntegrationsInDatabase(final Header identityHeader) {
-        Assertions.assertTrue(this.entityManager.createQuery("FROM Endpoint").getResultList().isEmpty(), "when fetching all the integrations from the database, the list was not empty");
-
-        // It does not make sense to attempt fetching all the integrations from
-        // the back end when using the Relations API, because we would need to
-        // mock which integrations the principal is authorized to list, and
-        // since we are just trying to fetch them all to verify that none got
-        // created, it kind of defeats the purpose. We also do not have an ID
-        // we could use to even mock the Relations API, because the integration
-        // does not get created in the database.
-        if (this.backendConfig.isKesselEnabled(anyString())) {
-            return;
-        }
-
-        given()
-            .header(identityHeader)
-            .when()
-            .get("/endpoints")
-            .then()
-            .statusCode(HttpStatus.SC_OK)
-            .contentType(JSON)
-            .body("data", Matchers.hasSize(0))
-            .body("links", Matchers.anEmptyMap())
-            .body("meta.count", Matchers.is(0));
     }
 
     /**

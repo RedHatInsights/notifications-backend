@@ -68,9 +68,9 @@ public class EndpointResourceCommon {
     @Inject
     SecretUtils secretUtils;
 
-    protected EndpointDTO internalGetEndpoint(final SecurityContext securityContext, final UUID id, final boolean includeLinkedEventTypes) {
+    protected EndpointDTO internalGetEndpoint(final SecurityContext securityContext, final UUID id, final boolean includeLinkedEventTypes, final boolean includeSystemIntegrationFlag) {
         String orgId = getOrgId(securityContext);
-        Optional<Endpoint> endpoint = endpointRepository.getEndpointWithLinkedEventTypes(orgId, id);
+        Optional<Endpoint> endpoint = endpointRepository.getEndpointWithLinkedEventTypes(orgId, id, includeSystemIntegrationFlag);
         if (endpoint.isEmpty()) {
             throw new NotFoundException();
         } else {
@@ -83,6 +83,9 @@ public class EndpointResourceCommon {
             EndpointDTO endpointDTO = this.endpointMapper.toDTO(endpoint.get());
             if (includeLinkedEventTypes) {
                 includeLinkedEventTypes(endpoint.get().getEventTypes(), endpointDTO);
+            }
+            if (includeSystemIntegrationFlag) {
+                endpointDTO.setReadOnly(endpoint.get().getOrgId() == null);
             }
             return endpointDTO;
         }
@@ -103,7 +106,8 @@ public class EndpointResourceCommon {
         final List<String> targetType,
         final Boolean activeOnly,
         final String name,
-        final boolean includeLinkedEventTypes
+        final boolean includeLinkedEventTypes,
+        final boolean includeSystemIntegrations
     ) {
         String orgId = getOrgId(sec);
 
@@ -124,8 +128,8 @@ public class EndpointResourceCommon {
             compositeType = Set.of();
         }
 
-        endpoints = endpointRepository.getEndpointsPerCompositeType(orgId, name, compositeType, activeOnly, query);
-        count = endpointRepository.getEndpointsCountPerCompositeType(orgId, name, compositeType, activeOnly);
+        endpoints = endpointRepository.getEndpointsPerCompositeType(orgId, name, compositeType, activeOnly, query, includeSystemIntegrations);
+        count = endpointRepository.getEndpointsCountPerCompositeType(orgId, name, compositeType, activeOnly, includeSystemIntegrations);
 
         final List<EndpointDTO> endpointDTOS = new ArrayList<>(endpoints.size());
         for (Endpoint endpoint: endpoints) {
@@ -139,6 +143,9 @@ public class EndpointResourceCommon {
             EndpointDTO endpointDTO = endpointMapper.toDTO(endpoint);
             if (includeLinkedEventTypes) {
                 includeLinkedEventTypes(endpoint.getEventTypes(), endpointDTO);
+            }
+            if (includeSystemIntegrations) {
+                endpointDTO.setReadOnly(endpoint.getOrgId() == null);
             }
             endpointDTOS.add(endpointDTO);
         }
