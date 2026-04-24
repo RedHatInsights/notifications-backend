@@ -41,42 +41,42 @@ class TestCostManagementTemplate extends DrawerTemplatesHelper {
     void testRenderedTemplateMissingCostModel() {
 
         String result = generateDrawerTemplate(MISSING_COST_MODEL, ACTION);
-        assertEquals("OpenShift source **[Dummy source name](https://localhost/openshift/cost-management)** has no assigned cost model.", result);
+        assertEquals("OpenShift source **[Dummy source name](https://localhost/settings/sources/detail/12345?from=notifications&integration=drawer)** has no assigned cost model.", result);
     }
 
     @Test
     void testRenderedTemplateCostModelCreate() {
         String result = generateDrawerTemplate(COST_MODEL_CREATE, ACTION);
-        assertEquals("Cost model **[Sample model](https://localhost/openshift/cost-management/cost-models/4540543DGE)** has been created.", result);
+        assertEquals("Cost model **[Sample model](https://localhost/openshift/cost-management/cost-models/4540543DGE?from=notifications&integration=drawer)** has been created.", result);
     }
 
     @Test
     void testRenderedTemplateCostModelUpdate() {
         String result = generateDrawerTemplate(COST_MODEL_UPDATE, ACTION);
-        assertEquals("Cost model **[Sample model](https://localhost/openshift/cost-management/cost-models/4540543DGE)** has been updated.", result);
+        assertEquals("Cost model **[Sample model](https://localhost/openshift/cost-management/cost-models/4540543DGE?from=notifications&integration=drawer)** has been updated.", result);
     }
 
     @Test
     void testRenderedTemplateCostModelRemove() {
         String result = generateDrawerTemplate(COST_MODEL_REMOVE, ACTION);
-        assertEquals("Cost model **Sample model** has been removed. [Open Cost Management](https://localhost/openshift/cost-management/cost-models)", result);
+        assertEquals("Cost model **Sample model** has been removed. [Open Cost Management](https://localhost/openshift/cost-management/cost-models?from=notifications&integration=drawer)", result);
     }
 
     @Test
     void testRenderedTemplateCostModelOperatorStale() {
         String result = generateDrawerTemplate(CM_OPERATOR_STALE, ACTION);
-        assertEquals("OpenShift source **[Dummy source name](https://localhost/openshift/cost-management)** has not received any payloads in the last 3 or more days.", result);
+        assertEquals("OpenShift source **[Dummy source name](https://localhost/settings/sources/detail/12345?from=notifications&integration=drawer)** has not received any payloads in the last 3 or more days.", result);
     }
 
     @Test
     void testRenderedTemplateCostModelOperatorDataProcessed() {
         String result = generateDrawerTemplate(CM_OPERATOR_DATA_PROCESSED, ACTION);
-        assertEquals("Cost Management has completed processing for OpenShift source **[Dummy source name](https://localhost/openshift/cost-management)**.", result);
+        assertEquals("Cost Management has completed processing for OpenShift source **[Dummy source name](https://localhost/openshift/cost-management/ocp/?from=notifications&integration=drawer)**.", result);
     }
 
     @Test
     void testRenderedTemplateCostModelOperatorDataReceived() {
         String result = generateDrawerTemplate(CM_OPERATOR_DATA_RECEIVED, ACTION);
-        assertEquals("OpenShift source **[Dummy source name](https://localhost/openshift/cost-management)** has received a new payload and processing should begin shortly.", result);
+        assertEquals("OpenShift source **[Dummy source name](https://localhost/openshift/cost-management?from=notifications&integration=drawer)** has received a new payload and processing should begin shortly.", result);
     }
 }

@@ -29,20 +29,28 @@ class TestAdvisorTemplate extends DrawerTemplatesHelper {
     void testRenderedTemplateForResolvedRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", RESOLVED_RECOMMENDATION);
         String result = generateDrawerTemplate(RESOLVED_RECOMMENDATION, action);
-        assertEquals("**[My Host](https://localhost/insights/inventory/host-01)** has 4 resolved recommendations.", result);
+        assertEquals("**[My Host](https://localhost/insights/inventory/host-01?from=notifications&integration=drawer)** has 4 resolved recommendations.", result);
     }
 
     @Test
     void testRenderedTemplateForNewRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
         String result = generateDrawerTemplate(NEW_RECOMMENDATION, action);
-        assertEquals("**[My Host](https://localhost/insights/inventory/host-01)** has 4 new recommendations.", result);
+        assertEquals("**[My Host](https://localhost/insights/inventory/host-01?from=notifications&integration=drawer)** has 4 new recommendations.", result);
     }
 
     @Test
     void testRenderedTemplateForDeactivatedRecommendation() {
         Action action = TestHelpers.createAdvisorAction("123456", DEACTIVATED_RECOMMENDATION);
         String result = generateDrawerTemplate(DEACTIVATED_RECOMMENDATION, action);
-        assertEquals("2 recommendations have recently been deactivated by Red Hat Insights and are no longer affecting your systems. [Open Advisor](https://localhost/insights/advisor)", result);
+        assertEquals("2 recommendations have recently been deactivated by Red Hat Insights and are no longer affecting your systems. [Open Advisor](https://localhost/insights/advisor/recommendations?from=notifications&integration=drawer)", result);
+    }
+
+    @Test
+    void testRenderedTemplateForSingleDeactivatedRecommendation() {
+        Action action = TestHelpers.createAdvisorAction("123456", DEACTIVATED_RECOMMENDATION);
+        action.setEvents(List.of(action.getEvents().get(0)));
+        String result = generateDrawerTemplate(DEACTIVATED_RECOMMENDATION, action);
+        assertEquals("1 recommendation has recently been deactivated by Red Hat Insights and is no longer affecting your systems. [Open recommendation](https://localhost/insights/advisor/recommendations/retire-rule1?from=notifications&integration=drawer)", result);
     }
 }

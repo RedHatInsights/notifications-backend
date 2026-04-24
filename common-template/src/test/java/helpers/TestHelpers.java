@@ -230,7 +230,7 @@ public class TestHelpers {
                     new Payload.PayloadBuilder()
                         .withAdditionalProperty("host_id", "host-01")
                         .withAdditionalProperty("host_name", "My test machine")
-                        .withAdditionalProperty("policy_id", "Policy id 1")
+                        .withAdditionalProperty("policy_id", "policy-01")
                         .withAdditionalProperty("policy_name", "Tested name")
                         .withAdditionalProperty("compliance_score", "20")
                         .withAdditionalProperty("policy_threshold", "25")

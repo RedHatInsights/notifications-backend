@@ -30,6 +30,6 @@ class TestPatchTemplate extends DrawerTemplatesHelper {
     @Test
     void testRenderedTemplateNewAdvisory() {
         String result = generateDrawerTemplate(NEW_ADVISORY, ACTION);
-        assertEquals("Red Hat Insights has just released new [Advisories](https://localhost/insights/patch/advisories) for your organization. Please review the systems affected and all the details of each errata.", result);
+        assertEquals("Red Hat Insights has just released new [Advisories](https://localhost/insights/patch/advisories?from=notifications&integration=drawer) for your organization. Please review the systems affected and all the details of each errata.", result);
     }
 }

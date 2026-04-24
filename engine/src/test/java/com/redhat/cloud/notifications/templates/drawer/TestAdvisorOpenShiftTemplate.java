@@ -33,6 +33,6 @@ class TestAdvisorOpenShiftTemplate extends DrawerTemplatesHelper {
     void testRenderedTemplateForNewRecommendations() {
         Action action = TestHelpers.createAdvisorAction("123456", NEW_RECOMMENDATION);
         String result = generateDrawerTemplate(NEW_RECOMMENDATION, action);
-        assertEquals("**[My Host](this-is-my-host-url)** has 4 new recommendations.", result);
+        assertEquals("**[My Host](this-is-my-host-url?from=notifications&integration=drawer)** has 4 new recommendations.", result);
     }
 }

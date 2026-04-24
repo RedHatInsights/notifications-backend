@@ -30,12 +30,12 @@ class TestComplianceTemplate extends DrawerTemplatesHelper {
     void testRenderedTemplateBelowThreshold() {
 
         String result = generateDrawerTemplate(COMPLIANCE_BELOW_THRESHOLD, ACTION);
-        assertEquals("Your system, **[My test machine](https://localhost/insights/compliance/systems/host-01)**, assigned to policy **[Tested name](https://localhost/insights/compliance/scappolicies/Policy id 1)**, has been marked as non-compliant because its compliance score 20% dropped below the configured compliance threshold of 25% for this policy.", result);
+        assertEquals("Your system, **[My test machine](https://localhost/insights/compliance/systems/host-01?from=notifications&integration=drawer)**, assigned to policy **[Tested name](https://localhost/insights/compliance/scappolicies/policy-01?from=notifications&integration=drawer)**, has been marked as non-compliant because its compliance score 20% dropped below the configured compliance threshold of 25% for this policy.", result);
     }
 
     @Test
     void testRenderedTemplateUploadFailed() {
         String result = generateDrawerTemplate(REPORT_UPLOAD_FAILED, ACTION);
-        assertEquals("Your system **[My test machine](https://localhost/insights/compliance/systems/host-01)** failed to upload a new compliance report. The error message returned by our system for the request *12345* was: *Kernel panic (test)*", result);
+        assertEquals("Your system **[My test machine](https://localhost/insights/compliance/systems/host-01?from=notifications&integration=drawer)** failed to upload a new compliance report. The error message returned by our system for the request *12345* was: *Kernel panic (test)*", result);
     }
 }
