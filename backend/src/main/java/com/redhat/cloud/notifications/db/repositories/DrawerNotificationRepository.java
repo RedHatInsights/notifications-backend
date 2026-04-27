@@ -143,7 +143,7 @@ public class DrawerNotificationRepository {
                 "JOIN et.application app " +
                 "JOIN app.bundle bundle " +
                 "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.userId = :userid " +
-                "WHERE e.orgId = :orgId AND et.includedInDrawer = true AND et.id IN (:subscribedEventTypes)";
+                "WHERE e.orgId = :orgId AND e.renderedDrawerNotification IS NOT NULL AND et.id IN (:subscribedEventTypes)";
         } else {
             return "SELECT e.id, " +
                 "drs.id IS NOT NULL, " +
@@ -153,7 +153,7 @@ public class DrawerNotificationRepository {
                 "JOIN et.application app " +
                 "JOIN app.bundle bundle " +
                 "LEFT JOIN DrawerReadStatus drs ON drs.id.eventId = e.id AND drs.id.userId = :userid " +
-                "WHERE e.orgId = :orgId AND et.includedInDrawer = true AND et.id IN (:subscribedEventTypes)";
+                "WHERE e.orgId = :orgId AND e.renderedDrawerNotification IS NOT NULL AND et.id IN (:subscribedEventTypes)";
         }
     }
 

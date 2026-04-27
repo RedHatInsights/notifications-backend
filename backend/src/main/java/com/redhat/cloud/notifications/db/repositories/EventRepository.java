@@ -79,7 +79,7 @@ public class EventRepository {
 
      /**
      * Get drawer events that have authorization criteria.
-     * Filters by event type IDs (from subscriptions) and includedInDrawer flag.
+     * Filters by event type IDs (from subscriptions) and renderedDrawerNotification.
      *
      * @param orgId Organization ID
      * @param eventTypeIds Set of event type UUIDs to filter by (from subscription query)
@@ -100,12 +100,8 @@ public class EventRepository {
 
         hql += "WHERE e.orgId = :orgId";
 
-        // Filter by includedInDrawer (drawer-specific)
-        if (useNormalized) {
-            hql += " AND et.includedInDrawer = true";
-        } else {
-            hql += " AND e.eventType.includedInDrawer = true";
-        }
+        // Filter by renderedDrawerNotification (drawer-specific)
+        hql += " AND e.renderedDrawerNotification IS NOT NULL";
 
         // Filter by event type IDs (from subscription query)
         if (eventTypeIdsNotEmpty) {
