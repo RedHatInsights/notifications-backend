@@ -60,9 +60,9 @@ public class Rhel {
 
     public static final String PATCH_NEW_ADVISORY = "new-advisory";
 
-    public static final String RETIRING_LIFECYCLE = "retiring-lifecycle";
+    public static final String RETIRING_LIFECYCLE_REPORT = "retiring-lifecycle-monthly-report";
 
-    public static final String ROADMAP_MONTHLY_REPORT = "roadmap-monthly-report";
+    public static final String ROADMAP_REPORT = "roadmap-monthly-report";
 
     public static final String POLICIES_POLICY_TRIGGERED = "policy-triggered";
 
@@ -110,7 +110,10 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, PATCH_APP_NAME, null), PATCH_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Lifecycle
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, LIFECYCLE_APP_NAME, RETIRING_LIFECYCLE), LIFECYCLE_FOLDER_NAME + "retiringLifecycleInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, LIFECYCLE_APP_NAME, RETIRING_LIFECYCLE_REPORT), LIFECYCLE_FOLDER_NAME + "retiringLifecycleInstantEmailBody.html"),
+
+        // Roadmap
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ROADMAP_APP_NAME, ROADMAP_REPORT), ROADMAP_FOLDER_NAME + "roadmapInstantEmailBody.html"),
 
         // Policies
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, POLICIES_APP_NAME, POLICIES_POLICY_TRIGGERED), POLICY_FOLDER_NAME + "policyTriggeredBody.md"),

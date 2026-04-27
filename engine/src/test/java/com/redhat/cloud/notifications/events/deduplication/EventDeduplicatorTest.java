@@ -1,32 +1,49 @@
 package com.redhat.cloud.notifications.events.deduplication;
 
+import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
+@QuarkusTestResource(TestLifecycleManager.class)
 class EventDeduplicatorTest {
+
+    public static final String TEST_BUNDLE_NAME = "test-bundle";
+    public static final String SUBSCRIPTION_SERVICES_BUNDLE_NAME = "subscription-services";
+
+    static final ZoneId UTC_ZONE = ZoneId.of("UTC");
 
     @Inject
     EventDeduplicator eventDeduplicator;
 
     @Inject
     EntityManager entityManager;
+
+    @InjectSpy
+    EngineConfig config;
 
     @BeforeEach
     @Transactional
@@ -36,16 +53,30 @@ class EventDeduplicatorTest {
             .executeUpdate();
     }
 
-    @Test
-    void testIsNewWithDefaultDeduplication() {
+    @AfterEach
+    @Transactional
+    void afterEach() {
+        entityManager
+                .createNativeQuery("DELETE FROM bundles WHERE name = :testName OR name = :subName")
+                .setParameter("testName", TEST_BUNDLE_NAME)
+                .setParameter("subName", SUBSCRIPTION_SERVICES_BUNDLE_NAME)
+                .executeUpdate();
+    }
 
-        EventType eventType = createEventType("test-bundle", "test-app");
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testIsNewWithDefaultDeduplication(final boolean valkeyDedupEnabled) {
+        when(config.isValkeyEventDeduplicatorEnabled()).thenReturn(valkeyDedupEnabled);
+        when(config.isInMemoryDbEnabled()).thenReturn(valkeyDedupEnabled);
+
+        EventType eventType = createEventType(TEST_BUNDLE_NAME, "test-app");
+        LocalDateTime dateTime = LocalDateTime.now(UTC_ZONE);
 
         UUID eventId1 = UUID.randomUUID();
         Event event1 = new Event();
         event1.setId(eventId1);
         event1.setEventType(eventType);
-        event1.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
+        event1.setEventWrapper(new EventWrapperAction(ActionBuilder.build(dateTime)));
 
         assertTrue(eventDeduplicator.isNew(event1), "New event should return true");
 
@@ -53,28 +84,33 @@ class EventDeduplicatorTest {
         Event event2 = new Event();
         event2.setId(eventId2);
         event2.setEventType(eventType);
-        event2.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
+        event2.setEventWrapper(new EventWrapperAction(ActionBuilder.build(dateTime)));
 
         assertTrue(eventDeduplicator.isNew(event2), "New event should return true");
 
         Event event3 = new Event();
         event3.setId(eventId2);
         event3.setEventType(eventType);
-        event3.setEventWrapper(new EventWrapperAction(ActionBuilder.build(LocalDateTime.of(2025, 11, 14, 10, 52))));
+        event3.setEventWrapper(new EventWrapperAction(ActionBuilder.build(dateTime)));
 
         assertFalse(eventDeduplicator.isNew(event3), "Duplicate event should return false");
     }
 
-    @Test
-    void testIsNewWithSubscriptionsDeduplication() {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testIsNewWithSubscriptionsDeduplication(final boolean valkeyDedupEnabled) {
+        when(config.isValkeyEventDeduplicatorEnabled()).thenReturn(valkeyDedupEnabled);
+        when(config.isInMemoryDbEnabled()).thenReturn(valkeyDedupEnabled);
 
-        EventType eventType = createEventType("subscription-services", "subscriptions");
+        EventType eventType = createEventType(SUBSCRIPTION_SERVICES_BUNDLE_NAME, "subscriptions");
+        LocalDateTime baseDateTime =
+                LocalDateTime.of(LocalDateTime.now(UTC_ZONE).plusYears(1).getYear(), 11, 14, 10, 52);
 
         Event event1 = createSubscriptionsEvent(
             UUID.randomUUID(),
             "org123",
             eventType,
-            LocalDateTime.of(2025, 11, 14, 10, 52),
+            baseDateTime,
             "prod456",
             "metric789",
             "billing001");
@@ -85,7 +121,7 @@ class EventDeduplicatorTest {
             UUID.randomUUID(),
             "org123",
             eventType,
-            LocalDateTime.of(2025, 11, 15, 14, 30), // Different day, same month.
+            baseDateTime.withDayOfMonth(15).withHour(14).withMinute(30), // Different day, same month.
             "prod456",
             "metric789",
             "billing001");
@@ -96,7 +132,7 @@ class EventDeduplicatorTest {
             UUID.randomUUID(),
             "org999",
             eventType,
-            LocalDateTime.of(2025, 11, 16, 9, 15), // Different day, still same month.
+            baseDateTime.withDayOfMonth(16).withHour(9).withMinute(15), // Different day, still same month.
             "prod456",
             "metric789",
             "billing001");
@@ -107,7 +143,7 @@ class EventDeduplicatorTest {
             UUID.randomUUID(),
             "org123",
             eventType,
-            LocalDateTime.of(2025, 12, 1, 10, 0), // Different month.
+            baseDateTime.withMonth(12).withDayOfMonth(1).withHour(10).withMinute(0), // Different month.
             "prod456",
             "metric789",
             "billing001");
@@ -118,7 +154,7 @@ class EventDeduplicatorTest {
             UUID.randomUUID(),
             "org123",
             eventType,
-            LocalDateTime.of(2025, 11, 17, 11, 0),
+            baseDateTime.withDayOfMonth(17).withHour(11).withMinute(0),
             "prod999",
             "metric789",
             "billing001");
@@ -129,7 +165,7 @@ class EventDeduplicatorTest {
             UUID.randomUUID(),
             "org123",
             eventType,
-            LocalDateTime.of(2025, 11, 18, 11, 0),
+            baseDateTime.withDayOfMonth(18).withHour(11).withMinute(0),
             "prod999",
             "metric999",
             "billing001");
@@ -140,7 +176,7 @@ class EventDeduplicatorTest {
             UUID.randomUUID(),
             "org123",
             eventType,
-            LocalDateTime.of(2025, 11, 19, 11, 0),
+            baseDateTime.withDayOfMonth(19).withHour(11).withMinute(0),
             "prod999",
             "metric999",
             "billing999");

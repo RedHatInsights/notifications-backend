@@ -1,0 +1,91 @@
+{#include email/Common/insightsEmailBody}
+{#content-header-title}
+Red Hat Enterprise Linux - Roadmap monthly report - {action.context.roadmap.report_date}
+{/content-header-title}
+{#content-title}
+    Roadmap
+{/content-title}
+{#content-body}
+{#let
+    deprecationsCount = action.events[0].payload.deprecations.orEmpty.count.or(0)
+    changesCount = action.events[0].payload.changes.orEmpty.count.or(0)
+    additionsCount = action.events[0].payload.additions.orEmpty.count.or(0)
+}
+<table style="width: 100%; border: 0">
+    {! Deprecations section !}
+    {#let
+        sub-section-title = 'Deprecations'
+        sub-section-count = deprecationsCount
+        sub-section-count-id = 'deprecationsCount'
+        sub-section-description = 'Deprecations that could affect your systems'
+        sub-section-icon = 'img_incident.png'
+        sub-section-url = '{environment.url}/insights/planning/roadmap/?viewFilter=relevant&type=Deprecations&addedToRoadmap=lastMonthToDate'
+        sub-section-not-the-last = 1
+    }
+    {#insert content-roadmap-section}{/}
+    {/let}
+
+    {! Changes section !}
+    {#let
+        sub-section-title = 'Changes'
+        sub-section-count = changesCount
+        sub-section-count-id = 'changesCount'
+        sub-section-description = 'Changes that could affect your systems'
+        sub-section-icon = 'img_warning.png'
+        sub-section-url = '{environment.url}/insights/planning/roadmap/?viewFilter=relevant&type=Changes&addedToRoadmap=lastMonthToDate'
+        sub-section-not-the-last = 1
+    }
+    {#insert content-roadmap-section}{/}
+    {/let}
+
+    {! Additions & enhancements section !}
+    {#let
+        sub-section-title = 'Additions &amp; enhancements'
+        sub-section-count = additionsCount
+        sub-section-count-id = 'additionsCount'
+        sub-section-description = 'Additions &amp; enhancements that could affect your systems'
+        sub-section-icon = 'img_info.png'
+        sub-section-url = '{environment.url}/insights/planning/roadmap/?viewFilter=relevant&type=Addition&addedToRoadmap=lastMonthToDate'
+        sub-section-not-the-last = 0
+    }
+    {#insert content-roadmap-section}{/}
+    {/let}
+</table>
+{#if deprecationsCount == 0 && changesCount == 0 && additionsCount == 0}
+<p style="font-size: 14px; color: #151515; margin-top: 16px;">
+    Your inventory remained fully supported. A value of 0 indicates that no roadmap changes affected your systems this month.
+</p>
+{#else}
+    {#if deprecationsCount == 0 || changesCount == 0 || additionsCount == 0}
+    <p style="font-size: 14px; color: #151515; margin-top: 16px;">
+        Certain roadmap changes affected your systems. A value of 0 in any category indicated that no additional changes affected your inventory.
+    </p>
+    {/if}
+{/if}
+{/let}
+{/content-body}
+{#content-roadmap-section}
+<tr><td>
+    <table style="border: solid 1px #b8bbbe; border-radius: 16px; padding: 16px; width: 100%;">
+    <tr>
+        <td colspan="2" style="padding-bottom: 8px">
+            <strong style="font-size: 14px;">{sub-section-title}</strong>
+        </td>
+    </tr>
+    <tr>
+        <td style="vertical-align: top;">
+            <div style="font-size: 32px; font-weight: 600; color: #1f1f1f;"><a style="{body-section-table-td-a-style}" href="{sub-section-url}" target="_blank" id="{sub-section-count-id}">{sub-section-count}</a></div>
+            <div style="font-size: 14px; color: #151515; margin-top: 4px;">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/{sub-section-icon}" alt="" style="width:16px; height:16px; vertical-align:-2px; display: inline-block; margin-right: 4px;" border="0" width="16"/><!--[if mso]>&nbsp;&nbsp;<![endif]-->{sub-section-description}
+            </div>
+        </td>
+    </tr>
+    </table>
+</td></tr>
+{#if sub-section-not-the-last.or(0) > 0}
+<tr><td style="line-height: 24px">&#xA0;</td></tr>
+{/if}
+{/content-roadmap-section}
+{#content-button-href}{environment.url}/insights/planning/roadmap?{query_params}{/content-button-href}
+{#content-button-service-name}Roadmap - Planning{/content-button-service-name}
+{/include}

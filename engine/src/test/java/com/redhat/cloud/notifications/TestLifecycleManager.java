@@ -1,10 +1,12 @@
 package com.redhat.cloud.notifications;
 
+import io.github.ss_bhatt.testcontainers.valkey.ValkeyContainer;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -15,26 +17,38 @@ import java.util.Optional;
 
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.POSTGRES_MAJOR_VERSION;
+import static com.redhat.cloud.notifications.TestConstants.VALKEY_MAJOR_VERSION;
 
 public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
-    Boolean quarkusDevServiceEnabled = true;
+    Boolean quarkusDatasourceDevServiceEnabled = true;
+    Boolean quarkusValkeyDevServiceEnabled = true;
 
     PostgreSQLContainer<?> postgreSQLContainer;
+    ValkeyContainer valkeyContainer;
 
     @Override
     public Map<String, String> start() {
         System.out.println("++++  TestLifecycleManager start +++");
-        Optional<Boolean> quarkusDevServiceEnabledFlag = ConfigProvider.getConfig().getOptionalValue("quarkus.datasource.devservices.enabled", Boolean.class);
-        if (quarkusDevServiceEnabledFlag.isPresent()) {
-            quarkusDevServiceEnabled = quarkusDevServiceEnabledFlag.get();
-        }
-        System.out.println(" -- quarkusDatasourceDevServiceEnabled is " + quarkusDevServiceEnabled);
+        Optional<Boolean> quarkusDatasourceDevServiceEnabledFlag = ConfigProvider.getConfig().getOptionalValue("quarkus.datasource.devservices.enabled", Boolean.class);
+        quarkusDatasourceDevServiceEnabledFlag.ifPresent(flag -> quarkusDatasourceDevServiceEnabled = flag);
+        System.out.println(" -- quarkusDatasourceDevServiceEnabled is " + quarkusDatasourceDevServiceEnabled);
+
+        Optional<Boolean> quarkusValkeyDevServiceEnabledFlag = ConfigProvider.getConfig().getOptionalValue("quarkus.redis.devservices.enabled", Boolean.class);
+        quarkusValkeyDevServiceEnabledFlag.ifPresent(flag -> quarkusValkeyDevServiceEnabled = flag);
+        System.out.println(" -- quarkusValkeyDevServiceEnabled is " + quarkusValkeyDevServiceEnabled);
 
         Map<String, String> properties = new HashMap<>();
-        if (quarkusDevServiceEnabled) {
+        if (quarkusDatasourceDevServiceEnabled) {
             try {
                 setupPostgres(properties);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        if (quarkusValkeyDevServiceEnabled) {
+            try {
+                setupValkey(properties);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -47,8 +61,11 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
 
     @Override
     public void stop() {
-        if (quarkusDevServiceEnabled) {
+        if (quarkusDatasourceDevServiceEnabled) {
             postgreSQLContainer.stop();
+        }
+        if (quarkusValkeyDevServiceEnabled) {
+            valkeyContainer.stop();
         }
         MockServerLifecycleManager.stop();
         InMemoryConnector.clear();
@@ -74,6 +91,16 @@ public class TestLifecycleManager implements QuarkusTestResourceLifecycleManager
         statement.execute("CREATE EXTENSION pgcrypto;");
         statement.close();
         connection.close();
+    }
+
+    void setupValkey(Map<String, String> props) {
+        valkeyContainer = new ValkeyContainer(DockerImageName.parse("valkey/valkey:" + VALKEY_MAJOR_VERSION)
+                        .asCompatibleSubstituteFor("docker.io/valkey/valkey"));
+        valkeyContainer.start();
+        // Provide the connection credentials as a redis URI for compatibility
+        String valkeyHost = valkeyContainer.getConnectionString().replace("valkey://", "redis://");
+        props.put("quarkus.redis.hosts", valkeyHost);
+        props.put("in-memory-db.enabled", "true");
     }
 
     void setupMockEngine(Map<String, String> props) {
