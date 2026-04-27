@@ -88,12 +88,12 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
     {/let}
 {/if}
 </table>
-{#if rhelRetiredCount == 0 && rhelExpiringCount == 0 && rhel10RetiredCount == 0 && rhel10ExpiringCount == 0 && rhel9RetiredCount == 0 && rhel9ExpiringCount == 0 && rhel8RetiredCount == 0 && rhel8ExpiringCount == 0}
+{#if (rhelRetiredCount == 0 && rhelExpiringCount == 0 && rhel10RetiredCount == 0 && rhel10ExpiringCount == 0 && rhel9RetiredCount == 0 && rhel9ExpiringCount == 0 && rhel8RetiredCount == 0 && rhel8ExpiringCount == 0) || (rhelSystemsCount == 0 && rhel10SystemsCount == 0 && rhel9SystemsCount == 0 && rhel8SystemsCount == 0)}
 <p style="font-size: 14px; color: #151515; margin-top: 16px;">
     Your inventory remained fully supported. A value of 0 indicated that no systems reached a retirement threshold or approached end-of-life dates.
 </p>
 {#else}
-    {#if rhelRetiredCount == 0 || rhelExpiringCount == 0 || rhel10RetiredCount == 0 || rhel10ExpiringCount == 0 || rhel9RetiredCount == 0 || rhel9ExpiringCount == 0 || rhel8RetiredCount == 0 || rhel8ExpiringCount == 0}
+    {#if (rhelRetiredCount == 0 || rhelExpiringCount == 0 || rhel10RetiredCount == 0 || rhel10ExpiringCount == 0 || rhel9RetiredCount == 0 || rhel9ExpiringCount == 0 || rhel8RetiredCount == 0 || rhel8ExpiringCount == 0) && ((rhelSystemsCount > 0 && (rhelRetiredCount == 0 || rhelExpiringCount == 0)) || (rhel10SystemsCount > 0 && (rhel10RetiredCount == 0 || rhel10ExpiringCount == 0)) || (rhel9SystemsCount > 0 && (rhel9RetiredCount == 0 || rhel9ExpiringCount == 0)) || (rhel8SystemsCount > 0 && (rhel8RetiredCount == 0 || rhel8ExpiringCount == 0)))}
     <p style="font-size: 14px; color: #151515; margin-top: 16px;">
         Certain systems reached a retirement threshold. A value of 0 in any category confirmed that no additional systems were affected by that specific lifecycle event.
     </p>
