@@ -168,7 +168,7 @@ public class DrawerNotificationRepository {
     private static String addHqlConditions(String hql,
                                            boolean bundlesNotEmpty, boolean applicationsNotEmpty, boolean eventTypesNotEmpty,
                                            boolean excludeNotEmpty, LocalDateTime startDate, LocalDateTime endDate, Boolean readStatus) {
-        // Exclusion list from RBAC check
+        // Exclusion list from Kessel check
         if (excludeNotEmpty) {
             hql += " AND e.id NOT IN (:uuidToExclude)";
         }
