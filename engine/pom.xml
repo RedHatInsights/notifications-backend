@@ -15,6 +15,7 @@
 
     <properties>
         <apache.commons.csv.version>1.14.1</apache.commons.csv.version>
+        <testcontainers-valkey.version>1.0.0</testcontainers-valkey.version>
     </properties>
 
     <dependencies>
@@ -45,6 +46,10 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-redis-client</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -182,6 +187,12 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-postgresql</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ss-bhatt</groupId>
+            <artifactId>testcontainers-valkey</artifactId>
+            <version>${testcontainers-valkey.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

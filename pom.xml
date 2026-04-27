@@ -80,12 +80,12 @@
 
         <quarkus-logging-cloudwatch.version>6.16.0</quarkus-logging-cloudwatch.version>
         <quarkus-logging-sentry.version>2.3.1</quarkus-logging-sentry.version>
-        <quarkus-mcp-server.version>1.11.1</quarkus-mcp-server.version>
+        <quarkus-mcp-server.version>1.12.0</quarkus-mcp-server.version>
         <quarkus-unleash.version>1.13.0</quarkus-unleash.version>
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.34.5</quarkus.platform.version>
+        <quarkus.platform.version>3.34.6</quarkus.platform.version>
         <redhat.event-schemas.version>1.5.0</redhat.event-schemas.version>
         <com.networknt.json-schema-validator.version>2.0.1</com.networknt.json-schema-validator.version>
 
@@ -93,6 +93,8 @@
         <jacoco.output.directory>${project.build.directory}/jacoco-report</jacoco.output.directory>
         <!-- Point the Sonar Qube Plugin always to the same JaCoCo report to aggregate sub-modules reports-->
         <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+
+        <jandex-maven-plugin.version>3.5.3</jandex-maven-plugin.version>
 
     </properties>
 

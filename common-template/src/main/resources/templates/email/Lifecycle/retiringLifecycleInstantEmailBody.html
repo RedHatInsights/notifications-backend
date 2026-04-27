@@ -12,13 +12,13 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
     rhelSystemsCount = action.events[0].payload.rhel_retired.orEmpty.systems_count.or(0)
     rhel10RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty.count.or(0)
     rhel10ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel10.orEmpty.count.or(0)
-    rhel10SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty.systems_count.or(0) 
+    rhel10SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty.systems_count.or(0)
     rhel9RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty.count.or(0)
     rhel9ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel9.orEmpty.count.or(0)
-    rhel9SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty.systems_count.or(0) 
+    rhel9SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty.systems_count.or(0)
     rhel8RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.count.or(0)
     rhel8ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel8.orEmpty.count.or(0)
-    rhel8SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.systems_count.or(0) 
+    rhel8SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.systems_count.or(0)
 }
 <table style="width: 100%; border: 0">
 {! RHEL life cycle section !}

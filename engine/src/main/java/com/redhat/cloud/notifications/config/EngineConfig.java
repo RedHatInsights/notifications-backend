@@ -35,6 +35,7 @@ public class EngineConfig {
     private static final String UNLEASH = "notifications.unleash.enabled";
     private static final String PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS = "processor.connectors.max-server-errors";
     private static final String PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR = "processor.connectors.min-delay-since-first-server-error";
+    private static final String IN_MEMORY_DB_ENABLED = "in-memory-db.enabled";
 
     /**
      * Standard "Red Hat Hybrid Cloud Console" sender that the vast majority of the
@@ -57,6 +58,7 @@ public class EngineConfig {
     private String drawerToggle;
     private String exportServiceHccClusterToggle;
     private String kafkaConsumedTotalCheckerToggle;
+    private String valkeyEventDeduplicatorToggle;
     private String toggleBlacklistedEndpoints;
     private String toggleBlacklistedEventTypes;
     private String toggleKafkaOutgoingHighVolumeTopic;
@@ -154,6 +156,9 @@ public class EngineConfig {
     @ConfigProperty(name = NOTIFICATIONS_INGRESSREPLAY_END_TIME, defaultValue = "2025-12-15T09:30:00Z")
     String replayEndTime;
 
+    @ConfigProperty(name = IN_MEMORY_DB_ENABLED, defaultValue = "false")
+    boolean inMemoryDbEnabled;
+
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -167,6 +172,7 @@ public class EngineConfig {
         drawerToggle = toggleRegistry.register("drawer", true);
         exportServiceHccClusterToggle = toggleRegistry.register("export-service-hcc-cluster", true);
         kafkaConsumedTotalCheckerToggle = toggleRegistry.register("kafka-consumed-total-checker", true);
+        valkeyEventDeduplicatorToggle = toggleRegistry.register("valkey-event-deduplicator", true);
         toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
         toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
         toggleBlacklistedEventTypes = toggleRegistry.register("blacklisted-event-types", true);
@@ -203,6 +209,8 @@ public class EngineConfig {
         config.put(asyncEventProcessingToggle, isAsyncEventProcessing());
         config.put(toggleIncludeSeverityToFilterRecipients, isIncludeSeverityToFilterRecipientsEnabled(""));
         config.put(toggleSkipProcessingMessagesOnReplayService, isSkipMessageProcessing());
+        config.put(valkeyEventDeduplicatorToggle, isValkeyEventDeduplicatorEnabled());
+        config.put(IN_MEMORY_DB_ENABLED, isInMemoryDbEnabled());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -381,5 +389,17 @@ public class EngineConfig {
         } else {
             return false;
         }
+    }
+
+    public boolean isValkeyEventDeduplicatorEnabled() {
+        if (unleashEnabled) {
+            return this.unleash.isEnabled(this.valkeyEventDeduplicatorToggle, false);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean isInMemoryDbEnabled() {
+        return inMemoryDbEnabled;
     }
 }
