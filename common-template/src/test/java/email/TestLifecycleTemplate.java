@@ -282,4 +282,101 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
         assertFalse(result.contains("RHEL life cycle"), "Body shouldn't contain 'RHEL life cycle' section when systems_count is 0");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
+
+    @Test
+    public void testRetiringLifecycleEmailBodyWithAllZeroCountsShowsFullySupportedMessage() {
+        Action action = createLifecycleAction();
+
+        action.setContext(
+            new Context.ContextBuilder()
+                .withAdditionalProperty("lifecycle", Map.of("report_date", "1st Jan 2026"))
+                .build()
+        );
+
+        action.setEvents(List.of(
+            new Event.EventBuilder()
+                .withMetadata(new Metadata.MetadataBuilder().build())
+                .withPayload(
+                    new Payload.PayloadBuilder()
+                        .withAdditionalProperty("rhel_retired", Map.of("rhel_versions_count", 0, "systems_count", 0))
+                        .withAdditionalProperty("rhel_near_retirement", Map.of("rhel_versions_count", 0, "systems_count", 0))
+                        .withAdditionalProperty("appstream_retired", Map.of(
+                            "rhel8", Map.of("count", 0, "systems_count", 0),
+                            "rhel9", Map.of("count", 0, "systems_count", 0),
+                            "rhel10", Map.of("count", 0, "systems_count", 0)
+                        ))
+                        .withAdditionalProperty("appstream_near_retirement", Map.of(
+                            "rhel8", Map.of("count", 0, "systems_count", 0),
+                            "rhel9", Map.of("count", 0, "systems_count", 0),
+                            "rhel10", Map.of("count", 0, "systems_count", 0)
+                        ))
+                        .build()
+                )
+                .build()
+        ));
+
+        String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
+        assertTrue(result.contains("Your inventory remained fully supported"), "Body should contain fully supported message when all counts are 0");
+        assertTrue(result.contains("A value of 0 indicated that no systems reached a retirement threshold or approached end-of-life dates"), "Body should contain full explanation message");
+        assertFalse(result.contains("Certain systems reached a retirement threshold"), "Body should not contain partial zero message when all are 0");
+    }
+
+    @Test
+    public void testRetiringLifecycleEmailBodyWithSomeZeroCountsShowsPartialMessage() {
+        Action action = createLifecycleAction();
+
+        action.setContext(
+            new Context.ContextBuilder()
+                .withAdditionalProperty("lifecycle", Map.of("report_date", "1st Jan 2026"))
+                .build()
+        );
+
+        action.setEvents(List.of(
+            new Event.EventBuilder()
+                .withMetadata(new Metadata.MetadataBuilder().build())
+                .withPayload(
+                    new Payload.PayloadBuilder()
+                        .withAdditionalProperty("rhel_retired", Map.of("rhel_versions_count", 5, "systems_count", 10))
+                        .withAdditionalProperty("rhel_near_retirement", Map.of("rhel_versions_count", 0, "systems_count", 10))
+                        .withAdditionalProperty("appstream_retired", Map.of("rhel8", Map.of("count", 2, "systems_count", 5)))
+                        .withAdditionalProperty("appstream_near_retirement", Map.of("rhel8", Map.of("count", 0, "systems_count", 5)))
+                        .build()
+                )
+                .build()
+        ));
+
+        String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
+        assertTrue(result.contains("Certain systems reached a retirement threshold"), "Body should contain partial message when some counts are 0");
+        assertTrue(result.contains("A value of 0 in any category confirmed that no additional systems were affected by that specific lifecycle event"), "Body should contain partial explanation message");
+        assertFalse(result.contains("Your inventory remained fully supported"), "Body should not contain fully supported message when some counts are not 0");
+    }
+
+    @Test
+    public void testRetiringLifecycleEmailBodyWithNoZeroCountsShowsNoMessage() {
+        Action action = createLifecycleAction();
+
+        action.setContext(
+            new Context.ContextBuilder()
+                .withAdditionalProperty("lifecycle", Map.of("report_date", "1st Jan 2026"))
+                .build()
+        );
+
+        action.setEvents(List.of(
+            new Event.EventBuilder()
+                .withMetadata(new Metadata.MetadataBuilder().build())
+                .withPayload(
+                    new Payload.PayloadBuilder()
+                        .withAdditionalProperty("rhel_retired", Map.of("rhel_versions_count", 5, "systems_count", 10))
+                        .withAdditionalProperty("rhel_near_retirement", Map.of("rhel_versions_count", 3, "systems_count", 10))
+                        .withAdditionalProperty("appstream_retired", Map.of("rhel8", Map.of("count", 2, "systems_count", 5)))
+                        .withAdditionalProperty("appstream_near_retirement", Map.of("rhel8", Map.of("count", 4, "systems_count", 5)))
+                        .build()
+                )
+                .build()
+        ));
+
+        String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
+        assertFalse(result.contains("Your inventory remained fully supported"), "Body should not contain fully supported message when no counts are 0");
+        assertFalse(result.contains("Certain systems reached a retirement threshold"), "Body should not contain partial message when no counts are 0");
+    }
 }
