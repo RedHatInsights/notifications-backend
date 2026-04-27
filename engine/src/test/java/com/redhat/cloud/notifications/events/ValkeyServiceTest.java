@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -16,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
 class ValkeyServiceTest {
+
     @Inject
     ValkeyService valkeyService;
 
@@ -23,7 +25,7 @@ class ValkeyServiceTest {
     void testAddNewEntries() {
         UUID eventTypeId1 = UUID.randomUUID();
         String dedupKey1 = "dedup-key-new-" + UUID.randomUUID();
-        LocalDateTime deleteAfter = LocalDateTime.now().plusDays(7);
+        LocalDateTime deleteAfter = LocalDateTime.now(ZoneOffset.UTC).plusDays(7);
 
         // Insert first event
         assertTrue(valkeyService.isNewEvent(eventTypeId1, dedupKey1, deleteAfter));
@@ -50,7 +52,7 @@ class ValkeyServiceTest {
         // Insert initial event
         UUID eventTypeId = UUID.randomUUID();
         String dedupKey = "dedup-key-duplicates-" + UUID.randomUUID();
-        LocalDateTime deleteAfter = LocalDateTime.now().plusDays(7);
+        LocalDateTime deleteAfter = LocalDateTime.now(ZoneOffset.UTC).plusDays(7);
         assertTrue(valkeyService.isNewEvent(eventTypeId, dedupKey, deleteAfter));
 
         // Attempt to reinsert the same event
@@ -65,14 +67,13 @@ class ValkeyServiceTest {
     void testEntryExpiry() throws InterruptedException {
         UUID eventTypeId = UUID.randomUUID();
         String deduplicationKey = "dedup-expiry-key-" + UUID.randomUUID();
-        UUID eventId = UUID.randomUUID();
 
-        // Key will expire in 7 seconds
-        LocalDateTime deleteAfter = LocalDateTime.now().plusSeconds(7);
+        // Key will expire in 3 seconds
+        LocalDateTime deleteAfter = LocalDateTime.now(ZoneOffset.UTC).plusSeconds(3);
         valkeyService.isNewEvent(eventTypeId, deduplicationKey, deleteAfter);
 
-        // Wait 10 seconds and attempt to insert key that should have expired
-        Thread.sleep(Duration.ofSeconds(10));
+        // Wait 5 seconds and attempt to insert key that should have expired
+        Thread.sleep(Duration.ofSeconds(5));
         assertTrue(valkeyService.isNewEvent(eventTypeId, deduplicationKey, deleteAfter));
     }
 }
