@@ -1,28 +1,15 @@
 package com.redhat.cloud.notifications.connector.pagerduty;
 
-import com.redhat.cloud.notifications.connector.pagerduty.config.PagerDutyConnectorConfig;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
 
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
-/**
- * Constructs a <a href="https://support.pagerduty.com/main/docs/pd-cef">PD-CEF</a> alert event.
- * <br>
- * The severity is set to {@link PagerDutySeverity#WARNING}, and the action to {@link PagerDutyEventAction#TRIGGER} for
- * now. The following optional fields are not set (in jq format): <code>.payload.component, .payload.class, .dedup_key, .links[], .trigger[]</code>
- * <br>
- */
-@ApplicationScoped
-public class PagerDutyTransformer implements Processor {
+public final class PagerDutyTransformer {
 
     public static final String PAYLOAD = "payload";
 
@@ -36,6 +23,7 @@ public class PagerDutyTransformer implements Processor {
     public static final String CUSTOM_DETAILS = "custom_details";
     public static final String DISPLAY_NAME = "display_name";
     public static final String EVENT_ACTION = "event_action";
+    public static final String EVENT_ACTION_TRIGGER = "trigger";
     public static final String EVENT_TYPE = "event_type";
     public static final String EVENTS = "events";
     public static final String GROUP = "group";
@@ -44,6 +32,7 @@ public class PagerDutyTransformer implements Processor {
     public static final String LINKS = "links";
     public static final String ORG_ID = "org_id";
     public static final String RED_HAT_SEVERITY = "red_hat_severity";
+    public static final String ROUTING_KEY = "routing_key";
     public static final String SEVERITY = "severity";
     public static final String SOURCE = "source";
     public static final String SOURCE_NAMES = "source_names";
@@ -51,22 +40,17 @@ public class PagerDutyTransformer implements Processor {
     public static final String TIMESTAMP = "timestamp";
     public static final String TEXT = "text";
 
-    /** Legacy user-provided severity levels, to be replaced by tenant-provided severity levels. */
     @Deprecated(forRemoval = true, since = "RHCLOUD-41561: after user-provided severity levels are removed.")
     public static final String PAGERDUTY_STATIC_SEVERITY = "pagerduty_static_severity";
 
     public static final DateTimeFormatter PD_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS+0000");
 
-    @Inject
-    PagerDutyConnectorConfig connectorConfig;
+    private PagerDutyTransformer() {
+    }
 
-    @Override
-    public void process(Exchange exchange) {
-        JsonObject cloudEventPayload = exchange.getIn().getBody(JsonObject.class);
-        validatePayload(cloudEventPayload);
-
+    static String buildPagerDutyPayload(JsonObject cloudEventPayload, String routingKey, boolean dynamicSeverityEnabled) {
         JsonObject message = new JsonObject();
-        message.put(EVENT_ACTION, PagerDutyEventAction.TRIGGER);
+        message.put(EVENT_ACTION, EVENT_ACTION_TRIGGER);
         message.mergeIn(getClientLinks(cloudEventPayload));
 
         JsonObject messagePayload = new JsonObject();
@@ -90,20 +74,17 @@ public class PagerDutyTransformer implements Processor {
         customDetails.put(ORG_ID, orgId);
         customDetails.put(CONTEXT, cloudEventPayload.getJsonObject(CONTEXT));
 
-        // Add source names, if provided
         JsonObject cloudSource = getSourceNames(cloudEventPayload.getJsonObject(SOURCE));
         if (cloudSource != null) {
             customDetails.put(SOURCE_NAMES, cloudSource);
         }
 
-        // Set severity level
-        messagePayload.put(SEVERITY, getSeverity(cloudEventPayload, orgId));
+        messagePayload.put(SEVERITY, getSeverity(cloudEventPayload, dynamicSeverityEnabled));
         String redHatSeverity = cloudEventPayload.getString(SEVERITY);
-        if (connectorConfig.isDynamicPagerdutySeverityEnabled(orgId) && redHatSeverity != null && !redHatSeverity.isEmpty()) {
+        if (dynamicSeverityEnabled && redHatSeverity != null && !redHatSeverity.isEmpty()) {
             customDetails.put(RED_HAT_SEVERITY, redHatSeverity);
         }
 
-        // Keep events, if provided
         if (cloudEventPayload.containsKey(EVENTS)) {
             customDetails.put(EVENTS, cloudEventPayload.getJsonArray(EVENTS));
         }
@@ -111,34 +92,23 @@ public class PagerDutyTransformer implements Processor {
         messagePayload.put(CUSTOM_DETAILS, customDetails);
         message.put(PAYLOAD, messagePayload);
 
-        exchange.getIn().setBody(message.encode());
+        message.put(ROUTING_KEY, routingKey);
+
+        return message.encode();
     }
 
-    /**
-     * Validates that the inputs for the required Alert Event fields are present
-     */
-    private void validatePayload(final JsonObject cloudEventPayload) {
+    static void validatePayload(final JsonObject cloudEventPayload, String orgId) {
         String summary = cloudEventPayload.getString(EVENT_TYPE);
         if (summary == null || summary.isEmpty()) {
-            throw new IllegalArgumentException("Event type must be specified for PagerDuty payload summary");
+            throw new IllegalArgumentException("Event type must be specified for PagerDuty payload summary [orgId=" + orgId + "]");
         }
 
         String source = cloudEventPayload.getString(APPLICATION);
         if (source == null || source.isEmpty()) {
-            throw new IllegalArgumentException("Application must be specified for PagerDuty payload source");
+            throw new IllegalArgumentException("Application must be specified for PagerDuty payload source [orgId=" + orgId + "]");
         }
     }
 
-    /**
-     * Performs the following link conversions:
-     * <ul>
-     *     <li>{@link #APPLICATION} integrated into {@link #CLIENT}</li>
-     *     <li>{@link #APPLICATION_URL} becomes {@link #CLIENT_URL}</li>
-     *     <li>{@link #INVENTORY_URL}, if present, creates an entry in the {@link #LINKS} object</li>
-     * </ul>
-     * <p>
-     * The result is similar to the links provided in Microsoft Teams notifications.
-     */
     static JsonObject getClientLinks(final JsonObject cloudEventPayload) {
         JsonObject clientLinks = new JsonObject();
 
@@ -183,13 +153,11 @@ public class PagerDutyTransformer implements Processor {
         return null;
     }
 
-    PagerDutySeverity getSeverity(final JsonObject cloudEventPayload, final String orgId) {
+    static PagerDutySeverity getSeverity(final JsonObject cloudEventPayload, boolean dynamicSeverityEnabled) {
         String severity = cloudEventPayload.getString(SEVERITY);
-        if (connectorConfig.isDynamicPagerdutySeverityEnabled(orgId)) {
+        if (dynamicSeverityEnabled) {
             return PagerDutySeverity.fromSecuritySeverity(severity);
         } else {
-            // `severity` is a required field, so this fallback is used while the internal field name changes.
-            // TODO RHCLOUD-41561: remove once fully migrated to tenant-provided severity levels
             String staticSeverity = cloudEventPayload.getString(PAGERDUTY_STATIC_SEVERITY);
             if (staticSeverity != null && !staticSeverity.isEmpty()) {
                 return PagerDutySeverity.fromJson(staticSeverity);
