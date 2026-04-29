@@ -70,7 +70,7 @@
         <testcontainers.version>2.0.5</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
         <openapi-parser.version>4.0.4</openapi-parser.version>
-        <swagger-v3-core.version>2.2.48</swagger-v3-core.version>
+        <swagger-v3-core.version>2.2.49</swagger-v3-core.version>
         <failsafe.version>3.3.2</failsafe.version>
 
         <wiremock.version>3.13.2</wiremock.version>
