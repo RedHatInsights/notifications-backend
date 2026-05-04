@@ -2,6 +2,8 @@ package com.redhat.cloud.notifications.mcp;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
+import io.quarkus.cache.Cache;
+import io.quarkus.cache.CacheName;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -48,9 +50,25 @@ public class McpAuthTest {
     @Inject
     MicrometerAssertionHelper micrometerAssertionHelper;
 
+    @CacheName("mcp-get-severities")
+    Cache severitiesCache;
+
+    @CacheName("mcp-get-bundle")
+    Cache bundleCache;
+
+    @CacheName("mcp-get-application")
+    Cache applicationCache;
+
+    @CacheName("mcp-get-event-type")
+    Cache eventTypeCache;
+
     @BeforeEach
     void beforeEach() {
         MockServerLifecycleManager.getClient().resetAll();
+        severitiesCache.invalidateAll().await().indefinitely();
+        bundleCache.invalidateAll().await().indefinitely();
+        applicationCache.invalidateAll().await().indefinitely();
+        eventTypeCache.invalidateAll().await().indefinitely();
         micrometerAssertionHelper.saveCounterValuesBeforeTest(AUTH_SUCCESS_COUNTER);
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(AUTH_FAILURE_COUNTER, "reason", "missing_header");
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(AUTH_FAILURE_COUNTER, "reason", "missing_org_id");
@@ -125,6 +143,51 @@ public class McpAuthTest {
                 "params": {
                     "name": "getSeverities",
                     "arguments": {}
+                }
+            }
+            """;
+
+    private static final String GET_BUNDLE_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 6,
+                "params": {
+                    "name": "getBundle",
+                    "arguments": {
+                        "bundleName": "rhel"
+                    }
+                }
+            }
+            """;
+
+    private static final String GET_APPLICATION_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 7,
+                "params": {
+                    "name": "getApplication",
+                    "arguments": {
+                        "bundleName": "rhel",
+                        "applicationName": "patch"
+                    }
+                }
+            }
+            """;
+
+    private static final String GET_EVENT_TYPE_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 8,
+                "params": {
+                    "name": "getEventType",
+                    "arguments": {
+                        "bundleName": "rhel",
+                        "applicationName": "patch",
+                        "eventTypeName": "new-advisory"
+                    }
                 }
             }
             """;
@@ -248,8 +311,9 @@ public class McpAuthTest {
     public void testToolsListWithValidIdentity() {
         postMcp(validIdentity(), TOOLS_LIST_BODY)
                 .statusCode(200)
-                .body("result.tools.size()", greaterThanOrEqualTo(3))
-                .body("result.tools.name", hasItems("serverInfo", "whoami", "getSeverities"));
+                .body("result.tools.size()", greaterThanOrEqualTo(6))
+                .body("result.tools.name", hasItems("serverInfo", "whoami", "getSeverities",
+                        "getBundle", "getApplication", "getEventType"));
     }
 
     @Test
@@ -352,6 +416,138 @@ public class McpAuthTest {
         );
 
         postMcp(validIdentity(), GET_SEVERITIES_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- getBundle tool tests ---
+
+    @Test
+    public void testGetBundleWithValidIdentity() {
+        String bundleJson = "{\"id\":\"1234\",\"name\":\"rhel\",\"display_name\":\"Red Hat Enterprise Linux\"}";
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/notifications/bundles/rhel"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(bundleJson))
+        );
+
+        postMcp(validIdentity(), GET_BUNDLE_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("rhel"))
+                .body("result.content[0].text", containsString("Red Hat Enterprise Linux"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                getRequestedFor(urlPathEqualTo("/api/notifications/v1.0/notifications/bundles/rhel"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testGetBundleWithoutIdentityIsRejected() {
+        postMcp(null, GET_BUNDLE_BODY).statusCode(401);
+    }
+
+    @Test
+    public void testGetBundleWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/notifications/bundles/rhel"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), GET_BUNDLE_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- getApplication tool tests ---
+
+    @Test
+    public void testGetApplicationWithValidIdentity() {
+        String applicationJson = "{\"id\":\"5678\",\"name\":\"patch\",\"display_name\":\"Patch\",\"bundle_id\":\"1234\"}";
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/notifications/bundles/rhel/applications/patch"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(applicationJson))
+        );
+
+        postMcp(validIdentity(), GET_APPLICATION_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("patch"))
+                .body("result.content[0].text", containsString("Patch"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                getRequestedFor(urlPathEqualTo("/api/notifications/v1.0/notifications/bundles/rhel/applications/patch"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testGetApplicationWithoutIdentityIsRejected() {
+        postMcp(null, GET_APPLICATION_BODY).statusCode(401);
+    }
+
+    @Test
+    public void testGetApplicationWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/notifications/bundles/rhel/applications/patch"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), GET_APPLICATION_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- getEventType tool tests ---
+
+    @Test
+    public void testGetEventTypeWithValidIdentity() {
+        String eventTypeJson = "{\"id\":\"9012\",\"name\":\"new-advisory\",\"display_name\":\"New advisory\",\"application_id\":\"5678\"}";
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/notifications/bundles/rhel/applications/patch/eventTypes/new-advisory"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(eventTypeJson))
+        );
+
+        postMcp(validIdentity(), GET_EVENT_TYPE_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("new-advisory"))
+                .body("result.content[0].text", containsString("New advisory"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                getRequestedFor(urlPathEqualTo("/api/notifications/v1.0/notifications/bundles/rhel/applications/patch/eventTypes/new-advisory"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testGetEventTypeWithoutIdentityIsRejected() {
+        postMcp(null, GET_EVENT_TYPE_BODY).statusCode(401);
+    }
+
+    @Test
+    public void testGetEventTypeWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/notifications/bundles/rhel/applications/patch/eventTypes/new-advisory"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), GET_EVENT_TYPE_BODY)
                 .statusCode(200)
                 .body("result.isError", is(true))
                 .body("result.content[0].text", containsString("Resource not found"));

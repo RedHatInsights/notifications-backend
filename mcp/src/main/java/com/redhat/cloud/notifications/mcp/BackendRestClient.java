@@ -2,11 +2,12 @@ package com.redhat.cloud.notifications.mcp;
 
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
+import org.jboss.resteasy.reactive.RestHeader;
+import org.jboss.resteasy.reactive.RestPath;
 
 import java.time.temporal.ChronoUnit;
 
@@ -19,5 +20,20 @@ public interface BackendRestClient {
     @GET
     @Path("/api/notifications/v2.0/notifications/severities")
     @Produces(APPLICATION_JSON)
-    String getSeverities(@HeaderParam("x-rh-identity") String xRhIdentity);
+    String getSeverities(@RestHeader("x-rh-identity") String xRhIdentity);
+
+    @GET
+    @Path("/api/notifications/v1.0/notifications/bundles/{bundleName}")
+    @Produces(APPLICATION_JSON)
+    String getBundle(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath String bundleName);
+
+    @GET
+    @Path("/api/notifications/v1.0/notifications/bundles/{bundleName}/applications/{applicationName}")
+    @Produces(APPLICATION_JSON)
+    String getApplication(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath String bundleName, @RestPath String applicationName);
+
+    @GET
+    @Path("/api/notifications/v1.0/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
+    @Produces(APPLICATION_JSON)
+    String getEventType(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath String bundleName, @RestPath String applicationName, @RestPath String eventTypeName);
 }
