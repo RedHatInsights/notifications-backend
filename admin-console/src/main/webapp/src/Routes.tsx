@@ -5,6 +5,7 @@ import { ApplicationPage } from './pages/ApplicationPage';
 import { BundlePage } from './pages/BundlePage';
 import { MessageValidatorPage } from './pages/MessageValidatorPage';
 import { RenderEmailPage } from './pages/RenderEmailPage';
+import { DailyDigestEmailPage } from './pages/DailyDigestEmailPage';
 
 interface Path {
     readonly path: string;
@@ -15,7 +16,8 @@ export const linkTo = {
     bundle: (bundleId: string) => `/bundle/${bundleId}`,
     application: (applicationId: string) => `/application/${applicationId}`,
     email: () => '/email',
-    messageValidator: () => '/utils/message-validator'
+    messageValidator: () => '/utils/message-validator',
+    dailyDigestEmail: () => '/utils/daily-digest-email'
 };
 
 const pathRoutes: Path[] = [
@@ -34,6 +36,10 @@ const pathRoutes: Path[] = [
     {
         path: linkTo.messageValidator(),
         component: MessageValidatorPage
+    },
+    {
+        path: linkTo.dailyDigestEmail(),
+        component: DailyDigestEmailPage
     }
 ];
 

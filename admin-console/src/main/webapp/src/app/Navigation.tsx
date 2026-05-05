@@ -44,6 +44,9 @@ export const Navigation: React.FunctionComponent<NavigationProps> = props => {
                     <EnhancedNavItem to={ linkTo.email() }>
                         Email templates
                     </EnhancedNavItem>
+                    <EnhancedNavItem to={ linkTo.dailyDigestEmail() }>
+                        Trigger a daily digest email
+                    </EnhancedNavItem>
                 </NavExpandable>
             </NavList>
         </Nav>
