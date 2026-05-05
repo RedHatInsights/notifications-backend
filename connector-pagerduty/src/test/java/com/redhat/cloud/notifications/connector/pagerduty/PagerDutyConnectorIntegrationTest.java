@@ -13,11 +13,15 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getClient;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyMessageHandlerTest.AUTHENTICATION;
@@ -112,5 +116,114 @@ class PagerDutyConnectorIntegrationTest extends BaseHttpConnectorIntegrationTest
         assertNotNull(sentPayload.getJsonObject(PAYLOAD));
         assertEquals("default-event-type", sentPayload.getJsonObject(PAYLOAD).getString(SUMMARY));
         assertEquals("error", sentPayload.getJsonObject(PAYLOAD).getString(SEVERITY));
+    }
+
+    @Test
+    void testSuccessfulNotificationWithDynamicSeverityDisabled() {
+        mockHttpResponse(getRemoteServerPath(), 200, "OK");
+
+        String targetUrl = getConnectorSpecificTargetUrl() + getRemoteServerPath();
+        when(config.getPagerDutyUrl()).thenReturn(targetUrl);
+        when(config.isDynamicPagerdutySeverityEnabled(anyString())).thenReturn(false);
+
+        JsonObject authentication = new JsonObject();
+        authentication.put("type", AuthenticationType.SECRET_TOKEN.name());
+        authentication.put("secretId", 123L);
+
+        JsonObject innerPayload = new JsonObject();
+        innerPayload.put(ACCOUNT_ID, DEFAULT_ACCOUNT_ID);
+        innerPayload.put(APPLICATION, "default-application");
+        innerPayload.put(BUNDLE, "default-bundle");
+        innerPayload.put(CONTEXT, JsonObject.of(
+                DISPLAY_NAME, "console",
+                "inventory_id", "8a4a4f75-5319-4255-9eb5-1ee5a92efd7f"
+        ));
+        innerPayload.put(EVENT_TYPE, "default-event-type");
+        innerPayload.put(EVENTS, JsonArray.of(
+                JsonObject.of("event-1-key", "event-1-value")
+        ));
+        innerPayload.put(ORG_ID, DEFAULT_ORG_ID);
+        innerPayload.put(TIMESTAMP, LocalDateTime.of(2024, 8, 12, 17, 26, 19).toString());
+        innerPayload.put(APPLICATION_URL, "https://console.redhat.com/insights/default-application");
+        innerPayload.put(INVENTORY_URL, "https://console.redhat.com/insights/inventory/8a4a4f75-5319-4255-9eb5-1ee5a92efd7f");
+        innerPayload.put(SEVERITY, "warning");
+
+        JsonObject payload = new JsonObject();
+        payload.put(AUTHENTICATION, authentication);
+        payload.put(PAYLOAD, innerPayload);
+        payload.put(ORG_ID, DEFAULT_ORG_ID);
+
+        SourcesSecretResponse secretResponse = new SourcesSecretResponse();
+        secretResponse.password = ROUTING_KEY_VALUE;
+        when(authenticationLoader.fetchAuthenticationData(anyString(), any(JsonObject.class)))
+            .thenReturn(Optional.of(new AuthenticationResult(secretResponse, AuthenticationType.SECRET_TOKEN)));
+
+        String cloudEventId = sendCloudEventMessage(payload);
+        assertSuccessfulOutgoingMessage(cloudEventId, targetUrl, 200);
+
+        List<LoggedRequest> loggedRequests = getClient().findAll(
+            postRequestedFor(urlEqualTo(getRemoteServerPath()))
+        );
+        assertEquals(1, loggedRequests.size());
+
+        JsonObject sentPayload = new JsonObject(loggedRequests.get(0).getBodyAsString());
+        assertEquals(ROUTING_KEY_VALUE, sentPayload.getString(ROUTING_KEY));
+        assertEquals("warning", sentPayload.getJsonObject(PAYLOAD).getString(SEVERITY));
+        assertNull(sentPayload.getJsonObject(PAYLOAD).getJsonObject(CUSTOM_DETAILS).getString(RED_HAT_SEVERITY));
+    }
+
+    @Test
+    void testSuccessfulNotificationWithDynamicSeverityDisabledAndStaticSeverity() {
+        mockHttpResponse(getRemoteServerPath(), 200, "OK");
+
+        String targetUrl = getConnectorSpecificTargetUrl() + getRemoteServerPath();
+        when(config.getPagerDutyUrl()).thenReturn(targetUrl);
+        when(config.isDynamicPagerdutySeverityEnabled(anyString())).thenReturn(false);
+
+        JsonObject authentication = new JsonObject();
+        authentication.put("type", AuthenticationType.SECRET_TOKEN.name());
+        authentication.put("secretId", 123L);
+
+        JsonObject innerPayload = new JsonObject();
+        innerPayload.put(ACCOUNT_ID, DEFAULT_ACCOUNT_ID);
+        innerPayload.put(APPLICATION, "default-application");
+        innerPayload.put(BUNDLE, "default-bundle");
+        innerPayload.put(CONTEXT, JsonObject.of(
+                DISPLAY_NAME, "console",
+                "inventory_id", "8a4a4f75-5319-4255-9eb5-1ee5a92efd7f"
+        ));
+        innerPayload.put(EVENT_TYPE, "default-event-type");
+        innerPayload.put(EVENTS, JsonArray.of(
+                JsonObject.of("event-1-key", "event-1-value")
+        ));
+        innerPayload.put(ORG_ID, DEFAULT_ORG_ID);
+        innerPayload.put(TIMESTAMP, LocalDateTime.of(2024, 8, 12, 17, 26, 19).toString());
+        innerPayload.put(APPLICATION_URL, "https://console.redhat.com/insights/default-application");
+        innerPayload.put(INVENTORY_URL, "https://console.redhat.com/insights/inventory/8a4a4f75-5319-4255-9eb5-1ee5a92efd7f");
+        innerPayload.put(PAGERDUTY_STATIC_SEVERITY, PagerDutySeverity.CRITICAL);
+        innerPayload.put(SEVERITY, "warning");
+
+        JsonObject payload = new JsonObject();
+        payload.put(AUTHENTICATION, authentication);
+        payload.put(PAYLOAD, innerPayload);
+        payload.put(ORG_ID, DEFAULT_ORG_ID);
+
+        SourcesSecretResponse secretResponse = new SourcesSecretResponse();
+        secretResponse.password = ROUTING_KEY_VALUE;
+        when(authenticationLoader.fetchAuthenticationData(anyString(), any(JsonObject.class)))
+            .thenReturn(Optional.of(new AuthenticationResult(secretResponse, AuthenticationType.SECRET_TOKEN)));
+
+        String cloudEventId = sendCloudEventMessage(payload);
+        assertSuccessfulOutgoingMessage(cloudEventId, targetUrl, 200);
+
+        List<LoggedRequest> loggedRequests = getClient().findAll(
+            postRequestedFor(urlEqualTo(getRemoteServerPath()))
+        );
+        assertEquals(1, loggedRequests.size());
+
+        JsonObject sentPayload = new JsonObject(loggedRequests.get(0).getBodyAsString());
+        assertEquals(ROUTING_KEY_VALUE, sentPayload.getString(ROUTING_KEY));
+        assertEquals("critical", sentPayload.getJsonObject(PAYLOAD).getString(SEVERITY));
+        assertNull(sentPayload.getJsonObject(PAYLOAD).getJsonObject(CUSTOM_DETAILS).getString(RED_HAT_SEVERITY));
     }
 }
