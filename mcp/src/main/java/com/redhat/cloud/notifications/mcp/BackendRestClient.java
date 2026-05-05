@@ -8,8 +8,11 @@ import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestPath;
+import org.jboss.resteasy.reactive.RestQuery;
 
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.UUID;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -36,4 +39,24 @@ public interface BackendRestClient {
     @Path("/api/notifications/v1.0/notifications/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
     @Produces(APPLICATION_JSON)
     String getEventType(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath String bundleName, @RestPath String applicationName, @RestPath String eventTypeName);
+
+    @GET
+    @Path("/api/integrations/v2.0/endpoints")
+    @Produces(APPLICATION_JSON)
+    String getEndpoints(@RestHeader("x-rh-identity") String xRhIdentity, @RestQuery List<String> type, @RestQuery Boolean active, @RestQuery String name, @RestQuery Integer limit, @RestQuery Integer pageNumber);
+
+    @GET
+    @Path("/api/integrations/v2.0/endpoints/{id}")
+    @Produces(APPLICATION_JSON)
+    String getEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID id);
+
+    @GET
+    @Path("/api/integrations/v2.0/endpoints/{id}/history")
+    @Produces(APPLICATION_JSON)
+    String getEndpointHistory(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID id, @RestQuery Boolean includeDetail, @RestQuery Integer limit, @RestQuery Integer pageNumber);
+
+    @GET
+    @Path("/api/integrations/v1.0/endpoints/{id}/history/{history_id}/details")
+    @Produces(APPLICATION_JSON)
+    String getEndpointHistoryDetails(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID id, @RestPath("history_id") UUID historyId);
 }
