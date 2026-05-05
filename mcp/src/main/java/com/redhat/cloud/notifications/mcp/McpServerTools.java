@@ -112,7 +112,7 @@ public class McpServerTools {
             @NotBlank @ToolArg(description = "The UUID of the integration") String id) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         return executeRestCall("getIntegration", principal,
-                () -> backendClient.getEndpoint(principal.getRawHeader(), UUID.fromString(id)));
+                () -> backendClient.getEndpoint(principal.getRawHeader(), parseUuid("id", id)));
     }
 
     @Tool(description = "Retrieves notification history for an integration")
@@ -123,7 +123,7 @@ public class McpServerTools {
             @ToolArg(description = "Page number (starts at 0)", required = false) Integer pageNumber) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         return executeRestCall("getIntegrationHistory", principal,
-                () -> backendClient.getEndpointHistory(principal.getRawHeader(), UUID.fromString(id), includeDetail, limit, pageNumber));
+                () -> backendClient.getEndpointHistory(principal.getRawHeader(), parseUuid("id", id), includeDetail, limit, pageNumber));
     }
 
     @Tool(description = "Retrieves detailed information about a specific integration notification event")
@@ -132,7 +132,15 @@ public class McpServerTools {
             @NotBlank @ToolArg(description = "The UUID of the notification history event") String historyId) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         return executeRestCall("getIntegrationHistoryDetails", principal,
-                () -> backendClient.getEndpointHistoryDetails(principal.getRawHeader(), UUID.fromString(integrationId), UUID.fromString(historyId)));
+                () -> backendClient.getEndpointHistoryDetails(principal.getRawHeader(), parseUuid("integrationId", integrationId), parseUuid("historyId", historyId)));
+    }
+
+    private static UUID parseUuid(String paramName, String value) {
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            throw new ToolCallException("Invalid UUID for " + paramName + ": " + value);
+        }
     }
 
     /**
