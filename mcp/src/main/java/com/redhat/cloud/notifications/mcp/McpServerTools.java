@@ -51,6 +51,7 @@ public class McpServerTools {
         );
     }
 
+    // Cached here because severities are public, rarely updated, and require no ownership check.
     @CacheResult(cacheName = "mcp-get-severities")
     @Tool(description = "Returns the list of available notification severities")
     public String getSeverities() {
@@ -59,6 +60,7 @@ public class McpServerTools {
                 () -> backendClient.getSeverities(principal.getRawHeader()));
     }
 
+    // Cached here because bundles are public, rarely updated, and require no ownership check.
     @CacheResult(cacheName = "mcp-get-bundle")
     @Tool(description = "Retrieves a bundle by name")
     public String getBundle(
@@ -68,6 +70,7 @@ public class McpServerTools {
                 () -> backendClient.getBundle(principal.getRawHeader(), bundleName));
     }
 
+    // Cached here because applications are public, rarely updated, and require no ownership check.
     @CacheResult(cacheName = "mcp-get-application")
     @Tool(description = "Retrieves an application by bundle and application name")
     public String getApplication(
@@ -78,6 +81,7 @@ public class McpServerTools {
                 () -> backendClient.getApplication(principal.getRawHeader(), bundleName, applicationName));
     }
 
+    // Cached here because event types are public, rarely updated, and require no ownership check.
     @CacheResult(cacheName = "mcp-get-event-type")
     @Tool(description = "Retrieves an event type by bundle, application, and event type name")
     public String getEventType(
