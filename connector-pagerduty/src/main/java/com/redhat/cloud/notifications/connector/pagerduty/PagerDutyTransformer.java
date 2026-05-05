@@ -9,6 +9,13 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
+/**
+ * Constructs a <a href="https://support.pagerduty.com/main/docs/pd-cef">PD-CEF</a> alert event.
+ * <br>
+ * The severity is set to {@link PagerDutySeverity#WARNING}, and the action to {@link PagerDutyTransformer#EVENT_ACTION_TRIGGER} for
+ * now. The following optional fields are not set (in jq format): <code>.payload.component, .payload.class, .dedup_key, .links[], .trigger[]</code>
+ * <br>
+ */
 public final class PagerDutyTransformer {
 
     public static final String PAYLOAD = "payload";
@@ -40,13 +47,11 @@ public final class PagerDutyTransformer {
     public static final String TIMESTAMP = "timestamp";
     public static final String TEXT = "text";
 
+    /** Legacy user-provided severity levels, to be replaced by tenant-provided severity levels. */
     @Deprecated(forRemoval = true, since = "RHCLOUD-41561: after user-provided severity levels are removed.")
     public static final String PAGERDUTY_STATIC_SEVERITY = "pagerduty_static_severity";
 
     public static final DateTimeFormatter PD_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS+0000");
-
-    private PagerDutyTransformer() {
-    }
 
     static String buildPagerDutyPayload(JsonObject cloudEventPayload, String routingKey, boolean dynamicSeverityEnabled) {
         JsonObject message = new JsonObject();
@@ -74,11 +79,13 @@ public final class PagerDutyTransformer {
         customDetails.put(ORG_ID, orgId);
         customDetails.put(CONTEXT, cloudEventPayload.getJsonObject(CONTEXT));
 
+        // Add source names, if provided
         JsonObject cloudSource = getSourceNames(cloudEventPayload.getJsonObject(SOURCE));
         if (cloudSource != null) {
             customDetails.put(SOURCE_NAMES, cloudSource);
         }
 
+        // Set severity level
         messagePayload.put(SEVERITY, getSeverity(cloudEventPayload, dynamicSeverityEnabled));
         String redHatSeverity = cloudEventPayload.getString(SEVERITY);
         if (dynamicSeverityEnabled && redHatSeverity != null && !redHatSeverity.isEmpty()) {
@@ -109,6 +116,16 @@ public final class PagerDutyTransformer {
         }
     }
 
+    /**
+     * Performs the following link conversions:
+     * <ul>
+     *     <li>{@link #APPLICATION} integrated into {@link #CLIENT}</li>
+     *     <li>{@link #APPLICATION_URL} becomes {@link #CLIENT_URL}</li>
+     *     <li>{@link #INVENTORY_URL}, if present, creates an entry in the {@link #LINKS} object</li>
+     * </ul>
+     * <p>
+     * The result is similar to the links provided in Microsoft Teams notifications.
+     */
     static JsonObject getClientLinks(final JsonObject cloudEventPayload) {
         JsonObject clientLinks = new JsonObject();
 
@@ -158,6 +175,8 @@ public final class PagerDutyTransformer {
         if (dynamicSeverityEnabled) {
             return PagerDutySeverity.fromSecuritySeverity(severity);
         } else {
+            // `severity` is a required field, so this fallback is used while the internal field name changes.
+            // TODO RHCLOUD-41561: remove once fully migrated to tenant-provided severity levels
             String staticSeverity = cloudEventPayload.getString(PAGERDUTY_STATIC_SEVERITY);
             if (staticSeverity != null && !staticSeverity.isEmpty()) {
                 return PagerDutySeverity.fromJson(staticSeverity);
