@@ -53,8 +53,8 @@ public class TestApplicationServicesTemplate extends EmailTemplatesRendererHelpe
         assertTrue(result.contains("3 "), "EAP section should show 3 releases");
         assertTrue(result.contains("releases affecting your subscriptions."));
 
-        // Verify base_url is used in payload links
-        assertEquals(5, StringUtils.countMatches(result, "https://access.redhat.com/jbossnetwork/restricted/softwareDetail.html?softwareId="));
+        // Verify environment URL + download_path is used in payload links
+        assertEquals(5, StringUtils.countMatches(result, "https://localhost/jbossnetwork/restricted/softwareDetail.html?softwareId="));
 
         // Verify payload data is rendered in the tables
         assertTrue(result.contains("Red Hat build of Keycloak 26.2.13 Maven Repository"));
@@ -77,7 +77,7 @@ public class TestApplicationServicesTemplate extends EmailTemplatesRendererHelpe
             "\"application-services\":{" +
             "  \"global_releases_number\":1," +
             "  \"products\":{" +
-            "    \"keycloak-releases\":{\"description\":\"Red Hat build of Keycloak\",\"payloads\":[{\"id\":\"108766\",\"description\":\"Red Hat build of Keycloak 26.2.13 Maven Repository\",\"version\":\"26.2.13\"}]}" +
+            "    \"keycloak-releases\":{\"description\":\"Red Hat build of Keycloak\",\"payloads\":[{\"download_path\":\"jbossnetwork/restricted/softwareDetail.html?softwareId=108766\",\"description\":\"Red Hat build of Keycloak 26.2.13 Maven Repository\",\"version\":\"26.2.13\"}]}" +
             "  }" +
             "}," +
             "\"start_time\":null,\"end_time\":null" +
@@ -96,8 +96,8 @@ public class TestApplicationServicesTemplate extends EmailTemplatesRendererHelpe
             "\"application-services\":{" +
             "  \"global_releases_number\":2," +
             "  \"products\":{" +
-            "    \"zzz-product\":{\"description\":\"Zebra Product\",\"payloads\":[{\"id\":\"1\",\"description\":\"Zebra Release\",\"version\":\"1.0\"}]}," +
-            "    \"aaa-product\":{\"description\":\"Alpha Product\",\"payloads\":[{\"id\":\"2\",\"description\":\"Alpha Release\",\"version\":\"2.0\"}]}" +
+            "    \"zzz-product\":{\"description\":\"Zebra Product\",\"payloads\":[{\"download_path\":\"downloads/1\",\"description\":\"Zebra Release\",\"version\":\"1.0\"}]}," +
+            "    \"aaa-product\":{\"description\":\"Alpha Product\",\"payloads\":[{\"download_path\":\"downloads/2\",\"description\":\"Alpha Release\",\"version\":\"2.0\"}]}" +
             "  }" +
             "}," +
             "\"start_time\":null,\"end_time\":null" +
@@ -119,7 +119,7 @@ public class TestApplicationServicesTemplate extends EmailTemplatesRendererHelpe
             "  \"global_releases_number\":1," +
             "  \"products\":{" +
             "    \"keycloak-releases\":{\"description\":\"Red Hat build of Keycloak\",\"payloads\":[]}," +
-            "    \"eap-releases\":{\"description\":\"Red Hat JBoss Enterprise Application Platform\",\"payloads\":[{\"id\":\"1\",\"description\":\"EAP Release\",\"version\":\"8.0\"}]}" +
+            "    \"eap-releases\":{\"description\":\"Red Hat JBoss Enterprise Application Platform\",\"payloads\":[{\"download_path\":\"downloads/1\",\"description\":\"EAP Release\",\"version\":\"8.0\"}]}" +
             "  }" +
             "}," +
             "\"start_time\":null,\"end_time\":null" +
@@ -158,12 +158,12 @@ public class TestApplicationServicesTemplate extends EmailTemplatesRendererHelpe
         "            \"description\":\"Red Hat build of Keycloak\"," +
         "            \"payloads\":[" +
         "               {" +
-        "                  \"id\":\"108766\"," +
+        "                  \"download_path\":\"jbossnetwork/restricted/softwareDetail.html?softwareId=108766\"," +
         "                  \"description\":\"Red Hat build of Keycloak 26.2.13 Maven Repository\"," +
         "                  \"version\":\"26.2.13\"" +
         "               }," +
         "               {" +
-        "                  \"id\":\"108767\"," +
+        "                  \"download_path\":\"jbossnetwork/restricted/softwareDetail.html?softwareId=108767\"," +
         "                  \"description\":\"Red Hat build of Keycloak 26.2.13 Server\"," +
         "                  \"version\":\"26.2.13\"" +
         "               }" +
@@ -173,17 +173,17 @@ public class TestApplicationServicesTemplate extends EmailTemplatesRendererHelpe
         "            \"description\":\"Red Hat JBoss Enterprise Application Platform\"," +
         "            \"payloads\":[" +
         "               {" +
-        "                  \"id\":\"108920\"," +
+        "                  \"download_path\":\"jbossnetwork/restricted/softwareDetail.html?softwareId=108920\"," +
         "                  \"description\":\"Red Hat JBoss Enterprise Application Platform 8.1 Update 05 Installation Manager\"," +
         "                  \"version\":\"8.1\"" +
         "               }," +
         "               {" +
-        "                  \"id\":\"108917\"," +
+        "                  \"download_path\":\"jbossnetwork/restricted/softwareDetail.html?softwareId=108917\"," +
         "                  \"description\":\"Red Hat JBoss Enterprise Application Platform 8.1 Update 05 Source Code\"," +
         "                  \"version\":\"8.1\"" +
         "               }," +
         "               {" +
-        "                  \"id\":\"108918\"," +
+        "                  \"download_path\":\"jbossnetwork/restricted/softwareDetail.html?softwareId=108918\"," +
         "                  \"description\":\"Red Hat JBoss Enterprise Application Platform 8.1 Update 05 Maven Repository\"," +
         "                  \"version\":\"8.1\"" +
         "               }" +

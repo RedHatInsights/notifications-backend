@@ -48,7 +48,7 @@ public class ApplicationServicesTestHelpers {
                     .withMetadata(new Metadata.MetadataBuilder().build())
                     .withPayload(
                         new Payload.PayloadBuilder()
-                            .withAdditionalProperty("id", "108766")
+                            .withAdditionalProperty("download_path", "jbossnetwork/restricted/softwareDetail.html?softwareId=108766")
                             .withAdditionalProperty("description", "Red Hat build of Keycloak 26.2.13 Maven Repository")
                             .withAdditionalProperty("version", "26.2.13")
                             .build()
@@ -58,7 +58,7 @@ public class ApplicationServicesTestHelpers {
                     .withMetadata(new Metadata.MetadataBuilder().build())
                     .withPayload(
                         new Payload.PayloadBuilder()
-                            .withAdditionalProperty("id", "108767")
+                            .withAdditionalProperty("download_path", "jbossnetwork/restricted/softwareDetail.html?softwareId=108767")
                             .withAdditionalProperty("description", "Red Hat build of Keycloak 26.2.13 Server")
                             .withAdditionalProperty("version", "26.2.13")
                             .build()
@@ -76,7 +76,7 @@ public class ApplicationServicesTestHelpers {
                     .withMetadata(new Metadata.MetadataBuilder().build())
                     .withPayload(
                         new Payload.PayloadBuilder()
-                            .withAdditionalProperty("id", "108920")
+                            .withAdditionalProperty("download_path", "jbossnetwork/restricted/softwareDetail.html?softwareId=108920")
                             .withAdditionalProperty("description", "Red Hat JBoss Enterprise Application Platform 8.1 Update 05 Installation Manager")
                             .withAdditionalProperty("version", "8.1")
                             .build()
@@ -86,7 +86,7 @@ public class ApplicationServicesTestHelpers {
                     .withMetadata(new Metadata.MetadataBuilder().build())
                     .withPayload(
                         new Payload.PayloadBuilder()
-                            .withAdditionalProperty("id", "108917")
+                            .withAdditionalProperty("download_path", "jbossnetwork/restricted/softwareDetail.html?softwareId=108917")
                             .withAdditionalProperty("description", "Red Hat JBoss Enterprise Application Platform 8.1 Update 05 Source Code")
                             .withAdditionalProperty("version", "8.1")
                             .build()
@@ -96,7 +96,7 @@ public class ApplicationServicesTestHelpers {
                     .withMetadata(new Metadata.MetadataBuilder().build())
                     .withPayload(
                         new Payload.PayloadBuilder()
-                            .withAdditionalProperty("id", "108918")
+                            .withAdditionalProperty("download_path", "jbossnetwork/restricted/softwareDetail.html?softwareId=108918")
                             .withAdditionalProperty("description", "Red Hat JBoss Enterprise Application Platform 8.1 Update 05 Maven Repository")
                             .withAdditionalProperty("version", "8.1")
                             .build()
@@ -121,7 +121,7 @@ public class ApplicationServicesTestHelpers {
                 .withMetadata(new Metadata.MetadataBuilder().build())
                 .withPayload(
                     new Payload.PayloadBuilder()
-                        .withAdditionalProperty("id", "999")
+                        .withAdditionalProperty("download_path", "downloads/999")
                         .withAdditionalProperty("description", "Some release")
                         .withAdditionalProperty("version", "1.0")
                         .build()
@@ -153,7 +153,7 @@ public class ApplicationServicesTestHelpers {
                 .withMetadata(new Metadata.MetadataBuilder().build())
                 .withPayload(
                     new Payload.PayloadBuilder()
-                        .withAdditionalProperty("id", "999")
+                        .withAdditionalProperty("download_path", "downloads/999")
                         .withAdditionalProperty("description", "Some release")
                         .withAdditionalProperty("version", "1.0")
                         .build()
@@ -177,7 +177,7 @@ public class ApplicationServicesTestHelpers {
                 .put("display_name", "Red Hat build of Keycloak")));
         payload.put("events", new JsonArray()
             .add(new JsonObject().put("payload", new JsonObject()
-                .put("id", "108766")
+                .put("download_path", "jbossnetwork/restricted/softwareDetail.html?softwareId=108766")
                 .put("description", "Red Hat build of Keycloak 26.2.13 Maven Repository")
                 .put("version", "26.2.13")))
             .add(new JsonObject().putNull("payload")));
@@ -215,7 +215,7 @@ public class ApplicationServicesTestHelpers {
                 .withMetadata(new Metadata.MetadataBuilder().build())
                 .withPayload(
                     new Payload.PayloadBuilder()
-                        .withAdditionalProperty("id", "999")
+                        .withAdditionalProperty("download_path", "downloads/999")
                         .withAdditionalProperty("description", "Some release")
                         .withAdditionalProperty("version", "1.0")
                         .build()

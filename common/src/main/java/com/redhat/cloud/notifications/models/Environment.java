@@ -18,6 +18,9 @@ public class Environment {
     @ConfigProperty(name = "env.ocm.base.url", defaultValue = "https://localhost")
     String ocmUrl;
 
+    @ConfigProperty(name = "env.application-services.base.url", defaultValue = "https://localhost/")
+    String applicationServicesUrl;
+
     public String name() {
         return this.environment;
     }
@@ -30,6 +33,10 @@ public class Environment {
         return this.ocmUrl;
     }
 
+    public String applicationServicesUrl() {
+        return this.applicationServicesUrl;
+    }
+
     // add regular getters for jackson serialization
     public String getUrl() {
         return url;
@@ -37,6 +44,10 @@ public class Environment {
 
     public String getOcmUrl() {
         return ocmUrl;
+    }
+
+    public String getApplicationServicesUrl() {
+        return applicationServicesUrl;
     }
 
     /**

@@ -53,7 +53,7 @@
             <tbody>
                 {#each sub-section-product-releases}
                 <tr style="font-size: 14px;">
-                    <td style="{body-section-table-td-style}"><a style="{body-section-table-td-a-style}" href="https://access.redhat.com/jbossnetwork/restricted/softwareDetail.html?softwareId={it.id}" target="_blank">{it.description}</a></td>
+                    <td style="{body-section-table-td-style}"><a style="{body-section-table-td-a-style}" href="{environment.applicationServicesUrl}{it.download_path}" target="_blank">{it.description}</a></td>
                     <td style="{body-section-table-td-style}">{it.version}</td>
                 </tr>
                 {/each}

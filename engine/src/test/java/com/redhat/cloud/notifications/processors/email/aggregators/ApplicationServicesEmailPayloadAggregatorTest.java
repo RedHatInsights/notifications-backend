@@ -46,10 +46,10 @@ class ApplicationServicesEmailPayloadAggregatorTest {
 
         JsonArray payloads = keycloak.getJsonArray("payloads");
         assertEquals(2, payloads.size());
-        assertEquals("108766", payloads.getJsonObject(0).getString("id"));
+        assertEquals("jbossnetwork/restricted/softwareDetail.html?softwareId=108766", payloads.getJsonObject(0).getString("download_path"));
         assertEquals("Red Hat build of Keycloak 26.2.13 Maven Repository", payloads.getJsonObject(0).getString("description"));
         assertEquals("26.2.13", payloads.getJsonObject(0).getString("version"));
-        assertEquals("108767", payloads.getJsonObject(1).getString("id"));
+        assertEquals("jbossnetwork/restricted/softwareDetail.html?softwareId=108767", payloads.getJsonObject(1).getString("download_path"));
     }
 
     @Test
@@ -154,7 +154,7 @@ class ApplicationServicesEmailPayloadAggregatorTest {
         assertTrue(products.containsKey("keycloak-releases"));
         JsonArray payloads = products.getJsonObject("keycloak-releases").getJsonArray("payloads");
         assertEquals(1, payloads.size());
-        assertEquals("108766", payloads.getJsonObject(0).getString("id"));
+        assertEquals("jbossnetwork/restricted/softwareDetail.html?softwareId=108766", payloads.getJsonObject(0).getString("download_path"));
         assertEquals(1, appServices.getInteger("global_releases_number"));
     }
 
