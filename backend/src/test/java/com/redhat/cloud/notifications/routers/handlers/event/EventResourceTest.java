@@ -932,6 +932,13 @@ public class EventResourceTest extends DbIsolatedTest {
                                                        LocalDateTime startDate, LocalDateTime endDate, Set<String> endpointTypes,
                                                        Set<Boolean> invocationResults, Set<EventLogEntryActionStatus> status, Integer limit,
                                                        Integer offset, String sortBy, boolean includePayload, boolean includeActions, String path, Set<Severity> severities) {
+        return getEventLogPage(identityHeader, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, status, limit, offset, sortBy, includePayload, false, includeActions, path, severities);
+    }
+
+    private static Page<EventLogEntry> getEventLogPage(Header identityHeader, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
+                                                       LocalDateTime startDate, LocalDateTime endDate, Set<String> endpointTypes,
+                                                       Set<Boolean> invocationResults, Set<EventLogEntryActionStatus> status, Integer limit,
+                                                       Integer offset, String sortBy, boolean includePayload, boolean includeDetails, boolean includeActions, String path, Set<Severity> severities) {
         RequestSpecification request = given()
                 .header(identityHeader);
         if (bundleIds != null) {
@@ -969,6 +976,9 @@ public class EventResourceTest extends DbIsolatedTest {
         }
         if (includePayload) {
             request.param("includePayload", true);
+        }
+        if (includeDetails) {
+            request.param("includeDetails", true);
         }
         if (includeActions) {
             request.param("includeActions", true);
@@ -1331,4 +1341,62 @@ public class EventResourceTest extends DbIsolatedTest {
         getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false);
         micrometerAssertionHelper.awaitAndAssertTimerCountFilteredByTagsIncrement(GET_EVENTS_TIMER_NAME, NORMALIZED_QUERIES_TAG, tagValue, 1);
     }
+
+    @ParameterizedTest
+    @CsvSource({"false,false", "false,true", "true,false", "true,true"})
+    void testGetEventsWithEventTypeDisplayNameAndPayload(boolean kesselEnabled, boolean useNormalizedQueries) {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
+        when(backendConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
+        if (kesselEnabled) {
+            mockDefaultKesselPermission(EVENTS_VIEW, ALLOWED_TRUE);
+        }
+
+        Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        Bundle bundle = resourceHelpers.createBundle("test-bundle", "Test Bundle");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "test-app", "Test Application");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "new-system-registered", "New system registered", "New system registered");
+
+        // Create event with payload
+        Action action = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
+        String payload = Parser.encode(action);
+        Event event = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, payload, false, null);
+
+        Endpoint endpoint = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
+        NotificationHistory history = resourceHelpers.createNotificationHistory(event, endpoint, NotificationStatus.SUCCESS);
+
+        /*
+         * Test: Filter by eventTypeDisplayName "New system registered" with includeActions=true, includeDetails=false, and includePayload=true
+         */
+        Page<EventLogEntry> page = getEventLogPage(
+                defaultIdentityHeader,
+                null,
+                null,
+                "New system registered",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                true,   // includePayload
+                false,  // includeDetails
+                true,   // includeActions
+                PATH,
+                null
+        );
+
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(1, page.getData().size());
+        assertSameEvent(page.getData().get(0), event, history);
+        assertEquals(payload, page.getData().get(0).getPayload());
+        assertLinks(page.getLinks(), "first", "last");
+
+        // Clean up
+        endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint.getId());
+    }
+
+
 }
