@@ -164,12 +164,13 @@ public class SplunkMessageHandler extends MessageHandler {
      */
     static String buildSplunkPayload(SplunkNotification notification) {
         JsonObject base = new JsonObject();
-        base.put("org_id", notification.getOrgId());
-        base.put("account_id", notification.accountId);
 
         for (Map.Entry<String, Object> entry : notification.getExtraFields().entrySet()) {
             base.put(entry.getKey(), entry.getValue());
         }
+
+        base.put("org_id", notification.getOrgId());
+        base.put("account_id", notification.accountId);
 
         JsonArray events = notification.events;
 
