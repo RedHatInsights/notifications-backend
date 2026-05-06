@@ -22,6 +22,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -165,6 +166,10 @@ public class SplunkMessageHandler extends MessageHandler {
         JsonObject base = new JsonObject();
         base.put("org_id", notification.getOrgId());
         base.put("account_id", notification.accountId);
+
+        for (Map.Entry<String, Object> entry : notification.getExtraFields().entrySet()) {
+            base.put(entry.getKey(), entry.getValue());
+        }
 
         JsonArray events = notification.events;
 
