@@ -27,6 +27,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.connector.splunk.SplunkMessageHandler.SERVICES_COLLECTOR_EVENT;
 import static com.redhat.cloud.notifications.connector.v2.BaseConnectorIntegrationTest.buildIncomingCloudEvent;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -536,11 +537,52 @@ class SplunkMessageHandlerTest {
         assertTrue(result.contains("\"org_id\":\"" + DEFAULT_ORG_ID + "\""));
     }
 
+    @Test
+    void testExtraFieldsPreservedInPayload() {
+        mockAuthentication();
+
+        Response mockResponse = mock(Response.class);
+        when(mockResponse.getStatus()).thenReturn(200);
+        when(splunkRestClient.post(anyString(), anyString(), anyString())).thenReturn(mockResponse);
+
+        JsonObject payload = buildPayload("https://splunk.example.com",
+            JsonArray.of(JsonObject.of("k", "v")));
+        handler.handle(buildIncomingCloudEvent("test-id", "test-type", payload));
+
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+        verify(splunkRestClient).post(anyString(), anyString(), bodyCaptor.capture());
+
+        String sentBody = bodyCaptor.getValue();
+        JsonObject parsed = new JsonObject(sentBody);
+        JsonObject event = parsed.getJsonObject("event");
+
+        assertEquals(DEFAULT_ORG_ID, event.getString("org_id"));
+        assertEquals(DEFAULT_ACCOUNT_ID, event.getString("account_id"));
+        assertEquals("my-app", event.getString("application"));
+        assertEquals("my-bundle", event.getString("bundle"));
+        assertEquals("my-event-type", event.getString("event_type"));
+        assertEquals("2024-01-01T00:00:00Z", event.getString("timestamp"));
+
+        JsonObject source = event.getJsonObject("source");
+        assertNotNull(source);
+        assertEquals("My Bundle", source.getJsonObject("bundle").getString("display_name"));
+        assertEquals("My Application", source.getJsonObject("application").getString("display_name"));
+        assertEquals("My Event Type", source.getJsonObject("event_type").getString("display_name"));
+    }
+
     private void mockAuthentication() {
         SourcesSecretResponse secretResponse = new SourcesSecretResponse();
         secretResponse.password = "my-token";
         when(authenticationLoader.fetchAuthenticationData(anyString(), any(JsonObject.class)))
             .thenReturn(Optional.of(new AuthenticationResult(secretResponse, AuthenticationType.SECRET_TOKEN)));
+    }
+
+    static JsonObject buildSourceField() {
+        return JsonObject.of(
+            "bundle", JsonObject.of("display_name", "My Bundle"),
+            "application", JsonObject.of("display_name", "My Application"),
+            "event_type", JsonObject.of("display_name", "My Event Type")
+        );
     }
 
     private static JsonObject buildPayload(String targetUrl, JsonArray events) {
@@ -557,6 +599,11 @@ class SplunkMessageHandlerTest {
         payload.put("org_id", DEFAULT_ORG_ID);
         payload.put("account_id", DEFAULT_ACCOUNT_ID);
         payload.put("events", events);
+        payload.put("source", buildSourceField());
+        payload.put("application", "my-app");
+        payload.put("bundle", "my-bundle");
+        payload.put("event_type", "my-event-type");
+        payload.put("timestamp", "2024-01-01T00:00:00Z");
 
         return payload;
     }

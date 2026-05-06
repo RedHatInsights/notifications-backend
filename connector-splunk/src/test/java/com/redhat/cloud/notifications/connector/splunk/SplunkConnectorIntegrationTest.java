@@ -63,6 +63,10 @@ class SplunkConnectorIntegrationTest extends BaseHttpConnectorIntegrationTest {
             JsonObject.of("event-2-key", "event-2-value"),
             JsonObject.of("event-3-key", "event-3-value")
         ));
+        payload.put("source", SplunkMessageHandlerTest.buildSourceField());
+        payload.put("application", "my-app");
+        payload.put("bundle", "my-bundle");
+        payload.put("event_type", "my-event-type");
 
         // Mock the authentication loader to return a secret
         SourcesSecretResponse secretResponse = new SourcesSecretResponse();
@@ -98,6 +102,10 @@ class SplunkConnectorIntegrationTest extends BaseHttpConnectorIntegrationTest {
             "source", "eventing",
             "sourcetype", "Insights event",
             "event", JsonObject.of(
+                "source", SplunkMessageHandlerTest.buildSourceField(),
+                "application", "my-app",
+                "bundle", "my-bundle",
+                "event_type", "my-event-type",
                 "org_id", DEFAULT_ORG_ID,
                 "account_id", DEFAULT_ACCOUNT_ID,
                 "events", JsonArray.of(
