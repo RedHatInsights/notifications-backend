@@ -102,12 +102,12 @@ class SplunkConnectorIntegrationTest extends BaseHttpConnectorIntegrationTest {
             "source", "eventing",
             "sourcetype", "Insights event",
             "event", JsonObject.of(
-                "org_id", DEFAULT_ORG_ID,
-                "account_id", DEFAULT_ACCOUNT_ID,
                 "source", SplunkMessageHandlerTest.buildSourceField(),
                 "application", "my-app",
                 "bundle", "my-bundle",
                 "event_type", "my-event-type",
+                "org_id", DEFAULT_ORG_ID,
+                "account_id", DEFAULT_ACCOUNT_ID,
                 "events", JsonArray.of(
                     JsonObject.of(key, value)
                 )
