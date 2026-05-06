@@ -58,7 +58,7 @@ class TestCostManagementTemplate {
     @Test
     void testRenderedTemplateCostModelOperatorDataProcessed() {
         String result = renderTemplate(CM_OPERATOR_DATA_PROCESSED, ACTION);
-        assertEquals("Cost Management has completed processing for OpenShift source **[Dummy source name](https://localhost/openshift/cost-management/ocp/?from=notifications&integration=drawer)**.", result);
+        assertEquals("Cost Management has completed processing for OpenShift source **[Dummy source name](https://localhost/openshift/cost-management/ocp?from=notifications&integration=drawer)**.", result);
     }
 
     @Test
