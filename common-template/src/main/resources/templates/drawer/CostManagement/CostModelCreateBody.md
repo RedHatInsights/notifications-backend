@@ -1,1 +1,5 @@
-Cost model **[{data.context.cost_model_name}]({environment.url}/openshift/cost-management/cost-models/{data.context.cost_model_id}?from=notifications&integration=drawer)** has been created.
+{#include drawer/Common/commonDrawerNotification.md}
+{#body}
+Cost model **[{data.context.cost_model_name}]({environment.url}/openshift/cost-management/cost-models/{data.context.cost_model_id}?{query_params})** has been created.
+{/body}
+{/include}

@@ -1,1 +1,5 @@
-Red Hat now provides a new role **[{data.events[0].payload.name}]({environment.url}/iam/user-access/roles/detail/{data.events[0].payload.uuid}?from=notifications&integration=drawer)**.
+{#include drawer/Common/commonDrawerNotification.md}
+{#body}
+Red Hat now provides the **[{data.events[0].payload.name}]({environment.url}/iam/user-access/roles/detail/{data.events[0].payload.uuid}?{query_params})** role.
+{/body}
+{/include}

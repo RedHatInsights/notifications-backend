@@ -23,7 +23,7 @@ class TestSourcesTemplate {
     @Test
     void testRenderedTemplateAvailabilityStatus() {
         String result = renderTemplate(AVAILABILITY_STATUS, ACTION);
-        assertEquals("[test name 1](https://localhost/settings/sources/detail/5?from=notifications&integration=drawer)'s availability status was changed from **old status** to **current status**.", result);
+        assertEquals("The availability of integration [test name 1](https://localhost/settings/sources/detail/5?from=notifications&integration=drawer) changed from **old status** to **current status**.", result);
     }
 
     String renderTemplate(final String eventType, final Action action) {

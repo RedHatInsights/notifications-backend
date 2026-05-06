@@ -1,1 +1,5 @@
-A Technical Account Manager **[{data.events[0].payload.username}]({environment.url}/iam/user-access/users/detail/{data.events[0].payload.username}?from=notifications&integration=drawer)** requested to access your account. [Open Access Requests]({environment.url}/iam/user-access/access-requests?from=notifications&integration=drawer)
+{#include drawer/Common/commonDrawerNotification.md}
+{#body}
+A Red Hat technical account manager requested access to your account. Go to [Red Hat Access Request]({environment.url}/iam/user-access/access-requests?{query_params}) to review the request.
+{/body}
+{/include}

@@ -28,6 +28,7 @@ class TestInventoryTemplate extends DrawerTemplatesHelper {
     void testRenderedTemplateValidationError() {
         Action action = InventoryTestHelpers.createInventoryAction("123456", "rhel", "inventory", "Host Validation Error");
         String result = generateDrawerTemplate(EVENT_TYPE_NAME, action);
-        assertEquals("If no hosts were created by this change, the error will not appear in the service. [Open Inventory](https://localhost/insights/inventory?from=notifications&integration=drawer)", result);
+        assertEquals("Data in a payload from insights-client was unable to be processed in the inventory due to corrupted data, incorrect values, or another issue. " +
+                "If no hosts were created by this change, the error will not appear in the service. [Open Inventory](https://localhost/insights/inventory?from=notifications&integration=drawer)", result);
     }
 }
