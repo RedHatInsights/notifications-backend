@@ -13,7 +13,6 @@ objects:
   spec:
     envName: ${ENV_NAME}
     dependencies:
-    - ingress
     - notifications-backend
     - notifications-recipients-resolver
     optionalDependencies:
