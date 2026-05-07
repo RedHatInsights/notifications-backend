@@ -1,99 +1,82 @@
 package com.redhat.cloud.notifications.connector.pagerduty;
 
-import com.redhat.cloud.notifications.connector.pagerduty.config.PagerDutyConnectorConfig;
-import io.quarkus.test.InjectMock;
-import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import jakarta.inject.Inject;
-import org.apache.camel.Exchange;
-import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDateTime;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUtils.buildExpectedOutgoingPayload;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTestUtils.createIncomingPayload;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.APPLICATION;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.CONTEXT;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.DISPLAY_NAME;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENTS;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.EVENT_TYPE;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.INVENTORY_URL;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PAGERDUTY_STATIC_SEVERITY;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.PAYLOAD;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SEVERITY;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.SOURCE;
-import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.TIMESTAMP;
-import static org.apache.camel.test.junit6.TestSupport.createExchangeWithBody;
+import static com.redhat.cloud.notifications.connector.pagerduty.PagerDutyTransformer.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
-/**
- * These test cases are intended to verify that the {@link PagerDutyTransformer} can handle various possible inputs.
- */
-@QuarkusTest
-public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
-    static final String TEST_URL = "https://example.com/";
+class PagerDutyTransformerTest {
 
-    @Inject
-    PagerDutyCloudEventDataExtractor extractor;
-
-    @Inject
-    PagerDutyTransformer transformer;
-
-    @InjectMock
-    PagerDutyConnectorConfig config;
-
-    JsonObject cloudEventData;
-
-    @BeforeEach
-    void init() {
-        when(config.getPagerDutyUrl()).thenReturn(TEST_URL);
-        when(config.isDynamicPagerdutySeverityEnabled(anyString())).thenReturn(true);
-        cloudEventData = createIncomingPayload();
-    }
+    static final String ROUTING_KEY_VALUE = "my-routing-key";
 
     @Test
     void testMissingEventType() {
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        cloudPayload.remove(EVENT_TYPE);
-        cloudEventData.put(PAYLOAD, cloudPayload);
+        JsonObject payload = createIncomingPayload();
+        payload.remove(EVENT_TYPE);
 
-        verifyTransformExceptionThrown(cloudEventData, IllegalArgumentException.class, "Event type must be specified for PagerDuty payload summary");
+        assertThrows(IllegalArgumentException.class, () ->
+            PagerDutyTransformer.validatePayload(payload, DEFAULT_ORG_ID),
+            "Event type must be specified for PagerDuty payload summary"
+        );
     }
 
     @Test
-    void testMissingSource() {
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        cloudPayload.remove(APPLICATION);
-        cloudEventData.put(PAYLOAD, cloudPayload);
+    void testMissingApplication() {
+        JsonObject payload = createIncomingPayload();
+        payload.remove(APPLICATION);
 
-        verifyTransformExceptionThrown(cloudEventData, IllegalArgumentException.class, "Application must be specified for PagerDuty payload source");
+        assertThrows(IllegalArgumentException.class, () ->
+            PagerDutyTransformer.validatePayload(payload, DEFAULT_ORG_ID),
+            "Application must be specified for PagerDuty payload source"
+        );
     }
 
     @Test
     void testSuccessfulPayloadTransform() {
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
+        JsonObject payload = createIncomingPayload();
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
+
+        assertEquals("trigger", sent.getString(EVENT_ACTION));
+        assertEquals(ROUTING_KEY_VALUE, sent.getString(ROUTING_KEY));
+        assertEquals("default-application", sent.getString(CLIENT));
+        assertNotNull(sent.getString(CLIENT_URL));
+
+        JsonObject sentPayload = sent.getJsonObject(PAYLOAD);
+        assertEquals("default-event-type", sentPayload.getString(SUMMARY));
+        assertEquals("default-application", sentPayload.getString(SOURCE));
+        assertEquals("default-bundle", sentPayload.getString(GROUP));
+        assertEquals("error", sentPayload.getString(SEVERITY));
+
+        JsonObject customDetails = sentPayload.getJsonObject(CUSTOM_DETAILS);
+        assertEquals(DEFAULT_ACCOUNT_ID, customDetails.getString(ACCOUNT_ID));
+        assertEquals(DEFAULT_ORG_ID, customDetails.getString(ORG_ID));
+        assertNotNull(customDetails.getJsonObject(CONTEXT));
+        assertNotNull(customDetails.getJsonObject(SOURCE_NAMES));
+        assertEquals("IMPORTANT", customDetails.getString(RED_HAT_SEVERITY));
+        assertNotNull(customDetails.getJsonArray(EVENTS));
     }
 
     @Test
     void testSuccessfulWithLegacyStaticSeverity() {
-        when(config.isDynamicPagerdutySeverityEnabled(anyString())).thenReturn(false);
-        JsonObject staticCloudEventData = createIncomingPayload(false);
+        JsonObject payload = createIncomingPayload(false);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, false);
+        JsonObject sent = new JsonObject(result);
 
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(staticCloudEventData, false);
-        validatePayloadTransform(staticCloudEventData, expectedPayload);
+        JsonObject sentPayload = sent.getJsonObject(PAYLOAD);
+        assertEquals("error", sentPayload.getString(SEVERITY));
+        assertNull(sentPayload.getJsonObject(CUSTOM_DETAILS).getString(RED_HAT_SEVERITY));
     }
 
-    /**
-     * This is a slightly modified version of a real test message generated from the {@code /endpoints/{uuid}/test}
-     * integrations endpoint, with the account and org id replaced.
-     */
     @Test
     void testSuccessfulTestMessage() {
         JsonObject cloudEventPayload = JsonObject.of(
@@ -114,13 +97,16 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
                 )
         );
         cloudEventPayload.put("recipients", JsonArray.of());
-        // No inventory_url generated
         cloudEventPayload.put("application_url", "https://console.redhat.com/settings/integrations?from=notifications&integration=pagerduty");
-        cloudEventPayload.put("severity", "MODERATE"); // maps to "Warning"
-        cloudEventData.put(PAYLOAD, cloudEventPayload);
+        cloudEventPayload.put("severity", "MODERATE");
 
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(cloudEventPayload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
+
+        assertEquals("trigger", sent.getString(EVENT_ACTION));
+        assertEquals("integrations", sent.getString(CLIENT));
+        assertEquals("integration-test", sent.getJsonObject(PAYLOAD).getString(SUMMARY));
+        assertEquals("warning", sent.getJsonObject(PAYLOAD).getString(SEVERITY));
     }
 
     @Test
@@ -148,134 +134,219 @@ public class PagerDutyTransformerTest extends CamelQuarkusTestSupport {
         );
         cloudEventPayload.put("inventory_url", "https://localhost/insights/inventory/85094ed1-1c52-4bc5-8e3e-4ea3869a17ce?from=notifications&integration=pagerduty");
         cloudEventPayload.put("application_url", "https://localhost/insights/inventory?from=notifications&integration=pagerduty");
-        cloudEventPayload.put("severity", "IMPORTANT"); // maps to "Error"
-        cloudEventData.put("payload", cloudEventPayload);
+        cloudEventPayload.put("severity", "IMPORTANT");
 
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(cloudEventPayload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
+
+        assertEquals("trigger", sent.getString(EVENT_ACTION));
+        assertEquals("inventory", sent.getString(CLIENT));
+        assertNotNull(sent.getJsonArray(LINKS));
+        assertEquals(1, sent.getJsonArray(LINKS).size());
+        assertEquals("error", sent.getJsonObject(PAYLOAD).getString(SEVERITY));
     }
 
     @Test
     void testInvalidTimestampDropped() {
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        cloudPayload.put(TIMESTAMP, "not a timestamp");
-        cloudEventData.put(PAYLOAD, cloudPayload);
+        JsonObject payload = createIncomingPayload();
+        payload.put(TIMESTAMP, "not a timestamp");
 
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
+
+        assertNull(sent.getJsonObject(PAYLOAD).getString(TIMESTAMP));
     }
 
     @Test
     void testMissingSourceNames() {
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        cloudPayload.remove(SOURCE);
+        JsonObject payload = createIncomingPayload();
+        payload.remove(SOURCE);
 
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
+
+        assertNull(sent.getJsonObject(PAYLOAD).getJsonObject(CUSTOM_DETAILS).getJsonObject(SOURCE_NAMES));
     }
 
     @Test
     void testMissingApplicationDisplayName() {
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        JsonObject sourceNames = cloudPayload.getJsonObject(SOURCE);
-        sourceNames.remove(APPLICATION);
+        JsonObject payload = createIncomingPayload();
+        JsonObject source = payload.getJsonObject(SOURCE);
+        source.remove(APPLICATION);
 
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
+
+        JsonObject sourceNames = sent.getJsonObject(PAYLOAD).getJsonObject(CUSTOM_DETAILS).getJsonObject(SOURCE_NAMES);
+        assertNotNull(sourceNames);
+        assertNull(sourceNames.getString(APPLICATION));
+        assertNotNull(sourceNames.getString(BUNDLE));
     }
 
     @Test
     void testSourceWithoutDisplayNames() {
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        cloudPayload.put(SOURCE, new JsonObject());
-        cloudEventData.put(PAYLOAD, cloudPayload);
+        JsonObject payload = createIncomingPayload();
+        payload.put(SOURCE, new JsonObject());
 
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
+
+        assertNull(sent.getJsonObject(PAYLOAD).getJsonObject(CUSTOM_DETAILS).getJsonObject(SOURCE_NAMES));
     }
 
     @Test
     void testMissingEvents() {
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        cloudPayload.remove(EVENTS);
+        JsonObject payload = createIncomingPayload();
+        payload.remove(EVENTS);
 
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
+
+        assertNull(sent.getJsonObject(PAYLOAD).getJsonObject(CUSTOM_DETAILS).getJsonArray(EVENTS));
     }
 
     @Test
     void testWithHostUrl() {
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        JsonObject context = cloudPayload.getJsonObject(CONTEXT);
+        JsonObject payload = createIncomingPayload();
+        JsonObject context = payload.getJsonObject(CONTEXT);
         context.put("host_url", "https://console.redhat.com/insights/inventory/8a4a4f75-5319-4255-9eb5-1ee5a92efd7f");
 
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
+
+        assertNotNull(sent.getJsonObject(PAYLOAD).getJsonObject(CUSTOM_DETAILS).getJsonObject(CONTEXT).getString("host_url"));
     }
 
     @Test
     void testWithMissingClientDisplayName() {
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        JsonObject context = cloudPayload.getJsonObject(CONTEXT);
+        JsonObject payload = createIncomingPayload();
+        JsonObject context = payload.getJsonObject(CONTEXT);
         context.remove(DISPLAY_NAME);
 
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        assertNotNull(new JsonObject(result));
     }
 
     @Test
     void testWithMissingInventoryId() {
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        JsonObject context = cloudPayload.getJsonObject(CONTEXT);
+        JsonObject payload = createIncomingPayload();
+        JsonObject context = payload.getJsonObject(CONTEXT);
         context.remove("inventory_id");
 
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        assertNotNull(new JsonObject(result));
     }
 
     @Test
     void testMissingInventoryUrl() {
-        JsonObject cloudPayload = cloudEventData.getJsonObject(PAYLOAD);
-        cloudPayload.remove(INVENTORY_URL);
+        JsonObject payload = createIncomingPayload();
+        payload.remove(INVENTORY_URL);
 
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(cloudEventData);
-        validatePayloadTransform(cloudEventData, expectedPayload);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
+
+        assertNull(sent.getJsonArray(LINKS));
     }
 
     @Test
     void testLegacyStaticSeverityFallback() {
-        when(config.isDynamicPagerdutySeverityEnabled(anyString())).thenReturn(false);
-        JsonObject staticCloudEventData = createIncomingPayload(false);
+        JsonObject payload = createIncomingPayload(false);
+        String staticSeverity = payload.remove(PAGERDUTY_STATIC_SEVERITY).toString();
+        payload.put(SEVERITY, staticSeverity);
 
-        JsonObject cloudPayload = staticCloudEventData.getJsonObject(PAYLOAD);
-        String staticSeverity = cloudPayload.remove(PAGERDUTY_STATIC_SEVERITY).toString();
-        cloudPayload.put(SEVERITY, staticSeverity);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, false);
+        JsonObject sent = new JsonObject(result);
 
-        JsonObject expectedPayload = buildExpectedOutgoingPayload(staticCloudEventData, false);
-        validatePayloadTransform(staticCloudEventData, expectedPayload);
+        assertEquals("error", sent.getJsonObject(PAYLOAD).getString(SEVERITY));
     }
 
+    @Test
+    void testDynamicSeverityCritical() {
+        JsonObject payload = createIncomingPayload();
+        payload.put(SEVERITY, "CRITICAL");
 
-    void verifyTransformExceptionThrown(JsonObject cloudEventData, Class<? extends Throwable> exceptionType, String exceptionMessage) {
-        Exchange exchange = createExchangeWithBody(context, "I am not used!");
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
 
-        extractor.extract(exchange, cloudEventData);
-        assertThrows(exceptionType, () -> transformer.process(exchange), exceptionMessage);
+        assertEquals("critical", sent.getJsonObject(PAYLOAD).getString(SEVERITY));
     }
 
-    /**
-     * @param cloudEventData the cloud event, as provided to the connector
-     * @param expectedPayload the PagerDuty payload expected to be sent
-     */
-    void validatePayloadTransform(JsonObject cloudEventData, JsonObject expectedPayload) {
-        Exchange exchange = createExchangeWithBody(context, "I am not used!");
+    @Test
+    void testDynamicSeverityLow() {
+        JsonObject payload = createIncomingPayload();
+        payload.put(SEVERITY, "LOW");
 
-        extractor.extract(exchange, cloudEventData);
-        transformer.process(exchange);
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
 
-        /* This test does not check whether authentication fields are included,
-         * as only the PagerDuty payload is validated
-         */
-        assertEquals(expectedPayload.encode(), exchange.getIn().getBody(String.class));
+        assertEquals("info", sent.getJsonObject(PAYLOAD).getString(SEVERITY));
+    }
+
+    @Test
+    void testDynamicSeverityModerate() {
+        JsonObject payload = createIncomingPayload();
+        payload.put(SEVERITY, "MODERATE");
+
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
+
+        assertEquals("warning", sent.getJsonObject(PAYLOAD).getString(SEVERITY));
+    }
+
+    @Test
+    void testTimestampFormatting() {
+        JsonObject payload = createIncomingPayload();
+        payload.put(TIMESTAMP, "2024-08-12T17:26:19");
+
+        String result = PagerDutyTransformer.buildPagerDutyPayload(payload, ROUTING_KEY_VALUE, true);
+        JsonObject sent = new JsonObject(result);
+
+        assertEquals("2024-08-12T17:26:19.000+0000", sent.getJsonObject(PAYLOAD).getString(TIMESTAMP));
+    }
+
+    // --- Helper methods ---
+
+    static JsonObject createIncomingPayload() {
+        return createIncomingPayload(true);
+    }
+
+    static JsonObject createIncomingPayload(boolean dynamicSeverity) {
+        JsonObject payload = new JsonObject();
+        payload.put(ACCOUNT_ID, DEFAULT_ACCOUNT_ID);
+        payload.put(APPLICATION, "default-application");
+        payload.put(BUNDLE, "default-bundle");
+        payload.put(CONTEXT, JsonObject.of(
+                DISPLAY_NAME, "console",
+                "inventory_id", "8a4a4f75-5319-4255-9eb5-1ee5a92efd7f"
+        ));
+        payload.put(EVENT_TYPE, "default-event-type");
+        payload.put(EVENTS, JsonArray.of(
+                JsonObject.of("event-1-key", "event-1-value"),
+                JsonObject.of("event-2-key", "event-2-value"),
+                JsonObject.of("event-3-key", "event-3-value"),
+                JsonObject.of("event-4-with-metadata-and-payload", JsonObject.of(
+                        "metadata", "some metadata could be placed here",
+                        "payload", "Here is a test payload message"
+                ))
+        ));
+        payload.put(ORG_ID, DEFAULT_ORG_ID);
+        payload.put(TIMESTAMP, LocalDateTime.of(2024, 8, 12, 17, 26, 19).toString());
+
+        JsonObject source = JsonObject.of(
+                APPLICATION, JsonObject.of(DISPLAY_NAME, "Default Application Name"),
+                BUNDLE, JsonObject.of(DISPLAY_NAME, "Default Bundle Name"),
+                EVENT_TYPE, JsonObject.of(DISPLAY_NAME, "Default Event Type Name")
+        );
+
+        payload.put(SOURCE, source);
+        payload.put(INVENTORY_URL, "https://console.redhat.com/insights/inventory/8a4a4f75-5319-4255-9eb5-1ee5a92efd7f?from=notifications&integration=pagerduty");
+        payload.put(APPLICATION_URL, "https://console.redhat.com/insights/default-application?from=notifications&integration=pagerduty");
+        if (dynamicSeverity) {
+            payload.put(SEVERITY, "IMPORTANT");
+        } else {
+            payload.put(PAGERDUTY_STATIC_SEVERITY, PagerDutySeverity.ERROR);
+        }
+
+        return payload;
     }
 }

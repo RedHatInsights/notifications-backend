@@ -1,6 +1,6 @@
 package com.redhat.cloud.notifications.connector.pagerduty.config;
 
-import com.redhat.cloud.notifications.connector.http.HttpConnectorConfig;
+import com.redhat.cloud.notifications.connector.v2.http.HttpConnectorConfig;
 import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.UnleashContext;
 import jakarta.annotation.PostConstruct;
@@ -10,10 +10,9 @@ import java.util.Map;
 
 @ApplicationScoped
 public class PagerDutyConnectorConfig extends HttpConnectorConfig {
-    private static final String PAGERDUTY_URL_KEY = "notifications.connector.pagerduty.url";
-    private static final String PAGERDUTY_EVENT_V2_URL = "https://events.pagerduty.com/v2/enqueue";
+    private static final String PAGERDUTY_URL_KEY = "quarkus.rest-client.connector-rest-client.url";
 
-    @ConfigProperty(name = PAGERDUTY_URL_KEY, defaultValue = PAGERDUTY_EVENT_V2_URL)
+    @ConfigProperty(name = PAGERDUTY_URL_KEY)
     String pagerDutyUrl;
 
     private String toggleDynamicPagerdutySeverity;
