@@ -4,5 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record Environment(
     @JsonProperty("url")        String url,
-    @JsonProperty("ocm_url")    String ocmUrl
+    @JsonProperty("ocm_url")    String ocmUrl,
+    @JsonProperty("application_services_url")    String applicationServicesUrl
 ) { }
