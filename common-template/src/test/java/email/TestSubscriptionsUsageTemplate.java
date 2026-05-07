@@ -57,6 +57,7 @@ public class TestSubscriptionsUsageTemplate extends EmailTemplatesRendererHelper
     @ValueSource(booleans = {true, false})
     public void testUsageThresholdExceededEmailBody(boolean useBetaTemplate) {
         String result = generateEmailBody(EXCEEDED_UTILIZATION_THRESHOLD, ACTION, useBetaTemplate);
+        assertTrue(result.contains("/subscriptions/usage/RHEL%20for%20x86?"));
         assertTrue(result.contains("Subscriptions Usage - Subscription Services"));
         assertTrue(result.contains("Subscription threshold exceeded"));
         assertTrue(result.contains("Product variant: <b>RHEL for x86</b>"));
