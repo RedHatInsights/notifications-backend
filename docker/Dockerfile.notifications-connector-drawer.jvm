@@ -45,7 +45,7 @@ ENV PATH=${JAVA_HOME}/bin:${PATH}
 COPY . /home/jboss
 WORKDIR /home/jboss
 # '-Dquarkus.native.container-build=false' option disables containerized native image building, because the build is already running inside the Mandrel builder container
-RUN ./mvnw clean package \
+RUN ./mvnw -s .mvn/settings.xml clean package \
     -Dquarkus.package.type=native \
     -Dquarkus.native.container-build=false \
     -Dquarkus.kafka.snappy.enabled=true \
