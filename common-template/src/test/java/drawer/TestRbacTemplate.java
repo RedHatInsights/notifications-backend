@@ -49,16 +49,16 @@ class TestRbacTemplate {
                 break;
             case RH_PLATFORM_DEFAULT_ROLE_UPDATED:
             case RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED:
-                assertEquals("Red Hat has updated the role **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)**.", result);
+                assertEquals("Red Hat updated the **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** role.", result);
                 break;
             case CUSTOM_ROLE_CREATED:
-                assertEquals("A custom role **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** has been created by [testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer).", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** created the **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** custom role.", result);
                 break;
             case CUSTOM_ROLE_UPDATED:
-                assertEquals("Custom role **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** has been updated by [testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer).", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** updated the **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** custom role.", result);
                 break;
             case CUSTOM_ROLE_DELETED:
-                assertEquals("Custom role **testRoleName** has been deleted by [testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer) and is not available anymore. [Open User Access](https://localhost/iam/user-access/overview?from=notifications&integration=drawer)", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** deleted the **testRoleName** custom role.", result);
                 break;
             case RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS:
                 assertEquals("Red Hat added the **[myRole](https://localhost/iam/user-access/roles/detail/90d52d8b-614d-40f6-b073-1a88ee575f75?from=notifications&integration=drawer)** role to the Default access group.", result);
@@ -67,22 +67,22 @@ class TestRbacTemplate {
                 assertEquals("Red Hat removed the **[myRole](https://localhost/iam/user-access/roles/detail/90d52d8b-614d-40f6-b073-1a88ee575f75?from=notifications&integration=drawer)** role from the Default access group.", result);
                 break;
             case CUSTOM_DEFAULT_ACCESS_UPDATED:
-                assertEquals("Custom platform default access group has been updated by [testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer). [Open User Access](https://localhost/iam/user-access/overview?from=notifications&integration=drawer)", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** updated the Custom default access group by adding the **[myRole](https://localhost/iam/user-access/roles/detail/90d52d8b-614d-40f6-b073-1a88ee575f75?from=notifications&integration=drawer)** to the group.", result);
                 break;
             case GROUP_CREATED:
-                assertEquals("A custom group **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** has been created by [testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer).", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** created the **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** group.", result);
                 break;
             case GROUP_UPDATED:
-                assertEquals("Custom group **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** has been updated by [testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer).", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** updated the **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** group.", result);
                 break;
             case GROUP_DELETED:
-                assertEquals("Custom group **testRoleName** has been deleted by [testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer) and is not available anymore. [Open User Access](https://localhost/iam/user-access/overview?from=notifications&integration=drawer)", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** deleted the **testRoleName** group.", result);
                 break;
             case PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM:
-                assertEquals("Platform default group **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** has been modified by **[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** and will be managed by the Organization Administrator. It will receive no further updates from Red Hat Hybrid Cloud Console.", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** changed the Default access group. The group is now called **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)**.", result);
                 break;
             case REQUEST_ACCESS:
-                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** has requested access to **[https://console.redhat.com/stuff](https://console.redhat.com/stuff?from=notifications&integration=drawer)**.", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** requested access to **[https://console.redhat.com/stuff](https://console.redhat.com/stuff?from=notifications&integration=drawer)**.", result);
                 break;
             case TAM_ACCESS_REQUEST:
                 assertEquals("A Red Hat technical account manager requested access to your account. Go to [Red Hat Access Request](https://localhost/iam/user-access/access-requests?from=notifications&integration=drawer) to review the request.", result);
