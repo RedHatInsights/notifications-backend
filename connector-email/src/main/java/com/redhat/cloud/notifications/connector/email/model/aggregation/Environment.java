@@ -1,9 +1,7 @@
 package com.redhat.cloud.notifications.connector.email.model.aggregation;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public record Environment(
-    @JsonProperty("url")        String url,
-    @JsonProperty("ocm_url")    String ocmUrl,
-    @JsonProperty("application_services_url")    String applicationServicesUrl
+    String url,
+    String ocmUrl,
+    String applicationServicesUrl
 ) { }
