@@ -7,7 +7,6 @@ import java.util.Map;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.DRAWER;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_BODY;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_DAILY_DIGEST_BODY;
-import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_TITLE;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.GOOGLE_CHAT;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.MS_TEAMS;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.SLACK;
@@ -30,6 +29,7 @@ public class SubscriptionServices {
     public static final String ERRATA_NEW_SUBSCRIPTION_ENHANCEMENT_ERRATA = "new-subscription-enhancement-errata";
 
     public static final String SUBSCRIPTIONS_USAGE_EXCEEDED_UTILIZATION_THRESHOLD = "exceeded-utilization-threshold";
+    public static final String SUBSCRIPTIONS_USAGE_EXCEEDED_CUSTOM_UTILIZATION_THRESHOLD = "exceeded-custom-utilization-threshold";
 
     public static final Map<TemplateDefinition, String> templatesMap = Map.ofEntries(
 
@@ -57,7 +57,7 @@ public class SubscriptionServices {
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, APPLICATION_SERVICES_APP_NAME, null), APPLICATION_SERVICES_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Subscriptions Usage
-        entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, SUBSCRIPTIONS_USAGE_APP_NAME, SUBSCRIPTIONS_USAGE_EXCEEDED_UTILIZATION_THRESHOLD), SUBSCRIPTIONS_USAGE_FOLDER_NAME + "usageThresholdExceededEmailTitle.txt"),
-        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SUBSCRIPTIONS_USAGE_APP_NAME, SUBSCRIPTIONS_USAGE_EXCEEDED_UTILIZATION_THRESHOLD), SUBSCRIPTIONS_USAGE_FOLDER_NAME + "usageThresholdExceededEmailBody.html")
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SUBSCRIPTIONS_USAGE_APP_NAME, SUBSCRIPTIONS_USAGE_EXCEEDED_UTILIZATION_THRESHOLD), SUBSCRIPTIONS_USAGE_FOLDER_NAME + "usageThresholdExceededEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, SUBSCRIPTIONS_USAGE_APP_NAME, SUBSCRIPTIONS_USAGE_EXCEEDED_CUSTOM_UTILIZATION_THRESHOLD), SUBSCRIPTIONS_USAGE_FOLDER_NAME + "customUtilizationThresholdExceededEmailBody.html")
     );
 }
