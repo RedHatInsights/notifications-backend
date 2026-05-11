@@ -44,7 +44,7 @@
     "globals": "^17.0.0",
     "openapi2typescript-cli": "0.7.1",
     "react-scripts": "5.0.1",
-    "typescript": "5.9.3",
+    "typescript": "6.0.3",
     "webpack": "^5.11.0"
   },
   "scripts": {
