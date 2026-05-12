@@ -192,6 +192,61 @@ public class McpAuthTest {
             }
             """;
 
+    private static final String GET_INTEGRATIONS_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 9,
+                "params": {
+                    "name": "getIntegrations",
+                    "arguments": {}
+                }
+            }
+            """;
+
+    private static final String GET_INTEGRATION_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 10,
+                "params": {
+                    "name": "getIntegration",
+                    "arguments": {
+                        "id": "12345678-abcd-1234-abcd-1234567890ab"
+                    }
+                }
+            }
+            """;
+
+    private static final String GET_INTEGRATION_HISTORY_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 11,
+                "params": {
+                    "name": "getIntegrationHistory",
+                    "arguments": {
+                        "id": "12345678-abcd-1234-abcd-1234567890ab"
+                    }
+                }
+            }
+            """;
+
+    private static final String GET_INTEGRATION_HISTORY_DETAILS_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 12,
+                "params": {
+                    "name": "getIntegrationHistoryDetails",
+                    "arguments": {
+                        "integrationId": "12345678-abcd-1234-abcd-1234567890ab",
+                        "historyId": "abcd1234-abcd-1234-abcd-1234567890ab"
+                    }
+                }
+            }
+            """;
+
     // --- Helpers ---
 
     private static String validIdentity() {
@@ -311,9 +366,10 @@ public class McpAuthTest {
     public void testToolsListWithValidIdentity() {
         postMcp(validIdentity(), TOOLS_LIST_BODY)
                 .statusCode(200)
-                .body("result.tools.size()", greaterThanOrEqualTo(6))
+                .body("result.tools.size()", greaterThanOrEqualTo(10))
                 .body("result.tools.name", hasItems("serverInfo", "whoami", "getSeverities",
-                        "getBundle", "getApplication", "getEventType"));
+                        "getBundle", "getApplication", "getEventType",
+                        "getIntegrations", "getIntegration", "getIntegrationHistory", "getIntegrationHistoryDetails"));
     }
 
     @Test
@@ -548,6 +604,182 @@ public class McpAuthTest {
         );
 
         postMcp(validIdentity(), GET_EVENT_TYPE_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- getIntegrations tool tests ---
+
+    @Test
+    public void testGetIntegrationsWithValidIdentity() {
+        String integrationsJson = "{\"data\":[{\"id\":\"12345678-abcd-1234-abcd-1234567890ab\",\"name\":\"My Webhook\",\"type\":\"webhook\"}],\"meta\":{\"count\":1},\"links\":{}}";
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/integrations/v2.0/endpoints"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(integrationsJson))
+        );
+
+        postMcp(validIdentity(), GET_INTEGRATIONS_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("My Webhook"))
+                .body("result.content[0].text", containsString("webhook"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                getRequestedFor(urlPathEqualTo("/api/integrations/v2.0/endpoints"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testGetIntegrationsWithoutIdentityIsRejected() {
+        postMcp(null, GET_INTEGRATIONS_BODY).statusCode(401);
+    }
+
+    @Test
+    public void testGetIntegrationsWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/integrations/v2.0/endpoints"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), GET_INTEGRATIONS_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- getIntegration tool tests ---
+
+    @Test
+    public void testGetIntegrationWithValidIdentity() {
+        String integrationJson = "{\"id\":\"12345678-abcd-1234-abcd-1234567890ab\",\"name\":\"My Webhook\",\"type\":\"webhook\",\"enabled\":true}";
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/integrations/v2.0/endpoints/12345678-abcd-1234-abcd-1234567890ab"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(integrationJson))
+        );
+
+        postMcp(validIdentity(), GET_INTEGRATION_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("My Webhook"))
+                .body("result.content[0].text", containsString("12345678-abcd-1234-abcd-1234567890ab"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                getRequestedFor(urlPathEqualTo("/api/integrations/v2.0/endpoints/12345678-abcd-1234-abcd-1234567890ab"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testGetIntegrationWithoutIdentityIsRejected() {
+        postMcp(null, GET_INTEGRATION_BODY).statusCode(401);
+    }
+
+    @Test
+    public void testGetIntegrationWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/integrations/v2.0/endpoints/12345678-abcd-1234-abcd-1234567890ab"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), GET_INTEGRATION_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- getIntegrationHistory tool tests ---
+
+    @Test
+    public void testGetIntegrationHistoryWithValidIdentity() {
+        String historyJson = "{\"data\":[{\"id\":\"abcd1234-abcd-1234-abcd-1234567890ab\",\"status\":\"SUCCESS\"}],\"meta\":{\"count\":1},\"links\":{}}";
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/integrations/v2.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/history"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(historyJson))
+        );
+
+        postMcp(validIdentity(), GET_INTEGRATION_HISTORY_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("SUCCESS"))
+                .body("result.content[0].text", containsString("abcd1234"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                getRequestedFor(urlPathEqualTo("/api/integrations/v2.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/history"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testGetIntegrationHistoryWithoutIdentityIsRejected() {
+        postMcp(null, GET_INTEGRATION_HISTORY_BODY).statusCode(401);
+    }
+
+    @Test
+    public void testGetIntegrationHistoryWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/integrations/v2.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/history"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), GET_INTEGRATION_HISTORY_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- getIntegrationHistoryDetails tool tests ---
+
+    @Test
+    public void testGetIntegrationHistoryDetailsWithValidIdentity() {
+        String detailsJson = "{\"type\":\"com.redhat.console.notification.toCamel.webhook\",\"target\":\"https://example.com/hook\",\"outcome\":\"SUCCESS\"}";
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/history/abcd1234-abcd-1234-abcd-1234567890ab/details"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(detailsJson))
+        );
+
+        postMcp(validIdentity(), GET_INTEGRATION_HISTORY_DETAILS_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("webhook"))
+                .body("result.content[0].text", containsString("SUCCESS"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                getRequestedFor(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/history/abcd1234-abcd-1234-abcd-1234567890ab/details"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testGetIntegrationHistoryDetailsWithoutIdentityIsRejected() {
+        postMcp(null, GET_INTEGRATION_HISTORY_DETAILS_BODY).statusCode(401);
+    }
+
+    @Test
+    public void testGetIntegrationHistoryDetailsWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/history/abcd1234-abcd-1234-abcd-1234567890ab/details"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), GET_INTEGRATION_HISTORY_DETAILS_BODY)
                 .statusCode(200)
                 .body("result.isError", is(true))
                 .body("result.content[0].text", containsString("Resource not found"));

@@ -14,6 +14,8 @@ import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
+import java.util.List;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
@@ -91,6 +93,54 @@ public class McpServerTools {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         return executeRestCall("getEventType", principal,
                 () -> backendClient.getEventType(principal.getRawHeader(), bundleName, applicationName, eventTypeName));
+    }
+
+    @Tool(description = "Lists all integrations with optional filtering by type, active status, or name")
+    public String getIntegrations(
+            @ToolArg(description = "Filter by integration type: webhook, email_subscription, camel, ansible, drawer, pagerduty. Camel subtypes use colon notation: camel:slack, camel:teams, camel:google_chat, camel:splunk, camel:servicenow", required = false) List<String> type,
+            @ToolArg(description = "Filter by active status", required = false) Boolean active,
+            @ToolArg(description = "Filter by integration name", required = false) String name,
+            @ToolArg(description = "Number of items per page", required = false, defaultValue = "20") Integer limit,
+            @ToolArg(description = "Page number (starts at 0)", required = false) Integer pageNumber) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        return executeRestCall("getIntegrations", principal,
+                () -> backendClient.getEndpoints(principal.getRawHeader(), type, active, name, limit, pageNumber));
+    }
+
+    @Tool(description = "Retrieves a specific integration by ID")
+    public String getIntegration(
+            @NotBlank @ToolArg(description = "The UUID of the integration") String id) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        return executeRestCall("getIntegration", principal,
+                () -> backendClient.getEndpoint(principal.getRawHeader(), parseUuid("id", id)));
+    }
+
+    @Tool(description = "Retrieves notification history for an integration")
+    public String getIntegrationHistory(
+            @NotBlank @ToolArg(description = "The UUID of the integration") String id,
+            @ToolArg(description = "Include detailed information in the reply", required = false) Boolean includeDetail,
+            @ToolArg(description = "Number of items per page", required = false, defaultValue = "20") Integer limit,
+            @ToolArg(description = "Page number (starts at 0)", required = false) Integer pageNumber) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        return executeRestCall("getIntegrationHistory", principal,
+                () -> backendClient.getEndpointHistory(principal.getRawHeader(), parseUuid("id", id), includeDetail, limit, pageNumber));
+    }
+
+    @Tool(description = "Retrieves detailed information about a specific integration notification event")
+    public String getIntegrationHistoryDetails(
+            @NotBlank @ToolArg(description = "The UUID of the integration") String integrationId,
+            @NotBlank @ToolArg(description = "The UUID of the notification history event") String historyId) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        return executeRestCall("getIntegrationHistoryDetails", principal,
+                () -> backendClient.getEndpointHistoryDetails(principal.getRawHeader(), parseUuid("integrationId", integrationId), parseUuid("historyId", historyId)));
+    }
+
+    private static UUID parseUuid(String paramName, String value) {
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException e) {
+            throw new ToolCallException("Invalid UUID for " + paramName + ": " + value);
+        }
     }
 
     /**
