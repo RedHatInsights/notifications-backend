@@ -28,11 +28,13 @@ class TestRbacTemplate {
     static final String GROUP_UPDATED = "group-updated";
     static final String GROUP_DELETED = "group-deleted";
     static final String PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM = "platform-default-group-turned-into-custom";
+    static final String REQUEST_ACCESS = "request-access";
+    static final String TAM_ACCESS_REQUEST = "rh-new-tam-request-created";
 
     @Inject
     TestHelpers testHelpers;
 
-    @ValueSource(strings = { RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED, CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS, CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM })
+    @ValueSource(strings = { RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED, CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS, CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM, REQUEST_ACCESS, TAM_ACCESS_REQUEST })
     @ParameterizedTest
     void testRenderedTemplates(final String eventType) {
         Action action = RbacTestHelpers.createRbacAction();
@@ -43,41 +45,47 @@ class TestRbacTemplate {
     private void checkResult(String eventType, String result) {
         switch (eventType) {
             case RH_NEW_ROLE_AVAILABLE:
-                assertEquals("Red Hat now provides a new role **testRoleName**.", result);
+                assertEquals("Red Hat now provides the **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** role.", result);
                 break;
             case RH_PLATFORM_DEFAULT_ROLE_UPDATED:
             case RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED:
-                assertEquals("Red Hat has updated the role **testRoleName**.", result);
+                assertEquals("Red Hat updated the **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** role.", result);
                 break;
             case CUSTOM_ROLE_CREATED:
-                assertEquals("A custom role **testRoleName** has been created by testUser1.", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** created the **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** custom role.", result);
                 break;
             case CUSTOM_ROLE_UPDATED:
-                assertEquals("Custom role **testRoleName** has been updated by testUser1.", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** updated the **[testRoleName](https://localhost/iam/user-access/roles/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** custom role.", result);
                 break;
             case CUSTOM_ROLE_DELETED:
-                assertEquals("Custom role **testRoleName** has been deleted by testUser1 and is not available anymore.", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** deleted the **testRoleName** custom role.", result);
                 break;
             case RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS:
-                assertEquals("Red Hat added a role **myRole** to platform default access group.", result);
+                assertEquals("Red Hat added the **[myRole](https://localhost/iam/user-access/roles/detail/90d52d8b-614d-40f6-b073-1a88ee575f75?from=notifications&integration=drawer)** role to the Default access group.", result);
                 break;
             case RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS:
-                assertEquals("Red Hat removed a role **myRole** from platform default access group.", result);
+                assertEquals("Red Hat removed the **[myRole](https://localhost/iam/user-access/roles/detail/90d52d8b-614d-40f6-b073-1a88ee575f75?from=notifications&integration=drawer)** role from the Default access group.", result);
                 break;
             case CUSTOM_DEFAULT_ACCESS_UPDATED:
-                assertEquals("Custom platform default access group has been updated by testUser1.", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** updated the Custom default access group by adding the **[myRole](https://localhost/iam/user-access/roles/detail/90d52d8b-614d-40f6-b073-1a88ee575f75?from=notifications&integration=drawer)** to the group.", result);
                 break;
             case GROUP_CREATED:
-                assertEquals("A custom group **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286)** has been created by testUser1.", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** created the **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** group.", result);
                 break;
             case GROUP_UPDATED:
-                assertEquals("Custom group has been updated by testUser1.", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** updated the **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)** group.", result);
                 break;
             case GROUP_DELETED:
-                assertEquals("Custom group **testRoleName** has been deleted by testUser1 and is not available anymore.", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** deleted the **testRoleName** group.", result);
                 break;
             case PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM:
-                assertEquals("Platform default group is modified by testUser1 and Red Hat will not be responsible for managing it from now on.", result);
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** changed the Default access group. The group is now called **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)**.", result);
+                break;
+            case REQUEST_ACCESS:
+                assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** requested access to **[https://console.redhat.com/stuff](https://console.redhat.com/stuff?from=notifications&integration=drawer)**.", result);
+                break;
+            case TAM_ACCESS_REQUEST:
+                assertEquals("A Red Hat technical account manager requested access to your account. Go to [Red Hat Access Request](https://localhost/iam/user-access/access-requests?from=notifications&integration=drawer) to review the request.", result);
                 break;
             default:
                 break;

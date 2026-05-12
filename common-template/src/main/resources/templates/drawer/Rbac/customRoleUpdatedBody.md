@@ -1,1 +1,5 @@
-Custom role **{data.events[0].payload.name}** has been updated by {data.events[0].payload.username}.
+{#include drawer/Common/commonDrawerNotification.md}
+{#body}
+**[{data.events[0].payload.username}]({environment.url}/iam/user-access/users/detail/{data.events[0].payload.username}?{query_params})** updated the **[{data.events[0].payload.name}]({environment.url}/iam/user-access/roles/detail/{data.events[0].payload.uuid}?{query_params})** custom role.
+{/body}
+{/include}

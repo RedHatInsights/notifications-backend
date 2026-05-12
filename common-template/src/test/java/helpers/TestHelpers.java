@@ -280,6 +280,7 @@ public class TestHelpers {
             new Context.ContextBuilder()
                 .withAdditionalProperty("system_check_in", "2020-08-03T15:22:42.199046")
                 .withAdditionalProperty("source_name", "Dummy source name")
+                .withAdditionalProperty("source_id", "12345")
                 .withAdditionalProperty("cost_model_name", "Sample model")
                 .withAdditionalProperty("cost_model_id", "4540543DGE")
                 .build()
@@ -378,10 +379,11 @@ public class TestHelpers {
         return emailActionMessage;
     }
 
-    public static Action createIntegrationDisabledAction(String errorType, String integrationName, Integer statusCode) {
+    public static Action createIntegrationDisabledAction(String errorType, String integrationName, String endpointCategory, Integer statusCode) {
         Context.ContextBuilderBase contextBuilder = new Context.ContextBuilder()
             .withAdditionalProperty("error_type", errorType)
-            .withAdditionalProperty("endpoint_name", integrationName);
+            .withAdditionalProperty("endpoint_name", integrationName)
+            .withAdditionalProperty("endpoint_category", endpointCategory);
 
         if (statusCode != null) {
             contextBuilder.withAdditionalProperty("status_code", statusCode);

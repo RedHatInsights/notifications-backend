@@ -22,7 +22,7 @@ class TemplateServiceTest {
 
     @Test
     void testBetaToGaFallback() {
-        final Action action = TestHelpers.createIntegrationDisabledAction("HTTP_4XX", "Unreliable integration", 401);
+        final Action action = TestHelpers.createIntegrationDisabledAction("HTTP_4XX", "Unreliable integration", "Communications", 401);
 
         // Render default drawer notification
         final TemplateDefinition defaultDrawerTemplateDefinition = new TemplateDefinition(DRAWER, null, null, null);
