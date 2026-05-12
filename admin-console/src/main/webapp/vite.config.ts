@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// When adding new internal API endpoints, add the path prefix here so the dev server proxies it.
 const apiPaths = [
     '/access',
     '/admin',
