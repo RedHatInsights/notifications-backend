@@ -34,8 +34,8 @@
     "@types/node": "24.12.4",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
     "eslint": "^10.0.0",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jsx-a11y": "^6.10.0",
@@ -44,7 +44,7 @@
     "globals": "^17.0.0",
     "openapi2typescript-cli": "0.7.1",
     "react-scripts": "5.0.1",
-    "typescript": "5.9.3",
+    "typescript": "6.0.3",
     "webpack": "^5.11.0"
   },
   "scripts": {
