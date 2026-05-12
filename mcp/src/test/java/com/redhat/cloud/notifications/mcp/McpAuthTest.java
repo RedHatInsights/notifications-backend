@@ -247,6 +247,57 @@ public class McpAuthTest {
             }
             """;
 
+    private static final String GET_EVENTS_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 13,
+                "params": {
+                    "name": "getEvents",
+                    "arguments": {}
+                }
+            }
+            """;
+
+    private static final String GET_DAILY_DIGEST_TIME_PREFERENCE_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 14,
+                "params": {
+                    "name": "getDailyDigestTimePreference",
+                    "arguments": {}
+                }
+            }
+            """;
+
+    private static final String GET_USER_NOTIFICATION_PREFERENCES_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 15,
+                "params": {
+                    "name": "getUserNotificationPreferences",
+                    "arguments": {}
+                }
+            }
+            """;
+
+    private static final String GET_USER_NOTIFICATION_PREFERENCES_BY_APP_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 16,
+                "params": {
+                    "name": "getUserNotificationPreferencesByApplication",
+                    "arguments": {
+                        "bundleName": "rhel",
+                        "applicationName": "patch"
+                    }
+                }
+            }
+            """;
+
     // --- Helpers ---
 
     private static String validIdentity() {
@@ -366,10 +417,12 @@ public class McpAuthTest {
     public void testToolsListWithValidIdentity() {
         postMcp(validIdentity(), TOOLS_LIST_BODY)
                 .statusCode(200)
-                .body("result.tools.size()", greaterThanOrEqualTo(10))
+                .body("result.tools.size()", greaterThanOrEqualTo(14))
                 .body("result.tools.name", hasItems("serverInfo", "whoami", "getSeverities",
                         "getBundle", "getApplication", "getEventType",
-                        "getIntegrations", "getIntegration", "getIntegrationHistory", "getIntegrationHistoryDetails"));
+                        "getIntegrations", "getIntegration", "getIntegrationHistory", "getIntegrationHistoryDetails",
+                        "getEvents", "getDailyDigestTimePreference",
+                        "getUserNotificationPreferences", "getUserNotificationPreferencesByApplication"));
     }
 
     @Test
@@ -780,6 +833,182 @@ public class McpAuthTest {
         );
 
         postMcp(validIdentity(), GET_INTEGRATION_HISTORY_DETAILS_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- getEvents tool tests ---
+
+    @Test
+    public void testGetEventsWithValidIdentity() {
+        String eventsJson = "{\"data\":[{\"id\":\"11111111-1111-1111-1111-111111111111\",\"bundle\":\"rhel\",\"application\":\"patch\",\"event_type\":\"New advisory\",\"created\":\"2026-05-12T10:00:00\"}],\"meta\":{\"count\":1},\"links\":{}}";
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/notifications/events"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(eventsJson))
+        );
+
+        postMcp(validIdentity(), GET_EVENTS_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("rhel"))
+                .body("result.content[0].text", containsString("patch"))
+                .body("result.content[0].text", containsString("New advisory"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                getRequestedFor(urlPathEqualTo("/api/notifications/v1.0/notifications/events"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testGetEventsWithoutIdentityIsRejected() {
+        postMcp(null, GET_EVENTS_BODY).statusCode(401);
+    }
+
+    @Test
+    public void testGetEventsWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/notifications/events"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), GET_EVENTS_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- getDailyDigestTimePreference tool tests ---
+
+    @Test
+    public void testGetDailyDigestTimePreferenceWithValidIdentity() {
+        String timeJson = "\"09:00\"";
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/org-config/daily-digest/time-preference"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(timeJson))
+        );
+
+        postMcp(validIdentity(), GET_DAILY_DIGEST_TIME_PREFERENCE_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("09:00"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                getRequestedFor(urlPathEqualTo("/api/notifications/v1.0/org-config/daily-digest/time-preference"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testGetDailyDigestTimePreferenceWithoutIdentityIsRejected() {
+        postMcp(null, GET_DAILY_DIGEST_TIME_PREFERENCE_BODY).statusCode(401);
+    }
+
+    @Test
+    public void testGetDailyDigestTimePreferenceWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/org-config/daily-digest/time-preference"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), GET_DAILY_DIGEST_TIME_PREFERENCE_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- getUserNotificationPreferences tool tests ---
+
+    @Test
+    public void testGetUserNotificationPreferencesWithValidIdentity() {
+        String prefsJson = "{\"bundles\":{\"rhel\":{\"display_name\":\"Red Hat Enterprise Linux\",\"applications\":{}}}}";
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/user-config/notification-event-type-preference"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(prefsJson))
+        );
+
+        postMcp(validIdentity(), GET_USER_NOTIFICATION_PREFERENCES_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("rhel"))
+                .body("result.content[0].text", containsString("Red Hat Enterprise Linux"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                getRequestedFor(urlPathEqualTo("/api/notifications/v1.0/user-config/notification-event-type-preference"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testGetUserNotificationPreferencesWithoutIdentityIsRejected() {
+        postMcp(null, GET_USER_NOTIFICATION_PREFERENCES_BODY).statusCode(401);
+    }
+
+    @Test
+    public void testGetUserNotificationPreferencesWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/user-config/notification-event-type-preference"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), GET_USER_NOTIFICATION_PREFERENCES_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- getUserNotificationPreferencesByApplication tool tests ---
+
+    @Test
+    public void testGetUserNotificationPreferencesByApplicationWithValidIdentity() {
+        String appPrefsJson = "{\"display_name\":\"Patch\",\"event_types\":{\"new-advisory\":{\"display_name\":\"New advisory\"}}}";
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/user-config/notification-event-type-preference/rhel/patch"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(appPrefsJson))
+        );
+
+        postMcp(validIdentity(), GET_USER_NOTIFICATION_PREFERENCES_BY_APP_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("Patch"))
+                .body("result.content[0].text", containsString("New advisory"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                getRequestedFor(urlPathEqualTo("/api/notifications/v1.0/user-config/notification-event-type-preference/rhel/patch"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testGetUserNotificationPreferencesByApplicationWithoutIdentityIsRejected() {
+        postMcp(null, GET_USER_NOTIFICATION_PREFERENCES_BY_APP_BODY).statusCode(401);
+    }
+
+    @Test
+    public void testGetUserNotificationPreferencesByApplicationWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/user-config/notification-event-type-preference/rhel/patch"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), GET_USER_NOTIFICATION_PREFERENCES_BY_APP_BODY)
                 .statusCode(200)
                 .body("result.isError", is(true))
                 .body("result.content[0].text", containsString("Resource not found"));

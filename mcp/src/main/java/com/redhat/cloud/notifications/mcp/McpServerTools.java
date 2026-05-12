@@ -135,6 +135,49 @@ public class McpServerTools {
                 () -> backendClient.getEndpointHistoryDetails(principal.getRawHeader(), parseUuid("integrationId", integrationId), parseUuid("historyId", historyId)));
     }
 
+    @Tool(description = "Retrieves notification event log entries. Returns a paginated list with fields: id, bundle, application, event_type, created, severity. By default, actions and payload are omitted — set includeActions=true to see delivery status per integration, and includePayload=true to see event content. Use the getBundle or getApplication tools first to obtain bundle/application UUIDs for filtering.")
+    public String getEvents(
+            @ToolArg(description = "Filter by bundle UUIDs (use getBundle to find UUIDs)", required = false) List<String> bundleIds,
+            @ToolArg(description = "Filter by application UUIDs (use getApplication to find UUIDs)", required = false) List<String> appIds,
+            @ToolArg(description = "Filter by event type display name", required = false) String eventTypeDisplayName,
+            @ToolArg(description = "Filter events from this date (yyyy-MM-dd)", required = false) String startDate,
+            @ToolArg(description = "Filter events until this date (yyyy-MM-dd)", required = false) String endDate,
+            @ToolArg(description = "Filter by endpoint types: webhook, email_subscription, camel, ansible, drawer, pagerduty. Camel subtypes use colon notation: camel:slack, camel:teams, camel:google_chat, camel:splunk, camel:servicenow", required = false) List<String> endpointTypes,
+            @ToolArg(description = "Filter by invocation result as string values: 'true' for success, 'false' for failure", required = false) List<String> invocationResults,
+            @ToolArg(description = "Filter by notification status: SUCCESS, SENT, FAILED, PROCESSING", required = false) List<String> status,
+            @ToolArg(description = "Include detailed information about each notification action (default: false)", required = false) Boolean includeDetails,
+            @ToolArg(description = "Include the event payload in the response (default: false)", required = false) Boolean includePayload,
+            @ToolArg(description = "Include notification actions (delivery attempts per integration) in the response (default: false)", required = false) Boolean includeActions,
+            @ToolArg(description = "Number of items per page", required = false, defaultValue = "20") Integer limit,
+            @ToolArg(description = "Page number (starts at 0)", required = false) Integer pageNumber) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        return executeRestCall("getEvents", principal,
+                () -> backendClient.getEvents(principal.getRawHeader(), bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, status, includeDetails, includePayload, includeActions, limit, pageNumber));
+    }
+
+    @Tool(description = "Retrieves the daily digest time setting for the organization. Returns a UTC time string (e.g. \"09:00\") indicating when daily digest emails are sent.")
+    public String getDailyDigestTimePreference() {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        return executeRestCall("getDailyDigestTimePreference", principal,
+                () -> backendClient.getDailyDigestTimePreference(principal.getRawHeader()));
+    }
+
+    @Tool(description = "Retrieves user notification preferences for all bundles and applications. Returns a nested structure: bundles → applications → event types, each showing which subscription types (instant, daily, drawer) the user is subscribed to. Use getUserNotificationPreferencesByApplication for a single application.")
+    public String getUserNotificationPreferences() {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        return executeRestCall("getUserNotificationPreferences", principal,
+                () -> backendClient.getUserNotificationPreferences(principal.getRawHeader()));
+    }
+
+    @Tool(description = "Retrieves user notification preferences for a specific bundle and application. Returns event types with their subscription types (instant, daily, drawer) and whether the user is subscribed. Lighter than getUserNotificationPreferences when you only need one application.")
+    public String getUserNotificationPreferencesByApplication(
+            @NotBlank @ToolArg(description = "The name of the bundle") String bundleName,
+            @NotBlank @ToolArg(description = "The name of the application") String applicationName) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        return executeRestCall("getUserNotificationPreferencesByApplication", principal,
+                () -> backendClient.getUserNotificationPreferencesByApplication(principal.getRawHeader(), bundleName, applicationName));
+    }
+
     private static UUID parseUuid(String paramName, String value) {
         try {
             return UUID.fromString(value);
