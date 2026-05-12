@@ -14,6 +14,8 @@ import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -150,6 +152,11 @@ public class McpServerTools {
             @ToolArg(description = "Include notification actions (delivery attempts per integration) in the response (default: false)", required = false) Boolean includeActions,
             @ToolArg(description = "Number of items per page", required = false, defaultValue = "20") Integer limit,
             @ToolArg(description = "Page number (starts at 0)", required = false) Integer pageNumber) {
+        LocalDate parsedStart = parseDate("startDate", startDate);
+        LocalDate parsedEnd = parseDate("endDate", endDate);
+        if (parsedStart != null && parsedEnd != null && parsedStart.isAfter(parsedEnd)) {
+            throw new ToolCallException("startDate must not be after endDate");
+        }
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         return executeRestCall("getEvents", principal,
                 () -> backendClient.getEvents(principal.getRawHeader(), bundleIds, appIds, eventTypeDisplayName, startDate, endDate, endpointTypes, invocationResults, status, includeDetails, includePayload, includeActions, limit, pageNumber));
@@ -183,6 +190,17 @@ public class McpServerTools {
             return UUID.fromString(value);
         } catch (IllegalArgumentException e) {
             throw new ToolCallException("Invalid UUID for " + paramName + ": " + value);
+        }
+    }
+
+    private static LocalDate parseDate(String paramName, String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value);
+        } catch (DateTimeParseException e) {
+            throw new ToolCallException("Invalid date for " + paramName + ": " + value + ", expected yyyy-MM-dd");
         }
     }
 
