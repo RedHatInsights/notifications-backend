@@ -91,13 +91,13 @@ public class IntegrationDisabledNotifier {
             case ANSIBLE -> "Reporting";
             case CAMEL -> {
                 yield switch (endpoint.getSubType()) {
-                        case "google_chat", "slack", "teams" -> "Communications";
-                        case "servicenow", "splunk" -> "Reporting";
-                        default -> {
-                            // The frontend will show the Cloud tab by default if we return an empty string.
-                            yield "";
-                        }
-                    };
+                    case "google_chat", "slack", "teams" -> "Communications";
+                    case "servicenow", "splunk" -> "Reporting";
+                    default -> {
+                        // The frontend will show the Cloud tab by default if we return an empty string.
+                        yield "";
+                    }
+                };
             }
             case WEBHOOK -> "Webhooks";
             default -> {
