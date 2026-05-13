@@ -1,12 +1,11 @@
 package com.redhat.cloud.notifications;
 
 import io.quarkus.logging.Log;
-import io.quarkus.runtime.ShutdownDelayInitiatedEvent;
+import io.quarkus.runtime.ShutdownDelayInitiated;
 import io.smallrye.reactive.messaging.ChannelRegistry;
 import io.smallrye.reactive.messaging.PausableChannel;
 import io.smallrye.reactive.messaging.kafka.KafkaClientService;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 
 import java.util.Set;
@@ -29,7 +28,8 @@ public class GracefulShutdownManager {
     @Inject
     KafkaClientService kafkaClientService;
 
-    void onShutdown(@Observes ShutdownDelayInitiatedEvent event) {
+    @ShutdownDelayInitiated
+    void onShutdown() {
         Log.info("=== Starting graceful shutdown sequence ===");
 
         pauseAllKafkaConsumers();
