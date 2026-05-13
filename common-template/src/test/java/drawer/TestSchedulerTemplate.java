@@ -28,7 +28,7 @@ class TestSchedulerTemplate {
         String result = renderTemplate(SCHEDULER_EXPORT_COMPLETE, action);
         assertTrue(result.contains("A scheduled export"));
         assertTrue(result.contains("**[Test Export Job]"));
-        assertTrue(result.contains("/api/exports/v1/exports/export-67890)**"));
+        assertTrue(result.contains("/api/exports/v1/exports/export-67890?from=notifications&integration=drawer)**"));
         assertTrue(result.contains("has completed"));
     }
 
@@ -38,7 +38,7 @@ class TestSchedulerTemplate {
         String result = renderTemplate(SCHEDULER_JOB_FAILED, action);
         assertTrue(result.contains("A scheduled export"));
         assertTrue(result.contains("**[Test Failed Job]"));
-        assertTrue(result.contains("/insights/jobs/job-54321)**"));
+        assertTrue(result.contains("/insights/jobs/job-54321?from=notifications&integration=drawer)**"));
         assertTrue(result.contains("has failed"));
     }
 
@@ -48,7 +48,7 @@ class TestSchedulerTemplate {
         String result = renderTemplate(SCHEDULER_JOB_FAILED_PAUSED, action);
         assertTrue(result.contains("A scheduled export"));
         assertTrue(result.contains("**[Test Paused Job]"));
-        assertTrue(result.contains("/insights/jobs/job-99999)**"));
+        assertTrue(result.contains("/insights/jobs/job-99999?from=notifications&integration=drawer)**"));
         assertTrue(result.contains("has failed and been automatically paused"));
     }
 

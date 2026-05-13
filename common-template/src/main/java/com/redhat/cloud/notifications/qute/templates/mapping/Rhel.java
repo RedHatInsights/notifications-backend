@@ -89,6 +89,9 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, COMPLIANCE_APP_NAME, null), COMPLIANCE_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Inventory
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_NEW_SYSTEM_REGISTERED), INVENTORY_FOLDER_NAME + "newSystemRegisteredBody.md"),
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_SYSTEM_BECAME_STALE), INVENTORY_FOLDER_NAME + "systemBecameStaleBody.md"),
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_SYSTEM_DELETED), INVENTORY_FOLDER_NAME + "systemDeletedBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_NEW_SYSTEM_REGISTERED), INVENTORY_FOLDER_NAME + "newSystemRegisteredEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_SYSTEM_BECAME_STALE), INVENTORY_FOLDER_NAME + "systemBecameStaleBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, INVENTORY_APP_NAME, INVENTORY_SYSTEM_DELETED), INVENTORY_FOLDER_NAME + "systemDeletedEmailBody.html"),
@@ -107,9 +110,11 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, PATCH_APP_NAME, null), PATCH_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Lifecycle
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, LIFECYCLE_APP_NAME, RETIRING_LIFECYCLE_REPORT), LIFECYCLE_FOLDER_NAME + "retiringLifecycleBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, LIFECYCLE_APP_NAME, RETIRING_LIFECYCLE_REPORT), LIFECYCLE_FOLDER_NAME + "retiringLifecycleInstantEmailBody.html"),
 
         // Roadmap
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, ROADMAP_APP_NAME, ROADMAP_REPORT), ROADMAP_FOLDER_NAME + "roadmapBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ROADMAP_APP_NAME, ROADMAP_REPORT), ROADMAP_FOLDER_NAME + "roadmapInstantEmailBody.html"),
 
 
@@ -117,6 +122,8 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, RESOURCE_OPTIMIZATION_APP_NAME, null), RESOURCE_OPTIMIZATION_FOLDER_NAME + "dailyEmailBody.html"),
 
         // Task
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, TASK_APP_NAME, TASK_EXECUTED_TASK_COMPLETED), TASK_FOLDER_NAME + "executedTaskCompletedBody.md"),
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, TASK_APP_NAME, TASK_JOB_FAILED), TASK_FOLDER_NAME + "jobFailedBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, TASK_APP_NAME, TASK_EXECUTED_TASK_COMPLETED), TASK_FOLDER_NAME + "executedTaskCompletedEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, TASK_APP_NAME, TASK_JOB_FAILED), TASK_FOLDER_NAME + "jobFailedEmailBody.html"),
 
