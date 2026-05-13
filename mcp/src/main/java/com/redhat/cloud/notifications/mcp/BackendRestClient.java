@@ -59,4 +59,37 @@ public interface BackendRestClient {
     @Path("/api/integrations/v1.0/endpoints/{id}/history/{history_id}/details")
     @Produces(APPLICATION_JSON)
     String getEndpointHistoryDetails(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID id, @RestPath("history_id") UUID historyId);
+
+    @GET
+    @Path("/api/notifications/v1.0/notifications/events")
+    @Produces(APPLICATION_JSON)
+    String getEvents(@RestHeader("x-rh-identity") String xRhIdentity,
+                     @RestQuery List<String> bundleIds,
+                     @RestQuery List<String> appIds,
+                     @RestQuery String eventTypeDisplayName,
+                     @RestQuery String startDate,
+                     @RestQuery String endDate,
+                     @RestQuery List<String> endpointTypes,
+                     @RestQuery List<String> invocationResults,
+                     @RestQuery List<String> status,
+                     @RestQuery Boolean includeDetails,
+                     @RestQuery Boolean includePayload,
+                     @RestQuery Boolean includeActions,
+                     @RestQuery Integer limit,
+                     @RestQuery Integer pageNumber);
+
+    @GET
+    @Path("/api/notifications/v1.0/org-config/daily-digest/time-preference")
+    @Produces(APPLICATION_JSON)
+    String getDailyDigestTimePreference(@RestHeader("x-rh-identity") String xRhIdentity);
+
+    @GET
+    @Path("/api/notifications/v1.0/user-config/notification-event-type-preference")
+    @Produces(APPLICATION_JSON)
+    String getUserNotificationPreferences(@RestHeader("x-rh-identity") String xRhIdentity);
+
+    @GET
+    @Path("/api/notifications/v1.0/user-config/notification-event-type-preference/{bundleName}/{applicationName}")
+    @Produces(APPLICATION_JSON)
+    String getUserNotificationPreferencesByApplication(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath String bundleName, @RestPath String applicationName);
 }
