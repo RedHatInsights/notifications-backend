@@ -1,0 +1,7 @@
+{#include drawer/Common/commonDrawerNotification.md}
+{#body}
+{#let rhelRetiredCount=data.events[0].payload.rhel_retired.orEmpty.rhel_versions_count.or(0) rhelExpiringCount=data.events[0].payload.rhel_near_retirement.orEmpty.rhel_versions_count.or(0) rhel10RetiredCount=data.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty.count.or(0) rhel9RetiredCount=data.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty.count.or(0) rhel8RetiredCount=data.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.count.or(0) rhel10ExpiringCount=data.events[0].payload.appstream_near_retirement.orEmpty.rhel10.orEmpty.count.or(0) rhel9ExpiringCount=data.events[0].payload.appstream_near_retirement.orEmpty.rhel9.orEmpty.count.or(0) rhel8ExpiringCount=data.events[0].payload.appstream_near_retirement.orEmpty.rhel8.orEmpty.count.or(0)}
+{#if rhelRetiredCount > 0 || rhelExpiringCount > 0 || rhel10RetiredCount > 0 || rhel9RetiredCount > 0 || rhel8RetiredCount > 0 || rhel10ExpiringCount > 0 || rhel9ExpiringCount > 0 || rhel8ExpiringCount > 0}Your [life cycle monthly report]({environment.url}/insights/planning/lifecycle?{query_params}) is available: **{rhelRetiredCount + rhel10RetiredCount + rhel9RetiredCount + rhel8RetiredCount}** retired and **{rhelExpiringCount + rhel10ExpiringCount + rhel9ExpiringCount + rhel8ExpiringCount}** expiring releases.{#else}Your [life cycle monthly report]({environment.url}/insights/planning/lifecycle?{query_params}) is available. Your inventory remained fully supported.{/if}
+{/let}
+{/body}
+{/include}
