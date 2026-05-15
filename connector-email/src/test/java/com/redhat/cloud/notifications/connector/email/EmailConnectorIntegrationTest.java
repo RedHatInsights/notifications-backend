@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.connector.email.model.aggregation.Applicat
 import com.redhat.cloud.notifications.connector.email.model.settings.RecipientSettings;
 import com.redhat.cloud.notifications.connector.email.model.settings.User;
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPManager;
+import com.redhat.cloud.notifications.connector.v2.BaseConnectorIntegrationTest;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import helpers.TestHelpers;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -18,44 +19,39 @@ import io.quarkus.test.junit.mockito.InjectSpy;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
-import org.apache.camel.Exchange;
-import org.apache.camel.builder.AdviceWithRouteBuilder;
-import org.apache.camel.component.mock.MockEndpoint;
-import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.redhat.cloud.notifications.connector.ConnectorRoutesTest.KAFKA_SOURCE_MOCK;
-import static com.redhat.cloud.notifications.connector.ConnectorToEngineRouteBuilder.CONNECTOR_TO_ENGINE;
-import static com.redhat.cloud.notifications.connector.EngineToConnectorRouteBuilder.ENGINE_TO_CONNECTOR;
-import static com.redhat.cloud.notifications.connector.IncomingCloudEventFilter.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
-import static com.redhat.cloud.notifications.connector.IncomingCloudEventProcessor.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
 import static email.TestAdvisorTemplate.JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestInventoryTemplate.JSON_INVENTORY_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestPatchTemplate.JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestResourceOptimizationTemplate.JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT;
-import static org.apache.camel.builder.AdviceWith.adviceWith;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
+class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
+
     private static final String PATCH_TEST_EVENT = "{\"account_id\":\"\",\"application\":\"patch\",\"bundle\":\"rhel\",\"context\":{\"system_check_in\":\"2022-08-03T15:22:42.199046\",\"start_time\":\"2022-08-03T15:22:42.199046\",\"patch\":{\"Alpha\":[\"advA\",\"advB\",\"advC\"],\"Roman\":[\"advI\",\"advII\",\"advIII\"],\"Numerical\":[\"adv1\",\"adv2\"]}},\"event_type\":\"new-advisory\",\"events\":[{\"metadata\":{},\"payload\":{\"advisory_name\":\"name 1\",\"synopsis\":\"synopsis 1\"}},{\"metadata\":{},\"payload\":{\"advisory_name\":\"name 2\",\"synopsis\":\"synopsis 2\"}}],\"orgId\":\"default-org-id\",\"timestamp\":\"2022-10-03T15:22:13.000000025\",\"severity\":\"MODERATE\",\"source\":{\"application\":{\"display_name\":\"Patch\"},\"bundle\":{\"display_name\":\"Red Hat Enterprise Linux\"},\"event_type\":{\"display_name\":\"New Advisory\"}},\"environment\":{\"url\":\"https://localhost\",\"ocmUrl\":\"https://localhost\"},\"pendo_message\":null,\"ignore_user_preferences\":true}";
 
     @InjectSpy
@@ -64,58 +60,23 @@ class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
     @Inject
     ObjectMapper objectMapper;
 
-    static boolean camelRoutesInitialised = false;
-
-    static MockEndpoint kafkaConnectorToEngine;
-    static MockEndpoint kafkaEngineToConnector;
-
     @InjectSpy
     BOPManager bopManager;
 
     @Inject
     TemplateService templateService;
 
-    Map<String, Object> eventData;
-    boolean isDailyDigest = false;
-
-    @BeforeEach
-    void beforeEach() {
-        eventData = buildInstantEmailContext();
-        isDailyDigest = false;
+    @Override
+    protected JsonObject buildIncomingPayload(String targetUrl) {
+        return buildEmailPayload(buildInstantEmailContext(), false, null);
     }
 
-    void initCamelRoutes() throws Exception {
-
-        adviceWith(emailConnectorConfig.getConnectorName(), context(), new AdviceWithRouteBuilder() {
-            @Override
-            public void configure() throws Exception {
-                mockEndpoints(
-                    "direct:" + CONNECTOR_TO_ENGINE
-                );
-                mockEndpointsAndSkip("kafka:" + emailConnectorConfig.getOutgoingKafkaTopic());
-            }
-        });
-
-        adviceWith(CONNECTOR_TO_ENGINE, context(), new AdviceWithRouteBuilder() {
-            @Override
-            public void configure() throws Exception {
-                mockEndpointsAndSkip("kafka:" + emailConnectorConfig.getOutgoingKafkaTopic());
-            }
-        });
-
-        adviceWith(ENGINE_TO_CONNECTOR, context(), new AdviceWithRouteBuilder() {
-            @Override
-            public void configure() {
-                replaceFromWith(KAFKA_SOURCE_MOCK);
-            }
-        });
-
-        kafkaConnectorToEngine = getMockEndpoint("mock:kafka:" + emailConnectorConfig.getOutgoingKafkaTopic());
-        kafkaEngineToConnector = getMockEndpoint("mock:" + KAFKA_SOURCE_MOCK);
+    @Override
+    protected String getConnectorSpecificTargetUrl() {
+        return getMockServerUrl();
     }
 
-    void initMocks(Integer recipientsStatus, String recipientsBody, Integer bopStatus, Integer delaySeconds) throws Exception {
-
+    private void setupMocks(Integer recipientsStatus, String recipientsBody, Integer bopStatus, Integer delayMs) {
         MockServerLifecycleManager.getClient().resetAll();
 
         if (recipientsStatus != null) {
@@ -124,8 +85,8 @@ class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
                 .withHeader("Content-Type", "application/json")
                 .withBody(recipientsBody != null ? recipientsBody : "");
 
-            if (delaySeconds != null && delaySeconds > 0) {
-                responseBuilder.withFixedDelay(delaySeconds * 1000);
+            if (delayMs != null && delayMs > 0) {
+                responseBuilder.withFixedDelay(delayMs);
             }
 
             MockServerLifecycleManager.getClient().stubFor(
@@ -139,8 +100,8 @@ class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
                 .withStatus(bopStatus)
                 .withHeader("Content-Type", "application/json");
 
-            if (delaySeconds != null && delaySeconds > 0) {
-                responseBuilder.withFixedDelay(delaySeconds * 1000);
+            if (delayMs != null && delayMs > 0) {
+                responseBuilder.withFixedDelay(delayMs);
             }
 
             MockServerLifecycleManager.getClient().stubFor(
@@ -148,23 +109,21 @@ class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
                     .willReturn(responseBuilder)
             );
         }
-
-        if (!camelRoutesInitialised) {
-            initCamelRoutes();
-            camelRoutesInitialised = true;
-        }
     }
 
     @Test
-    void testEmptyRecipients() throws Exception {
+    void testEmptyRecipients() {
+        setupMocks(200, "[]", 200, null);
 
-        initMocks(200, "[]", 200, null);
+        JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, null);
+        String cloudEventId = sendCloudEventMessage(payload);
 
-        kafkaConnectorToEngine.expectedMessageCount(1);
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertTrue(data.getBoolean("successful"));
+        assertEquals(0, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
 
-        buildCloudEventAndSendIt(null);
-
-        kafkaConnectorToEngine.assertIsSatisfied();
+        assertMetricsIncrement(1, 0);
+        assertHandlerDurationTimerRecorded(1);
     }
 
     @ParameterizedTest
@@ -174,22 +133,26 @@ class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             emailConnectorConfig.setEmailsInternalOnlyEnabled(emailsInternalOnlyEnabled);
             Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
             String strUsers = objectMapper.writeValueAsString(users);
-            initMocks(200, strUsers, 200, null);
+            setupMocks(200, strUsers, 200, null);
 
             Set<String> additionalEmails = Set.of("redhat_user@redhat.com", "external_user@noway.com");
             int usersAndRecipientsTotalNumber = users.size() + additionalEmails.size();
 
-            kafkaConnectorToEngine.expectedMessageCount(1);
+            JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, additionalEmails);
+            String cloudEventId = sendCloudEventMessage(payload);
 
-            buildCloudEventAndSendIt(additionalEmails);
+            JsonObject data = waitForOutgoingMessage(cloudEventId);
+            assertTrue(data.getBoolean("successful"));
 
-            kafkaConnectorToEngine.assertIsSatisfied(2000);
-
+            @SuppressWarnings("unchecked")
             final ArgumentCaptor<List<String>> listCaptor = ArgumentCaptor.forClass((Class) List.class);
             verify(bopManager, times(3))
                 .sendToBop(listCaptor.capture(), anyString(), anyString(), anyString());
 
-            checkRecipientsAndHistory(usersAndRecipientsTotalNumber, listCaptor.getAllValues(), kafkaConnectorToEngine, emailsInternalOnlyEnabled, "external_user@noway.com");
+            checkRecipientsAndHistory(usersAndRecipientsTotalNumber, listCaptor.getAllValues(), data, emailsInternalOnlyEnabled, "external_user@noway.com");
+
+            assertMetricsIncrement(1, 0);
+            assertHandlerDurationTimerRecorded(1);
         } finally {
             emailConnectorConfig.setEmailsInternalOnlyEnabled(false);
         }
@@ -198,102 +161,85 @@ class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testWithRecipientsForDailyDigest(boolean emailsInternalOnlyEnabled) throws Exception {
-        eventData = buildRhelDailyDigestEmailContext();
-
-        isDailyDigest = true;
         try {
             emailConnectorConfig.setEmailsInternalOnlyEnabled(emailsInternalOnlyEnabled);
             Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
             String strUsers = objectMapper.writeValueAsString(users);
-            initMocks(200, strUsers, 200, null);
+            setupMocks(200, strUsers, 200, null);
 
             Set<String> additionalEmails = Set.of("redhat_user@redhat.com", "external_user@noway.com");
             int usersAndRecipientsTotalNumber = users.size() + additionalEmails.size();
 
-            kafkaConnectorToEngine.expectedMessageCount(1);
+            JsonObject payload = buildEmailPayload(buildRhelDailyDigestEmailContext(), true, additionalEmails);
+            String cloudEventId = sendCloudEventMessage(payload);
 
-            buildCloudEventAndSendIt(additionalEmails);
+            JsonObject data = waitForOutgoingMessage(cloudEventId);
+            assertTrue(data.getBoolean("successful"));
 
-            kafkaConnectorToEngine.assertIsSatisfied(2000);
-
+            @SuppressWarnings("unchecked")
             final ArgumentCaptor<List<String>> listCaptor = ArgumentCaptor.forClass((Class) List.class);
             verify(bopManager, times(3))
                 .sendToBop(listCaptor.capture(), anyString(), anyString(), anyString());
 
-            checkRecipientsAndHistory(usersAndRecipientsTotalNumber, listCaptor.getAllValues(), kafkaConnectorToEngine, emailsInternalOnlyEnabled, "external_user@noway.com");
+            checkRecipientsAndHistory(usersAndRecipientsTotalNumber, listCaptor.getAllValues(), data, emailsInternalOnlyEnabled, "external_user@noway.com");
+
+            assertMetricsIncrement(1, 0);
+            assertHandlerDurationTimerRecorded(1);
         } finally {
             emailConnectorConfig.setEmailsInternalOnlyEnabled(false);
         }
     }
 
     @Test
-    void testFailureFetchingRecipientsInternalError() throws Exception {
+    void testFailureFetchingRecipientsInternalError() {
+        setupMocks(500, "", null, null);
 
-        initMocks(500, "", null, null);
+        JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, null);
+        String cloudEventId = sendCloudEventMessage(payload);
 
-        kafkaConnectorToEngine.expectedMessageCount(1);
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertFalse(data.getBoolean("successful"));
+        assertEquals(0, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
 
-        buildCloudEventAndSendIt(null);
-
-        kafkaConnectorToEngine.assertIsSatisfied();
-        List<JsonObject> responseDetails = checkRecipientsAndHistoryFailure(kafkaConnectorToEngine, 0, true);
-        for (JsonObject responseDetail : responseDetails) {
-            assertEquals(500, responseDetail.getJsonObject("error").getInteger("http_status_code"));
-            assertEquals("HTTP_5XX", responseDetail.getJsonObject("error").getString("error_type"));
-        }
+        assertMetricsIncrement(0, 1);
+        assertHandlerDurationTimerRecorded(1);
     }
 
     @Test
-    void testFailureFetchingRecipientsTimeout() throws Exception {
-        // Simulate timeout by creating a stub with a delay longer than the configured socket timeout
-        MockServerLifecycleManager.getClient().resetAll();
-        MockServerLifecycleManager.getClient().stubFor(
-            put(urlEqualTo("/internal/recipients-resolver"))
-                .willReturn(aResponse()
-                    .withStatus(200)
-                    .withHeader("Content-Type", "application/json")
-                    .withBody("[]")
-                    .withFixedDelay(5000)) // 5 seconds delay, exceeds socket timeout
-        );
-        if (!camelRoutesInitialised) {
-            initCamelRoutes();
-            camelRoutesInitialised = true;
-        }
+    void testFailureFetchingRecipientsTimeout() {
+        setupMocks(200, "[]", null, 5000);
 
-        kafkaConnectorToEngine.expectedMessageCount(1);
+        JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, null);
+        String cloudEventId = sendCloudEventMessage(payload);
 
-        buildCloudEventAndSendIt(null);
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertFalse(data.getBoolean("successful"));
 
-        kafkaConnectorToEngine.assertIsSatisfied();
-        checkRecipientsAndHistoryFailure(kafkaConnectorToEngine, 0, false);
+        assertMetricsIncrement(0, 1);
+        assertHandlerDurationTimerRecorded(1);
     }
 
     @Test
     void testFailureBopInternalError() throws Exception {
-
         Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
         String strUsers = objectMapper.writeValueAsString(users);
-        initMocks(200, strUsers, 500, null);
+        setupMocks(200, strUsers, 500, null);
 
-        kafkaConnectorToEngine.expectedMessageCount(1);
-        buildCloudEventAndSendIt(null);
+        JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, null);
+        String cloudEventId = sendCloudEventMessage(payload);
 
-        kafkaConnectorToEngine.assertIsSatisfied();
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertFalse(data.getBoolean("successful"));
 
-        List<JsonObject> responseDetails = checkRecipientsAndHistoryFailure(kafkaConnectorToEngine, 7, true);
-        for (JsonObject responseDetail : responseDetails) {
-            assertEquals(500, responseDetail.getJsonObject("error").getInteger("http_status_code"));
-            assertEquals("HTTP_5XX", responseDetail.getJsonObject("error").getString("error_type"));
-        }
+        assertMetricsIncrement(0, 1);
+        assertHandlerDurationTimerRecorded(1);
     }
 
     @Test
-    void testFailureBopRecipientsTimeout() throws Exception {
-
+    void testFailureBopTimeout() throws Exception {
         Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7");
         String strUsers = objectMapper.writeValueAsString(users);
 
-        // Set up recipients resolver with normal response, but BOP with timeout
         MockServerLifecycleManager.getClient().resetAll();
         MockServerLifecycleManager.getClient().stubFor(
             put(urlEqualTo("/internal/recipients-resolver"))
@@ -307,49 +253,42 @@ class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
                 .willReturn(aResponse()
                     .withStatus(200)
                     .withHeader("Content-Type", "application/json")
-                    .withFixedDelay(5000)) // 5 seconds delay, exceeds socket timeout
+                    .withFixedDelay(5000))
         );
-        if (!camelRoutesInitialised) {
-            initCamelRoutes();
-            camelRoutesInitialised = true;
-        }
 
-        kafkaConnectorToEngine.expectedMessageCount(1);
-        buildCloudEventAndSendIt(null);
+        JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, null);
+        String cloudEventId = sendCloudEventMessage(payload);
 
-        kafkaConnectorToEngine.assertIsSatisfied();
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertFalse(data.getBoolean("successful"));
 
-        checkRecipientsAndHistoryFailure(kafkaConnectorToEngine, 7, false);
+        assertMetricsIncrement(0, 1);
+        assertHandlerDurationTimerRecorded(1);
     }
 
-    private List<JsonObject> checkRecipientsAndHistoryFailure(MockEndpoint kafkaEndpoint, int expectedRecipientNumber, boolean errorDetailsExpected) {
+    // --- Helper methods ---
 
-        int expectedBopRequests = expectedRecipientNumber > 0 ? 1 : 0;
-        verify(bopManager, times(expectedBopRequests))
-            .sendToBop(anyList(), anyString(), anyString(), anyString());
+    private JsonObject buildEmailPayload(Map<String, Object> eventData, boolean isDailyDigest, Set<String> emailRecipients) {
+        RecipientSettings recipientSettings = new RecipientSettings(false, false, null, null, emailRecipients);
 
-        List<JsonObject> dataToReturn = new ArrayList<>();
-        // check metrics sent to engine
-        for (Exchange kafkaMessage : kafkaEndpoint.getReceivedExchanges()) {
-            JsonObject payload = new JsonObject(kafkaMessage.getIn().getBody(String.class));
-            JsonObject data = new JsonObject(payload.getString("data"));
+        EmailNotification emailNotification = new EmailNotification(
+            "Not used",
+            "123456",
+            "123456",
+            List.of(recipientSettings),
+            new ArrayList<>(),
+            new ArrayList<>(),
+            false,
+            null,
+            eventData,
+            isDailyDigest
+        );
 
-            assertFalse(data.getBoolean("successful"));
-            assertTrue(data.containsKey("details"));
-            assertEquals(expectedRecipientNumber, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
-            assertFalse(data.getJsonObject("details").getString("outcome").isBlank());
-            if (errorDetailsExpected) {
-                assertTrue(data.containsKey("error"));
-                assertFalse(data.getJsonObject("error").getString("error_type").isBlank());
-            }
-            dataToReturn.add(data);
-        }
-        return dataToReturn;
+        return JsonObject.mapFrom(emailNotification);
     }
 
-    private static void checkRecipientsAndHistory(int usersAndRecipientsTotalNumber, List<List<String>> recipientsSentToBop, MockEndpoint kafkaEndpoint, boolean emailsInternalOnlyEnabled, String filteredRecipient) {
-
-        // check recipients sent to bop
+    private static void checkRecipientsAndHistory(int usersAndRecipientsTotalNumber, List<List<String>> recipientsSentToBop,
+                                                  JsonObject data, boolean emailsInternalOnlyEnabled, String filteredRecipient) {
         Set<String> receivedEmails = new HashSet<>();
         for (List<String> recipientsList : recipientsSentToBop) {
             assertTrue(recipientsList.size() <= 3);
@@ -364,11 +303,6 @@ class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
             assertEquals(usersAndRecipientsTotalNumber, receivedEmails.size());
         }
 
-        // check metrics sent to engine
-        Exchange kafkaMessage  = kafkaEndpoint.getReceivedExchanges().stream().findFirst().get();
-        JsonObject payload = new JsonObject(kafkaMessage.getIn().getBody(String.class));
-        JsonObject data = new JsonObject(payload.getString("data"));
-
         assertTrue(data.getBoolean("successful"));
 
         if (emailsInternalOnlyEnabled) {
@@ -378,38 +312,14 @@ class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
         }
     }
 
-    private void buildCloudEventAndSendIt(Set<String> emailRecipients) {
-        final JsonObject cloudEvent = generateIncomingCloudEvent(emailRecipients);
-
-        final Map<String, Object> headers = new HashMap<>();
-        headers.put(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, emailConnectorConfig.getConnectorName());
-        template.sendBodyAndHeaders(KAFKA_SOURCE_MOCK, cloudEvent.encode(), headers);
-    }
-
-    private JsonObject generateIncomingCloudEvent(Set<String> emailRecipients) {
-        RecipientSettings recipientSettings = new RecipientSettings(false, false, null, null, emailRecipients);
-
-        final EmailNotification emailNotification = new EmailNotification(
-            "Not used",
-            "123456",
-            "123456",
-            List.of(recipientSettings),
-            new ArrayList<>(),
-            new ArrayList<>(),
-            false,
-            null,
-            eventData,
-            isDailyDigest
-        );
-        final JsonObject payload = JsonObject.mapFrom(emailNotification);
-
-        final String cloudEventId = UUID.randomUUID().toString();
-
-        final JsonObject cloudEvent = new JsonObject();
-        cloudEvent.put(CLOUD_EVENT_ID, cloudEventId);
-        cloudEvent.put(CLOUD_EVENT_TYPE, "com.redhat.console.notification.toCamel." + emailConnectorConfig.getConnectorName());
-        cloudEvent.put(CLOUD_EVENT_DATA, JsonObject.mapFrom(payload));
-        return cloudEvent;
+    private Map<String, Object> buildInstantEmailContext() {
+        TypeReference<HashMap<String, Object>> typeRef = new TypeReference<>() { };
+        try {
+            return objectMapper.readValue(PATCH_TEST_EVENT, typeRef);
+        } catch (JsonProcessingException e) {
+            fail(e);
+            return null;
+        }
     }
 
     private Map<String, Object> buildRhelDailyDigestEmailContext() {
@@ -433,7 +343,6 @@ class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
                 "patch",
                 objectMapper.readValue(JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT, typeRef)
             ));
-
             applicationAggregatedDataList.add(new ApplicationAggregatedData(
                 "resource-optimization",
                 objectMapper.readValue(JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT, typeRef)
@@ -454,15 +363,5 @@ class EmailRouteBuilderTest extends CamelQuarkusTestSupport {
         additionalContext.put("application_aggregated_data_list", new JsonArray(objectMapper.convertValue(applicationAggregatedDataList, List.class)));
 
         return additionalContext;
-    }
-
-    private Map<String, Object> buildInstantEmailContext() {
-        TypeReference<HashMap<String, Object>> typeRef = new TypeReference<>() { };
-        try {
-            return objectMapper.readValue(PATCH_TEST_EVENT, typeRef);
-        } catch (JsonProcessingException e) {
-            fail(e);
-            return null;
-        }
     }
 }
