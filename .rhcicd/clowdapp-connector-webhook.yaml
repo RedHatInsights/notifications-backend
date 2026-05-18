@@ -135,6 +135,8 @@ objects:
             secretKeyRef:
               name: oidc-authentication
               key: secret
+        - name: QUARKUS_REST_CLIENT_SOURCES_OIDC_URL
+          value: ${QUARKUS_REST_CLIENT_SOURCES_OIDC_URL}
         - name: QUARKUS_UNLEASH_ACTIVE
           value: ${NOTIFICATIONS_UNLEASH_ENABLED}
 parameters:
@@ -204,6 +206,9 @@ parameters:
   value: INFO
 - name: NOTIFICATIONS_UNLEASH_ENABLED
   value: "false"
+- name: QUARKUS_REST_CLIENT_SOURCES_OIDC_URL
+  description: Override URL for the OIDC-authenticated Sources REST client, used to point to the HCC cluster endpoint.
+  value: "http://localhost:8000"
 - name: OIDC_CLIENT_ENABLED
   description: If true, the OIDC client will be enabled.
   value: "false"

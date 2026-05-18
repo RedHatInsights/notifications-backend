@@ -121,7 +121,7 @@ V2 connectors do not use Kafka reinjection. Exceptions thrown from `MessageHandl
 Connectors needing endpoint authentication use the `connector-common-authentication` (V1) or `connector-common-authentication-v2` module:
 
 1. `AuthenticationLoader.fetchAuthenticationData(orgId, authenticationJson)` calls Sources API to retrieve secrets.
-2. Sources API supports two auth mechanisms behind a feature toggle (`sources-oidc-auth`): OIDC client (via `SourcesOidcClient`) or PSK (via `SourcesPskClient`). PSK is deprecated.
+2. Sources API supports two auth mechanisms behind a feature toggle (`sources-hcc-cluster`): OIDC client (via `SourcesOidcClient`) or PSK (via `SourcesPskClient`). PSK is deprecated.
 3. Authentication types: `BEARER` (Authorization header) and `SECRET_TOKEN` (X-Insight-Token header).
 4. The `AuthenticationRequest` requires both `authenticationType` and `secretId` fields.
 

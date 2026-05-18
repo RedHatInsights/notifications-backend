@@ -49,7 +49,7 @@ public class SecretsLoader implements Processor {
 
             Timer.Sample timer = Timer.start(meterRegistry);
             SourcesSecret sourcesSecret;
-            if (connectorConfig.isSourcesOidcAuthEnabled(orgId)) {
+            if (connectorConfig.isSourcesHccClusterEnabled(orgId)) {
                 Log.debug("Using OIDC Sources client");
                 sourcesSecret = sourcesOidcClient.getById(orgId, secretId);
             } else {
