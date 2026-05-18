@@ -72,8 +72,6 @@ objects:
           value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_WARN_IF_REQUEST_DURATION_EXCEEDS}
         - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_MAX_RESULTS_PER_PAGE
           value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_MAX_RESULTS_PER_PAGE}
-        - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_MBOP_ENABLED
-          value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_MBOP_ENABLED}
         - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_MBOP_API_TOKEN
           valueFrom:
             secretKeyRef:
@@ -96,10 +94,6 @@ objects:
               name: it-services
               key: it-services-keystorepassword
               optional: true
-        - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED
-          value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED}
-        - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED
-          value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED}
         - name: QUARKUS_CACHE_CAFFEINE_RECIPIENTS_USERS_PROVIDER_GET_USERS_EXPIRE_AFTER_WRITE
           value: ${RBAC_USERS_RETENTION_DELAY}
         - name: QUARKUS_CACHE_CAFFEINE_RECIPIENTS_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
@@ -229,12 +223,6 @@ parameters:
 - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_MAX_RESULTS_PER_PAGE
   description: Limit value sent to the external users service while querying users.
   value: "1000"
-- name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_MBOP_ENABLED
-  description: Users from an organization will be retrieved from MBOP if true
-  value: "false"
-- name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED
-  description: Users from an organization will be retrieved from RBAC if true
-  value: "true"
 - name: QUARKUS_LOG_CATEGORY__ORG_JBOSS_RESTEASY_REACTIVE_CLIENT_LOGGING__LEVEL
   description: When QUARKUS_REST_CLIENT_LOGGING_SCOPE is set to 'request-response', this logger level needs to be set to DEBUG
   value: INFO
@@ -293,8 +281,6 @@ parameters:
 - name: BACKOFFICE_SCHEME
   description: The scheme for the backoffice proxy host's URL
   value: "https"
-- name: NOTIFICATIONS_RECIPIENTS_RESOLVER_USE_KESSEL_ENABLED
-  value: "false"
 - name: NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS
   description: Should the inventory gRPC client open channels over TLS?
   value: "false"
