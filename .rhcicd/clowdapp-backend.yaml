@@ -327,8 +327,8 @@ parameters:
 - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
   value: "false"
 - name: QUARKUS_REST_CLIENT_SOURCES_OIDC_URL
-  description: Override URL for the OIDC-authenticated Sources Service REST client, used to point to the HCC cluster endpoint.
-  value: "http://localhost:8000"
+  description: Override URL for the OIDC-authenticated Sources Service REST client. Must be set to the HCC cluster Sources endpoint when enabling sources-hcc-cluster toggle. Leave empty to use the default Clowder-managed endpoint.
+  value: ""
 - name: READINESS_INITIAL_DELAY
   value: "40"
 - name: READINESS_FAILURE_THRESHOLD

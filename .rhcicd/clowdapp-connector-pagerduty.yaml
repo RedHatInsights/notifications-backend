@@ -220,8 +220,8 @@ parameters:
   description: Optional maximum size of the log events queue. If this is not set, the queue will have a capacity of Integer#MAX_VALUE.
   value: "100000"
 - name: QUARKUS_REST_CLIENT_SOURCES_OIDC_URL
-  description: Override URL for the OIDC-authenticated Sources Service REST client, used to point to the HCC cluster endpoint.
-  value: "http://localhost:8000"
+  description: Override URL for the OIDC-authenticated Sources Service REST client. Must be set to the HCC cluster Sources endpoint when enabling sources-hcc-cluster toggle. Leave empty to use the default Clowder-managed endpoint.
+  value: ""
 - name: SENTRY_DSN
   description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED
