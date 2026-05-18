@@ -73,7 +73,7 @@ public class SecretUtils {
         final Timer.Sample getSecretTimer = Timer.start(this.meterRegistry);
 
         final Secret secret;
-        if (backendConfig.isSourcesOidcAuthEnabled(endpoint.getOrgId())) {
+        if (backendConfig.isSourcesHccClusterEnabled(endpoint.getOrgId())) {
             Log.debug("Using OIDC Sources client");
             secret = this.sourcesOidcService.getById(
                 endpoint.getOrgId(),
@@ -153,7 +153,7 @@ public class SecretUtils {
     private Long updateSecretToken(Endpoint endpoint, String password, Long secretId, String secretType, String logDisplaySecretType) {
         if (secretId != null) {
             if (password == null || password.isBlank()) {
-                if (backendConfig.isSourcesOidcAuthEnabled(endpoint.getOrgId())) {
+                if (backendConfig.isSourcesHccClusterEnabled(endpoint.getOrgId())) {
                     Log.debug("Using OIDC Sources client");
                     this.sourcesOidcService.delete(
                         endpoint.getOrgId(),
@@ -173,7 +173,7 @@ public class SecretUtils {
                 Secret secret = new Secret();
                 secret.password = password;
 
-                if (backendConfig.isSourcesOidcAuthEnabled(endpoint.getOrgId())) {
+                if (backendConfig.isSourcesHccClusterEnabled(endpoint.getOrgId())) {
                     Log.debug("Using OIDC Sources client");
                     this.sourcesOidcService.update(
                         endpoint.getOrgId(),
@@ -227,7 +227,7 @@ public class SecretUtils {
     }
 
     private void deleteSecret(Endpoint endpoint, Long secretId, String logMessageFormat) {
-        if (backendConfig.isSourcesOidcAuthEnabled(endpoint.getOrgId())) {
+        if (backendConfig.isSourcesHccClusterEnabled(endpoint.getOrgId())) {
             Log.debug("Using OIDC Sources client");
             this.sourcesOidcService.delete(
                 endpoint.getOrgId(),
@@ -261,7 +261,7 @@ public class SecretUtils {
 
     private Long createSecret(String orgId, Secret secret) {
         final Secret createdSecret;
-        if (backendConfig.isSourcesOidcAuthEnabled(orgId)) {
+        if (backendConfig.isSourcesHccClusterEnabled(orgId)) {
             Log.debug("Using OIDC Sources client");
             createdSecret = this.sourcesOidcService.create(
                 orgId,

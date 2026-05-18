@@ -53,7 +53,7 @@ public class AuthenticationLoader {
         Timer.Sample timer = Timer.start(meterRegistry);
         SourcesSecretResponse sourcesSecretResponse;
         try {
-            if (connectorConfig.isSourcesOidcAuthEnabled(orgId)) {
+            if (connectorConfig.isSourcesHccClusterEnabled(orgId)) {
                 Log.debug("Using OIDC Sources client");
                 sourcesSecretResponse = sourcesOidcClient.getById(orgId, secretRequest.secretId);
             } else {

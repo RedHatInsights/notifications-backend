@@ -48,7 +48,7 @@ public class BackendConfig {
     private String bypassBehaviorGroupMaxCreationLimitToggle;
     private String ignoreSourcesErrorOnEndpointDeleteToggle;
     private String useCommonTemplateModuleForUserPrefApisToggle;
-    private String sourcesOidcAuthToggle;
+    private String sourcesHccClusterToggle;
     private String toggleUseBetaTemplatesEnabled;
     private String showHiddenEventTypesToggle;
     private String normalizedQueriesToggle;
@@ -128,7 +128,7 @@ public class BackendConfig {
         bypassBehaviorGroupMaxCreationLimitToggle = toggleRegistry.register("bypass-behavior-group-max-creation-limit", true);
         ignoreSourcesErrorOnEndpointDeleteToggle = toggleRegistry.register("ignore-sources-error-on-endpoint-delete", true);
         useCommonTemplateModuleForUserPrefApisToggle = toggleRegistry.register("use-common-template-module-for-user-pref-apis", true);
-        sourcesOidcAuthToggle = toggleRegistry.register("sources-oidc-auth", true);
+        sourcesHccClusterToggle = toggleRegistry.register("sources-hcc-cluster", true);
         toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
         showHiddenEventTypesToggle = toggleRegistry.register("show-hidden-event-types", true);
         normalizedQueriesToggle = toggleRegistry.register("normalized-queries", true);
@@ -151,7 +151,7 @@ public class BackendConfig {
         config.put(RBAC_ENABLED, isRBACEnabled());
         config.put(SECURED_EMAIL_TEMPLATES, useSecuredEmailTemplates);
         config.put(UNLEASH, unleashEnabled);
-        config.put(sourcesOidcAuthToggle, isSourcesOidcAuthEnabled(null));
+        config.put(sourcesHccClusterToggle, isSourcesHccClusterEnabled(null));
         config.put(showHiddenEventTypesToggle, isShowHiddenEventTypes(null));
 
         Log.info("=== Startup configuration ===");
@@ -305,10 +305,10 @@ public class BackendConfig {
         }
     }
 
-    public boolean isSourcesOidcAuthEnabled(String orgId) {
+    public boolean isSourcesHccClusterEnabled(String orgId) {
         if (unleashEnabled) {
             UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(sourcesOidcAuthToggle, unleashContext, false);
+            return unleash.isEnabled(sourcesHccClusterToggle, unleashContext, false);
         } else {
             return false;
         }

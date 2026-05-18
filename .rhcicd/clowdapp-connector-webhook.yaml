@@ -69,6 +69,8 @@ objects:
             secretKeyRef:
               name: sources-api-psk
               key: psk
+        - name: QUARKUS_REST_CLIENT_SOURCES_OIDC_URL
+          value: ${QUARKUS_REST_CLIENT_SOURCES_OIDC_URL}
         - name: NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE
           value: ${NOTIFICATIONS_CONNECTOR_ENDPOINT_CACHE_MAX_SIZE}
         - name: NOTIFICATIONS_CONNECTOR_HTTP_CONNECT_TIMEOUT_MS
@@ -227,6 +229,9 @@ parameters:
 - name: QUARKUS_LOG_CLOUDWATCH_MAX_QUEUE_SIZE
   description: Optional maximum size of the log events queue. If this is not set, the queue will have a capacity of Integer#MAX_VALUE.
   value: "100000"
+- name: QUARKUS_REST_CLIENT_SOURCES_OIDC_URL
+  description: Override URL for the OIDC-authenticated Sources Service REST client, used to point to the HCC cluster endpoint.
+  value: "http://localhost:8000"
 - name: SENTRY_DSN
   description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED
