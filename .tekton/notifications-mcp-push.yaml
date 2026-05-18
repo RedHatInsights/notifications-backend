@@ -26,7 +26,7 @@ spec:
   - name: output-image
     value: quay.io/redhat-user-workloads/hcc-integrations-tenant/notifications/notifications-mcp:{{revision}}
   - name: dockerfile
-    value: ./docker/Dockerfile.notifications-mcp.jvm
+    value: ./docker/Dockerfile.notifications-mcp.native
   - name: path-context
     value: .
   pipelineRef:

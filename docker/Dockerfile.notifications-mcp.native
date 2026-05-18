@@ -1,0 +1,79 @@
+####
+# This Dockerfile is used in order to build a container that runs the Quarkus application in native mode with Mandrel
+###
+
+# Build the project with Mandrel (UBI9-based)
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest AS build
+USER root
+
+# Install required dependencies for native-image compilation
+# Note: curl-minimal is already installed in ubi9-minimal
+
+# Set Mandrel version and architecture
+# Using latest Mandrel release for Java 21 (as of May 2026)
+ENV MANDREL_VERSION=23.1.11.0-Final
+ENV JAVA_VERSION=21
+ENV ARCH=linux-amd64
+
+# Install Mandrel 23.1.11.0-Final requested dependencies (list available at https://github.com/graalvm/mandrel/releases/tag/mandrel-23.1.11.0-Final)
+RUN microdnf install -y \
+  glibc-devel \
+  zlib-devel \
+  gcc \
+  freetype-devel \
+  libstdc++-static \
+  && microdnf clean all
+
+# Install additional dependencies to unzip Mandrel artefact
+RUN microdnf install -y \
+  tar \
+  gzip \
+  findutils \
+  && microdnf clean all
+
+# Download and install Mandrel
+ARG MANDREL_SHA256=11c27dd5b16b5154336418d63c0bc90781ccf1c7e0ad454126ada2325bd320ca
+RUN curl -L -o /tmp/mandrel.tar.gz \
+  https://github.com/graalvm/mandrel/releases/download/mandrel-${MANDREL_VERSION}/mandrel-java${JAVA_VERSION}-${ARCH}-${MANDREL_VERSION}.tar.gz \
+  && echo "${MANDREL_SHA256} /tmp/mandrel.tar.gz" | sha256sum -c - \
+  && tar -xzf /tmp/mandrel.tar.gz -C /usr/local \
+  && rm /tmp/mandrel.tar.gz
+
+# Set environment variables
+ENV JAVA_HOME=/usr/local/mandrel-java${JAVA_VERSION}-${MANDREL_VERSION}
+ENV GRAALVM_HOME=${JAVA_HOME}
+ENV PATH=${JAVA_HOME}/bin:${PATH}
+
+COPY . /home/jboss
+WORKDIR /home/jboss
+# '-Dquarkus.native.container-build=false' option disables containerized native image building, because the build is already running inside the Mandrel builder container
+RUN ./mvnw -s .mvn/settings.xml clean package \
+    -Dquarkus.package.type=native \
+    -Dquarkus.native.container-build=false \
+    -Dquarkus.kafka.snappy.enabled=true \
+    -Dmaven.test.skip \
+    -Dcheckstyle.skip \
+    -pl :notifications-mcp -am --no-transfer-progress && \
+    find /home/jboss/mcp/target -name "*-runner" -exec mv {} /home/jboss/application \;
+
+# Build the container with minimal runtime (UBI9-based)
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
+
+WORKDIR /
+# Update the base image packages
+USER root
+# See https://www.mankier.com/8/microdnf
+RUN microdnf upgrade --refresh --nodocs --setopt=install_weak_deps=0 -y
+RUN microdnf clean all
+
+# Create licenses directory and copy license file
+RUN mkdir -p /licenses
+COPY --from=build --chown=185:0 /home/jboss/LICENSE.txt /licenses/LICENSE
+
+# Copy the native executable (moved to a fixed location during build)
+COPY --from=build --chown=185:0 /home/jboss/application /application
+
+EXPOSE 8080
+USER 185
+
+ENTRYPOINT ["/application"]
