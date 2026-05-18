@@ -50,8 +50,6 @@ objects:
           value: ${ENV_NAME}
         - name: HOST_NAME
           value: ${HOSTNAME}
-        - name: NOTIFICATIONS_UNLEASH_ENABLED
-          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
           value: ${NOTIFICATIONS_LOG_LEVEL}
         - name: QUARKUS_LOG_CLOUDWATCH_ENABLED
@@ -63,7 +61,7 @@ objects:
         - name: QUARKUS_LOG_SENTRY_ENVIRONMENT
           value: ${ENV_NAME}
         - name: QUARKUS_UNLEASH_ACTIVE
-          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
+          value: "true"
         - name: PROMETHEUS_PUSHGATEWAY_URL
           value: ${PROMETHEUS_PUSHGATEWAY}
 parameters:
@@ -98,8 +96,6 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
-- name: NOTIFICATIONS_UNLEASH_ENABLED
-  value: "false"
 - name: SENTRY_DSN
   description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED

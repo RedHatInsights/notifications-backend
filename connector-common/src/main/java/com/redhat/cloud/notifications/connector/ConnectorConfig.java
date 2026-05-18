@@ -40,27 +40,12 @@ public class ConnectorConfig {
     private static final String SEDA_CONCURRENT_CONSUMERS = "notifications.connector.seda.concurrent-consumers";
     private static final String SEDA_QUEUE_SIZE = "notifications.connector.seda.queue-size";
     private static final String SUPPORTED_CONNECTOR_HEADERS = "notifications.connector.supported-connector-headers";
-    private static final String UNLEASH = "notifications.unleash.enabled";
 
     /*
      * Unleash configuration
      */
 
-    /*
-     * TODO: This sources-hcc-cluster feature toggle is not ideally placed in the base ConnectorConfig class,
-     * as it's only relevant for connectors that use Sources API authentication (PagerDuty, ServiceNow,
-     * Splunk, and Webhook connectors). However, there's no better architectural solution currently available
-     * that would allow sharing this toggle across multiple specific connector config classes without
-     * duplicating the logic or creating complex inheritance hierarchies.
-     *
-     * This is a temporary situation - once PSK authentication is fully deprecated and removed from the
-     * Sources API integration, this feature toggle can be removed entirely along with all PSK-related code.
-     */
-    private String sourcesHccClusterToggle;
-
-    @ConfigProperty(name = UNLEASH, defaultValue = "false")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    protected boolean unleashEnabled;
+    private String sourcesOidcAuthToggle;
 
     @ConfigProperty(name = ENDPOINT_CACHE_MAX_SIZE, defaultValue = "100")
     int endpointCacheMaxSize;
@@ -119,7 +104,7 @@ public class ConnectorConfig {
 
     @PostConstruct
     void postConstruct() {
-        sourcesHccClusterToggle = toggleRegistry.register("sources-hcc-cluster", true);
+        sourcesOidcAuthToggle = toggleRegistry.register("sources-oidc-auth", true);
     }
 
     public void log() {
@@ -146,8 +131,7 @@ public class ConnectorConfig {
         config.put(SEDA_CONCURRENT_CONSUMERS, sedaConcurrentConsumers);
         config.put(SEDA_QUEUE_SIZE, sedaQueueSize);
         config.put(SUPPORTED_CONNECTOR_HEADERS, supportedConnectorHeaders);
-        config.put(UNLEASH, unleashEnabled);
-        config.put(sourcesHccClusterToggle, isSourcesHccClusterEnabled(null));
+        config.put(sourcesOidcAuthToggle, isSourcesOidcAuthEnabled(null));
         return config;
     }
 
@@ -211,12 +195,8 @@ public class ConnectorConfig {
         return supportedConnectorHeaders;
     }
 
-    public boolean isSourcesHccClusterEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = UnleashContextBuilder.buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(sourcesHccClusterToggle, unleashContext, false);
-        } else {
-            return false;
-        }
+    public boolean isSourcesOidcAuthEnabled(String orgId) {
+        UnleashContext unleashContext = UnleashContextBuilder.buildUnleashContextWithOrgId(orgId);
+        return unleash.isEnabled(sourcesOidcAuthToggle, unleashContext, false);
     }
 }

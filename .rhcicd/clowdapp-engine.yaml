@@ -216,10 +216,8 @@ objects:
           value: ${NOTIFICATIONS_DRAWER_ENABLED}
         - name: NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED
           value: ${NOTIFICATIONS_ASYNC_AGGREGATION_ENABLED}
-        - name: NOTIFICATIONS_UNLEASH_ENABLED
-          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
         - name: QUARKUS_UNLEASH_ACTIVE
-          value: ${NOTIFICATIONS_UNLEASH_ENABLED}
+          value: "true"
         - name: PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS
           value: ${PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS}
         - name: PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR
@@ -385,8 +383,6 @@ parameters:
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
-- name: NOTIFICATIONS_UNLEASH_ENABLED
-  value: "false"
 - name: QUARKUS_HIBERNATE_ORM_LOG_SQL
   value: "false"
 - name: QUARKUS_LOG_CLOUDWATCH_API_CALL_TIMEOUT
