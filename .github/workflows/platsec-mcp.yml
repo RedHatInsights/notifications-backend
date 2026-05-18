@@ -42,7 +42,7 @@ jobs:
     with:
     #  dockerbuild_path: './testbuild'
       dockerfile_path: './docker'
-      dockerfile_name: 'Dockerfile.notifications-mcp.jvm'
+      dockerfile_name: 'Dockerfile.notifications-mcp.native'
     #   base_image_build: true
     #   base_dockerbuild_path: './testbuild'
     #   base_dockerfile_path: './test'

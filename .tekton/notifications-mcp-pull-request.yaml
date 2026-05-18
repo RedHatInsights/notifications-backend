@@ -29,7 +29,7 @@ spec:
   - name: image-expires-after
     value: 5d
   - name: dockerfile
-    value: ./docker/Dockerfile.notifications-mcp.jvm
+    value: ./docker/Dockerfile.notifications-mcp.native
   - name: path-context
     value: .
   pipelineRef:
