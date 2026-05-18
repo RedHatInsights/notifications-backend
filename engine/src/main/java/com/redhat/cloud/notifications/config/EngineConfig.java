@@ -30,9 +30,7 @@ public class EngineConfig {
     private static final String EVENT_CONSUMER_KEEP_ALIVE_TIME_SECONDS = "notifications.event-consumer.keep-alive-time-seconds";
     private static final String EVENT_CONSUMER_QUEUE_CAPACITY = "notifications.event-consumer.queue-capacity";
     private static final String SECURED_EMAIL_TEMPLATES = "notifications.use-secured-email-templates.enabled";
-    private static final String NOTIFICATIONS_KAFKA_OUTGOING_HIGH_VOLUME_TOPIC_ENABLED = "notifications.kafka.outgoing.high-volume.topic.enabled";
     private static final String KAFKA_TOCAMEL_MAXIMUM_REQUEST_SIZE = "mp.messaging.outgoing.tocamel.max.request.size";
-    private static final String UNLEASH = "notifications.unleash.enabled";
     private static final String PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS = "processor.connectors.max-server-errors";
     private static final String PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR = "processor.connectors.min-delay-since-first-server-error";
     private static final String IN_MEMORY_DB_ENABLED = "in-memory-db.enabled";
@@ -67,29 +65,9 @@ public class EngineConfig {
     private String toggleSubscriptionsDeduplicationWillBeNotified;
     private String normalizedQueriesToggle;
 
-    @ConfigProperty(name = UNLEASH, defaultValue = "false")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean unleashEnabled;
-
-    @ConfigProperty(name = "notifications.drawer.enabled", defaultValue = "false")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean drawerEnabled;
-
-    @ConfigProperty(name = "notifications.async-aggregation.enabled", defaultValue = "true")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean asyncAggregation;
-
     @ConfigProperty(name = "processor.email.aggregation.use-recipients-resolver-clowdapp.enabled", defaultValue = "true")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
     boolean useRecipientsResolverClowdappForDailyDigestEnabled;
-
-    @ConfigProperty(name = "notifications.kafka-consumed-total-checker.enabled", defaultValue = "false")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean kafkaConsumedTotalCheckerEnabled;
-
-    @ConfigProperty(name = NOTIFICATIONS_KAFKA_OUTGOING_HIGH_VOLUME_TOPIC_ENABLED, defaultValue = "false")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    Boolean outgoingKafkaHighVolumeTopicEnabled;
 
     @ConfigProperty(name = "notifications.use-rbac-for-fetching-users", defaultValue = "false")
     @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
@@ -197,7 +175,6 @@ public class EngineConfig {
         config.put(kafkaConsumedTotalCheckerToggle, isKafkaConsumedTotalCheckerEnabled());
         config.put(KAFKA_TOCAMEL_MAXIMUM_REQUEST_SIZE, getKafkaToCamelMaximumRequestSize());
         config.put(SECURED_EMAIL_TEMPLATES, isSecuredEmailTemplatesEnabled());
-        config.put(UNLEASH, unleashEnabled);
         config.put(PROCESSOR_CONNECTORS_MAX_SERVER_ERRORS, maxServerErrors);
         config.put(PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR, minDelaySinceFirstServerErrorBeforeDisabling);
         config.put(NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE, rhHccSender);
@@ -219,19 +196,11 @@ public class EngineConfig {
     }
 
     public boolean isAsyncAggregationEnabled() {
-        if (unleashEnabled) {
-            return unleash.isEnabled(asyncAggregationToggle, false);
-        } else {
-            return asyncAggregation;
-        }
+        return unleash.isEnabled(asyncAggregationToggle, false);
     }
 
     public boolean isAsyncEventProcessing() {
-        if (unleashEnabled) {
-            return unleash.isEnabled(asyncEventProcessingToggle, false);
-        } else {
-            return false;
-        }
+        return unleash.isEnabled(asyncEventProcessingToggle, false);
     }
 
     public boolean isDefaultTemplateEnabled() {
@@ -239,12 +208,8 @@ public class EngineConfig {
     }
 
     public boolean isDrawerEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = UnleashContextBuilder.buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(drawerToggle, unleashContext, false);
-        } else {
-            return drawerEnabled;
-        }
+        UnleashContext unleashContext = UnleashContextBuilder.buildUnleashContextWithOrgId(orgId);
+        return unleash.isEnabled(drawerToggle, unleashContext, false);
     }
 
     public boolean isEmailsOnlyModeEnabled() {
@@ -268,11 +233,7 @@ public class EngineConfig {
     }
 
     public boolean isKafkaConsumedTotalCheckerEnabled() {
-        if (unleashEnabled) {
-            return unleash.isEnabled(kafkaConsumedTotalCheckerToggle, false);
-        } else {
-            return kafkaConsumedTotalCheckerEnabled;
-        }
+        return unleash.isEnabled(kafkaConsumedTotalCheckerToggle, false);
     }
 
     public boolean isSecuredEmailTemplatesEnabled() {
@@ -280,7 +241,7 @@ public class EngineConfig {
     }
 
     public boolean isBlacklistedEndpoint(final UUID endpointId) {
-        if (unleashEnabled && null != endpointId) {
+        if (null != endpointId) {
             UnleashContext unleashContext = UnleashContext.builder()
                 .addProperty("endpointId", endpointId.toString())
                 .build();
@@ -291,7 +252,7 @@ public class EngineConfig {
     }
 
     public boolean isBlacklistedEventType(final UUID eventTypeId) {
-        if (unleashEnabled && null != eventTypeId) {
+        if (null != eventTypeId) {
             UnleashContext unleashContext = UnleashContext.builder()
                 .addProperty("eventTypeId", eventTypeId.toString())
                 .build();
@@ -336,27 +297,15 @@ public class EngineConfig {
     }
 
     public boolean isOutgoingKafkaHighVolumeTopicEnabled() {
-        if (unleashEnabled) {
-            return this.unleash.isEnabled(this.toggleKafkaOutgoingHighVolumeTopic, false);
-        } else {
-            return this.outgoingKafkaHighVolumeTopicEnabled;
-        }
+        return this.unleash.isEnabled(this.toggleKafkaOutgoingHighVolumeTopic, false);
     }
 
     public boolean isIncludeSeverityToFilterRecipientsEnabled(String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(toggleIncludeSeverityToFilterRecipients, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return false;
-        }
+        return unleash.isEnabled(toggleIncludeSeverityToFilterRecipients, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
     }
 
     public boolean isSkipMessageProcessing() {
-        if (unleashEnabled) {
-            return unleash.isEnabled(toggleSkipProcessingMessagesOnReplayService, true);
-        } else {
-            return true;
-        }
+        return unleash.isEnabled(toggleSkipProcessingMessagesOnReplayService, true);
     }
 
     public String getReplayStartTime() {
@@ -368,35 +317,19 @@ public class EngineConfig {
     }
 
     public boolean isExportServiceHccClusterEnabled(String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(exportServiceHccClusterToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return false;
-        }
+        return unleash.isEnabled(exportServiceHccClusterToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
     }
 
     public boolean isSubscriptionsDeduplicationWillBeNotifiedEnabled(String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(toggleSubscriptionsDeduplicationWillBeNotified, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return false;
-        }
+        return unleash.isEnabled(toggleSubscriptionsDeduplicationWillBeNotified, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
     }
 
     public boolean isNormalizedQueriesEnabled(String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(normalizedQueriesToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return false;
-        }
+        return unleash.isEnabled(normalizedQueriesToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
     }
 
     public boolean isValkeyEventDeduplicatorEnabled() {
-        if (unleashEnabled) {
-            return this.unleash.isEnabled(this.valkeyEventDeduplicatorToggle, false);
-        } else {
-            return false;
-        }
+        return this.unleash.isEnabled(this.valkeyEventDeduplicatorToggle, false);
     }
 
     public boolean isInMemoryDbEnabled() {

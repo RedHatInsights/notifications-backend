@@ -32,7 +32,6 @@ public class RecipientsResolverConfig {
     private static final String RETRY_MAX_ATTEMPTS = "notifications.recipients-resolver.retry.max-attempts";
     private static final String RETRY_MAX_BACKOFF = "notifications.recipients-resolver.retry.max-backoff";
     private static final String WARN_IF_DURATION_EXCEEDS = "notifications.recipients-resolver.warn-if-request-duration-exceeds";
-    private static final String UNLEASH = "notifications.unleash.enabled";
     public static final String MBOP_APITOKEN = "notifications.recipients-resolver.mbop.api_token";
     public static final String MBOP_CLIENT_ID = "notifications.recipients-resolver.mbop.client_id";
     private static final String MBOP_ENV = "notifications.recipients-resolver.mbop.env";
@@ -51,18 +50,6 @@ public class RecipientsResolverConfig {
     private String fetchUsersWithRbacToggle;
     private String useKesselToggle;
     private String rbacOidcAuthToggle;
-
-    @ConfigProperty(name = UNLEASH, defaultValue = "false")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean unleashEnabled;
-
-    @ConfigProperty(name = "notifications.recipients-resolver.fetch.users.rbac.enabled", defaultValue = "false")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean fetchUsersWithRbacEnabled;
-
-    @ConfigProperty(name = "notifications.recipients-resolver.fetch.users.mbop.enabled", defaultValue = "false")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean fetchUsersWithMbopEnabled;
 
     @ConfigProperty(name = MAX_RESULTS_PER_PAGE, defaultValue = "1000")
     int maxResultsPerPage;
@@ -143,7 +130,6 @@ public class RecipientsResolverConfig {
         config.put(RETRY_MAX_ATTEMPTS, getMaxRetryAttempts());
         config.put(RETRY_MAX_BACKOFF, getMaxRetryBackoff());
         config.put(WARN_IF_DURATION_EXCEEDS, getLogTooLongRequestLimit());
-        config.put(UNLEASH, unleashEnabled);
         config.put(useKesselToggle, isUseKesselEnabled(null));
         config.put(rbacOidcAuthToggle, isRbacOidcAuthEnabled(null));
         config.put(KESSEL_TARGET_URL, getKesselTargetUrl());
@@ -157,38 +143,22 @@ public class RecipientsResolverConfig {
     }
 
     public boolean isFetchUsersWithMbopEnabled(String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(fetchUsersWithMbopToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return fetchUsersWithMbopEnabled;
-        }
+        return unleash.isEnabled(fetchUsersWithMbopToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
     }
 
     public boolean isFetchUsersWithRbacEnabled(String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(fetchUsersWithRbacToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return fetchUsersWithRbacEnabled;
-        }
+        return unleash.isEnabled(fetchUsersWithRbacToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
     }
 
     public boolean isUseKesselEnabled(String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(useKesselToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return false;
-        }
+        return unleash.isEnabled(useKesselToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
     }
 
     public boolean isRbacOidcAuthEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = UnleashContext.builder()
-                .addProperty("orgId", orgId)
-                .build();
-            return unleash.isEnabled(rbacOidcAuthToggle, unleashContext, false);
-        } else {
-            return false;
-        }
+        UnleashContext unleashContext = UnleashContext.builder()
+            .addProperty("orgId", orgId)
+            .build();
+        return unleash.isEnabled(rbacOidcAuthToggle, unleashContext, false);
     }
 
     public int getMaxResultsPerPage() {
