@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.recipients.config;
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
-import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -155,10 +154,7 @@ public class RecipientsResolverConfig {
     }
 
     public boolean isRbacOidcAuthEnabled(String orgId) {
-        UnleashContext unleashContext = UnleashContext.builder()
-            .addProperty("orgId", orgId)
-            .build();
-        return unleash.isEnabled(rbacOidcAuthToggle, unleashContext, false);
+        return unleash.isEnabled(rbacOidcAuthToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
     }
 
     public int getMaxResultsPerPage() {

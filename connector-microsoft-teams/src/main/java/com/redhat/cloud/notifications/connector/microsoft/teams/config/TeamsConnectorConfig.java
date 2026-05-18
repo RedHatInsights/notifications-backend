@@ -37,9 +37,10 @@ public class TeamsConnectorConfig extends HttpConnectorConfig {
                 }
             }
         }
-        UnleashContext.Builder unleashContextBuilder = UnleashContext.builder()
-            .addProperty("orgId", orgId);
-
+        UnleashContext.Builder unleashContextBuilder = UnleashContext.builder();
+        if (orgId != null) {
+            unleashContextBuilder.addProperty("orgId", orgId);
+        }
         if (null != bundleApplicationEventType) {
             unleashContextBuilder.addProperty("bundleApplicationEventType", bundleApplicationEventType);
         }

@@ -223,10 +223,11 @@ public class BackendConfig {
     }
 
     private static UnleashContext buildUnleashContextWithOrgId(String orgId) {
-        UnleashContext unleashContext = UnleashContext.builder()
-            .addProperty("orgId", orgId)
-            .build();
-        return unleashContext;
+        UnleashContext.Builder builder = UnleashContext.builder();
+        if (orgId != null) {
+            builder.addProperty("orgId", orgId);
+        }
+        return builder.build();
     }
 
     public boolean isMaintenanceModeEnabled(String path) {
@@ -237,10 +238,7 @@ public class BackendConfig {
     }
 
     public boolean isUseBetaTemplatesEnabled(final String orgId) {
-        UnleashContext unleashContext = UnleashContext.builder()
-            .addProperty("orgId", orgId)
-            .build();
-        return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContext, false);
+        return unleash.isEnabled(toggleUseBetaTemplatesEnabled, buildUnleashContextWithOrgId(orgId), false);
     }
 
     /**

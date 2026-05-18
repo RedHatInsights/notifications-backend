@@ -5,9 +5,10 @@ import io.getunleash.UnleashContext;
 public class UnleashContextBuilder {
 
     public static UnleashContext buildUnleashContextWithOrgId(String orgId) {
-        UnleashContext unleashContext = UnleashContext.builder()
-            .addProperty("orgId", orgId)
-            .build();
-        return unleashContext;
+        UnleashContext.Builder builder = UnleashContext.builder();
+        if (orgId != null) {
+            builder.addProperty("orgId", orgId);
+        }
+        return builder.build();
     }
 }
