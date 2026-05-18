@@ -16,6 +16,7 @@ import java.util.Map;
 import static com.redhat.cloud.notifications.qute.templates.mapping.Rhel.ROADMAP_REPORT;
 import static helpers.TestHelpers.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -78,6 +79,11 @@ public class TestRoadmapTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("id=\"deprecationsCount\">5<"), "Body should contain deprecations count");
         assertTrue(result.contains("id=\"changesCount\">3<"), "Body should contain changes count");
         assertTrue(result.contains("id=\"additionsCount\">4<"), "Body should contain additions count");
+        // Verify roadmap URLs are properly resolved with the environment base URL
+        assertTrue(result.contains("href=\"https://localhost/insights/planning/roadmap/?viewFilter=relevant&type=Deprecations"), "Deprecations link should contain resolved environment URL");
+        assertTrue(result.contains("href=\"https://localhost/insights/planning/roadmap/?viewFilter=relevant&type=Changes"), "Changes link should contain resolved environment URL");
+        assertTrue(result.contains("href=\"https://localhost/insights/planning/roadmap/?viewFilter=relevant&type=Addition"), "Additions link should contain resolved environment URL");
+        assertFalse(result.contains("href=\"{environment.url}"), "Links should not contain unresolved template expression");
     }
 
     @Test

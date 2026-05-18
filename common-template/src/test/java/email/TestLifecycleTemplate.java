@@ -81,6 +81,10 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("id=\"rhelRetiredCount\">6<"), "Body should contain rhel_versions_count for retired RHEL");
         // Verify RHEL near retirement data is present
         assertTrue(result.contains("id=\"rhelExpiringCount\">1<"), "Body should contain rhel_versions_count for near retirement RHEL");
+        // Verify lifecycle URLs are properly resolved with the environment base URL
+        assertTrue(result.contains("href=\"https://localhost/insights/planning?lifecycleDropdown=Red+Hat+Enterprise+Linux"), "Retired RHEL link should contain resolved environment URL");
+        assertTrue(result.contains("href=\"https://localhost/insights/planning?lifecycleDropdown=Red+Hat+Enterprise+Linux"), "Expiring RHEL link should contain resolved environment URL");
+        assertFalse(result.contains("href=\"{environment.url}"), "Links should not contain unresolved template expression");
     }
 
     @Test
@@ -98,6 +102,10 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
         // Verify appstream near retirement data
         assertTrue(result.contains("id=\"rhel8ExpiringCount\">5<"), "Body should contain appstream near retirement count for rhel8");
         assertTrue(result.contains("id=\"rhel9ExpiringCount\">22<"), "Body should contain appstream near retirement count for rhel9");
+        // Verify appstream lifecycle URLs are properly resolved
+        assertTrue(result.contains("href=\"https://localhost/insights/planning?lifecycleDropdown=RHEL+8+Application+Streams"), "RHEL 8 appstream link should contain resolved environment URL");
+        assertTrue(result.contains("href=\"https://localhost/insights/planning?lifecycleDropdown=RHEL+9+Application+Streams"), "RHEL 9 appstream link should contain resolved environment URL");
+        assertTrue(result.contains("href=\"https://localhost/insights/planning?lifecycleDropdown=RHEL+10+Application+Streams"), "RHEL 10 appstream link should contain resolved environment URL");
     }
 
     @Test
