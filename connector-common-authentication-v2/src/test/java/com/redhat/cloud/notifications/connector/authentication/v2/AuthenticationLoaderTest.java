@@ -141,7 +141,7 @@ public class AuthenticationLoaderTest {
 
     @Test
     void testOidcAuthenticationFlow() {
-        when(connectorConfig.isSourcesOidcAuthEnabled(anyString())).thenReturn(true);
+        when(connectorConfig.isSourcesHccClusterEnabled(anyString())).thenReturn(true);
 
         SourcesSecretResponse sourcesSecret = new SourcesSecretResponse();
         sourcesSecret.username = "john_doe";

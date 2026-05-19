@@ -106,7 +106,7 @@ Every new repository method that accesses tenant data must follow this pattern.
 - `SecretUtils` handles the full lifecycle: create, read, update, delete secrets in Sources.
 
 ### 5.2 Dual Authentication to Sources
-- Sources supports two authentication methods, toggled per org via Unleash (`sources-oidc-auth`):
+- Sources supports two authentication methods, toggled per org via Unleash (`sources-hcc-cluster`):
   - **PSK**: Pre-shared key sent in `x-rh-sources-psk` header. Key is in `sources.psk` config property.
   - **OIDC**: OAuth2 client credentials flow via `@OidcClientFilter` annotation on the REST client.
 - PSK client uses internal Sources endpoints (`/internal/v2.0/secrets/{id}`).
