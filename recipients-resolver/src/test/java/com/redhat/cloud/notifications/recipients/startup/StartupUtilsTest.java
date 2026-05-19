@@ -25,17 +25,30 @@ public class StartupUtilsTest {
 
     @Test
     void readKeystoreTest() {
-        String resourceName = "testKeystore.jks";
-        String testPassword = "change_it";
-
         ClassLoader classLoader = getClass().getClassLoader();
-        File file = new File(classLoader.getResource(resourceName).getFile());
-        URI fileUri = file.toURI();
-
-        when(recipientsResolverConfig.getQuarkusItServiceKeystore()).thenReturn(Optional.of(fileUri));
+        String testPassword = "change_it";
         when(recipientsResolverConfig.getQuarkusItServicePassword()).thenReturn(Optional.of(testPassword));
-        List<String> certificateData = startupUtils.checkCertificatesExpiration();
-        assertEquals(1, certificateData.size());
-        assertEquals("(@channel) Certificate 'testexpcertif' has expired since Mon Sep 02 10:12:19 UTC 2024", certificateData.get(0));
+
+        // JKS
+        String resourceNameJks = "testKeystore.jks";
+        File fileJks = new File(classLoader.getResource(resourceNameJks).getFile());
+        URI fileUriJks = fileJks.toURI();
+
+        when(recipientsResolverConfig.getQuarkusItServiceKeystore()).thenReturn(Optional.of(fileUriJks));
+        when(recipientsResolverConfig.getQuarkusItServiceKeystoreType()).thenReturn("JKS");
+        List<String> certificateDataJks = startupUtils.checkCertificatesExpiration();
+        assertEquals(1, certificateDataJks.size());
+        assertEquals("(@channel) Certificate 'testexpcertif' has expired since Mon Sep 02 10:12:19 UTC 2024", certificateDataJks.get(0));
+
+        // PKCS #12
+        String resourceNameP12 = "testKeystore.p12";
+        File fileP12 = new File(classLoader.getResource(resourceNameJks).getFile());
+        URI fileUriP12 = fileP12.toURI();
+
+        when(recipientsResolverConfig.getQuarkusItServiceKeystore()).thenReturn(Optional.of(fileUriP12));
+        when(recipientsResolverConfig.getQuarkusItServiceKeystoreType()).thenReturn("P12");
+        List<String> certificateDataP12 = startupUtils.checkCertificatesExpiration();
+        assertEquals(1, certificateDataP12.size());
+        assertEquals("(@channel) Certificate 'testexpcertif' has expired since Mon Sep 02 10:12:19 UTC 2024", certificateDataP12.get(0));
     }
 }
