@@ -32,7 +32,7 @@ public class ConnectorConfig {
      * Unleash configuration
      */
 
-    private String sourcesOidcAuthToggle;
+    private String sourcesHccClusterToggle;
 
     @ConfigProperty(name = NAME)
     String connectorName;
@@ -48,7 +48,7 @@ public class ConnectorConfig {
 
     @PostConstruct
     void postConstruct() {
-        sourcesOidcAuthToggle = toggleRegistry.register("sources-oidc-auth", true);
+        sourcesHccClusterToggle = toggleRegistry.register("sources-hcc-cluster", true);
     }
 
     public void log() {
@@ -62,7 +62,7 @@ public class ConnectorConfig {
         Map<String, Object> config = new TreeMap<>();
         config.put(NAME, connectorName);
         config.put(SUPPORTED_CONNECTOR_HEADERS, supportedConnectorHeaders);
-        config.put(sourcesOidcAuthToggle, isSourcesOidcAuthEnabled(null));
+        config.put(sourcesHccClusterToggle, isSourcesHccClusterEnabled(null));
         return config;
     }
 
@@ -74,8 +74,8 @@ public class ConnectorConfig {
         return supportedConnectorHeaders;
     }
 
-    public boolean isSourcesOidcAuthEnabled(String orgId) {
+    public boolean isSourcesHccClusterEnabled(String orgId) {
         UnleashContext unleashContext = UnleashContextBuilder.buildUnleashContextWithOrgId(orgId);
-        return unleash.isEnabled(sourcesOidcAuthToggle, unleashContext, false);
+        return unleash.isEnabled(sourcesHccClusterToggle, unleashContext, false);
     }
 }

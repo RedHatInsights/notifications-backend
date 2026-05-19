@@ -46,7 +46,7 @@ public class BackendConfig {
     private String bypassBehaviorGroupMaxCreationLimitToggle;
     private String ignoreSourcesErrorOnEndpointDeleteToggle;
     private String useCommonTemplateModuleForUserPrefApisToggle;
-    private String sourcesOidcAuthToggle;
+    private String sourcesHccClusterToggle;
     private String toggleUseBetaTemplatesEnabled;
     private String showHiddenEventTypesToggle;
     private String useDrawerfilteredQuery;
@@ -116,7 +116,7 @@ public class BackendConfig {
         bypassBehaviorGroupMaxCreationLimitToggle = toggleRegistry.register("bypass-behavior-group-max-creation-limit", true);
         ignoreSourcesErrorOnEndpointDeleteToggle = toggleRegistry.register("ignore-sources-error-on-endpoint-delete", true);
         useCommonTemplateModuleForUserPrefApisToggle = toggleRegistry.register("use-common-template-module-for-user-pref-apis", true);
-        sourcesOidcAuthToggle = toggleRegistry.register("sources-oidc-auth", true);
+        sourcesHccClusterToggle = toggleRegistry.register("sources-hcc-cluster", true);
         toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
         showHiddenEventTypesToggle = toggleRegistry.register("show-hidden-event-types", true);
         useDrawerfilteredQuery = toggleRegistry.register("remove-drawer-endpoint-from-behavior-group", true);
@@ -139,7 +139,7 @@ public class BackendConfig {
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(RBAC_ENABLED, isRBACEnabled());
         config.put(SECURED_EMAIL_TEMPLATES, useSecuredEmailTemplates);
-        config.put(sourcesOidcAuthToggle, isSourcesOidcAuthEnabled(null));
+        config.put(sourcesHccClusterToggle, isSourcesHccClusterEnabled(null));
         config.put(showHiddenEventTypesToggle, isShowHiddenEventTypes(null));
         config.put(useDrawerfilteredQuery, isUseDrawerfilteredQuery(null));
 
@@ -260,9 +260,9 @@ public class BackendConfig {
         return unleash.isEnabled(bypassBehaviorGroupMaxCreationLimitToggle, unleashContext, false);
     }
 
-    public boolean isSourcesOidcAuthEnabled(String orgId) {
+    public boolean isSourcesHccClusterEnabled(String orgId) {
         UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
-        return unleash.isEnabled(sourcesOidcAuthToggle, unleashContext, false);
+        return unleash.isEnabled(sourcesHccClusterToggle, unleashContext, false);
     }
 
     public boolean isShowHiddenEventTypes(String orgId) {
