@@ -10,19 +10,22 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
     rhelRetiredCount = action.events[0].payload.rhel_retired.orEmpty.rhel_versions_count.or(0)
     rhelExpiringCount = action.events[0].payload.rhel_near_retirement.orEmpty.rhel_versions_count.or(0)
     rhelSystemsCount = action.events[0].payload.rhel_retired.orEmpty.systems_count.or(0)
+    rhel10Data = action.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty
     rhel10RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty.count.or(0)
     rhel10ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel10.orEmpty.count.or(0)
     rhel10SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty.systems_count.or(0)
+    rhel9Data = action.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty
     rhel9RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty.count.or(0)
     rhel9ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel9.orEmpty.count.or(0)
     rhel9SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty.systems_count.or(0)
+    rhel8Data = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty
     rhel8RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.count.or(0)
     rhel8ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel8.orEmpty.count.or(0)
     rhel8SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.systems_count.or(0)
 }
 <table style="width: 100%; border: 0">
 {! RHEL life cycle section !}
-{#if rhelSystemsCount > 0}
+{#if action.events[0].payload.rhel_retired}
     {#let
         sub-section-title = 'RHEL life cycle'
         sub-section-retired-count = rhelRetiredCount
@@ -30,7 +33,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
         sub-section-expiring-count = rhelExpiringCount
         sub-section-expiring-count-id = 'rhelExpiringCount'
         sub-section-expiring-months = 3
-        sub-section-not-the-last = (rhel10SystemsCount + rhel9SystemsCount + rhel8SystemsCount)
+        sub-section-not-the-last = 1
         sub-section-retired-url = '/insights/planning?lifecycleDropdown=Red+Hat+Enterprise+Linux&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Retired'
         sub-section-expiring-url = '/insights/planning?lifecycleDropdown=Red+Hat+Enterprise+Linux&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Near+retirement'
         }
@@ -39,7 +42,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
 {/if}
 
 {! RHEL 10 application streams life cycle section !}
-{#if rhel10SystemsCount > 0}
+{#if rhel10Data.count.or(-1) >= 0}
     {#let
         sub-section-title = 'RHEL 10 application streams life cycle'
         sub-section-retired-count = rhel10RetiredCount
@@ -47,7 +50,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
         sub-section-expiring-count = rhel10ExpiringCount
         sub-section-expiring-count-id = 'rhel10ExpiringCount'
         sub-section-expiring-months = 6
-        sub-section-not-the-last = (rhel9SystemsCount + rhel8SystemsCount)
+        sub-section-not-the-last = 1
         sub-section-retired-url = '/insights/planning?lifecycleDropdown=RHEL+10+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Retired'
         sub-section-expiring-url = '/insights/planning?lifecycleDropdown=RHEL+10+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Near+retirement'
         }
@@ -56,7 +59,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
 {/if}
 
 {! RHEL 9 application streams life cycle section !}
-{#if rhel9SystemsCount > 0}
+{#if rhel9Data.count.or(-1) >= 0}
     {#let
         sub-section-title = 'RHEL 9 application streams life cycle'
         sub-section-retired-count = rhel9RetiredCount
@@ -64,7 +67,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
         sub-section-expiring-count = rhel9ExpiringCount
         sub-section-expiring-count-id = 'rhel9ExpiringCount'
         sub-section-expiring-months = 6
-        sub-section-not-the-last = rhel8SystemsCount
+        sub-section-not-the-last = 1
         sub-section-retired-url = '/insights/planning?lifecycleDropdown=RHEL+9+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Retired'
         sub-section-expiring-url = '/insights/planning?lifecycleDropdown=RHEL+9+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Near+retirement'
         }
@@ -73,7 +76,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
 {/if}
 
 {! RHEL 8 application streams life cycle section !}
-{#if rhel8SystemsCount > 0}
+{#if rhel8Data.count.or(-1) >= 0}
     {#let
         sub-section-title = 'RHEL 8 application streams life cycle'
         sub-section-retired-count = rhel8RetiredCount
