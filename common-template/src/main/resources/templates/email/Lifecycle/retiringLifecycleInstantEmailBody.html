@@ -3,7 +3,7 @@
 Red Hat Enterprise Linux - Life Cycle Monthly Report - {action.context.lifecycle.report_date}
 {/content-header-title}
 {#content-title}
-    Life cycle
+    Life Cycle
 {/content-title}
 {#content-body}
 {#let
@@ -29,7 +29,7 @@ Red Hat Enterprise Linux - Life Cycle Monthly Report - {action.context.lifecycle
 {! RHEL life cycle section !}
 {#if rhelData.rhel_versions_count.or(-1) >= 0}
     {#let
-        sub-section-title = 'RHEL life cycle'
+        sub-section-title = 'RHEL Life Cycle'
         sub-section-retired-count = rhelRetiredCount
         sub-section-retired-count-id = 'rhelRetiredCount'
         sub-section-expiring-count = rhelExpiringCount
@@ -46,7 +46,7 @@ Red Hat Enterprise Linux - Life Cycle Monthly Report - {action.context.lifecycle
 {! RHEL 10 application streams life cycle section !}
 {#if rhel10Data.count.or(-1) >= 0}
     {#let
-        sub-section-title = 'RHEL 10 application streams life cycle'
+        sub-section-title = 'RHEL 10 Application Streams Life Cycle'
         sub-section-retired-count = rhel10RetiredCount
         sub-section-retired-count-id = 'rhel10RetiredCount'
         sub-section-expiring-count = rhel10ExpiringCount
@@ -63,7 +63,7 @@ Red Hat Enterprise Linux - Life Cycle Monthly Report - {action.context.lifecycle
 {! RHEL 9 application streams life cycle section !}
 {#if rhel9Data.count.or(-1) >= 0}
     {#let
-        sub-section-title = 'RHEL 9 application streams life cycle'
+        sub-section-title = 'RHEL 9 Application Streams Life Cycle'
         sub-section-retired-count = rhel9RetiredCount
         sub-section-retired-count-id = 'rhel9RetiredCount'
         sub-section-expiring-count = rhel9ExpiringCount
@@ -80,7 +80,7 @@ Red Hat Enterprise Linux - Life Cycle Monthly Report - {action.context.lifecycle
 {! RHEL 8 application streams life cycle section !}
 {#if rhel8Data.count.or(-1) >= 0}
     {#let
-        sub-section-title = 'RHEL 8 application streams life cycle'
+        sub-section-title = 'RHEL 8 Application Streams Life Cycle'
         sub-section-retired-count = rhel8RetiredCount
         sub-section-retired-count-id = 'rhel8RetiredCount'
         sub-section-expiring-count = rhel8ExpiringCount
@@ -142,5 +142,5 @@ Red Hat Enterprise Linux - Life Cycle Monthly Report - {action.context.lifecycle
 {/if}
 {/content-common-section}
 {#content-button-href}{environment.url}/insights/planning/lifecycle?{query_params}{/content-button-href}
-{#content-button-service-name}Lifecycle - Planning{/content-button-service-name}
+{#content-button-service-name}Life Cycle - Planning{/content-button-service-name}
 {/include}
