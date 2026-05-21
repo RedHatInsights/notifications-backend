@@ -1,57 +1,55 @@
 package com.redhat.cloud.notifications.connector.email;
 
-import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
+import com.redhat.cloud.notifications.connector.email.models.HandledEmailExceptionDetails;
+import com.redhat.cloud.notifications.connector.email.models.HandledEmailMessageDetails;
 import com.redhat.cloud.notifications.connector.email.payload.PayloadDetails;
-import com.redhat.cloud.notifications.connector.http.HttpOutgoingCloudEventBuilder;
+import com.redhat.cloud.notifications.connector.v2.OutgoingCloudEventBuilder;
+import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
-import org.apache.camel.Exchange;
-import org.apache.camel.Message;
-
-import static com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty.ADDITIONAL_ERROR_DETAILS;
 
 @ApplicationScoped
 @Alternative
-@Priority(0) // The value doesn't matter.
-public class CloudEventHistoryBuilder extends HttpOutgoingCloudEventBuilder {
+@Priority(0)
+public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
 
     public static final String TOTAL_RECIPIENTS_KEY = "total_recipients";
+    public static final String ADDITIONAL_ERROR_DETAILS = "additionalErrorDetails";
 
     @Override
-    public void process(Exchange exchange) throws Exception {
-        super.process(exchange);
-        int totalRecipients = exchange.getProperty(TOTAL_RECIPIENTS_KEY, 0, Integer.class);
+    public JsonObject buildSuccess(HandledMessageDetails processedMessageDetails) {
+        JsonObject data = new JsonObject();
+        if (processedMessageDetails instanceof HandledEmailMessageDetails emailDetails) {
+            data.put("details", new JsonObject()
+                .put(TOTAL_RECIPIENTS_KEY, emailDetails.totalRecipients));
 
-        Message in = exchange.getIn();
-        JsonObject cloudEvent = new JsonObject(in.getBody(String.class));
-        JsonObject data = new JsonObject(cloudEvent.getString("data"));
-        data.getJsonObject("details").put(TOTAL_RECIPIENTS_KEY, totalRecipients);
-
-        if (exchange.getProperties().containsKey(ADDITIONAL_ERROR_DETAILS)) {
-            data.getJsonObject("details").put(ADDITIONAL_ERROR_DETAILS, getErrorDetail(exchange));
+            if (emailDetails.payloadId != null) {
+                data.put(PayloadDetails.PAYLOAD_DETAILS_ID_KEY, emailDetails.payloadId);
+            }
         }
-
-        // Include the payload's identifier in the response, so that the engine
-        // can delete it afterward. Also, remove the exchange property from the
-        // exchange.
-        final String payloadId = exchange.getProperty(ExchangeProperty.PAYLOAD_ID, String.class);
-        if (null != payloadId) {
-            data.put(PayloadDetails.PAYLOAD_DETAILS_ID_KEY, payloadId);
-
-            exchange.removeProperty(ExchangeProperty.PAYLOAD_ID);
-        }
-
-        cloudEvent.put("data", data.encode());
-        in.setBody(cloudEvent.encode());
+        return data;
     }
 
-    private Object getErrorDetail(final Exchange exchange) {
-        try {
-            return new JsonObject(exchange.getProperty(ADDITIONAL_ERROR_DETAILS, String.class));
-        } catch (Exception e) {
-            return exchange.getProperty(ADDITIONAL_ERROR_DETAILS, String.class);
+    @Override
+    public JsonObject buildFailure(HandledExceptionDetails processedExceptionDetails) {
+        JsonObject data = new JsonObject();
+        JsonObject details = new JsonObject();
+        details.put(TOTAL_RECIPIENTS_KEY, 0);
+
+        if (processedExceptionDetails instanceof HandledEmailExceptionDetails emailDetails) {
+            if (emailDetails.additionalErrorDetails != null) {
+                try {
+                    details.put(ADDITIONAL_ERROR_DETAILS, new JsonObject(emailDetails.additionalErrorDetails));
+                } catch (Exception e) {
+                    details.put(ADDITIONAL_ERROR_DETAILS, emailDetails.additionalErrorDetails);
+                }
+            }
         }
+
+        data.put("details", details);
+        return data;
     }
 }
