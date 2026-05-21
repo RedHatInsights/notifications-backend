@@ -97,9 +97,9 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
     public void testRetiringLifecycleEmailBodyContainsAppstreamData() {
         String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, createLifecycleAction());
         // Verify appstream sections appear when payload has the data
-        assertTrue(result.contains("RHEL 8 application streams life cycle"), "Body should contain RHEL 8 appstreams section");
-        assertTrue(result.contains("RHEL 9 application streams life cycle"), "Body should contain RHEL 9 appstreams section");
-        assertTrue(result.contains("RHEL 10 application streams life cycle"), "Body should contain RHEL 10 appstreams section");
+        assertTrue(result.contains("RHEL 8 Application Streams Life Cycle"), "Body should contain RHEL 8 appstreams section");
+        assertTrue(result.contains("RHEL 9 Application Streams Life Cycle"), "Body should contain RHEL 9 appstreams section");
+        assertTrue(result.contains("RHEL 10 Application Streams Life Cycle"), "Body should contain RHEL 10 appstreams section");
         // Verify appstream count IDs are present
         assertTrue(result.contains("id=\"rhel8RetiredCount\""), "Body should contain rhel8 retired count ID");
         assertTrue(result.contains("id=\"rhel9RetiredCount\""), "Body should contain rhel9 retired count ID");
@@ -137,7 +137,7 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
         String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
         assertTrue(result.contains("id=\"rhelRetiredCount\">3<"), "Body should contain retired rhel_versions_count");
         assertTrue(result.contains("id=\"rhelExpiringCount\">0<"), "Body should contain near retirement rhel_versions_count");
-        assertFalse(result.contains("application streams life cycle"), "Body shouldn't contain appstream sections since no appstream payload");
+        assertFalse(result.contains("Application Streams Life Cycle"), "Body shouldn't contain appstream sections since no appstream payload");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -166,7 +166,7 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
         String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
         assertTrue(result.contains("id=\"rhelRetiredCount\">0<"), "Body should contain retired rhel_versions_count");
         assertTrue(result.contains("id=\"rhelExpiringCount\">2<"), "Body should contain near retirement rhel_versions_count");
-        assertFalse(result.contains("application streams life cycle"), "Body shouldn't contain appstream sections since no appstream payload");
+        assertFalse(result.contains("Application Streams Life Cycle"), "Body shouldn't contain appstream sections since no appstream payload");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -193,10 +193,10 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
         ));
 
         String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
-        assertTrue(result.contains("RHEL life cycle"), "Body should contain 'RHEL life cycle' section since payload exists");
+        assertTrue(result.contains("RHEL Life Cycle"), "Body should contain 'RHEL Life Cycle' section since payload exists");
         assertTrue(result.contains("id=\"rhelRetiredCount\">0<"), "Body should contain retired rhel_versions_count of 0");
         assertTrue(result.contains("id=\"rhelExpiringCount\">0<"), "Body should contain near retirement rhel_versions_count of 0");
-        assertFalse(result.contains("application streams life cycle"), "Body shouldn't contain appstream sections since no appstream payload");
+        assertFalse(result.contains("Application Streams Life Cycle"), "Body shouldn't contain appstream sections since no appstream payload");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -224,14 +224,14 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
 
         String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
         // Verify RHEL 8 and 9 sections appear since they're in the payload
-        assertTrue(result.contains("RHEL 8 application streams life cycle"), "Body should contain RHEL 8 appstreams section");
-        assertTrue(result.contains("RHEL 9 application streams life cycle"), "Body should contain RHEL 9 appstreams section");
+        assertTrue(result.contains("RHEL 8 Application Streams Life Cycle"), "Body should contain RHEL 8 appstreams section");
+        assertTrue(result.contains("RHEL 9 Application Streams Life Cycle"), "Body should contain RHEL 9 appstreams section");
         assertTrue(result.contains("id=\"rhel8RetiredCount\""), "Body should contain rhel8 retired count ID");
         assertTrue(result.contains("id=\"rhel8ExpiringCount\""), "Body should contain rhel8 expiring count ID");
         assertTrue(result.contains("id=\"rhel9RetiredCount\""), "Body should contain rhel9 retired count ID");
         assertTrue(result.contains("id=\"rhel9ExpiringCount\""), "Body should contain rhel9 expiring count ID");
-        assertFalse(result.contains("RHEL life cycle"), "Body shouldn't contain 'RHEL life cycle' section since no rhel_retired payload");
-        assertFalse(result.contains("RHEL 10 application streams life cycle"), "Body shouldn't contain RHEL 10 appstreams section since no rhel10 payload");
+        assertFalse(result.contains("RHEL Life Cycle"), "Body shouldn't contain 'RHEL Life Cycle' section since no rhel_retired payload");
+        assertFalse(result.contains("RHEL 10 Application Streams Life Cycle"), "Body shouldn't contain RHEL 10 appstreams section since no rhel10 payload");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -262,16 +262,16 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
 
         String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
         // Verify all RHEL appstream versions sections appear
-        assertTrue(result.contains("RHEL 8 application streams life cycle"), "Body should contain RHEL 8 appstreams section");
-        assertTrue(result.contains("RHEL 9 application streams life cycle"), "Body should contain RHEL 9 appstreams section");
-        assertTrue(result.contains("RHEL 10 application streams life cycle"), "Body should contain RHEL 10 appstreams section");
+        assertTrue(result.contains("RHEL 8 Application Streams Life Cycle"), "Body should contain RHEL 8 appstreams section");
+        assertTrue(result.contains("RHEL 9 Application Streams Life Cycle"), "Body should contain RHEL 9 appstreams section");
+        assertTrue(result.contains("RHEL 10 Application Streams Life Cycle"), "Body should contain RHEL 10 appstreams section");
         assertTrue(result.contains("id=\"rhel8RetiredCount\""), "Body should contain rhel8 retired count ID");
         assertTrue(result.contains("id=\"rhel9RetiredCount\""), "Body should contain rhel9 retired count ID");
         assertTrue(result.contains("id=\"rhel10RetiredCount\""), "Body should contain rhel10 retired count ID");
         assertTrue(result.contains("id=\"rhel8ExpiringCount\""), "Body should contain rhel8 expiring count ID");
         assertTrue(result.contains("id=\"rhel9ExpiringCount\""), "Body should contain rhel9 expiring count ID");
         assertTrue(result.contains("id=\"rhel10ExpiringCount\""), "Body should contain rhel10 expiring count ID");
-        assertFalse(result.contains("RHEL life cycle"), "Body shouldn't contain 'RHEL life cycle' section since no rhel_retired payload");
+        assertFalse(result.contains("RHEL Life Cycle"), "Body shouldn't contain 'RHEL Life Cycle' section since no rhel_retired payload");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -300,10 +300,10 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
         ));
 
         String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, action);
-        assertTrue(result.contains("RHEL life cycle"), "Body should contain 'RHEL life cycle' section since rhel_retired payload exists");
+        assertTrue(result.contains("RHEL Life Cycle"), "Body should contain 'RHEL Life Cycle' section since rhel_retired payload exists");
         assertTrue(result.contains("id=\"rhelRetiredCount\">5<"), "Body should contain retired rhel_versions_count");
         assertTrue(result.contains("id=\"rhelExpiringCount\">3<"), "Body should contain near retirement rhel_versions_count");
-        assertFalse(result.contains("application streams life cycle"), "Body shouldn't contain appstream sections since no appstream payload");
+        assertFalse(result.contains("Application Streams Life Cycle"), "Body shouldn't contain appstream sections since no appstream payload");
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
