@@ -1,12 +1,13 @@
 {#include email/Common/insightsEmailBody}
 {#content-header-title}
-Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle.report_date}
+Red Hat Enterprise Linux - Life Cycle Monthly Report - {action.context.lifecycle.report_date}
 {/content-header-title}
 {#content-title}
     Life cycle
 {/content-title}
 {#content-body}
 {#let
+    rhelData = action.events[0].payload.rhel_retired.orEmpty
     rhelRetiredCount = action.events[0].payload.rhel_retired.orEmpty.rhel_versions_count.or(0)
     rhelExpiringCount = action.events[0].payload.rhel_near_retirement.orEmpty.rhel_versions_count.or(0)
     rhelSystemsCount = action.events[0].payload.rhel_retired.orEmpty.systems_count.or(0)
@@ -24,8 +25,9 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
     rhel8SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.systems_count.or(0)
 }
 <table style="width: 100%; border: 0">
+{#if rhelData.rhel_versions_count.or(-1) >= 0 || rhel10Data.count.or(-1) >= 0 || rhel9Data.count.or(-1) >= 0 || rhel8Data.count.or(-1) >= 0}
 {! RHEL life cycle section !}
-{#if action.events[0].payload.rhel_retired}
+{#if rhelData.rhel_versions_count.or(-1) >= 0}
     {#let
         sub-section-title = 'RHEL life cycle'
         sub-section-retired-count = rhelRetiredCount
@@ -90,7 +92,13 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
     {#insert content-common-section}{/}
     {/let}
 {/if}
+{#else}
+<p style="font-size: 14px; color: #151515; margin-top: 16px;">
+    No RHEL systems were detected in your Inventory. Please add systems to Inventory to view RHEL releases and application streams that are approaching retirement/retired. 
+</p>
+{/if}
 </table>
+{#if rhelData.rhel_versions_count.or(-1) >= 0 || rhel10Data.count.or(-1) >= 0 || rhel9Data.count.or(-1) >= 0 || rhel8Data.count.or(-1) >= 0}
 {#if (rhelRetiredCount == 0 && rhelExpiringCount == 0 && rhel10RetiredCount == 0 && rhel10ExpiringCount == 0 && rhel9RetiredCount == 0 && rhel9ExpiringCount == 0 && rhel8RetiredCount == 0 && rhel8ExpiringCount == 0) || (rhelSystemsCount == 0 && rhel10SystemsCount == 0 && rhel9SystemsCount == 0 && rhel8SystemsCount == 0)}
 <p style="font-size: 14px; color: #151515; margin-top: 16px;">
     Your inventory remained fully supported. A value of 0 indicated that no systems reached a retirement threshold or approached end-of-life dates.
@@ -101,6 +109,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
         Certain systems reached a retirement threshold. A value of 0 in any category confirmed that no additional systems were affected by that specific lifecycle event.
     </p>
     {/if}
+{/if}
 {/if}
 {/let}
 {/content-body}
