@@ -31,21 +31,14 @@
             <dependencies>
                 <dependency>
                     <groupId>com.redhat.cloud.notifications</groupId>
+                    <artifactId>notifications-connector-common-v2</artifactId>
+                    <version>${project.version}</version>
+                    <type>test-jar</type>
+                    <scope>test</scope>
+                </dependency>
+                <dependency>
+                    <groupId>com.redhat.cloud.notifications</groupId>
                     <artifactId>notifications-common</artifactId>
-                    <version>${project.version}</version>
-                    <type>test-jar</type>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>com.redhat.cloud.notifications</groupId>
-                    <artifactId>notifications-connector-common-http</artifactId>
-                    <version>${project.version}</version>
-                    <type>test-jar</type>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>com.redhat.cloud.notifications</groupId>
-                    <artifactId>notifications-connector-common</artifactId>
                     <version>${project.version}</version>
                     <type>test-jar</type>
                     <scope>test</scope>
@@ -61,18 +54,6 @@
         </profile>
     </profiles>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>${quarkus.platform.group-id}</groupId>
-                <artifactId>quarkus-camel-bom</artifactId>
-                <version>${quarkus.platform.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
 
         <!-- Scope: compile -->
@@ -80,7 +61,7 @@
         <!-- Notifications module -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
-            <artifactId>notifications-connector-common-http</artifactId>
+            <artifactId>notifications-connector-common-http-v2</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -100,20 +81,9 @@
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
 
-        <!-- Scope: test -->
-        <!-- Some test dependencies are declared in the "profiles" section of this POM. -->
-
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-junit-mockito</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Camel -->
-        <dependency>
-            <groupId>org.apache.camel.quarkus</groupId>
-            <artifactId>camel-quarkus-junit</artifactId>
-            <scope>test</scope>
+            <artifactId>quarkus-messaging-kafka</artifactId>
         </dependency>
 
         <!-- Retries -->
@@ -121,6 +91,15 @@
             <groupId>dev.failsafe</groupId>
             <artifactId>failsafe</artifactId>
             <version>${failsafe.version}</version>
+        </dependency>
+
+        <!-- Scope: test -->
+        <!-- Some test dependencies are declared in the "profiles" section of this POM. -->
+
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit-mockito</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- WireMock -->
@@ -139,6 +118,16 @@
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye.reactive</groupId>
+            <artifactId>smallrye-reactive-messaging-in-memory</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
