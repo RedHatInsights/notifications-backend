@@ -1,28 +1,33 @@
 {#include email/Common/insightsEmailBody}
 {#content-header-title}
-Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle.report_date}
+Red Hat Enterprise Linux - Life Cycle Monthly Report - {action.context.lifecycle.report_date}
 {/content-header-title}
 {#content-title}
     Life cycle
 {/content-title}
 {#content-body}
 {#let
+    rhelData = action.events[0].payload.rhel_retired.orEmpty
     rhelRetiredCount = action.events[0].payload.rhel_retired.orEmpty.rhel_versions_count.or(0)
     rhelExpiringCount = action.events[0].payload.rhel_near_retirement.orEmpty.rhel_versions_count.or(0)
     rhelSystemsCount = action.events[0].payload.rhel_retired.orEmpty.systems_count.or(0)
+    rhel10Data = action.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty
     rhel10RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty.count.or(0)
     rhel10ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel10.orEmpty.count.or(0)
     rhel10SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel10.orEmpty.systems_count.or(0)
+    rhel9Data = action.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty
     rhel9RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty.count.or(0)
     rhel9ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel9.orEmpty.count.or(0)
     rhel9SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel9.orEmpty.systems_count.or(0)
+    rhel8Data = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty
     rhel8RetiredCount = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.count.or(0)
     rhel8ExpiringCount = action.events[0].payload.appstream_near_retirement.orEmpty.rhel8.orEmpty.count.or(0)
     rhel8SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.systems_count.or(0)
 }
 <table style="width: 100%; border: 0">
+{#if rhelData.rhel_versions_count.or(-1) >= 0 || rhel10Data.count.or(-1) >= 0 || rhel9Data.count.or(-1) >= 0 || rhel8Data.count.or(-1) >= 0}
 {! RHEL life cycle section !}
-{#if rhelSystemsCount > 0}
+{#if rhelData.rhel_versions_count.or(-1) >= 0}
     {#let
         sub-section-title = 'RHEL life cycle'
         sub-section-retired-count = rhelRetiredCount
@@ -30,7 +35,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
         sub-section-expiring-count = rhelExpiringCount
         sub-section-expiring-count-id = 'rhelExpiringCount'
         sub-section-expiring-months = 3
-        sub-section-not-the-last = (rhel10SystemsCount + rhel9SystemsCount + rhel8SystemsCount)
+        sub-section-not-the-last = 1
         sub-section-retired-url = '/insights/planning?lifecycleDropdown=Red+Hat+Enterprise+Linux&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Retired'
         sub-section-expiring-url = '/insights/planning?lifecycleDropdown=Red+Hat+Enterprise+Linux&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Near+retirement'
         }
@@ -39,7 +44,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
 {/if}
 
 {! RHEL 10 application streams life cycle section !}
-{#if rhel10SystemsCount > 0}
+{#if rhel10Data.count.or(-1) >= 0}
     {#let
         sub-section-title = 'RHEL 10 application streams life cycle'
         sub-section-retired-count = rhel10RetiredCount
@@ -47,7 +52,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
         sub-section-expiring-count = rhel10ExpiringCount
         sub-section-expiring-count-id = 'rhel10ExpiringCount'
         sub-section-expiring-months = 6
-        sub-section-not-the-last = (rhel9SystemsCount + rhel8SystemsCount)
+        sub-section-not-the-last = 1
         sub-section-retired-url = '/insights/planning?lifecycleDropdown=RHEL+10+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Retired'
         sub-section-expiring-url = '/insights/planning?lifecycleDropdown=RHEL+10+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Near+retirement'
         }
@@ -56,7 +61,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
 {/if}
 
 {! RHEL 9 application streams life cycle section !}
-{#if rhel9SystemsCount > 0}
+{#if rhel9Data.count.or(-1) >= 0}
     {#let
         sub-section-title = 'RHEL 9 application streams life cycle'
         sub-section-retired-count = rhel9RetiredCount
@@ -64,7 +69,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
         sub-section-expiring-count = rhel9ExpiringCount
         sub-section-expiring-count-id = 'rhel9ExpiringCount'
         sub-section-expiring-months = 6
-        sub-section-not-the-last = rhel8SystemsCount
+        sub-section-not-the-last = 1
         sub-section-retired-url = '/insights/planning?lifecycleDropdown=RHEL+9+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Retired'
         sub-section-expiring-url = '/insights/planning?lifecycleDropdown=RHEL+9+Application+Streams&chartSortBy=Retirement+date&chartOrder=asc&viewFilter=installed-only&statuses=Near+retirement'
         }
@@ -73,7 +78,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
 {/if}
 
 {! RHEL 8 application streams life cycle section !}
-{#if rhel8SystemsCount > 0}
+{#if rhel8Data.count.or(-1) >= 0}
     {#let
         sub-section-title = 'RHEL 8 application streams life cycle'
         sub-section-retired-count = rhel8RetiredCount
@@ -87,7 +92,13 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
     {#insert content-common-section}{/}
     {/let}
 {/if}
+{#else}
+<p style="font-size: 14px; color: #151515; margin-top: 16px;">
+    No RHEL systems were detected in your Inventory. Please add systems to Inventory to view RHEL releases and application streams that are approaching retirement/retired. 
+</p>
+{/if}
 </table>
+{#if rhelData.rhel_versions_count.or(-1) >= 0 || rhel10Data.count.or(-1) >= 0 || rhel9Data.count.or(-1) >= 0 || rhel8Data.count.or(-1) >= 0}
 {#if (rhelRetiredCount == 0 && rhelExpiringCount == 0 && rhel10RetiredCount == 0 && rhel10ExpiringCount == 0 && rhel9RetiredCount == 0 && rhel9ExpiringCount == 0 && rhel8RetiredCount == 0 && rhel8ExpiringCount == 0) || (rhelSystemsCount == 0 && rhel10SystemsCount == 0 && rhel9SystemsCount == 0 && rhel8SystemsCount == 0)}
 <p style="font-size: 14px; color: #151515; margin-top: 16px;">
     Your inventory remained fully supported. A value of 0 indicated that no systems reached a retirement threshold or approached end-of-life dates.
@@ -98,6 +109,7 @@ Red Hat Enterprise Linux - life cycle monthly report - {action.context.lifecycle
         Certain systems reached a retirement threshold. A value of 0 in any category confirmed that no additional systems were affected by that specific lifecycle event.
     </p>
     {/if}
+{/if}
 {/if}
 {/let}
 {/content-body}
