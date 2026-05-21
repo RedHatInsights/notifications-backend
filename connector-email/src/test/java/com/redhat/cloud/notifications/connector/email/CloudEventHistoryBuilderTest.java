@@ -1,47 +1,87 @@
 package com.redhat.cloud.notifications.connector.email;
 
-import com.redhat.cloud.notifications.connector.email.constants.ExchangeProperty;
+import com.redhat.cloud.notifications.connector.email.models.HandledEmailExceptionDetails;
+import com.redhat.cloud.notifications.connector.email.models.HandledEmailMessageDetails;
 import com.redhat.cloud.notifications.connector.email.payload.PayloadDetails;
-import io.quarkus.test.junit.QuarkusTest;
+import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.vertx.core.json.JsonObject;
-import jakarta.inject.Inject;
-import org.apache.camel.Exchange;
-import org.apache.camel.Message;
-import org.apache.camel.quarkus.test.CamelQuarkusTestSupport;
 import org.junit.jupiter.api.Test;
 
-import static com.redhat.cloud.notifications.connector.ExchangeProperty.START_TIME;
-import static org.apache.camel.test.junit6.TestSupport.createExchangeWithBody;
+import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.ADDITIONAL_ERROR_DETAILS;
+import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@QuarkusTest
-public class CloudEventHistoryBuilderTest extends CamelQuarkusTestSupport {
+class CloudEventHistoryBuilderTest {
 
-    @Inject
-    CloudEventHistoryBuilder cloudEventHistoryBuilder;
+    private final CloudEventHistoryBuilder builder = new CloudEventHistoryBuilder();
 
-    /**
-     * Tests that when the exchange contains the payload identifier property,
-     * the processor adds it to the outgoing cloud event data and removes
-     * the property from the exchange.
-     */
     @Test
-    void testPayloadIdHandling() throws Exception {
+    void testBuildSuccessWithPayloadId() {
+        HandledEmailMessageDetails details = new HandledEmailMessageDetails();
+        details.totalRecipients = 42;
+        details.payloadId = "test-payload-id";
 
-        String payloadId = "123";
+        JsonObject data = builder.buildSuccess(details);
 
-        Exchange exchange = createExchangeWithBody(context, "");
-        exchange.setProperty(START_TIME, System.currentTimeMillis());
-        exchange.setProperty(ExchangeProperty.PAYLOAD_ID, payloadId);
+        assertEquals(42, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
+        assertEquals("test-payload-id", data.getString(PayloadDetails.PAYLOAD_DETAILS_ID_KEY));
+    }
 
-        cloudEventHistoryBuilder.process(exchange);
+    @Test
+    void testBuildSuccessWithoutPayloadId() {
+        HandledEmailMessageDetails details = new HandledEmailMessageDetails();
+        details.totalRecipients = 10;
+        details.payloadId = null;
 
-        assertNull(exchange.getProperty(ExchangeProperty.PAYLOAD_ID), "The payload ID property should have been removed from the exchange");
+        JsonObject data = builder.buildSuccess(details);
 
-        Message in = exchange.getIn();
-        JsonObject cloudEvent = new JsonObject(in.getBody(String.class));
-        JsonObject data = new JsonObject(cloudEvent.getString("data"));
-        assertEquals(payloadId, data.getString(PayloadDetails.PAYLOAD_DETAILS_ID_KEY), "The payload ID should have been added to the cloud event data");
+        assertEquals(10, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
+        assertFalse(data.containsKey(PayloadDetails.PAYLOAD_DETAILS_ID_KEY));
+    }
+
+    @Test
+    void testBuildSuccessWithNonEmailDetails() {
+        HandledMessageDetails genericDetails = new HandledMessageDetails("Ok");
+        JsonObject data = builder.buildSuccess(genericDetails);
+        assertTrue(data.isEmpty());
+    }
+
+    @Test
+    void testBuildFailureWithAdditionalErrorDetails() {
+        HandledEmailExceptionDetails details = new HandledEmailExceptionDetails(new HandledExceptionDetails("error"));
+        details.additionalErrorDetails = "{\"message\":\"Internal Server Error\"}";
+
+        JsonObject data = builder.buildFailure(details);
+
+        assertEquals(0, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
+        assertTrue(data.getJsonObject("details").getValue(ADDITIONAL_ERROR_DETAILS) instanceof JsonObject);
+        assertEquals("Internal Server Error",
+            data.getJsonObject("details").getJsonObject(ADDITIONAL_ERROR_DETAILS).getString("message"));
+    }
+
+    @Test
+    void testBuildFailureWithNonJsonErrorDetails() {
+        HandledEmailExceptionDetails details = new HandledEmailExceptionDetails(new HandledExceptionDetails("error"));
+        details.additionalErrorDetails = "plain text error";
+
+        JsonObject data = builder.buildFailure(details);
+
+        assertEquals(0, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
+        assertEquals("plain text error", data.getJsonObject("details").getString(ADDITIONAL_ERROR_DETAILS));
+    }
+
+    @Test
+    void testBuildFailureWithoutAdditionalErrorDetails() {
+        HandledEmailExceptionDetails details = new HandledEmailExceptionDetails(new HandledExceptionDetails("error"));
+        details.additionalErrorDetails = null;
+
+        JsonObject data = builder.buildFailure(details);
+
+        assertEquals(0, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
+        assertNull(data.getJsonObject("details").getValue(ADDITIONAL_ERROR_DETAILS));
     }
 }
