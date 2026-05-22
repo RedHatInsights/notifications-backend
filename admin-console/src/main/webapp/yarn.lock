@@ -683,7 +683,7 @@
     react-dropzone "14.3.5"
     tslib "^2.8.1"
 
-"@patternfly/react-core@6.4.3", "@patternfly/react-core@^6.4.1":
+"@patternfly/react-core@6.4.3":
   version "6.4.3"
   resolved "https://registry.yarnpkg.com/@patternfly/react-core/-/react-core-6.4.3.tgz#ce08ce1685a646eead45678b1728458f31578d08"
   integrity sha512-CYf+DFmcV5LCTQh7ZNBhHgqaEbDKwKOxBB/3Si6xFn8fIH8h/Wj3ZHSm6rYslQS7dJUusqyv5gJ2dR9LixT3TA==
@@ -707,6 +707,18 @@
     react-dropzone "^14.3.5"
     tslib "^2.8.1"
 
+"@patternfly/react-core@^6.5.1":
+  version "6.5.1"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-core/-/react-core-6.5.1.tgz#58a698bb8c8d3e4bab3fdf6476c85268e7df994d"
+  integrity sha512-fFZ0hcIyHJO27hxbf53W3m2R11l0O9WxR7CusJXuCEaNMP31ULrhf5Pv6ROdTrrs39Kl/yPv+2QuxQfe/4e72g==
+  dependencies:
+    "@patternfly/react-icons" "^6.5.1"
+    "@patternfly/react-styles" "^6.5.1"
+    "@patternfly/react-tokens" "^6.5.1"
+    focus-trap "7.6.6"
+    react-dropzone "^14.3.5"
+    tslib "^2.8.1"
+
 "@patternfly/react-icons@6.4.0", "@patternfly/react-icons@^6.4.0":
   version "6.4.0"
   resolved "https://registry.yarnpkg.com/@patternfly/react-icons/-/react-icons-6.4.0.tgz#563d5a51e76084dea8c752b587fc479dfe10fc31"
@@ -716,6 +728,11 @@
   version "6.5.0"
   resolved "https://registry.yarnpkg.com/@patternfly/react-icons/-/react-icons-6.5.0.tgz#999f5d5b4c059cab9e19eb9d539df629e3df9e23"
   integrity sha512-Y4CWTKR9mMwBd3Ogh+6O5kJSOt9pbrDPWXK1mz25d41bDX87VPJMtgyYQX3A2+MvXiKn3YOc4i9ZsnXVqSx6Kw==
+
+"@patternfly/react-icons@^6.5.1":
+  version "6.5.1"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-icons/-/react-icons-6.5.1.tgz#9c607cc8450e28478c239c6a337f3779c54dfa41"
+  integrity sha512-CnuPvTTs4MMWx8CAUkmnY690ouN1bbHjunsyXu3QxvGOmzbztP+wS4BdiLS8TIXOIH80Yb7KPhnF8VkA+CduOA==
 
 "@patternfly/react-styles@^6.4.0":
   version "6.4.0"
@@ -727,16 +744,21 @@
   resolved "https://registry.yarnpkg.com/@patternfly/react-styles/-/react-styles-6.5.0.tgz#c31893719c1fcc20c645c7361f9087b668a1af81"
   integrity sha512-N5iw6W+BfMBDpY++OSXQ6j0ocSNOVCuRUK9mPYni6Sqi/ibXqUCsj7RbCalpCZi3WoMp9ARdjjKTWedtaOJ+1Q==
 
-"@patternfly/react-table@6.4.1":
-  version "6.4.1"
-  resolved "https://registry.yarnpkg.com/@patternfly/react-table/-/react-table-6.4.1.tgz#9074101de89d4c22abc49a7a90314cc9ffba2a71"
-  integrity sha512-dceS5X1I5gmhRfEf6gsLIdFhrQd5hY+SWRIYzEvI19rrdN9VwCVWg+bhSsNv05pQnGs8uOlzYVBI25p7PJtFeA==
+"@patternfly/react-styles@^6.5.1":
+  version "6.5.1"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-styles/-/react-styles-6.5.1.tgz#9e858d15a60586f0872d6af6a9c2db11c46337dc"
+  integrity sha512-yQMzUbbf6qYM/v3JbPvaCJTgxRbOKoEw229XZmnnM8gDvp8ECiI7LqihrAOK/NA6T6M3DDgsRMd2JurUBhPDEw==
+
+"@patternfly/react-table@6.5.1":
+  version "6.5.1"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-table/-/react-table-6.5.1.tgz#39ac5a2c5dc4d89bd51acd4161131e95821c0a04"
+  integrity sha512-JpX66ctLsg5snRRheDhuF2fHvXDG4UDKYfP5403kCAQ4Dz2dPu3PhlHi4AJol+egEBD2HfS/U37j7noQ1Y7mpA==
   dependencies:
-    "@patternfly/react-core" "^6.4.1"
-    "@patternfly/react-icons" "^6.4.0"
-    "@patternfly/react-styles" "^6.4.0"
-    "@patternfly/react-tokens" "^6.4.0"
-    lodash "^4.17.23"
+    "@patternfly/react-core" "^6.5.1"
+    "@patternfly/react-icons" "^6.5.1"
+    "@patternfly/react-styles" "^6.5.1"
+    "@patternfly/react-tokens" "^6.5.1"
+    lodash "^4.18.1"
     tslib "^2.8.1"
 
 "@patternfly/react-tokens@^6.4.0":
@@ -748,6 +770,11 @@
   version "6.5.0"
   resolved "https://registry.yarnpkg.com/@patternfly/react-tokens/-/react-tokens-6.5.0.tgz#67ef77e5ca1aa692f803f311c740507cd144b61b"
   integrity sha512-rHNg8rvWJO12vHq1N32lxwPfXOlJ0KNd0HP4LhFJ9yJFsBxjQeZkcKZLAgeJyxXfT8kjScYkA7vqCmdY/o1mLQ==
+
+"@patternfly/react-tokens@^6.5.1":
+  version "6.5.1"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-tokens/-/react-tokens-6.5.1.tgz#d27c7852af9f322e348b58aba8fa6b694fef4d3b"
+  integrity sha512-zwepLsIQTL0Lf4R2/PIBOk1m+pm0hYVT3lktf2H4+Y87eRIifwMRb19c+pr4hj4ckGvHs+WxwjTfTj2Qqwn5rw==
 
 "@rolldown/pluginutils@1.0.0-beta.27":
   version "1.0.0-beta.27"
@@ -3061,7 +3088,7 @@ lodash.truncate@^4.4.2:
   resolved "https://registry.yarnpkg.com/lodash.truncate/-/lodash.truncate-4.4.2.tgz#5a350da0b1113b837ecfffd5812cbe58d6eae193"
   integrity sha512-jttmRe7bRse52OsWIMDLaXxWqRAmtIUccAQ3garviCqJjafXOfNMO0yMfNpdD6zbGaTU0P5Nz7e7gAT6cKmJRw==
 
-lodash@^4.17.23:
+lodash@^4.18.1:
   version "4.18.1"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.18.1.tgz#ff2b66c1f6326d59513de2407bf881439812771c"
   integrity sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==
