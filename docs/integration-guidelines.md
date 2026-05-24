@@ -115,11 +115,11 @@ Slack, Microsoft Teams, and Google Chat use `TemplateService` for message render
 
 ```shell
 # Compile all connector modules
-mvn compile -pl connector-common-v2,connector-common-http-v2,connector-common-authentication-v2,connector-slack,connector-webhook,connector-pagerduty,connector-servicenow,connector-splunk,connector-google-chat,connector-microsoft-teams,connector-drawer
+./mvnw compile -pl connector-common-v2,connector-common-http-v2,connector-common-authentication-v2,connector-slack,connector-webhook,connector-pagerduty,connector-servicenow,connector-splunk,connector-google-chat,connector-microsoft-teams,connector-drawer
 
 # Run a single connector's tests
-mvn verify -pl connector-slack
+./mvnw verify -pl connector-slack
 
 # Run all connector tests
-mvn verify -pl connector-slack,connector-webhook,connector-pagerduty,connector-servicenow,connector-splunk,connector-google-chat,connector-microsoft-teams,connector-drawer
+./mvnw verify -pl connector-slack,connector-webhook,connector-pagerduty,connector-servicenow,connector-splunk,connector-google-chat,connector-microsoft-teams,connector-drawer
 ```
