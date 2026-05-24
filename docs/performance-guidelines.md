@@ -1,156 +1,112 @@
 # Performance Guidelines
 
-Rules and conventions for writing performant code in `notifications-backend`, derived from existing patterns. All agents MUST follow these during implementation and review.
+## Kafka Consumer Threading Model
 
-## 1. Caching (Quarkus Caffeine)
+### Engine: `@Blocking` on All Consumers
 
-### Cache naming and TTL conventions
+Annotate every `@Incoming` consumer method in the engine with `@Blocking` (from `io.smallrye.reactive.messaging.annotations.Blocking`). This offloads processing from the Vert.x event loop to a worker thread. All four engine consumers (`EventConsumer`, `ConnectorReceiver`, `ReplayEventConsumer`, `ExportEventListener`) follow this pattern.
 
-The codebase uses `@CacheResult` / `@CacheInvalidate` from `io.quarkus.cache` with Caffeine as the backing provider. TTLs are configured in `application.properties` using `quarkus.cache.caffeine.<name>.expire-after-write`.
+Note: `ExportEventListener` imports `io.smallrye.common.annotation.Blocking` instead. Both imports are acceptable; use whichever matches the surrounding code.
 
-| TTL tier | Use case | Examples |
-|---|---|---|
-| PT1M | Volatile data fetched per-request (resolved recipients) | `recipients-resolver-results` |
-| PT5M | Lookup data that changes infrequently (templates, event types) | `event-types-from-baet`, `event-types-from-fqn`, `aggregation-target-email-subscription-endpoints` |
-| PT10M | External user directory responses | `recipients-users-provider-get-users`, `recipients-users-provider-get-group-users`, `find-recipients` |
-| PT60s | Status / health checks, maintenance mode | `maintenance` |
-| PT120s | RBAC authorization cache | `rbac-cache` |
-| PT60M | Quasi-static organizational data | `kessel-rbac-workspace-id` |
-| PT15M | Reference data (bundles, applications) | `get-bundle-by-id`, `get-app-by-name` |
-| P7D | Credentials that rarely rotate | `kessel-oauth2-client-credentials` |
+### Connector-v2: Named Thread Pool with Virtual Threads
 
-**Rules:**
-- Always define `expire-after-write` in `application.properties` for new caches; never rely on Caffeine defaults.
-- Enable `metrics-enabled=true` for caches that serve high-traffic paths (see `rbac-cache`, `recipients-users-provider-get-users`).
-- When cached data is a collection fetched from an external service, copy it before mutating: `new HashSet<>(fetchedUsers)` (see `RecipientsResolver.findRecipients`).
-- Use `@CacheInvalidateAll` to provide explicit cache-clearing endpoints (see `OAuth2ClientCredentialsCache.clearCache()`).
-- Cache names must be kebab-case strings matching the property key.
+In `connector-common-v2`, the `MessageConsumer` uses `@Blocking("connector-thread-pool")` combined with `@RunOnVirtualThread`. Each connector module sets the concurrency via `smallrye.messaging.worker.connector-thread-pool.max-concurrency=20` in its `application.properties`. Preserve both annotations when modifying connector-v2 message handlers.
 
-## 2. Kafka Configuration
+### Engine Async Event Processing Thread Pool
 
-### Producer conventions
-- Use `snappy` compression for topics carrying large payloads (rendered emails): `mp.messaging.outgoing.<channel>.compression.type=snappy`.
-- Set `mp.messaging.outgoing.<channel>.merge=true` when multiple in-app emitters write to the same topic (see `egress` channel).
-- Use structured cloud-events mode for outgoing connector messages: `cloud-events-mode=structured`.
-- Monitor payload sizes with `DistributionSummary` before sending (see `ConnectorSender.recordMetrics`).
-- When a payload exceeds `mp.messaging.outgoing.tocamel.max.request.size` (configured as 10 MB in this application; Kafka default is 1 MB), store it in the database and send only a reference ID (see `ConnectorSender.send` with `PayloadDetails`).
+`EventConsumer` creates a custom `ThreadPoolExecutor` with a `LinkedBlockingQueue` whose `offer()` delegates to `put()`, making the submit call block when all threads are busy. This is intentional backpressure -- do not replace with a standard queue. Pool sizing is configured via:
+- `notifications.event-consumer.core-thread-pool-size` (default: 10)
+- `notifications.event-consumer.max-thread-pool-size` (default: 10)
+- `notifications.event-consumer.queue-capacity` (default: 1)
 
-### Consumer conventions
-- All Kafka consumers use `@Blocking` annotation to avoid starving the Vert.x event loop.
-- Connector-v2 consumers use `@Blocking("connector-thread-pool")` combined with `@RunOnVirtualThread` (see `MessageConsumer`).
-- The `connector-thread-pool` concurrency is configured via `smallrye.messaging.worker.connector-thread-pool.max-concurrency` (default 20 in connector-drawer).
-- Set `mp.messaging.incoming.<channel>.pausable=true` for channels that may need flow-control at runtime (see `ingress`, `exportrequests`).
-- Use a dedicated `group.id` per connector module (e.g., `notifications-connector-email`, `notifications-connector-slack`).
+The small queue capacity is deliberate. The blocking `offer()` prevents unbounded Kafka message consumption when threads are saturated.
 
-### High-volume topic pattern
-- High-traffic applications (e.g., `errata-notifications`) are routed to a dedicated topic (`platform.notifications.connector.email.high.volume`) controlled by Unleash toggle `kafka-outgoing-high-volume-topic`.
-- The decision is made in `ConnectorSender` based on application name; new high-volume apps require updating `isEventFromHighVolumeApplication`.
+## Kafka Channel Backpressure
 
-## 3. Thread Pool and Async Processing
+### Pausable Channels
 
-### EventConsumer thread pool (engine)
-The engine's `EventConsumer` uses a custom `ThreadPoolExecutor` with a blocking `LinkedBlockingQueue` that converts `offer()` to `put()` to apply backpressure on the Kafka consumer thread. Configuration (via `EngineConfig`):
+Mark incoming Kafka channels that support runtime pause/resume with `pausable=true` in `application.properties`. Currently enabled on `ingress` and `exportrequests` channels.
 
-| Property | Default | Purpose |
-|---|---|---|
-| `notifications.event-consumer.core-thread-pool-size` | 10 | Core threads |
-| `notifications.event-consumer.max-thread-pool-size` | 10 | Max threads |
-| `notifications.event-consumer.keep-alive-time-seconds` | 60 | Idle thread reclaim |
-| `notifications.event-consumer.queue-capacity` | 1 | Blocking queue size |
+`KafkaChannelManager` reads pause/resume directives from an Unleash feature toggle (`notifications.kafka-channels`) and applies them per-host via `PausableChannel`. When adding new incoming channels that should support operational pause, add `mp.messaging.incoming.<channel>.pausable=true`.
 
-**Rules:**
-- The queue capacity of 1 is intentional: it blocks the Kafka consumer when all threads are busy, preventing unbounded memory growth.
-- Async event processing is gated by an Unleash toggle (`async-event-processing`). Always check `config.isAsyncEventProcessing()`.
-- When processing Kafka messages on worker threads, annotate the method with `@ActivateRequestContext` to ensure CDI request scope is available (see `EventConsumer.process`).
+### SEDA Backpressure (connector-common, Camel-based)
 
-### Aggregation executor (engine)
-Email aggregation uses a `ManagedExecutor` produced by `AggregationManagedExecutorProducer`:
-- `notifications.aggregation.managed-executor.max-queued=100`
-- `notifications.aggregation.managed-executor.max-async=10`
-- Aggregation tasks use `@Dependent` scoped `AsyncAggregation` runnables with `@ActivateRequestContext`.
+`SedaComponentConfigurator` sets `defaultBlockWhenFull=true` on the SEDA component. This blocks Kafka message consumption when the SEDA queue (sized by `notifications.connector.seda.queue-size`, default 1000) is full. Do not disable this -- it prevents OOM under load.
 
-### Connector SEDA pattern
-Connectors (email, slack, teams, etc.) uniformly configure:
-- `notifications.connector.seda.concurrent-consumers=20`
-- `notifications.connector.seda.queue-size=20`
+## High-Volume Traffic Routing
 
-Do NOT change these without load testing. They match the Camel HTTP component's `connectionsPerRoute` default.
+`ConnectorSender` routes events from high-volume applications (currently `errata-notifications`) to a dedicated Kafka topic (`platform.notifications.connector.email.high.volume`) when the Unleash toggle is enabled. Only `EMAIL_SUBSCRIPTION` connectors are compatible with the high-volume topic. When adding new high-volume applications, update `isEventFromHighVolumeApplication()` in `ConnectorSender`.
 
-## 4. REST Client Timeouts
+## Kafka Producer Configuration
 
-Explicit timeouts are set per external service. Follow these conventions:
+Use `snappy` compression for outgoing Kafka topics that carry large payloads (currently `tocamel` and `highvolume`). When a payload exceeds `mp.messaging.outgoing.tocamel.max.request.size` (default 10 MB), `ConnectorSender` stores it in the `payload_details` database table and sends only the reference ID over Kafka. Preserve this offload pattern for any new large-payload channels.
 
-| Service | connect-timeout | read-timeout |
-|---|---|---|
-| RBAC (backend auth) | 2000ms | 2000ms |
-| RBAC (recipients-resolver s2s) | 2000ms | 120000ms |
-| Sources | - | 1000ms |
-| Internal engine | - | 900000ms (15min) |
+## Caching
 
-**Rules:**
-- Always set explicit `connect-timeout` and `read-timeout` for new REST clients. Omitting them risks unbounded waits.
-- The recipients-resolver has a long read timeout (120s) because RBAC user pagination for large orgs can be slow. Log slow requests exceeding `recipientsResolverConfig.getLogTooLongRequestLimit()`.
+### Engine Caches
 
-## 5. Retry and Resilience
+Use `@CacheResult` (Quarkus Caffeine cache) for frequently queried, rarely changing reference data. Current engine caches and their TTLs:
+- `event-types-from-baet`, `event-types-from-fqn`: 5 min
+- `get-bundle-by-id`: 15 min
+- `get-app-by-name`: 15 min
+- `aggregation-target-email-subscription-endpoints`: 5 min
+- `recipients-resolver-results`: 1 min
 
-### Failsafe retry pattern
-External service calls use `dev.failsafe.RetryPolicy` with exponential backoff. This pattern is used consistently in:
-- `FetchUsersFromExternalServices` (recipients-resolver)
-- `ExternalRecipientsResolver` (connector-email, connector-drawer)
-- `BOPManager` (connector-email)
+When adding new caches, define `quarkus.cache.caffeine.<name>.expire-after-write` in `application.properties`. Prefer short TTLs (1-5 min) for data that changes during operations.
 
-**Rules:**
-- Configure `withBackoff(initialRetryBackoff, maxRetryBackoff)` and `withMaxAttempts(maxRetryAttempts)`.
-- Handle only `IOException.class` (network failures), not all exceptions.
-- Increment failure counters on each retry (`onRetry`) and on final failure.
-- The RBAC auth path uses Mutiny retry: `.onFailure(IOException | ConnectTimeoutException).retry().withBackOff().atMost()`.
+### Backend Caches
 
-### Endpoint error tracking
-The engine tracks server errors per endpoint with `EndpointRepository.incrementEndpointServerErrors`:
-- `processor.connectors.max-server-errors=10` (threshold before disabling)
-- `processor.connectors.min-delay-since-first-server-error=2D` (grace period)
-- Uses `PESSIMISTIC_WRITE` lock to prevent concurrent threads from sending duplicate disable notifications.
+RBAC authentication results are cached for 120 seconds (`rbac-cache`). Kessel OAuth2 tokens are cached for 7 days. Do not cache per-request or user-specific data beyond authentication.
 
-## 6. Database Query Patterns
+## Mutiny Reactive Patterns
 
-### Eager fetching
-- Use `JOIN FETCH` in JPQL to avoid N+1 queries when loading entity graphs (see `EventTypeRepository.getEventType` which fetches application and bundle).
-- Use the `loadProperties` batch-loading pattern: group endpoints by type, then load properties in a single `WHERE id IN (:ids)` query per type (see `EndpointRepository.loadProperties`).
+Mutiny `Uni` is used exclusively in the `backend` module for authentication flows (`ConsoleIdentityProvider`, `RbacServer`). The engine and connectors do not use Mutiny reactive types for business logic -- they use imperative `@Blocking` consumers.
 
-### Pessimistic locking
-- Use `PESSIMISTIC_WRITE` (`SELECT FOR UPDATE`) only when atomic read-modify-write is required across pods (see `EndpointRepository.lockEndpoint` for server error counting).
-- `BehaviorGroupRepository` also uses pessimistic locking for ordering operations.
+### Retry with Backoff on Uni
 
-### Update queries
-- Prefer HQL `UPDATE` statements over loading + modifying + persisting when only a few columns change (see `incrementEndpointServerErrors`, `resetEndpointServerErrors`, `disableEndpoint`).
+When calling external services that return `Uni`, apply retry with exponential backoff for transient failures. Follow the `ConsoleIdentityProvider` pattern:
+```java
+.onFailure(failure -> failure.getClass() == IOException.class)
+.retry()
+.withBackOff(initialBackOff, maxBackOff)
+.atMost(maxRetryAttempts)
+```
+Filter retries to specific exception types -- never retry on all failures.
 
-## 7. Observability for Performance
+## Camel Connector Retry
 
-### Required metrics for new features
-- **Counters:** Track rejected, processed, error, and duplicate events (see `EventConsumer` counter names).
-- **Timers:** Wrap processing paths with `Timer.Sample` / `Timer.start()` (see `CONSUMED_TIMER_NAME`, `user-provider.get-users.total`).
-- **Distribution summaries:** Measure payload sizes (`notifications.tocamel.payload.content.size`).
-- **Gauges:** Track cardinality of cached data (see `user-provider.users` gauge in `FetchUsersFromExternalServices`).
+Camel-based connectors (connector-common) use `maximumRedeliveries` with `RedeliveryPredicate` to control which exceptions trigger retries. Defaults: 2 max attempts, 1000 ms delay. When adding new connector exception handling, extend `RedeliveryPredicate` to match only retryable exceptions.
 
-### Slow request logging
-- Log warnings when external service calls exceed a configurable threshold (see `FetchUsersFromExternalServices` comparing duration against `getLogTooLongRequestLimit()`).
+Kafka message reinjection (re-sending failed messages) uses `asyncDelayed()` on the Camel delay to avoid blocking threads during the wait period. Maximum reinjections default to 3 (`notifications.connector.kafka.maximum-reinjections`).
 
-## 8. Feature Toggle Guards
+## Deduplication
 
-Performance-sensitive features are gated behind Unleash toggles. Always:
-- Register toggles in the relevant `*Config` class's `@PostConstruct` via `toggleRegistry.register()`.
-- Provide a non-Unleash fallback for local development (see `EngineConfig.isAsyncEventProcessing()`).
-- Log toggle states at startup (see `EngineConfig.logConfigAtStartup`).
-- Use org-scoped toggles (`UnleashContextBuilder.buildUnleashContextWithOrgId`) for gradual rollouts.
+Event deduplication uses Postgres (`ON CONFLICT DO NOTHING`) as the primary mechanism, with Valkey (Redis-compatible) as an experimental parallel path gated by `isValkeyEventDeduplicatorEnabled()`. When the Valkey result disagrees with Postgres, the Postgres result takes precedence. On processing failure, the Valkey deduplication key is rolled back via `removeEventFromDeduplication()`.
 
-## 9. Event Deduplication
+## Error Isolation
 
-- Kafka-level deduplication via `MESSAGE_ID_HEADER` (extracted from the Kafka message or the event payload).
-- Application-level deduplication via `EventDeduplicator.isNew(event)` using custom per-tenant logic.
-- Always check deduplication BEFORE persisting the event to avoid wasted database writes.
+Use `DelayedThrower.throwEventually()` when processing multiple endpoints for a single event. This ensures one endpoint's failure does not prevent delivery to other endpoints. All exceptions are collected and rethrown as suppressed exceptions after the loop completes.
 
-## 10. Connector Concurrency
+## `@ActivateRequestContext`
 
-- All connectors share the same `tocamel` / `fromcamel` Kafka topic pair, disambiguated by the `x-rh-notifications-connector` header.
-- Connector-v2 modules filter messages by checking the header against `connectorConfig.getSupportedConnectorHeaders()` and immediately ack unrelated messages.
-- The email connector disables reinjections (`notifications.connector.kafka.maximum-reinjections=0`) because email delivery should not retry at the Kafka level.
+Annotate methods that run on non-CDI-managed threads (e.g., `ThreadPoolExecutor` submissions, `Runnable` implementations) with `@ActivateRequestContext`. Without it, CDI request-scoped beans and JPA `EntityManager` are unavailable. See `EventConsumer.process()` and `AsyncAggregation.run()`.
+
+## Verification
+
+```bash
+# Check that all @Incoming consumers in engine use @Blocking
+grep -rn "@Incoming" engine/src/main/java/ --include="*.java" -l | \
+  xargs grep -L "@Blocking"
+
+# Verify pausable channels are declared in application.properties
+grep "pausable=true" engine/src/main/resources/application.properties
+
+# Verify connector-v2 thread pool concurrency is set
+grep "connector-thread-pool.max-concurrency" connector-*/src/main/resources/application.properties
+
+# Verify all engine Caffeine caches have explicit TTLs
+grep "quarkus.cache.caffeine" engine/src/main/resources/application.properties
+
+# Confirm snappy compression on outgoing Kafka topics
+grep "compression.type=snappy" engine/src/main/resources/application.properties
+```
