@@ -60,10 +60,7 @@
 
 ## Template Tests
 
-- Template rendering tests in `common-template` use `@QuarkusTest` without `@QuarkusTestResource` (no database needed).
-- Inject the module's `TestHelpers` (`helpers.TestHelpers`, `@ApplicationScoped`) which wraps `TemplateService.renderTemplate()`.
-- Create `Action` objects via static factory methods on `TestHelpers` (e.g., `createAdvisorAction`, `createPoliciesAction`).
-- Test classes are organized by integration type: `drawer/`, `email/`, `slack/`, `ms_teams/`, `google_chat/`.
+See [Template Guidelines](template-guidelines.md) for the full test patterns (`EmailTemplatesRendererHelper`, `TestHelpers`, drawer/email/chat test organization).
 
 ## REST API Tests
 

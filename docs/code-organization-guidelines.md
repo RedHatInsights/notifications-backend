@@ -92,10 +92,7 @@ REST resources in `routers.handlers` use the public API paths. Resources in `rou
 
 ## Template File Organization
 
-Qute templates live in `common-template/src/main/resources/templates/{channel}/{Application}/`:
-- Channels: `email`, `drawer`, `slack`, `google_chat`, `ms_teams`
-- Application names match the registered application (e.g., `Advisor`, `Compliance`, `Errata`, `Patch`)
-- Shared partials go in `Common` or `Default` subdirectories per channel
+See [Template Guidelines](template-guidelines.md) for the full directory structure, naming conventions, and registration pattern.
 
 ## Flyway Migrations
 
