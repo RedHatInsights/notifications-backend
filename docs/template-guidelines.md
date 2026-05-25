@@ -1,212 +1,176 @@
 # Template Guidelines
 
-Rules and conventions for notification templates in `notifications-backend`, derived from existing patterns in the `common-template` module. All agents MUST follow these during implementation and review.
+## Template Resolution Order
 
-## 1. Architecture Overview
+`TemplateService.compileTemplate()` resolves templates using a three-level fallback chain. A `TemplateDefinition` is a record of `(IntegrationType, bundle, application, eventType, isBetaVersion)`. Resolution proceeds:
 
-The `common-template` module uses **Quarkus Qute** (`quarkus-qute` dependency) for rendering notification templates. `TemplateService` is an `@ApplicationScoped` CDI bean marked with `@Startup` that loads all template mappings at application start and validates every declared template file exists on the classpath.
+1. Exact match on all four fields (integration type + bundle + application + event type).
+2. Application-level default: same integration type + bundle + application, `eventType=null`.
+3. System-level default: same integration type only, `bundle=null`, `application=null`, `eventType=null`.
+4. If the definition is a beta version and no match is found at any level, the entire chain is retried with `isBetaVersion=false`.
 
-Auto-escaping is **disabled** for `.json` and `.html` content types via `application.properties`:
-```properties
-quarkus.qute.content-types.json=none
-quarkus.qute.content-types.html=none
-```
+If no template is found after all fallbacks, `TemplateNotFoundException` is thrown. Every template used in production must be registered in a mapping class; unregistered files are dead code.
 
-## 2. Directory Structure
+## Template File Organization
 
-Template files live under `common-template/src/main/resources/templates/` and are organized by integration root folder, then by application subfolder:
+All template files live under `common-template/src/main/resources/templates/`. The first-level directory is the **channel** (matching `IntegrationType.getRootFolder()`):
 
-```
-templates/
-  drawer/          # DRAWER notifications
-  email/           # EMAIL_BODY, EMAIL_TITLE, EMAIL_DAILY_DIGEST_*
-  slack/           # SLACK
-  ms_teams/        # MS_TEAMS
-  google_chat/     # GOOGLE_CHAT
-```
-
-Within each root folder, subfolders use **PascalCase** application names (e.g. `Advisor/`, `CostManagement/`, `Policies/`, `OCM/`). Shared includes go in a `Common/` subfolder. A `Default/` subfolder holds system-level fallback templates. A `Secure/` subfolder under `email/` holds secured-environment variants.
-
-### File naming conventions
-
-| Integration type | Extension | Example file name |
+| IntegrationType enum value | Root folder | File format |
 |---|---|---|
-| DRAWER | `.md` | `newRecommendationBody.md` |
-| EMAIL_BODY | `.html` | `newRecommendationInstantEmailBody.html` |
-| EMAIL_TITLE | `.txt` | `instantEmailTitle.txt` |
-| EMAIL_DAILY_DIGEST_BODY | `.html` | `dailyEmailBody.html` |
-| SLACK / MS_TEAMS / GOOGLE_CHAT | `.json` | `default.json`, `newSubscriptionBugfixErrata.json` |
+| `DRAWER` | `drawer/` | `.md` (Markdown) |
+| `EMAIL_BODY`, `EMAIL_TITLE`, `EMAIL_DAILY_DIGEST_BODY`, `EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY`, `EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE` | `email/` | `.html` or `.txt` |
+| `SLACK` | `slack/` | `.json` |
+| `MS_TEAMS` | `ms_teams/` | `.json` |
+| `GOOGLE_CHAT` | `google_chat/` | `.json` |
 
-File names use **camelCase** and encode the event type and purpose (e.g. `deactivatedRecommendationBody.md`, `clusterUpdateInstantEmailBody.html`).
+Under each channel directory, templates are organized by **application folder** (PascalCase, e.g., `Advisor/`, `CostManagement/`, `OCM/`). Shared layout templates go in `Common/` and fallback defaults in `Default/`.
 
-## 3. TemplateDefinition and IntegrationType
+### Naming Conventions
 
-`TemplateDefinition` is a Java record with five fields:
+- Drawer body: `{eventNameCamelCase}Body.md` (e.g., `newRecommendationBody.md`)
+- Instant email body: `{eventNameCamelCase}InstantEmailBody.html`
+- Daily digest body: `dailyEmailBody.html`
+- Email title: `instantEmailTitle.txt`
+- Slack/Teams/Google Chat: `{eventNameCamelCase}.json` or `default.json`
 
-```java
-record TemplateDefinition(IntegrationType integrationType, String bundle,
-    String application, String eventType, boolean isBetaVersion)
+## Registering a Template
+
+Templates are registered in static `Map<TemplateDefinition, String>` fields inside mapping classes under `com.redhat.cloud.notifications.qute.templates.mapping`. Each mapping class corresponds to a product bundle:
+
+| Mapping class | Bundle |
+|---|---|
+| `Rhel` | `rhel` |
+| `OpenShift` | `openshift` |
+| `Console` | `console` |
+| `SubscriptionServices` | `subscription-services` |
+| `AnsibleAutomationPlatform` | `ansible-automation-platform` |
+| `DefaultTemplates` | System defaults (bundle=null) |
+| `SecureEmailTemplates` | Secured environment overrides |
+| `DefaultInstantEmailTemplates` | Stage-only fallback (bundle=null) |
+
+The map value is the path **relative to the channel root folder** (e.g., `"Advisor/newRecommendationBody.md"`). `TemplateService.buildTemplateFilePath()` prepends the channel root folder.
+
+### Adding a New Event Type Template
+
+1. Define the event type constant in the appropriate mapping class (e.g., `Rhel`).
+2. Create the template file(s) in the correct channel/application folder.
+3. Add `entry(new TemplateDefinition(...), "FolderName/fileName")` to the mapping class's `templatesMap`.
+4. At startup, `TemplateService.init()` calls `checkTemplatesConsistency()`, which verifies every registered path exists on the classpath and is parseable by Qute. Missing files cause startup failure.
+
+## Template Composition Patterns
+
+### Drawer Templates
+
+Drawer templates use Qute `{#include}` to wrap content in `drawer/Common/commonDrawerNotification.md`, which declares the `query_params` parameter (`from=notifications&integration=drawer`):
+
+```
+{#include drawer/Common/commonDrawerNotification.md}
+{#body}
+**[{data.context.display_name}]({environment.url}/path?{query_params})** has {data.events.size()} new items.
+{/body}
+{/include}
 ```
 
-A convenience constructor omits `isBetaVersion` (defaults to `false`).
+Data is accessed via `{data.*}` (the action transformed to a map by `BaseTransformer.toJsonObject()`).
 
-`IntegrationType` is an enum that maps each type to a root folder:
-- `DRAWER` -> `"drawer"`
-- `EMAIL_BODY`, `EMAIL_TITLE` -> `"email"`
-- `EMAIL_DAILY_DIGEST_BODY`, `EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY`, `EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE` -> `"email"`
-- `SLACK` -> `"slack"`, `MS_TEAMS` -> `"ms_teams"`, `GOOGLE_CHAT` -> `"google_chat"`
+### Email Templates
 
-Rules:
-- NEVER add a new root folder string to `IntegrationType` without also creating the corresponding directory under `templates/`.
-- Daily digest templates use `EMAIL_DAILY_DIGEST_BODY` with `eventType=null`; bundle-level aggregation uses `EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_BODY`.
+Email body templates use `{#include email/Common/insightsEmailBody}` and fill named sections: `content-header-title`, `content-title`, `content-title-right-part`, `content-body`, `content-button-href`, `content-button-service-name`. The parent template declares style parameters as `{@String ...}` variables. Data is accessed via `{action.*}` (the `Action` object or map passed directly).
 
-## 4. Template Mapping Classes
+### Slack, MS Teams, Google Chat
 
-Template registrations live in `com.redhat.cloud.notifications.qute.templates.mapping`. Each class declares a `public static final Map<TemplateDefinition, String> templatesMap` built with `Map.ofEntries(...)`.
+Each channel has a shared layout in its `Common/` folder (`commonSlackBlocks.json`, `commonMsAdaptiveCard.json`, `commonCardsV2.json`). Default templates simply include the common layout: `{#include slack/Common/commonSlackBlocks.json /}`. Data is accessed via `{data.*}`.
 
-Existing mapping classes, loaded in `TemplateService.init()`:
-- `DefaultTemplates` -- system-level fallback entries (null bundle/app/eventType)
-- `AnsibleAutomationPlatform`, `Console`, `OpenShift`, `Rhel`, `SubscriptionServices` -- per-bundle entries
-- `SecureEmailTemplates` -- loaded instead of the above when `notifications.use-secured-email-templates.enabled=true`
-- `DefaultInstantEmailTemplates` -- loaded only when `notifications.use-default-template=true` (stage-only)
+## Qute Syntax Conventions
 
-Rules for mapping classes:
-- Define `BUNDLE_NAME`, app name constants (e.g. `ADVISOR_APP_NAME`), folder name constants (e.g. `ADVISOR_FOLDER_NAME = "Advisor/"`), and event type constants as `static final String` fields.
-- The map value is a **relative path** from the integration root folder to the template file, e.g. `"Advisor/newRecommendationBody.md"`. The root folder prefix is added by `TemplateService.buildTemplateFilePath()`.
-- Every entry in the map MUST have a corresponding file on disk. `checkTemplatesConsistency()` will throw `TemplateNotFoundException` at startup if any file is missing.
+- **Parameter declarations**: `{@String varName = "default"}` at the top of templates.
+- **Conditionals**: `{#if expr}`, `{#else}`, `{/if}`; null-safe checks with `{#if field??}`.
+- **Loops**: `{#each collection}...{it.field}...{/each}`.
+- **Switch**: `{#switch expr}{#case "val"}...{/switch}`.
+- **Size**: `{list.size()}`, pluralization via `{#if list.size() is 1}`.
+- **Or-default**: `{field.or('')}` for null-safe defaults.
+- **Raw output**: `{value.raw}` to skip HTML escaping (used for URLs).
+- **Safe output**: `{value.safe}` to mark trusted HTML (used in pendo messages).
 
-## 5. Three-Tier Fallback Resolution
+## Template Extension Classes
 
-`TemplateService.compileTemplate()` resolves templates using a three-tier fallback:
-
-1. **Exact match**: `(integrationType, bundle, application, eventType)`
-2. **Application default**: `(integrationType, bundle, application, null)` -- eventType dropped
-3. **System default**: `(integrationType, null, null, null)` -- bundle and application also dropped
-
-If all three fail and the definition is a **beta version** (`isBetaVersion=true`), the entire resolution restarts with `isBetaVersion=false` (GA fallback). If still not found, `TemplateNotFoundException` is thrown.
-
-Rules:
-- Always register a system-level default in `DefaultTemplates` for each `IntegrationType` that needs a catch-all.
-- When adding a new event type, you may rely on fallback instead of creating a dedicated template, but review whether the default output is acceptable.
-- Beta templates are optional. Do not create beta-specific files unless the content must differ from GA.
-
-## 6. Rendering Entry Points
-
-| Method | Data binding | Use case |
-|---|---|---|
-| `renderTemplate(TemplateDefinition, Map)` | Map accessible via `{data.*}` | Drawer, Slack, MS Teams, Google Chat |
-| `renderTemplateWithCustomDataMap(TemplateDefinition, Map)` | Each map key is a top-level variable | Email templates (body, title, daily digest) |
-| `renderTemplateWithCustomDataMap(String, Map)` | Inline template string, same binding | Ad-hoc template rendering |
-
-Rules:
-- For `renderTemplate`, access data in Qute as `{data.context.*}`, `{data.events.*}`, `{data.source.*}`.
-- For `renderTemplateWithCustomDataMap`, each key in the map (e.g. `action`, `environment`, `source`, `pendo_message`, `ignore_user_preferences`) is a top-level Qute variable.
-- All render results are **trimmed**. Do not rely on leading/trailing whitespace.
-
-## 7. Template Data Context
-
-### Drawer / Slack / MS Teams / Google Chat (`renderTemplate` path)
-The `data` map is a Jackson-serialized `Action` object merged with additional entries:
-- `data.context.*` -- action context properties (accessed dynamically via `ActionExtension`)
-- `data.events` -- list of events, each with `payload.*` entries
-- `data.source.application.display_name`, `data.source.bundle.display_name`, `data.source.event_type.display_name`
-- `data.severity` -- optional severity string
-- `data.inventory_url`, `data.application_url` -- injected by the caller
-
-### Email (`renderTemplateWithCustomDataMap` path)
-Top-level variables:
-- `action` -- the Action object or map
-- `environment` -- `Environment` bean (provides `url()`, `name()`, `isLocal()`, `isStage()` methods, plus `getUrl()` getter)
-- `source` -- same structure as above (`source.application.display_name`, etc.)
-- `pendo_message` -- optional marketing/pendo message object
-- `ignore_user_preferences` -- boolean controlling footer text
-
-## 8. Template Extensions
-
-Extensions in `com.redhat.cloud.notifications.qute.templates.extensions` add methods callable from Qute:
+Extensions are in `com.redhat.cloud.notifications.qute.templates.extensions` and are auto-discovered by Qute via the `@TemplateExtension` annotation.
 
 | Extension class | Methods available in templates |
 |---|---|
-| `ActionExtension` | `context.propertyName` (dynamic property access on Context), `payload.propertyName`, `action.toPrettyJson()`, `event.toPrettyJson()` |
-| `LocalDateTimeExtension` | `.toUtcFormat()`, `.toStringFormat()`, `.toTimeAgo()` -- works on both `LocalDateTime` and `String` |
-| `SeverityExtension` | `.severityAsEmailTitle()`, `.toTitleCase()`, `.asSeverityEmoji()`, `.asPatternFlySeverity()` |
-| `ErrataSortExtension` | `.sortErrataSecurityArray()`, `.sortErrataArray()` -- sort lists of errata maps |
-| `TimeAgoFormatter` | Internal helper used by `LocalDateTimeExtension.toTimeAgo()` |
+| `ActionExtension` | `context.propertyName` (dynamic property access on `Context`), `payload.propertyName` (on `Payload`), `action.toPrettyJson()` |
+| `LocalDateTimeExtension` | `date.toUtcFormat()`, `date.toStringFormat()`, `date.toTimeAgo()`, `string.toUtcFormat()`, `string.toStringFormat()`, `string.toTimeAgo()` |
+| `SeverityExtension` | `string.severityAsEmailTitle()`, `string.toTitleCase()`, `string.asSeverityEmoji()`, `string.asPatternFlySeverity()` |
+| `UrlEncodingExtension` | `string.urlEncode()` |
+| `ErrataSortExtension` | `list.sortErrataSecurityArray()`, `list.sortErrataArray()` |
+| `ApplicationServicesSortExtension` | `map.sortByProductDescription()`, `list.sortByEventTypeDisplayName()` |
 
-Rules:
-- New `@TemplateExtension` classes are auto-discovered by Qute. No registration needed.
-- Use `@TemplateExtension(matchName = TemplateExtension.ANY)` only for dynamic property access patterns (like `ActionExtension`). For named methods, use `@TemplateExtension` on the method.
+To add a new extension, create a class in the `extensions` package with static methods annotated `@TemplateExtension`. Use `matchName = TemplateExtension.ANY` for dynamic property access patterns.
 
-## 9. Adding a New Template
+## TemplateService Rendering API
 
-Checklist for adding a new event-type template:
+`TemplateService` is an `@ApplicationScoped` CDI bean initialized at `@Startup`.
 
-1. **Create the template file** in the correct `templates/<rootFolder>/<AppFolder>/` directory with the naming convention from Section 2.
-2. **Register in the mapping class**: add an `entry(new TemplateDefinition(...), "AppFolder/fileName")` to the appropriate mapping class's `templatesMap`.
-3. **Add event type constants** as `static final String` in the mapping class if new.
-4. **Create or update tests**: add a test class under `common-template/src/test/java/<integration_type>/` following the existing pattern.
-5. **Run the module build** to verify `checkTemplatesConsistency()` passes (`mvn -pl common-template test`).
-
-When adding a new application:
-- Create a new subfolder in each applicable root folder (e.g. `drawer/NewApp/`, `email/NewApp/`).
-- Add constants in the mapping class: `APP_NAME`, `FOLDER_NAME` (PascalCase with trailing `/`).
-- Consider whether a new mapping class is needed (new bundle) or entries belong in an existing one.
-
-## 10. Startup Validation
-
-`TemplateService.init()` runs at `@PostConstruct` and calls `checkTemplatesConsistency()` which:
-1. Iterates every `TemplateDefinition` key in the merged `templatesConfigMap`.
-2. Verifies the file exists on the classpath via `classLoader.getResource("templates/" + filePath)`.
-3. Calls `engine.getTemplate(filePath).instance()` to verify Qute can parse it.
-4. Throws `TemplateNotFoundException` on any failure, preventing application startup.
-
-Rule: NEVER merge a PR that adds a mapping entry without the corresponding template file. The application will fail to start.
-
-## 11. Secure Templates
-
-When `notifications.use-secured-email-templates.enabled=true`, `TemplateService` loads **only** `SecureEmailTemplates.templatesMap` instead of all standard mappings. Secure templates:
-- Live under `email/Secure/<AppFolder>/`.
-- Are a subset of templates (primarily daily digest and OCM email templates).
-- Reuse the same `TemplateDefinition` keys, so they override standard templates entirely.
-
-Rule: Do not add non-email integration types to `SecureEmailTemplates`.
-
-## 12. Testing Patterns
-
-Tests are `@QuarkusTest` classes organized by integration type package:
-
-| Package | Pattern |
+| Method | Use case |
 |---|---|
-| `drawer/` | Inject `TestHelpers`, call `testHelpers.renderTemplate(TemplateDefinition, Action)`, assert rendered markdown content with `assertEquals` |
-| `email/` | Extend `EmailTemplatesRendererHelper`, override `getApp()`/`getBundle()`, use `generateEmailBody()`/`generateEmailSubject()`/`generateAggregatedEmailBody()`, assert with `assertTrue(result.contains(...))` |
-| `slack/`, `ms_teams/`, `google_chat/` | Inject `TestHelpers` and `TemplateService`. Either call `testHelpers.renderTemplate(IntegrationType, eventType, action, inventoryUrl, applicationUrl, useBeta)` for default templates, or create `TemplateDefinition` and call `templateService.renderTemplate(templateConfig, action)` directly. Assert JSON content with `assertTrue`. |
+| `renderTemplate(TemplateDefinition, Map<String, Object>)` | Drawer/Slack/Teams/Chat: data map is passed under `"data"` key |
+| `renderTemplateWithCustomDataMap(TemplateDefinition, Map<String, Object>)` | Email: full context map with keys like `action`, `environment`, `pendo_message`, `ignore_user_preferences` |
+| `renderTemplateWithCustomDataMap(String templateContent, Map)` | Inline template rendering (used for dynamic content) |
+| `isValidTemplateDefinition(TemplateDefinition)` | Checks if a template exists without throwing |
+| `convertActionToContextMap(Action)` | Converts `Action.context` to `Map` for aggregation templates |
 
-Rules:
-- Chat tests may use either the `TestHelpers.renderTemplate` convenience method or call `templateService.renderTemplate` directly after constructing a `TemplateDefinition`.
-- Test both beta and non-beta variants using `@ParameterizedTest` with `@MethodSource` or `@ValueSource`.
-- Test helpers in `helpers/` package (e.g. `ErrataTestHelpers`, `OcmTestHelpers`) build `Action` objects with realistic data. Reuse or extend these rather than duplicating setup logic.
-- Email tests write rendered output to `target/` for manual inspection (controlled by `SHOULD_WRITE_ON_FILE_FOR_DEBUG`).
+### Configuration Flags
 
-## 13. Common Qute Patterns
+- `notifications.use-secured-email-templates.enabled` (default `false`): Loads `SecureEmailTemplates` instead of the standard mapping classes. Used in restricted environments.
+- `notifications.use-default-template` (default `false`): Adds `DefaultInstantEmailTemplates` as a catch-all `EMAIL_BODY` fallback. Stage-only.
 
-```qute
-{! Conditional display !}
-{#if data.context.display_name??}...{/if}
+## Testing Templates
 
-{! Iteration with size check !}
-{data.events.size()} event{#if data.events.size() > 1}s{/if}
+Tests live in `common-template/src/test/java/` mirroring channels: `drawer/`, `email/`, `google_chat/`, `ms_teams/`, `slack/`.
 
-{! Extension method call !}
-{data.severity.toTitleCase}
-{data.severity.asSeverityEmoji}
+### Drawer Test Pattern
 
-{! Template inclusion (used for shared layouts) !}
-{#include email/Common/insightsEmailBody}
-{#content-body}...{/content-body}
-{/include}
+```java
+@QuarkusTest
+class TestMyAppTemplate {
+    @Inject TestHelpers testHelpers;
 
-{! Insert blocks for composable templates !}
-{#insert content-body}{/}
+    @Test
+    void testRenderedTemplate() {
+        Action action = TestHelpers.createSomeAction(...);
+        TemplateDefinition def = new TemplateDefinition(
+            IntegrationType.DRAWER, "bundle", "app", "event-type");
+        String result = testHelpers.renderTemplate(def, action);
+        assertEquals("Expected rendered markdown", result);
+    }
+}
 ```
 
-Rule: Use `{#include}` for layout inheritance (email body wrapping) and `{#insert}` for overridable sections. Prefer Qute's null-safe operator `??` for optional fields.
+`TestHelpers.renderTemplate(TemplateDefinition, Action)` transforms the `Action` through `BaseTransformer.toJsonObject()` (same as production `DrawerProcessor`) and passes it to `TemplateService.renderTemplateWithCustomDataMap()`.
+
+### Email Test Pattern
+
+Extend `EmailTemplatesRendererHelper` and override `getBundle()`, `getApp()`, `getAppDisplayName()`. Use `generateEmailBody(eventType, action)` for instant emails and `generateAggregatedEmailBody(jsonContext)` for daily digests. Assert on `result.contains(...)` for expected content. Test output is written to `target/` as HTML files for visual inspection.
+
+### Test Helper Classes
+
+Action factory methods are in `helpers/TestHelpers.java` (e.g., `createAdvisorAction()`, `createComplianceAction()`). Domain-specific helpers exist in `helpers/` (e.g., `ErrataTestHelpers`, `PatchTestHelpers`, `InventoryTestHelpers`).
+
+## Verification Commands
+
+```bash
+# Run all template tests (drawer, email, slack, teams, google chat)
+./mvnw test -pl common-template
+
+# Run tests for a specific channel
+./mvnw test -pl common-template -Dtest="drawer.*"
+
+# Run a single template test class
+./mvnw test -pl common-template -Dtest="drawer.TestAdvisorTemplate"
+
+# Verify template consistency (all registered templates parse at startup)
+./mvnw test -pl common-template -Dtest="TemplateServiceTest"
+
+# Inspect rendered email output after tests (written to target/)
+ls common-template/target/email/
+```

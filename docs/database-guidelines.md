@@ -1,144 +1,99 @@
 # Database Guidelines
 
-Rules and conventions for database usage in `notifications-backend`, derived from existing patterns. All agents MUST follow these during implementation and review.
-
 ## Flyway Migration Conventions
 
-### File Naming
-- Format: `V1.<sequence>.0__<JIRA-TICKET>_<description>.sql`
-- Example: `V1.118.0__RHCLOUD-43290_event_deduplication.sql`
-- The sequence number is monotonically increasing across the project (currently at 129)
-- Description uses underscores as word separators
-- Always include the Jira ticket ID (e.g., `RHCLOUD-43290`) after the double underscore
+### Versioning
+- Use `V1.<next>.0__` format where `<next>` is the next integer after the highest existing migration (currently V1.133.0).
+- Reserve patch versions (V1.x.1, V1.x.2) only for hotfix follow-ups to a migration within the same PR. Prefer a new minor version.
+- Migrations live in `database/src/main/resources/db/migration/`.
 
-### Migration Location
-- All migrations live in `database/src/main/resources/db/migration/`
-- Flyway runs automatically at startup (`quarkus.flyway.migrate-at-start=true`)
+### Naming
+- Format: `V1.<N>.0__<TICKET>_<snake_case_description>.sql`
+- Include the Jira ticket ID when one exists: `V1.134.0__RHCLOUD-12345_add_foo_column.sql`
+- When no ticket exists, use a descriptive name: `V1.134.0__add_foo_column.sql`
+- Use snake_case in the description portion after the ticket reference.
 
-### Migration Content Rules
-- Use `snake_case` for all SQL identifiers (table names, column names, constraint names, index names)
-- Name constraints explicitly with prefixes: `pk_` (primary key), `fk_` (foreign key), `ix_` (index)
-- Example: `CONSTRAINT pk_event_deduplication PRIMARY KEY (...)`, `CONSTRAINT fk_event_deduplication_event_type_id FOREIGN KEY (...)`
-- Index naming: `ix_<table>_<column(s)>` (e.g., `ix_event_deduplication_delete_after`)
-- Add `COMMENT ON INDEX` when the purpose of an index is non-obvious
-- Use `ON DELETE CASCADE` for foreign keys referencing parent entities
-- Use `UUID` as the primary key type for all entity tables, generated via `public.gen_random_uuid()` in SQL or `UUID.randomUUID()` in Java (note: `gen_random_uuid()` is a built-in function in PostgreSQL 13+, though pgcrypto extension is still referenced in migrations for backward compatibility)
-- Stored procedures use `PLPGSQL` language and include `RAISE INFO` for operational logging
+### Content Rules
+- Each migration must be idempotent-safe or strictly additive; Flyway runs migrations once and records checksums.
+- Prefer `CREATE INDEX` as a separate migration from `ALTER TABLE` when both are needed -- keeps migrations small and reviewable.
+- Use `IF NOT EXISTS` / `IF EXISTS` for index and table creation/deletion to prevent failures on re-runs in dev.
+- Include `COMMENT ON` for non-obvious indexes or stored procedures (see V1.118.0 for example).
 
-## JPA/Hibernate Entity Conventions
+## Schema Conventions
 
-### Naming Strategy
-- A custom `SnakeCasePhysicalNamingStrategy` auto-converts camelCase Java field names to snake_case column names
-- Configured via `quarkus.hibernate-orm.physical-naming-strategy=com.redhat.cloud.notifications.db.naming.SnakeCasePhysicalNamingStrategy`
-- This strategy only affects **column names**; table names must be explicitly mapped
+### Tables and Columns
+- Table names: lowercase snake_case, plural for entity tables (`endpoints`, `applications`, `bundles`) or singular for join/status tables (`behavior_group`, `event_type`, `drawer_read_status`).
+- Column names: lowercase snake_case in SQL. Hibernate auto-converts via `SnakeCasePhysicalNamingStrategy`.
+- Primary keys: UUID type generated with `public.gen_random_uuid()` (requires `pgcrypto` extension).
+- Timestamp columns: use `timestamp with time zone` in SQL. Entities use `LocalDateTime` with UTC zone.
+- Multi-tenant filtering: include `org_id TEXT NOT NULL` on tenant-scoped tables. Queries must always filter by `orgId`.
 
-### Entity Class Structure
-- Always annotate with `@Entity` and `@Table(name = "snake_case_table_name")`
-- Entities live in `common/src/main/java/com/redhat/cloud/notifications/models/`
-- Use `@JsonNaming(SnakeCaseStrategy.class)` for JSON serialization (legacy pattern, being replaced by DTOs)
+### Naming Conventions for Constraints and Indexes
+- Foreign keys: `fk_<table>_<column>` (e.g., `fk_event_event_type_id`).
+- Primary keys (explicit): `pk_<table>` (e.g., `pk_endpoint_event_type`).
+- Indexes: `ix_<table>_<columns>` (e.g., `ix_event_org_id_created_authorization_criterion`).
+- Unique constraints: `<table>_<columns>_key` (e.g., `behavior_group_bundle_id_display_name_org_id_key`).
+- Foreign keys should use `ON DELETE CASCADE` unless the relationship requires `ON DELETE SET NULL` (e.g., notification_history to endpoints).
 
-### ID Generation
-- Primary keys are `UUID` type
-- Two patterns exist:
-  1. `@Id @GeneratedValue private UUID id;` -- Hibernate generates the UUID (used by `Event`, `Application`, `BehaviorGroup`, `EventType`)
-  2. `@Id private UUID id;` with manual generation in `additionalPrePersist()` -- used by `Endpoint` when the ID may be pre-assigned
-- `EndpointProperties` subclasses share the parent `Endpoint` ID via `@MapsId` and `@OneToOne`
-- For `NotificationHistory`, ID is not auto-generated (`@Id` only, no `@GeneratedValue`) because IDs are assigned externally before sending to Camel
+## Entity Conventions
 
-### Timestamp Management
-- Extend `CreationTimestamped` for entities with only a `created` field
-- Extend `CreationUpdateTimestamped` for entities with both `created` and `updated` fields
-- `@PrePersist` sets `created = LocalDateTime.now(UTC)` if null
-- `@PreUpdate` sets `updated = LocalDateTime.now(UTC)`
-- Override `additionalPrePersist()` for custom pre-persist logic (e.g., UUID generation in `Endpoint`)
+### Base Classes
+- Entities with `created`/`updated` timestamps extend `CreationUpdateTimestamped` (which extends `CreationTimestamped`).
+- `@PrePersist` sets `created` to `LocalDateTime.now(UTC)` automatically. `@PreUpdate` sets `updated`.
+- Override `additionalPrePersist()` for entity-specific initialization (e.g., generating UUIDs in `Endpoint`).
 
-### Relationship Mapping
-- Use `FetchType.LAZY` for all `@ManyToOne` and `@OneToOne` relationships
-- Use `@JoinColumn(name = "snake_case_fk_column")` to explicitly name FK columns
-- Composite keys use `@EmbeddedId` with a separate `@Embeddable` ID class (e.g., `BehaviorGroupActionId`, `DrawerNotificationId`)
-- Join table entities use `@MapsId` to map composite key fields to their relationships
-- `@Embedded` is used for value objects like `CompositeEndpointType`
+### Mapping Patterns
+- Annotate every entity with `@Entity` and explicit `@Table(name = "...")`.
+- Use `@JsonNaming(SnakeCaseStrategy.class)` on entities exposed via JSON API.
+- Use `@GeneratedValue` on UUID `@Id` fields. Avoid sequences for new tables -- UUIDs are the standard.
+- Composite keys use `@EmbeddedId` with a separate `@Embeddable` ID class (see `DrawerReadStatus` / `EndpointEventType`).
+- Mark FK relationships `FetchType.LAZY` by default. Use `JOIN FETCH` in queries when eager loading is needed.
+- Properties subtypes (WebhookProperties, CamelProperties, PagerDutyProperties) extend `EndpointProperties` with `@MapsId` sharing the parent Endpoint's UUID.
 
-### Enum Mapping
-- Use `@Enumerated(EnumType.STRING)` for all enum fields
-- Custom converters exist for some types (e.g., `EndpointTypeConverter`, `HttpTypeConverter`)
+### Equals/HashCode
+- Implement `equals` and `hashCode` using only the `id` field via `Objects.equals`/`Objects.hash`.
 
-### Sortable Fields
-- Each sortable entity defines a `public static final Map<String, String> SORT_FIELDS` mapping API field names to HQL paths
-- Example: `Map.of("name", "e.name", "created", "e.created")`
-
-## Repository Pattern
+## Repository Conventions
 
 ### Structure
-- Repositories are `@ApplicationScoped` CDI beans in `backend/src/main/java/com/redhat/cloud/notifications/db/repositories/`
-- Inject `EntityManager` directly (not Spring Data-style interfaces)
-- One repository per aggregate root (e.g., `EndpointRepository`, `BehaviorGroupRepository`, `EventRepository`)
+- This codebase does NOT use Panache. Repositories are plain CDI beans (`@ApplicationScoped`) that inject `EntityManager`.
+- Repository classes live in `<module>/src/main/java/.../db/repositories/`.
+- Use HQL/JPQL for queries, not Criteria API. Native SQL is acceptable only for PostgreSQL-specific operations (array operations, `LIMIT` in subqueries, `ON CONFLICT`).
 
 ### Query Patterns
-- **HQL/JPQL is the primary query language** -- no named queries are used
-- Inline HQL strings built with concatenation and conditional appends
-- Use `entityManager.createQuery(hql, ResultType.class)` for type-safe queries
-- Use `entityManager.createNativeQuery(sql)` only for upserts (`ON CONFLICT ... DO ...`) and complex SQL not expressible in HQL
-- Always use named parameters (`:paramName`), never positional parameters
-- Handle `NoResultException` by returning `null`, `Optional.empty()`, or throwing `NotFoundException`
+- Prefer string-built HQL with named parameters (`:paramName`), never string concatenation of user input.
+- Use the `QueryBuilder`/`WhereBuilder` fluent API (in `com.redhat.cloud.notifications.db.builder`) for complex conditional queries with optional filters.
+- Sorting: entities define a static `SORT_FIELDS` map that maps API field names to HQL paths. Use `Sort.getSort()` to validate sort parameters against this map.
+- Pagination: use `TypedQuery.setMaxResults()` and `setFirstResult()` via `Query.Limit`.
+- For large result sets, fetch IDs first, then load full entities by ID list (see `EventRepository.getEvents` two-query pattern).
 
-### QueryBuilder (Internal DSL)
-- `QueryBuilder` and `WhereBuilder` provide a fluent API for building conditional HQL queries
-- Used for complex filter scenarios like `EndpointRepository.queryBuilderEndpointsPerType()`
-- Supports `.limit()`, `.sort()`, `.build()`, `.buildCount()`
+### Transactions
+- Annotate write methods with `@Transactional` (Jakarta). Read-only methods do not need it.
+- Keep transactions short -- do validation before `@Transactional` methods when possible.
 
-### Multi-tenancy Filtering
-- **Prefer filtering by `orgId`** in queries -- this is the primary tenant isolation mechanism
-- Pattern: `WHERE e.orgId = :orgId` for tenant-scoped entities
-- System-level/default entities may use `WHERE e.orgId IS NULL` or `WHERE (e.orgId = :orgId OR e.orgId IS NULL)` to include both tenant and system records
-- Default/system entities have `orgId = NULL`; tenant entities have a non-null `orgId`
-- Never trust client-supplied orgId values; always extract from the authenticated identity
+## Testing
 
-### Existence Checks
-- Use `SELECT 1 FROM Entity WHERE ...` with `getSingleResult()` wrapped in try/catch `NoResultException`
-- Or use `SELECT COUNT(*) FROM Entity WHERE ...` and compare to 0
+### Test Infrastructure
+- Tests use PostgreSQL 16 via Testcontainers (configured in `TestLifecycleManager`).
+- Flyway runs migrations at test startup (`quarkus.flyway.migrate-at-start=true`).
+- Database tests extend `DbIsolatedTest`, which cleans all tables via `DbCleaner` before and after each test.
+- Use `ResourceHelpers` to create test fixtures (bundles, applications, event types, endpoints).
 
-### Deadlock Prevention
-- Use `PESSIMISTIC_WRITE` lock mode before bulk updates to prevent deadlocks
-- Pattern: lock existing rows, compute diff, delete removed items, insert new items
-- Example in `BehaviorGroupRepository.updateBehaviorGroupActions()` and `updateBehaviorEventTypes()`
+## Verification
 
-## Transaction Management
+```sh
+# Validate migration files parse correctly (Flyway check via Quarkus startup)
+./mvnw -pl backend quarkus:dev -Dquarkus.flyway.migrate-at-start=true -Dquarkus.http.port=0
 
-- Use `jakarta.transaction.Transactional` (JTA), not Spring's `@Transactional`
-- Apply `@Transactional` at the repository method level, not at the class level
-- Read-only methods do NOT use `@Transactional`
-- Write operations (`persist`, `createQuery(...).executeUpdate()`, `delete`) require `@Transactional`
-- When a method calls other `@Transactional` methods, the outer method must also be `@Transactional`
-- After native SQL modifications that Hibernate is unaware of, call `entityManager.flush()` and `entityManager.refresh(entity)`
+# Run database-related tests
+./mvnw -pl backend test -Dtest="*RepositoryTest"
 
-## Pagination and Filtering
+# List all migrations in order
+ls -1 database/src/main/resources/db/migration/ | sort -V
 
-### Query Object
-- `Query` class binds JAX-RS query parameters: `limit` (1-200, default 20), `pageNumber`, `offset`, `sort_by`
-- `offset` takes precedence over `pageNumber` if both are set
-- Pagination uses `TypedQuery.setMaxResults(limit).setFirstResult(offset)`
+# Check for duplicate migration version numbers
+ls database/src/main/resources/db/migration/ | grep -oP 'V\d+\.\d+\.\d+' | sort | uniq -d
 
-### Sort
-- `Sort.getSort(query, defaultSort, SORT_FIELDS)` validates and maps sort parameters
-- Default sort format: `"created:DESC"` (field:direction)
-- Secondary sort: when primary sort is not `created`, append `, e.created DESC` as tiebreaker
-
-### Dynamic Filtering
-- Filters are applied by conditionally appending HQL clauses with `AND`
-- Parameter binding is conditional: only set parameters that correspond to appended clauses
-- Separate `count()` and `getResults()` methods share the same filter-building logic via private helper methods (`addHqlConditions`, `setQueryParams`)
-
-## Database Configuration
-
-- Database: PostgreSQL
-- Extension: `pgcrypto` (for `gen_random_uuid()` in older PostgreSQL versions; built-in since PostgreSQL 13)
-- JSONB columns: configured with `quarkus.hibernate-orm.mapping.format.global=ignore` to decouple Jackson REST serialization from database JSONB serialization
-- JSON column mapping: use `@JdbcTypeCode(SqlTypes.JSON)` for JSON/JSONB columns (e.g., `EventType.availableSeverities`)
-
-## Properties Loading (Endpoint Inheritance)
-
-- `Endpoint` properties are stored in separate tables per type (e.g., `endpoint_webhooks`, `camel_properties`)
-- Properties are `@Transient` on the `Endpoint` entity and loaded via a separate batch query in `loadProperties()`
-- Properties classes extend `EndpointProperties` (`@MappedSuperclass`) and share the parent `Endpoint` ID via `@MapsId`
-- After persisting an `Endpoint`, explicitly call `endpoint.getProperties().setEndpoint(endpoint)` before persisting properties
+# Compile the database module to verify migration resources are included
+./mvnw -pl database compile
+```

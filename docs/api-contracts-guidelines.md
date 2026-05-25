@@ -1,107 +1,99 @@
 # API Contracts Guidelines
 
-Rules and conventions for REST API contracts in `notifications-backend`, derived from existing patterns. All agents MUST follow these during implementation and review.
+## Path Structure and Versioning
 
-## 1. API Versioning Strategy
+- Public API paths follow the pattern `/api/{domain}/v{major}.0/{resource}` where domain is `notifications` or `integrations`. Use constants from `com.redhat.cloud.notifications.Constants` (e.g., `API_INTEGRATIONS_V_1_0`, `API_NOTIFICATIONS_V_2_0`).
+- Internal API paths use `/internal` prefix (`API_INTERNAL` constant). Internal resources are annotated with `@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)` at the class level.
+- The `IncomingRequestInterceptor` rewrites `/api/{domain}/v{N}/...` to `/api/{domain}/v{N}.0/...`, so clients can use either `v1` or `v1.0`.
 
-- Two public API groups exist: `integrations` and `notifications`, each with v1.0 and v2.0.
-- Base paths are constants in `com.redhat.cloud.notifications.Constants`:
-  - `API_INTEGRATIONS_V_1_0 = "/api/integrations/v1.0"`
-  - `API_INTEGRATIONS_V_2_0 = "/api/integrations/v2.0"`
-  - `API_NOTIFICATIONS_V_1_0 = "/api/notifications/v1.0"`
-  - `API_NOTIFICATIONS_V_2_0 = "/api/notifications/v2.0"`
-  - `API_INTERNAL = "/internal"`
-- Version binding uses a **static inner class pattern**. The resource class contains business logic; a static inner class (e.g., `V1`, `V2`) applies only the `@Path` annotation:
+## Resource Class Versioning Pattern
+
+- V1 resources define a static inner class annotated with the versioned path that extends the resource:
   ```java
   public class EndpointResource extends EndpointResourceCommon {
       @Path(API_INTEGRATIONS_V_1_0 + "/endpoints")
       static class V1 extends EndpointResource { }
   }
   ```
-- When v2 extends behavior, create a separate `*V2` class (e.g., `EndpointResourceV2`) with its own inner class `V2`. Factor shared logic into a `*Common` base class (e.g., `EndpointResourceCommon`).
-- V2 endpoints that overlap V1 should set an explicit `operationId` via `@Operation(operationId = "EndpointResource$V2_methodName")` to avoid OpenAPI ID collisions.
-- The key V1-to-V2 difference is paginated responses: V1 returns raw `List<T>`, V2 returns `Page<T>` with links and meta.
+- V2 resources follow the same pattern but extend a separate class. Most V2 GET endpoints rewrite to V1 via `IncomingRequestInterceptor` except for specific endpoints listed in the interceptor (e.g., `endpoints`, `eventTypes/{id}/behaviorGroups`).
+- V2 endpoints that differ from V1 return `Page<T>` with pagination links and meta count. V1 endpoints return `List<T>` or domain-specific page types.
+- When a V2 resource overrides a V1 endpoint, set an explicit `operationId` in `@Operation` using the format `"ResourceName$V2_methodName"`.
 
-## 2. OpenAPI / Swagger Annotations
+## Shared Logic Between Versions
 
-- Use **MicroProfile OpenAPI** annotations (`org.eclipse.microprofile.openapi.annotations.*`), not Swagger annotations.
-- Public endpoints should have `@Operation(summary = "...", description = "...")`. Deprecated endpoints may use `@Operation(hidden = true)`.
-- Use `@APIResponse` / `@APIResponses` for non-default response codes (400, 404, 204).
-- Pagination query params are documented via `@Parameters` / `@Parameter` blocks with `in = ParameterIn.QUERY` and `@Schema(type = SchemaType.INTEGER)`.
-- Mark private/internal-only endpoints with `@Tag(name = OApiFilter.PRIVATE)`. These are filtered out of the public OpenAPI spec.
-- Internal endpoints (under `/internal`) are excluded from scanning via `mp.openapi.scan.exclude.packages` in `application.properties`.
-- The `OApiFilter` strips `DTO` suffix from schema names when no collision exists, so the public OpenAPI shows `Endpoint` instead of `EndpointDTO`.
-- Operation IDs default to `CLASS_METHOD` strategy (`mp.openapi.extensions.smallrye.operationIdStrategy=CLASS_METHOD`).
+- Extract shared logic into a `*Common` base class (e.g., `EndpointResourceCommon`) that both V1 and V2 resource classes extend.
+- Use `protected` internal methods prefixed with `internal` for shared implementations (e.g., `internalGetEndpoints`, `internalGetEndpoint`).
 
-## 3. DTO Layer and MapStruct Mapping
+## DTO Layer
 
-- DTOs live in the `backend` module under `com.redhat.cloud.notifications.models.dto.v1` (versioned package). Entity classes live in the `common` module under `com.redhat.cloud.notifications.models`.
-- DTO classes are `final` classes (e.g., `EndpointDTO`), not interfaces or records.
-- All DTO classes use `@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)` for snake_case JSON serialization.
-- MapStruct mappers use `@Mapper(componentModel = MappingConstants.ComponentModel.CDI)` for CDI injection. They are declared as interfaces.
-- Two mapper types exist:
-  - `EndpointMapper` -- dedicated mapper for complex entities with polymorphic properties; uses `@Named` qualifiers and `default` methods with `switch` expressions for type dispatch.
-  - `CommonMapper` -- general mapper for simple entity-to-DTO conversions (Bundle, Application, EventType, NotificationHistory).
-- When mapping entity-to-DTO, use `@Mapping(target = "fieldName", ignore = true)` for fields not present in the target (e.g., `accountId`, `orgId`, internal IDs).
-- Secrets/credentials mapped from Sources are excluded in DTO-to-entity direction: `@Mapping(target = "bearerAuthenticationSourcesId", ignore = true)`.
-- Polymorphic properties (e.g., `EndpointPropertiesDTO`) use Jackson `@JsonSubTypes` and `@JsonTypeInfo(use = Id.NAME, property = "type", include = As.EXTERNAL_PROPERTY)` on the DTO field.
+- DTOs live in `models.dto.v1` package. Annotate all DTOs with `@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)` for snake_case JSON serialization.
+- Use MapStruct mapper interfaces annotated with `@Mapper(componentModel = MappingConstants.ComponentModel.CDI)` for entity-to-DTO conversion. Place mappers alongside their DTOs (e.g., `EndpointMapper`, `CommonMapper`).
+- Mapper interfaces use `@Named` qualified methods for polymorphic property mapping (e.g., mapping `EndpointProperties` subtypes to their respective DTO subtypes via a `default` switch method).
+- Read-only fields use `@JsonProperty(access = JsonProperty.Access.READ_ONLY)`. Nullable fields use `@JsonInclude(JsonInclude.Include.NON_NULL)`.
 
-## 4. Request/Response Schema Conventions
+## Pagination
 
-- JSON field naming: **snake_case** everywhere via `@JsonNaming(SnakeCaseStrategy.class)` on DTOs and response models.
-- Read-only fields use `@JsonProperty(access = JsonProperty.Access.READ_ONLY)` (e.g., `created`, `updated` timestamps).
-- Nullable/optional fields use `@JsonInclude(JsonInclude.Include.NON_NULL)`.
-- Timestamps use `LocalDateTime` with `@JsonFormat(shape = JsonFormat.Shape.STRING)`.
-- Request body models for create/update are separate classes (e.g., `CreateBehaviorGroupRequest`, `UpdateBehaviorGroupRequest`), not the same as the response DTO.
-- Response models for create operations can be separate (e.g., `CreateBehaviorGroupResponse`) with `@NotNull` on required output fields.
-- Enum DTOs use `@JsonProperty("lowercase_value")` on each constant and `@Schema(enumeration = {...})` on the enum class.
-- Request models use `@JsonIgnoreProperties(ignoreUnknown = true)` to tolerate extra fields.
+- Paginated responses use `Page<T>` with `data` (list), `links` (map of first/last/prev/next URLs), and `meta` (count).
+- Query pagination is handled via `@BeanParam @Valid Query query`. The `Query` class binds `limit` (default 20, max 200), `pageNumber`, `offset`, and `sort_by` from query parameters.
+- Build pagination links with `PageLinksBuilder.build(uriInfo, count, query)` to preserve existing query parameters in link URLs.
+- Domain-specific page types (e.g., `EndpointPage`) extend `Page<T>`.
 
-## 5. Pagination
+## Authorization
 
-- Paginated list endpoints return `Page<T>` (`com.redhat.cloud.notifications.routers.models.Page` in `common` module) containing `data` (list), `links` (map of first/last/prev/next URLs), and `meta` (object with `count`).
-- The `Query` class (`com.redhat.cloud.notifications.db.Query` in `backend` module) is a `@BeanParam` binding `limit`, `pageNumber`, `offset`, and `sort_by` query params.
-- Pagination defaults: `limit` defaults to 20, max 200, min 1. `offset` takes precedence over `pageNumber`.
-- `PageLinksBuilder.build(uriInfo, count, query)` constructs pagination links preserving all original query params.
-- Some V1 endpoints (e.g., `EndpointResource.getEndpoints`) return `EndpointPage` (a typed `Page<EndpointDTO>` subclass). Prefer generic `Page<T>` for new V2 endpoints.
-- Empty results return `Page.EMPTY_PAGE` or construct a Page with empty data, zero count, and computed links.
+- Annotate handler methods with `@Authorization(legacyRBACRole = ..., workspacePermissions = ...)`. This single annotation handles both legacy RBAC and Kessel permission checks depending on configuration.
+- Read operations use `*_VIEW` permissions, write operations use `*_EDIT` permissions. For example: `RBAC_READ_INTEGRATIONS_ENDPOINTS` / `INTEGRATIONS_VIEW` for reads, `RBAC_WRITE_INTEGRATIONS_ENDPOINTS` / `INTEGRATIONS_EDIT` for writes.
+- Obtain `orgId` and `accountId` from `SecurityContext` via `SecurityContextUtil.getOrgId(sec)` and `SecurityContextUtil.getAccountId(sec)`.
 
-## 6. Content Type Handling
+## Media Types
 
-- Standard: `@Consumes(APPLICATION_JSON)` and `@Produces(APPLICATION_JSON)` using `jakarta.ws.rs.core.MediaType` constants.
-- Some mutation endpoints produce `TEXT_PLAIN` for simple status responses (e.g., enable/disable returning `Response.ok()`).
-- DELETE operations return `Response.noContent().build()` (204) with no body, using `@APIResponse(responseCode = "204")`.
-- OpenAPI content types in `@APIResponse` use `@Content(mediaType = APPLICATION_JSON, schema = ...)`.
+- Use `@Produces(APPLICATION_JSON)` for GET endpoints. Use both `@Consumes(APPLICATION_JSON)` and `@Produces(APPLICATION_JSON)` for POST/PUT endpoints that accept and return JSON.
+- Some mutating endpoints return `@Produces(TEXT_PLAIN)` with `Response.ok().build()` or `Response.noContent().build()`.
+- Import media type constants statically: `import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON`.
 
-## 7. Path and Naming Conventions
+## Request Validation
 
-- Resource paths use lowercase plural nouns: `/endpoints`, `/notifications`, `/behaviorGroups` (camelCase exception for behavior groups).
-- Sub-resources use `/{id}/child`: `/endpoints/{id}/history`, `/eventTypes/{eventTypeId}/behaviorGroups`.
-- Path parameters use UUID type: `@PathParam("id") UUID id` or `@RestPath UUID uuid`.
-- Use `@RestPath` (RESTEasy Reactive) interchangeably with `@PathParam`. Both are used in the codebase.
-- Use `@RestQuery` (RESTEasy Reactive) for query params as an alternative to `@QueryParam`.
-- System/special endpoints use descriptive sub-paths: `/endpoints/system/email_subscription`.
+- Annotate request body parameters with `@NotNull @Valid @RequestBody`. For required request bodies, add `@RequestBody(required = true)`.
+- Use Jakarta Bean Validation annotations (`@NotNull`, `@NotBlank`, `@Size`, `@Min`, `@Max`) on DTO fields and `@AssertTrue` for cross-field validation.
+- Use `@Valid @BeanParam` for query parameter objects like `Query`.
 
-## 8. Validation
+## Error Handling
 
-- Request bodies: `@NotNull @Valid EndpointDTO endpointDTO`. The `@RequestBody` annotation is optional and used only for OpenAPI documentation.
-- Bean validation on DTO fields: `@NotNull`, `@Size(max = 255)`, `@Min(0)`, `@NotBlank`.
-- Custom cross-field validation uses `@JsonIgnore @AssertTrue(message = "...")` or `@AssertFalse(message = "...")` methods on DTOs (e.g., `isSubTypePresentWhenRequired()`, `isDisplayNameNotNullAndBlank()`).
-- Custom validators: `@ValidNonPrivateUrl` on URL fields to reject private/internal URLs.
-- `Query` params validated with `@Min` / `@Max` annotations directly on fields.
-- `ConstraintViolationExceptionMapper` returns 400 with structured JSON: `{ "title", "description", "violations": [{ "field", "message" }] }`.
-- Manual validation in handlers for cases Bean Validation cannot cover (e.g., RESTEasy not rejecting null UUIDs in `List<UUID>` bodies).
+- Throw `BadRequestException` with a descriptive message string for client errors. Throw `NotFoundException` (with or without message) for missing resources.
+- `JaxRsExceptionMapper` maps `WebApplicationException` subtypes to responses, returning the exception message as a plain-text entity.
+- `ConstraintViolationExceptionMapper` returns a JSON body with `title`, `description`, and `violations` array (each with `field` and `message`).
+- `NotFoundExceptionMapper` returns `TEXT_PLAIN` with the exception message.
+- The global `ObjectMapper` has `ACCEPT_CASE_INSENSITIVE_ENUMS` enabled via `RegisterCustomModuleCustomizer`.
 
-## 9. Authorization
+## OpenAPI Annotations
 
-- Most public endpoints should have `@Authorization(legacyRBACRole = RBAC_*, workspacePermissions = WorkspacePermission.*)`. Endpoints marked with `@Tag(name = OApiFilter.PRIVATE)` (e.g., UserConfigResource, DrawerResource, StatusResource) extract orgId/username from SecurityContext but do not use `@Authorization`.
-- Read endpoints use `RBAC_READ_*` / `*_VIEW` permissions; write endpoints use `RBAC_WRITE_*` / `*_EDIT`.
-- Internal endpoints use `@RolesAllowed(RBAC_INTERNAL_ADMIN)` or `@RolesAllowed(RBAC_INTERNAL_USER)` or `@PermitAll`.
-- Credential redaction in responses is based on write permission: users without write access see `*****` for secrets.
+- Use MicroProfile OpenAPI annotations: `@Operation(summary, description)`, `@APIResponse`, `@APIResponses`, `@Parameter`, `@Tag`.
+- Mark private/internal-only endpoints with `@Tag(name = OApiFilter.PRIVATE)` to exclude them from public OpenAPI docs.
+- OpenAPI operation IDs default to `CLASS_METHOD` strategy (configured in `application.properties`).
+- The `OApiFilter` class generates separate OpenAPI specs per domain (`/api/notifications/v1.0/openapi.json`, `/api/integrations/v1.0/openapi.json`) by filtering paths and schemas. DTO suffix removal happens automatically for schema names ending in `DTO` when no conflict exists.
+- Internal and engine packages are excluded from OpenAPI scanning via `mp.openapi.scan.exclude.packages`.
 
-## 10. Error Handling
+## HTTP Method Conventions
 
-- Throw JAX-RS exceptions directly: `BadRequestException`, `NotFoundException`, `ForbiddenException`.
-- Exception mappers exist for: `ConstraintViolationException` (400), `JsonParseException`, `NotFoundException`, general `JaxRsExceptionMapper`.
-- Error messages should be user-facing strings, not stack traces.
-- Business rule violations use `BadRequestException` with descriptive messages (e.g., `"The endpoint URL must start with \"https\""`).
+- `DELETE` for resource deletion returns `Response.noContent().build()` (204).
+- `PUT` for updates returns `Response.ok().build()` (200) with `TEXT_PLAIN`.
+- `POST` for creation returns the created DTO directly (200), not 201.
+- Enable/disable toggle endpoints use `PUT /{id}/enable` (enable, returns 200) and `DELETE /{id}/enable` (disable, returns 204).
+
+## Maintenance Mode
+
+- `MaintenanceModeRequestFilter` returns 503 with "Maintenance in progress" for affected paths. Internal, health, metrics, and status paths are excluded.
+
+## Verification
+
+```shell
+# Compile and validate OpenAPI generation
+./mvnw -pl backend quarkus:dev &
+curl -s http://localhost:8085/api/integrations/v1.0/openapi.json | python3 -m json.tool > /dev/null
+curl -s http://localhost:8085/api/notifications/v1.0/openapi.json | python3 -m json.tool > /dev/null
+
+# Run backend tests (includes API contract tests)
+./mvnw verify -pl backend
+
+# Run checkstyle
+./mvnw checkstyle:check -pl backend
+```
