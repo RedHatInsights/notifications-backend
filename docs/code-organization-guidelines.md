@@ -117,17 +117,17 @@ Star imports are forbidden (except static). No `@author` Javadoc tags.
 
 ```bash
 # Validate checkstyle compliance across all modules
-./mvnw checkstyle:check
+./mvnw validate --no-transfer-progress
 
 # Compile all modules
-./mvnw compile -DskipTests
+./mvnw compile -DskipTests --no-transfer-progress
 
 # Run tests for a single module
-./mvnw test -pl backend
+./mvnw test -pl backend --no-transfer-progress
 
 # Run tests for a connector and its framework dependencies
-./mvnw test -pl connector-webhook -am
+./mvnw test -pl connector-webhook -am --no-transfer-progress
 
 # Verify the full build
-./mvnw verify
+./mvnw clean verify --no-transfer-progress
 ```
