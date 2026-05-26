@@ -70,6 +70,12 @@ public class Rhel {
     public static final String VULNERABILITY_NEW_CVE_SEVERITY = "new-cve-severity";
     public static final String VULNERABILITY_NEW_CVE_CVSS = "new-cve-cvss";
     public static final String VULNERABILITY_NEW_CVE_SECURITY_RULE = "new-cve-security-rule";
+    public static final String VULNERABILITY_NEW_CVE_ALL = "new-cve-all";
+    public static final String VULNERABILITY_SYSTEM_CVE_KNOWN_EXPLOIT = "system-cve-known-exploit";
+    public static final String VULNERABILITY_SYSTEM_CVE_SEVERITY = "system-cve-severity";
+    public static final String VULNERABILITY_SYSTEM_CVE_CVSS = "system-cve-cvss";
+    public static final String VULNERABILITY_SYSTEM_CVE_SECURITY_RULE = "system-cve-security-rule";
+    public static final String VULNERABILITY_SYSTEM_CVE_ALL = "system-cve-all";
 
     public static final Map<TemplateDefinition, String> templatesMap = Map.ofEntries(
         // Advisor
@@ -129,6 +135,18 @@ public class Rhel {
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_CVSS), VULNERABILITY_FOLDER_NAME + "newCveHighCvssEmailBody.html"),
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_SECURITY_RULE), VULNERABILITY_FOLDER_NAME + "newCveSecurityRuleBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_SECURITY_RULE), VULNERABILITY_FOLDER_NAME + "newCveSecurityRuleEmailBody.html"),
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_ALL), VULNERABILITY_FOLDER_NAME + "newCveAllBody.md"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_NEW_CVE_ALL), VULNERABILITY_FOLDER_NAME + "newCveAllEmailBody.html"),
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_SYSTEM_CVE_KNOWN_EXPLOIT), VULNERABILITY_FOLDER_NAME + "systemCveKnownExploitBody.md"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_SYSTEM_CVE_KNOWN_EXPLOIT), VULNERABILITY_FOLDER_NAME + "systemCveKnownExploitEmailBody.html"),
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_SYSTEM_CVE_SEVERITY), VULNERABILITY_FOLDER_NAME + "systemCveCritSeverityBody.md"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_SYSTEM_CVE_SEVERITY), VULNERABILITY_FOLDER_NAME + "systemCveCritSeverityEmailBody.html"),
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_SYSTEM_CVE_CVSS), VULNERABILITY_FOLDER_NAME + "systemCveHighCvssBody.md"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_SYSTEM_CVE_CVSS), VULNERABILITY_FOLDER_NAME + "systemCveHighCvssEmailBody.html"),
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_SYSTEM_CVE_SECURITY_RULE), VULNERABILITY_FOLDER_NAME + "systemCveSecurityRuleBody.md"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_SYSTEM_CVE_SECURITY_RULE), VULNERABILITY_FOLDER_NAME + "systemCveSecurityRuleEmailBody.html"),
+        entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_SYSTEM_CVE_ALL), VULNERABILITY_FOLDER_NAME + "systemCveAllBody.md"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, VULNERABILITY_SYSTEM_CVE_ALL), VULNERABILITY_FOLDER_NAME + "systemCveAllEmailBody.html"),
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, VULNERABILITY_APP_NAME, null), VULNERABILITY_FOLDER_NAME + "dailyEmailBody.html")
     );
 }
