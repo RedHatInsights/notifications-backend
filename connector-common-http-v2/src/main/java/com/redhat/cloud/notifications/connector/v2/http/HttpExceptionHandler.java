@@ -4,19 +4,24 @@ import com.redhat.cloud.notifications.connector.v2.ExceptionHandler;
 import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpExceptionDetails;
 import com.redhat.cloud.notifications.connector.v2.http.models.NotificationToConnectorHttp;
 import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
+import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.ProcessingException;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
+import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
+import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.CONNECTION_REFUSED;
+import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.CONNECT_TIMEOUT;
 import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTTP_3XX;
 import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTTP_4XX;
 import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTTP_5XX;
@@ -38,10 +43,18 @@ public class HttpExceptionHandler extends ExceptionHandler {
     @Override
     protected HandledExceptionDetails process(Throwable t, IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
         HandledHttpExceptionDetails details = new HandledHttpExceptionDetails();
-        if (t instanceof ClientWebApplicationException e) {
+        // The Quarkus REST Client Reactive wraps network-level exceptions (DNS failures, SSL errors, timeouts)
+        // in ProcessingException per the JAX-RS spec. Unwrap it to match the actual cause below.
+        if (t instanceof ProcessingException && t.getCause() != null) {
+            return process(t.getCause(), incomingCloudEvent);
+        } else if (t instanceof ClientWebApplicationException e) {
             details = manageReturnedStatusCode(incomingCloudEvent, e.getResponse().getStatus(), e.getResponse().readEntity(String.class));
+        } else if (t instanceof ConnectTimeoutException) {
+            details.httpErrorType = CONNECT_TIMEOUT;
         } else if (t instanceof SocketTimeoutException) {
             details.httpErrorType = SOCKET_TIMEOUT;
+        } else if (t instanceof ConnectException) {
+            details.httpErrorType = CONNECTION_REFUSED;
         } else if (t instanceof SSLHandshakeException) {
             details.httpErrorType = SSL_HANDSHAKE;
         } else if (t instanceof UnknownHostException) {

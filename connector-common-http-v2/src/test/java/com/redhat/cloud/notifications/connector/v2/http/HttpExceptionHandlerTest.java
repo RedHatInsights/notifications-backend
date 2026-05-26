@@ -2,19 +2,24 @@ package com.redhat.cloud.notifications.connector.v2.http;
 
 import com.redhat.cloud.notifications.connector.v2.BaseConnectorIntegrationTest;
 import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpExceptionDetails;
+import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.test.junit.QuarkusTest;
 import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Response;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
+import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
+import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.CONNECTION_REFUSED;
+import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.CONNECT_TIMEOUT;
 import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTTP_3XX;
 import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTTP_4XX;
 import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTTP_5XX;
@@ -212,6 +217,104 @@ class HttpExceptionHandlerTest {
         assertNotNull(result);
         assertNull(result.httpErrorType);
         assertEquals(200, result.httpStatusCode);
+        assertEquals("https://example.com/webhook", result.targetUrl);
+    }
+
+    @Test
+    void testProcessConnectTimeoutException() {
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = buildIncomingCloudEvent("https://example.com/webhook");
+        ConnectTimeoutException exception = new ConnectTimeoutException("connection timed out");
+
+        HandledHttpExceptionDetails result = (HandledHttpExceptionDetails) httpExceptionHandler.process(exception, incomingCloudEvent);
+
+        assertNotNull(result);
+        assertEquals(CONNECT_TIMEOUT, result.httpErrorType);
+        assertEquals("https://example.com/webhook", result.targetUrl);
+        assertNull(result.httpStatusCode);
+    }
+
+    @Test
+    void testProcessConnectException() {
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = buildIncomingCloudEvent("https://example.com/webhook");
+        ConnectException exception = new ConnectException("Connection refused");
+
+        HandledHttpExceptionDetails result = (HandledHttpExceptionDetails) httpExceptionHandler.process(exception, incomingCloudEvent);
+
+        assertNotNull(result);
+        assertEquals(CONNECTION_REFUSED, result.httpErrorType);
+        assertEquals("https://example.com/webhook", result.targetUrl);
+        assertNull(result.httpStatusCode);
+    }
+
+    @Test
+    void testProcessWrappedUnknownHostException() {
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = buildIncomingCloudEvent("https://example.com/webhook");
+        ProcessingException exception = new ProcessingException(new UnknownHostException("unknown.host.example.com"));
+
+        HandledHttpExceptionDetails result = (HandledHttpExceptionDetails) httpExceptionHandler.process(exception, incomingCloudEvent);
+
+        assertNotNull(result);
+        assertEquals(UNKNOWN_HOST, result.httpErrorType);
+        assertEquals("https://example.com/webhook", result.targetUrl);
+    }
+
+    @Test
+    void testProcessWrappedSSLHandshakeException() {
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = buildIncomingCloudEvent("https://example.com/webhook");
+        ProcessingException exception = new ProcessingException(new SSLHandshakeException("SSL handshake failed"));
+
+        HandledHttpExceptionDetails result = (HandledHttpExceptionDetails) httpExceptionHandler.process(exception, incomingCloudEvent);
+
+        assertNotNull(result);
+        assertEquals(SSL_HANDSHAKE, result.httpErrorType);
+        assertEquals("https://example.com/webhook", result.targetUrl);
+    }
+
+    @Test
+    void testProcessWrappedSocketTimeoutException() {
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = buildIncomingCloudEvent("https://example.com/webhook");
+        ProcessingException exception = new ProcessingException(new SocketTimeoutException("Read timed out"));
+
+        HandledHttpExceptionDetails result = (HandledHttpExceptionDetails) httpExceptionHandler.process(exception, incomingCloudEvent);
+
+        assertNotNull(result);
+        assertEquals(SOCKET_TIMEOUT, result.httpErrorType);
+        assertEquals("https://example.com/webhook", result.targetUrl);
+    }
+
+    @Test
+    void testProcessWrappedConnectTimeoutException() {
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = buildIncomingCloudEvent("https://example.com/webhook");
+        ProcessingException exception = new ProcessingException(new ConnectTimeoutException("connection timed out"));
+
+        HandledHttpExceptionDetails result = (HandledHttpExceptionDetails) httpExceptionHandler.process(exception, incomingCloudEvent);
+
+        assertNotNull(result);
+        assertEquals(CONNECT_TIMEOUT, result.httpErrorType);
+        assertEquals("https://example.com/webhook", result.targetUrl);
+    }
+
+    @Test
+    void testProcessWrappedConnectException() {
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = buildIncomingCloudEvent("https://example.com/webhook");
+        ProcessingException exception = new ProcessingException(new ConnectException("Connection refused"));
+
+        HandledHttpExceptionDetails result = (HandledHttpExceptionDetails) httpExceptionHandler.process(exception, incomingCloudEvent);
+
+        assertNotNull(result);
+        assertEquals(CONNECTION_REFUSED, result.httpErrorType);
+        assertEquals("https://example.com/webhook", result.targetUrl);
+    }
+
+    @Test
+    void testProcessNestedProcessingException() {
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = buildIncomingCloudEvent("https://example.com/webhook");
+        ProcessingException exception = new ProcessingException(new ProcessingException(new UnknownHostException("unknown.host.example.com")));
+
+        HandledHttpExceptionDetails result = (HandledHttpExceptionDetails) httpExceptionHandler.process(exception, incomingCloudEvent);
+
+        assertNotNull(result);
+        assertEquals(UNKNOWN_HOST, result.httpErrorType);
         assertEquals("https://example.com/webhook", result.targetUrl);
     }
 
