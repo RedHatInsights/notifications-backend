@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeBehavior;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -139,6 +140,11 @@ public class BehaviorGroupRepository {
         } else {
             behaviorGroup.setBundle(bundle);
             entityManager.persist(behaviorGroup);
+
+            // CREATE operation - SEC-MON-REQ-1 compliance (EOI-1 pii_manipulation)
+            Log.infof("[action: CREATE][resource_type: behavior_group][resource_id: %s][org_id: %s][outcome: success] Behavior group created",
+                behaviorGroup.getId(), orgId);
+
             behaviorGroup.filterOutBundle();
             return behaviorGroup;
         }
@@ -233,7 +239,12 @@ public class BehaviorGroupRepository {
             q = q.setParameter("orgId", orgId);
         }
 
-        q.executeUpdate();
+        int rowCount = q.executeUpdate();
+        String outcome = rowCount > 0 ? "success" : "failure";
+
+        // UPDATE operation - SEC-MON-REQ-1 compliance (EOI-1 pii_manipulation)
+        Log.infof("[action: UPDATE][resource_type: behavior_group][resource_id: %s][org_id: %s][outcome: %s] Behavior group updated",
+            behaviorGroup.getId(), orgId, outcome);
     }
 
     private void checkBehaviorGroupDisplayNameDuplicate(String orgId, BehaviorGroup behaviorGroup, boolean isDefaultBehaviorGroup) {
@@ -288,7 +299,14 @@ public class BehaviorGroupRepository {
             q = q.setParameter("orgId", orgId);
         }
 
-        return q.executeUpdate() > 0;
+        boolean success = q.executeUpdate() > 0;
+        String outcome = success ? "success" : "failure";
+
+        // DELETE operation - SEC-MON-REQ-1 compliance (EOI-1 pii_manipulation)
+        Log.infof("[action: DELETE][resource_type: behavior_group][resource_id: %s][org_id: %s][outcome: %s] Behavior group deleted",
+            behaviorGroupId, orgId, outcome);
+
+        return success;
     }
 
     @Transactional

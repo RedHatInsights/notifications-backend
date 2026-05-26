@@ -35,6 +35,11 @@ public class TemplateRepository {
     @Transactional
     public Template createTemplate(Template template) {
         entityManager.persist(template);
+
+        // CREATE operation - SEC-MON-REQ-1 compliance (EOI-2 system_object_manipulation)
+        Log.infof("[action: CREATE][resource_type: template][resource_id: %s][principal: system][outcome: success] Template created",
+            template.getId());
+
         return template;
     }
 
@@ -57,7 +62,15 @@ public class TemplateRepository {
                 .setParameter("data", template.getData())
                 .setParameter("id", id)
                 .executeUpdate();
-        return rowCount > 0;
+
+        boolean success = rowCount > 0;
+        String outcome = success ? "success" : "failure";
+
+        // UPDATE operation - SEC-MON-REQ-1 compliance (EOI-2 system_object_manipulation)
+        Log.infof("[action: UPDATE][resource_type: template][resource_id: %s][principal: system][outcome: %s] Template updated",
+            id, outcome);
+
+        return success;
     }
 
     @Transactional
@@ -78,7 +91,15 @@ public class TemplateRepository {
                 int rowCount = entityManager.createQuery(deleteHql)
                         .setParameter("id", id)
                         .executeUpdate();
-                return rowCount > 0;
+
+                boolean success = rowCount > 0;
+                String outcome = success ? "success" : "failure";
+
+                // DELETE operation - SEC-MON-REQ-1 compliance (EOI-2 system_object_manipulation)
+                Log.infof("[action: DELETE][resource_type: template][resource_id: %s][principal: system][outcome: %s] Template deleted",
+                    id, outcome);
+
+                return success;
             }
         }
     }

@@ -83,7 +83,8 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
         try {
             consoleIdentity = getRhIdentityFromString(request.getXRhIdentityHeaderValue());
         } catch (final IllegalArgumentException e) {
-            Log.warnf(e, "[x-rh-identity: %s] Unable to decode identity header", request.getXRhIdentityHeaderValue());
+            // Authentication failure - SEC-MON-REQ-1 compliance (EOI-7 invalid_login)
+            Log.warnf("[action: AUTHENTICATE][auth_method: x-rh-identity][outcome: failure][reason: invalid_header] Unable to decode identity header");
 
             throw new AuthenticationFailedException();
         }
@@ -95,7 +96,8 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                 // with an "org_id", since it is crucial for our application
                 // to work and make the proper relations.
                 if (rhIdentity.getOrgId() == null || rhIdentity.getOrgId().isBlank()) {
-                    Log.warnf("[x-rh-identity: %s] Rejected request header because the \"org_id\" field is missing in the identity header");
+                    // Authentication failure - SEC-MON-REQ-1 compliance (EOI-7 invalid_login)
+                    Log.warnf("[action: AUTHENTICATE][auth_method: x-rh-identity][outcome: failure][reason: missing_org_id] Rejected request header because the \"org_id\" field is missing in the identity header");
 
                     return Uni.createFrom().failure(new AuthenticationFailedException());
                 }
@@ -122,7 +124,8 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                 if (this.backendConfig.isRBACEnabled()) {
                     return this.buildRBACSecurityIdentity(request.getXRhIdentityHeaderValue(), rhIdPrincipal);
                 } else if (!this.environment.isLocal()) {
-                    Log.errorf("Kessel and RBAC are disabled in a non development environment");
+                    // Authentication failure - SEC-MON-REQ-1 compliance (EOI-7 invalid_login)
+                    Log.errorf("[action: AUTHENTICATE][auth_method: x-rh-identity][outcome: failure][reason: kessel_rbac_disabled] Kessel and RBAC are disabled in a non development environment");
 
                     return Uni.createFrom().failure(new AuthenticationFailedException());
                 } else {
@@ -139,7 +142,9 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
             // We do not support any other authentication methods for the
             // moment.
             default -> {
-                Log.warnf("[identity_type: %s][identity_name: %s] Unprocessable identity", consoleIdentity.type, consoleIdentity.getName());
+                // Authentication failure - SEC-MON-REQ-1 compliance (EOI-7 invalid_login)
+                Log.warnf("[action: AUTHENTICATE][auth_method: x-rh-identity][outcome: failure][reason: unprocessable_identity][identity_type: %s][identity_name: %s] Unprocessable identity",
+                    consoleIdentity.type, consoleIdentity.getName());
 
                 return Uni.createFrom().failure(new AuthenticationFailedException());
             }
