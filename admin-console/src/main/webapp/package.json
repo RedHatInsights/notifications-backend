@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@patternfly/react-code-editor": "6.5.0",
+    "@patternfly/react-code-editor": "6.5.1",
     "@patternfly/react-core": "6.4.3",
     "@patternfly/react-icons": "6.4.0",
     "@patternfly/react-table": "6.4.1",
