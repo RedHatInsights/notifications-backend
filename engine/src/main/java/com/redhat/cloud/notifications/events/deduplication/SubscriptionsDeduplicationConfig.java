@@ -57,6 +57,7 @@ public class SubscriptionsDeduplicationConfig implements EventDeduplicationConfi
         Optional.ofNullable(context.getString("service_level")).ifPresent(sla -> deduplicationKey.put("service_level", sla));
         Optional.ofNullable(context.getString("usage")).ifPresent(usage -> deduplicationKey.put("usage", usage));
         deduplicationKey.put("month", event.getTimestamp().format(MONTH_FORMATTER));
+        Optional.ofNullable(context.getString("preferences_hash")).ifPresent(hash -> deduplicationKey.put("preferences_hash", hash));
         if (engineConfig.isSubscriptionsDeduplicationWillBeNotifiedEnabled(event.getOrgId())) {
             deduplicationKey.put("will_be_notified", willBeNotified(event.getOrgId(), event.getEventType().getId()));
         }
