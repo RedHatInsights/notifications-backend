@@ -321,6 +321,43 @@ public class TestHelpers {
         return emailActionMessage;
     }
 
+    public static Action createSystemVulnerabilityAction() {
+        Action emailActionMessage = new Action();
+        emailActionMessage.setBundle(StringUtils.EMPTY);
+        emailActionMessage.setApplication(StringUtils.EMPTY);
+        emailActionMessage.setTimestamp(LocalDateTime.of(2020, 10, 3, 15, 22, 13, 25));
+        emailActionMessage.setEventType(EVENT_TYPE);
+        emailActionMessage.setRecipients(List.of());
+
+        emailActionMessage.setContext(
+            new Context.ContextBuilder()
+                .withAdditionalProperty("display_name", "test-system")
+                .withAdditionalProperty("inventory_id", "b8125066-0db2-47df-b37a-09e71979269f")
+                .withAdditionalProperty("vulnerability", Map.of("reported_cves", List.of("CVE1", "CVE2", "CVE3")))
+                .build()
+        );
+
+        emailActionMessage.setEvents(List.of(
+            new Event.EventBuilder().withMetadata(new Metadata.MetadataBuilder()
+                    .build())
+                .withPayload(new Payload.PayloadBuilder()
+                    .withAdditionalProperty("reported_cve", "CVE-TEST-1")
+                    .build())
+                .build(),
+            new Event.EventBuilder().withMetadata(new Metadata.MetadataBuilder()
+                    .build())
+                .withPayload(new Payload.PayloadBuilder()
+                    .withAdditionalProperty("reported_cve", "CVE-TEST-2")
+                    .build())
+                .build()
+        ));
+
+        emailActionMessage.setAccountId(StringUtils.EMPTY);
+        emailActionMessage.setOrgId(DEFAULT_ORG_ID);
+
+        return emailActionMessage;
+    }
+
     public static Action createSourcesAction() {
         Action emailActionMessage = new Action();
         emailActionMessage.setBundle(StringUtils.EMPTY);
