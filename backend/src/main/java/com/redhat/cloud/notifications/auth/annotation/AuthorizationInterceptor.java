@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
+import io.quarkus.logging.Log;
 import jakarta.annotation.Priority;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
@@ -83,6 +84,10 @@ public class AuthorizationInterceptor {
             if (securityContext.isUserInRole(annotation.legacyRBACRole())) {
                 return ctx.proceed();
             } else {
+                // Authorization failure - SEC-MON-REQ-1 compliance (EOI-8 authorization_failure)
+                String orgId = SecurityContextUtil.getOrgId(securityContext);
+                Log.warnf("[action: AUTHORIZE][resource_type: endpoint][org_id: %s][required_role: %s][outcome: failure][reason: rbac_permission_denied] Authorization denied",
+                    orgId, annotation.legacyRBACRole());
                 throw new ForbiddenException();
             }
         }

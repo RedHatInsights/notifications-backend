@@ -66,6 +66,9 @@ public class DailyEmailAggregationJob {
 
     @ActivateRequestContext
     public void processDailyEmail() {
+        // Job start - SEC-MON-REQ-1 compliance (EOI-3 admin_action, EOI-5 process_status)
+        Log.infof("[action: RUN_JOB][resource_type: daily_email_aggregation][principal: system][outcome: started] Daily email aggregation job started");
+
         CollectorRegistry registry = new CollectorRegistry();
         Gauge duration = Gauge
                 .build()
@@ -103,8 +106,12 @@ public class DailyEmailAggregationJob {
                     .help("Last time the aggregator job succeeded.")
                     .register(registry);
             lastSuccess.setToCurrentTime();
+
+            // Job completion - SEC-MON-REQ-1 compliance (EOI-3 admin_action, EOI-5 process_status)
+            Log.infof("[action: RUN_JOB][resource_type: daily_email_aggregation][principal: system][outcome: success] Daily email aggregation job completed successfully");
         } catch (Exception ex) {
-            Log.error("Daily aggregation job failed", ex);
+            // Job failure - SEC-MON-REQ-1 compliance (EOI-3 admin_action, EOI-11 warnings_or_errors)
+            Log.errorf("[action: RUN_JOB][resource_type: daily_email_aggregation][principal: system][outcome: failure][reason: job_failed] Daily aggregation job failed");
             throw ex;
         } finally {
             durationTimer.setDuration();

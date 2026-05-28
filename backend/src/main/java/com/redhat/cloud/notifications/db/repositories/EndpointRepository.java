@@ -86,6 +86,11 @@ public class EndpointRepository {
                     break;
             }
         }
+
+        // CREATE operation - SEC-MON-REQ-1 compliance (EOI-1 pii_manipulation)
+        Log.infof("[action: CREATE][resource_type: endpoint][resource_id: %s][org_id: %s][outcome: success] Endpoint created",
+            endpoint.getId(), endpoint.getOrgId());
+
         return endpoint;
     }
 
@@ -190,7 +195,15 @@ public class EndpointRepository {
                 .setParameter("id", id)
                 .setParameter("orgId", orgId)
                 .executeUpdate();
-        return rowCount > 0;
+
+        boolean success = rowCount > 0;
+        String outcome = success ? "success" : "failure";
+
+        // DELETE operation - SEC-MON-REQ-1 compliance (EOI-1 pii_manipulation)
+        Log.infof("[action: DELETE][resource_type: endpoint][resource_id: %s][org_id: %s][outcome: %s] Endpoint deleted",
+            id, orgId, outcome);
+
+        return success;
         // Actually, the endpoint targeting this should be repeatable
     }
 
@@ -235,39 +248,52 @@ public class EndpointRepository {
                 .setParameter("id", endpoint.getId())
                 .executeUpdate();
 
+        boolean success;
         if (endpointRowCount == 0) {
-            return false;
+            success = false;
         } else if (endpoint.getProperties() == null) {
-            return true;
+            success = true;
         } else {
             switch (endpoint.getType()) {
                 case ANSIBLE:
                 case WEBHOOK:
                     WebhookProperties properties = endpoint.getProperties(WebhookProperties.class);
-                    return entityManager.createQuery(webhookQuery)
+                    success = entityManager.createQuery(webhookQuery)
                             .setParameter("url", properties.getUrl())
                             .setParameter("method", properties.getMethod())
                             .setParameter("disableSslVerification", properties.getDisableSslVerification())
                             .setParameter("endpointId", endpoint.getId())
                             .executeUpdate() > 0;
+                    break;
                 case CAMEL:
                     CamelProperties cAttr = (CamelProperties) endpoint.getProperties();
-                    return entityManager.createQuery(camelQuery)
+                    success = entityManager.createQuery(camelQuery)
                             .setParameter("url", cAttr.getUrl())
                             .setParameter("disableSslVerification", cAttr.getDisableSslVerification())
                             .setParameter("endpointId", endpoint.getId())
                             .setParameter("extras", cAttr.getExtras())
                             .executeUpdate() > 0;
+                    break;
                 case PAGERDUTY:
                     PagerDutyProperties pdAttr = (PagerDutyProperties) endpoint.getProperties();
-                    return entityManager.createQuery(pagerDutyQuery)
+                    success = entityManager.createQuery(pagerDutyQuery)
                             .setParameter("severity", pdAttr.getSeverity())
                             .setParameter("endpointId", endpoint.getId())
                             .executeUpdate() > 0;
+                    break;
                 default:
-                    return true;
+                    success = true;
+                    break;
             }
         }
+
+        String outcome = success ? "success" : "failure";
+
+        // UPDATE operation - SEC-MON-REQ-1 compliance (EOI-1 pii_manipulation)
+        Log.infof("[action: UPDATE][resource_type: endpoint][resource_id: %s][org_id: %s][outcome: %s] Endpoint updated",
+            endpoint.getId(), endpoint.getOrgId(), outcome);
+
+        return success;
     }
 
     public void loadProperties(List<Endpoint> endpoints) {

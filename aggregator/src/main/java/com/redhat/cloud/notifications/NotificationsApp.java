@@ -18,9 +18,15 @@ public class NotificationsApp implements QuarkusApplication {
 
     @Override
     public int run(String... args) {
+        // Startup - SEC-MON-REQ-1 compliance (EOI-5 process_status)
+        Log.infof("[action: STARTUP][resource_type: email_aggregator][principal: system][outcome: success] Email aggregator starting");
+
         Log.info(readGitProperties());
 
         dailyEmailAggregationJob.processDailyEmail();
+
+        // Graceful shutdown - SEC-MON-REQ-1 compliance (EOI-5 process_status)
+        Log.infof("[action: SHUTDOWN][resource_type: email_aggregator][principal: system][outcome: success] Email aggregator shutting down gracefully");
 
         return 0;
     }
