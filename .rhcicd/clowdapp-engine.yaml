@@ -81,6 +81,7 @@ objects:
           timeoutSeconds: 1
           successThreshold: 1
           failureThreshold: 5
+        terminationGracePeriodSeconds: 75
         env:
         - name: ENV_BASE_URL
           value: ${ENV_BASE_URL}
