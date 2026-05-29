@@ -1,8 +1,7 @@
-package com.redhat.cloud.notifications.mcp.tools;
+package com.redhat.cloud.notifications.mcp;
 
 import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
-import com.redhat.cloud.notifications.mcp.McpTestHelpers;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
@@ -19,7 +18,7 @@ import static io.restassured.RestAssured.given;
  * Base class for MCP tool tests providing shared setup and helper methods.
  * Subclasses must be annotated with @QuarkusTest and @QuarkusTestResource(TestLifecycleManager.class).
  */
-public abstract class McpToolTestBase {
+public abstract class McpTestBase {
 
     protected static final String MCP_ENDPOINT = "/mcp";
     protected static final String ACCEPT_MCP = "application/json, text/event-stream";

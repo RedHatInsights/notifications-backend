@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.mcp.tools;
 
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
+import com.redhat.cloud.notifications.mcp.McpTestBase;
 import com.redhat.cloud.notifications.mcp.TestLifecycleManager;
 import io.quarkus.cache.Cache;
 import io.quarkus.cache.CacheName;
@@ -22,7 +23,7 @@ import static org.hamcrest.Matchers.is;
  */
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class MetadataToolsTest extends McpToolTestBase {
+public class MetadataToolsTest extends McpTestBase {
 
     @CacheName("mcp-get-severities")
     Cache severitiesCache;

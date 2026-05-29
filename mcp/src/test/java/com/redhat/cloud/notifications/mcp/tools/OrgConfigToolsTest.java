@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.mcp.tools;
 
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
+import com.redhat.cloud.notifications.mcp.McpTestBase;
 import com.redhat.cloud.notifications.mcp.TestLifecycleManager;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -19,7 +20,7 @@ import static org.hamcrest.Matchers.is;
  */
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class OrgConfigToolsTest extends McpToolTestBase {
+public class OrgConfigToolsTest extends McpTestBase {
 
     private static final String GET_DAILY_DIGEST_TIME_PREFERENCE_BODY = """
             {

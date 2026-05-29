@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.mcp.tools;
 
+import com.redhat.cloud.notifications.mcp.McpTestBase;
 import com.redhat.cloud.notifications.mcp.McpTestHelpers;
 import com.redhat.cloud.notifications.mcp.TestLifecycleManager;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -15,7 +16,7 @@ import static org.hamcrest.Matchers.containsString;
  */
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class ServerToolsTest extends McpToolTestBase {
+public class ServerToolsTest extends McpTestBase {
 
     private static final String SERVER_INFO_BODY = """
             {

@@ -1,14 +1,7 @@
 package com.redhat.cloud.notifications.mcp;
 
-import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.http.ContentType;
-import io.restassured.response.ValidatableResponse;
-import io.restassured.specification.RequestSpecification;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
@@ -27,30 +20,7 @@ import static org.hamcrest.Matchers.notNullValue;
  */
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class McpAuthenticationTest {
-
-    private static final String MCP_ENDPOINT = "/mcp";
-    private static final String ACCEPT_MCP = "application/json, text/event-stream";
-    private static final String AUTH_SUCCESS_COUNTER = "notifications.mcp.auth.success";
-    private static final String AUTH_FAILURE_COUNTER = "notifications.mcp.auth.failure";
-
-    @Inject
-    MicrometerAssertionHelper micrometerAssertionHelper;
-
-    @BeforeEach
-    void beforeEach() {
-        micrometerAssertionHelper.saveCounterValuesBeforeTest(AUTH_SUCCESS_COUNTER);
-        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(AUTH_FAILURE_COUNTER, "reason", "missing_header");
-        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(AUTH_FAILURE_COUNTER, "reason", "missing_org_id");
-        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(AUTH_FAILURE_COUNTER, "reason", "invalid_header");
-        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(AUTH_FAILURE_COUNTER, "reason", "missing_user_id");
-        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(AUTH_FAILURE_COUNTER, "reason", "missing_username");
-    }
-
-    @AfterEach
-    void afterEach() {
-        micrometerAssertionHelper.clearSavedValues();
-    }
+public class McpAuthenticationTest extends McpTestBase {
 
     private static final String INITIALIZE_BODY = """
             {
@@ -81,23 +51,8 @@ public class McpAuthenticationTest {
             }
             """;
 
-    private static String validIdentity() {
-        return McpTestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
-    }
-
     private static String base64Encode(String value) {
         return Base64.getEncoder().encodeToString(value.getBytes(UTF_8));
-    }
-
-    private ValidatableResponse postMcp(String identity, String body) {
-        RequestSpecification request = given()
-                .header("Accept", ACCEPT_MCP)
-                .contentType(ContentType.JSON)
-                .body(body);
-        if (identity != null) {
-            request = request.header("x-rh-identity", identity);
-        }
-        return request.when().post(MCP_ENDPOINT).then();
     }
 
     private void assertInitializeRejected(String identity, String expectedReason) {

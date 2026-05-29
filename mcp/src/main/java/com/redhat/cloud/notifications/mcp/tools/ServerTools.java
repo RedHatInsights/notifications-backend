@@ -12,7 +12,7 @@ public class ServerTools {
     @Inject
     SecurityIdentity securityIdentity;
 
-    @Tool(description = "Returns the server status and version information")
+    @Tool(description = "Returns the server status")
     public String serverInfo() {
         return "Notifications MCP Server is running.";
     }
