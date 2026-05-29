@@ -1,7 +1,12 @@
 package com.redhat.cloud.notifications.mcp;
 
+import com.redhat.cloud.notifications.mcp.dto.EndpointDTO;
 import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import org.eclipse.microprofile.faulttolerance.Retry;
@@ -92,4 +97,42 @@ public interface BackendRestClient {
     @Path("/api/notifications/v1.0/user-config/notification-event-type-preference/{bundleName}/{applicationName}")
     @Produces(APPLICATION_JSON)
     String getUserNotificationPreferencesByApplication(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath String bundleName, @RestPath String applicationName);
+
+    @PUT
+    @Path("/api/integrations/v1.0/endpoints/{id}/enable")
+    void enableEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID id);
+
+    @DELETE
+    @Path("/api/integrations/v1.0/endpoints/{id}/enable")
+    void disableEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID id);
+
+    @POST
+    @Path("/api/integrations/v1.0/endpoints/{uuid}/test")
+    @Consumes(APPLICATION_JSON)
+    void testEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID uuid);
+
+    @PUT
+    @Path("/api/notifications/v1.0/org-config/daily-digest/time-preference")
+    @Consumes(APPLICATION_JSON)
+    void setDailyDigestTimePreference(@RestHeader("x-rh-identity") String xRhIdentity, java.time.LocalTime time);
+
+    @POST
+    @Path("/api/notifications/v1.0/user-config/notification-event-type-preference")
+    @Consumes(APPLICATION_JSON)
+    void saveUserNotificationPreferences(@RestHeader("x-rh-identity") String xRhIdentity, String preferences);
+
+    @DELETE
+    @Path("/api/integrations/v1.0/endpoints/{id}")
+    void deleteEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID id);
+
+    @POST
+    @Path("/api/integrations/v1.0/endpoints")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    String createEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, EndpointDTO endpoint);
+
+    @PUT
+    @Path("/api/integrations/v1.0/endpoints/{id}")
+    @Consumes(APPLICATION_JSON)
+    void updateEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID id, EndpointDTO endpoint);
 }

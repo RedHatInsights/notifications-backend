@@ -98,6 +98,20 @@ Equivalent REST endpoint: `GET /api/notifications/v2.0/notifications/severities`
 ["CRITICAL","IMPORTANT","MODERATE","LOW","NONE","UNDEFINED"]
 ```
 
+### Integration Management
+
+The MCP server provides full CRUD operations for integration endpoints via `IntegrationTools`. Tools include:
+- **Read**: `getIntegrations`, `getIntegration`, `getIntegrationHistory`, `getIntegrationHistoryDetails`
+- **Write**: `createIntegration`, `updateIntegration`, `enableIntegration`, `disableIntegration`, `testIntegration`, `deleteIntegration`
+
+Integration endpoints use **polymorphic DTOs** (see `dto/EndpointDTO.java`). The `type` field determines which properties structure is used:
+- `webhook`, `ansible` → WebhookPropertiesDTO
+- `camel` → CamelPropertiesDTO (requires `sub_type`: slack, teams, google_chat, servicenow, splunk)
+- `pagerduty` → PagerDutyPropertiesDTO
+- `drawer`, `email_subscription` → SystemSubscriptionPropertiesDTO
+
+Each tool includes detailed parameter descriptions via `@Tool` annotations. Use the MCP `tools/list` method to see complete schemas.
+
 ## Testing
 
 ### Running Tests
@@ -223,10 +237,16 @@ curl -X POST http://localhost:9010/mcp \
 - **`McpToolUtils`** - Shared utilities (parseUuid, parseDate, executeRestCall, httpErrorMessage)
 - **`tools/ServerTools`** - Server information tools (serverInfo, whoami)
 - **`tools/MetadataTools`** - Metadata retrieval (getSeverities, getBundle, getApplication, getEventType)
-- **`tools/IntegrationTools`** - Integration management (getIntegrations, getIntegration, getIntegrationHistory, getIntegrationHistoryDetails)
+- **`tools/IntegrationTools`** - Integration management  
+  - GET: getIntegrations, getIntegration, getIntegrationHistory, getIntegrationHistoryDetails  
+  - Write: enableIntegration, disableIntegration, testIntegration, deleteIntegration, createIntegration, updateIntegration
 - **`tools/EventTools`** - Event log queries (getEvents)
-- **`tools/UserConfigTools`** - User preferences (getUserNotificationPreferences, getUserNotificationPreferencesByApplication)
-- **`tools/OrgConfigTools`** - Organization configuration (getDailyDigestTimePreference)
+- **`tools/UserConfigTools`** - User preferences  
+  - GET: getUserNotificationPreferences, getUserNotificationPreferencesByApplication  
+  - Write: saveUserNotificationPreferences
+- **`tools/OrgConfigTools`** - Organization configuration  
+  - GET: getDailyDigestTimePreference  
+  - Write: setDailyDigestTimePreference
 
 ## Configuration
 

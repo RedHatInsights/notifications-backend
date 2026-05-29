@@ -3,13 +3,16 @@ package com.redhat.cloud.notifications.mcp.tools;
 import com.redhat.cloud.notifications.mcp.BackendRestClient;
 import com.redhat.cloud.notifications.mcp.McpPrincipal;
 import com.redhat.cloud.notifications.mcp.McpToolUtils;
+import com.redhat.cloud.notifications.mcp.dto.EndpointDTO;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.util.List;
@@ -65,5 +68,90 @@ public class IntegrationTools {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         return McpToolUtils.executeRestCall("getIntegrationHistoryDetails", principal,
                 () -> backendClient.getEndpointHistoryDetails(principal.getRawHeader(), McpToolUtils.parseUuid("integrationId", integrationId), McpToolUtils.parseUuid("historyId", historyId)), registry);
+    }
+
+    @Tool(description = "Enables an integration endpoint")
+    public String enableIntegration(
+            @NotBlank @ToolArg(description = "The UUID of the integration to enable") String id) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        McpToolUtils.executeRestCall("enableIntegration", principal,
+                () -> {
+                    backendClient.enableEndpoint(principal.getRawHeader(), McpToolUtils.parseUuid("id", id));
+                    return null;
+                }, registry);
+        return "Integration enabled successfully";
+    }
+
+    @Tool(description = "Disables an integration endpoint")
+    public String disableIntegration(
+            @NotBlank @ToolArg(description = "The UUID of the integration to disable") String id) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        McpToolUtils.executeRestCall("disableIntegration", principal,
+                () -> {
+                    backendClient.disableEndpoint(principal.getRawHeader(), McpToolUtils.parseUuid("id", id));
+                    return null;
+                }, registry);
+        return "Integration disabled successfully";
+    }
+
+    @Tool(description = "Tests an integration endpoint by sending a test notification")
+    public String testIntegration(
+            @NotBlank @ToolArg(description = "The UUID of the integration to test") String uuid) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        McpToolUtils.executeRestCall("testIntegration", principal,
+                () -> {
+                    backendClient.testEndpoint(principal.getRawHeader(), McpToolUtils.parseUuid("uuid", uuid));
+                    return null;
+                }, registry);
+        return "Test notification sent successfully";
+    }
+
+    @Tool(description = "Deletes an integration endpoint. Note: You cannot delete system endpoints (email_subscription, drawer).")
+    public String deleteIntegration(
+            @NotBlank @ToolArg(description = "The UUID of the integration to delete") String id) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        McpToolUtils.executeRestCall("deleteIntegration", principal,
+                () -> {
+                    backendClient.deleteEndpoint(principal.getRawHeader(), McpToolUtils.parseUuid("id", id));
+                    return null;
+                }, registry);
+        return "Integration deleted successfully";
+    }
+
+    @Tool(description = """
+        Creates a new integration endpoint. Returns the created endpoint as JSON including its UUID.
+
+        The endpoint parameter uses polymorphic properties based on the type field:
+        - type=WEBHOOK or ANSIBLE: properties is WebhookPropertiesDTO
+        - type=CAMEL: properties is CamelPropertiesDTO (requires sub_type: slack, teams, google_chat, servicenow, or splunk)
+        - type=PAGERDUTY: properties is PagerDutyPropertiesDTO
+        - type=DRAWER or EMAIL_SUBSCRIPTION: properties is SystemSubscriptionPropertiesDTO (system endpoints, rarely created via API)
+
+        Property field names use snake_case (e.g., disable_ssl_verification, secret_token).
+        See the EndpointDTO schema for complete structure including required fields per type.
+        """)
+    public String createIntegration(
+            @NotNull @Valid @ToolArg(description = "Endpoint configuration") EndpointDTO endpoint) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        return McpToolUtils.executeRestCall("createIntegration", principal,
+                () -> backendClient.createEndpoint(principal.getRawHeader(), endpoint), registry);
+    }
+
+    @Tool(description = """
+        Updates an existing integration endpoint. The endpoint configuration replaces the existing configuration,
+        so all fields (name, description, type, enabled, properties) should be provided.
+
+        The endpoint parameter uses polymorphic properties - see createIntegration description for type/properties mapping.
+        """)
+    public String updateIntegration(
+            @NotBlank @ToolArg(description = "The UUID of the integration to update") String id,
+            @NotNull @Valid @ToolArg(description = "Updated endpoint configuration") EndpointDTO endpoint) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        McpToolUtils.executeRestCall("updateIntegration", principal,
+                () -> {
+                    backendClient.updateEndpoint(principal.getRawHeader(), McpToolUtils.parseUuid("id", id), endpoint);
+                    return null;
+                }, registry);
+        return "Integration updated successfully";
     }
 }
