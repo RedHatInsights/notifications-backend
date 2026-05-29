@@ -201,22 +201,32 @@ curl -X POST http://localhost:9010/mcp \
 │  └──────────────┬──────────────────────┘   │
 │                 ▼                            │
 │  ┌─────────────────────────────────────┐   │
-│  │ MCP Tools (McpServerTools)           │   │
+│  │ MCP Tools (tools/*.java)             │   │
 │  │ - Inject SecurityIdentity            │   │
 │  │ - Access user's org_id, user_id      │   │
 │  │ - Execute under user's permissions   │   │
+│  │ - Use McpToolUtils for common logic  │   │
 │  └─────────────────────────────────────┘   │
 └─────────────────────────────────────────────┘
 ```
 
 ### Classes
 
+#### Authentication Layer
 - **`McpAuthMechanism`** - HTTP authentication mechanism, validates header presence
 - **`McpAuthenticationRequest`** - Request object carrying x-rh-identity value
 - **`McpIdentityProvider`** - Parses and validates x-rh-identity header
 - **`RhIdentity`** - Record holding parsed identity fields (type, orgId, accountId, userId, username)
 - **`McpPrincipal`** - Security principal wrapping RhIdentity
-- **`McpServerTools`** - MCP tool implementations
+
+#### Tool Layer (Modular Structure)
+- **`McpToolUtils`** - Shared utilities (parseUuid, parseDate, executeRestCall, httpErrorMessage)
+- **`tools/ServerTools`** - Server information tools (serverInfo, whoami)
+- **`tools/MetadataTools`** - Metadata retrieval (getSeverities, getBundle, getApplication, getEventType)
+- **`tools/IntegrationTools`** - Integration management (getIntegrations, getIntegration, getIntegrationHistory, getIntegrationHistoryDetails)
+- **`tools/EventTools`** - Event log queries (getEvents)
+- **`tools/UserConfigTools`** - User preferences (getUserNotificationPreferences, getUserNotificationPreferencesByApplication)
+- **`tools/OrgConfigTools`** - Organization configuration (getDailyDigestTimePreference)
 
 ## Configuration
 
@@ -226,15 +236,41 @@ Authentication is enforced programmatically by `McpAuthMechanism`, not via `quar
 
 ### Adding New MCP Tools
 
+The codebase follows a modular structure mirroring `backend/routers/handlers`. Each `*Tools.java` class in the `tools` package contains tools for a specific functional area.
+
+**Example: Adding a read-only tool**
 ```java
-@Tool(description = "My new tool")
-public String myTool() {
-    McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
-    String orgId = principal.getOrgId();
-    // Tool logic here, operates under user's identity
-    return "Result for org: " + orgId;
+@ApplicationScoped
+public class MetadataTools {
+    @Inject SecurityIdentity securityIdentity;
+    @Inject @RestClient BackendRestClient backendClient;
+    @Inject MeterRegistry registry;
+
+    @Tool(description = "My new tool")
+    public String myTool(@ToolArg(description = "Parameter") String param) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        return McpToolUtils.executeRestCall("myTool", principal,
+                () -> backendClient.myEndpoint(principal.getRawHeader(), param), registry);
+    }
 }
 ```
+
+**Example: Adding a write operation**
+```java
+@Tool(description = "Updates a resource")
+public String updateResource(@ToolArg(description = "Resource ID") String id) {
+    McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+    return McpToolUtils.executeRestCall("updateResource", principal,
+            () -> backendClient.updateResource(principal.getRawHeader(), 
+                    McpToolUtils.parseUuid("id", id)), registry);
+}
+```
+
+**Shared utilities available in `McpToolUtils`:**
+- `parseUuid(paramName, value)` - Parse and validate UUID parameters
+- `parseDate(paramName, value)` - Parse yyyy-MM-dd date strings to LocalDate
+- `executeRestCall(toolName, principal, restCall, registry)` - Execute REST calls with error handling and metrics
+- `httpErrorMessage(status)` - User-friendly error messages for HTTP status codes
 
 ## References
 
