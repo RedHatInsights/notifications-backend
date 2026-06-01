@@ -37,7 +37,7 @@ public class OrgConfigTools {
 
     @Tool(description = "Sets the daily digest time for the organization. The time must be in HH:mm format (UTC), and the minute value must be 00, 15, 30, or 45. Example: \"09:00\" or \"14:30\"")
     public String setDailyDigestTimePreference(
-            @NotBlank @Pattern(regexp = "^([01]\\d|2[0-3]):[0-5]\\d$") @ToolArg(description = "The UTC time in HH:mm format (e.g., \"09:00\"). Minute values must be 00, 15, 30, or 45.") String time) {
+            @NotBlank @Pattern(regexp = "^([01]\\d|2[0-3]):(00|15|30|45)$") @ToolArg(description = "The UTC time in HH:mm format (e.g., \"09:00\"). Minute values must be 00, 15, 30, or 45.") String time) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         LocalTime localTime = LocalTime.parse(time);
         McpToolUtils.executeRestCall("setDailyDigestTimePreference", principal,

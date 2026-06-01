@@ -109,6 +109,7 @@ public interface BackendRestClient {
     @POST
     @Path("/api/integrations/v1.0/endpoints/{uuid}/test")
     @Consumes(APPLICATION_JSON)
+    @Retry(maxRetries = 0) // Non-idempotent POST that triggers a test notification; backend→engine layer already retries, so MCP-level retry would cascade
     void testEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID uuid);
 
     @PUT
@@ -129,6 +130,7 @@ public interface BackendRestClient {
     @Path("/api/integrations/v1.0/endpoints")
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
+    @Retry(maxRetries = 0) // Non-idempotent POST that creates a new integration; retry on transient failure would create duplicate endpoints
     String createEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, EndpointDTO endpoint);
 
     @PUT
