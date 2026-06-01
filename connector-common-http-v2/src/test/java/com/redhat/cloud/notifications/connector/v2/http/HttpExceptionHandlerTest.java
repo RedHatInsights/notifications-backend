@@ -50,6 +50,7 @@ class HttpExceptionHandlerTest {
         assertEquals(HTTP_3XX, result.httpErrorType);
         assertEquals(301, result.httpStatusCode);
         assertEquals("https://example.com/webhook", result.targetUrl);
+        assertEquals("Moved Permanently", result.responseBody);
     }
 
     @Test
@@ -65,6 +66,7 @@ class HttpExceptionHandlerTest {
         assertEquals(HTTP_4XX, result.httpErrorType);
         assertEquals(404, result.httpStatusCode);
         assertEquals("https://example.com/webhook", result.targetUrl);
+        assertEquals("Not Found", result.responseBody);
     }
 
     @Test
@@ -80,6 +82,7 @@ class HttpExceptionHandlerTest {
         assertEquals(HTTP_5XX, result.httpErrorType);
         assertEquals(500, result.httpStatusCode);
         assertEquals("https://example.com/webhook", result.targetUrl);
+        assertEquals("Internal Server Error", result.responseBody);
     }
 
     @Test
@@ -95,6 +98,7 @@ class HttpExceptionHandlerTest {
         assertEquals(HTTP_5XX, result.httpErrorType);
         assertEquals(429, result.httpStatusCode);
         assertEquals("https://example.com/webhook", result.targetUrl);
+        assertEquals("Too Many Requests", result.responseBody);
     }
 
     @Test
@@ -108,6 +112,7 @@ class HttpExceptionHandlerTest {
         assertEquals(SOCKET_TIMEOUT, result.httpErrorType);
         assertEquals("https://example.com/webhook", result.targetUrl);
         assertNull(result.httpStatusCode);
+        assertNull(result.responseBody);
     }
 
     @Test
@@ -304,6 +309,36 @@ class HttpExceptionHandlerTest {
         assertNotNull(result);
         assertEquals(CONNECTION_REFUSED, result.httpErrorType);
         assertEquals("https://example.com/webhook", result.targetUrl);
+    }
+
+    @Test
+    void testResponseBodyTruncatedTo1000Chars() {
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = buildIncomingCloudEvent("https://example.com/webhook");
+
+        String longBody = "x".repeat(2000);
+        Response response = Response.status(500).entity(longBody).build();
+        ClientWebApplicationException exception = new ClientWebApplicationException(response);
+
+        HandledHttpExceptionDetails result = (HandledHttpExceptionDetails) httpExceptionHandler.process(exception, incomingCloudEvent);
+
+        assertNotNull(result);
+        assertEquals(1000, result.responseBody.length());
+        assertEquals("x".repeat(1000), result.responseBody);
+    }
+
+    @Test
+    void testResponseBodyReadFailureHandledGracefully() {
+        IncomingCloudEventMetadata<JsonObject> incomingCloudEvent = buildIncomingCloudEvent("https://example.com/webhook");
+
+        Response response = Response.status(500).build();
+        ClientWebApplicationException exception = new ClientWebApplicationException(response);
+
+        HandledHttpExceptionDetails result = (HandledHttpExceptionDetails) httpExceptionHandler.process(exception, incomingCloudEvent);
+
+        assertNotNull(result);
+        assertEquals(HTTP_5XX, result.httpErrorType);
+        assertEquals(500, result.httpStatusCode);
+        assertNull(result.responseBody);
     }
 
     @Test

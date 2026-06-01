@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.connector.v2.http;
 import com.redhat.cloud.notifications.connector.v2.ExceptionHandler;
 import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpExceptionDetails;
 import com.redhat.cloud.notifications.connector.v2.http.models.NotificationToConnectorHttp;
-import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
 import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
@@ -11,6 +10,7 @@ import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 
@@ -41,14 +41,28 @@ public class HttpExceptionHandler extends ExceptionHandler {
     HttpConnectorConfig connectorConfig;
 
     @Override
-    protected HandledExceptionDetails process(Throwable t, IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
+    protected HandledHttpExceptionDetails process(Throwable t, IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
         HandledHttpExceptionDetails details = new HandledHttpExceptionDetails();
         // The Quarkus REST Client Reactive wraps network-level exceptions (DNS failures, SSL errors, timeouts)
         // in ProcessingException per the JAX-RS spec. Unwrap it to match the actual cause below.
         if (t instanceof ProcessingException && t.getCause() != null) {
             return process(t.getCause(), incomingCloudEvent);
         } else if (t instanceof ClientWebApplicationException e) {
-            details = manageReturnedStatusCode(incomingCloudEvent, e.getResponse().getStatus(), e.getResponse().readEntity(String.class));
+            String responseBody = null;
+            int statusCode;
+            try (Response response = e.getResponse()) {
+                statusCode = response.getStatus();
+                try {
+                    responseBody = response.readEntity(String.class);
+                    if (responseBody != null) {
+                        responseBody = responseBody.substring(0, Math.min(responseBody.length(), 1000));
+                    }
+                } catch (Exception ex) {
+                    Log.debugf(ex, "Failed to read HTTP error response body");
+                }
+            }
+            details = manageReturnedStatusCode(incomingCloudEvent, statusCode, responseBody);
+            details.responseBody = responseBody;
         } else if (t instanceof ConnectTimeoutException) {
             details.httpErrorType = CONNECT_TIMEOUT;
         } else if (t instanceof SocketTimeoutException) {

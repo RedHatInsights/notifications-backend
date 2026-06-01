@@ -1,23 +1,29 @@
 package com.redhat.cloud.notifications.connector.email;
 
-import com.redhat.cloud.notifications.connector.email.models.HandledEmailExceptionDetails;
-import com.redhat.cloud.notifications.connector.email.models.HandledEmailMessageDetails;
+import com.redhat.cloud.notifications.connector.email.model.HandledEmailExceptionDetails;
+import com.redhat.cloud.notifications.connector.email.model.HandledEmailMessageDetails;
 import com.redhat.cloud.notifications.connector.email.payload.PayloadDetails;
-import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
+import com.redhat.cloud.notifications.connector.v2.OutgoingCloudEventBuilder;
+import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpExceptionDetails;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
+import io.quarkus.test.common.QuarkusTestResource;
+import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
-import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.ADDITIONAL_ERROR_DETAILS;
 import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
+import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTTP_5XX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@QuarkusTest
+@QuarkusTestResource(TestLifecycleManager.class)
 class CloudEventHistoryBuilderTest {
 
-    private final CloudEventHistoryBuilder builder = new CloudEventHistoryBuilder();
+    @Inject
+    OutgoingCloudEventBuilder builder;
 
     @Test
     void testBuildSuccessWithPayloadId() {
@@ -51,37 +57,35 @@ class CloudEventHistoryBuilderTest {
     }
 
     @Test
-    void testBuildFailureWithAdditionalErrorDetails() {
-        HandledEmailExceptionDetails details = new HandledEmailExceptionDetails(new HandledExceptionDetails("error"));
-        details.additionalErrorDetails = "{\"message\":\"Internal Server Error\"}";
+    void testBuildFailureWithResponseBody() {
+        HandledEmailExceptionDetails details = new HandledEmailExceptionDetails(new HandledHttpExceptionDetails());
+        details.httpErrorType = HTTP_5XX;
+        details.responseBody = "{\"message\":\"Internal Server Error\"}";
 
         JsonObject data = builder.buildFailure(details);
 
         assertEquals(0, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
-        assertTrue(data.getJsonObject("details").getValue(ADDITIONAL_ERROR_DETAILS) instanceof JsonObject);
-        assertEquals("Internal Server Error",
-            data.getJsonObject("details").getJsonObject(ADDITIONAL_ERROR_DETAILS).getString("message"));
+        assertTrue(data.containsKey("error"));
     }
 
     @Test
-    void testBuildFailureWithNonJsonErrorDetails() {
-        HandledEmailExceptionDetails details = new HandledEmailExceptionDetails(new HandledExceptionDetails("error"));
-        details.additionalErrorDetails = "plain text error";
+    void testBuildFailureWithPayloadId() {
+        HandledEmailExceptionDetails details = new HandledEmailExceptionDetails(new HandledHttpExceptionDetails());
+        details.payloadId = "test-payload-123";
 
         JsonObject data = builder.buildFailure(details);
 
         assertEquals(0, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
-        assertEquals("plain text error", data.getJsonObject("details").getString(ADDITIONAL_ERROR_DETAILS));
+        assertEquals("test-payload-123", data.getString(PayloadDetails.PAYLOAD_DETAILS_ID_KEY));
     }
 
     @Test
-    void testBuildFailureWithoutAdditionalErrorDetails() {
-        HandledEmailExceptionDetails details = new HandledEmailExceptionDetails(new HandledExceptionDetails("error"));
-        details.additionalErrorDetails = null;
+    void testBuildFailureWithoutResponseBody() {
+        HandledEmailExceptionDetails details = new HandledEmailExceptionDetails(new HandledHttpExceptionDetails());
 
         JsonObject data = builder.buildFailure(details);
 
         assertEquals(0, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
-        assertNull(data.getJsonObject("details").getValue(ADDITIONAL_ERROR_DETAILS));
+        assertFalse(data.containsKey("error"));
     }
 }
