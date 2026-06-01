@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.connector.email.models;
+package com.redhat.cloud.notifications.connector.email.model;
 
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 

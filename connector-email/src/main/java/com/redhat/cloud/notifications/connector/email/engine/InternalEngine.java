@@ -5,11 +5,15 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
+import java.time.temporal.ChronoUnit;
+
 @Path("/internal")
 @RegisterRestClient(configKey = "engine")
+@Retry(delay = 1, delayUnit = ChronoUnit.SECONDS, maxRetries = 2)
 public interface InternalEngine {
     /**
      * Fetches the payload from the engine.
