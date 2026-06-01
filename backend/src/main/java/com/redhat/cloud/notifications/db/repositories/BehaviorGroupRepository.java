@@ -183,7 +183,7 @@ public class BehaviorGroupRepository {
                 .setParameter("bundleId", bundleId)
                 .getResultList();
 
-            if (!backendConfig.isDrawerEnabled()) {
+            if (!backendConfig.isDrawerEnabled(orgId)) {
                 for (BehaviorGroup behaviorGroup : behaviorGroups) {
                     if (behaviorGroup.getActions() != null) {
                         behaviorGroup.setActions(

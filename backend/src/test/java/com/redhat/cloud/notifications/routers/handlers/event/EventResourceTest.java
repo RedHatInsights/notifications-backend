@@ -260,7 +260,7 @@ public class EventResourceTest extends DbIsolatedTest {
         assertNull(page.getData().get(0).getPayload());
         assertLinks(page.getLinks(), "first", "last");
 
-        when(backendConfig.isDrawerEnabled()).thenReturn(true);
+        when(backendConfig.isDrawerEnabled(anyString())).thenReturn(true);
         /*
          * Test #1.2
          * Account: DEFAULT_ACCOUNT_ID
@@ -1062,7 +1062,7 @@ public class EventResourceTest extends DbIsolatedTest {
     void testEventsWithKesselCriterion(boolean useNormalizedQueries) {
         when(backendConfig.isKesselChecksOnEventLogEnabled(anyString())).thenReturn(true);
         when(backendConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
-        when(backendConfig.isDrawerEnabled()).thenReturn(true);
+        when(backendConfig.isDrawerEnabled(anyString())).thenReturn(true);
 
         Header defaultIdentityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
 
