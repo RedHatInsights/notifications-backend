@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.connector.email;
 
-import com.redhat.cloud.notifications.connector.email.models.HandledEmailExceptionDetails;
-import com.redhat.cloud.notifications.connector.email.models.HandledEmailMessageDetails;
+import com.redhat.cloud.notifications.connector.email.model.HandledEmailExceptionDetails;
+import com.redhat.cloud.notifications.connector.email.model.HandledEmailMessageDetails;
 import com.redhat.cloud.notifications.connector.email.payload.PayloadDetails;
-import com.redhat.cloud.notifications.connector.v2.OutgoingCloudEventBuilder;
+import com.redhat.cloud.notifications.connector.v2.http.HttpOutgoingCloudEventBuilder;
 import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.vertx.core.json.JsonObject;
@@ -13,8 +13,8 @@ import jakarta.enterprise.inject.Alternative;
 
 @ApplicationScoped
 @Alternative
-@Priority(0)
-public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
+@Priority(0) // The value doesn't matter.
+public class CloudEventHistoryBuilder extends HttpOutgoingCloudEventBuilder {
 
     public static final String TOTAL_RECIPIENTS_KEY = "total_recipients";
     public static final String ADDITIONAL_ERROR_DETAILS = "additionalErrorDetails";
@@ -35,21 +35,17 @@ public class CloudEventHistoryBuilder extends OutgoingCloudEventBuilder {
 
     @Override
     public JsonObject buildFailure(HandledExceptionDetails processedExceptionDetails) {
-        JsonObject data = new JsonObject();
-        JsonObject details = new JsonObject();
-        details.put(TOTAL_RECIPIENTS_KEY, 0);
+        JsonObject data = super.buildFailure(processedExceptionDetails);
+        if (!data.containsKey("details")) {
+            data.put("details", new JsonObject());
+        }
+        data.getJsonObject("details").put(TOTAL_RECIPIENTS_KEY, 0);
 
         if (processedExceptionDetails instanceof HandledEmailExceptionDetails emailDetails) {
-            if (emailDetails.additionalErrorDetails != null) {
-                try {
-                    details.put(ADDITIONAL_ERROR_DETAILS, new JsonObject(emailDetails.additionalErrorDetails));
-                } catch (Exception e) {
-                    details.put(ADDITIONAL_ERROR_DETAILS, emailDetails.additionalErrorDetails);
-                }
+            if (emailDetails.payloadId != null) {
+                data.put(PayloadDetails.PAYLOAD_DETAILS_ID_KEY, emailDetails.payloadId);
             }
         }
-
-        data.put("details", details);
         return data;
     }
 }
