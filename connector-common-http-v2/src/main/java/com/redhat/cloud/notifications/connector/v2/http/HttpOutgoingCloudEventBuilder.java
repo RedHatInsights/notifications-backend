@@ -17,6 +17,7 @@ import static com.redhat.cloud.notifications.connector.v2.http.HttpErrorType.HTT
 
 @ApplicationScoped
 public class HttpOutgoingCloudEventBuilder extends OutgoingCloudEventBuilder {
+    public static final String ADDITIONAL_ERROR_DETAILS = "additionalErrorDetails";
 
     @Override
     public JsonObject buildFailure(HandledExceptionDetails processedExceptionDetails) {
@@ -24,6 +25,13 @@ public class HttpOutgoingCloudEventBuilder extends OutgoingCloudEventBuilder {
         if (processedExceptionDetails instanceof HandledHttpExceptionDetails processedExceptionDetailsHttp) {
             if (null != processedExceptionDetailsHttp.targetUrl) {
                 data.put("details", new JsonObject().put("target", processedExceptionDetailsHttp.targetUrl));
+            }
+
+            if (processedExceptionDetailsHttp.responseBody != null) {
+                if (!data.containsKey("details")) {
+                    data.put("details", new JsonObject());
+                }
+                data.getJsonObject("details").put(ADDITIONAL_ERROR_DETAILS, processedExceptionDetailsHttp.responseBody);
             }
 
             if (processedExceptionDetailsHttp.httpErrorType != null) {
