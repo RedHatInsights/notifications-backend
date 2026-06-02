@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
@@ -202,5 +203,11 @@ public class OrgConfigToolsTest extends McpTestBase {
                     .body("result.content[0].text", containsString("must match"));
         }
         micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 8);
+
+        // Verify that the backend was never called for invalid minute values
+        MockServerLifecycleManager.getClient().verify(
+                exactly(0),
+                putRequestedFor(urlPathEqualTo("/api/notifications/v1.0/org-config/daily-digest/time-preference"))
+        );
     }
 }
