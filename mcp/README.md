@@ -236,7 +236,9 @@ curl -X POST http://localhost:9010/mcp \
 #### Tool Layer (Modular Structure)
 - **`McpToolUtils`** - Shared utilities (parseUuid, parseDate, executeRestCall, httpErrorMessage)
 - **`tools/ServerTools`** - Server information tools (serverInfo, whoami)
-- **`tools/MetadataTools`** - Metadata retrieval (getSeverities, getBundle, getApplication, getEventType)
+- **`tools/NotificationTools`** - Notification metadata and routing configuration  
+  - Metadata: getSeverities, getBundle, getApplication, getEventType  
+  - Routing: getLinkedEndpoints, updateEventTypeEndpoints
 - **`tools/IntegrationTools`** - Integration management  
   - GET: getIntegrations, getIntegration, getIntegrationHistory, getIntegrationHistoryDetails  
   - Write: enableIntegration, disableIntegration, testIntegration, deleteIntegration, createIntegration, updateIntegration
@@ -261,7 +263,7 @@ The codebase follows a modular structure mirroring `backend/routers/handlers`. E
 **Example: Adding a read-only tool**
 ```java
 @ApplicationScoped
-public class MetadataTools {
+public class NotificationTools {
     @Inject SecurityIdentity securityIdentity;
     @Inject @RestClient BackendRestClient backendClient;
     @Inject MeterRegistry registry;
