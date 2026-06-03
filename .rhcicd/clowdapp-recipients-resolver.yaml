@@ -31,18 +31,15 @@ objects:
             cpu: ${CPU_LIMIT}
             memory: ${MEMORY_LIMIT}
         volumes:
-        - name: keystore
+        - name: it-services-cert
           secret:
-            secretName: it-services
-            items:
-              - key: keystore.jks
-                path: clientkeystore.jks
+            secretName: it-services-cert
             defaultMode: 420
             optional: true
         volumeMounts:
-        - name: keystore
+        - name: it-services-cert
           readOnly: true
-          mountPath: /mnt/secrets
+          mountPath: /mnt/it-services-cert
         readinessProbe:
           httpGet:
             path: /q/health/ready
@@ -88,14 +85,6 @@ objects:
           value: ${BACKOFFICE_CLIENT_ENV}
         - name: QUARKUS_REST_CLIENT_MBOP_URL
           value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}
-        - name: QUARKUS_REST_CLIENT_MBOP_KEY_STORE
-          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
-        - name: QUARKUS_REST_CLIENT_MBOP_KEY_STORE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: it-services
-              key: it-services-keystorepassword
-              optional: true
         - name: NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED
           value: ${NOTIFICATIONS_RECIPIENTS_RESOLVER_FETCH_USERS_RBAC_ENABLED}
         - name: NOTIFICATIONS_UNLEASH_ENABLED
@@ -146,14 +135,6 @@ objects:
             secretKeyRef:
               name: oidc-authentication
               key: secret
-        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE
-          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
-        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: it-services
-              key: it-services-keystorepassword
-              optional: true
         - name: QUARKUS_REST_CLIENT_IT_S2S_URL
           valueFrom:
             secretKeyRef:
@@ -211,9 +192,6 @@ parameters:
   value: latest
 - name: IO_SMALLRYE_REACTIVE_MESSAGING_LOG_LEVEL
   value: INFO
-- name: IT_SERVICE_TO_SERVICE_KEY_STORE
-  description: "Key store for secured connection if communicating with IT. It should be set to file:/mnt/secrets/clientkeystore.jks"
-  value: ""
 - name: MEMORY_LIMIT
   description: Memory limit
   value: 500Mi
