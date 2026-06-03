@@ -16,6 +16,9 @@ import jakarta.validation.constraints.NotNull;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class IntegrationTools {
@@ -153,5 +156,71 @@ public class IntegrationTools {
                     return null;
                 }, registry);
         return "Integration updated successfully";
+    }
+
+    @Tool(description = """
+            Adds a link between an integration and an event type. This allows the integration to receive \
+            notifications when this event occurs. This is an incremental operation - it adds one event type \
+            without affecting existing event type associations.
+            """)
+    public String addEventTypeToIntegration(
+            @NotBlank @ToolArg(description = "UUID of the integration") String endpointId,
+            @NotBlank @ToolArg(description = "UUID of the event type to link") String eventTypeId) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        UUID endpointUuid = McpToolUtils.parseUuid("endpointId", endpointId);
+        UUID eventTypeUuid = McpToolUtils.parseUuid("eventTypeId", eventTypeId);
+
+        McpToolUtils.executeRestCall("addEventTypeToIntegration", principal,
+                () -> {
+                    backendClient.addEventTypeToEndpoint(principal.getRawHeader(), endpointUuid, eventTypeUuid);
+                    return null;
+                }, registry);
+
+        return "Event type linked to integration successfully.";
+    }
+
+    @Tool(description = """
+            Removes the link between an integration and an event type. This stops the integration from \
+            receiving notifications for this event type. This is an incremental operation - it removes one \
+            event type association without affecting other linked event types.
+            """)
+    public String deleteEventTypeFromIntegration(
+            @NotBlank @ToolArg(description = "UUID of the integration") String endpointId,
+            @NotBlank @ToolArg(description = "UUID of the event type to unlink") String eventTypeId) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        UUID endpointUuid = McpToolUtils.parseUuid("endpointId", endpointId);
+        UUID eventTypeUuid = McpToolUtils.parseUuid("eventTypeId", eventTypeId);
+
+        McpToolUtils.executeRestCall("deleteEventTypeFromIntegration", principal,
+                () -> {
+                    backendClient.deleteEventTypeFromEndpoint(principal.getRawHeader(), endpointUuid, eventTypeUuid);
+                    return null;
+                }, registry);
+
+        return "Event type unlinked from integration successfully.";
+    }
+
+    @Tool(description = """
+            Updates the complete list of event types associated with an integration. This controls which events \
+            will trigger notifications to this integration. Pass an empty set to remove all event type associations. \
+            Pass a set of event type UUIDs to route notifications for those specific events. This operation \
+            replaces the existing event type configuration entirely.
+            """)
+    public String updateEventTypesLinkedToIntegration(
+            @NotBlank @ToolArg(description = "UUID of the integration") String endpointId,
+            @ToolArg(description = "Set of event type UUIDs to associate (empty set removes all associations)") Set<String> eventTypeIds) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        UUID endpointUuid = McpToolUtils.parseUuid("endpointId", endpointId);
+        Set<UUID> eventTypeUuids = eventTypeIds.stream()
+                .map(id -> McpToolUtils.parseUuid("eventTypeId", id))
+                .collect(Collectors.toSet());
+
+        McpToolUtils.executeRestCall("updateEventTypesLinkedToIntegration", principal,
+                () -> {
+                    backendClient.updateEventTypesLinkedToEndpoint(principal.getRawHeader(), endpointUuid, eventTypeUuids);
+                    return null;
+                }, registry);
+
+        return "Integration event type associations updated successfully.";
     }
 }

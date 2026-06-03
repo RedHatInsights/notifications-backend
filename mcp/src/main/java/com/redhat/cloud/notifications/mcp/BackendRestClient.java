@@ -147,4 +147,17 @@ public interface BackendRestClient {
     @Path("/api/notifications/v1.0/eventTypes/{eventTypeId}/endpoints")
     @Consumes(APPLICATION_JSON)
     void updateEventTypeEndpoints(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID eventTypeId, java.util.Set<UUID> endpointIds);
+
+    @PUT
+    @Path("/api/integrations/v1.0/endpoints/{endpointId}/eventType/{eventTypeId}")
+    void addEventTypeToEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID endpointId, @RestPath UUID eventTypeId);
+
+    @DELETE
+    @Path("/api/integrations/v1.0/endpoints/{endpointId}/eventType/{eventTypeId}")
+    void deleteEventTypeFromEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID endpointId, @RestPath UUID eventTypeId);
+
+    @PUT
+    @Path("/api/integrations/v1.0/endpoints/{endpointId}/eventTypes")
+    @Consumes(APPLICATION_JSON)
+    void updateEventTypesLinkedToEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID endpointId, java.util.Set<UUID> eventTypeIds);
 }

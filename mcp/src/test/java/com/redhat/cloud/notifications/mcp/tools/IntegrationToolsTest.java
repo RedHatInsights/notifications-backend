@@ -1070,4 +1070,212 @@ public class IntegrationToolsTest extends McpTestBase {
         );
         micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
     }
+
+    // --- addEventTypeToIntegration tests ---
+
+    private static final String ADD_EVENT_TYPE_TO_INTEGRATION_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 200,
+                "params": {
+                    "name": "addEventTypeToIntegration",
+                    "arguments": {
+                        "endpointId": "12345678-abcd-1234-abcd-1234567890ab",
+                        "eventTypeId": "87654321-dcba-4321-dcba-ba0987654321"
+                    }
+                }
+            }
+            """;
+
+    @Test
+    public void testAddEventTypeToIntegrationWithValidIdentity() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/eventType/87654321-dcba-4321-dcba-ba0987654321"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse().withStatus(204))
+        );
+
+        postMcp(validIdentity(), ADD_EVENT_TYPE_TO_INTEGRATION_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("linked to integration successfully"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                putRequestedFor(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/eventType/87654321-dcba-4321-dcba-ba0987654321"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testAddEventTypeToIntegrationWithoutIdentityIsRejected() {
+        assertAuthRejected(null, ADD_EVENT_TYPE_TO_INTEGRATION_BODY, "missing_header");
+    }
+
+    @Test
+    public void testAddEventTypeToIntegrationWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/eventType/87654321-dcba-4321-dcba-ba0987654321"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), ADD_EVENT_TYPE_TO_INTEGRATION_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    @Test
+    public void testAddEventTypeToIntegrationWhenBackendReturns403() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/eventType/87654321-dcba-4321-dcba-ba0987654321"))
+                        .willReturn(aResponse().withStatus(403))
+        );
+
+        postMcp(validIdentity(), ADD_EVENT_TYPE_TO_INTEGRATION_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Access denied"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- deleteEventTypeFromIntegration tests ---
+
+    private static final String DELETE_EVENT_TYPE_FROM_INTEGRATION_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 201,
+                "params": {
+                    "name": "deleteEventTypeFromIntegration",
+                    "arguments": {
+                        "endpointId": "12345678-abcd-1234-abcd-1234567890ab",
+                        "eventTypeId": "87654321-dcba-4321-dcba-ba0987654321"
+                    }
+                }
+            }
+            """;
+
+    @Test
+    public void testDeleteEventTypeFromIntegrationWithValidIdentity() {
+        MockServerLifecycleManager.getClient().stubFor(
+                delete(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/eventType/87654321-dcba-4321-dcba-ba0987654321"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse().withStatus(204))
+        );
+
+        postMcp(validIdentity(), DELETE_EVENT_TYPE_FROM_INTEGRATION_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("unlinked from integration successfully"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                deleteRequestedFor(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/eventType/87654321-dcba-4321-dcba-ba0987654321"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testDeleteEventTypeFromIntegrationWithoutIdentityIsRejected() {
+        assertAuthRejected(null, DELETE_EVENT_TYPE_FROM_INTEGRATION_BODY, "missing_header");
+    }
+
+    @Test
+    public void testDeleteEventTypeFromIntegrationWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                delete(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/eventType/87654321-dcba-4321-dcba-ba0987654321"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), DELETE_EVENT_TYPE_FROM_INTEGRATION_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    @Test
+    public void testDeleteEventTypeFromIntegrationWhenBackendReturns403() {
+        MockServerLifecycleManager.getClient().stubFor(
+                delete(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/eventType/87654321-dcba-4321-dcba-ba0987654321"))
+                        .willReturn(aResponse().withStatus(403))
+        );
+
+        postMcp(validIdentity(), DELETE_EVENT_TYPE_FROM_INTEGRATION_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Access denied"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- updateEventTypesLinkedToIntegration tests ---
+
+    private static final String UPDATE_EVENT_TYPES_LINKED_TO_INTEGRATION_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 202,
+                "params": {
+                    "name": "updateEventTypesLinkedToIntegration",
+                    "arguments": {
+                        "endpointId": "12345678-abcd-1234-abcd-1234567890ab",
+                        "eventTypeIds": ["87654321-dcba-4321-dcba-ba0987654321", "11111111-2222-3333-4444-555555555555"]
+                    }
+                }
+            }
+            """;
+
+    @Test
+    public void testUpdateEventTypesLinkedToIntegrationWithValidIdentity() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/eventTypes"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse().withStatus(204))
+        );
+
+        postMcp(validIdentity(), UPDATE_EVENT_TYPES_LINKED_TO_INTEGRATION_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("associations updated successfully"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                putRequestedFor(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/eventTypes"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .withRequestBody(matchingJsonPath("$[0]"))  // Verify array body
+        );
+    }
+
+    @Test
+    public void testUpdateEventTypesLinkedToIntegrationWithoutIdentityIsRejected() {
+        assertAuthRejected(null, UPDATE_EVENT_TYPES_LINKED_TO_INTEGRATION_BODY, "missing_header");
+    }
+
+    @Test
+    public void testUpdateEventTypesLinkedToIntegrationWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/eventTypes"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), UPDATE_EVENT_TYPES_LINKED_TO_INTEGRATION_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    @Test
+    public void testUpdateEventTypesLinkedToIntegrationWhenBackendReturns403() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/eventTypes"))
+                        .willReturn(aResponse().withStatus(403))
+        );
+
+        postMcp(validIdentity(), UPDATE_EVENT_TYPES_LINKED_TO_INTEGRATION_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Access denied"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
 }

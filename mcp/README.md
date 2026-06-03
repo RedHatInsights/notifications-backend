@@ -103,6 +103,7 @@ Equivalent REST endpoint: `GET /api/notifications/v2.0/notifications/severities`
 The MCP server provides full CRUD operations for integration endpoints via `IntegrationTools`. Tools include:
 - **Read**: `getIntegrations`, `getIntegration`, `getIntegrationHistory`, `getIntegrationHistoryDetails`
 - **Write**: `createIntegration`, `updateIntegration`, `enableIntegration`, `disableIntegration`, `testIntegration`, `deleteIntegration`
+- **Event Type Linking**: `addEventTypeToIntegration`, `deleteEventTypeFromIntegration`, `updateEventTypesLinkedToIntegration`
 
 Integration endpoints use **polymorphic DTOs** (see `dto/EndpointDTO.java`). The `type` field determines which properties structure is used:
 - `webhook`, `ansible` → WebhookPropertiesDTO
@@ -241,7 +242,8 @@ curl -X POST http://localhost:9010/mcp \
   - Routing: getLinkedEndpoints, updateEventTypeEndpoints
 - **`tools/IntegrationTools`** - Integration management  
   - GET: getIntegrations, getIntegration, getIntegrationHistory, getIntegrationHistoryDetails  
-  - Write: enableIntegration, disableIntegration, testIntegration, deleteIntegration, createIntegration, updateIntegration
+  - Write: enableIntegration, disableIntegration, testIntegration, deleteIntegration, createIntegration, updateIntegration  
+  - Event Type Linking: addEventTypeToIntegration, deleteEventTypeFromIntegration, updateEventTypesLinkedToIntegration
 - **`tools/EventTools`** - Event log queries (getEvents)
 - **`tools/UserConfigTools`** - User preferences  
   - GET: getUserNotificationPreferences, getUserNotificationPreferencesByApplication  
