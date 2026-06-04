@@ -227,6 +227,8 @@ objects:
           value: ${PROCESSOR_CONNECTORS_MIN_DELAY_SINCE_FIRST_SERVER_ERROR}
         - name: NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES
           value: ${NOTIFICATIONS_USE_OCM_REFACTORED_TEMPLATES}
+        - name: IN_MEMORY_DB_ENABLED
+          value: ${IN_MEMORY_DB_ENABLED}
       autoScaler:
         minReplicaCount: ${{MIN_REPLICAS}}
         maxReplicaCount: 6
