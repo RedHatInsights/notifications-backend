@@ -247,11 +247,84 @@ class SubscriptionsDeduplicationConfigTest {
                 "Same service_level and usage should produce identical deduplication keys");
     }
 
+    @Test
+    void testGetDeduplicationKeyWithPreferencesHash() {
+        String orgId = "test-org";
+        String productId = "product-123";
+        String metricId = "metric-456";
+        String billingAccountId = "billing-789";
+        String preferencesHash = "abc123def456";
+
+        Event event = givenSubscriptionEventWithPreferencesHash(orgId, productId, metricId, billingAccountId, preferencesHash);
+        Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey(event);
+
+        assertTrue(deduplicationKey.isPresent());
+        JsonObject keyJson = new JsonObject(deduplicationKey.get());
+        assertEquals(preferencesHash, keyJson.getString("preferences_hash"));
+    }
+
+    @Test
+    void testGetDeduplicationKeyDifferentPreferencesHashProducesDifferentKey() {
+        String orgId = "test-org";
+        String productId = "product-123";
+        String metricId = "metric-456";
+        String billingAccountId = "billing-789";
+
+        Event event1 = givenSubscriptionEventWithPreferencesHash(orgId, productId, metricId, billingAccountId, "hash1");
+        Optional<String> deduplicationKey1 = deduplicationConfig.getDeduplicationKey(event1);
+
+        Event event2 = givenSubscriptionEventWithPreferencesHash(orgId, productId, metricId, billingAccountId, "hash2");
+        Optional<String> deduplicationKey2 = deduplicationConfig.getDeduplicationKey(event2);
+
+        assertTrue(deduplicationKey1.isPresent());
+        assertTrue(deduplicationKey2.isPresent());
+        assertNotEquals(deduplicationKey1.get(), deduplicationKey2.get(),
+                "Different preferences_hash should produce different deduplication keys");
+    }
+
+    @Test
+    void testGetDeduplicationKeySamePreferencesHashProducesSameKey() {
+        String orgId = "test-org";
+        String productId = "product-123";
+        String metricId = "metric-456";
+        String billingAccountId = "billing-789";
+        String preferencesHash = "same-hash-123";
+
+        Event event1 = givenSubscriptionEventWithPreferencesHash(orgId, productId, metricId, billingAccountId, preferencesHash);
+        Optional<String> deduplicationKey1 = deduplicationConfig.getDeduplicationKey(event1);
+
+        Event event2 = givenSubscriptionEventWithPreferencesHash(orgId, productId, metricId, billingAccountId, preferencesHash);
+        Optional<String> deduplicationKey2 = deduplicationConfig.getDeduplicationKey(event2);
+
+        assertTrue(deduplicationKey1.isPresent());
+        assertTrue(deduplicationKey2.isPresent());
+        assertEquals(deduplicationKey1.get(), deduplicationKey2.get(),
+                "Same preferences_hash should produce identical deduplication keys");
+    }
+
+    @Test
+    void testGetDeduplicationKeyWithoutPreferencesHash() {
+        Event event = givenSubscriptionEvent("org", "product", "metric", "billing");
+        Optional<String> deduplicationKey = deduplicationConfig.getDeduplicationKey(event);
+
+        assertTrue(deduplicationKey.isPresent());
+        JsonObject keyJson = new JsonObject(deduplicationKey.get());
+        assertFalse(keyJson.containsKey("preferences_hash"));
+    }
+
     private Event givenSubscriptionEvent(String orgId, String productId, String metricId, String billingAccountId) {
         return givenSubscriptionEvent(orgId, productId, metricId, billingAccountId, null, null);
     }
 
     private Event givenSubscriptionEvent(String orgId, String productId, String metricId, String billingAccountId, String serviceLevel, String usage) {
+        return givenSubscriptionEvent(orgId, productId, metricId, billingAccountId, serviceLevel, usage, null);
+    }
+
+    private Event givenSubscriptionEventWithPreferencesHash(String orgId, String productId, String metricId, String billingAccountId, String preferencesHash) {
+        return givenSubscriptionEvent(orgId, productId, metricId, billingAccountId, null, null, preferencesHash);
+    }
+
+    private Event givenSubscriptionEvent(String orgId, String productId, String metricId, String billingAccountId, String serviceLevel, String usage, String preferencesHash) {
         JsonObject context = new JsonObject();
         context.put("product_id", productId);
         context.put("metric_id", metricId);
@@ -261,6 +334,9 @@ class SubscriptionsDeduplicationConfigTest {
         }
         if (usage != null) {
             context.put("usage", usage);
+        }
+        if (preferencesHash != null) {
+            context.put("preferences_hash", preferencesHash);
         }
 
         EventType eventType = new EventType();
