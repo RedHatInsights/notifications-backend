@@ -53,7 +53,13 @@ public class ValkeyService {
             if (valkeyHost.isEmpty() || valkeyHost.get().isEmpty()) {
                 throw new IllegalStateException("In-memory DB enabled, but Valkey connection string was not provided");
             } else {
-                RedisOptions valkeyOptions = new RedisOptions().setConnectionString(valkeyHost.get().replace("valkey://", "redis://"));
+                String connectionString = valkeyHost.get()
+                        .replace("valkey://", "redis://")
+                        .replace("valkeys://", "rediss://");
+                RedisOptions valkeyOptions = new RedisOptions().setConnectionString(connectionString);
+                if (connectionString.startsWith("rediss://")) {
+                    valkeyOptions.getNetClientOptions().setHostnameVerificationAlgorithm("HTTPS");
+                }
                 valkeyPassword.ifPresent(valkeyOptions::setPassword);
 
                 this.valkeyClient = Redis.createClient(vertx, valkeyOptions);
