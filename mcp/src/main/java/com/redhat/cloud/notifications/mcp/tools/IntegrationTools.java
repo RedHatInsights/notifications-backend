@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.mcp.dto.EndpointDTO;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
+import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -211,6 +212,9 @@ public class IntegrationTools {
             @ToolArg(description = "Set of event type UUIDs to associate (empty set removes all associations)") Set<String> eventTypeIds) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         UUID endpointUuid = McpToolUtils.parseUuid("endpointId", endpointId);
+        if (eventTypeIds == null) {
+            throw new ToolCallException("eventTypeIds cannot be null");
+        }
         Set<UUID> eventTypeUuids = eventTypeIds.stream()
                 .map(id -> McpToolUtils.parseUuid("eventTypeId", id))
                 .collect(Collectors.toSet());

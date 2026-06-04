@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.mcp.McpToolUtils;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
+import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.cache.CacheResult;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -98,6 +99,9 @@ public class NotificationTools {
             @ToolArg(description = "Set of endpoint UUIDs to associate (empty set disables notifications)") Set<String> endpointIds) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         UUID eventTypeUuid = McpToolUtils.parseUuid("eventTypeId", eventTypeId);
+        if (endpointIds == null) {
+            throw new ToolCallException("endpointIds cannot be null");
+        }
         Set<UUID> endpointUuids = endpointIds.stream()
                 .map(id -> McpToolUtils.parseUuid("endpointId", id))
                 .collect(Collectors.toSet());

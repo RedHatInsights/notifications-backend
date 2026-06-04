@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests for NotificationTools: getSeverities, getBundle, getApplication, getEventType
+ * Tests for NotificationTools: getSeverities, getBundle, getApplication, getEventType, getLinkedEndpoints, updateEventTypeEndpoints
  */
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
