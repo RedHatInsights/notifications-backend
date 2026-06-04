@@ -86,7 +86,7 @@ public class StartupUtils {
         }
         try {
             File f = new File(keystoreFile.get());
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance(getQuarkusItKeystoreTypeForJava());
             try (FileInputStream keystoreFileInputStream = new FileInputStream(f)) {
 
                 ks.load(keystoreFileInputStream, keystorePassword.get().toCharArray());
@@ -127,5 +127,14 @@ public class StartupUtils {
             throw new RuntimeException(e);
         }
         return result;
+    }
+
+    private String getQuarkusItKeystoreTypeForJava() {
+        String keystoreType = recipientsResolverConfig.getQuarkusItServiceKeystoreType();
+        if (keystoreType.equals("P12")) {
+            return "PKCS12";
+        } else {
+            return keystoreType;
+        }
     }
 }
