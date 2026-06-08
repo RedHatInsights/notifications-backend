@@ -464,6 +464,71 @@ public class IntegrationToolsTest extends McpTestBase {
         micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
     }
 
+    // --- testIntegration with custom message tests ---
+
+    private static final String TEST_INTEGRATION_WITH_MESSAGE_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 19,
+                "params": {
+                    "name": "testIntegration",
+                    "arguments": {
+                        "uuid": "12345678-abcd-1234-abcd-1234567890ab",
+                        "requestBody": {
+                            "message": "Custom test message"
+                        }
+                    }
+                }
+            }
+            """;
+
+    @Test
+    public void testTestIntegrationWithCustomMessage() {
+        MockServerLifecycleManager.getClient().stubFor(
+                post(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/test"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse().withStatus(204))
+        );
+
+        postMcp(validIdentity(), TEST_INTEGRATION_WITH_MESSAGE_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("Test notification sent successfully"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                postRequestedFor(urlPathEqualTo("/api/integrations/v1.0/endpoints/12345678-abcd-1234-abcd-1234567890ab/test"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .withRequestBody(matchingJsonPath("$.message", equalTo("Custom test message")))
+        );
+    }
+
+    private static final String TEST_INTEGRATION_WITH_BLANK_MESSAGE_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 19,
+                "params": {
+                    "name": "testIntegration",
+                    "arguments": {
+                        "uuid": "12345678-abcd-1234-abcd-1234567890ab",
+                        "requestBody": {
+                            "message": "   "
+                        }
+                    }
+                }
+            }
+            """;
+
+    @Test
+    public void testTestIntegrationWithBlankMessageReturnsValidationError() {
+        postMcp(validIdentity(), TEST_INTEGRATION_WITH_BLANK_MESSAGE_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("must not be blank"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
     // --- deleteIntegration tests ---
 
     private static final String DELETE_INTEGRATION_BODY = """

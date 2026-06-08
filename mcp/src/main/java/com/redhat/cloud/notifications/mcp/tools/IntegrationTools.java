@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.mcp.BackendRestClient;
 import com.redhat.cloud.notifications.mcp.McpPrincipal;
 import com.redhat.cloud.notifications.mcp.McpToolUtils;
 import com.redhat.cloud.notifications.mcp.dto.EndpointDTO;
+import com.redhat.cloud.notifications.mcp.dto.EndpointTestRequestDTO;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
@@ -98,13 +99,23 @@ public class IntegrationTools {
         return "Integration disabled successfully";
     }
 
-    @Tool(description = "Tests an integration endpoint by sending a test notification")
+    @Tool(description = """
+        Tests an integration endpoint by sending a test notification. Optionally provide a request body with \
+        a custom message to identify the test notification when reviewing integration history.
+
+        Examples:
+        - Without custom message: testIntegration(uuid="12345678-abcd-1234-abcd-1234567890ab")
+        - With custom message: testIntegration(uuid="12345678-abcd-1234-abcd-1234567890ab", requestBody={"message": "Testing webhook integration"})
+
+        The requestBody.message field must not be blank if provided.
+        """)
     public String testIntegration(
-            @NotBlank @ToolArg(description = "The UUID of the integration to test") String uuid) {
+            @NotBlank @ToolArg(description = "The UUID of the integration to test") String uuid,
+            @Valid @ToolArg(description = "Optional request body with a custom message for the test notification", required = false) EndpointTestRequestDTO requestBody) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         McpToolUtils.executeRestCall("testIntegration", principal,
                 () -> {
-                    backendClient.testEndpoint(principal.getRawHeader(), McpToolUtils.parseUuid("uuid", uuid));
+                    backendClient.testEndpoint(principal.getRawHeader(), McpToolUtils.parseUuid("uuid", uuid), requestBody);
                     return null;
                 }, registry);
         return "Test notification sent successfully";

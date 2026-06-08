@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.mcp;
 
 import com.redhat.cloud.notifications.mcp.dto.EndpointDTO;
+import com.redhat.cloud.notifications.mcp.dto.EndpointTestRequestDTO;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -110,7 +111,7 @@ public interface BackendRestClient {
     @Path("/api/integrations/v1.0/endpoints/{uuid}/test")
     @Consumes(APPLICATION_JSON)
     @Retry(maxRetries = 0) // Non-idempotent POST that triggers a test notification; backend→engine layer already retries, so MCP-level retry would cascade
-    void testEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID uuid);
+    void testEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID uuid, EndpointTestRequestDTO requestBody);
 
     @PUT
     @Path("/api/notifications/v1.0/org-config/daily-digest/time-preference")
