@@ -124,7 +124,7 @@ public class KesselInventoryAuthorization {
         // Verify whether the subject has permission on the resource or not.
         if (Allowed.ALLOWED_TRUE != response.getAllowed()) {
             // Authorization failure - SEC-MON-REQ-1 compliance (EOI-8 authorization_failure)
-            Log.warnf("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission denied", identity, permission, resourceType, resourceId);
+            Log.infof("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission denied", identity, permission, resourceType, resourceId);
 
             throw new ForbiddenException();
         }
@@ -165,7 +165,7 @@ public class KesselInventoryAuthorization {
         // Verify whether the subject has permission on the resource or not.
         if (Allowed.ALLOWED_TRUE != response.getAllowed()) {
             // Authorization failure - SEC-MON-REQ-1 compliance (EOI-8 authorization_failure)
-            Log.warnf("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission denied", identity, permission, resourceType, resourceId);
+            Log.infof("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission denied", identity, permission, resourceType, resourceId);
 
             throw new ForbiddenException();
         }
@@ -220,7 +220,7 @@ public class KesselInventoryAuthorization {
         // Verify whether the subject has permission on the resource or not.
         if (response == null || Allowed.ALLOWED_TRUE != response.getAllowed()) {
             // Authorization failure - SEC-MON-REQ-1 compliance (EOI-8 authorization_failure)
-            Log.warnf("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission denied", identity, permission, resourceType, resourceId);
+            Log.infof("[identity: %s][permission: %s][resource_type: %s][resource_id: %s] Permission denied", identity, permission, resourceType, resourceId);
 
             return false;
         }
