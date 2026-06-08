@@ -86,7 +86,7 @@ public class AuthorizationInterceptor {
             } else {
                 // Authorization failure - SEC-MON-REQ-1 compliance (EOI-8 authorization_failure)
                 String orgId = SecurityContextUtil.getOrgId(securityContext);
-                Log.warnf("[action: AUTHORIZE][resource_type: endpoint][org_id: %s][required_role: %s][outcome: failure][reason: rbac_permission_denied] Authorization denied",
+                Log.infof("[action: AUTHORIZE][resource_type: endpoint][org_id: %s][required_role: %s][outcome: failure][reason: rbac_permission_denied] Authorization denied",
                     orgId, annotation.legacyRBACRole());
                 throw new ForbiddenException();
             }
