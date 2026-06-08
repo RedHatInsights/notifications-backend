@@ -320,7 +320,7 @@ public class NotificationToolsTest extends McpTestBase {
                 "method": "tools/call",
                 "id": 20,
                 "params": {
-                    "name": "getLinkedEndpoints",
+                    "name": "getLinkedIntegrations",
                     "arguments": {
                         "eventTypeId": "550e8400-e29b-41d4-a716-446655440000"
                     }
@@ -400,7 +400,7 @@ public class NotificationToolsTest extends McpTestBase {
                 "method": "tools/call",
                 "id": 25,
                 "params": {
-                    "name": "updateEventTypeEndpoints",
+                    "name": "updateEventTypeIntegrations",
                     "arguments": {
                         "eventTypeId": "550e8400-e29b-41d4-a716-446655440000",
                         "endpointIds": ["660e8400-e29b-41d4-a716-446655440001", "660e8400-e29b-41d4-a716-446655440002"]
@@ -415,7 +415,7 @@ public class NotificationToolsTest extends McpTestBase {
                 "method": "tools/call",
                 "id": 26,
                 "params": {
-                    "name": "updateEventTypeEndpoints",
+                    "name": "updateEventTypeIntegrations",
                     "arguments": {
                         "eventTypeId": "550e8400-e29b-41d4-a716-446655440000",
                         "endpointIds": []

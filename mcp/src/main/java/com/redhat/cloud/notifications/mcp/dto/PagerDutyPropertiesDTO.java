@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.mcp.dto;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -11,6 +12,7 @@ import jakarta.validation.constraints.Size;
  * Based on: backend/src/main/java/com/redhat/cloud/notifications/models/dto/v1/endpoint/properties/PagerDutyPropertiesDTO.java
  */
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+@RegisterForReflection
 public class PagerDutyPropertiesDTO extends EndpointPropertiesDTO {
 
     @NotNull

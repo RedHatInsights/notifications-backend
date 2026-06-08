@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.mcp.dto;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
 /**
  * Base class for endpoint properties in MCP requests.
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
  * {@code @JsonSubTypes} on the {@code properties} field in {@link EndpointDTO},
  * using the {@code type} field as an external property discriminator.
  */
+@RegisterForReflection
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public abstract class EndpointPropertiesDTO {
 }

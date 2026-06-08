@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.mcp.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
 import java.util.Locale;
 
@@ -9,6 +10,7 @@ import java.util.Locale;
  *
  * Based on: backend/src/main/java/com/redhat/cloud/notifications/models/dto/v1/endpoint/properties/PagerDutySeverityDTO.java
  */
+@RegisterForReflection
 public enum PagerDutySeverityDTO {
     @JsonProperty("critical")
     CRITICAL,

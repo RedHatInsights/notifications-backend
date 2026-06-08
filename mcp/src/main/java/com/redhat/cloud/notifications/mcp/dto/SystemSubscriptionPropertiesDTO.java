@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.mcp.dto;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
 import java.util.Set;
 import java.util.UUID;
@@ -12,6 +13,7 @@ import java.util.UUID;
  * Based on: backend/src/main/java/com/redhat/cloud/notifications/models/dto/v1/endpoint/properties/SystemSubscriptionPropertiesDTO.java
  */
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+@RegisterForReflection
 public class SystemSubscriptionPropertiesDTO extends EndpointPropertiesDTO {
 
     private UUID groupId;

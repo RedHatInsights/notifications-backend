@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.mcp.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
 /**
  * Supported integration endpoint types.
@@ -9,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * Mirrors backend EndpointTypeDTO enum values exactly.
  */
+@RegisterForReflection
 public enum EndpointTypeDTO {
     @JsonProperty("ansible")
     ANSIBLE(false, false),

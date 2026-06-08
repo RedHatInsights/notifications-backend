@@ -153,7 +153,7 @@ public class IntegrationTools {
     }
 
     @Tool(description = """
-        Updates an existing integration. The endpoint configuration replaces the existing configuration,
+        Updates an existing integration. The integration configuration replaces the existing configuration,
         so all fields (name, description, type, enabled, properties) should be provided.
 
         The integration parameter uses polymorphic properties - see createIntegration description for type/properties mapping.

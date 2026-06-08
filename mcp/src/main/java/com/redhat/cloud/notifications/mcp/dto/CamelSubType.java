@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.mcp.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
 /**
  * Supported Camel connector sub-types.
@@ -12,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Note: Backend stores subType as a String. Jackson serializes this enum to lowercase
  * strings using the @JsonProperty annotations (e.g., SLACK -> "slack").
  */
+@RegisterForReflection
 public enum CamelSubType {
     @JsonProperty("slack")
     SLACK,

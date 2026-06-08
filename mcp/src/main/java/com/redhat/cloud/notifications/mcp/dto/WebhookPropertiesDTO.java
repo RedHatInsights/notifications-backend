@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.mcp.dto;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -14,6 +15,7 @@ import jakarta.validation.constraints.Size;
  * MCP layer omits this validation to keep DTOs simple - backend will validate on receive.
  */
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+@RegisterForReflection
 public class WebhookPropertiesDTO extends EndpointPropertiesDTO {
 
     @NotNull
