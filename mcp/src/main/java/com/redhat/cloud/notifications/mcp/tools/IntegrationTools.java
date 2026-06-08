@@ -74,7 +74,7 @@ public class IntegrationTools {
                 () -> backendClient.getEndpointHistoryDetails(principal.getRawHeader(), McpToolUtils.parseUuid("integrationId", integrationId), McpToolUtils.parseUuid("historyId", historyId)), registry);
     }
 
-    @Tool(description = "Enables an integration endpoint")
+    @Tool(description = "Enables an integration")
     public String enableIntegration(
             @NotBlank @ToolArg(description = "The UUID of the integration to enable") String id) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
@@ -86,7 +86,7 @@ public class IntegrationTools {
         return "Integration enabled successfully";
     }
 
-    @Tool(description = "Disables an integration endpoint")
+    @Tool(description = "Disables an integration")
     public String disableIntegration(
             @NotBlank @ToolArg(description = "The UUID of the integration to disable") String id) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
@@ -110,7 +110,7 @@ public class IntegrationTools {
         return "Test notification sent successfully";
     }
 
-    @Tool(description = "Deletes an integration endpoint. Note: You cannot delete system endpoints (email_subscription, drawer).")
+    @Tool(description = "Deletes an integration. Note: You cannot delete system integrations (Shared integrations across all orgs)")
     public String deleteIntegration(
             @NotBlank @ToolArg(description = "The UUID of the integration to delete") String id) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
@@ -123,9 +123,9 @@ public class IntegrationTools {
     }
 
     @Tool(description = """
-        Creates a new integration endpoint. Returns the created endpoint as JSON including its UUID.
+        Creates a new integration. Returns the created endpoint as JSON including its UUID.
 
-        The endpoint parameter uses polymorphic properties based on the type field:
+        The integration parameter uses polymorphic properties based on the type field:
         - type=WEBHOOK or ANSIBLE: properties is WebhookPropertiesDTO
         - type=CAMEL: properties is CamelPropertiesDTO (requires sub_type: slack, teams, google_chat, servicenow, or splunk)
         - type=PAGERDUTY: properties is PagerDutyPropertiesDTO
@@ -135,21 +135,21 @@ public class IntegrationTools {
         See the EndpointDTO schema for complete structure including required fields per type.
         """)
     public String createIntegration(
-            @NotNull @Valid @ToolArg(description = "Endpoint configuration") EndpointDTO endpoint) {
+            @NotNull @Valid @ToolArg(description = "Integration configuration") EndpointDTO endpoint) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         return McpToolUtils.executeRestCall("createIntegration", principal,
                 () -> backendClient.createEndpoint(principal.getRawHeader(), endpoint), registry);
     }
 
     @Tool(description = """
-        Updates an existing integration endpoint. The endpoint configuration replaces the existing configuration,
+        Updates an existing integration. The endpoint configuration replaces the existing configuration,
         so all fields (name, description, type, enabled, properties) should be provided.
 
-        The endpoint parameter uses polymorphic properties - see createIntegration description for type/properties mapping.
+        The integration parameter uses polymorphic properties - see createIntegration description for type/properties mapping.
         """)
     public String updateIntegration(
             @NotBlank @ToolArg(description = "The UUID of the integration to update") String id,
-            @NotNull @Valid @ToolArg(description = "Updated endpoint configuration") EndpointDTO endpoint) {
+            @NotNull @Valid @ToolArg(description = "Updated integration configuration") EndpointDTO endpoint) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         McpToolUtils.executeRestCall("updateIntegration", principal,
                 () -> {

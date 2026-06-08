@@ -74,39 +74,39 @@ public class NotificationTools {
     }
 
     @Tool(description = """
-            Retrieves the endpoints linked to an event type. Returns a paginated list of integrations that will be \
+            Retrieves the integrations linked to an event type. Returns a paginated list of integrations that will be \
             triggered when this event occurs. Use this to verify the current notification routing configuration before \
             making changes with updateEventTypeEndpoints.
             """)
-    public String getLinkedEndpoints(
+    public String getLinkedIntegrations(
             @NotBlank @ToolArg(description = "UUID of the event type") String eventTypeId,
             @ToolArg(description = "Maximum number of results per page (default 50)", required = false) Integer limit,
             @ToolArg(description = "Offset for pagination (default 0)", required = false) Integer offset) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         UUID eventTypeUuid = McpToolUtils.parseUuid("eventTypeId", eventTypeId);
-        return McpToolUtils.executeRestCall("getLinkedEndpoints", principal,
+        return McpToolUtils.executeRestCall("getLinkedIntegrations", principal,
                 () -> backendClient.getLinkedEndpoints(principal.getRawHeader(), eventTypeUuid, limit, offset), registry);
     }
 
     @Tool(description = """
-            Updates the list of endpoints associated with an event type. This controls which integrations will be \
+            Updates the list of integrations associated with an event type. This controls which integrations will be \
             triggered when this event occurs. Pass an empty set to disable all notifications for this event type. \
-            Pass a set of endpoint UUIDs to route notifications to those specific integrations. This operation \
-            replaces the existing endpoint configuration entirely.
+            Pass a set of integration UUIDs to route notifications to those specific integrations. This operation \
+            replaces the existing integration configuration entirely.
             """)
-    public String updateEventTypeEndpoints(
+    public String updateEventTypeIntegrations(
             @NotBlank @ToolArg(description = "UUID of the event type") String eventTypeId,
-            @ToolArg(description = "Set of endpoint UUIDs to associate (empty set disables notifications)") Set<String> endpointIds) {
+            @ToolArg(description = "Set of integration UUIDs to associate (empty set disables notifications)") Set<String> endpointIds) {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         UUID eventTypeUuid = McpToolUtils.parseUuid("eventTypeId", eventTypeId);
         if (endpointIds == null) {
-            throw new ToolCallException("endpointIds cannot be null");
+            throw new ToolCallException("Integration UUIDs Ids cannot be null");
         }
         Set<UUID> endpointUuids = endpointIds.stream()
                 .map(id -> McpToolUtils.parseUuid("endpointId", id))
                 .collect(Collectors.toSet());
 
-        McpToolUtils.executeRestCall("updateEventTypeEndpoints", principal,
+        McpToolUtils.executeRestCall("updateEventTypeIntegrations", principal,
                 () -> {
                     backendClient.updateEventTypeEndpoints(principal.getRawHeader(), eventTypeUuid, endpointUuids);
                     return null;
