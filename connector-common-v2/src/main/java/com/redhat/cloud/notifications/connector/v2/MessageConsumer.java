@@ -103,7 +103,7 @@ public class MessageConsumer {
             outgoingMessageSender.sendSuccess(cloudEventMetadata, additionalConnectorDetails, startTime);
             success = true;
         } catch (Exception e) {
-            Log.errorf(e, "Error processing message: %s", e.getMessage());
+            Log.infof(e, "Error processing message: %s", e.getMessage());
             HandledExceptionDetails processedExceptionDetails = exceptionProcessor.processException(e, cloudEventMetadata);
 
             // Send failure response back to engine
