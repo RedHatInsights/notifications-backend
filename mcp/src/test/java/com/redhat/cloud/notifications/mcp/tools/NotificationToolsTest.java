@@ -14,16 +14,18 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Tests for MetadataTools: getSeverities, getBundle, getApplication, getEventType
+ * Tests for NotificationTools: getSeverities, getBundle, getApplication, getEventType, getLinkedEndpoints, updateEventTypeEndpoints
  */
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
-public class MetadataToolsTest extends McpTestBase {
+public class NotificationToolsTest extends McpTestBase {
 
     @CacheName("mcp-get-severities")
     Cache severitiesCache;
@@ -304,6 +306,198 @@ public class MetadataToolsTest extends McpTestBase {
         );
 
         postMcp(validIdentity(), GET_EVENT_TYPE_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- getLinkedEndpoints tests ---
+
+    private static final String GET_LINKED_ENDPOINTS_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 20,
+                "params": {
+                    "name": "getLinkedIntegrations",
+                    "arguments": {
+                        "eventTypeId": "550e8400-e29b-41d4-a716-446655440000"
+                    }
+                }
+            }
+            """;
+
+    @Test
+    public void testGetLinkedEndpointsWithValidIdentity() {
+        String endpointsJson = """
+                {
+                    "data": [
+                        {"id": "endpoint-1", "name": "Webhook 1", "type": "webhook"},
+                        {"id": "endpoint-2", "name": "Slack Integration", "type": "camel"}
+                    ],
+                    "meta": {"count": 2}
+                }
+                """;
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse()
+                                .withHeader("Content-Type", "application/json")
+                                .withBody(endpointsJson))
+        );
+
+        postMcp(validIdentity(), GET_LINKED_ENDPOINTS_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("endpoint-1"))
+                .body("result.content[0].text", containsString("Webhook 1"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                getRequestedFor(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testGetLinkedEndpointsWithoutIdentityIsRejected() {
+        assertAuthRejected(null, GET_LINKED_ENDPOINTS_BODY, "missing_header");
+    }
+
+    @Test
+    public void testGetLinkedEndpointsWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), GET_LINKED_ENDPOINTS_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Resource not found"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    @Test
+    public void testGetLinkedEndpointsWhenBackendReturns403() {
+        MockServerLifecycleManager.getClient().stubFor(
+                get(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                        .willReturn(aResponse().withStatus(403))
+        );
+
+        postMcp(validIdentity(), GET_LINKED_ENDPOINTS_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Access denied"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- updateEventTypeEndpoints tests ---
+
+    private static final String UPDATE_EVENT_TYPE_ENDPOINTS_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 25,
+                "params": {
+                    "name": "updateEventTypeIntegrations",
+                    "arguments": {
+                        "eventTypeId": "550e8400-e29b-41d4-a716-446655440000",
+                        "endpointIds": ["660e8400-e29b-41d4-a716-446655440001", "660e8400-e29b-41d4-a716-446655440002"]
+                    }
+                }
+            }
+            """;
+
+    private static final String UPDATE_EVENT_TYPE_ENDPOINTS_EMPTY_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 26,
+                "params": {
+                    "name": "updateEventTypeIntegrations",
+                    "arguments": {
+                        "eventTypeId": "550e8400-e29b-41d4-a716-446655440000",
+                        "endpointIds": []
+                    }
+                }
+            }
+            """;
+
+    @Test
+    public void testUpdateEventTypeEndpointsWithValidIdentity() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse().withStatus(200))
+        );
+
+        postMcp(validIdentity(), UPDATE_EVENT_TYPE_ENDPOINTS_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("updated successfully"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                putRequestedFor(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testUpdateEventTypeEndpointsWithEmptySet() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse().withStatus(200))
+        );
+
+        postMcp(validIdentity(), UPDATE_EVENT_TYPE_ENDPOINTS_EMPTY_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("updated successfully"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    @Test
+    public void testUpdateEventTypeEndpointsWithoutIdentityIsRejected() {
+        assertAuthRejected(null, UPDATE_EVENT_TYPE_ENDPOINTS_BODY, "missing_header");
+    }
+
+    @Test
+    public void testUpdateEventTypeEndpointsWhenBackendReturns400() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                        .willReturn(aResponse().withStatus(400))
+        );
+
+        postMcp(validIdentity(), UPDATE_EVENT_TYPE_ENDPOINTS_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Invalid request"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    @Test
+    public void testUpdateEventTypeEndpointsWhenBackendReturns403() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                        .willReturn(aResponse().withStatus(403))
+        );
+
+        postMcp(validIdentity(), UPDATE_EVENT_TYPE_ENDPOINTS_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Access denied"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    @Test
+    public void testUpdateEventTypeEndpointsWhenBackendReturns404() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                        .willReturn(aResponse().withStatus(404))
+        );
+
+        postMcp(validIdentity(), UPDATE_EVENT_TYPE_ENDPOINTS_BODY)
                 .statusCode(200)
                 .body("result.isError", is(true))
                 .body("result.content[0].text", containsString("Resource not found"));

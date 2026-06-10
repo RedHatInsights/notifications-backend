@@ -3,16 +3,24 @@ package com.redhat.cloud.notifications.mcp.tools;
 import com.redhat.cloud.notifications.mcp.BackendRestClient;
 import com.redhat.cloud.notifications.mcp.McpPrincipal;
 import com.redhat.cloud.notifications.mcp.McpToolUtils;
+import com.redhat.cloud.notifications.mcp.dto.EndpointDTO;
+import com.redhat.cloud.notifications.mcp.dto.EndpointTestRequestDTO;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
+import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class IntegrationTools {
@@ -65,5 +73,169 @@ public class IntegrationTools {
         McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
         return McpToolUtils.executeRestCall("getIntegrationHistoryDetails", principal,
                 () -> backendClient.getEndpointHistoryDetails(principal.getRawHeader(), McpToolUtils.parseUuid("integrationId", integrationId), McpToolUtils.parseUuid("historyId", historyId)), registry);
+    }
+
+    @Tool(description = "Enables an integration")
+    public String enableIntegration(
+            @NotBlank @ToolArg(description = "The UUID of the integration to enable") String id) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        McpToolUtils.executeRestCall("enableIntegration", principal,
+                () -> {
+                    backendClient.enableEndpoint(principal.getRawHeader(), McpToolUtils.parseUuid("id", id));
+                    return null;
+                }, registry);
+        return "Integration enabled successfully";
+    }
+
+    @Tool(description = "Disables an integration")
+    public String disableIntegration(
+            @NotBlank @ToolArg(description = "The UUID of the integration to disable") String id) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        McpToolUtils.executeRestCall("disableIntegration", principal,
+                () -> {
+                    backendClient.disableEndpoint(principal.getRawHeader(), McpToolUtils.parseUuid("id", id));
+                    return null;
+                }, registry);
+        return "Integration disabled successfully";
+    }
+
+    @Tool(description = """
+        Tests an integration endpoint by sending a test notification. Optionally provide a request body with \
+        a custom message to identify the test notification when reviewing integration history.
+
+        Examples:
+        - Without custom message: testIntegration(uuid="12345678-abcd-1234-abcd-1234567890ab")
+        - With custom message: testIntegration(uuid="12345678-abcd-1234-abcd-1234567890ab", requestBody={"message": "Testing webhook integration"})
+
+        The requestBody.message field must not be blank if provided.
+        """)
+    public String testIntegration(
+            @NotBlank @ToolArg(description = "The UUID of the integration to test") String uuid,
+            @Valid @ToolArg(description = "Optional request body with a custom message for the test notification", required = false) EndpointTestRequestDTO requestBody) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        McpToolUtils.executeRestCall("testIntegration", principal,
+                () -> {
+                    backendClient.testEndpoint(principal.getRawHeader(), McpToolUtils.parseUuid("uuid", uuid), requestBody);
+                    return null;
+                }, registry);
+        return "Test notification sent successfully";
+    }
+
+    @Tool(description = "Deletes an integration. Note: You cannot delete system integrations (Shared integrations across all orgs)")
+    public String deleteIntegration(
+            @NotBlank @ToolArg(description = "The UUID of the integration to delete") String id) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        McpToolUtils.executeRestCall("deleteIntegration", principal,
+                () -> {
+                    backendClient.deleteEndpoint(principal.getRawHeader(), McpToolUtils.parseUuid("id", id));
+                    return null;
+                }, registry);
+        return "Integration deleted successfully";
+    }
+
+    @Tool(description = """
+        Creates a new integration. Returns the created endpoint as JSON including its UUID.
+
+        The integration parameter uses polymorphic properties based on the type field:
+        - type=WEBHOOK or ANSIBLE: properties is WebhookPropertiesDTO
+        - type=CAMEL: properties is CamelPropertiesDTO (requires sub_type: slack, teams, google_chat, servicenow, or splunk)
+        - type=PAGERDUTY: properties is PagerDutyPropertiesDTO
+        - type=DRAWER or EMAIL_SUBSCRIPTION: properties is SystemSubscriptionPropertiesDTO (system endpoints, rarely created via API)
+
+        Property field names use snake_case (e.g., disable_ssl_verification, secret_token).
+        See the EndpointDTO schema for complete structure including required fields per type.
+        """)
+    public String createIntegration(
+            @NotNull @Valid @ToolArg(description = "Integration configuration") EndpointDTO endpoint) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        return McpToolUtils.executeRestCall("createIntegration", principal,
+                () -> backendClient.createEndpoint(principal.getRawHeader(), endpoint), registry);
+    }
+
+    @Tool(description = """
+        Updates an existing integration. The integration configuration replaces the existing configuration,
+        so all fields (name, description, type, enabled, properties) should be provided.
+
+        The integration parameter uses polymorphic properties - see createIntegration description for type/properties mapping.
+        """)
+    public String updateIntegration(
+            @NotBlank @ToolArg(description = "The UUID of the integration to update") String id,
+            @NotNull @Valid @ToolArg(description = "Updated integration configuration") EndpointDTO endpoint) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        McpToolUtils.executeRestCall("updateIntegration", principal,
+                () -> {
+                    backendClient.updateEndpoint(principal.getRawHeader(), McpToolUtils.parseUuid("id", id), endpoint);
+                    return null;
+                }, registry);
+        return "Integration updated successfully";
+    }
+
+    @Tool(description = """
+            Adds a link between an integration and an event type. This allows the integration to receive \
+            notifications when this event occurs. This is an incremental operation - it adds one event type \
+            without affecting existing event type associations.
+            """)
+    public String addEventTypeToIntegration(
+            @NotBlank @ToolArg(description = "UUID of the integration") String endpointId,
+            @NotBlank @ToolArg(description = "UUID of the event type to link") String eventTypeId) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        UUID endpointUuid = McpToolUtils.parseUuid("endpointId", endpointId);
+        UUID eventTypeUuid = McpToolUtils.parseUuid("eventTypeId", eventTypeId);
+
+        McpToolUtils.executeRestCall("addEventTypeToIntegration", principal,
+                () -> {
+                    backendClient.addEventTypeToEndpoint(principal.getRawHeader(), endpointUuid, eventTypeUuid);
+                    return null;
+                }, registry);
+
+        return "Event type linked to integration successfully.";
+    }
+
+    @Tool(description = """
+            Removes the link between an integration and an event type. This stops the integration from \
+            receiving notifications for this event type. This is an incremental operation - it removes one \
+            event type association without affecting other linked event types.
+            """)
+    public String deleteEventTypeFromIntegration(
+            @NotBlank @ToolArg(description = "UUID of the integration") String endpointId,
+            @NotBlank @ToolArg(description = "UUID of the event type to unlink") String eventTypeId) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        UUID endpointUuid = McpToolUtils.parseUuid("endpointId", endpointId);
+        UUID eventTypeUuid = McpToolUtils.parseUuid("eventTypeId", eventTypeId);
+
+        McpToolUtils.executeRestCall("deleteEventTypeFromIntegration", principal,
+                () -> {
+                    backendClient.deleteEventTypeFromEndpoint(principal.getRawHeader(), endpointUuid, eventTypeUuid);
+                    return null;
+                }, registry);
+
+        return "Event type unlinked from integration successfully.";
+    }
+
+    @Tool(description = """
+            Updates the complete list of event types associated with an integration. This controls which events \
+            will trigger notifications to this integration. Pass an empty set to remove all event type associations. \
+            Pass a set of event type UUIDs to route notifications for those specific events. This operation \
+            replaces the existing event type configuration entirely.
+            """)
+    public String updateEventTypesLinkedToIntegration(
+            @NotBlank @ToolArg(description = "UUID of the integration") String endpointId,
+            @ToolArg(description = "Set of event type UUIDs to associate (empty set removes all associations)") Set<String> eventTypeIds) {
+        McpPrincipal principal = (McpPrincipal) securityIdentity.getPrincipal();
+        UUID endpointUuid = McpToolUtils.parseUuid("endpointId", endpointId);
+        if (eventTypeIds == null) {
+            throw new ToolCallException("eventTypeIds cannot be null");
+        }
+        Set<UUID> eventTypeUuids = eventTypeIds.stream()
+                .map(id -> McpToolUtils.parseUuid("eventTypeId", id))
+                .collect(Collectors.toSet());
+
+        McpToolUtils.executeRestCall("updateEventTypesLinkedToIntegration", principal,
+                () -> {
+                    backendClient.updateEventTypesLinkedToEndpoint(principal.getRawHeader(), endpointUuid, eventTypeUuids);
+                    return null;
+                }, registry);
+
+        return "Integration event type associations updated successfully.";
     }
 }

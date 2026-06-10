@@ -1,7 +1,13 @@
 package com.redhat.cloud.notifications.mcp;
 
+import com.redhat.cloud.notifications.mcp.dto.EndpointDTO;
+import com.redhat.cloud.notifications.mcp.dto.EndpointTestRequestDTO;
 import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import org.eclipse.microprofile.faulttolerance.Retry;
@@ -92,4 +98,67 @@ public interface BackendRestClient {
     @Path("/api/notifications/v1.0/user-config/notification-event-type-preference/{bundleName}/{applicationName}")
     @Produces(APPLICATION_JSON)
     String getUserNotificationPreferencesByApplication(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath String bundleName, @RestPath String applicationName);
+
+    @PUT
+    @Path("/api/integrations/v1.0/endpoints/{id}/enable")
+    void enableEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID id);
+
+    @DELETE
+    @Path("/api/integrations/v1.0/endpoints/{id}/enable")
+    void disableEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID id);
+
+    @POST
+    @Path("/api/integrations/v1.0/endpoints/{uuid}/test")
+    @Consumes(APPLICATION_JSON)
+    @Retry(maxRetries = 0) // Non-idempotent POST that triggers a test notification; backend→engine layer already retries, so MCP-level retry would cascade
+    void testEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID uuid, EndpointTestRequestDTO requestBody);
+
+    @PUT
+    @Path("/api/notifications/v1.0/org-config/daily-digest/time-preference")
+    @Consumes(APPLICATION_JSON)
+    void setDailyDigestTimePreference(@RestHeader("x-rh-identity") String xRhIdentity, java.time.LocalTime time);
+
+    @POST
+    @Path("/api/notifications/v1.0/user-config/notification-event-type-preference")
+    @Consumes(APPLICATION_JSON)
+    void saveUserNotificationPreferences(@RestHeader("x-rh-identity") String xRhIdentity, String preferences);
+
+    @DELETE
+    @Path("/api/integrations/v1.0/endpoints/{id}")
+    void deleteEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID id);
+
+    @POST
+    @Path("/api/integrations/v1.0/endpoints")
+    @Consumes(APPLICATION_JSON)
+    @Produces(APPLICATION_JSON)
+    @Retry(maxRetries = 0) // Non-idempotent POST that creates a new integration; retry on transient failure would create duplicate endpoints
+    String createEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, EndpointDTO endpoint);
+
+    @PUT
+    @Path("/api/integrations/v1.0/endpoints/{id}")
+    @Consumes(APPLICATION_JSON)
+    void updateEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID id, EndpointDTO endpoint);
+
+    @GET
+    @Path("/api/notifications/v1.0/eventTypes/{eventTypeId}/endpoints")
+    @Produces(APPLICATION_JSON)
+    String getLinkedEndpoints(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID eventTypeId, @RestQuery Integer limit, @RestQuery Integer offset);
+
+    @PUT
+    @Path("/api/notifications/v1.0/eventTypes/{eventTypeId}/endpoints")
+    @Consumes(APPLICATION_JSON)
+    void updateEventTypeEndpoints(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID eventTypeId, java.util.Set<UUID> endpointIds);
+
+    @PUT
+    @Path("/api/integrations/v1.0/endpoints/{endpointId}/eventType/{eventTypeId}")
+    void addEventTypeToEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID endpointId, @RestPath UUID eventTypeId);
+
+    @DELETE
+    @Path("/api/integrations/v1.0/endpoints/{endpointId}/eventType/{eventTypeId}")
+    void deleteEventTypeFromEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID endpointId, @RestPath UUID eventTypeId);
+
+    @PUT
+    @Path("/api/integrations/v1.0/endpoints/{endpointId}/eventTypes")
+    @Consumes(APPLICATION_JSON)
+    void updateEventTypesLinkedToEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID endpointId, java.util.Set<UUID> eventTypeIds);
 }

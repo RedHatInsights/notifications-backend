@@ -1,0 +1,40 @@
+package com.redhat.cloud.notifications.mcp.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+/**
+ * Supported integration endpoint types.
+ *
+ * Based on: backend/src/main/java/com/redhat/cloud/notifications/models/dto/v1/endpoint/EndpointTypeDTO.java
+ *
+ * Mirrors backend EndpointTypeDTO enum values exactly.
+ */
+@RegisterForReflection
+public enum EndpointTypeDTO {
+    @JsonProperty("ansible")
+    ANSIBLE(false, false),
+
+    @JsonProperty("camel")
+    CAMEL(true, false),
+
+    @JsonProperty("drawer")
+    DRAWER(false, true),
+
+    @JsonProperty("email_subscription")
+    EMAIL_SUBSCRIPTION(false, true),
+
+    @JsonProperty("webhook")
+    WEBHOOK(false, false),
+
+    @JsonProperty("pagerduty")
+    PAGERDUTY(false, false);
+
+    public final boolean requiresSubType;
+    public final boolean isSystemEndpointType;
+
+    EndpointTypeDTO(boolean requiresSubType, boolean isSystemEndpointType) {
+        this.requiresSubType = requiresSubType;
+        this.isSystemEndpointType = isSystemEndpointType;
+    }
+}

@@ -9,8 +9,11 @@ import org.junit.jupiter.api.Test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -73,5 +76,138 @@ public class OrgConfigToolsTest extends McpTestBase {
                 .body("result.isError", is(true))
                 .body("result.content[0].text", containsString("Resource not found"));
         micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    // --- setDailyDigestTimePreference tests ---
+
+    private static final String SET_DAILY_DIGEST_TIME_PREFERENCE_BODY = """
+            {
+                "jsonrpc": "2.0",
+                "method": "tools/call",
+                "id": 20,
+                "params": {
+                    "name": "setDailyDigestTimePreference",
+                    "arguments": {
+                        "time": "14:30"
+                    }
+                }
+            }
+            """;
+
+    @Test
+    public void testSetDailyDigestTimePreferenceWithValidIdentity() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/notifications/v1.0/org-config/daily-digest/time-preference"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+                        .willReturn(aResponse().withStatus(204))
+        );
+
+        postMcp(validIdentity(), SET_DAILY_DIGEST_TIME_PREFERENCE_BODY)
+                .statusCode(200)
+                .body("result.content[0].text", containsString("Daily digest time preference set to 14:30 UTC"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+
+        MockServerLifecycleManager.getClient().verify(
+                putRequestedFor(urlPathEqualTo("/api/notifications/v1.0/org-config/daily-digest/time-preference"))
+                        .withHeader("x-rh-identity", equalTo(validIdentity()))
+        );
+    }
+
+    @Test
+    public void testSetDailyDigestTimePreferenceWithoutIdentityIsRejected() {
+        assertAuthRejected(null, SET_DAILY_DIGEST_TIME_PREFERENCE_BODY, "missing_header");
+    }
+
+    @Test
+    public void testSetDailyDigestTimePreferenceWhenBackendReturns400() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/notifications/v1.0/org-config/daily-digest/time-preference"))
+                        .willReturn(aResponse().withStatus(400))
+        );
+
+        postMcp(validIdentity(), SET_DAILY_DIGEST_TIME_PREFERENCE_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Invalid request"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    @Test
+    public void testSetDailyDigestTimePreferenceWhenBackendReturns403() {
+        MockServerLifecycleManager.getClient().stubFor(
+                put(urlPathEqualTo("/api/notifications/v1.0/org-config/daily-digest/time-preference"))
+                        .willReturn(aResponse().withStatus(403))
+        );
+
+        postMcp(validIdentity(), SET_DAILY_DIGEST_TIME_PREFERENCE_BODY)
+                .statusCode(200)
+                .body("result.isError", is(true))
+                .body("result.content[0].text", containsString("Access denied"));
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
+    }
+
+    @Test
+    public void testSetDailyDigestTimePreferenceWithValidMinuteValues() {
+        String[] validMinutes = {"00", "15", "30", "45"};
+        for (String minute : validMinutes) {
+            String time = "09:" + minute;
+            String body = """
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "tools/call",
+                        "id": 21,
+                        "params": {
+                            "name": "setDailyDigestTimePreference",
+                            "arguments": {
+                                "time": "%s"
+                            }
+                        }
+                    }
+                    """.formatted(time);
+
+            MockServerLifecycleManager.getClient().stubFor(
+                    put(urlPathEqualTo("/api/notifications/v1.0/org-config/daily-digest/time-preference"))
+                            .withHeader("x-rh-identity", equalTo(validIdentity()))
+                            .willReturn(aResponse().withStatus(204))
+            );
+
+            postMcp(validIdentity(), body)
+                    .statusCode(200)
+                    .body("result.content[0].text", containsString("Daily digest time preference set to " + time + " UTC"));
+        }
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 4);
+    }
+
+    @Test
+    public void testSetDailyDigestTimePreferenceWithInvalidMinuteValues() {
+        String[] invalidMinutes = {"01", "10", "20", "25", "35", "40", "50", "59"};
+        for (String minute : invalidMinutes) {
+            String time = "09:" + minute;
+            String body = """
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "tools/call",
+                        "id": 22,
+                        "params": {
+                            "name": "setDailyDigestTimePreference",
+                            "arguments": {
+                                "time": "%s"
+                            }
+                        }
+                    }
+                    """.formatted(time);
+
+            postMcp(validIdentity(), body)
+                    .statusCode(200)
+                    .body("result.isError", is(true))
+                    .body("result.content[0].text", containsString("must match"));
+        }
+        micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 8);
+
+        // Verify that the backend was never called for invalid minute values
+        MockServerLifecycleManager.getClient().verify(
+                exactly(0),
+                putRequestedFor(urlPathEqualTo("/api/notifications/v1.0/org-config/daily-digest/time-preference"))
+        );
     }
 }
