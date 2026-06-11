@@ -3899,6 +3899,52 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     @Test
+    void testSystemEndpointWriteOperationsBlocked() {
+        final Endpoint systemEndpoint = resourceHelpers.createEndpoint(null, null, EndpointType.EMAIL_SUBSCRIPTION);
+        final UUID systemEndpointId = systemEndpoint.getId();
+
+        final String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, "username");
+        final Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        given()
+            .header(identityHeader)
+            .pathParam("id", systemEndpointId)
+            .when().delete("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
+
+        given()
+            .header(identityHeader)
+            .pathParam("id", systemEndpointId)
+            .when().put("/endpoints/{id}/enable")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
+
+        given()
+            .header(identityHeader)
+            .pathParam("id", systemEndpointId)
+            .when().delete("/endpoints/{id}/enable")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
+
+        EndpointDTO updateRequest = new EndpointDTO();
+        updateRequest.setName("updated-name");
+        updateRequest.setDescription("updated-description");
+        updateRequest.setType(EndpointTypeDTO.EMAIL_SUBSCRIPTION);
+        updateRequest.setProperties(new SystemSubscriptionPropertiesDTO());
+
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("id", systemEndpointId)
+            .body(Json.encode(updateRequest))
+            .when().put("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
     void testCreateThenDeleteEndpointToEventTypeRelationship() {
         final Bundle bundle1 = resourceHelpers.createBundle(RandomStringUtils.randomAlphabetic(10).toLowerCase(), "bundle 1");
 
