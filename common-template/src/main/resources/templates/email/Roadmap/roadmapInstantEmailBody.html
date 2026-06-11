@@ -7,9 +7,9 @@ Red Hat Enterprise Linux - Roadmap Monthly Report - {action.context.roadmap.repo
 {/content-title}
 {#content-body}
 {#let
-    deprecationsCount = action.events[0].payload.deprecations.orEmpty.count.or(0)
-    changesCount = action.events[0].payload.changes.orEmpty.count.or(0)
-    additionsCount = action.events[0].payload.additions.orEmpty.count.or(0)
+    deprecationsCount = action.events[0].payload.deprecation.orEmpty.count.or(0)
+    changesCount = action.events[0].payload.change.orEmpty.count.or(0)
+    additionsCount = action.events[0].payload.addition.orEmpty.count.or(0)
 }
 <table style="width: 100%; border: 0">
     {! Deprecations section !}
