@@ -59,7 +59,7 @@ public class GeneralCommunicationsResourceTest {
         final String orgId = DEFAULT_ORG_ID + "test-send-gen-com";
         final List<Endpoint> createdEndpoints = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(orgId, EndpointType.CAMEL, "teams", true, 0);
+            final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(orgId, EndpointType.PAGERDUTY, null, true, 0);
 
             createdEndpoints.add(createdEndpoint);
         }
