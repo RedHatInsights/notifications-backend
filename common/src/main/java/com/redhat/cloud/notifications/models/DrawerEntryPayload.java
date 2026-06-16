@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.Severity;
 import jakarta.validation.constraints.NotNull;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -36,6 +37,9 @@ public class DrawerEntryPayload {
 
     private String bundle;
 
+    @Schema(description = "The technical name of the application (not the display name)")
+    private String application;
+
     private String severity;
 
     public DrawerEntryPayload() {
@@ -52,6 +56,9 @@ public class DrawerEntryPayload {
         bundle = (String) rawDrawerEntry[7];
         if (rawDrawerEntry[8] instanceof Severity) {
             severity = ((Severity) rawDrawerEntry[8]).name();
+        }
+        if (rawDrawerEntry.length > 9) {
+            application = (String) rawDrawerEntry[9];
         }
     }
 
@@ -117,5 +124,13 @@ public class DrawerEntryPayload {
 
     public void setSeverity(String severity) {
         this.severity = severity;
+    }
+
+    public String getApplication() {
+        return application;
+    }
+
+    public void setApplication(String application) {
+        this.application = application;
     }
 }

@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.drawer;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationHistoryRepository;
 import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -36,6 +37,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -47,10 +49,12 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -70,6 +74,9 @@ class DrawerProcessorTest {
 
     @Inject
     protected ResourceHelpers resourceHelpers;
+
+    @InjectSpy
+    ApplicationRepository applicationRepository;
 
     @InjectSpy
     NotificationHistoryRepository notificationHistoryRepository;
@@ -158,12 +165,53 @@ class DrawerProcessorTest {
         assertFalse(message.getPayload().isEmpty());
 
         assertNotNull(message.getPayload().getJsonObject("event_data"));
+        JsonObject drawerEntryPayload = message.getPayload().getJsonObject("drawer_entry_payload");
+        assertNotNull(drawerEntryPayload, "drawer_entry_payload should be present in the message");
+        assertEquals("test-drawer-engine-event-application", drawerEntryPayload.getString("application"),
+            "application field should contain the application name");
         CloudEventMetadata cloudEventMetadata = message.getMetadata(CloudEventMetadata.class).get();
         assertNotNull(cloudEventMetadata);
         assertFalse(cloudEventMetadata.getId().isEmpty());
         assertFalse(cloudEventMetadata.getType().isEmpty());
 
         deleteEvent(createdEvent);
+    }
+
+    @Test
+    void shouldHandleNullApplicationName() {
+        inMemoryToCamelSink.clear();
+
+        User user = new User();
+        user.setId("foo");
+        user.setUsername("foo");
+
+        when(externalRecipientsResolver.recipientUsers(any(), any(), any(), any(), eq(true), any(RecipientsAuthorizationCriterion.class)))
+                .thenReturn(Set.of(user));
+
+        Event createdEvent = createEvent(true);
+
+        doReturn(null).when(applicationRepository).getApplicationName(any());
+
+        try {
+            Endpoint endpoint = new Endpoint();
+            endpoint.setProperties(new SystemSubscriptionProperties());
+            endpoint.setType(EndpointType.DRAWER);
+
+            when(engineConfig.isDrawerEnabled(anyString())).thenReturn(true);
+            testee.process(createdEvent, List.of(endpoint));
+
+            await().until(() -> inMemoryToCamelSink.received().size() == 1);
+            Message<JsonObject> message = inMemoryToCamelSink.received().get(0);
+
+            JsonObject drawerEntryPayload = message.getPayload().getJsonObject("drawer_entry_payload");
+            assertNotNull(drawerEntryPayload, "drawer_entry_payload should be present in the message");
+            assertNull(drawerEntryPayload.getString("application"),
+                "application field should be null when repository returns null");
+        } finally {
+            Mockito.reset(applicationRepository);
+            inMemoryToCamelSink.clear();
+            deleteEvent(createdEvent);
+        }
     }
 
     @Transactional

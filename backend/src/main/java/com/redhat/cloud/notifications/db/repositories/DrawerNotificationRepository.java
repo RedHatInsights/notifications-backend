@@ -147,7 +147,7 @@ public class DrawerNotificationRepository {
         } else {
             return "SELECT e.id, " +
                 "drs.id IS NOT NULL, " +
-                "bundle.displayName, app.displayName, et.displayName, e.created, e.renderedDrawerNotification, bundle.name, e.severity " +
+                "bundle.displayName, app.displayName, et.displayName, e.created, e.renderedDrawerNotification, bundle.name, e.severity, app.name " +
                 "FROM Event e " +
                 "JOIN e.eventType et " +
                 "JOIN et.application app " +

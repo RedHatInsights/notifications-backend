@@ -26,6 +26,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -176,6 +177,20 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testGetNotifications_ReturnsApplicationName() {
+        Event event = createDrawerEvent(orgId, "bundle1", "app1", "event-type-1");
+        Application app = entityManager.find(Application.class, event.getApplicationId());
+
+        List<DrawerEntryPayload> result = drawerNotificationRepository.getNotifications(
+            orgId, username, null, null, null, null, null, null, new Query(), null
+        );
+
+        assertEquals(1, result.size());
+        assertNotNull(result.get(0).getApplication(), "application field should not be null");
+        assertEquals(app.getName(), result.get(0).getApplication(), "Application name should match app.name from the database");
+    }
+
+    @Test
     void testGetNotifications_RespectsReadStatusFilter_Unread() {
         Event unreadEvent = createDrawerEvent(orgId, "bundle1", "app1", "event-type-1");
         Event readEvent = createDrawerEvent(orgId, "bundle1", "app1", "event-type-1");
@@ -298,6 +313,7 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
         when(backendConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(true);
 
         Event event = createDrawerEvent(orgId, "bundle1", "app1", "event-type-1");
+        Application app = entityManager.find(Application.class, event.getApplicationId());
 
         List<DrawerEntryPayload> result = drawerNotificationRepository.getNotifications(
             orgId, username, null, null, null, null, null, null, new Query(), null
@@ -305,6 +321,8 @@ public class DrawerNotificationRepositoryTest extends DbIsolatedTest {
 
         assertEquals(1, result.size(), "Normalized query path should return results");
         assertEquals(event.getId(), result.get(0).getEventId());
+        assertNotNull(result.get(0).getApplication(), "Normalized query should also return application name");
+        assertEquals(app.getName(), result.get(0).getApplication());
     }
 
     @Test

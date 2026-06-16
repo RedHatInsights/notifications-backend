@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import java.util.Optional;
+import java.util.UUID;
 
 @ApplicationScoped
 public class ApplicationRepository {
@@ -24,6 +25,18 @@ public class ApplicationRepository {
                 .getSingleResult());
         } catch (NoResultException e) {
             return Optional.empty();
+        }
+    }
+
+    @CacheResult(cacheName = "get-application-by-id")
+    public String getApplicationName(UUID id) {
+        try {
+            return entityManager.createQuery(
+                    "SELECT a.name FROM Application a WHERE a.id = :id", String.class)
+                .setParameter("id", id)
+                .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
         }
     }
 }
