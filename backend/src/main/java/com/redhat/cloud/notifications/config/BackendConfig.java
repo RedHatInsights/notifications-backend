@@ -274,10 +274,6 @@ public class BackendConfig {
     }
 
     public boolean isUseDrawerfilteredQuery(String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(useDrawerfilteredQuery, buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return false;
-        }
+        return unleash.isEnabled(useDrawerfilteredQuery, buildUnleashContextWithOrgId(orgId), false);
     }
 }
