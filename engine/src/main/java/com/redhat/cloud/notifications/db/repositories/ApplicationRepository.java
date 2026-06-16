@@ -28,7 +28,7 @@ public class ApplicationRepository {
         }
     }
 
-    @CacheResult(cacheName = "get-application-by-id")
+    @CacheResult(cacheName = "get-application-name-by-id")
     public String getApplicationName(UUID id) {
         try {
             return entityManager.createQuery(

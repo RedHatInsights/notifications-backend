@@ -29,7 +29,7 @@ public class ApplicationRepositoryTest {
     @Inject
     ApplicationRepository applicationRepository;
 
-    @CacheInvalidateAll(cacheName = "get-application-by-id")
+    @CacheInvalidateAll(cacheName = "get-application-name-by-id")
     void invalidateApplicationCache() {
     }
 
