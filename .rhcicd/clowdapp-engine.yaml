@@ -234,14 +234,14 @@ objects:
         maxReplicaCount: 6
         externalHPA: true
         triggers:
-          - type: prometheus
-            metricType: Value
+          - type: kafka
             metadata:
-              serverAddress: https://prometheus.external-resources.${ENV_NAME}.devshift.net/
-              metricName: aws_kafka_sum_offset_lag_sum
-              threshold: "25"
-              query: sum by(topic) (aws_kafka_sum_offset_lag_sum{topic=~".*platform.notifications.ingress"})
-              authModes: bearer
+              topic: platform.notifications.ingress
+              bootstrapServers: my-cluster-kafka-bootstrap.openshift-operators.svc:9092
+              consumerGroup: integrations
+              lagThreshold: '25'
+              allowIdleConsumers: 'true'
+              version: '1.0.0'
             authenticationRef:
               name: cma-prometheus-trigger-auth
               kind: TriggerAuthentication
