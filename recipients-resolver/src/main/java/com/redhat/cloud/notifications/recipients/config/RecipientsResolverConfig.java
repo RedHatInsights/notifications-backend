@@ -118,6 +118,12 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = "it.services.tls.cert-path")
     Optional<String> itServicesTlsCertPath;
 
+    @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store")
+    Optional<String> itServicesKeyStorePath;
+
+    @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store-password")
+    Optional<String> itServicesKeyStorePassword;
+
     @ConfigProperty(name = KESSEL_DOMAIN, defaultValue = "redhat")
     String kesselDomain;
 
@@ -240,6 +246,14 @@ public class RecipientsResolverConfig {
 
     public Optional<String> getItServicesTlsCertPath() {
         return itServicesTlsCertPath;
+    }
+
+    public Optional<String> getItServicesKeyStorePath() {
+        return itServicesKeyStorePath;
+    }
+
+    public Optional<String> getItServicesKeyStorePassword() {
+        return itServicesKeyStorePassword;
     }
 
     public Optional<String> getKesselClientId() {

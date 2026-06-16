@@ -12,6 +12,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -23,6 +28,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -75,15 +81,26 @@ public class StartupUtils {
 
     public List<String> checkCertificatesExpiration() {
         Optional<String> certPath = recipientsResolverConfig.getItServicesTlsCertPath();
-        List<String> result = new ArrayList<>();
-        String logMessage;
-        if (certPath.isEmpty() || certPath.get().isBlank()) {
-            result.add("IT services TLS certificate path is not configured");
-            return result;
+        if (certPath.isPresent() && !certPath.get().isBlank()) {
+            return checkPemCertExpiration(certPath.get());
         }
-        File certFile = new File(certPath.get());
+        Optional<String> keystorePath = recipientsResolverConfig.getItServicesKeyStorePath();
+        if (keystorePath.isPresent() && !keystorePath.get().isBlank()) {
+            return checkJksCertExpiration(
+                keystorePath.get(),
+                recipientsResolverConfig.getItServicesKeyStorePassword().orElse("")
+            );
+        }
+        List<String> result = new ArrayList<>();
+        result.add("IT services TLS certificate path is not configured");
+        return result;
+    }
+
+    private List<String> checkPemCertExpiration(String certPath) {
+        List<String> result = new ArrayList<>();
+        File certFile = new File(certPath);
         if (!certFile.exists()) {
-            logMessage = String.format("IT services TLS certificate file not found: %s", certPath.get());
+            String logMessage = String.format("IT services TLS certificate file not found: %s", certPath);
             Log.warn(logMessage);
             result.add(logMessage);
             return result;
@@ -92,6 +109,12 @@ public class StartupUtils {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             try (FileInputStream fis = new FileInputStream(certFile)) {
                 Collection<? extends Certificate> certs = cf.generateCertificates(fis);
+                if (certs.isEmpty()) {
+                    String logMessage = String.format("IT services TLS certificate file contains no valid PEM blocks: %s", certPath);
+                    Log.warn(logMessage);
+                    result.add(logMessage);
+                    return result;
+                }
                 final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy");
                 final ZonedDateTime currentUtcTime = ZonedDateTime.now(ZoneId.of("UTC"));
                 int index = 0;
@@ -101,6 +124,7 @@ public class StartupUtils {
                     final String utcExpDateTimeStr = formatter.format(utcExpDateTime);
                     String subject = ((X509Certificate) cert).getSubjectX500Principal().getName();
                     long diff = ChronoUnit.DAYS.between(currentUtcTime, utcExpDateTime);
+                    String logMessage;
                     if (diff < 0) {
                         logMessage = String.format("(@channel) Certificate [%d] '%s' has expired since %s", index, subject, utcExpDateTimeStr);
                         Log.fatal(logMessage);
@@ -122,6 +146,65 @@ public class StartupUtils {
                 }
             }
         } catch (IOException | CertificateException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+    private List<String> checkJksCertExpiration(String keystoreUri, String password) {
+        List<String> result = new ArrayList<>();
+        try {
+            File keystoreFile = new File(new URI(keystoreUri));
+            if (!keystoreFile.exists()) {
+                String logMessage = String.format("IT services JKS keystore file not found: %s", keystoreUri);
+                Log.warn(logMessage);
+                result.add(logMessage);
+                return result;
+            }
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            try (FileInputStream fis = new FileInputStream(keystoreFile)) {
+                keyStore.load(fis, password.toCharArray());
+            }
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE MMM dd HH:mm:ss z yyyy");
+            ZonedDateTime currentUtcTime = ZonedDateTime.now(ZoneId.of("UTC"));
+            Enumeration<String> aliases = keyStore.aliases();
+            boolean foundCertificate = false;
+            while (aliases.hasMoreElements()) {
+                String alias = aliases.nextElement();
+                Certificate certificate = keyStore.getCertificate(alias);
+                if (!(certificate instanceof X509Certificate cert)) {
+                    continue;
+                }
+                foundCertificate = true;
+                Date notAfter = cert.getNotAfter();
+                ZonedDateTime utcExpDateTime = ZonedDateTime.ofInstant(notAfter.toInstant(), ZoneId.of("UTC"));
+                String utcExpDateTimeStr = formatter.format(utcExpDateTime);
+                long diff = ChronoUnit.DAYS.between(currentUtcTime, utcExpDateTime);
+                String logMessage;
+                if (diff < 0) {
+                    logMessage = String.format("(@channel) Certificate '%s' has expired since %s", alias, utcExpDateTimeStr);
+                    Log.fatal(logMessage);
+                } else if (diff < 10) {
+                    logMessage = String.format("(@channel) Certificate '%s' is about to expire! (on %s)", alias, utcExpDateTimeStr);
+                    Log.fatal(logMessage);
+                } else if (diff < 30) {
+                    logMessage = String.format("(@channel) Certificate '%s' will expire within 30 days! (on %s)", alias, utcExpDateTimeStr);
+                    Log.error(logMessage);
+                } else if (diff < 60) {
+                    logMessage = String.format("(@channel) Certificate '%s' will expire within 60 days! (on %s)", alias, utcExpDateTimeStr);
+                    Log.warn(logMessage);
+                } else {
+                    logMessage = String.format("Certificate '%s' will expire on %s", alias, utcExpDateTimeStr);
+                    Log.info(logMessage);
+                }
+                result.add(logMessage);
+            }
+            if (!foundCertificate) {
+                String logMessage = String.format("IT services JKS keystore contains no X.509 certificates: %s", keystoreUri);
+                Log.warn(logMessage);
+                result.add(logMessage);
+            }
+        } catch (URISyntaxException | KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException e) {
             throw new RuntimeException(e);
         }
         return result;

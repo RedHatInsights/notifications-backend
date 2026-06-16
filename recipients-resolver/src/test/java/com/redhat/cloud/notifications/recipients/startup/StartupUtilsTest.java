@@ -28,8 +28,22 @@ public class StartupUtilsTest {
         File file = new File(classLoader.getResource("testCert.pem").getFile());
 
         when(recipientsResolverConfig.getItServicesTlsCertPath()).thenReturn(Optional.of(file.getAbsolutePath()));
+        when(recipientsResolverConfig.getItServicesKeyStorePath()).thenReturn(Optional.empty());
         List<String> certificateData = startupUtils.checkCertificatesExpiration();
         assertEquals(1, certificateData.size());
         assertEquals("(@channel) Certificate [0] 'CN=Notifications,OU=Unknown,O=Red Hat,L=Unknown,ST=Unknown,C=Unknown' has expired since Mon Sep 02 10:12:19 UTC 2024", certificateData.get(0));
+    }
+
+    @Test
+    void readKeystoreTest() {
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource("testKeystore.jks").getFile());
+
+        when(recipientsResolverConfig.getItServicesTlsCertPath()).thenReturn(Optional.empty());
+        when(recipientsResolverConfig.getItServicesKeyStorePath()).thenReturn(Optional.of(file.toURI().toString()));
+        when(recipientsResolverConfig.getItServicesKeyStorePassword()).thenReturn(Optional.of("change_it"));
+        List<String> certificateData = startupUtils.checkCertificatesExpiration();
+        assertEquals(1, certificateData.size());
+        assertEquals("(@channel) Certificate 'testexpcertif' has expired since Mon Sep 02 10:12:19 UTC 2024", certificateData.get(0));
     }
 }
