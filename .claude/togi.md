@@ -6,6 +6,7 @@ To participate, run in Claude Code:
 
     /plugin marketplace add gwenneg/togi
     /plugin install togi@togi
+    /reload-plugins
     /togi:enable
 
 Disable togi any time with /togi:disable. This file is togi's adoption note: it records that this repo adopted togi, and its presence lets togi show a one-time opt-in notice to developers who already have the plugin installed — nothing in this repo installs or runs anything by itself.
