@@ -49,7 +49,5 @@ backend/src/main/resources/META-INF
 __pycache__
 
 # togi
-/.claude/friction/
 /.claude/settings.local.json
-/.claude/togi.log
-/.claude/togi-notice-shown
+/.togi/
