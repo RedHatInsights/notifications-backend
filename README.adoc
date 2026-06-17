@@ -222,6 +222,6 @@ While the Grafana dashboard on stage gets updated automatically after merging a 
 prod still needs to be updated manually. If you want to update the dashboards on prod after you checked that your changes are working on stage,
 you need to update the reference in app-interface/data/services/insights/notifications/cicd/ci-int/saas-observability.yml
 
-## AI friction capture (togi)
+== AI friction capture (togi)
 
-This repo uses [togi](https://github.com/gwenneg/togi) to turn AI friction into context-doc improvements. Participation is opt-in per developer — see [.claude/togi.md](.claude/togi.md) for the setup commands and cost model.
+This repo uses link:https://github.com/gwenneg/togi[togi] to turn AI friction into context-doc improvements. Participation is opt-in per developer — see link:adopt-togi.md[adopt-togi.md] for the setup commands.

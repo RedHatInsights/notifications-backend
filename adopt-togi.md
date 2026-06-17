@@ -1,6 +1,6 @@
 # This repo uses togi (研ぎ)
 
-[Togi](https://github.com/gwenneg/togi) turns AI friction — corrections, clarifications, mistakes, denied tool calls — into context-doc pull requests. Capture is opt-in per developer and costs ~.05–.20 per session for those who opt in, billed at standard API rates from their separate Agent SDK credit (or API billing).
+[Togi](https://github.com/gwenneg/togi) turns AI friction — corrections, clarifications, denied tool calls — into context-doc pull requests. Capture is opt-in per developer and runs inside your normal Claude Code session, so it adds no meaningful cost.
 
 To participate, run in Claude Code:
 
