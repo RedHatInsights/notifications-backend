@@ -55,22 +55,17 @@ jobs:
             echo "Generate one with: gpg --full-generate-key && gpg --export-secret-key -a <KEY_ID>"
             exit 1
           fi
-          GPG_KEY_FILE=$(mktemp)
-          printenv GPG_PRIVATE_KEY > "${GPG_KEY_FILE}"
           if [ -n "${GPG_PASSPHRASE}" ]; then
-            if ! gpg --batch --pinentry-mode loopback --passphrase-fd 3 --import "${GPG_KEY_FILE}" 3<<< "${GPG_PASSPHRASE}"; then
+            if ! printenv GPG_PRIVATE_KEY | gpg --batch --pinentry-mode loopback --passphrase-fd 3 --import 3<<< "${GPG_PASSPHRASE}"; then
               echo "Error: Failed to import GPG key with passphrase. Check that GPG_PASSPHRASE is correct."
-              shred -u "${GPG_KEY_FILE}"
               exit 1
             fi
           else
-            if ! gpg --batch --import "${GPG_KEY_FILE}"; then
+            if ! printenv GPG_PRIVATE_KEY | gpg --batch --import; then
               echo "Error: Failed to import GPG key. Check that GPG_PRIVATE_KEY is valid ASCII-armored format."
-              shred -u "${GPG_KEY_FILE}"
               exit 1
             fi
           fi
-          shred -u "${GPG_KEY_FILE}"
           KEY_FINGERPRINT=$(gpg --list-secret-keys --with-colons --fingerprint 2>/dev/null | awk -F: '/^fpr/{print $10; exit}')
           if [ -z "${KEY_FINGERPRINT}" ]; then
             echo "Error: No GPG secret key found after import"
