@@ -43,11 +43,72 @@ jobs:
       - name: Build admin-console
         if: steps.admin-console-changed.outputs.any_changed == 'true'
         run: ./mvnw clean verify -Padmin-console -pl :checkstyle,:notifications-admin-console --no-transfer-progress
+      - name: Configure GPG signing
+        if: steps.admin-console-changed.outputs.any_changed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          if [ -z "${GPG_PRIVATE_KEY}" ]; then
+            echo "Error: GPG_PRIVATE_KEY secret is not configured."
+            echo "Add a GPG private key (ASCII-armored) as a repository secret named GPG_PRIVATE_KEY."
+            echo "Generate one with: gpg --full-generate-key && gpg --export-secret-key -a <KEY_ID>"
+            exit 1
+          fi
+          GPG_KEY_FILE=$(mktemp)
+          printenv GPG_PRIVATE_KEY > "${GPG_KEY_FILE}"
+          if [ -n "${GPG_PASSPHRASE}" ]; then
+            if ! gpg --batch --pinentry-mode loopback --passphrase-fd 3 --import "${GPG_KEY_FILE}" 3<<< "${GPG_PASSPHRASE}"; then
+              echo "Error: Failed to import GPG key with passphrase. Check that GPG_PASSPHRASE is correct."
+              shred -u "${GPG_KEY_FILE}"
+              exit 1
+            fi
+          else
+            if ! gpg --batch --import "${GPG_KEY_FILE}"; then
+              echo "Error: Failed to import GPG key. Check that GPG_PRIVATE_KEY is valid ASCII-armored format."
+              shred -u "${GPG_KEY_FILE}"
+              exit 1
+            fi
+          fi
+          shred -u "${GPG_KEY_FILE}"
+          KEY_ID=$(gpg --list-secret-keys --with-colons 2>/dev/null | awk -F: '/^sec/{print $5; exit}')
+          if [ -z "${KEY_ID}" ]; then
+            echo "Error: No GPG secret key found after import"
+            exit 1
+          fi
+          echo "GPG_KEY_ID=${KEY_ID}" >> "${GITHUB_ENV}"
+          git config user.signingkey "${KEY_ID}"
+          git config commit.gpgsign true
+          git config user.email "noreply@redhat.com"
+          git config user.name "notifications-ci-bot"
+          if [ -n "${GPG_PASSPHRASE}" ]; then
+            echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+            gpg-connect-agent reloadagent /bye
+            KEYGRIP=$(gpg --list-secret-keys --with-keygrip --with-colons 2>/dev/null | awk -F: '/^grp/{print $10; exit}')
+            if [ -z "${KEYGRIP}" ]; then
+              echo "Error: Could not extract GPG keygrip for passphrase preset"
+              exit 1
+            fi
+            if ! /usr/lib/gnupg/gpg-preset-passphrase --preset "${KEYGRIP}" <<< "${GPG_PASSPHRASE}"; then
+              echo "Error: Failed to preset GPG passphrase"
+              exit 1
+            fi
+          fi
       - name: Create PR for admin-console updates
         if: steps.admin-console-changed.outputs.any_changed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash .github/scripts/push-admin-console.sh
+      - name: Cleanup GPG key
+        if: always() && steps.admin-console-changed.outputs.any_changed == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          if [ -n "${GPG_KEY_ID}" ]; then
+            gpg --batch --yes --delete-secret-and-public-key "${GPG_KEY_ID}" || true
+          fi
+          gpgconf --kill gpg-agent || true
+          rm -rf ~/.gnupg
+          git config --unset user.signingkey || true
+          git config --unset commit.gpgsign || true
       - name: Build with Maven
         run: ./mvnw clean verify --no-transfer-progress
       - name: Pushes coverage
