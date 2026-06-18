@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.config.EngineConfig;
+import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
@@ -54,6 +55,9 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     SubscriptionRepository subscriptionRepository;
+
+    @Inject
+    ApplicationRepository applicationRepository;
 
     @Inject
     BundleRepository bundleRepository;
@@ -130,6 +134,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         drawerEntryPayload.setCreated(event.getCreated());
         drawerEntryPayload.setSource(String.format("%s - %s", event.getApplicationDisplayName(), event.getBundleDisplayName()));
         drawerEntryPayload.setBundle(bundleRepository.getBundle(event.getBundleId()).getName());
+        drawerEntryPayload.setApplication(applicationRepository.getApplicationName(event.getApplicationId()));
         drawerEntryPayload.setEventId(event.getId());
         if (event.getSeverity() != null) {
             drawerEntryPayload.setSeverity(event.getSeverity().name());
