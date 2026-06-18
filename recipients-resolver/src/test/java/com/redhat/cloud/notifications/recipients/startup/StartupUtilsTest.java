@@ -7,7 +7,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import java.io.File;
-import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,16 +23,25 @@ public class StartupUtilsTest {
     RecipientsResolverConfig recipientsResolverConfig;
 
     @Test
-    void readKeystoreTest() {
-        String resourceName = "testKeystore.jks";
-        String testPassword = "change_it";
-
+    void readCertificateTest() {
         ClassLoader classLoader = getClass().getClassLoader();
-        File file = new File(classLoader.getResource(resourceName).getFile());
-        URI fileUri = file.toURI();
+        File file = new File(classLoader.getResource("testCert.pem").getFile());
 
-        when(recipientsResolverConfig.getQuarkusItServiceKeystore()).thenReturn(Optional.of(fileUri));
-        when(recipientsResolverConfig.getQuarkusItServicePassword()).thenReturn(Optional.of(testPassword));
+        when(recipientsResolverConfig.getItServicesTlsCertPath()).thenReturn(Optional.of(file.getAbsolutePath()));
+        when(recipientsResolverConfig.getItServicesKeyStorePath()).thenReturn(Optional.empty());
+        List<String> certificateData = startupUtils.checkCertificatesExpiration();
+        assertEquals(1, certificateData.size());
+        assertEquals("(@channel) Certificate [0] 'CN=Notifications,OU=Unknown,O=Red Hat,L=Unknown,ST=Unknown,C=Unknown' has expired since Mon Sep 02 10:12:19 UTC 2024", certificateData.get(0));
+    }
+
+    @Test
+    void readKeystoreTest() {
+        ClassLoader classLoader = getClass().getClassLoader();
+        File file = new File(classLoader.getResource("testKeystore.jks").getFile());
+
+        when(recipientsResolverConfig.getItServicesTlsCertPath()).thenReturn(Optional.empty());
+        when(recipientsResolverConfig.getItServicesKeyStorePath()).thenReturn(Optional.of(file.toURI().toString()));
+        when(recipientsResolverConfig.getItServicesKeyStorePassword()).thenReturn(Optional.of("change_it"));
         List<String> certificateData = startupUtils.checkCertificatesExpiration();
         assertEquals(1, certificateData.size());
         assertEquals("(@channel) Certificate 'testexpcertif' has expired since Mon Sep 02 10:12:19 UTC 2024", certificateData.get(0));

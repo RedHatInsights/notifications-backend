@@ -115,11 +115,14 @@ public class RecipientsResolverConfig {
     @Inject
     Unleash unleash;
 
+    @ConfigProperty(name = "it.services.tls.cert-path")
+    Optional<String> itServicesTlsCertPath;
+
     @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store")
-    Optional<URI> quarkusItServiceKeystore;
+    Optional<String> itServicesKeyStorePath;
 
     @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store-password")
-    Optional<String> quarkusItServicePassword;
+    Optional<String> itServicesKeyStorePassword;
 
     @ConfigProperty(name = KESSEL_DOMAIN, defaultValue = "redhat")
     String kesselDomain;
@@ -241,12 +244,16 @@ public class RecipientsResolverConfig {
         return logTooLongRequestLimit;
     }
 
-    public Optional<URI> getQuarkusItServiceKeystore() {
-        return quarkusItServiceKeystore;
+    public Optional<String> getItServicesTlsCertPath() {
+        return itServicesTlsCertPath;
     }
 
-    public Optional<String> getQuarkusItServicePassword() {
-        return quarkusItServicePassword;
+    public Optional<String> getItServicesKeyStorePath() {
+        return itServicesKeyStorePath;
+    }
+
+    public Optional<String> getItServicesKeyStorePassword() {
+        return itServicesKeyStorePassword;
     }
 
     public Optional<String> getKesselClientId() {
