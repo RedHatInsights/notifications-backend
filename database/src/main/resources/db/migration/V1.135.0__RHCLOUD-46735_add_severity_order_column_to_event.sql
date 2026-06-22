@@ -24,4 +24,4 @@ CREATE TRIGGER trg_event_severity_order
 -- Index created upfront on the nullable column (essentially empty while severity_order is NULL).
 -- The backfill API populates rows in batches, incrementally building the index.
 CREATE INDEX ix_event_org_id_severity_order_created
-    ON event (org_id, severity_order, created DESC) INCLUDE (id);
+    ON event (org_id, severity_order, created DESC) INCLUDE (id) WHERE severity_order IS NOT NULL;
