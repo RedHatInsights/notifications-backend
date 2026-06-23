@@ -27,27 +27,12 @@ public class ConnectorConfig {
 
     private static final String NAME = "notifications.connector.name";
     private static final String SUPPORTED_CONNECTOR_HEADERS = "notifications.connector.supported-connector-headers";
-    private static final String UNLEASH = "notifications.unleash.enabled";
 
     /*
      * Unleash configuration
      */
 
-    /*
-     * TODO: This sources-hcc-cluster feature toggle is not ideally placed in the base ConnectorConfig class,
-     * as it's only relevant for connectors that use Sources API authentication (PagerDuty, ServiceNow,
-     * Splunk, and Webhook connectors). However, there's no better architectural solution currently available
-     * that would allow sharing this toggle across multiple specific connector config classes without
-     * duplicating the logic or creating complex inheritance hierarchies.
-     *
-     * This is a temporary situation - once PSK authentication is fully deprecated and removed from the
-     * Sources API integration, this feature toggle can be removed entirely along with all PSK-related code.
-     */
     private String sourcesHccClusterToggle;
-
-    @ConfigProperty(name = UNLEASH, defaultValue = "false")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    protected boolean unleashEnabled;
 
     @ConfigProperty(name = NAME)
     String connectorName;
@@ -77,7 +62,6 @@ public class ConnectorConfig {
         Map<String, Object> config = new TreeMap<>();
         config.put(NAME, connectorName);
         config.put(SUPPORTED_CONNECTOR_HEADERS, supportedConnectorHeaders);
-        config.put(UNLEASH, unleashEnabled);
         config.put(sourcesHccClusterToggle, isSourcesHccClusterEnabled(null));
         return config;
     }
@@ -91,11 +75,7 @@ public class ConnectorConfig {
     }
 
     public boolean isSourcesHccClusterEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = UnleashContextBuilder.buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(sourcesHccClusterToggle, unleashContext, false);
-        } else {
-            return false;
-        }
+        UnleashContext unleashContext = UnleashContextBuilder.buildUnleashContextWithOrgId(orgId);
+        return unleash.isEnabled(sourcesHccClusterToggle, unleashContext, false);
     }
 }

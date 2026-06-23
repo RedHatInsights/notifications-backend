@@ -27,26 +27,23 @@ public class TeamsConnectorConfig extends HttpConnectorConfig {
 
 
     public boolean isUseBetaTemplatesEnabled(final String orgId, final String bundle, final String application, final String eventType) {
-        if (unleashEnabled) {
-            String bundleApplicationEventType = null;
-            if (null != bundle) {
-                bundleApplicationEventType = bundle;
-                if (null != application) {
-                    bundleApplicationEventType += "#" + application;
-                    if (null != eventType) {
-                        bundleApplicationEventType += "#" + eventType;
-                    }
+        String bundleApplicationEventType = null;
+        if (null != bundle) {
+            bundleApplicationEventType = bundle;
+            if (null != application) {
+                bundleApplicationEventType += "#" + application;
+                if (null != eventType) {
+                    bundleApplicationEventType += "#" + eventType;
                 }
             }
-            UnleashContext.Builder unleashContextBuilder = UnleashContext.builder()
-                .addProperty("orgId", orgId);
-
-            if (null != bundleApplicationEventType) {
-                unleashContextBuilder.addProperty("bundleApplicationEventType", bundleApplicationEventType);
-            }
-            return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContextBuilder.build(), false);
-        } else {
-            return false;
         }
+        UnleashContext.Builder unleashContextBuilder = UnleashContext.builder();
+        if (orgId != null) {
+            unleashContextBuilder.addProperty("orgId", orgId);
+        }
+        if (null != bundleApplicationEventType) {
+            unleashContextBuilder.addProperty("bundleApplicationEventType", bundleApplicationEventType);
+        }
+        return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContextBuilder.build(), false);
     }
 }

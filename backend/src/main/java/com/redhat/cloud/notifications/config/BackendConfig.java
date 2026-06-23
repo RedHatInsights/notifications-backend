@@ -35,8 +35,6 @@ public class BackendConfig {
     private static final String OIDC_SECRET = "notifications.oidc.secret";
     private static final String RBAC_URL = "notifications.rbac.url";
     private static final String RBAC_ENABLED = "rbac.enabled";
-    private static final String UNLEASH = "notifications.unleash.enabled";
-    private static final String MAINTENANCE_MODE = "notifications.maintenance.mode";
 
     /*
      * Unleash configuration
@@ -53,14 +51,6 @@ public class BackendConfig {
     private String showHiddenEventTypesToggle;
     private String useDrawerfilteredQuery;
     private String normalizedQueriesToggle;
-
-    @ConfigProperty(name = UNLEASH, defaultValue = "false")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean unleashEnabled;
-
-    @ConfigProperty(name = "notifications.drawer.enabled", defaultValue = "false")
-    @Deprecated(forRemoval = true, since = "To be removed when we're done migrating to Unleash in all environments")
-    boolean drawerEnabled;
 
     // Only used in stage environments.
     @ConfigProperty(name = DEFAULT_TEMPLATE, defaultValue = "false")
@@ -107,9 +97,6 @@ public class BackendConfig {
     @ConfigProperty(name = RBAC_ENABLED, defaultValue = "true")
     protected boolean rbacEnabled;
 
-    @ConfigProperty(name = MAINTENANCE_MODE, defaultValue = "false")
-    boolean maintenanceModeEnabled;
-
     // Only used in special environments.
     @ConfigProperty(name = SECURED_EMAIL_TEMPLATES, defaultValue = "false")
     boolean useSecuredEmailTemplates;
@@ -152,7 +139,6 @@ public class BackendConfig {
         config.put(INSTANT_EMAILS, isInstantEmailsEnabled());
         config.put(RBAC_ENABLED, isRBACEnabled());
         config.put(SECURED_EMAIL_TEMPLATES, useSecuredEmailTemplates);
-        config.put(UNLEASH, unleashEnabled);
         config.put(sourcesHccClusterToggle, isSourcesHccClusterEnabled(null));
         config.put(showHiddenEventTypesToggle, isShowHiddenEventTypes(null));
         config.put(useDrawerfilteredQuery, isUseDrawerfilteredQuery(null));
@@ -168,12 +154,8 @@ public class BackendConfig {
     }
 
     public boolean isDrawerEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(drawerToggle, unleashContext, false);
-        } else {
-            return drawerEnabled;
-        }
+        UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+        return unleash.isEnabled(drawerToggle, unleashContext, false);
     }
 
     public boolean isEmailsOnlyModeEnabled() {
@@ -193,12 +175,8 @@ public class BackendConfig {
     }
 
     public boolean isKesselEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(kesselToggle, unleashContext, false);
-        } else {
-            return kesselEnabled;
-        }
+        UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+        return unleash.isEnabled(kesselToggle, unleashContext, false);
     }
 
     public boolean isKesselInsecureClientEnabled() {
@@ -230,29 +208,17 @@ public class BackendConfig {
     }
 
     public boolean isIgnoreSourcesErrorOnEndpointDelete(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(ignoreSourcesErrorOnEndpointDeleteToggle, unleashContext, false);
-        } else {
-            return false;
-        }
+        UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+        return unleash.isEnabled(ignoreSourcesErrorOnEndpointDeleteToggle, unleashContext, false);
     }
 
     public boolean isKesselChecksOnEventLogEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(kesselChecksOnEventLogToggle, unleashContext, false);
-        } else {
-            return false;
-        }
+        UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+        return unleash.isEnabled(kesselChecksOnEventLogToggle, unleashContext, false);
     }
 
     public boolean isUseCommonTemplateModuleForUserPrefApisToggle() {
-        if (unleashEnabled) {
-            return unleash.isEnabled(useCommonTemplateModuleForUserPrefApisToggle, true);
-        } else {
-            return true;
-        }
+        return unleash.isEnabled(useCommonTemplateModuleForUserPrefApisToggle, true);
     }
 
     public boolean isRBACEnabled() {
@@ -260,31 +226,22 @@ public class BackendConfig {
     }
 
     private static UnleashContext buildUnleashContextWithOrgId(String orgId) {
-        UnleashContext unleashContext = UnleashContext.builder()
-            .addProperty("orgId", orgId)
-            .build();
-        return unleashContext;
+        UnleashContext.Builder builder = UnleashContext.builder();
+        if (orgId != null) {
+            builder.addProperty("orgId", orgId);
+        }
+        return builder.build();
     }
 
     public boolean isMaintenanceModeEnabled(String path) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = UnleashContext.builder()
-                .addProperty("method_and_path", path)
-                .build();
-            return unleash.isEnabled(maintenanceModeToggle, unleashContext, false);
-        }
-        return maintenanceModeEnabled;
+        UnleashContext unleashContext = UnleashContext.builder()
+            .addProperty("method_and_path", path)
+            .build();
+        return unleash.isEnabled(maintenanceModeToggle, unleashContext, false);
     }
 
     public boolean isUseBetaTemplatesEnabled(final String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = UnleashContext.builder()
-                .addProperty("orgId", orgId)
-                .build();
-            return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContext, false);
-        } else {
-            return false;
-        }
+        return unleash.isEnabled(toggleUseBetaTemplatesEnabled, buildUnleashContextWithOrgId(orgId), false);
     }
 
     /**
@@ -299,45 +256,24 @@ public class BackendConfig {
      */
     @Deprecated(forRemoval = true)
     public boolean isBehaviorGroupCreationLimitDisabledForOrgId(final String orgId) {
-        if (unleashEnabled) {
-            final UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
-
-            return unleash.isEnabled(bypassBehaviorGroupMaxCreationLimitToggle, unleashContext, false);
-        } else {
-            return false;
-        }
+        final UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+        return unleash.isEnabled(bypassBehaviorGroupMaxCreationLimitToggle, unleashContext, false);
     }
 
     public boolean isSourcesHccClusterEnabled(String orgId) {
-        if (unleashEnabled) {
-            UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
-            return unleash.isEnabled(sourcesHccClusterToggle, unleashContext, false);
-        } else {
-            return false;
-        }
+        UnleashContext unleashContext = buildUnleashContextWithOrgId(orgId);
+        return unleash.isEnabled(sourcesHccClusterToggle, unleashContext, false);
     }
 
     public boolean isShowHiddenEventTypes(String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(showHiddenEventTypesToggle, buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return false;
-        }
+        return unleash.isEnabled(showHiddenEventTypesToggle, buildUnleashContextWithOrgId(orgId), false);
     }
 
     public boolean isNormalizedQueriesEnabled(String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(normalizedQueriesToggle, buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return false;
-        }
+        return unleash.isEnabled(normalizedQueriesToggle, buildUnleashContextWithOrgId(orgId), false);
     }
 
     public boolean isUseDrawerfilteredQuery(String orgId) {
-        if (unleashEnabled) {
-            return unleash.isEnabled(useDrawerfilteredQuery, buildUnleashContextWithOrgId(orgId), false);
-        } else {
-            return false;
-        }
+        return unleash.isEnabled(useDrawerfilteredQuery, buildUnleashContextWithOrgId(orgId), false);
     }
 }
