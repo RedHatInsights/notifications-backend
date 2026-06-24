@@ -197,8 +197,6 @@ objects:
           value: ${IT_SERVICES_TLS_KEY_PATH}
         - name: IT_SERVICES_TLS_CONFIG_NAME
           value: ${IT_SERVICES_TLS_CONFIG_NAME}
-        - name: IT_SERVICES_TLS_TRUST_STORE_CERTS
-          value: ${IT_SERVICES_TLS_TRUST_STORE_CERTS}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -288,9 +286,6 @@ parameters:
   value: ""
 - name: IT_SERVICES_TLS_CONFIG_NAME
   description: Quarkus TLS configuration name for the IT s2s REST client. Set to "it-s2s" in stage/prod; empty elsewhere (disables PEM-based mTLS).
-  value: ""
-- name: IT_SERVICES_TLS_TRUST_STORE_CERTS
-  description: Path to the certificate trust store for IT service-to-service mTLS. Set to /etc/pki/tls/certs/ca-bundle.crt in stage/prod; (default UBI trust store path) empty elsewhere.
   value: ""
 - name: SENTRY_DSN
   description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
