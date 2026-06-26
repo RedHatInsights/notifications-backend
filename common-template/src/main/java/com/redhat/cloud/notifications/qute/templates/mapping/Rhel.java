@@ -6,6 +6,7 @@ import java.util.Map;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.DRAWER;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_BODY;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_DAILY_DIGEST_BODY;
+import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_TITLE;
 import static java.util.Map.entry;
 
 public class Rhel {
@@ -62,6 +63,7 @@ public class Rhel {
 
     public static final String ROADMAP_REPORT = "roadmap-monthly-report";
 
+    public static final String MONTHLY_EMAIL_TITLE = "Common/insightsMonthlyEmailTitle.txt";
 
     public static final String TASK_EXECUTED_TASK_COMPLETED = "executed-task-completed";
     public static final String TASK_JOB_FAILED = "job-failed";
@@ -118,11 +120,12 @@ public class Rhel {
         // Lifecycle
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, LIFECYCLE_APP_NAME, RETIRING_LIFECYCLE_REPORT), LIFECYCLE_FOLDER_NAME + "retiringLifecycleBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, LIFECYCLE_APP_NAME, RETIRING_LIFECYCLE_REPORT), LIFECYCLE_FOLDER_NAME + "retiringLifecycleInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, LIFECYCLE_APP_NAME, RETIRING_LIFECYCLE_REPORT), MONTHLY_EMAIL_TITLE),
 
         // Roadmap
         entry(new TemplateDefinition(DRAWER, BUNDLE_NAME, ROADMAP_APP_NAME, ROADMAP_REPORT), ROADMAP_FOLDER_NAME + "roadmapBody.md"),
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, ROADMAP_APP_NAME, ROADMAP_REPORT), ROADMAP_FOLDER_NAME + "roadmapInstantEmailBody.html"),
-
+        entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, ROADMAP_APP_NAME, ROADMAP_REPORT), MONTHLY_EMAIL_TITLE),
 
         // Resource optimization
         entry(new TemplateDefinition(EMAIL_DAILY_DIGEST_BODY, BUNDLE_NAME, RESOURCE_OPTIMIZATION_APP_NAME, null), RESOURCE_OPTIMIZATION_FOLDER_NAME + "dailyEmailBody.html"),
