@@ -82,7 +82,7 @@ public class TestRoadmapTemplate extends EmailTemplatesRendererHelper {
         // Verify roadmap URLs are properly resolved with the environment base URL
         assertTrue(result.contains("href=\"https://localhost/insights/planning/roadmap/?viewFilter=relevant&type=Deprecation"), "Deprecations link should contain resolved environment URL");
         assertTrue(result.contains("href=\"https://localhost/insights/planning/roadmap/?viewFilter=relevant&type=Change"), "Changes link should contain resolved environment URL");
-        assertTrue(result.contains("href=\"https://localhost/insights/planning/roadmap/?viewFilter=relevant&type=Addition"), "Additions link should contain resolved environment URL");
+        assertTrue(result.contains("href=\"https://localhost/insights/planning/roadmap/?viewFilter=relevant&type=Enhancement%2CAddition"), "Additions link should contain resolved environment URL");
         assertFalse(result.contains("href=\"{environment.url}"), "Links should not contain unresolved template expression");
     }
 
