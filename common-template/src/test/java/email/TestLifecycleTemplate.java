@@ -70,7 +70,7 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
     public void testRetiringLifecycleEmailTitle() {
         eventTypeDisplayName = "life cycle monthly report";
         String result = generateEmailSubject(RETIRING_LIFECYCLE_REPORT, createLifecycleAction());
-        assertEquals("Monthly notification - life cycle monthly report - Life Cycle - Red Hat Enterprise Linux", result);
+        assertEquals("Monthly report - Life Cycle - Red Hat Enterprise Linux", result);
     }
 
     @Test
