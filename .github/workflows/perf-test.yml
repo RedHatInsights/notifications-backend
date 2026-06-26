@@ -15,17 +15,13 @@ jobs:
         env:
           WEBHOOK_SECRET: ${{ secrets.GOSMEE_WEBHOOK_SECRET }}
         run: |
-          PAYLOAD=$(cat <<EOF
-          {
-            "jenkins_job": "InsightsNotifications_PRTest_builder",
-            "repo": "${{ github.repository }}",
-            "pr_number": "${{ github.event.pull_request.number }}",
-            "pr_sha": "${{ github.event.pull_request.head.sha }}",
-            "pr_branch": "${{ github.head_ref }}",
-            "triggered_by": "${{ github.actor }}"
-          }
-          EOF
-          )
+          # Single-line JSON avoids multiline $GITHUB_OUTPUT issues
+          PAYLOAD=$(printf '{"jenkins_job":"InsightsNotifications_PRTest_builder","repo":"%s","pr_number":"%s","pr_sha":"%s","pr_branch":"%s","triggered_by":"%s"}' \
+            "${{ github.repository }}" \
+            "${{ github.event.pull_request.number }}" \
+            "${{ github.event.pull_request.head.sha }}" \
+            "${{ github.head_ref }}" \
+            "${{ github.actor }}")
           SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | cut -d' ' -f2)
           echo "signature=$SIGNATURE" >> $GITHUB_OUTPUT
           echo "payload=$PAYLOAD" >> $GITHUB_OUTPUT
