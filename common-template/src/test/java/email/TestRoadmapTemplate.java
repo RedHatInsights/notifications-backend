@@ -69,7 +69,7 @@ public class TestRoadmapTemplate extends EmailTemplatesRendererHelper {
     public void testRoadmapEmailTitle() {
         eventTypeDisplayName = "roadmap monthly report";
         String result = generateEmailSubject(ROADMAP_REPORT, createRoadmapAction());
-        assertEquals("Instant notification - roadmap monthly report - Roadmap - Red Hat Enterprise Linux", result);
+        assertEquals("Monthly report - Roadmap - Red Hat Enterprise Linux", result);
     }
 
     @Test
