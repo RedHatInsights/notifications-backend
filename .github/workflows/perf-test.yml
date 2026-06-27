@@ -10,18 +10,42 @@ jobs:
     name: Trigger Jenkins Performance Test
     runs-on: ubuntu-latest
     steps:
+      - name: Wait for Konflux image to be ready
+        run: |
+          IMAGE="quay.io/redhat-user-workloads/hcc-integrations-tenant/notifications/notifications-backend:on-pr-${{ github.event.pull_request.head.sha }}"
+          echo "Waiting for Konflux to build: $IMAGE"
+
+          MAX_WAIT=1800  # 30 minutes
+          INTERVAL=30
+          elapsed=0
+
+          while [ $elapsed -lt $MAX_WAIT ]; do
+            if skopeo inspect --no-creds "docker://$IMAGE" > /dev/null 2>&1; then
+              echo "Image is ready: $IMAGE"
+              exit 0
+            fi
+            echo "Not ready yet... (${elapsed}s elapsed, retrying in ${INTERVAL}s)"
+            sleep $INTERVAL
+            elapsed=$((elapsed + INTERVAL))
+          done
+
+          echo "ERROR: Timed out after ${MAX_WAIT}s waiting for Konflux image"
+          exit 1
+
       - name: Build and sign webhook payload
         id: payload
         env:
           WEBHOOK_SECRET: ${{ secrets.GOSMEE_WEBHOOK_SECRET }}
         run: |
           # Single-line JSON avoids multiline $GITHUB_OUTPUT issues
-          PAYLOAD=$(printf '{"jenkins_job":"InsightsNotifications_PRTest_builder","repo":"%s","pr_number":"%s","pr_sha":"%s","pr_branch":"%s","triggered_by":"%s"}' \
+          # image_tag_override uses the predictable Konflux tag format: on-pr-<SHA>
+          PAYLOAD=$(printf '{"jenkins_job":"InsightsNotifications_PRTest_builder","repo":"%s","pr_number":"%s","pr_sha":"%s","pr_branch":"%s","triggered_by":"%s","image_tag_override":"%s"}' \
             "${{ github.repository }}" \
             "${{ github.event.pull_request.number }}" \
             "${{ github.event.pull_request.head.sha }}" \
             "${{ github.head_ref }}" \
-            "${{ github.actor }}")
+            "${{ github.actor }}" \
+            "on-pr-${{ github.event.pull_request.head.sha }}")
           SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | cut -d' ' -f2)
           echo "signature=$SIGNATURE" >> $GITHUB_OUTPUT
           echo "payload=$PAYLOAD" >> $GITHUB_OUTPUT
@@ -29,9 +53,10 @@ jobs:
       - name: Send webhook to gosmee
         run: |
           echo "Triggering perf test for PR #${{ github.event.pull_request.number }}"
-          echo "Repo:   ${{ github.repository }}"
-          echo "Branch: ${{ github.head_ref }}"
-          echo "SHA:    ${{ github.event.pull_request.head.sha }}"
+          echo "Repo:      ${{ github.repository }}"
+          echo "Branch:    ${{ github.head_ref }}"
+          echo "SHA:       ${{ github.event.pull_request.head.sha }}"
+          echo "Image tag: on-pr-${{ github.event.pull_request.head.sha }}"
 
           HTTP_STATUS=$(curl -s -o /tmp/gosmee_response.json -w "%{http_code}" \
             -X POST \
