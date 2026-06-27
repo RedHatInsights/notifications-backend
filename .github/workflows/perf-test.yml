@@ -10,42 +10,33 @@ jobs:
     name: Trigger Jenkins Performance Test
     runs-on: ubuntu-latest
     steps:
-      - name: Wait for Konflux image to be ready
+      # TODO(phase2): Replace this step with a real Konflux image wait.
+      # Once Konflux builds the PR image at:
+      #   quay.io/redhat-user-workloads/hcc-integrations-tenant/notifications/notifications-backend:on-pr-<SHA>
+      # restore the skopeo poll loop and set IMAGE_URL to that address.
+      - name: Resolve image to test
+        id: image
         run: |
-          IMAGE="quay.io/redhat-user-workloads/hcc-integrations-tenant/notifications/notifications-backend:on-pr-${{ github.event.pull_request.head.sha }}"
-          echo "Waiting for Konflux to build: $IMAGE"
-
-          MAX_WAIT=1800  # 30 minutes
-          INTERVAL=30
-          elapsed=0
-
-          while [ $elapsed -lt $MAX_WAIT ]; do
-            if skopeo inspect --no-creds "docker://$IMAGE" > /dev/null 2>&1; then
-              echo "Image is ready: $IMAGE"
-              exit 0
-            fi
-            echo "Not ready yet... (${elapsed}s elapsed, retrying in ${INTERVAL}s)"
-            sleep $INTERVAL
-            elapsed=$((elapsed + INTERVAL))
-          done
-
-          echo "ERROR: Timed out after ${MAX_WAIT}s waiting for Konflux image"
-          exit 1
+          # MOCK: use the currently deployed production image for end-to-end testing.
+          # Replace with the Konflux PR image URL once the real flow is in place.
+          IMAGE_URL="quay.io/redhat-services-prod/hcc-integrations-tenant/notifications/notifications-backend:ac82a92"
+          echo "Image to test: $IMAGE_URL"
+          echo "image_url=$IMAGE_URL" >> $GITHUB_OUTPUT
 
       - name: Build and sign webhook payload
         id: payload
         env:
           WEBHOOK_SECRET: ${{ secrets.GOSMEE_WEBHOOK_SECRET }}
         run: |
-          # Single-line JSON avoids multiline $GITHUB_OUTPUT issues
-          # image_tag_override uses the predictable Konflux tag format: on-pr-<SHA>
+          # Single-line JSON avoids multiline $GITHUB_OUTPUT issues.
+          # image_tag_override carries the full image URL so Jenkins can deploy it directly.
           PAYLOAD=$(printf '{"jenkins_job":"InsightsNotifications_PRTest_builder","repo":"%s","pr_number":"%s","pr_sha":"%s","pr_branch":"%s","triggered_by":"%s","image_tag_override":"%s"}' \
             "${{ github.repository }}" \
             "${{ github.event.pull_request.number }}" \
             "${{ github.event.pull_request.head.sha }}" \
             "${{ github.head_ref }}" \
             "${{ github.actor }}" \
-            "on-pr-${{ github.event.pull_request.head.sha }}")
+            "${{ steps.image.outputs.image_url }}")
           SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | cut -d' ' -f2)
           echo "signature=$SIGNATURE" >> $GITHUB_OUTPUT
           echo "payload=$PAYLOAD" >> $GITHUB_OUTPUT
