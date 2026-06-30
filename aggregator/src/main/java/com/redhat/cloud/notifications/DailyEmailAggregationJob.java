@@ -30,6 +30,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -66,6 +67,13 @@ public class DailyEmailAggregationJob {
 
     @ActivateRequestContext
     public void processDailyEmail() {
+        // Cluster coordination check - fail-safe if Unleash unreachable
+        if (!shouldRunOnThisCluster()) {
+            Log.infof("Aggregator run skipped on %s cluster due to Unleash flag",
+                aggregatorConfig.getClusterId().orElse("unknown"));
+            return; // Exit gracefully with success
+        }
+
         // Job start - SEC-MON-REQ-1 compliance (EOI-3 admin_action, EOI-5 process_status)
         Log.infof("[action: RUN_JOB][resource_type: daily_email_aggregation][principal: system][outcome: started] Daily email aggregation job started");
 
@@ -197,6 +205,55 @@ public class DailyEmailAggregationJob {
 
     Gauge getPairsProcessed() {
         return pairsProcessed;
+    }
+
+    /**
+     * Determines if this cluster should run the aggregation job.
+     *
+     * BACKWARD COMPATIBILITY:
+     * - If cluster ID is NOT configured, cluster coordination is disabled - returns true (run)
+     * - This allows existing single-cluster deployments to work without changes
+     *
+     * FAIL-SAFE BEHAVIOR (when cluster ID IS configured):
+     * Returns false (skip) in ALL error conditions:
+     * - Unleash variant is not enabled or unreachable
+     * - Unleash variant has invalid/missing payload
+     * - Unleash returns a cluster ID that doesn't match this instance
+     *
+     * Returns true (run) ONLY if:
+     * - Cluster ID is configured AND Unleash variant returns valid data
+     * - AND the returned cluster ID exactly matches this instance's CLUSTER_ID
+     */
+    private boolean shouldRunOnThisCluster() {
+        Optional<String> thisClusterId = aggregatorConfig.getClusterId();
+
+        // If no cluster ID configured, cluster coordination is disabled - allow run (backward compatibility)
+        if (thisClusterId.isEmpty()) {
+            Log.debug("NOTIFICATIONS_AGGREGATOR_CLUSTER_ID not configured - cluster coordination disabled, proceeding with aggregation");
+            return true;
+        }
+
+        Optional<String> activeCluster = aggregatorConfig.getActiveCluster();
+
+        // If Unleash disabled or unreachable, don't run (fail-safe when cluster ID is configured)
+        // This includes: Unleash disabled, unreachable, variant disabled, invalid payload
+        if (activeCluster.isEmpty()) {
+            Log.warn("Unable to determine active cluster from Unleash - failing safe by not running");
+            return false;
+        }
+
+        // Check if this cluster matches the active cluster
+        boolean shouldRun = thisClusterId.get().equals(activeCluster.get());
+
+        if (shouldRun) {
+            Log.infof("Cluster coordination check passed: this cluster (%s) matches active cluster (%s)",
+                thisClusterId.get(), activeCluster.get());
+        } else {
+            Log.infof("Cluster coordination check failed: this cluster (%s) does not match active cluster (%s)",
+                thisClusterId.get(), activeCluster.get());
+        }
+
+        return shouldRun;
     }
 
     // For automatic tests purpose
