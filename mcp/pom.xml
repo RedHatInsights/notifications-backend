@@ -124,6 +124,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.quarkiverse.mcp</groupId>
+            <artifactId>quarkus-mcp-server-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
