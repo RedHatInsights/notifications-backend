@@ -45,7 +45,7 @@ public class AggregatorConfig {
     }
 
     public Optional<String> getClusterId() {
-        return clusterId;
+        return clusterId.map(String::trim).filter(value -> !value.isEmpty());
     }
 
     /**
