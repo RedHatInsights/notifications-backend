@@ -103,11 +103,11 @@ public class RecipientsResolverConfig {
 
     // Keystore path for certificate expiry logging (supports both JKS and PKCS12)
     // StartupUtils auto-detects the format from the file extension (.jks, .p12, .pfx)
-    @ConfigProperty(name = "it.services.keystore-path")
+    @ConfigProperty(name = "notifications.it-services.keystore-path")
     Optional<String> itServicesKeystorePath;
 
     // SECURITY WARNING: This property contains sensitive credentials - never log this value
-    @ConfigProperty(name = "it.services.keystore-password")
+    @ConfigProperty(name = "notifications.it-services.keystore-password")
     Optional<String> itServicesKeystorePassword;
 
     @ConfigProperty(name = KESSEL_DOMAIN, defaultValue = "redhat")
