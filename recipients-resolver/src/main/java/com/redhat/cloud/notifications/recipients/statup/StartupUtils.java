@@ -166,7 +166,7 @@ public class StartupUtils {
 
     private String detectKeystoreType(String path) {
         int lastDot = path.lastIndexOf('.');
-        if (lastDot <= 0 || lastDot == path.length() - 1) {
+        if (lastDot < 0 || lastDot == path.length() - 1) {
             throw new IllegalArgumentException(String.format("No file extension found for keystore path '%s'. " +
                     "Supported extensions: .jks, .p12, .pfx", path));
         }

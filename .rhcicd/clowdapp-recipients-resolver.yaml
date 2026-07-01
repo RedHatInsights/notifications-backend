@@ -146,6 +146,8 @@ objects:
               name: ${IT_SERVICE_TO_SERVICE_SECRET_NAME}
               key: ${IT_SERVICE_TO_SERVICE_PASSWORD_KEY}
               optional: true
+        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_TYPE
+          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE_TYPE}
         - name: QUARKUS_REST_CLIENT_IT_S2S_URL
           valueFrom:
             secretKeyRef:
@@ -264,6 +266,9 @@ parameters:
 - name: IT_SERVICE_TO_SERVICE_KEY_STORE
   description: "PKCS12 keystore path for IT service mTLS. Set to /mnt/it-services-cert-autorenew/keystore.p12 in stage/prod (auto-renewed); set to file:/mnt/secrets/clientkeystore.jks in ephemeral (manual JKS)."
   value: ""
+- name: IT_SERVICE_TO_SERVICE_KEY_STORE_TYPE
+  description: "Keystore type. Use PKCS12 in stage/prod (auto-renewed cert); use JKS in ephemeral."
+  value: "PKCS12"
 - name: IT_SERVICE_TO_SERVICE_SECRET_NAME
   description: "Name of the secret containing the keystore password. Use 'it-services-cert' in stage/prod (auto-renewed); use 'it-services' in ephemeral."
   value: "it-services"
