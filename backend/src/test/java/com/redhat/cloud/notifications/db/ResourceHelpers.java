@@ -219,7 +219,7 @@ public class ResourceHelpers {
         return endpointRepository.createEndpoint(endpoint);
     }
 
-    public Endpoint createSystemEndpoint(String accountId, String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
+    public Endpoint getOrCreateSystemEndpoint(String accountId, String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
         return endpointRepository.getOrCreateSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType);
     }
 

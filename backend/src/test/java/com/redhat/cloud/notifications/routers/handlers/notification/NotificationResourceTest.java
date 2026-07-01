@@ -2312,7 +2312,7 @@ public class NotificationResourceTest extends DbIsolatedTest {
             .findFirst().get().getId();
         UUID endpointId1 = helpers.createWebhookEndpoint(accountId, orgId, "endpoint1");
         UUID endpointId2 = helpers.createWebhookEndpoint(accountId, orgId, "endpoint2");
-        Endpoint emailEndpoint = helpers.createSystemEndpoint(accountId, orgId, new SystemSubscriptionProperties(), EndpointType.EMAIL_SUBSCRIPTION);
+        Endpoint emailEndpoint = helpers.getOrCreateSystemEndpoint(accountId, orgId, new SystemSubscriptionProperties(), EndpointType.EMAIL_SUBSCRIPTION);
 
         List<EventType> eventTypes = applicationRepository.getEventTypes(appId);
         final EventType retictedRecipientsIntegrationEventType = helpers.createEventType(appId, RandomStringUtils.randomAlphabetic(10).toLowerCase(), "restricted event type 2", "description", true);
