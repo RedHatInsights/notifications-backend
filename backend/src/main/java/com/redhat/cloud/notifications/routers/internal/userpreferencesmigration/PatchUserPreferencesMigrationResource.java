@@ -162,7 +162,6 @@ public class PatchUserPreferencesMigrationResource {
         SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
         properties.setOnlyAdmins(false);
 
-        Optional<Endpoint> getEndpoint = endpointRepository.getSystemSubscriptionEndpoint(orgId, properties, EndpointType.EMAIL_SUBSCRIPTION);
-        return getEndpoint.orElseGet(() -> endpointRepository.createSystemSubscriptionEndpoint(accountId, orgId, properties, EndpointType.EMAIL_SUBSCRIPTION));
+        return endpointRepository.getOrCreateSystemSubscriptionEndpoint(accountId, orgId, properties, EndpointType.EMAIL_SUBSCRIPTION);
     }
 }
