@@ -1,0 +1,92 @@
+---
+name: Performance Regression Test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  trigger-perf-test:
+    name: Trigger Jenkins Performance Test
+    runs-on: ubuntu-latest
+    steps:
+      # ─────────────────────────────────────────────────────────────────────────
+      # TODO(phase2 — real PR flow): replace the mock below with a Konflux wait.
+      #
+      # When a real PR is opened against RedHatInsights/notifications-backend,
+      # Konflux automatically builds and pushes the image to:
+      #
+      #   quay.io/redhat-user-workloads/hcc-integrations-tenant/notifications/
+      #     notifications-backend:on-pr-<PR_HEAD_SHA>
+      #
+      # Steps to switch from mock to real:
+      #   1. Remove the "MOCK" block below.
+      #   2. Uncomment / restore the skopeo poll loop:
+      #
+      #        IMAGE_URL="quay.io/redhat-user-workloads/hcc-integrations-tenant/\
+      #  notifications/notifications-backend:on-pr-${{ github.event.pull_request.head.sha }}"
+      #        MAX_WAIT=1800; INTERVAL=30; elapsed=0
+      #        while [ $elapsed -lt $MAX_WAIT ]; do
+      #          if skopeo inspect --no-creds "docker://$IMAGE_URL" >/dev/null 2>&1; then
+      #            echo "Image ready: $IMAGE_URL"; break
+      #          fi
+      #          echo "Waiting... ${elapsed}s elapsed"; sleep $INTERVAL
+      #          elapsed=$((elapsed + INTERVAL))
+      #        done
+      #        [ $elapsed -ge $MAX_WAIT ] && { echo "Timed out"; exit 1; }
+      #
+      #   3. Update the echo line in "Send webhook to gosmee" to show the real SHA tag.
+      #   4. Ensure GOSMEE_WEBHOOK_SECRET is set as an org-level secret so all
+      #      target repos pick it up automatically.
+      # ─────────────────────────────────────────────────────────────────────────
+      - name: Resolve image to test
+        id: image
+        run: |
+          # MOCK: use the currently deployed production image for end-to-end testing.
+          IMAGE_URL="quay.io/redhat-services-prod/hcc-integrations-tenant/notifications/notifications-backend:ac82a92"
+          echo "Image to test: $IMAGE_URL"
+          echo "image_url=$IMAGE_URL" >> $GITHUB_OUTPUT
+
+      - name: Build and sign webhook payload
+        id: payload
+        env:
+          WEBHOOK_SECRET: ${{ secrets.GOSMEE_WEBHOOK_SECRET }}
+        run: |
+          # Single-line JSON avoids multiline $GITHUB_OUTPUT issues.
+          # image_tag_override carries the full image URL so Jenkins can deploy it directly.
+          PAYLOAD=$(printf '{"jenkins_job":"InsightsNotifications_PRTest_builder","repo":"%s","pr_number":"%s","pr_sha":"%s","pr_branch":"%s","triggered_by":"%s","image_tag_override":"%s"}' \
+            "${{ github.repository }}" \
+            "${{ github.event.pull_request.number }}" \
+            "${{ github.event.pull_request.head.sha }}" \
+            "${{ github.head_ref }}" \
+            "${{ github.actor }}" \
+            "${{ steps.image.outputs.image_url }}")
+          SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | cut -d' ' -f2)
+          echo "signature=$SIGNATURE" >> $GITHUB_OUTPUT
+          echo "payload=$PAYLOAD" >> $GITHUB_OUTPUT
+
+      - name: Send webhook to gosmee
+        run: |
+          echo "Triggering perf test for PR #${{ github.event.pull_request.number }}"
+          echo "Repo:      ${{ github.repository }}"
+          echo "Branch:    ${{ github.head_ref }}"
+          echo "SHA:       ${{ github.event.pull_request.head.sha }}"
+          echo "Image tag: on-pr-${{ github.event.pull_request.head.sha }}"
+
+          HTTP_STATUS=$(curl -s -o /tmp/gosmee_response.json -w "%{http_code}" \
+            -X POST \
+            "https://gosmee-server-smee-proxy.apps.rhperfcluster.ptjz.p1.openshiftapps.com/JIrfcIXXVTBJ" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: sha256=${{ steps.payload.outputs.signature }}" \
+            -d '${{ steps.payload.outputs.payload }}')
+
+          echo "Gosmee response (HTTP $HTTP_STATUS):"
+          cat /tmp/gosmee_response.json
+
+          if [[ "$HTTP_STATUS" != "202" ]]; then
+            echo "ERROR: Expected HTTP 202 from gosmee, got $HTTP_STATUS"
+            exit 1
+          fi
+
+          echo "Webhook accepted. Jenkins job will start shortly."
+          echo "Monitor at: https://jenkins-csb-perf-master.dno.corp.redhat.com/job/InsightsNotifications_PRTest_builder/"
