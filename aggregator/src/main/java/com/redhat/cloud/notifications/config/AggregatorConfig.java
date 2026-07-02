@@ -60,25 +60,25 @@ public class AggregatorConfig {
         try {
             Variant variant = unleash.getVariant(activeClusterToggle);
             if (!variant.isEnabled()) {
-                Log.warn("Unleash variant for active-cluster is not enabled");
+                Log.info("Unleash variant for active-cluster is not enabled");
                 return Optional.empty();
             }
 
             Optional<Payload> payload = variant.getPayload();
             if (payload.isEmpty()) {
-                Log.warn("Unleash variant payload is empty");
+                Log.info("Unleash variant payload is empty");
                 return Optional.empty();
             }
 
             String value = payload.get().getValue();
             if (value == null || value.isBlank()) {
-                Log.warn("Unleash variant payload value is null or blank");
+                Log.info("Unleash variant payload value is null or blank");
                 return Optional.empty();
             }
 
             return Optional.of(value.trim());
         } catch (Exception e) {
-            Log.error("Failed to retrieve active cluster from Unleash", e);
+            Log.warn("Failed to retrieve active cluster from Unleash", e);
             return Optional.empty();
         }
     }

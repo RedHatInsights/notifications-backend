@@ -238,7 +238,7 @@ public class DailyEmailAggregationJob {
         // If Unleash disabled or unreachable, don't run (fail-safe when cluster ID is configured)
         // This includes: Unleash disabled, unreachable, variant disabled, invalid payload
         if (activeCluster.isEmpty()) {
-            Log.warn("Unable to determine active cluster from Unleash - failing safe by not running");
+            Log.info("Unable to determine active cluster from Unleash - failing safe by not running");
             return false;
         }
 
