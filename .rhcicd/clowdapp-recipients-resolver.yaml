@@ -72,7 +72,6 @@ objects:
           readOnly: true
           mountPath: /mnt/it-services-cert-source
         - name: it-services-cert-decoded
-          readOnly: true
           mountPath: /mnt/it-services-cert-autorenew
         - name: keystore
           readOnly: true
