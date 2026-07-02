@@ -101,14 +101,14 @@ public class RecipientsResolverConfig {
     @Inject
     Unleash unleash;
 
-    @ConfigProperty(name = "it.services.tls.cert-path")
-    Optional<String> itServicesTlsCertPath;
+    // Keystore path for certificate expiry logging (supports both JKS and PKCS12)
+    // StartupUtils auto-detects the format from the file extension (.jks, .p12, .pfx)
+    @ConfigProperty(name = "notifications.it-services.keystore-path")
+    Optional<String> itServicesKeystorePath;
 
-    @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store")
-    Optional<String> itServicesKeyStorePath;
-
-    @ConfigProperty(name = "quarkus.rest-client.it-s2s.key-store-password")
-    Optional<String> itServicesKeyStorePassword;
+    // SECURITY WARNING: This property contains sensitive credentials - never log this value
+    @ConfigProperty(name = "notifications.it-services.keystore-password")
+    Optional<String> itServicesKeystorePassword;
 
     @ConfigProperty(name = KESSEL_DOMAIN, defaultValue = "redhat")
     String kesselDomain;
@@ -210,16 +210,12 @@ public class RecipientsResolverConfig {
         return logTooLongRequestLimit;
     }
 
-    public Optional<String> getItServicesTlsCertPath() {
-        return itServicesTlsCertPath;
+    public Optional<String> getItServicesKeystorePath() {
+        return itServicesKeystorePath;
     }
 
-    public Optional<String> getItServicesKeyStorePath() {
-        return itServicesKeyStorePath;
-    }
-
-    public Optional<String> getItServicesKeyStorePassword() {
-        return itServicesKeyStorePassword;
+    public Optional<String> getItServicesKeystorePassword() {
+        return itServicesKeystorePassword;
     }
 
     public Optional<String> getKesselClientId() {

@@ -94,14 +94,6 @@ objects:
           value: ${BACKOFFICE_CLIENT_ENV}
         - name: QUARKUS_REST_CLIENT_MBOP_URL
           value: ${BACKOFFICE_SCHEME}://${BACKOFFICE_HOST}
-        - name: QUARKUS_REST_CLIENT_MBOP_KEY_STORE
-          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE}
-        - name: QUARKUS_REST_CLIENT_MBOP_KEY_STORE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: it-services
-              key: it-services-keystorepassword
-              optional: true
         - name: QUARKUS_CACHE_CAFFEINE_RECIPIENTS_USERS_PROVIDER_GET_USERS_EXPIRE_AFTER_WRITE
           value: ${RBAC_USERS_RETENTION_DELAY}
         - name: QUARKUS_CACHE_CAFFEINE_RECIPIENTS_USERS_PROVIDER_GET_GROUP_USERS_EXPIRE_AFTER_WRITE
@@ -151,9 +143,11 @@ objects:
         - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: it-services
-              key: it-services-keystorepassword
+              name: ${IT_SERVICE_TO_SERVICE_SECRET_NAME}
+              key: ${IT_SERVICE_TO_SERVICE_PASSWORD_KEY}
               optional: true
+        - name: QUARKUS_REST_CLIENT_IT_S2S_KEY_STORE_TYPE
+          value: ${IT_SERVICE_TO_SERVICE_KEY_STORE_TYPE}
         - name: QUARKUS_REST_CLIENT_IT_S2S_URL
           valueFrom:
             secretKeyRef:
@@ -191,14 +185,6 @@ objects:
           value: ${NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS}
         - name: KESSEL_DOMAIN
           value: ${KESSEL_DOMAIN}
-        - name: IT_SERVICES_TLS_CERT_PATH
-          value: ${IT_SERVICES_TLS_CERT_PATH}
-        - name: IT_SERVICES_TLS_KEY_PATH
-          value: ${IT_SERVICES_TLS_KEY_PATH}
-        - name: IT_SERVICES_TLS_CONFIG_NAME
-          value: ${IT_SERVICES_TLS_CONFIG_NAME}
-        - name: IT_SERVICES_TLS_TRUST_STORE_CERTS
-          value: ${IT_SERVICES_TLS_TRUST_STORE_CERTS}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -278,20 +264,17 @@ parameters:
   description: Delay in milliseconds before an IT S2S query is interrupted
   value: "120000"
 - name: IT_SERVICE_TO_SERVICE_KEY_STORE
-  description: "JKS key store for IT/MBOP mTLS. Defaults to the it-services JKS to file:/mnt/secrets/clientkeystore.jks (ephemeral); set to empty in stage/prod which use the auto-renewed PEM cert instead."
+  description: "PKCS12 keystore path for IT service mTLS. Set to /mnt/it-services-cert-autorenew/keystore.p12 in stage/prod (auto-renewed); set to file:/mnt/secrets/clientkeystore.jks in ephemeral (manual JKS)."
   value: ""
-- name: IT_SERVICES_TLS_CERT_PATH
-  description: Path to the PEM certificate for IT service-to-service mTLS. Set to /mnt/it-services-cert-autorenew/tls.crt in stage/prod; empty elsewhere (which use the JKS keystore instead).
-  value: ""
-- name: IT_SERVICES_TLS_KEY_PATH
-  description: Path to the PEM private key for IT service-to-service mTLS. Set to /mnt/it-services-cert-autorenew/tls.key in stage/prod; empty elsewhere.
-  value: ""
-- name: IT_SERVICES_TLS_CONFIG_NAME
-  description: Quarkus TLS configuration name for the IT s2s REST client. Set to "it-s2s" in stage/prod; empty elsewhere (disables PEM-based mTLS).
-  value: ""
-- name: IT_SERVICES_TLS_TRUST_STORE_CERTS
-  description: Path to the certificate trust store for IT service-to-service mTLS. Set to /etc/pki/tls/certs/ca-bundle.crt in stage/prod; (default UBI trust store path) empty elsewhere.
-  value: ""
+- name: IT_SERVICE_TO_SERVICE_KEY_STORE_TYPE
+  description: "Keystore type. Use PKCS12 in stage/prod (auto-renewed cert); use JKS in ephemeral."
+  value: "PKCS12"
+- name: IT_SERVICE_TO_SERVICE_SECRET_NAME
+  description: "Name of the secret containing the keystore password. Use 'it-services-cert' in stage/prod (auto-renewed); use 'it-services' in ephemeral."
+  value: "it-services"
+- name: IT_SERVICE_TO_SERVICE_PASSWORD_KEY
+  description: "Key within the secret for the keystore password. Use 'password' in stage/prod (PKCS12); use 'it-services-keystorepassword' in ephemeral (JKS)."
+  value: "it-services-keystorepassword"
 - name: SENTRY_DSN
   description: The DSN to push data to Sentry — i.e. https://public_key@host/project_id?environment=
 - name: SENTRY_ENABLED
