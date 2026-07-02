@@ -62,12 +62,17 @@ objects:
           value: ${ENV_NAME}
         - name: QUARKUS_UNLEASH_ACTIVE
           value: "true"
+        - name: NOTIFICATIONS_AGGREGATOR_CLUSTER_ID
+          value: ${CLUSTER_ID}
         - name: PROMETHEUS_PUSHGATEWAY_URL
           value: ${PROMETHEUS_PUSHGATEWAY}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
   value: "false"
+- name: CLUSTER_ID
+  description: Cluster identifier for coordination (e.g., 'crcs' or 'hccs')
+  required: false
 - name: CRONTAB_AGGREGATION_JOB
   value: "0 0 * * *"
 - name: CPU_LIMIT
