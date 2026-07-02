@@ -23,6 +23,27 @@ objects:
           enabled: true
       podSpec:
         image: ${IMAGE}:${IMAGE_TAG}
+        initContainers:
+        - name: decode-pkcs12-keystore
+          image: ${IMAGE}:${IMAGE_TAG}
+          command:
+          - /bin/sh
+          - -c
+          - |
+            # Decode PKCS12 keystore if it exists (base64 encoded from rhcs-cert provider)
+            if [ -f /mnt/it-services-cert-source/keystore.pkcs12.b64 ]; then
+              echo "Decoding PKCS12 keystore from base64..."
+              base64 -d /mnt/it-services-cert-source/keystore.pkcs12.b64 > /mnt/it-services-cert-decoded/keystore.p12
+              echo "PKCS12 keystore decoded successfully"
+            else
+              echo "No PKCS12 keystore found to decode (this is expected in ephemeral/local)"
+            fi
+          volumeMounts:
+          - name: it-services-cert-autorenew
+            readOnly: true
+            mountPath: /mnt/it-services-cert-source
+          - name: it-services-cert-decoded
+            mountPath: /mnt/it-services-cert-decoded
         resources:
           requests:
             cpu: ${CPU_REQUEST}
@@ -36,6 +57,8 @@ objects:
             secretName: it-services-cert
             defaultMode: 420
             optional: true
+        - name: it-services-cert-decoded
+          emptyDir: {}
         - name: keystore
           secret:
             secretName: it-services
@@ -45,7 +68,7 @@ objects:
             defaultMode: 420
             optional: true
         volumeMounts:
-        - name: it-services-cert-autorenew
+        - name: it-services-cert-decoded
           readOnly: true
           mountPath: /mnt/it-services-cert-autorenew
         - name: keystore
