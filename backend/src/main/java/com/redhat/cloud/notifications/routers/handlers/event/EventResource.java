@@ -106,7 +106,8 @@ public class EventResource {
                                          @RestQuery Set<String> endpointTypes, @RestQuery Set<Boolean> invocationResults,
                                          @RestQuery Set<EventLogEntryActionStatus> status, @RestQuery Set<Severity> severities,
                                          @BeanParam @Valid Query query,
-                                         @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
+                                         @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions,
+                                         @RestQuery boolean hasAction) {
         Set<EndpointType> basicTypes = Collections.emptySet();
         Set<CompositeEndpointType> compositeTypes = Collections.emptySet();
         Set<NotificationStatus> notificationStatusSet = status == null ? Set.of() : toNotificationStatus(status);
@@ -154,11 +155,11 @@ public class EventResource {
                 if (uuidToExclude.isEmpty()) {
                     uuidToExclude = null;
                 }
-                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.ofNullable(uuidToExclude), true);
-                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.ofNullable(uuidToExclude), true);
+                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.ofNullable(uuidToExclude), true, hasAction);
+                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.ofNullable(uuidToExclude), true, hasAction);
             } else {
-                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.empty(), false);
-                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.empty(), false);
+                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.empty(), false, hasAction);
+                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.empty(), false, hasAction);
             }
 
             if (events.isEmpty()) {
