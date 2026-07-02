@@ -68,6 +68,9 @@ objects:
             defaultMode: 420
             optional: true
         volumeMounts:
+        - name: it-services-cert-autorenew
+          readOnly: true
+          mountPath: /mnt/it-services-cert-source
         - name: it-services-cert-decoded
           readOnly: true
           mountPath: /mnt/it-services-cert-autorenew
