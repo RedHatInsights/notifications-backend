@@ -48,11 +48,18 @@ jobs:
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GIT_BOT_EMAIL: ${{ secrets.GIT_BOT_EMAIL }}
+          GIT_BOT_NAME: ${{ secrets.GIT_BOT_NAME }}
         run: |
           if [ -z "${GPG_PRIVATE_KEY}" ]; then
             echo "Error: GPG_PRIVATE_KEY secret is not configured."
             echo "Add a GPG private key (ASCII-armored) as a repository secret named GPG_PRIVATE_KEY."
             echo "Generate one with: gpg --full-generate-key && gpg --export-secret-key -a <KEY_ID>"
+            exit 1
+          fi
+          if [ -z "${GIT_BOT_EMAIL}" ] || [ -z "${GIT_BOT_NAME}" ]; then
+            echo "Error: GIT_BOT_EMAIL and GIT_BOT_NAME secrets must be configured."
+            echo "They must match a verified email/username on the GitHub account owning the GPG key."
             exit 1
           fi
           if [ -n "${GPG_PASSPHRASE}" ]; then
@@ -74,8 +81,8 @@ jobs:
           echo "GPG_KEY_FINGERPRINT=${KEY_FINGERPRINT}" >> "${GITHUB_ENV}"
           git config user.signingkey "${KEY_FINGERPRINT}"
           git config commit.gpgsign true
-          git config user.email "noreply@redhat.com"
-          git config user.name "notifications-ci-bot"
+          git config user.email "${GIT_BOT_EMAIL}"
+          git config user.name "${GIT_BOT_NAME}"
           if [ -n "${GPG_PASSPHRASE}" ]; then
             echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
             gpg-connect-agent reloadagent /bye
