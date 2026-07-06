@@ -671,15 +671,15 @@
   dependencies:
     "@monaco-editor/loader" "^1.5.0"
 
-"@patternfly/react-code-editor@6.5.1":
-  version "6.5.1"
-  resolved "https://registry.yarnpkg.com/@patternfly/react-code-editor/-/react-code-editor-6.5.1.tgz#7fcf6471a22cfd05e8481c4093f4400961c00a32"
-  integrity sha512-Epd4iAX7/Uzo+Vl+6gX6f1BjhoX06DVV7pnZnQK4N4uknyXbfIGkmOJcE0Eq06z1cxiITV/h/JHI6WqzbOSaGA==
+"@patternfly/react-code-editor@6.6.0":
+  version "6.6.0"
+  resolved "https://registry.yarnpkg.com/@patternfly/react-code-editor/-/react-code-editor-6.6.0.tgz#d588d79883e58430f758b6be8c7f3aba6c1988e5"
+  integrity sha512-WzR2tRI/KeAz2XZNgR2FmO8E06+n652bga0Bt/vDoNuWK3nTTCyO+1KYKRH06huGk3aIEjXDcBGCJQNt7LUJkA==
   dependencies:
     "@monaco-editor/react" "^4.7.0"
-    "@patternfly/react-core" "^6.5.1"
-    "@patternfly/react-icons" "^6.5.1"
-    "@patternfly/react-styles" "^6.5.1"
+    "@patternfly/react-core" "^6.6.0"
+    "@patternfly/react-icons" "^6.6.0"
+    "@patternfly/react-styles" "^6.6.0"
     react-dropzone "14.3.5"
     tslib "^2.8.1"
 
@@ -695,7 +695,7 @@
     react-dropzone "^14.3.5"
     tslib "^2.8.1"
 
-"@patternfly/react-core@^6.5.1":
+"@patternfly/react-core@^6.5.1", "@patternfly/react-core@^6.6.0":
   version "6.6.0"
   resolved "https://registry.yarnpkg.com/@patternfly/react-core/-/react-core-6.6.0.tgz#6a4074d4b73e76977e1b727dbf0b3e7c2b52ffcc"
   integrity sha512-MLYPcJvdDWHZqWcvEH2QhKtCg6APRfrDJ4o192/wc2LUaf4ViGVsVLKDMbaKCamhbGauv7KpffNCSy3fjRy4Bw==
