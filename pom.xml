@@ -87,7 +87,7 @@
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>3.37.1</quarkus.platform.version>
         <redhat.event-schemas.version>1.5.0</redhat.event-schemas.version>
-        <com.networknt.json-schema-validator.version>2.0.2</com.networknt.json-schema-validator.version>
+        <com.networknt.json-schema-validator.version>3.0.6</com.networknt.json-schema-validator.version>
 
         <sonar.maven.plugin.version>5.7.0.6970</sonar.maven.plugin.version>
         <jacoco.output.directory>${project.build.directory}/jacoco-report</jacoco.output.directory>
