@@ -1,4 +1,27 @@
 ---
+# ─────────────────────────────────────────────────────────────────────────────
+# ONBOARDING A NEW SERVICE?
+#
+# This file is service-specific. Each application that wants PR perf testing
+# needs its own copy of this workflow with the following values updated:
+#
+#   1. IMAGE_URL (line ~19):
+#        Change the Quay path to point at the new service's Konflux image.
+#        Format: quay.io/redhat-user-workloads/<tenant>/<component>/<image>:on-pr-<sha>
+#        Find the correct path via:
+#          skopeo list-tags --no-creds docker://quay.io/redhat-user-workloads/<tenant>/<component>/<image>
+#
+#   2. jenkins_job (line ~49):
+#        Change "InsightsNotifications_PRTest_builder" to the Jenkins job name
+#        for your service (e.g. "InsightsKesselAPI_PRTest_builder").
+#        Each service needs its own Job DSL entry in ci-configs/src/jobs/ and
+#        a config file in ci-configs/jenkins/gh-pr-testing/.
+#
+#   3. Monitor URL (last line):
+#        Update the Jenkins job URL to match the new jenkins_job name.
+#
+# See ci-configs/jenkins/gh-pr-testing/README.md for the full onboarding guide.
+# ─────────────────────────────────────────────────────────────────────────────
 name: Performance Regression Test
 
 on:
@@ -16,6 +39,7 @@ jobs:
           # Wait for Konflux to build and push the PR image to Quay.
           # Konflux publishes images as: quay.io/redhat-user-workloads/<org>/<component>:<tag>
           # Tag format for PRs: on-pr-<full-commit-sha>
+          # TODO(onboarding): update this path when copying to a new service repo.
           IMAGE_URL="quay.io/redhat-user-workloads/hcc-integrations-tenant/notifications/notifications-backend:on-pr-${{ github.event.pull_request.head.sha }}"
           echo "Waiting for Konflux image: $IMAGE_URL"
 
@@ -45,7 +69,9 @@ jobs:
           WEBHOOK_SECRET: ${{ secrets.GOSMEE_WEBHOOK_SECRET }}
         run: |
           # Single-line JSON avoids multiline $GITHUB_OUTPUT issues.
-          # image_tag_override carries the full image URL so Jenkins can deploy it directly.
+          # jenkins_job routes to the correct Jenkins pipeline for this service.
+          # image_tag_override carries the full Konflux image URL for deployment.
+          # TODO(onboarding): update jenkins_job when copying to a new service repo.
           PAYLOAD=$(printf '{"jenkins_job":"InsightsNotifications_PRTest_builder","repo":"%s","pr_number":"%s","pr_sha":"%s","pr_branch":"%s","triggered_by":"%s","image_tag_override":"%s"}' \
             "${{ github.repository }}" \
             "${{ github.event.pull_request.number }}" \
@@ -81,4 +107,5 @@ jobs:
           fi
 
           echo "Webhook accepted. Jenkins job will start shortly."
+          # TODO(onboarding): update this URL when copying to a new service repo.
           echo "Monitor at: https://jenkins-csb-perf-master.dno.corp.redhat.com/job/InsightsNotifications_PRTest_builder/"
