@@ -140,12 +140,12 @@ public interface BackendRestClient {
     void updateEndpoint(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID id, EndpointDTO endpoint);
 
     @GET
-    @Path("/api/notifications/v1.0/eventTypes/{eventTypeId}/endpoints")
+    @Path("/api/notifications/v1.0/notifications/eventTypes/{eventTypeId}/endpoints")
     @Produces(APPLICATION_JSON)
     String getLinkedEndpoints(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID eventTypeId, @RestQuery Integer limit, @RestQuery Integer offset);
 
     @PUT
-    @Path("/api/notifications/v1.0/eventTypes/{eventTypeId}/endpoints")
+    @Path("/api/notifications/v1.0/notifications/eventTypes/{eventTypeId}/endpoints")
     @Consumes(APPLICATION_JSON)
     void updateEventTypeEndpoints(@RestHeader("x-rh-identity") String xRhIdentity, @RestPath UUID eventTypeId, java.util.Set<UUID> endpointIds);
 
