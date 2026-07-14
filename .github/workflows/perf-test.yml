@@ -27,6 +27,10 @@ name: Performance Regression Test
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    paths-ignore:
+      - '.github/**'
+      - '**.md'
+      - 'docs/**'
 
 jobs:
   trigger-perf-test:
