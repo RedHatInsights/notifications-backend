@@ -72,6 +72,10 @@ jobs:
         env:
           WEBHOOK_SECRET: ${{ secrets.GOSMEE_WEBHOOK_SECRET }}
         run: |
+          if [[ -z "$WEBHOOK_SECRET" ]]; then
+            echo "ERROR: GOSMEE_WEBHOOK_SECRET is not set. Add it as a repository secret."
+            exit 1
+          fi
           # Single-line JSON avoids multiline $GITHUB_OUTPUT issues.
           # jenkins_job routes to the correct Jenkins pipeline for this service.
           # image_tag_override carries the full Konflux image URL for deployment.
