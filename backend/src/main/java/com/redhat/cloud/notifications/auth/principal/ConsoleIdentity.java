@@ -1,3 +1,4 @@
+// test
 package com.redhat.cloud.notifications.auth.principal;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
