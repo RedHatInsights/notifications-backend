@@ -184,6 +184,33 @@ class EventDeduplicatorTest {
         assertTrue(eventDeduplicator.isNew(event7), "Event with different billing_account_id should return true");
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testIsNewWithSubscriptionsDeduplicationServiceLevelAndUsage(final boolean valkeyDedupEnabled) {
+        when(config.isValkeyEventDeduplicatorEnabled()).thenReturn(valkeyDedupEnabled);
+        when(config.isInMemoryDbEnabled()).thenReturn(valkeyDedupEnabled);
+
+        EventType eventType = createEventType(SUBSCRIPTION_SERVICES_BUNDLE_NAME, "subscriptions");
+        LocalDateTime baseDateTime =
+                LocalDateTime.of(LocalDateTime.now(UTC_ZONE).plusYears(1).getYear(), 11, 20, 10, 0);
+
+        assertTrue(eventDeduplicator.isNew(createSubscriptionsEvent(
+            UUID.randomUUID(), "org123", eventType, baseDateTime,
+            "prod456", "metric789", "billing001", "Premium", "Production")));
+
+        assertFalse(eventDeduplicator.isNew(createSubscriptionsEvent(
+            UUID.randomUUID(), "org123", eventType, baseDateTime.plusDays(1),
+            "prod456", "metric789", "billing001", "Premium", "Production")));
+
+        assertTrue(eventDeduplicator.isNew(createSubscriptionsEvent(
+            UUID.randomUUID(), "org123", eventType, baseDateTime.plusDays(2),
+            "prod456", "metric789", "billing001", "Standard", "Production")));
+
+        assertTrue(eventDeduplicator.isNew(createSubscriptionsEvent(
+            UUID.randomUUID(), "org123", eventType, baseDateTime.plusDays(3),
+            "prod456", "metric789", "billing001", "Premium", "Development/Test")));
+    }
+
     @Transactional
     EventType createEventType(String bundleName, String appName) {
         Bundle bundle = new Bundle();
@@ -208,12 +235,39 @@ class EventDeduplicatorTest {
         return eventType;
     }
 
-    private static Event createSubscriptionsEvent(UUID eventId, String orgId, EventType eventType, LocalDateTime timestamp, String productId, String metricId, String billingAccountId) {
+    private static Event createSubscriptionsEvent(
+            UUID eventId,
+            String orgId,
+            EventType eventType,
+            LocalDateTime timestamp,
+            String productId,
+            String metricId,
+            String billingAccountId) {
+        return createSubscriptionsEvent(
+            eventId, orgId, eventType, timestamp, productId, metricId, billingAccountId, null, null);
+    }
+
+    private static Event createSubscriptionsEvent(
+            UUID eventId,
+            String orgId,
+            EventType eventType,
+            LocalDateTime timestamp,
+            String productId,
+            String metricId,
+            String billingAccountId,
+            String serviceLevel,
+            String usage) {
 
         JsonObject context = new JsonObject();
         context.put("product_id", productId);
         context.put("metric_id", metricId);
         context.put("billing_account_id", billingAccountId);
+        if (serviceLevel != null) {
+            context.put("service_level", serviceLevel);
+        }
+        if (usage != null) {
+            context.put("usage", usage);
+        }
 
         Event event = new Event();
         event.setId(eventId);

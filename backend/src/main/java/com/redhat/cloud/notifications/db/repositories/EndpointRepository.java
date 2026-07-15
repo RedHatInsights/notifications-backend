@@ -193,17 +193,7 @@ public class EndpointRepository {
     }
 
     @Transactional
-    public Optional<Endpoint> getSystemSubscriptionEndpoint(String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
-        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null, false);
-        loadProperties(endpoints);
-        return endpoints
-            .stream()
-            .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(SystemSubscriptionProperties.class)))
-            .findFirst();
-    }
-
-    @Transactional
-    public Endpoint createSystemSubscriptionEndpoint(String accountId, String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
+    public Endpoint getOrCreateSystemSubscriptionEndpoint(String accountId, String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
         String label = "Email";
         if (EndpointType.DRAWER == endpointType) {
             label = "Drawer";

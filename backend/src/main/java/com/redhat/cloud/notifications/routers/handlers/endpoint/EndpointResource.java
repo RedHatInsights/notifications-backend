@@ -365,12 +365,7 @@ public class EndpointResource extends EndpointResourceCommon {
         if (null != requestProps.getGroupId()) {
             properties.setGroupIds(Set.of(requestProps.getGroupId()));
         }
-        Optional<Endpoint> getEndpoint = endpointRepository.getSystemSubscriptionEndpoint(orgId, properties, endpointType);
-        if (getEndpoint.isPresent()) {
-            return getEndpoint.get();
-        } else {
-            return endpointRepository.createSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType);
-        }
+        return endpointRepository.getOrCreateSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType);
     }
 
     private void getOrCreateInternalEndpointCommonChecks(RequestSystemSubscriptionProperties requestProps, RhIdPrincipal principal) {
