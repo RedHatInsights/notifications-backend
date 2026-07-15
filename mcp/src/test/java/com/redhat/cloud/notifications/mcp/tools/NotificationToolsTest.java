@@ -340,7 +340,7 @@ public class NotificationToolsTest extends McpTestBase {
                 }
                 """;
         MockServerLifecycleManager.getClient().stubFor(
-                get(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                get(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .withHeader("x-rh-identity", equalTo(validIdentity()))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "application/json")
@@ -354,7 +354,7 @@ public class NotificationToolsTest extends McpTestBase {
         micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
 
         MockServerLifecycleManager.getClient().verify(
-                getRequestedFor(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                getRequestedFor(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .withHeader("x-rh-identity", equalTo(validIdentity()))
         );
     }
@@ -367,7 +367,7 @@ public class NotificationToolsTest extends McpTestBase {
     @Test
     public void testGetLinkedEndpointsWhenBackendReturns404() {
         MockServerLifecycleManager.getClient().stubFor(
-                get(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                get(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .willReturn(aResponse().withStatus(404))
         );
 
@@ -381,7 +381,7 @@ public class NotificationToolsTest extends McpTestBase {
     @Test
     public void testGetLinkedEndpointsWhenBackendReturns403() {
         MockServerLifecycleManager.getClient().stubFor(
-                get(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                get(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .willReturn(aResponse().withStatus(403))
         );
 
@@ -427,7 +427,7 @@ public class NotificationToolsTest extends McpTestBase {
     @Test
     public void testUpdateEventTypeEndpointsWithValidIdentity() {
         MockServerLifecycleManager.getClient().stubFor(
-                put(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                put(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .withHeader("x-rh-identity", equalTo(validIdentity()))
                         .willReturn(aResponse().withStatus(200))
         );
@@ -438,7 +438,7 @@ public class NotificationToolsTest extends McpTestBase {
         micrometerAssertionHelper.assertCounterIncrement(AUTH_SUCCESS_COUNTER, 1);
 
         MockServerLifecycleManager.getClient().verify(
-                putRequestedFor(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                putRequestedFor(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .withHeader("x-rh-identity", equalTo(validIdentity()))
         );
     }
@@ -446,7 +446,7 @@ public class NotificationToolsTest extends McpTestBase {
     @Test
     public void testUpdateEventTypeEndpointsWithEmptySet() {
         MockServerLifecycleManager.getClient().stubFor(
-                put(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                put(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .withHeader("x-rh-identity", equalTo(validIdentity()))
                         .willReturn(aResponse().withStatus(200))
         );
@@ -465,7 +465,7 @@ public class NotificationToolsTest extends McpTestBase {
     @Test
     public void testUpdateEventTypeEndpointsWhenBackendReturns400() {
         MockServerLifecycleManager.getClient().stubFor(
-                put(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                put(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .willReturn(aResponse().withStatus(400))
         );
 
@@ -479,7 +479,7 @@ public class NotificationToolsTest extends McpTestBase {
     @Test
     public void testUpdateEventTypeEndpointsWhenBackendReturns403() {
         MockServerLifecycleManager.getClient().stubFor(
-                put(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                put(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .willReturn(aResponse().withStatus(403))
         );
 
@@ -493,7 +493,7 @@ public class NotificationToolsTest extends McpTestBase {
     @Test
     public void testUpdateEventTypeEndpointsWhenBackendReturns404() {
         MockServerLifecycleManager.getClient().stubFor(
-                put(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                put(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .willReturn(aResponse().withStatus(404))
         );
 
