@@ -1013,6 +1013,19 @@ public class EventResourceTest extends DbIsolatedTest {
                 });
     }
 
+    private static Page<EventLogEntry> getEventLogPageWithHasAction(Header identityHeader, boolean hasAction) {
+        return given()
+                .header(identityHeader)
+                .param("hasAction", hasAction)
+                .param("includeActions", true)
+                .when().get(PATH)
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(JSON)
+                .extract().body().as(new TypeRef<>() {
+                });
+    }
+
     private static void assertSameEvent(EventLogEntry eventLogEntry, Event event, NotificationHistory... historyEntries) {
         assertEquals(event.getId(), eventLogEntry.getId());
         assertEquals(event.getExternalId(), eventLogEntry.getExternalId());
@@ -1055,6 +1068,42 @@ public class EventResourceTest extends DbIsolatedTest {
         for (String key : expectedKeys) {
             assertTrue(links.containsKey(key));
         }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false,false", "false,true", "true,false", "true,true"})
+    void testHasActionFilter(boolean kesselEnabled, boolean useNormalizedQueries) {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
+        when(backendConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
+        if (kesselEnabled) {
+            mockDefaultKesselPermission(EVENTS_VIEW, ALLOWED_TRUE);
+        }
+
+        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        Bundle bundle = resourceHelpers.createBundle("bundle-ha", "Bundle HA");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "app-ha", "App HA");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "et-ha", "ET HA", "ET HA");
+
+        // event with a notification action
+        Event eventWithAction = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW.minusDays(1L));
+        Endpoint endpoint = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
+        resourceHelpers.createNotificationHistory(eventWithAction, endpoint, NotificationStatus.SUCCESS);
+        endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint.getId());
+
+        // event without any notification action
+        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW.minusDays(2L));
+
+        // hasAction=false (default): both events returned
+        Page<EventLogEntry> all = getEventLogPageWithHasAction(identityHeader, false);
+        assertEquals(2, all.getMeta().getCount());
+        assertEquals(2, all.getData().size());
+
+        // hasAction=true: only the event with an action returned
+        Page<EventLogEntry> filtered = getEventLogPageWithHasAction(identityHeader, true);
+        assertEquals(1, filtered.getMeta().getCount());
+        assertEquals(1, filtered.getData().size());
+        assertEquals(eventWithAction.getId(), filtered.getData().get(0).getId());
     }
 
     @ParameterizedTest
