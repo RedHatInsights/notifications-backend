@@ -114,15 +114,14 @@ jobs:
           echo "SHA:       ${PR_SHA}"
           echo "Image tag: on-pr-${PR_SHA}"
 
-          HTTP_STATUS=$(curl -s -o /tmp/gosmee_response.json -w "%{http_code}" \
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST \
             "https://gosmee-server-smee-proxy.apps.rhperfcluster.ptjz.p1.openshiftapps.com/JIrfcIXXVTBJ" \
             -H "Content-Type: application/json" \
             -H "X-Hub-Signature-256: sha256=${SIGNATURE}" \
             --data-raw "${PAYLOAD}")
 
-          echo "Gosmee response (HTTP $HTTP_STATUS):"
-          cat /tmp/gosmee_response.json
+          echo "Gosmee response: HTTP $HTTP_STATUS"
 
           if [[ "$HTTP_STATUS" != "202" ]]; then
             echo "ERROR: Expected HTTP 202 from gosmee, got $HTTP_STATUS"
