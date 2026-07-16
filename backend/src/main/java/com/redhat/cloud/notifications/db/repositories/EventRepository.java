@@ -382,9 +382,7 @@ public class EventRepository {
             }
 
             hql += " AND EXISTS (SELECT 1 FROM NotificationHistory nh WHERE nh.event = e AND " + String.join(" AND ", subQueryConditions) + ")";
-        }
-
-        if (hasAction) {
+        } else if (hasAction) {
             hql += " AND EXISTS (SELECT 1 FROM NotificationHistory nh WHERE nh.event = e)";
         }
 
