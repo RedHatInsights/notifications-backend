@@ -71,40 +71,54 @@ jobs:
         id: payload
         env:
           WEBHOOK_SECRET: ${{ secrets.GOSMEE_WEBHOOK_SECRET }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BRANCH: ${{ github.head_ref }}
+          TRIGGERED_BY: ${{ github.actor }}
+          IMAGE_URL: ${{ steps.image.outputs.image_url }}
         run: |
           if [[ -z "$WEBHOOK_SECRET" ]]; then
             echo "ERROR: GOSMEE_WEBHOOK_SECRET is not set. Add it as a repository secret."
             exit 1
           fi
-          # Single-line JSON avoids multiline $GITHUB_OUTPUT issues.
-          # jenkins_job routes to the correct Jenkins pipeline for this service.
-          # image_tag_override carries the full Konflux image URL for deployment.
+          # Use jq --arg to safely build JSON from env vars.
+          # This prevents shell injection from crafted branch names or other PR values.
           # TODO(onboarding): update jenkins_job when copying to a new service repo.
-          PAYLOAD=$(printf '{"jenkins_job":"InsightsNotifications_PRTest_builder","repo":"%s","pr_number":"%s","pr_sha":"%s","pr_branch":"%s","triggered_by":"%s","image_tag_override":"%s"}' \
-            "${{ github.repository }}" \
-            "${{ github.event.pull_request.number }}" \
-            "${{ github.event.pull_request.head.sha }}" \
-            "${{ github.head_ref }}" \
-            "${{ github.actor }}" \
-            "${{ steps.image.outputs.image_url }}")
+          PAYLOAD=$(jq -cn \
+            --arg jenkins_job        "InsightsNotifications_PRTest_builder" \
+            --arg repo               "$GH_REPO" \
+            --arg pr_number          "$PR_NUMBER" \
+            --arg pr_sha             "$PR_SHA" \
+            --arg pr_branch          "$PR_BRANCH" \
+            --arg triggered_by       "$TRIGGERED_BY" \
+            --arg image_tag_override "$IMAGE_URL" \
+            '{jenkins_job: $jenkins_job, repo: $repo, pr_number: $pr_number, pr_sha: $pr_sha, pr_branch: $pr_branch, triggered_by: $triggered_by, image_tag_override: $image_tag_override}')
           SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | cut -d' ' -f2)
           echo "signature=$SIGNATURE" >> $GITHUB_OUTPUT
           echo "payload=$PAYLOAD" >> $GITHUB_OUTPUT
 
       - name: Send webhook to gosmee
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_REPO: ${{ github.repository }}
+          PR_BRANCH: ${{ github.head_ref }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          SIGNATURE: ${{ steps.payload.outputs.signature }}
+          PAYLOAD: ${{ steps.payload.outputs.payload }}
         run: |
-          echo "Triggering perf test for PR #${{ github.event.pull_request.number }}"
-          echo "Repo:      ${{ github.repository }}"
-          echo "Branch:    ${{ github.head_ref }}"
-          echo "SHA:       ${{ github.event.pull_request.head.sha }}"
-          echo "Image tag: on-pr-${{ github.event.pull_request.head.sha }}"
+          echo "Triggering perf test for PR #${PR_NUMBER}"
+          echo "Repo:      ${GH_REPO}"
+          echo "Branch:    ${PR_BRANCH}"
+          echo "SHA:       ${PR_SHA}"
+          echo "Image tag: on-pr-${PR_SHA}"
 
           HTTP_STATUS=$(curl -s -o /tmp/gosmee_response.json -w "%{http_code}" \
             -X POST \
             "https://gosmee-server-smee-proxy.apps.rhperfcluster.ptjz.p1.openshiftapps.com/JIrfcIXXVTBJ" \
             -H "Content-Type: application/json" \
-            -H "X-Hub-Signature-256: sha256=${{ steps.payload.outputs.signature }}" \
-            -d '${{ steps.payload.outputs.payload }}')
+            -H "X-Hub-Signature-256: sha256=${SIGNATURE}" \
+            --data-raw "${PAYLOAD}")
 
           echo "Gosmee response (HTTP $HTTP_STATUS):"
           cat /tmp/gosmee_response.json
