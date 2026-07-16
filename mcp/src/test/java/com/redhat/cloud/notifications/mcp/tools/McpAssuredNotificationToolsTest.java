@@ -232,7 +232,7 @@ public class McpAssuredNotificationToolsTest extends McpAssuredTestBase {
                 {"data":[{"id":"endpoint-1","name":"Webhook 1","type":"webhook"},{"id":"endpoint-2","name":"Slack Integration","type":"camel"}],"meta":{"count":2}}
                 """;
         MockServerLifecycleManager.getClient().stubFor(
-                get(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                get(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .willReturn(aResponse()
                                 .withHeader("Content-Type", "application/json")
                                 .withBody(endpointsJson))
@@ -252,7 +252,7 @@ public class McpAssuredNotificationToolsTest extends McpAssuredTestBase {
     @Test
     public void testGetLinkedIntegrationsBackendReturns404() {
         MockServerLifecycleManager.getClient().stubFor(
-                get(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                get(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .willReturn(aResponse().withStatus(404))
         );
 
@@ -270,7 +270,7 @@ public class McpAssuredNotificationToolsTest extends McpAssuredTestBase {
     @Test
     public void testUpdateEventTypeIntegrations() {
         MockServerLifecycleManager.getClient().stubFor(
-                put(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                put(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .willReturn(aResponse().withStatus(200))
         );
 
@@ -285,14 +285,14 @@ public class McpAssuredNotificationToolsTest extends McpAssuredTestBase {
                 .thenAssertResults();
 
         MockServerLifecycleManager.getClient().verify(
-                putRequestedFor(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                putRequestedFor(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
         );
     }
 
     @Test
     public void testUpdateEventTypeIntegrationsBackendReturns403() {
         MockServerLifecycleManager.getClient().stubFor(
-                put(urlPathEqualTo("/api/notifications/v1.0/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
+                put(urlPathEqualTo("/api/notifications/v1.0/notifications/eventTypes/550e8400-e29b-41d4-a716-446655440000/endpoints"))
                         .willReturn(aResponse().withStatus(403))
         );
 

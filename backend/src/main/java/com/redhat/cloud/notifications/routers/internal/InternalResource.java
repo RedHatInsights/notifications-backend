@@ -78,7 +78,6 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -546,12 +545,7 @@ public class InternalResource {
             if (p.getEndpointType() != null && p.getEndpointType() == DRAWER) {
                 endpointType = DRAWER;
             }
-            Optional<Endpoint> getEndpoint = endpointRepository.getSystemSubscriptionEndpoint(null, properties, endpointType);
-            if (getEndpoint.isPresent()) {
-                return getEndpoint.get();
-            } else {
-                return endpointRepository.createSystemSubscriptionEndpoint(null, null, properties, endpointType);
-            }
+            return endpointRepository.getOrCreateSystemSubscriptionEndpoint(null, null, properties, endpointType);
         }).collect(Collectors.toList());
         behaviorGroupRepository.updateDefaultBehaviorGroupActions(
                 behaviorGroupId,
