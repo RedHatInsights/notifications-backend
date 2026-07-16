@@ -36,6 +36,7 @@ jobs:
   trigger-perf-test:
     name: Trigger Jenkins Performance Test
     runs-on: ubuntu-latest
+    permissions: {}  # this job only calls external services; no GitHub API access needed
     steps:
       - name: Resolve image to test
         id: image
