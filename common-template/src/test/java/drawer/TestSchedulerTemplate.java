@@ -28,7 +28,7 @@ class TestSchedulerTemplate {
         String result = renderTemplate(SCHEDULER_EXPORT_COMPLETE, action);
         assertTrue(result.contains("A scheduled export"));
         assertTrue(result.contains("**[Test Export Job]"));
-        assertTrue(result.contains("/api/export/v1/exports/export-67890?from=notifications&integration=drawer)**"));
+        assertTrue(result.contains("/api/export/v1/exports/export-67890)**"));
         assertTrue(result.contains("has completed"));
     }
 
