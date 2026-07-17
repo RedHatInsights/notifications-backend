@@ -302,7 +302,7 @@ public class TestHelpers {
 
         emailActionMessage.setContext(
             new Context.ContextBuilder()
-                .withAdditionalProperty("vulnerability", Map.of("reported_cves", List.of("CVE1", "CVE2", "CVE3")))
+                .withAdditionalProperty("vulnerability", Map.of("reported_cves", List.of("CVE1", "CVE2", "CVE3"), "total_unique_cves", 3))
                 .build()
         );
 
@@ -333,7 +333,7 @@ public class TestHelpers {
             new Context.ContextBuilder()
                 .withAdditionalProperty("display_name", "test-system")
                 .withAdditionalProperty("inventory_id", "b8125066-0db2-47df-b37a-09e71979269f")
-                .withAdditionalProperty("vulnerability", Map.of("reported_cves", List.of("CVE1", "CVE2", "CVE3")))
+                .withAdditionalProperty("vulnerability", Map.of("reported_cves", List.of("CVE1", "CVE2", "CVE3"), "total_unique_cves", 3))
                 .build()
         );
 

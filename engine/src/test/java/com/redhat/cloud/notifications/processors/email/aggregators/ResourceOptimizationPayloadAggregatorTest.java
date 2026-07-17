@@ -76,6 +76,53 @@ public class ResourceOptimizationPayloadAggregatorTest {
         }
     }
 
+    @Test
+    void shouldCapTrackedSystemsAndTrackTotal() {
+        int cap = 3;
+        ResourceOptimizationPayloadAggregator cappedAggregator = new ResourceOptimizationPayloadAggregator(cap);
+
+        int totalSystems = cap + 5;
+        for (int i = 0; i < totalSystems; i++) {
+            cappedAggregator.aggregate(buildEmailAggregation(100, UUID.randomUUID().toString(), IDLING));
+        }
+
+        JsonObject aggregatedData = JsonObject.mapFrom(cappedAggregator.getContext().get(AGGREGATED_DATA));
+        assertEquals(cap, aggregatedData.getJsonArray(STATES).getJsonObject(0).getInteger(SYSTEM_COUNT),
+            "tracked systems should be capped");
+        assertEquals(totalSystems, aggregatedData.getInteger(SYSTEMS_TRIGGERED),
+            "systems_triggered should reflect actual count");
+    }
+
+    @Test
+    void shouldStillUpdateExistingEntriesBeyondCap() {
+        int cap = 2;
+        ResourceOptimizationPayloadAggregator cappedAggregator = new ResourceOptimizationPayloadAggregator(cap);
+
+        String id1 = UUID.randomUUID().toString();
+        String id2 = UUID.randomUUID().toString();
+        String id3 = UUID.randomUUID().toString();
+
+        cappedAggregator.aggregate(buildEmailAggregation(10, id1, IDLING));
+        cappedAggregator.aggregate(buildEmailAggregation(10, id2, IDLING));
+        // id3 beyond cap — tracked in total but not in map
+        cappedAggregator.aggregate(buildEmailAggregation(10, id3, IDLING));
+        // update id1 state (already in map, should update)
+        cappedAggregator.aggregate(buildEmailAggregation(10, id1, UNDER_PRESSURE));
+
+        JsonObject aggregatedData = JsonObject.mapFrom(cappedAggregator.getContext().get(AGGREGATED_DATA));
+        assertEquals(3, aggregatedData.getInteger(SYSTEMS_TRIGGERED));
+
+        JsonArray states = aggregatedData.getJsonArray(STATES);
+        for (int i = 0; i < states.size(); i++) {
+            JsonObject state = states.getJsonObject(i);
+            if (IDLING.equals(state.getString(STATE))) {
+                assertEquals(1, state.getInteger(SYSTEM_COUNT));
+            } else if (UNDER_PRESSURE.equals(state.getString(STATE))) {
+                assertEquals(1, state.getInteger(SYSTEM_COUNT));
+            }
+        }
+    }
+
     private static EmailAggregation buildEmailAggregation(int systemsWithSuggestions, String inventoryId, String currentState) {
 
         Action action = buildAction(systemsWithSuggestions, inventoryId, currentState);

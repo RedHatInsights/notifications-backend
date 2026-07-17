@@ -20,9 +20,18 @@ public class ResourceOptimizationPayloadAggregator extends AbstractEmailPayloadA
     public static final String STATE = "state";
     public static final String SYSTEM_COUNT = "system_count";
 
+    public static final int DEFAULT_MAX_TRACKED_SYSTEMS = 10_000;
+
     private final Map</* inventory_id */ String, /* current_state */ String> currentStates = new HashMap<>();
+    private final int maxTrackedSystems;
+    private int totalSystemsTriggered;
 
     ResourceOptimizationPayloadAggregator() {
+        this(DEFAULT_MAX_TRACKED_SYSTEMS);
+    }
+
+    ResourceOptimizationPayloadAggregator(int maxTrackedSystems) {
+        this.maxTrackedSystems = maxTrackedSystems;
         context.put(AGGREGATED_DATA, new JsonObject());
     }
 
@@ -60,13 +69,18 @@ public class ResourceOptimizationPayloadAggregator extends AbstractEmailPayloadA
                 Log.warn("Missing or blank inventory_id field found in resource-optimization aggregation payload");
             }
 
-            /*
-             * For each system, we'll only keep the latest current_state field value.
-             */
-            currentStates.put(inventoryId, payload.getString("current_state"));
+            String currentState = payload.getString("current_state");
+            if (currentStates.containsKey(inventoryId)) {
+                currentStates.put(inventoryId, currentState);
+            } else {
+                totalSystemsTriggered++;
+                if (currentStates.size() < maxTrackedSystems) {
+                    currentStates.put(inventoryId, currentState);
+                }
+            }
         }
 
-        aggregatedData.put(SYSTEMS_TRIGGERED, currentStates.keySet().size());
+        aggregatedData.put(SYSTEMS_TRIGGERED, totalSystemsTriggered);
 
         /*
          * This transforms the currentStates map into another map where each state becomes a key

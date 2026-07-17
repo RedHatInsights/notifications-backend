@@ -1,87 +1,55 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
-import com.redhat.cloud.notifications.processors.email.SubscribedEventTypeSeverities;
-import java.util.Set;
+
+import java.util.Map;
+import java.util.UUID;
 
 public class EmailPayloadAggregatorFactory {
 
-    private static final String RHEL = "rhel";
-    private static final String SUBSCRIPTION_SERVICES = "subscription-services";
-    private static final String APPLICATION_SERVICES = "application-services";
-    private static final String ADVISOR = "advisor";
+    @FunctionalInterface
+    interface AggregatorCreator {
+        AbstractEmailPayloadAggregator create(int inventoryMax, int vulnerabilityMax, int resourceOptMax);
+    }
 
-    private static final String COMPLIANCE = "compliance";
-    private static final String ANSIBLE = "ansible";
-    private static final String PATCH = "patch";
-    private static final String VULNERABILITY = "vulnerability";
-    private static final String INVENTORY = "inventory";
-    private static final String RESOURCE_OPTIMIZATION = "resource-optimization";
-    private static final String ERRATA = "errata-notifications";
+    private static final Map<String, AggregatorCreator> AGGREGATORS = Map.ofEntries(
+        Map.entry("application-services/ansible",               (i, v, r) -> new AnsibleEmailAggregator()),
+        Map.entry("subscription-services/errata-notifications", (i, v, r) -> new ErrataEmailPayloadAggregator()),
+        Map.entry("subscription-services/application-services", (i, v, r) -> new ApplicationServicesEmailPayloadAggregator()),
+        Map.entry("rhel/advisor",                               (i, v, r) -> new AdvisorEmailAggregator()),
+        Map.entry("rhel/compliance",                            (i, v, r) -> new ComplianceEmailAggregator()),
+        Map.entry("rhel/inventory",                             (i, v, r) -> new InventoryEmailAggregator(i)),
+        Map.entry("rhel/patch",                                 (i, v, r) -> new PatchEmailPayloadAggregator()),
+        Map.entry("rhel/resource-optimization",                 (i, v, r) -> new ResourceOptimizationPayloadAggregator(r)),
+        Map.entry("rhel/vulnerability",                         (i, v, r) -> new VulnerabilityEmailPayloadAggregator(v))
+    );
 
     private EmailPayloadAggregatorFactory() {
 
     }
 
-    public static AbstractEmailPayloadAggregator by(EventAggregationCriterion aggregationKey, String username, Set<SubscribedEventTypeSeverities> userSeverities) {
+    public static AbstractEmailPayloadAggregator by(EventAggregationCriterion aggregationKey, String username,
+                                                       Map<UUID, Map<Severity, Boolean>> severitiesByEventType,
+                                                       int inventoryMaxDisplayed, int vulnerabilityMaxDisplayed, int resourceOptMaxTracked) {
         String bundle = aggregationKey.getBundle();
         String application = aggregationKey.getApplication();
 
-        AbstractEmailPayloadAggregator aggregator = getAggregator(bundle, application);
+        AbstractEmailPayloadAggregator aggregator = getAggregator(bundle, application, inventoryMaxDisplayed, vulnerabilityMaxDisplayed, resourceOptMaxTracked);
         if (aggregator != null) {
             aggregator.userName = username;
-            aggregator.userSeverities = userSeverities;
+            aggregator.severitiesByEventType = severitiesByEventType;
         }
         return aggregator;
     }
 
-    private static AbstractEmailPayloadAggregator getAggregator(String bundle, String application) {
-        switch (bundle) {
-            case APPLICATION_SERVICES:
-                switch (application.toLowerCase()) { // TODO Remove toLowerCase if possible
-                    case ANSIBLE:
-                        return new AnsibleEmailAggregator();
-                    default:
-                        // Do nothing.
-                        break;
-                }
-                break;
-            case SUBSCRIPTION_SERVICES:
-                switch (application) {
-                    case ERRATA:
-                        return new ErrataEmailPayloadAggregator();
-                    case APPLICATION_SERVICES:
-                        return new ApplicationServicesEmailPayloadAggregator();
-                    default:
-                        // Do nothing.
-                        break;
-                }
-                break;
-            case RHEL:
-                switch (application) {
-                    case ADVISOR:
-                        return new AdvisorEmailAggregator();
-                    case COMPLIANCE:
-                        return new ComplianceEmailAggregator();
-                    case INVENTORY:
-                        return new InventoryEmailAggregator();
-                    case PATCH:
-                        return new PatchEmailPayloadAggregator();
-
-                    case RESOURCE_OPTIMIZATION:
-                        return new ResourceOptimizationPayloadAggregator();
-                    case VULNERABILITY:
-                        return new VulnerabilityEmailPayloadAggregator();
-                    default:
-                        // Do nothing
-                        break;
-                }
-                break;
-            default:
-                // Do nothing.
-                break;
+    private static AbstractEmailPayloadAggregator getAggregator(String bundle, String application,
+                                                                    int inventoryMaxDisplayed, int vulnerabilityMaxDisplayed, int resourceOptMaxTracked) {
+        String key = bundle + "/" + application;
+        AggregatorCreator creator = AGGREGATORS.get(key);
+        if (creator == null) {
+            creator = AGGREGATORS.get(bundle + "/" + application.toLowerCase());
         }
-
-        return null;
+        return creator != null ? creator.create(inventoryMaxDisplayed, vulnerabilityMaxDisplayed, resourceOptMaxTracked) : null;
     }
 }

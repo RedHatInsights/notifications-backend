@@ -36,6 +36,61 @@ public class InventoryEmailAggregatorTest {
     }
 
     @Test
+    void shouldCapCollectionsAndTrackTotals() {
+        int cap = 3;
+        InventoryEmailAggregator cappedAggregator = new InventoryEmailAggregator(cap);
+
+        int totalSystems = cap + 5;
+
+        for (int i = 0; i < totalSystems; i++) {
+            cappedAggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(
+                InventoryEmailAggregator.EVENT_TYPE_NEW_SYSTEM_REGISTERED, UUID.randomUUID(), "new-system-" + i));
+            cappedAggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(
+                InventoryEmailAggregator.EVENT_TYPE_SYSTEM_BECAME_STALE, UUID.randomUUID(), "stale-system-" + i));
+            cappedAggregator.aggregate(InventoryTestHelpers.createMinimalEmailAggregationV2(
+                InventoryEmailAggregator.EVENT_TYPE_SYSTEM_DELETED, UUID.randomUUID(), "deleted-system-" + i));
+        }
+
+        Map<String, Object> context = cappedAggregator.getContext();
+        JsonObject inventory = JsonObject.mapFrom(context).getJsonObject("inventory");
+
+        Assertions.assertEquals(cap, inventory.getJsonArray(InventoryEmailAggregator.NEW_SYSTEMS).size(),
+            "new_systems array should be capped");
+        Assertions.assertEquals(cap, inventory.getJsonArray(InventoryEmailAggregator.STALE_SYSTEMS).size(),
+            "stale_systems array should be capped");
+        Assertions.assertEquals(cap, inventory.getJsonArray(InventoryEmailAggregator.DELETED_SYSTEMS).size(),
+            "deleted_systems array should be capped");
+
+        Assertions.assertEquals(totalSystems, inventory.getInteger(InventoryEmailAggregator.TOTAL_NEW_SYSTEMS),
+            "total_new_systems should reflect actual count");
+        Assertions.assertEquals(totalSystems, inventory.getInteger(InventoryEmailAggregator.TOTAL_STALE_SYSTEMS),
+            "total_stale_systems should reflect actual count");
+        Assertions.assertEquals(totalSystems, inventory.getInteger(InventoryEmailAggregator.TOTAL_DELETED_SYSTEMS),
+            "total_deleted_systems should reflect actual count");
+    }
+
+    @Test
+    void shouldCapErrorsAndTrackTotal() {
+        int cap = 2;
+        InventoryEmailAggregator cappedAggregator = new InventoryEmailAggregator(cap);
+
+        int totalErrors = cap + 3;
+        for (int i = 0; i < totalErrors; i++) {
+            cappedAggregator.aggregate(InventoryTestHelpers.createEmailAggregation("tenant", "rhel", "inventory", "error event " + i));
+        }
+
+        Map<String, Object> context = cappedAggregator.getContext();
+        JsonObject inventory = JsonObject.mapFrom(context).getJsonObject("inventory");
+
+        // Each createEmailAggregation produces 2 error events in the payload
+        int expectedTotalErrors = totalErrors * 2;
+        Assertions.assertTrue(inventory.getJsonArray("errors").size() <= cap,
+            "errors array should be capped");
+        Assertions.assertEquals(expectedTotalErrors, inventory.getInteger(InventoryEmailAggregator.TOTAL_ERRORS),
+            "total_errors should reflect actual count");
+    }
+
+    @Test
     void validatePayload() {
         // Add a "validation error" event type to the aggregation.
         this.aggregator.aggregate(InventoryTestHelpers.createEmailAggregation("tenant", "rhel", "inventory", "test event"));
@@ -93,6 +148,11 @@ public class InventoryEmailAggregatorTest {
         this.assertInventoryContainsExpectedElements(deletedSystemsMap, deletedSystems, "deleted systems");
         this.assertInventoryContainsExpectedElements(newSystemsMap, newSystems, "new systems");
         this.assertInventoryContainsExpectedElements(staleSystemsMap, staleSystems, "stale systems");
+
+        Assertions.assertEquals(2, inventory.getInteger(InventoryEmailAggregator.TOTAL_NEW_SYSTEMS));
+        Assertions.assertEquals(2, inventory.getInteger(InventoryEmailAggregator.TOTAL_STALE_SYSTEMS));
+        Assertions.assertEquals(2, inventory.getInteger(InventoryEmailAggregator.TOTAL_DELETED_SYSTEMS));
+        Assertions.assertEquals(2, inventory.getInteger(InventoryEmailAggregator.TOTAL_ERRORS));
     }
 
     /**

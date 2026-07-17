@@ -47,7 +47,11 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
         "      ]," +
         "      \"new_systems\":[]," +
         "      \"stale_systems\":[]," +
-        "      \"deleted_systems\":[]" +
+        "      \"deleted_systems\":[]," +
+        "      \"total_errors\":2," +
+        "      \"total_new_systems\":0," +
+        "      \"total_stale_systems\":0," +
+        "      \"total_deleted_systems\":0" +
         "   }," +
         "   \"start_time\":null," +
         "   \"end_time\":null" +
@@ -93,7 +97,11 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
                  {
                     "display_name":"second-deleted-system-display-name"
                  }
-              ]
+              ],
+              "total_errors":2,
+              "total_new_systems":2,
+              "total_stale_systems":2,
+              "total_deleted_systems":2
            },
            "start_time":null,
            "end_time":null
@@ -200,12 +208,14 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
         assertSystems(result, deletedSystemsMap, false, !deletedSystemsMap.isEmpty());
     }
 
-    private static void addToAggregationContext(String category, Map<UUID, String> newSystemsMap, Map<String, Object> aggregationContext) {
-        for (final Map.Entry<UUID, String> entry : newSystemsMap.entrySet()) {
-            ((ArrayList<Map<String, Object>>) ((Map<String, Object>) aggregationContext.get("inventory")).get(category)).add(
+    private static void addToAggregationContext(String category, Map<UUID, String> systemsMap, Map<String, Object> aggregationContext) {
+        Map<String, Object> inventory = (Map<String, Object>) aggregationContext.get("inventory");
+        for (final Map.Entry<UUID, String> entry : systemsMap.entrySet()) {
+            ((ArrayList<Map<String, Object>>) inventory.get(category)).add(
                 Map.of("inventory_id", entry.getKey(), "display_name",  entry.getValue())
             );
         }
+        inventory.put("total_" + category, systemsMap.size());
     }
 
     /**

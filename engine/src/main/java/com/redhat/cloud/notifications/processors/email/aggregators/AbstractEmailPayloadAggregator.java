@@ -1,20 +1,19 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.models.EmailAggregation;
-import com.redhat.cloud.notifications.processors.email.SubscribedEventTypeSeverities;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.UUID;
 
 public abstract class AbstractEmailPayloadAggregator {
 
     private String orgId;
 
     public String userName;
-    public Set<SubscribedEventTypeSeverities> userSeverities;
+    public Map<UUID, Map<Severity, Boolean>> severitiesByEventType;
     JsonObject context = new JsonObject();
 
     abstract void processEmailAggregation(EmailAggregation aggregation);
@@ -27,12 +26,10 @@ public abstract class AbstractEmailPayloadAggregator {
         }
 
         boolean shouldAggregateThisEvent = true;
-        if (userSeverities != null) {
-            Optional<SubscribedEventTypeSeverities> userPrevForThisEventType = userSeverities.stream()
-                .filter(userSeverity -> aggregation.getEventTypeId().equals(userSeverity.eventTypeId())).findFirst();
-
-            if (userPrevForThisEventType.isPresent() && userPrevForThisEventType.get().severities().containsKey(aggregation.getSeverity())) {
-                shouldAggregateThisEvent = userPrevForThisEventType.get().severities().get(aggregation.getSeverity());
+        if (severitiesByEventType != null) {
+            Map<Severity, Boolean> severities = severitiesByEventType.get(aggregation.getEventTypeId());
+            if (severities != null && severities.containsKey(aggregation.getSeverity())) {
+                shouldAggregateThisEvent = severities.get(aggregation.getSeverity());
             } else {
                 shouldAggregateThisEvent = false;
             }

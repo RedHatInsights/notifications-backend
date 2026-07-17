@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
 import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
@@ -85,6 +86,15 @@ public class EmailAggregator {
     @ConfigProperty(name = "notifications.aggregation.max-page-size", defaultValue = "100")
     int maxPageSize;
 
+    @ConfigProperty(name = "notifications.aggregation.inventory.max-displayed-systems", defaultValue = "50")
+    int inventoryMaxDisplayedSystems;
+
+    @ConfigProperty(name = "notifications.aggregation.vulnerability.max-displayed-cves", defaultValue = "100")
+    int vulnerabilityMaxDisplayedCves;
+
+    @ConfigProperty(name = "notifications.aggregation.resource-optimization.max-tracked-systems", defaultValue = "10000")
+    int resourceOptimizationMaxTrackedSystems;
+
     public Map<User, Map<String, Object>> getAggregated(UUID appId, EventAggregationCriterion aggregationKey, SubscriptionType subscriptionType, LocalDateTime start, LocalDateTime end) {
 
         Map<User, AbstractEmailPayloadAggregator> aggregated = new HashMap<>();
@@ -165,16 +175,19 @@ public class EmailAggregator {
                  * Let's populate the Map that will be returned by the method.
                  */
                 recipients.forEach(recipient -> {
-                    final Set<SubscribedEventTypeSeverities> userSubscribedSeverities;
+                    final Map<UUID, Map<Severity, Boolean>> severitiesByEventType;
                     if (subscribersWithSeverities.isPresent() && subscribersWithSeverities.get().containsKey(recipient.getUsername())) {
-                        userSubscribedSeverities = subscribersWithSeverities.get().get(recipient.getUsername());
+                        severitiesByEventType = subscribersWithSeverities.get().get(recipient.getUsername()).stream()
+                            .collect(toMap(SubscribedEventTypeSeverities::eventTypeId, SubscribedEventTypeSeverities::severities));
                     } else {
-                        userSubscribedSeverities = null;
+                        severitiesByEventType = null;
                     }
 
                     // We may or may not have already initialized an aggregator for the recipient.
                     AbstractEmailPayloadAggregator aggregator = aggregated
-                        .computeIfAbsent(recipient, notUsed -> EmailPayloadAggregatorFactory.by(eventAggregationCriteria, recipient.getUsername(), userSubscribedSeverities));
+                        .computeIfAbsent(recipient, notUsed -> EmailPayloadAggregatorFactory.by(
+                            eventAggregationCriteria, recipient.getUsername(), severitiesByEventType,
+                            inventoryMaxDisplayedSystems, vulnerabilityMaxDisplayedCves, resourceOptimizationMaxTrackedSystems));
 
                     // It's aggregation time!
                     EmailAggregation eventDataToAggregate = new EmailAggregation(aggregation.getOrgId(), eventAggregationCriteria.getBundle(), eventAggregationCriteria.getApplication(), baseTransformer.toJsonObject(aggregation), aggregation.getSeverity(), aggregation.getEventType().getId());
