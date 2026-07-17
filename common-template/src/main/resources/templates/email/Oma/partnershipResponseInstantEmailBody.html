@@ -1,0 +1,32 @@
+{#include email/Common/insightsEmailBody}
+{#content-header-title}
+    OpenShift Migration Advisor
+{/content-header-title}
+{#content-title}
+    Update on Your Partnership Request
+{/content-title}
+{#content-body}
+<p style="{body-section-p-style}">
+    Dear {action.context.customer_name},
+</p>
+<p style="{body-section-p-style}">
+    This is an automated notification from the OpenShift Migration Advisor (OMA) platform.
+</p>
+<p style="{body-section-p-style}">
+    We are writing to inform you that <b>{action.context.partner_name}</b> has <b>{action.context.decision}</b> your request to establish a partnership.
+</p>
+{#if action.context.decision.or('') == 'Declined'}
+<p style="{body-section-p-style}">
+    Reason for decision: {action.context.reason.or('No reason provided')}
+</p>
+{/if}
+<p style="{body-section-p-style}">
+    You can view the status of your request and any additional details by logging in to the OpenShift Migration Advisor administrative dashboard.
+</p>
+<p style="{body-section-p-style}">
+    If you have any questions regarding this decision, please contact your organization's account administrator or visit the support portal.
+</p>
+{/content-body}
+{#content-button-href}{environment.url}/openshift/migration-advisor/partnerships?{query_params}{/content-button-href}
+{#content-button-service-name}OpenShift Migration Advisor{/content-button-service-name}
+{/include}
