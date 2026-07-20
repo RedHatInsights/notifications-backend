@@ -10,11 +10,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.project_kessel.clients.authn.AuthenticationConfig;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -34,12 +30,12 @@ public class RecipientsResolverConfig {
     public static final String MBOP_APITOKEN = "notifications.recipients-resolver.mbop.api_token";
     public static final String MBOP_CLIENT_ID = "notifications.recipients-resolver.mbop.client_id";
     private static final String MBOP_ENV = "notifications.recipients-resolver.mbop.env";
-    private static final String KESSEL_TARGET_URL = "notifications.recipients-resolver.kessel.target-url";
-    private static final String KESSEL_USE_SECURE_CLIENT = "relations-api.is-secure-clients";
-    private static final String KESSEL_CLIENT_ID = "relations-api.authn.client.id";
-    private static final String KESSEL_CLIENT_SECRET = "relations-api.authn.client.secret";
-    private static final String KESSEL_CLIENT_ISSUER = "relations-api.authn.client.issuer";
-    private static final String KESSEL_CLIENT_MODE = "relations-api.authn.mode";
+    private static final String KESSEL_URL = "notifications.kessel.url";
+    private static final String KESSEL_TIMEOUT_MS = "notifications.kessel.timeout-ms";
+    private static final String KESSEL_INSECURE_CLIENT_ENABLED = "notifications.kessel.insecure-client.enabled";
+    private static final String KESSEL_CLIENT_ID = "notifications.kessel.authn.client-id";
+    private static final String KESSEL_CLIENT_SECRET = "notifications.kessel.authn.client-secret";
+    private static final String KESSEL_CLIENT_ISSUER = "notifications.kessel.authn.issuer";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
 
     /*
@@ -74,8 +70,11 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = MBOP_ENV, defaultValue = "na")
     String mbopEnv;
 
-    @ConfigProperty(name = KESSEL_TARGET_URL, defaultValue = "localhost:9000")
-    String kesselTargetUrl;
+    @ConfigProperty(name = KESSEL_URL, defaultValue = "localhost:9081")
+    String kesselUrl;
+
+    @ConfigProperty(name = KESSEL_TIMEOUT_MS, defaultValue = "30000")
+    long kesselTimeoutMs;
 
     @ConfigProperty(name = KESSEL_CLIENT_ID)
     Optional<String> kesselClientId;
@@ -86,14 +85,11 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = KESSEL_CLIENT_ISSUER)
     Optional<String> kesselClientIssuer;
 
-    @ConfigProperty(name = KESSEL_CLIENT_MODE)
-    AuthenticationConfig.AuthMode kesselClientMode;
-
     /**
-     * Is the gRPC client supposed to connect to a secure, HTTPS endpoint?
+     * Is the gRPC client supposed to skip OAuth2 authentication and TLS verification?
      */
-    @ConfigProperty(name = KESSEL_USE_SECURE_CLIENT, defaultValue = "false")
-    boolean kesselUseSecureClient;
+    @ConfigProperty(name = KESSEL_INSECURE_CLIENT_ENABLED, defaultValue = "false")
+    boolean kesselInsecureClientEnabled;
 
     @Inject
     ToggleRegistry toggleRegistry;
@@ -134,8 +130,9 @@ public class RecipientsResolverConfig {
         config.put(WARN_IF_DURATION_EXCEEDS, getLogTooLongRequestLimit());
         config.put(useKesselToggle, isUseKesselEnabled(null));
         config.put(rbacOidcAuthToggle, isRbacOidcAuthEnabled(null));
-        config.put(KESSEL_TARGET_URL, getKesselTargetUrl());
-        config.put(KESSEL_USE_SECURE_CLIENT, isKesselUseSecureClient());
+        config.put(KESSEL_URL, getKesselUrl());
+        config.put(KESSEL_TIMEOUT_MS, getKesselTimeoutMs());
+        config.put(KESSEL_INSECURE_CLIENT_ENABLED, isKesselInsecureClientEnabled());
         config.put(KESSEL_DOMAIN, getKesselDomain());
 
         Log.info("=== Startup configuration ===");
@@ -188,22 +185,16 @@ public class RecipientsResolverConfig {
         return mbopEnv;
     }
 
-    public boolean isKesselUseSecureClient() {
-        return kesselUseSecureClient;
+    public boolean isKesselInsecureClientEnabled() {
+        return kesselInsecureClientEnabled;
     }
 
-    public String getKesselTargetUrl() {
-        try {
-            final URL url = new URI(kesselTargetUrl).toURL();
-            final String newKesselUrl = url.getHost() + ":9000";
+    public String getKesselUrl() {
+        return kesselUrl;
+    }
 
-            Log.debugf("Kessel URL changed from \"%s\" to \"%s\"", kesselTargetUrl, newKesselUrl);
-
-            return newKesselUrl;
-        } catch (final IllegalArgumentException | MalformedURLException | URISyntaxException e) {
-            Log.debugf(e, "Unable to create a URL from value \"%s\"", kesselTargetUrl);
-            return kesselTargetUrl;
-        }
+    public long getKesselTimeoutMs() {
+        return kesselTimeoutMs;
     }
 
     public Duration getLogTooLongRequestLimit() {
@@ -228,10 +219,6 @@ public class RecipientsResolverConfig {
 
     public Optional<String> getKesselClientIssuer() {
         return kesselClientIssuer;
-    }
-
-    public AuthenticationConfig.AuthMode getKesselClientMode() {
-        return kesselClientMode;
     }
 
     public String getKesselDomain() {
