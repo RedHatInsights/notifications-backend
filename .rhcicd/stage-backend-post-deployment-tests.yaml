@@ -7,7 +7,7 @@ objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdJobInvocation
   metadata:
-    name: notifications-backend-tests-${UID}
+    name: ${NAME_STUB}-${UID}
   spec:
     appName: notifications-backend
     testing:
@@ -24,6 +24,9 @@ parameters:
 - name: IMAGE_TAG
   value: ''
   required: true
+- name: NAME_STUB
+  description: "Basename for the automation pods"
+  value: "notifications-backend-tests"
 - name: UID
   description: "Unique CJI name suffix"
   generate: expression
