@@ -2,21 +2,20 @@ package com.redhat.cloud.notifications.recipients.resolver.kessel;
 
 import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.recipients.config.RecipientsResolverConfig;
+import io.grpc.StatusRuntimeException;
 import io.quarkus.logging.Log;
-import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.project_kessel.api.relations.v1beta1.LookupSubjectsRequest;
-import org.project_kessel.api.relations.v1beta1.LookupSubjectsResponse;
-import org.project_kessel.api.relations.v1beta1.ObjectReference;
-import org.project_kessel.api.relations.v1beta1.ObjectType;
-import org.project_kessel.relations.client.LookupClient;
-import org.project_kessel.relations.client.RelationsConfig;
-import org.project_kessel.relations.client.RelationsGrpcClientsManager;
+import org.eclipse.microprofile.faulttolerance.Retry;
+import org.project_kessel.api.auth.OAuth2Exception;
+import org.project_kessel.api.inventory.v1beta2.ReporterReference;
+import org.project_kessel.api.inventory.v1beta2.RepresentationType;
+import org.project_kessel.api.inventory.v1beta2.ResourceReference;
+import org.project_kessel.api.inventory.v1beta2.StreamedListSubjectsRequest;
+import org.project_kessel.api.inventory.v1beta2.StreamedListSubjectsResponse;
 
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Optional;
 import java.util.Set;
 
 @ApplicationScoped
@@ -29,100 +28,47 @@ public class KesselService {
     @Inject
     RecipientsResolverConfig recipientsResolverConfig;
 
-    LookupClient lookupClient;
+    @Inject
+    KesselInventoryClient kesselInventoryClient;
 
-    @PostConstruct
-    void postConstruct() {
-        RelationsConfig kesselRelationsConfig = getKesselRelationsConfig();
-
-        RelationsGrpcClientsManager clientsManager = RelationsGrpcClientsManager.forClientsWithConfig(kesselRelationsConfig);
-
-        lookupClient = clientsManager.getLookupClient();
-    }
-
-    private RelationsConfig getKesselRelationsConfig() {
-        RelationsConfig kesselRelationsConfig = new RelationsConfig() {
-            @Override
-            public boolean isSecureClients() {
-                return recipientsResolverConfig.isKesselUseSecureClient();
-            }
-
-            @Override
-            public String targetUrl() {
-                return recipientsResolverConfig.getKesselTargetUrl();
-            }
-
-            @Override
-            public Optional<AuthenticationConfig> authenticationConfig() {
-                AuthenticationConfig authenticationConfig = new AuthenticationConfig() {
-                    @Override
-                    public org.project_kessel.clients.authn.AuthenticationConfig.AuthMode mode() {
-                        return recipientsResolverConfig.getKesselClientMode();
-                    }
-
-                    @Override
-                    public Optional<OIDCClientCredentialsConfig> clientCredentialsConfig() {
-                        OIDCClientCredentialsConfig clientCredentialsConfig = new OIDCClientCredentialsConfig() {
-                            @Override
-                            public String issuer() {
-                                return recipientsResolverConfig.getKesselClientIssuer().get();
-                            }
-
-                            @Override
-                            public String clientId() {
-                                return recipientsResolverConfig.getKesselClientId().get();
-                            }
-
-                            @Override
-                            public String clientSecret() {
-                                return recipientsResolverConfig.getKesselClientSecret().get();
-                            }
-
-                            @Override
-                            public Optional<String[]> scope() {
-                                return Optional.empty();
-                            }
-
-                            @Override
-                            public Optional<String> oidcClientCredentialsMinterImplementation() {
-                                return Optional.empty();
-                            }
-                        };
-
-                        return Optional.of(clientCredentialsConfig);
-                    }
-                };
-
-                return Optional.of(authenticationConfig);
-            }
-        };
-        return kesselRelationsConfig;
-    }
-
+    // worst-case retry budget (4 x kessel.timeout-ms = 120s) exceeds callers' default 30s REST timeout.
+    // Confirmed: none of engine/connector-email/connector-drawer override quarkus.rest-client.recipients-resolver's
+    // read-timeout, so all three genuinely get Quarkus's 30s default. Also, this budget isn't competing with an
+    // otherwise-empty request: RecipientsResolver.findRecipients() calls this lookup first, then still has to run
+    // RBAC/MBOP calls (FetchUsersFromExternalServices) per RecipientSettings in the same request/timeout window --
+    // so the safe target is meaningfully less than 30s, not just-under-30s. No real traffic exercises this path yet
+    // (use-kessel toggle is off everywhere), so there's no latency data to size against. Needs sizing guidance.
+    @Retry(maxRetries = 3, delay = 100, retryOn = KesselTransientException.class)
     public Set<String> lookupSubjects(RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
-        Set<String> userIds = new HashSet<>();
-        LookupSubjectsRequest request = getLookupSubjectsRequest(recipientsAuthorizationCriterion);
+        StreamedListSubjectsRequest request = getStreamedListSubjectsRequest(recipientsAuthorizationCriterion);
 
         final String kesselAdditionalDomainName = String.format("%s/", recipientsResolverConfig.getKesselDomain());
-        for (Iterator<LookupSubjectsResponse> it = lookupClient.lookupSubjects(request); it.hasNext();) {
-            LookupSubjectsResponse response = it.next();
-            userIds.add(response.getSubject().getSubject().getId().replaceAll(kesselAdditionalDomainName, ""));
+        Set<String> userIds = new HashSet<>();
+        try {
+            for (Iterator<StreamedListSubjectsResponse> it = kesselInventoryClient.streamedListSubjects(request); it.hasNext();) {
+                StreamedListSubjectsResponse response = it.next();
+                userIds.add(response.getSubject().getResource().getResourceId().replace(kesselAdditionalDomainName, ""));
+            }
+        } catch (StatusRuntimeException e) {
+            throw kesselInventoryClient.handleGrpcException(e);
+        } catch (OAuth2Exception e) {
+            Log.warnf("Transient error fetching Kessel OAuth2 credentials (may retry): %s", e.getMessage());
+            throw new KesselTransientException(e);
         }
         Log.infof("Kessel returned %d user(s) for request %s", userIds.size(), request);
         return userIds;
     }
 
-    private static LookupSubjectsRequest getLookupSubjectsRequest(RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
-        LookupSubjectsRequest request = LookupSubjectsRequest.newBuilder()
-            .setResource(ObjectReference.newBuilder()
-                .setType(ObjectType.newBuilder()
-                    .setNamespace(recipientsAuthorizationCriterion.getType().getNamespace())
-                    .setName(recipientsAuthorizationCriterion.getType().getName()).build())
-                .setId(recipientsAuthorizationCriterion.getId())
+    private static StreamedListSubjectsRequest getStreamedListSubjectsRequest(RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
+        return StreamedListSubjectsRequest.newBuilder()
+            .setResource(ResourceReference.newBuilder()
+                .setReporter(ReporterReference.newBuilder()
+                    .setType(recipientsAuthorizationCriterion.getType().getNamespace()).build())
+                .setResourceType(recipientsAuthorizationCriterion.getType().getName())
+                .setResourceId(recipientsAuthorizationCriterion.getId())
                 .build())
             .setRelation(recipientsAuthorizationCriterion.getRelation())
-            .setSubjectType(ObjectType.newBuilder().setNamespace(RBAC_NAMESPACE).setName(SUBJECT_TYPE_USER).build())
+            .setSubjectType(RepresentationType.newBuilder().setReporterType(RBAC_NAMESPACE).setResourceType(SUBJECT_TYPE_USER).build())
             .build();
-        return request;
     }
 }
