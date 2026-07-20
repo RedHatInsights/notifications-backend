@@ -7,15 +7,19 @@ objects:
 - apiVersion: cloud.redhat.com/v1alpha1
   kind: ClowdJobInvocation
   metadata:
-    name: notifications-engine-tests-${UID}
+    name: ${NAME_STUB}-${UID}
   spec:
     appName: notifications-backend
     testing:
       iqe:
         debug: false
-        dynaconfEnvName: stage_post_deploy
-        filter: ''
-        marker: 'notif_engine and api'
+        env:
+          - name: 'ENV_FOR_DYNACONF'
+            value: 'stage_post_deploy'
+          - name: 'DYNACONF_DEFAULT_USER'
+            value: ${DYNACONF_DEFAULT_USER}
+          - name: 'IQE_MARKER_EXPRESSION'
+            value: 'notif_engine and api'
 parameters:
 - name: IMAGE_TAG
   value: ''
@@ -24,3 +28,9 @@ parameters:
   description: "Unique CJI name suffix"
   generate: expression
   from: "[a-z0-9]{6}"
+- name: NAME_STUB
+  description: "Basename for the automation pods"
+  value: "notifications-engine-tests"
+- name: DYNACONF_DEFAULT_USER
+  description: The user to be impersonated in the tests
+  value: "notifications_admin"
