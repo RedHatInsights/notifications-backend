@@ -191,6 +191,12 @@ objects:
               name: export-service-psk
               key: psk
               optional: true
+        - name: SOURCES_PSK
+          valueFrom:
+            secretKeyRef:
+              name: sources-api-psk
+              key: psk
+              optional: true
         - name: QUARKUS_OIDC_CLIENT_AUTH_SERVER_URL
           value: ${OIDC_ISSUER}
         - name: QUARKUS_OIDC_CLIENT_CLIENT_ENABLED
