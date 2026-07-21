@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.events.deduplication;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.events.ValkeyService;
 import com.redhat.cloud.notifications.models.Event;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -58,18 +57,7 @@ public class EventDeduplicator {
         LocalDateTime deleteAfter = eventDeduplicationConfig.getDeleteAfter(event);
 
         if (engineConfig.isInMemoryDbEnabled() && engineConfig.isValkeyEventDeduplicatorEnabled()) {
-            // RHCLOUD-35790: remove once Valkey deduplication is validated
-            boolean isNewEvent = postgresEventDeduplication(eventTypeId, deduplicationKey, deleteAfter);
-            boolean valkeyIsNewEvent = valkeyService.isNewEvent(eventTypeId, deduplicationKey.get(),
-                    deleteAfter);
-            if (valkeyIsNewEvent != isNewEvent) {
-                Log.warnf(
-                        "Valkey event deduplication (isNewEvent=%s) does not align with Postgres result (isNewEvent=%s) [event_type_id=%s, deduplication_key=%s]",
-                        valkeyIsNewEvent, isNewEvent, eventTypeId, deduplicationKey.get());
-            }
-
-            return isNewEvent;
-
+            return valkeyService.isNewEvent(eventTypeId, deduplicationKey.get(), deleteAfter);
         } else {
             return postgresEventDeduplication(eventTypeId, deduplicationKey, deleteAfter);
         }
