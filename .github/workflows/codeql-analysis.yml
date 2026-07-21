@@ -51,7 +51,7 @@ jobs:
         name: Cache Yarn dependencies
         uses: actions/cache@v6
         with:
-          path: ~/.cache/yarn
+          path: admin-console/src/main/webapp/.yarn/cache
           # The cache key is changed every month to prevent unlimited growth.
           key: yarn-cache-${{ steps.cache-key.outputs.date }}
 

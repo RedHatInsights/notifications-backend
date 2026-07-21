@@ -37,7 +37,7 @@
                             <goal>corepack</goal>
                         </goals>
                         <configuration>
-                            <arguments>yarn install</arguments>
+                            <arguments>yarn install --immutable</arguments>
                         </configuration>
                     </execution>
                     <execution>
