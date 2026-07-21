@@ -94,6 +94,28 @@ public class ResourceOptimizationPayloadAggregatorTest {
     }
 
     @Test
+    void shouldNotInflateCountForRepeatedUntrackedIds() {
+        int cap = 2;
+        ResourceOptimizationPayloadAggregator cappedAggregator = new ResourceOptimizationPayloadAggregator(cap);
+
+        String id1 = UUID.randomUUID().toString();
+        String id2 = UUID.randomUUID().toString();
+        String id3 = UUID.randomUUID().toString();
+
+        cappedAggregator.aggregate(buildEmailAggregation(10, id1, IDLING));
+        cappedAggregator.aggregate(buildEmailAggregation(10, id2, IDLING));
+        // id3 beyond cap
+        cappedAggregator.aggregate(buildEmailAggregation(10, id3, IDLING));
+        // repeat id3 — should NOT inflate count
+        cappedAggregator.aggregate(buildEmailAggregation(10, id3, UNDER_PRESSURE));
+        cappedAggregator.aggregate(buildEmailAggregation(10, id3, UNKNOWN));
+
+        JsonObject aggregatedData = JsonObject.mapFrom(cappedAggregator.getContext().get(AGGREGATED_DATA));
+        assertEquals(3, aggregatedData.getInteger(SYSTEMS_TRIGGERED),
+            "repeated untracked ID should not inflate systems_triggered");
+    }
+
+    @Test
     void shouldStillUpdateExistingEntriesBeyondCap() {
         int cap = 2;
         ResourceOptimizationPayloadAggregator cappedAggregator = new ResourceOptimizationPayloadAggregator(cap);

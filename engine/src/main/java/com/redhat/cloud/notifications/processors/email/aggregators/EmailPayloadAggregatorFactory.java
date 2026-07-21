@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.processors.email.aggregators;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -47,8 +48,8 @@ public class EmailPayloadAggregatorFactory {
                                                                     int inventoryMaxDisplayed, int vulnerabilityMaxDisplayed, int resourceOptMaxTracked) {
         String key = bundle + "/" + application;
         AggregatorCreator creator = AGGREGATORS.get(key);
-        if (creator == null) {
-            creator = AGGREGATORS.get(bundle + "/" + application.toLowerCase());
+        if (creator == null && application != null) {
+            creator = AGGREGATORS.get(bundle + "/" + application.toLowerCase(Locale.ROOT));
         }
         return creator != null ? creator.create(inventoryMaxDisplayed, vulnerabilityMaxDisplayed, resourceOptMaxTracked) : null;
     }

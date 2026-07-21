@@ -6,7 +6,9 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -22,9 +24,9 @@ public class ResourceOptimizationPayloadAggregator extends AbstractEmailPayloadA
 
     public static final int DEFAULT_MAX_TRACKED_SYSTEMS = 10_000;
 
+    private final Set<String> allSeenIds = new HashSet<>();
     private final Map</* inventory_id */ String, /* current_state */ String> currentStates = new HashMap<>();
     private final int maxTrackedSystems;
-    private int totalSystemsTriggered;
 
     ResourceOptimizationPayloadAggregator() {
         this(DEFAULT_MAX_TRACKED_SYSTEMS);
@@ -72,15 +74,14 @@ public class ResourceOptimizationPayloadAggregator extends AbstractEmailPayloadA
             String currentState = payload.getString("current_state");
             if (currentStates.containsKey(inventoryId)) {
                 currentStates.put(inventoryId, currentState);
-            } else {
-                totalSystemsTriggered++;
+            } else if (allSeenIds.add(inventoryId)) {
                 if (currentStates.size() < maxTrackedSystems) {
                     currentStates.put(inventoryId, currentState);
                 }
             }
         }
 
-        aggregatedData.put(SYSTEMS_TRIGGERED, totalSystemsTriggered);
+        aggregatedData.put(SYSTEMS_TRIGGERED, allSeenIds.size());
 
         /*
          * This transforms the currentStates map into another map where each state becomes a key
