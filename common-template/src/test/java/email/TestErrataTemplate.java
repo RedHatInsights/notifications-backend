@@ -141,6 +141,21 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("There are 24 security updates affecting your subscriptions"));
         assertEquals(51, StringUtils.countMatches(result, "https://access.redhat.com/errata/RHSA-2024:"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+
+        // Sections must appear in order of importance: security, then bugfix, then enhancement.
+        int securityIndex = result.indexOf("There are 24 security updates affecting your subscriptions");
+        int bugfixIndex = result.indexOf("There are 9 bug fixes affecting your subscriptions.");
+        int enhancementIndex = result.indexOf("There are 18 enhancements affecting your subscriptions.");
+        assertTrue(securityIndex >= 0 && bugfixIndex >= 0 && enhancementIndex >= 0);
+        assertTrue(securityIndex < bugfixIndex, "Security section should appear before bugfix");
+        assertTrue(bugfixIndex < enhancementIndex, "Bugfix section should appear before enhancement");
+
+        int securityLinkIndex = result.indexOf(">Security updates (24)<");
+        int bugfixLinkIndex = result.indexOf(">Bug fixes (9)<");
+        int enhancementLinkIndex = result.indexOf(">Enhancements (18)<");
+        assertTrue(securityLinkIndex >= 0 && bugfixLinkIndex >= 0 && enhancementLinkIndex >= 0);
+        assertTrue(securityLinkIndex < bugfixLinkIndex, "Security link should appear before bugfix");
+        assertTrue(bugfixLinkIndex < enhancementLinkIndex, "Bugfix link should appear before enhancement");
     }
 
     public static final String JSON_ERRATA_DEFAULT_AGGREGATION_CONTEXT = "{" +
