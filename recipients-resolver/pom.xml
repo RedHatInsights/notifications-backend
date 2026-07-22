@@ -34,8 +34,14 @@
         <!-- gRPC clients for the interactions with Kessel -->
         <dependency>
             <groupId>org.project-kessel</groupId>
-            <artifactId>relations-client-java</artifactId>
-            <version>${kessel.relationships-client.version}</version>
+            <artifactId>kessel-sdk</artifactId>
+            <version>${kessel-sdk.version}</version>
+        </dependency>
+
+        <!-- gRPC transport for the Kessel client (kessel-sdk does not bring one transitively) -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
         </dependency>
 
         <!-- oAuth library for the gRPC clients -->
@@ -69,6 +75,10 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-rest-jackson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-fault-tolerance</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

@@ -14,6 +14,8 @@ objects:
     envName: ${ENV_NAME}
     dependencies:
     - rbac
+    optionalDependencies:
+    - kessel-inventory
     featureFlags: true
     deployments:
     - name: service
@@ -194,21 +196,23 @@ objects:
             secretKeyRef:
               name: rbac-psks
               key: psks.json
-        - name: RELATIONS_API_AUTHN_CLIENT_ID
+        - name: NOTIFICATIONS_KESSEL_AUTHN_CLIENT_ID
           valueFrom:
             secretKeyRef:
               name: oidc-authentication
               key: client-id
-        - name: RELATIONS_API_AUTHN_CLIENT_ISSUER
+        - name: NOTIFICATIONS_KESSEL_AUTHN_ISSUER
           value: ${NOTIFICATIONS_KESSEL_OIDC_ISSUER}
-        - name: RELATIONS_API_AUTHN_CLIENT_SECRET
+        - name: NOTIFICATIONS_KESSEL_AUTHN_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               name: oidc-authentication
               key: secret
-        - name: RELATIONS_API_IS_SECURE_CLIENTS
-          value: ${NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS}
-        - name: KESSEL_DOMAIN
+        - name: NOTIFICATIONS_KESSEL_INSECURE_CLIENT_ENABLED
+          value: ${KESSEL_INSECURE_CLIENT_ENABLED}
+        - name: NOTIFICATIONS_KESSEL_TIMEOUT_MS
+          value: ${KESSEL_TIMEOUT_MS}
+        - name: NOTIFICATIONS_KESSEL_DOMAIN
           value: ${KESSEL_DOMAIN}
 parameters:
 - name: CLOUDWATCH_ENABLED
@@ -317,9 +321,12 @@ parameters:
 - name: BACKOFFICE_SCHEME
   description: The scheme for the backoffice proxy host's URL
   value: "https"
-- name: NOTIFICATIONS_KESSEL_RELATIONS_SECURE_CLIENTS
-  description: Should the inventory gRPC client open channels over TLS?
+- name: KESSEL_INSECURE_CLIENT_ENABLED
+  description: Is the insecure client enabled for Kessel?
   value: "false"
+- name: KESSEL_TIMEOUT_MS
+  description: Timeout in milliseconds for Kessel gRPC calls
+  value: "30000"
 - name: NOTIFICATIONS_KESSEL_OIDC_ISSUER
   description: Specifies the issuer of the OIDC authentication tokens.
   value: "https://redhat.com/realms/redhat-external"

@@ -48,7 +48,6 @@
 
     <properties>
         <mapstruct.version>1.6.3</mapstruct.version>
-        <kessel.relationships-client.version>0.12</kessel.relationships-client.version>
         <kessel-sdk.version>1.8.0</kessel-sdk.version>
         <oauth2-oidc-sdk.version>11.38.1</oauth2-oidc-sdk.version>
 
