@@ -21,12 +21,15 @@ public class OAuth2ClientCredentialsCache {
     @CacheResult(cacheName = CACHE_NAME)
     public OAuth2ClientCredentials getCredentials() {
 
-        OIDCDiscoveryMetadata discoveryMetadata = OIDCDiscovery.fetchOIDCDiscovery(recipientsResolverConfig.getKesselClientIssuer().get());
-        ClientConfigAuth auth = new ClientConfigAuth(
-            recipientsResolverConfig.getKesselClientId().get(),
-            recipientsResolverConfig.getKesselClientSecret().get(),
-            discoveryMetadata.tokenEndpoint()
-        );
+        String issuer = recipientsResolverConfig.getKesselClientIssuer()
+            .orElseThrow(() -> new IllegalStateException("Missing required configuration: notifications.kessel.authn.issuer"));
+        String clientId = recipientsResolverConfig.getKesselClientId()
+            .orElseThrow(() -> new IllegalStateException("Missing required configuration: notifications.kessel.authn.client-id"));
+        String clientSecret = recipientsResolverConfig.getKesselClientSecret()
+            .orElseThrow(() -> new IllegalStateException("Missing required configuration: notifications.kessel.authn.client-secret"));
+
+        OIDCDiscoveryMetadata discoveryMetadata = OIDCDiscovery.fetchOIDCDiscovery(issuer);
+        ClientConfigAuth auth = new ClientConfigAuth(clientId, clientSecret, discoveryMetadata.tokenEndpoint());
         return new OAuth2ClientCredentials(auth);
     }
 

@@ -47,7 +47,8 @@ public class KesselService {
         try {
             for (Iterator<StreamedListSubjectsResponse> it = kesselInventoryClient.streamedListSubjects(request); it.hasNext();) {
                 StreamedListSubjectsResponse response = it.next();
-                userIds.add(response.getSubject().getResource().getResourceId().replace(kesselAdditionalDomainName, ""));
+                String resourceId = response.getSubject().getResource().getResourceId();
+                userIds.add(resourceId.startsWith(kesselAdditionalDomainName) ? resourceId.substring(kesselAdditionalDomainName.length()) : resourceId);
             }
         } catch (StatusRuntimeException e) {
             throw kesselInventoryClient.handleGrpcException(e);
