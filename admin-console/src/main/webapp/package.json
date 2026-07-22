@@ -40,7 +40,7 @@
     "globals": "^17.0.0",
     "jsdom": "^29.1.1",
     "openapi2typescript-cli": "0.7.1",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "vite": "^8.0.0",
     "vitest": "^4.0.0"
   },
