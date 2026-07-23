@@ -172,6 +172,12 @@ public class EmailAggregator {
                 recipient,
                 notUsed -> EmailPayloadAggregatorFactory.by(eventAggregationCriteria, recipient.getUsername(), userSubscribedSeverities));
 
+            if (aggregator == null) {
+                Log.warnf("No aggregator found for %s/%s, skipping recipient %s",
+                    eventAggregationCriteria.getBundle(), eventAggregationCriteria.getApplication(), recipient.getUsername());
+                return;
+            }
+
             EmailAggregation eventDataToAggregate = new EmailAggregation(
                 aggregation.getOrgId(),
                 eventAggregationCriteria.getBundle(),

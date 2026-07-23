@@ -278,7 +278,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
             Map<User, List<ApplicationAggregatedData>> userData) {
         Map<List<ApplicationAggregatedData>, Set<User>> grouped = userData.keySet().stream()
             .collect(Collectors.groupingBy(userData::get, Collectors.toSet()));
-        Log.debugf("Users with same aggregated data: %s", grouped);
+        Log.debugf("Grouped %d users into %d aggregated-data groups", userData.size(), grouped.size());
         return grouped;
     }
 
