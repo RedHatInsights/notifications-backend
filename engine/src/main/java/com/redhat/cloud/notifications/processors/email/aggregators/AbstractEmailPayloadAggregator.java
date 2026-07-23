@@ -13,8 +13,8 @@ public abstract class AbstractEmailPayloadAggregator {
 
     private String orgId;
 
-    public String userName;
-    public Set<SubscribedEventTypeSeverities> userSeverities;
+    private String userName;
+    private Set<SubscribedEventTypeSeverities> userSeverities;
     JsonObject context = new JsonObject();
 
     abstract void processEmailAggregation(EmailAggregation aggregation);
@@ -55,6 +55,14 @@ public abstract class AbstractEmailPayloadAggregator {
 
     void copyStringField(JsonObject to, JsonObject from, final String field) {
         to.put(field, from.getString(field));
+    }
+
+    void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    void setUserSeverities(Set<SubscribedEventTypeSeverities> userSeverities) {
+        this.userSeverities = userSeverities;
     }
 
     String getOrgId() {
