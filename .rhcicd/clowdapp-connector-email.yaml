@@ -124,6 +124,8 @@ objects:
           value: ${NOTIFICATIONS_CONNECTOR_MAX_RECIPIENTS_PER_EMAIL}
         - name: NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED
           value: ${NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED}
+        - name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
+          value: ${NOTIFICATIONS_USE_DEFAULT_TEMPLATE}
         - name: QUARKUS_HTTP_PORT
           value: ${QUARKUS_HTTP_PORT}
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -242,6 +244,8 @@ parameters:
   description: If an email has more recipients (to/cc/bcc) than this value, it will be split into several emails with the same content but fewer recipients
   value: "50"
 - name: NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED
+  value: "false"
+- name: NOTIFICATIONS_USE_DEFAULT_TEMPLATE
   value: "false"
 - name: QUARKUS_HTTP_PORT
   description: Quarkus HTTP server port
