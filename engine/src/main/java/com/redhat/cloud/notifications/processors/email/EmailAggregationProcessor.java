@@ -178,6 +178,11 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                     } catch (Exception e) {
                         Log.error("Kafka aggregation payload parsing key failed to be cast as 'EventAggregationCriteria' for event: " + event.getId() + ", aggregation: " + actionEvent.toString(), e);
                     }
+                    if (command.getAggregationKey() == null) {
+                        Log.warnf("Skipping aggregation command with null key for event: %s", event.getId());
+                        rejectedAggregationCommandCount.increment();
+                        continue;
+                    }
                     aggregationCommands.add(command);
                 } catch (Exception e) {
                     Log.error("Kafka aggregation payload parsing failed for event: " + event.getId() + ", aggregation: " + actionEvent.toString(), e);
@@ -187,6 +192,11 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         } catch (Exception e) {
             Log.error("Kafka aggregation payload parsing failed for event " + event.getId(), e);
             rejectedAggregationCommandCount.increment();
+            return;
+        }
+
+        if (aggregationCommands.isEmpty()) {
+            Log.warnf("No valid aggregation commands parsed from event %s", event.getId());
             return;
         }
 
