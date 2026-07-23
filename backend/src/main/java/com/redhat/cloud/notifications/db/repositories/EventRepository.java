@@ -16,7 +16,6 @@ import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 
 import java.sql.Timestamp;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -36,7 +35,7 @@ public class EventRepository {
     RecipientsAuthorizationCriterionExtractor recipientsAuthorizationCriterionExtractor;
 
     public List<EventAuthorizationCriterion> getEventsWithCriterion(String orgId, boolean useNormalized, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
-                                                                    LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
+                                                                    LocalDateTime startDate, LocalDateTime endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                                                     Set<Boolean> invocationResults, Set<NotificationStatus> status) {
 
         boolean bundlesNotEmpty = bundleIds != null && !bundleIds.isEmpty();
@@ -148,7 +147,7 @@ public class EventRepository {
     }
 
     public List<Event> getEvents(String orgId, boolean useNormalized, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
-                                      LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
+                                      LocalDateTime startDate, LocalDateTime endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                       Set<Boolean> invocationResults, boolean fetchNotificationHistory, Set<NotificationStatus> status, Set<Severity> severities, Query query,
                                       Optional<List<UUID>> uuidToExclude, boolean includeEventsWithAuthCriterion, boolean hasAction) {
 
@@ -207,7 +206,7 @@ public class EventRepository {
     }
 
     public Long count(String orgId, boolean useNormalized, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
-                      LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes,
+                      LocalDateTime startDate, LocalDateTime endDate, Set<EndpointType> endpointTypes,
                       Set<CompositeEndpointType> compositeEndpointTypes, Set<Boolean> invocationResults,
                       Set<NotificationStatus> status, Set<Severity> severities, Optional<List<UUID>> uuidToExclude, Boolean includeEventsWithAuthCriterion,
                       boolean hasAction) {
@@ -251,7 +250,7 @@ public class EventRepository {
     }
 
     private List<UUID> getEventIds(String orgId, boolean useNormalized, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeDisplayName,
-                                        LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
+                                        LocalDateTime startDate, LocalDateTime endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                         Set<Boolean> invocationResults, Set<NotificationStatus> status, Set<Severity> severities, Query query, Optional<List<UUID>> uuidToExclude, boolean includeEventsWithAuthCriterion,
                                         boolean hasAction) {
         boolean bundlesNotEmpty = bundleIds != null && !bundleIds.isEmpty();
@@ -301,7 +300,7 @@ public class EventRepository {
     }
 
     private String addHqlConditions(String hql, boolean useNormalized, boolean bundlesNotEmpty, boolean applicationsNotEmpty, boolean eventTypeNameNotEmpty,
-                                           LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes,
+                                           LocalDateTime startDate, LocalDateTime endDate, Set<EndpointType> endpointTypes,
                                            Set<CompositeEndpointType> compositeEndpointTypes, Set<Boolean> invocationResults,
                                            Set<NotificationStatus> status, Set<Severity> severities, Optional<List<UUID>> uuidToExclude, boolean includeEventsWithAuthCriterion,
                                            boolean hasAction) {
@@ -390,7 +389,7 @@ public class EventRepository {
     }
 
     private void setQueryParams(TypedQuery<?> query, String orgId, Set<UUID> bundleIds, Set<UUID> appIds, String eventTypeName,
-                                       LocalDate startDate, LocalDate endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
+                                       LocalDateTime startDate, LocalDateTime endDate, Set<EndpointType> endpointTypes, Set<CompositeEndpointType> compositeEndpointTypes,
                                        Set<Boolean> invocationResults, Set<NotificationStatus> status, Set<Severity> severities, Optional<List<UUID>> uuidToExclude) {
         query.setParameter("orgId", orgId);
         if (uuidToExclude.isPresent()) {
@@ -406,10 +405,10 @@ public class EventRepository {
             query.setParameter("eventTypeDisplayName", "%" + eventTypeName.toLowerCase() + "%");
         }
         if (startDate != null) {
-            query.setParameter("startDate", Timestamp.valueOf(startDate.atStartOfDay()));
+            query.setParameter("startDate", Timestamp.valueOf(startDate));
         }
         if (endDate != null) {
-            query.setParameter("endDate", Timestamp.valueOf(endDate.atTime(LocalTime.MAX))); // at end of day
+            query.setParameter("endDate", Timestamp.valueOf(endDate));
         }
         if (severities != null && !severities.isEmpty()) {
             query.setParameter("severities", severities);
