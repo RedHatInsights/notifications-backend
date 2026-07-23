@@ -1026,6 +1026,51 @@ public class EventResourceTest extends DbIsolatedTest {
                 });
     }
 
+    private static Page<EventLogEntry> getEventLogPageWithDateTimeParams(
+            Header identityHeader, String startDate, String endDate, String startDateTime, String endDateTime) {
+        RequestSpecification request = given().header(identityHeader);
+        if (startDate != null) {
+            request.param("startDate", startDate);
+        }
+        if (endDate != null) {
+            request.param("endDate", endDate);
+        }
+        if (startDateTime != null) {
+            request.param("startDateTime", startDateTime);
+        }
+        if (endDateTime != null) {
+            request.param("endDateTime", endDateTime);
+        }
+        request.param("includeActions", true);
+        return request
+                .when().get(PATH)
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(JSON)
+                .extract().body().as(new TypeRef<>() {
+                });
+    }
+
+    private static void getEventLogPageExpect400(
+            Header identityHeader, String startDate, String endDate, String startDateTime, String endDateTime) {
+        RequestSpecification request = given().header(identityHeader);
+        if (startDate != null) {
+            request.param("startDate", startDate);
+        }
+        if (endDate != null) {
+            request.param("endDate", endDate);
+        }
+        if (startDateTime != null) {
+            request.param("startDateTime", startDateTime);
+        }
+        if (endDateTime != null) {
+            request.param("endDateTime", endDateTime);
+        }
+        request.when().get(PATH)
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
     private static void assertSameEvent(EventLogEntry eventLogEntry, Event event, NotificationHistory... historyEntries) {
         assertEquals(event.getId(), eventLogEntry.getId());
         assertEquals(event.getExternalId(), eventLogEntry.getExternalId());
@@ -1466,5 +1511,76 @@ public class EventResourceTest extends DbIsolatedTest {
         endpointRepository.deleteEndpoint(DEFAULT_ORG_ID, endpoint.getId());
     }
 
+    @ParameterizedTest
+    @CsvSource({"false,false", "false,true", "true,false", "true,true"})
+    void testDateTimeQueryParams(boolean kesselEnabled, boolean useNormalizedQueries) {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
+        when(backendConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
+        if (kesselEnabled) {
+            mockDefaultKesselPermission(EVENTS_VIEW, ALLOWED_TRUE);
+        }
 
+        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        Bundle bundle = resourceHelpers.createBundle("bundle-dt", "Bundle DT");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "app-dt", "App DT");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "et-dt", "ET DT", "ET DT");
+
+        Event eventA = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW.minusHours(4L));
+        Event eventB = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW.minusHours(2L));
+        Event eventC = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW.minusMinutes(30L));
+
+        // Case 1: datetime-only, both bounds -- only eventB falls within the window
+        Page<EventLogEntry> page = getEventLogPageWithDateTimeParams(identityHeader, null, null,
+                NOW.minusHours(3L).toString(), NOW.minusHours(1L).toString());
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(eventB.getId(), page.getData().get(0).getId());
+
+        // Case 2: datetime-only start, no end -- open-ended forward range
+        page = getEventLogPageWithDateTimeParams(identityHeader, null, null, NOW.minusHours(3L).toString(), null);
+        assertEquals(2, page.getMeta().getCount());
+        assertTrue(page.getData().stream().anyMatch(e -> e.getId().equals(eventB.getId())));
+        assertTrue(page.getData().stream().anyMatch(e -> e.getId().equals(eventC.getId())));
+
+        // Case 3: datetime-only end, no start -- open-ended backward range
+        page = getEventLogPageWithDateTimeParams(identityHeader, null, null, null, NOW.minusHours(1L).toString());
+        assertEquals(2, page.getMeta().getCount());
+        assertTrue(page.getData().stream().anyMatch(e -> e.getId().equals(eventA.getId())));
+        assertTrue(page.getData().stream().anyMatch(e -> e.getId().equals(eventB.getId())));
+
+        // Case 4: mixed startDateTime + endDate -- start uses exact time, end expands to end of day
+        page = getEventLogPageWithDateTimeParams(identityHeader, null, NOW.toLocalDate().toString(),
+                NOW.minusHours(1L).toString(), null);
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(eventC.getId(), page.getData().get(0).getId());
+
+        // Case 5: mixed startDate + endDateTime -- start expands to start of day, end uses exact time
+        page = getEventLogPageWithDateTimeParams(identityHeader, NOW.toLocalDate().toString(), null,
+                null, NOW.minusHours(1L).toString());
+        assertEquals(2, page.getMeta().getCount());
+        assertTrue(page.getData().stream().anyMatch(e -> e.getId().equals(eventA.getId())));
+        assertTrue(page.getData().stream().anyMatch(e -> e.getId().equals(eventB.getId())));
+
+        // Case 6: date-only (regression) -- behavior identical to pre-change
+        page = getEventLogPageWithDateTimeParams(identityHeader, NOW.toLocalDate().toString(), NOW.toLocalDate().toString(), null, null);
+        assertEquals(3, page.getMeta().getCount());
+
+        // Case 7: zero params (regression) -- unbounded, all events returned
+        page = getEventLogPageWithDateTimeParams(identityHeader, null, null, null, null);
+        assertEquals(3, page.getMeta().getCount());
+    }
+
+    @Test
+    void testDateTimeAmbiguityValidation() {
+        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        // Case 8: ambiguity on start
+        getEventLogPageExpect400(identityHeader, NOW.toLocalDate().toString(), null, NOW.toString(), null);
+
+        // Case 9: ambiguity on end
+        getEventLogPageExpect400(identityHeader, null, NOW.toLocalDate().toString(), null, NOW.toString());
+
+        // Case 10: ambiguity on both
+        getEventLogPageExpect400(identityHeader, NOW.toLocalDate().toString(), NOW.toLocalDate().toString(), NOW.toString(), NOW.toString());
+    }
 }

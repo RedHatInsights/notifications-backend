@@ -40,6 +40,8 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -99,15 +101,56 @@ public class EventResource {
         description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
         schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
     )
+    @Parameter(
+        name = "startDate",
+        in = ParameterIn.QUERY,
+        description = "Start date of the date range filter, expanded to the beginning of that day (00:00:00). "
+            + "Cannot be used together with startDateTime.",
+        schema = @Schema(type = SchemaType.STRING, format = "date")
+    )
+    @Parameter(
+        name = "endDate",
+        in = ParameterIn.QUERY,
+        description = "End date of the date range filter, expanded to the end of that day (23:59:59.999999999). "
+            + "Cannot be used together with endDateTime.",
+        schema = @Schema(type = SchemaType.STRING, format = "date")
+    )
+    @Parameter(
+        name = "startDateTime",
+        in = ParameterIn.QUERY,
+        description = "Start date and time of the date range filter in ISO 8601 format (e.g. 2024-01-15T10:30:00). "
+            + "Cannot be used together with startDate.",
+        schema = @Schema(type = SchemaType.STRING, format = "date-time")
+    )
+    @Parameter(
+        name = "endDateTime",
+        in = ParameterIn.QUERY,
+        description = "End date and time of the date range filter in ISO 8601 format (e.g. 2024-01-15T18:00:00). "
+            + "Cannot be used together with endDate.",
+        schema = @Schema(type = SchemaType.STRING, format = "date-time")
+    )
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS, workspacePermissions = EVENTS_VIEW)
     public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @Context UriInfo uriInfo,
                                          @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
                                          @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
+                                         @RestQuery LocalDateTime startDateTime, @RestQuery LocalDateTime endDateTime,
                                          @RestQuery Set<String> endpointTypes, @RestQuery Set<Boolean> invocationResults,
                                          @RestQuery Set<EventLogEntryActionStatus> status, @RestQuery Set<Severity> severities,
                                          @BeanParam @Valid Query query,
                                          @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions,
                                          @RestQuery boolean hasAction) {
+        if (startDate != null && startDateTime != null) {
+            throw new BadRequestException("Cannot specify both startDate and startDateTime. Use one or the other.");
+        }
+        if (endDate != null && endDateTime != null) {
+            throw new BadRequestException("Cannot specify both endDate and endDateTime. Use one or the other.");
+        }
+
+        LocalDateTime effectiveStart = startDateTime != null ? startDateTime
+            : startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime effectiveEnd = endDateTime != null ? endDateTime
+            : endDate != null ? endDate.atTime(LocalTime.MAX) : null;
+
         Set<EndpointType> basicTypes = Collections.emptySet();
         Set<CompositeEndpointType> compositeTypes = Collections.emptySet();
         Set<NotificationStatus> notificationStatusSet = status == null ? Set.of() : toNotificationStatus(status);
@@ -139,7 +182,7 @@ public class EventResource {
             Long count;
             if (backendConfig.isKesselChecksOnEventLogEnabled(orgId)) {
                 Log.info("Check for events with authorization criterion");
-                List<EventAuthorizationCriterion> listEventsAuthCriterion = eventRepository.getEventsWithCriterion(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet);
+                List<EventAuthorizationCriterion> listEventsAuthCriterion = eventRepository.getEventsWithCriterion(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, effectiveStart, effectiveEnd, basicTypes, compositeTypes, invocationResults, notificationStatusSet);
                 List<UUID> uuidToExclude = new ArrayList<>();
                 Map<Integer, Boolean> criterionResultCache = new HashMap<>();
                 for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
@@ -155,11 +198,11 @@ public class EventResource {
                 if (uuidToExclude.isEmpty()) {
                     uuidToExclude = null;
                 }
-                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.ofNullable(uuidToExclude), true, hasAction);
-                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.ofNullable(uuidToExclude), true, hasAction);
+                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, effectiveStart, effectiveEnd, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.ofNullable(uuidToExclude), true, hasAction);
+                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, effectiveStart, effectiveEnd, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.ofNullable(uuidToExclude), true, hasAction);
             } else {
-                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.empty(), false, hasAction);
-                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.empty(), false, hasAction);
+                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, effectiveStart, effectiveEnd, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.empty(), false, hasAction);
+                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, effectiveStart, effectiveEnd, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.empty(), false, hasAction);
             }
 
             if (events.isEmpty()) {
