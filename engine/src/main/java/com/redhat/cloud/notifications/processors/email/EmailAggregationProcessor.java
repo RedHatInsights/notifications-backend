@@ -160,54 +160,57 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
         List<AggregationCommand> aggregationCommands = new ArrayList<>();
         Timer.Sample consumedTimer = Timer.start(registry);
+        String bundle = "unknown";
 
         try {
-            Action action = actionParser.fromJsonString(event.getPayload());
-            Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+            try {
+                Action action = actionParser.fromJsonString(event.getPayload());
+                Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
-            for (com.redhat.cloud.notifications.ingress.Event actionEvent : action.getEvents()) {
-                try {
-                    AggregationCommand command = objectMapper.convertValue(actionEvent.getPayload().getAdditionalProperties(), AggregationCommand.class);
+                for (com.redhat.cloud.notifications.ingress.Event actionEvent : action.getEvents()) {
                     try {
-                        JsonObject aggregationKey = new JsonObject(actionEvent.getPayload().getAdditionalProperties()).getJsonObject("aggregationKey");
-                        EventAggregationCriterion key = objectMapper.convertValue(aggregationKey, EventAggregationCriterion.class);
-                        Set<ConstraintViolation<EventAggregationCriterion>> constraintViolations = validator.validate(key);
-                        if (constraintViolations.isEmpty()) {
-                            command.setAggregationKey(key);
+                        AggregationCommand command = objectMapper.convertValue(actionEvent.getPayload().getAdditionalProperties(), AggregationCommand.class);
+                        try {
+                            JsonObject aggregationKey = new JsonObject(actionEvent.getPayload().getAdditionalProperties()).getJsonObject("aggregationKey");
+                            EventAggregationCriterion key = objectMapper.convertValue(aggregationKey, EventAggregationCriterion.class);
+                            Set<ConstraintViolation<EventAggregationCriterion>> constraintViolations = validator.validate(key);
+                            if (constraintViolations.isEmpty()) {
+                                command.setAggregationKey(key);
+                            }
+                        } catch (Exception e) {
+                            Log.error("Kafka aggregation payload parsing key failed to be cast as 'EventAggregationCriteria' for event: " + event.getId() + ", aggregation: " + actionEvent.toString(), e);
                         }
+                        if (command.getAggregationKey() == null) {
+                            Log.warnf("Skipping aggregation command with null key for event: %s", event.getId());
+                            rejectedAggregationCommandCount.increment();
+                            continue;
+                        }
+                        aggregationCommands.add(command);
                     } catch (Exception e) {
-                        Log.error("Kafka aggregation payload parsing key failed to be cast as 'EventAggregationCriteria' for event: " + event.getId() + ", aggregation: " + actionEvent.toString(), e);
-                    }
-                    if (command.getAggregationKey() == null) {
-                        Log.warnf("Skipping aggregation command with null key for event: %s", event.getId());
+                        Log.error("Kafka aggregation payload parsing failed for event: " + event.getId() + ", aggregation: " + actionEvent.toString(), e);
                         rejectedAggregationCommandCount.increment();
-                        continue;
                     }
-                    aggregationCommands.add(command);
-                } catch (Exception e) {
-                    Log.error("Kafka aggregation payload parsing failed for event: " + event.getId() + ", aggregation: " + actionEvent.toString(), e);
-                    rejectedAggregationCommandCount.increment();
                 }
+            } catch (Exception e) {
+                Log.error("Kafka aggregation payload parsing failed for event " + event.getId(), e);
+                rejectedAggregationCommandCount.increment();
+                return;
             }
-        } catch (Exception e) {
-            Log.error("Kafka aggregation payload parsing failed for event " + event.getId(), e);
-            rejectedAggregationCommandCount.increment();
-            return;
-        }
 
-        if (aggregationCommands.isEmpty()) {
-            Log.warnf("No valid aggregation commands parsed from event %s", event.getId());
-            return;
-        }
+            if (aggregationCommands.isEmpty()) {
+                Log.warnf("No valid aggregation commands parsed from event %s", event.getId());
+                return;
+            }
 
-        final String bundle = aggregationCommands.get(0).getAggregationKey().getBundle();
+            bundle = aggregationCommands.get(0).getAggregationKey().getBundle();
 
-        processedAggregationCommandCount.increment(aggregationCommands.size());
-        try {
-            processBundleAggregation(aggregationCommands, event);
-        } catch (Exception e) {
-            Log.warn("Error while processing aggregation", e);
-            failedAggregationCommandCount.increment();
+            processedAggregationCommandCount.increment(aggregationCommands.size());
+            try {
+                processBundleAggregation(aggregationCommands, event);
+            } catch (Exception e) {
+                Log.warn("Error while processing aggregation", e);
+                failedAggregationCommandCount.increment();
+            }
         } finally {
             consumedTimer.stop(registry.timer(
                 AGGREGATION_CONSUMED_TIMER_NAME,
