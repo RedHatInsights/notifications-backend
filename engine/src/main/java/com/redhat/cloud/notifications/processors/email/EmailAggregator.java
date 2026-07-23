@@ -106,6 +106,7 @@ public class EmailAggregator {
 
         List<Event> aggregations;
         do {
+            // Retrieve paginated aggregations that match the given key.
             aggregations = emailAggregationRepository.getEmailAggregationBasedOnEvent(eventAggregationCriteria, start, end, offset, maxPageSize);
             offset += maxPageSize;
 
@@ -151,6 +152,11 @@ public class EmailAggregator {
         ).stream().filter(user -> user.getEmail() != null && !user.getEmail().isBlank()).collect(toSet());
     }
 
+    /*
+     * For each recipient, creates or retrieves an existing aggregator and feeds the event into it.
+     * A single aggregator instance is shared across all events for a given user, accumulating data
+     * throughout the aggregation window.
+     */
     private void aggregateForRecipients(Set<User> recipients,
                                         Event aggregation,
                                         EventAggregationCriterion eventAggregationCriteria,
@@ -161,6 +167,7 @@ public class EmailAggregator {
                 .map(map -> map.get(recipient.getUsername()))
                 .orElse(null);
 
+            // We may or may not have already initialized an aggregator for the recipient.
             AbstractEmailPayloadAggregator aggregator = aggregated.computeIfAbsent(
                 recipient,
                 notUsed -> EmailPayloadAggregatorFactory.by(eventAggregationCriteria, recipient.getUsername(), userSubscribedSeverities));

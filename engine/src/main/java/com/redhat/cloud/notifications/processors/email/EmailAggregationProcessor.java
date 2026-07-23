@@ -221,10 +221,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         final String bundleName = aggregationCommands.get(0).getAggregationKey().getBundle();
         // Patch event display name for event log rendering
         Bundle bundle = bundleRepository.getBundle(bundleName)
-                .orElseThrow(() -> {
-                    String exceptionMsg = String.format("Bundle not found: %s", bundleName);
-                    return new IllegalArgumentException(exceptionMsg);
-                });
+                .orElseThrow(() -> new IllegalArgumentException("Bundle not found: " + bundleName));
 
         String eventTypeDisplayName = String.format("%s - %s",
             aggregatorEvent.getEventTypeDisplayName(),
@@ -233,74 +230,96 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
         Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(null, aggregatorEvent.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
 
-        //Store every aggregated application data for each user
+        Map<User, List<ApplicationAggregatedData>> userData = aggregateByApplication(aggregationCommands);
+
+        Map<List<ApplicationAggregatedData>, Set<User>> usersWithSameData = groupUsersByAggregatedData(userData);
+
+        sendAggregatedEmails(usersWithSameData, bundle, aggregatorEvent, endpoint);
+    }
+
+    /*
+     * Aggregates event data per application and collects results per user.
+     * Each application's aggregation command is processed independently; errors in one
+     * application do not prevent others from being aggregated.
+     */
+    private Map<User, List<ApplicationAggregatedData>> aggregateByApplication(List<AggregationCommand> aggregationCommands) {
         Map<User, List<ApplicationAggregatedData>> userData = new HashMap<>();
 
-        for (AggregationCommand applicationAggregationCommand : aggregationCommands) {
-            Log.debugf("Processing aggregation command: %s", applicationAggregationCommand);
+        for (AggregationCommand cmd : aggregationCommands) {
+            Log.debugf("Processing aggregation command: %s", cmd);
 
             try {
-                Application app = applicationRepository.getApplication(applicationAggregationCommand.getAggregationKey().getBundle(), applicationAggregationCommand.getAggregationKey().getApplication())
-                        .orElseThrow(() -> {
-                            String exceptionMsg = String.format("Application not found: %s/%s",
-                                    applicationAggregationCommand.getAggregationKey().getBundle(), applicationAggregationCommand.getAggregationKey().getApplication());
-                            return new IllegalArgumentException(exceptionMsg);
-                        });
-                Map<User, Map<String, Object>> applicationAggregatedContextByUser = emailAggregator.getAggregated(app.getId(), applicationAggregationCommand.getAggregationKey(),
-                    applicationAggregationCommand.getSubscriptionType(),
-                    applicationAggregationCommand.getStart(),
-                    applicationAggregationCommand.getEnd());
+                Application app = applicationRepository.getApplication(
+                        cmd.getAggregationKey().getBundle(),
+                        cmd.getAggregationKey().getApplication())
+                    .orElseThrow(() -> new IllegalArgumentException(String.format(
+                        "Application not found: %s/%s",
+                        cmd.getAggregationKey().getBundle(),
+                        cmd.getAggregationKey().getApplication())));
 
-                applicationAggregatedContextByUser.entrySet().stream().forEach(userAggregation -> {
-                    userData.computeIfAbsent(userAggregation.getKey(), unused -> new ArrayList<>())
-                        .add(new ApplicationAggregatedData(userAggregation.getValue(), applicationAggregationCommand.getAggregationKey().getApplication()));
-                });
+                Map<User, Map<String, Object>> aggregatedByUser = emailAggregator.getAggregated(
+                    app.getId(), cmd.getAggregationKey(),
+                    cmd.getSubscriptionType(), cmd.getStart(), cmd.getEnd());
+
+                aggregatedByUser.forEach((user, data) ->
+                    userData.computeIfAbsent(user, unused -> new ArrayList<>())
+                        .add(new ApplicationAggregatedData(data, cmd.getAggregationKey().getApplication())));
             } catch (Exception ex) {
-                Log.error("Error processing " + applicationAggregationCommand.getAggregationKey(), ex);
+                Log.error("Error processing " + cmd.getAggregationKey(), ex);
             }
         }
+        return userData;
+    }
 
-        // Group users with same aggregated data
-        Map<List<ApplicationAggregatedData>, Set<User>> usersWithSameAggregatedData = userData.keySet().stream()
+    /*
+     * Groups users who have identical aggregated data so they can share a single rendered email.
+     */
+    private Map<List<ApplicationAggregatedData>, Set<User>> groupUsersByAggregatedData(
+            Map<User, List<ApplicationAggregatedData>> userData) {
+        Map<List<ApplicationAggregatedData>, Set<User>> grouped = userData.keySet().stream()
             .collect(Collectors.groupingBy(userData::get, Collectors.toSet()));
+        Log.debugf("Users with same aggregated data: %s", grouped);
+        return grouped;
+    }
 
-        Log.debugf("Users with same aggregated data: %s", usersWithSameAggregatedData);
-
+    /*
+     * Sends one aggregated email per group of users with identical data.
+     * Recipients are determined at an earlier stage (see EmailAggregator) using the
+     * recipients-resolver app and the subscription records from the database.
+     */
+    private void sendAggregatedEmails(Map<List<ApplicationAggregatedData>, Set<User>> usersWithSameData,
+                                      Bundle bundle, Event aggregatorEvent, Endpoint endpoint) {
         Map<String, Object> mapDataTitle = Map.of("source", Map.of("bundle", Map.of("display_name", bundle.getDisplayName())));
         TemplateDefinition templateTitleDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE, null, null, null);
-        String emailTitle = commonQuteTemplateService.renderTemplateWithCustomDataMap(templateTitleDefinition, mapDataTitle);
+        commonQuteTemplateService.renderTemplateWithCustomDataMap(templateTitleDefinition, mapDataTitle);
 
-        // for each set of users, generate email subject + body and send it to email connector
-        usersWithSameAggregatedData.entrySet().stream().forEach(listApplicationWithUserCollection -> {
-
-            // Format data to send to the connector.
-            Set<String> recipientsUsernames = listApplicationWithUserCollection.getValue().stream().map(User::getUsername).collect(Collectors.toSet());
+        usersWithSameData.forEach((appDataList, users) -> {
+            Set<String> recipientsUsernames = users.stream().map(User::getUsername).collect(Collectors.toSet());
             Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(aggregatorEvent, List.of(endpoint));
 
-            Map<String, Object> aggregatedDataToRenderOnConnector = buildFullConnectorTemplateContext(listApplicationWithUserCollection.getKey(), bundle);
+            Map<String, Object> templateContext = buildFullConnectorTemplateContext(appDataList, bundle);
 
-            // Prepare all the data to be sent to the connector.
+            /*
+             * The recipients are determined at an earlier stage (see EmailAggregator) using the
+             * recipients-resolver app and the subscription records from the database.
+             * The subscribedByDefault value below simply means that recipients-resolver will consider
+             * the subscribers passed in the request as the recipients candidates of the aggregation email.
+             * Because the recipient list has already been computed using authz constraints, we don't
+             * need to pass them again for the aggregated email.
+             */
             final EmailNotification emailNotification = new EmailNotification(
                 this.emailActorsResolver.getEmailSender(aggregatorEvent),
                 aggregatorEvent.getOrgId(),
                 recipientSettings,
-                /*
-                 * The recipients are determined at an earlier stage (see EmailAggregator) using the
-                 * recipients-resolver app and the subscription records from the database.
-                 * The subscribedByDefault value below simply means that recipients-resolver will consider
-                 * the subscribers passed in the request as the recipients candidates of the aggregation email.
-                 */
                 recipientsUsernames,
                 Collections.emptySet(),
                 false,
-                // because recipient list has already been computed using authz constraints, we don't need it for the aggregated email
                 null,
-                aggregatedDataToRenderOnConnector,
+                templateContext,
                 true
             );
 
             connectorSender.send(aggregatorEvent, endpoint, JsonObject.mapFrom(emailNotification));
-
             Log.debugf("Sent aggregation email notification to connector: %s", emailNotification);
         });
     }
