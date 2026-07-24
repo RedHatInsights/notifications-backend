@@ -294,7 +294,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                                       Bundle bundle, Event aggregatorEvent, Endpoint endpoint) {
         Map<String, Object> mapDataTitle = Map.of("source", Map.of("bundle", Map.of("display_name", bundle.getDisplayName())));
         TemplateDefinition templateTitleDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE, null, null, null);
-        commonQuteTemplateService.renderTemplateWithCustomDataMap(templateTitleDefinition, mapDataTitle);
 
         usersWithSameData.forEach((appDataList, users) -> {
             Set<String> recipientsUsernames = users.stream().map(User::getUsername).collect(Collectors.toSet());
