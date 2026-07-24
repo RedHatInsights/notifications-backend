@@ -55,6 +55,7 @@ jobs:
         working-directory: admin-console/src/main/webapp
         env:
           YARN_ENABLE_IMMUTABLE_INSTALLS: "false"
+          BRANCH_REF: ${{ github.ref_name }}
         run: |
           corepack enable
           yarn install
@@ -66,7 +67,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add yarn.lock
           git commit -m "Regenerate yarn.lock to match Mintmaker's dependency bump"
-          git push origin "HEAD:${{ github.ref_name }}"
+          git push origin "HEAD:${BRANCH_REF}"
       - name: Build admin-console
         if: steps.admin-console-changed.outputs.any_changed == 'true'
         run: ./mvnw clean verify -Padmin-console -pl :checkstyle,:notifications-admin-console --no-transfer-progress
