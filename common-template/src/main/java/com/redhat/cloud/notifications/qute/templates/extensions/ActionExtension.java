@@ -11,6 +11,8 @@ import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import io.quarkus.qute.TemplateExtension;
 
+import java.util.Map;
+
 public class ActionExtension {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -44,6 +46,15 @@ public class ActionExtension {
         try {
             String encodedAction = consoleCloudEventParser.toJson(event);
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readTree(encodedAction));
+        } catch (JsonProcessingException jpe) {
+            throw new RuntimeException("Error while transforming action to json", jpe);
+        }
+    }
+
+    @TemplateExtension
+    public static String toPrettyJson(Map<String, Object> action) {
+        try {
+            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(action);
         } catch (JsonProcessingException jpe) {
             throw new RuntimeException("Error while transforming action to json", jpe);
         }
