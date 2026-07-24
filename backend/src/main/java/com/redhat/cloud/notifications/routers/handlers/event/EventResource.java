@@ -110,14 +110,14 @@ public class EventResource {
             in = ParameterIn.QUERY,
             description = "Start of the date range filter. Accepts either a date (yyyy-MM-dd), expanded to the beginning of that day, "
                 + "or a date-time (yyyy-MM-dd'T'HH:mm:ss).",
-            schema = @Schema(type = SchemaType.STRING, oneOf = {LocalDate.class, LocalDateTime.class })
+            schema = @Schema(type = SchemaType.STRING)
         ),
         @Parameter(
             name = "endDate",
             in = ParameterIn.QUERY,
             description = "End of the date range filter. Accepts either a date (yyyy-MM-dd), expanded to the end of that day, "
                 + "or a date-time (yyyy-MM-dd'T'HH:mm:ss).",
-            schema = @Schema(type = SchemaType.STRING, oneOf = {LocalDate.class, LocalDateTime.class })
+            schema = @Schema(type = SchemaType.STRING)
         )
     })
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS, workspacePermissions = EVENTS_VIEW)
