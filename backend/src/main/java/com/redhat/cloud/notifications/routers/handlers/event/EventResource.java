@@ -37,9 +37,13 @@ import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.jboss.resteasy.reactive.RestQuery;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,6 +54,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
@@ -93,21 +98,36 @@ public class EventResource {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the event log entries", description = "Retrieves the event log entries. Use this endpoint to review a full history of the events related to the tenant. You can sort by the bundle, application, event, and created fields. You can specify the sort order by appending :asc or :desc to the field, for example bundle:desc. Sorting defaults to desc for the created field and to asc for all other fields."
     )
-    @Parameter(
-        name = "limit",
-        in = ParameterIn.QUERY,
-        description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
-        schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
-    )
+    @Parameters({
+        @Parameter(
+            name = "limit",
+            in = ParameterIn.QUERY,
+            description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
+            schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
+        ),
+        @Parameter(
+            name = "startDate",
+            in = ParameterIn.QUERY,
+            schema = @Schema(implementation = LocalDate.class)
+        ),
+        @Parameter(
+            name = "endDate",
+            in = ParameterIn.QUERY,
+            schema = @Schema(implementation = LocalDate.class)
+        )
+    })
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS, workspacePermissions = EVENTS_VIEW)
     public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @Context UriInfo uriInfo,
                                          @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
-                                         @RestQuery String eventTypeDisplayName, @RestQuery LocalDate startDate, @RestQuery LocalDate endDate,
+                                         @RestQuery String eventTypeDisplayName, @RestQuery String startDate, @RestQuery String endDate,
                                          @RestQuery Set<String> endpointTypes, @RestQuery Set<Boolean> invocationResults,
                                          @RestQuery Set<EventLogEntryActionStatus> status, @RestQuery Set<Severity> severities,
                                          @BeanParam @Valid Query query,
                                          @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions,
                                          @RestQuery boolean hasAction) {
+        LocalDateTime startDateTime = parseDate(startDate, "startDate", LocalDate::atStartOfDay);
+        LocalDateTime endDateTime = parseDate(endDate, "endDate", date -> date.atTime(LocalTime.MAX));
+
         Set<EndpointType> basicTypes = Collections.emptySet();
         Set<CompositeEndpointType> compositeTypes = Collections.emptySet();
         Set<NotificationStatus> notificationStatusSet = status == null ? Set.of() : toNotificationStatus(status);
@@ -139,7 +159,7 @@ public class EventResource {
             Long count;
             if (backendConfig.isKesselChecksOnEventLogEnabled(orgId)) {
                 Log.info("Check for events with authorization criterion");
-                List<EventAuthorizationCriterion> listEventsAuthCriterion = eventRepository.getEventsWithCriterion(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet);
+                List<EventAuthorizationCriterion> listEventsAuthCriterion = eventRepository.getEventsWithCriterion(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDateTime, endDateTime, basicTypes, compositeTypes, invocationResults, notificationStatusSet);
                 List<UUID> uuidToExclude = new ArrayList<>();
                 Map<Integer, Boolean> criterionResultCache = new HashMap<>();
                 for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
@@ -155,11 +175,11 @@ public class EventResource {
                 if (uuidToExclude.isEmpty()) {
                     uuidToExclude = null;
                 }
-                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.ofNullable(uuidToExclude), true, hasAction);
-                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.ofNullable(uuidToExclude), true, hasAction);
+                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDateTime, endDateTime, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.ofNullable(uuidToExclude), true, hasAction);
+                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDateTime, endDateTime, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.ofNullable(uuidToExclude), true, hasAction);
             } else {
-                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.empty(), false, hasAction);
-                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDate, endDate, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.empty(), false, hasAction);
+                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDateTime, endDateTime, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.empty(), false, hasAction);
+                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDateTime, endDateTime, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.empty(), false, hasAction);
             }
 
             if (events.isEmpty()) {
@@ -225,6 +245,22 @@ public class EventResource {
             return page;
         } finally {
             timerSample.stop(useNormalizedQueries ? normalizedTimer : denormalizedTimer);
+        }
+    }
+
+    // dateOnlyMapper expands a date-only value to start/end of day, preserving the pre-existing whole-day filtering behavior
+    private static LocalDateTime parseDate(String value, String paramName, Function<LocalDate, LocalDateTime> dateOnlyMapper) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(value);
+        } catch (DateTimeParseException e) {
+            try {
+                return dateOnlyMapper.apply(LocalDate.parse(value));
+            } catch (DateTimeParseException e2) {
+                throw new BadRequestException("Invalid '" + paramName + "' value: [" + value + "]. Expected format is yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ss", e2);
+            }
         }
     }
 
