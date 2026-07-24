@@ -7,9 +7,12 @@ import com.redhat.cloud.notifications.qute.templates.Severity;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import email.pojo.NotificationsConsoleCloudEvent;
+import helpers.BaseTransformer;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.vertx.core.json.JsonObject;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -26,6 +29,9 @@ public class TestDefaultTemplate extends EmailTemplatesRendererHelper {
 
     @InjectSpy
     protected TemplateService templateService;
+
+    @Inject
+    BaseTransformer baseTransformerHelper;
 
     @Override
     protected String getApp() {
@@ -115,6 +121,27 @@ public class TestDefaultTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("You are receiving this email because the email template associated with this event type is not configured properly"));
     }
 
+    /**
+     * connector-email renders this same Default template but with "action" as a plain
+     * {@code Map<String, Object>} (the deserialized {@code event_data} of the Kafka message it
+     * consumes) rather than an {@link Action} instance, so {@code action.toPrettyJson()} must
+     * also resolve against a {@code Map}.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testInstantEmailBodyFromMapAction(boolean useBetaTemplate) {
+        Action baseAction = TestHelpers.createPoliciesAction("", "my-bundle", "my-app", "FooMachine");
+        JsonObject actionJson = baseTransformerHelper.toJsonObject(baseAction);
+        actionJson.put("orgId", baseAction.getOrgId());
+        eventTypeDisplayName = "Test Event Type";
+        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_BODY, getBundle(), getApp(), EVENT_TYPE_NAME, useBetaTemplate);
+        String result = generateEmail(templateDefinition, actionJson.getMap(), null, false);
+
+        assertTrue(result.contains("Red Hat Enterprise Linux/Test App/Test Event Type notification was triggered"), "Body should contain bundle/app/event-type");
+        assertTrue(result.contains("You are receiving this email because the email template associated with this event type is not configured properly"));
+        assertTrue(result.contains("my-bundle"), "Raw action content section should render the map as pretty JSON");
+        assertTrue(result.contains(TestHelpers.POLICY_ID_1), "Raw action content section should render nested map/list values");
+    }
 
     @Test
     public void testInstantEmailTitleCloudEvents() {
