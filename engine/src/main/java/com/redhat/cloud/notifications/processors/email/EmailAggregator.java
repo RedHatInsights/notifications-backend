@@ -1,15 +1,9 @@
 package com.redhat.cloud.notifications.processors.email;
 
-import com.redhat.cloud.event.parser.ConsoleCloudEventParser;
-import com.redhat.cloud.event.parser.exceptions.ConsoleCloudEventParsingException;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
-import com.redhat.cloud.notifications.events.EventWrapper;
-import com.redhat.cloud.notifications.events.EventWrapperAction;
-import com.redhat.cloud.notifications.events.EventWrapperCloudEvent;
-import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.EmailAggregation;
@@ -17,7 +11,6 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.models.NotificationsConsoleCloudEvent;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.processors.email.aggregators.AbstractEmailPayloadAggregator;
 import com.redhat.cloud.notifications.processors.email.aggregators.EmailPayloadAggregatorFactory;
@@ -26,8 +19,6 @@ import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalReci
 import com.redhat.cloud.notifications.recipients.request.ActionRecipientSettings;
 import com.redhat.cloud.notifications.recipients.request.EndpointRecipientSettings;
 import com.redhat.cloud.notifications.transformers.BaseTransformer;
-import com.redhat.cloud.notifications.utils.ActionParser;
-import com.redhat.cloud.notifications.utils.ActionParsingException;
 import com.redhat.cloud.notifications.utils.RecipientsAuthorizationCriterionExtractor;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonArray;
@@ -66,15 +57,10 @@ public class EmailAggregator {
     SubscriptionRepository subscriptionRepository;
 
     @Inject
-    ActionParser actionParser;
-
-    @Inject
     EngineConfig engineConfig;
 
     @Inject
     BaseTransformer baseTransformer;
-
-    ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
     // This is manually used from the JSON payload instead of converting it to an Action and using getEventType()
     private static final String RECIPIENTS_KEY = "recipients";
@@ -120,91 +106,87 @@ public class EmailAggregator {
 
         List<Event> aggregations;
         do {
-            // First, we retrieve paginated aggregations that match the given key.
+            // Retrieve paginated aggregations that match the given key.
             aggregations = emailAggregationRepository.getEmailAggregationBasedOnEvent(eventAggregationCriteria, start, end, offset, maxPageSize);
             offset += maxPageSize;
 
-            // For each aggregation...
             for (Event aggregation : aggregations) {
-                // We need its event type to determine the target endpoints.
-                EventType eventType = aggregation.getEventType();
-
-                // Let's retrieve these targets.
-                Set<Endpoint> endpoints = Set.copyOf(endpointRepository
-                    .getTargetEmailSubscriptionEndpoints(aggregation.getOrgId(), aggregation.getEventType().getId()));
-
-                /*
-                 * Now we want to determine who will actually receive the aggregation email.
-                 * All users who subscribed to the current application and subscription type combination are recipients candidates.
-                 * The actual recipients list may differ from the candidates depending on the endpoint properties and the action settings.
-                 * The target endpoints properties will determine whether each candidate will actually receive an email.
-                 */
-
-                Set<String> subscribers = subscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
-                Set<String> unsubscribers = unsubscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
-
-                aggregation.setEventWrapper(getEventWrapper(aggregation.getPayload()));
-                RecipientsAuthorizationCriterion externalAuthorizationCriterion = recipientsAuthorizationCriterionExtractor.extract(aggregation);
-
-                Set<User> recipients = externalRecipientsResolver.recipientUsers(
-                    aggregation.getOrgId(),
-                    Stream.concat(
-                        endpoints
-                            .stream()
-                            .map(EndpointRecipientSettings::new),
-                        getActionRecipientSettings(new JsonObject(aggregation.getPayload()))
-                    ).collect(toSet()),
-                    subscribers,
-                    unsubscribers,
-                    eventType.isSubscribedByDefault(),
-                    externalAuthorizationCriterion
-                ).stream().filter(user -> user.getEmail() != null && !user.getEmail().isBlank()).collect(toSet());
-
-                /*
-                 * We now have the final recipients list.
-                 * Let's populate the Map that will be returned by the method.
-                 */
-                recipients.forEach(recipient -> {
-                    final Set<SubscribedEventTypeSeverities> userSubscribedSeverities;
-                    if (subscribersWithSeverities.isPresent() && subscribersWithSeverities.get().containsKey(recipient.getUsername())) {
-                        userSubscribedSeverities = subscribersWithSeverities.get().get(recipient.getUsername());
-                    } else {
-                        userSubscribedSeverities = null;
-                    }
-
-                    // We may or may not have already initialized an aggregator for the recipient.
-                    AbstractEmailPayloadAggregator aggregator = aggregated
-                        .computeIfAbsent(recipient, notUsed -> EmailPayloadAggregatorFactory.by(eventAggregationCriteria, recipient.getUsername(), userSubscribedSeverities));
-
-                    // It's aggregation time!
-                    EmailAggregation eventDataToAggregate = new EmailAggregation(aggregation.getOrgId(), eventAggregationCriteria.getBundle(), eventAggregationCriteria.getApplication(), baseTransformer.toJsonObject(aggregation), aggregation.getSeverity(), aggregation.getEventType().getId());
-                    aggregator.aggregate(eventDataToAggregate);
-                });
+                Set<User> recipients = resolveRecipients(aggregation, subscribersByEventType, unsubscribersByEventType);
+                aggregateForRecipients(recipients, aggregation, eventAggregationCriteria, subscribersWithSeverities, aggregated);
             }
             totalAggregatedElements += aggregations.size();
         } while (maxPageSize == aggregations.size());
         Log.infof("%d elements were aggregated for key %s", totalAggregatedElements, eventAggregationCriteria);
     }
 
-    private EventWrapper<?, ?> getEventWrapper(String payload) {
-        try {
-            Action action = actionParser.fromJsonString(payload);
-            return new EventWrapperAction(action);
-        } catch (ActionParsingException actionParseException) {
-            // Try to load it as a CloudEvent
-            try {
-                EventWrapperCloudEvent eventWrapperCloudEvent = new EventWrapperCloudEvent(cloudEventParser.fromJsonString(payload, NotificationsConsoleCloudEvent.class));
-                return eventWrapperCloudEvent;
-            } catch (ConsoleCloudEventParsingException cloudEventParseException) {
-                /*
-                 * An exception (most likely UncheckedIOException) was thrown during the payload parsing. The message
-                 * is therefore considered rejected.
-                 */
+    /*
+     * Determines who will actually receive the aggregation email for a single event.
+     * All users who subscribed to the current application and subscription type combination are recipient candidates.
+     * The actual recipients list may differ from the candidates depending on the endpoint properties and the action settings.
+     * The target endpoint properties will determine whether each candidate will actually receive an email.
+     */
+    private Set<User> resolveRecipients(Event aggregation,
+                                        Map<String, Set<String>> subscribersByEventType,
+                                        Map<String, Set<String>> unsubscribersByEventType) {
+        EventType eventType = aggregation.getEventType();
 
-                actionParseException.addSuppressed(cloudEventParseException);
-                throw actionParseException;
+        Set<Endpoint> endpoints = Set.copyOf(endpointRepository
+            .getTargetEmailSubscriptionEndpoints(aggregation.getOrgId(), eventType.getId()));
+
+        Set<String> subscribers = subscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
+        Set<String> unsubscribers = unsubscribersByEventType.getOrDefault(eventType.getName(), Collections.emptySet());
+
+        // extract() sets the event wrapper on the aggregation if not already set
+        RecipientsAuthorizationCriterion externalAuthorizationCriterion = recipientsAuthorizationCriterionExtractor.extract(aggregation);
+
+        return externalRecipientsResolver.recipientUsers(
+            aggregation.getOrgId(),
+            Stream.concat(
+                endpoints.stream().map(EndpointRecipientSettings::new),
+                getActionRecipientSettings(new JsonObject(aggregation.getPayload()))
+            ).collect(toSet()),
+            subscribers,
+            unsubscribers,
+            eventType.isSubscribedByDefault(),
+            externalAuthorizationCriterion
+        ).stream().filter(user -> user.getEmail() != null && !user.getEmail().isBlank()).collect(toSet());
+    }
+
+    /*
+     * For each recipient, creates or retrieves an existing aggregator and feeds the event into it.
+     * A single aggregator instance is shared across all events for a given user, accumulating data
+     * throughout the aggregation window.
+     */
+    private void aggregateForRecipients(Set<User> recipients,
+                                        Event aggregation,
+                                        EventAggregationCriterion eventAggregationCriteria,
+                                        Optional<Map<String, Set<SubscribedEventTypeSeverities>>> subscribersWithSeverities,
+                                        Map<User, AbstractEmailPayloadAggregator> aggregated) {
+        recipients.forEach(recipient -> {
+            Set<SubscribedEventTypeSeverities> userSubscribedSeverities = subscribersWithSeverities
+                .map(map -> map.get(recipient.getUsername()))
+                .orElse(null);
+
+            // We may or may not have already initialized an aggregator for the recipient.
+            AbstractEmailPayloadAggregator aggregator = aggregated.computeIfAbsent(
+                recipient,
+                notUsed -> EmailPayloadAggregatorFactory.by(eventAggregationCriteria, recipient.getUsername(), userSubscribedSeverities));
+
+            if (aggregator == null) {
+                Log.warnf("No aggregator found for %s/%s, skipping recipient %s",
+                    eventAggregationCriteria.getBundle(), eventAggregationCriteria.getApplication(), recipient.getUsername());
+                return;
             }
-        }
+
+            EmailAggregation eventDataToAggregate = new EmailAggregation(
+                aggregation.getOrgId(),
+                eventAggregationCriteria.getBundle(),
+                eventAggregationCriteria.getApplication(),
+                baseTransformer.toJsonObject(aggregation),
+                aggregation.getSeverity(),
+                aggregation.getEventType().getId());
+            aggregator.aggregate(eventDataToAggregate);
+        });
     }
 
     private Stream<ActionRecipientSettings> getActionRecipientSettings(JsonObject payload) {

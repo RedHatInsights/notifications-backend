@@ -29,8 +29,8 @@ public class EmailPayloadAggregatorFactory {
 
         AbstractEmailPayloadAggregator aggregator = getAggregator(bundle, application);
         if (aggregator != null) {
-            aggregator.userName = username;
-            aggregator.userSeverities = userSeverities;
+            aggregator.setUserName(username);
+            aggregator.setUserSeverities(userSeverities);
         }
         return aggregator;
     }
