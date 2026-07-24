@@ -40,11 +40,16 @@ jobs:
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
           files: admin-console/**
+      - name: Verify if admin-console package.json changed
+        id: package-json-changed
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
+        with:
+          files: admin-console/src/main/webapp/package.json
       - name: Configure GPG signing
         # Needed before "Regenerate yarn.lock for Mintmaker branches" (so that
         # commit is signed too), not just before "Create PR for admin-console
         # updates" further down.
-        if: steps.admin-console-changed.outputs.any_changed == 'true' && github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref_name, 'konflux/mintmaker/'))
+        if: github.event_name == 'push' && ((steps.admin-console-changed.outputs.any_changed == 'true' && github.ref == 'refs/heads/master') || (steps.package-json-changed.outputs.any_changed == 'true' && startsWith(github.ref_name, 'konflux/mintmaker/')))
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
@@ -98,7 +103,7 @@ jobs:
           fi
       - name: Set up Node for Mintmaker lockfile refresh
         # Keep this version in sync with <nodeVersion> in admin-console/pom.xml.
-        if: steps.admin-console-changed.outputs.any_changed == 'true' && github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')
+        if: steps.package-json-changed.outputs.any_changed == 'true' && github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')
         uses: actions/setup-node@v5
         with:
           node-version: 22.20.0
@@ -109,7 +114,7 @@ jobs:
         # the branch is self-consistent before the real build runs. Relies on
         # the git identity and signing key set up by "Configure GPG signing"
         # so the pushed commit shows as Verified.
-        if: steps.admin-console-changed.outputs.any_changed == 'true' && github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')
+        if: steps.package-json-changed.outputs.any_changed == 'true' && github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')
         working-directory: admin-console/src/main/webapp
         env:
           YARN_ENABLE_IMMUTABLE_INSTALLS: "false"
@@ -133,7 +138,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash .github/scripts/push-admin-console.sh
       - name: Cleanup GPG key
-        if: always() && steps.admin-console-changed.outputs.any_changed == 'true' && github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref_name, 'konflux/mintmaker/'))
+        if: always() && github.event_name == 'push' && ((steps.admin-console-changed.outputs.any_changed == 'true' && github.ref == 'refs/heads/master') || (steps.package-json-changed.outputs.any_changed == 'true' && startsWith(github.ref_name, 'konflux/mintmaker/')))
         run: |
           if [ -n "${GPG_KEY_FINGERPRINT}" ]; then
             gpg --batch --yes --delete-secret-and-public-key "${GPG_KEY_FINGERPRINT}" || true
