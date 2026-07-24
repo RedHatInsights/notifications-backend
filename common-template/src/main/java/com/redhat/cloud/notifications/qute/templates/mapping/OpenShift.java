@@ -23,6 +23,14 @@ public class OpenShift {
     public static final String CLUSTER_MANAGER_APP_NAME = "cluster-manager";
     static final String CLUSTER_MANAGER_FOLDER_NAME = "OCM/";
 
+    public static final String MIGRATION_ADVISOR_APP_NAME = "migration-advisor";
+    static final String MIGRATION_ADVISOR_FOLDER_NAME = "Oma/";
+
+    public static final String MIGRATION_ADVISOR_PARTNERSHIP_REQUEST = "partnership-request";
+    public static final String MIGRATION_ADVISOR_PARTNERSHIP_RESPONSE = "partnership-response";
+    public static final String MIGRATION_ADVISOR_ASSESSMENT_SHARED = "assessment-shared";
+    public static final String MIGRATION_ADVISOR_ASSESSMENT_CREATED = "assessment-created";
+
     public static final String ADVISOR_NEW_RECOMMENDATION = "new-recommendation";
 
     public static final String COST_MANAGEMENT_MISSING_COST_MODEL = "missing-cost-model";
@@ -86,6 +94,16 @@ public class OpenShift {
 
         entry(new TemplateDefinition(GOOGLE_CHAT, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.json"),
         entry(new TemplateDefinition(MS_TEAMS, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.json"),
-        entry(new TemplateDefinition(SLACK, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.json")
+        entry(new TemplateDefinition(SLACK, BUNDLE_NAME, CLUSTER_MANAGER_APP_NAME, null), CLUSTER_MANAGER_FOLDER_NAME + "ocmDefault.json"),
+
+        // Migration Advisor
+        entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, MIGRATION_ADVISOR_APP_NAME, MIGRATION_ADVISOR_PARTNERSHIP_REQUEST), MIGRATION_ADVISOR_FOLDER_NAME + "partnershipRequestEmailTitle.txt"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, MIGRATION_ADVISOR_APP_NAME, MIGRATION_ADVISOR_PARTNERSHIP_REQUEST), MIGRATION_ADVISOR_FOLDER_NAME + "partnershipRequestInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, MIGRATION_ADVISOR_APP_NAME, MIGRATION_ADVISOR_PARTNERSHIP_RESPONSE), MIGRATION_ADVISOR_FOLDER_NAME + "partnershipResponseEmailTitle.txt"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, MIGRATION_ADVISOR_APP_NAME, MIGRATION_ADVISOR_PARTNERSHIP_RESPONSE), MIGRATION_ADVISOR_FOLDER_NAME + "partnershipResponseInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, MIGRATION_ADVISOR_APP_NAME, MIGRATION_ADVISOR_ASSESSMENT_SHARED), MIGRATION_ADVISOR_FOLDER_NAME + "assessmentSharedEmailTitle.txt"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, MIGRATION_ADVISOR_APP_NAME, MIGRATION_ADVISOR_ASSESSMENT_SHARED), MIGRATION_ADVISOR_FOLDER_NAME + "assessmentSharedInstantEmailBody.html"),
+        entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, MIGRATION_ADVISOR_APP_NAME, MIGRATION_ADVISOR_ASSESSMENT_CREATED), MIGRATION_ADVISOR_FOLDER_NAME + "assessmentCreatedEmailTitle.txt"),
+        entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, MIGRATION_ADVISOR_APP_NAME, MIGRATION_ADVISOR_ASSESSMENT_CREATED), MIGRATION_ADVISOR_FOLDER_NAME + "assessmentCreatedInstantEmailBody.html")
     );
 }
