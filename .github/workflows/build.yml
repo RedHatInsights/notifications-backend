@@ -40,6 +40,33 @@ jobs:
         uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
         with:
           files: admin-console/**
+      - name: Set up Node for Mintmaker lockfile refresh
+        # Keep this version in sync with <nodeVersion> in admin-console/pom.xml.
+        if: steps.admin-console-changed.outputs.any_changed == 'true' && github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22.20.0
+      - name: Regenerate yarn.lock for Mintmaker branches
+        # Mintmaker bumps package.json dependency ranges but never runs yarn
+        # install, so yarn.lock goes stale and the immutable install in
+        # "Build admin-console" fails. Refresh and push the lockfile here so
+        # the branch is self-consistent before the real build runs.
+        if: steps.admin-console-changed.outputs.any_changed == 'true' && github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')
+        working-directory: admin-console/src/main/webapp
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: "false"
+        run: |
+          corepack enable
+          yarn install
+          if git diff --quiet -- yarn.lock; then
+            echo "yarn.lock is already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add yarn.lock
+          git commit -m "Regenerate yarn.lock to match Mintmaker's dependency bump"
+          git push origin "HEAD:${{ github.ref_name }}"
       - name: Build admin-console
         if: steps.admin-console-changed.outputs.any_changed == 'true'
         run: ./mvnw clean verify -Padmin-console -pl :checkstyle,:notifications-admin-console --no-transfer-progress
