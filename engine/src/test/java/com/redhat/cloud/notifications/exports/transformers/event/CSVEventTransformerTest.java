@@ -36,7 +36,8 @@ public final class CSVEventTransformerTest {
 
         // Call the function under test.
         final ResultsTransformer<Event> resultsTransformer = new CSVEventTransformer();
-        final String result = resultsTransformer.transform(events);
+        resultsTransformer.addRecords(events);
+        final String result = resultsTransformer.finish();
 
         Assertions.assertEquals(expectedContents, result, "unexpected CSV transformation performed");
     }

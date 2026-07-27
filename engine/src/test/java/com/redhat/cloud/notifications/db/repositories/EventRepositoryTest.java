@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.exports.transformers.TransformationException;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
@@ -63,6 +64,11 @@ public class EventRepositoryTest {
     @BeforeEach
     @Transactional
     void insertEventFixtures() {
+        // Use a page size comfortably larger than the number of fixtures, so
+        // that the existing tests keep exercising a single page. The
+        // pagination-specific test below overrides this with a smaller size.
+        when(engineConfig.getEventsExportPageSize()).thenReturn(100);
+
         this.createdBundle = this.resourceHelpers.createBundle("test-engine-event-repository-bundle");
         this.createdApplication = this.resourceHelpers.createApp(this.createdBundle.getId(), "test-engine-event-repository-application");
         this.createdEventType = this.resourceHelpers.createEventType(this.createdApplication.getId(), "test-engine-event-repository-event-type");
@@ -108,10 +114,11 @@ public class EventRepositoryTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testGetAll(boolean useNormalizedQueries) {
+    void testGetAll(boolean useNormalizedQueries) throws TransformationException {
         when(engineConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
 
-        final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, null);
+        final List<Event> result = new ArrayList<>();
+        this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, null, result::addAll);
 
         Assertions.assertEquals(this.createdEvents.size(), result.size(), "unexpected number of fetched events");
         Assertions.assertIterableEquals(
@@ -127,12 +134,13 @@ public class EventRepositoryTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testGetJustFrom(boolean useNormalizedQueries) {
+    void testGetJustFrom(boolean useNormalizedQueries) throws TransformationException {
         when(engineConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
 
         final LocalDate fourDaysAgo = TODAY.minusDays(4);
 
-        final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, null);
+        final List<Event> result = new ArrayList<>();
+        this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, null, result::addAll);
 
         Assertions.assertEquals(4, result.size(), "unexpected number of events received when applying the 'from' filter to four days ago");
 
@@ -158,12 +166,13 @@ public class EventRepositoryTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testGetJustTo(boolean useNormalizedQueries) {
+    void testGetJustTo(boolean useNormalizedQueries) throws TransformationException {
         when(engineConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
 
         final LocalDate threeDaysAgo = TODAY.minusDays(3);
 
-        final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, threeDaysAgo);
+        final List<Event> result = new ArrayList<>();
+        this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, threeDaysAgo, result::addAll);
 
         Assertions.assertEquals(3, result.size(), "unexpected number of events received when applying the 'to' filter to three days ago");
 
@@ -188,13 +197,14 @@ public class EventRepositoryTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testGetDateRange(boolean useNormalizedQueries) {
+    void testGetDateRange(boolean useNormalizedQueries) throws TransformationException {
         when(engineConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
 
         final LocalDate fourDaysAgo = TODAY.minusDays(4);
         final LocalDate threeDaysAgo = TODAY.minusDays(3);
 
-        final List<Event> result = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, threeDaysAgo);
+        final List<Event> result = new ArrayList<>();
+        this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, threeDaysAgo, result::addAll);
 
         Assertions.assertEquals(2, result.size(), "unexpected number of events received when applying the 'from' filter to four days ago, and the 'to' filter to three days ago");
 
@@ -219,5 +229,38 @@ public class EventRepositoryTest {
                 )
             );
         }
+    }
+
+    /**
+     * Tests that when the configured export page size is smaller than the
+     * total number of matching events, {@code findEventsToExport} still
+     * returns every event, in order, across multiple pages.
+     * Tests both denormalized (false) and normalized (true) query modes.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testGetAllPaginated(boolean useNormalizedQueries) throws TransformationException {
+        when(engineConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
+        // Force a page size smaller than the number of fixture events, so
+        // that the pagination loop has to run for more than one page.
+        when(engineConfig.getEventsExportPageSize()).thenReturn(2);
+
+        final List<List<Event>> pages = new ArrayList<>();
+        this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, null, pages::add);
+
+        // Five fixtures with a page size of two: three pages, the last one
+        // partially filled.
+        Assertions.assertEquals(3, pages.size(), "unexpected number of pages fetched");
+        Assertions.assertEquals(2, pages.get(0).size(), "unexpected size for the first page");
+        Assertions.assertEquals(2, pages.get(1).size(), "unexpected size for the second page");
+        Assertions.assertEquals(1, pages.get(2).size(), "unexpected size for the third and last page");
+
+        final List<Event> result = pages.stream().flatMap(List::stream).toList();
+
+        Assertions.assertEquals(this.createdEvents.size(), result.size(), "unexpected total number of fetched events");
+        Assertions.assertIterableEquals(
+            this.createdEvents.stream().sorted(Comparator.comparing(Event::getCreated)).toList(),
+            result,
+            "the fetched events are not the same as the created ones, or were not returned in ascending 'created' order across pages");
     }
 }

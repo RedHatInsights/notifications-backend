@@ -9,15 +9,15 @@ import java.time.ZoneOffset;
 import java.util.List;
 
 public final class JSONEventTransformer implements ResultsTransformer<Event> {
+
+    private final JsonArray jsonEvents = new JsonArray();
+
     /**
-     * Transforms the given list of events to JSON.
-     * @param events the list of events to transform.
-     * @return a {@link String} with the transformed contents.
+     * Appends the given page of events as JSON objects.
+     * @param events the page of events to append.
      */
     @Override
-    public String transform(final List<Event> events) {
-        final JsonArray jsonEvents = new JsonArray();
-
+    public void addRecords(final List<Event> events) {
         for (final Event event : events) {
             final JsonObject jsonEvent = new JsonObject();
 
@@ -27,9 +27,16 @@ public final class JSONEventTransformer implements ResultsTransformer<Event> {
             jsonEvent.put("eventType", event.getEventTypeDisplayName());
             jsonEvent.put("created", event.getCreated().toInstant(ZoneOffset.UTC));
 
-            jsonEvents.add(jsonEvent);
+            this.jsonEvents.add(jsonEvent);
         }
+    }
 
-        return jsonEvents.encode();
+    /**
+     * Encodes the accumulated JSON array.
+     * @return a {@link String} with the transformed contents.
+     */
+    @Override
+    public String finish() {
+        return this.jsonEvents.encode();
     }
 }

@@ -15,25 +15,32 @@ public final class CSVEventTransformer implements ResultsTransformer<Event> {
 
     private static final String[] CSV_HEADERS = {"uuid", "bundle", "application", "eventType", "created"};
 
-    /**
-     * Transforms the given list of events to CSV.
-     * @param events the list of events to transform.
-     * @return a {@link String} with the transformed contents.
-     */
-    @Override
-    public String transform(final List<Event> events) throws TransformationException {
-        // Set the format for the CSV file.
+    private final StringWriter stringWriter = new StringWriter();
+    private final CSVPrinter csvPrinter;
+
+    public CSVEventTransformer() throws TransformationException {
         final CSVFormat csvFormat = CSVFormat.DEFAULT
             .builder()
             .setHeader(CSV_HEADERS)
             .setRecordSeparator(System.lineSeparator())
             .build();
 
-        final StringWriter stringWriter = new StringWriter();
+        try {
+            this.csvPrinter = new CSVPrinter(this.stringWriter, csvFormat);
+        } catch (final IOException e) {
+            throw new TransformationException(e);
+        }
+    }
 
-        try (CSVPrinter csvPrinter = new CSVPrinter(stringWriter, csvFormat)) {
+    /**
+     * Appends the given page of events as CSV records.
+     * @param events the page of events to append.
+     */
+    @Override
+    public void addRecords(final List<Event> events) throws TransformationException {
+        try {
             for (final Event event : events) {
-                csvPrinter.printRecord(
+                this.csvPrinter.printRecord(
                     event.getId(),
                     event.getBundleDisplayName(),
                     event.getApplicationDisplayName(),
@@ -41,8 +48,22 @@ public final class CSVEventTransformer implements ResultsTransformer<Event> {
                     event.getCreated().toInstant(ZoneOffset.UTC)
                 );
             }
+        } catch (final IOException e) {
+            throw new TransformationException(e);
+        }
+    }
 
-            return stringWriter.toString();
+    /**
+     * Closes the underlying CSV printer and returns the accumulated CSV
+     * contents.
+     * @return a {@link String} with the transformed contents.
+     */
+    @Override
+    public String finish() throws TransformationException {
+        try {
+            this.csvPrinter.close();
+
+            return this.stringWriter.toString();
         } catch (final IOException e) {
             throw new TransformationException(e);
         }

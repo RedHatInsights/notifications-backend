@@ -9,7 +9,10 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.exports.filters.events.EventFiltersExtractor;
+import com.redhat.cloud.notifications.exports.transformers.PageConsumer;
+import com.redhat.cloud.notifications.exports.transformers.TransformationException;
 import com.redhat.cloud.notifications.exports.transformers.TransformersHelpers;
+import com.redhat.cloud.notifications.models.Event;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -288,7 +291,7 @@ public class ExportEventListenerTest {
      * the expected body.
      */
     @Test
-    void testExportEventsJSON() throws IOException, URISyntaxException {
+    void testExportEventsJSON() throws IOException, URISyntaxException, TransformationException {
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         // Generate an export request but set a resource type which we don't
@@ -299,7 +302,11 @@ public class ExportEventListenerTest {
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
         // Return fixture events when the repository is called.
-        Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any())).thenReturn(TransformersHelpers.getFixtureEvents());
+        Mockito.doAnswer(invocation -> {
+            final PageConsumer<Event> pageConsumer = invocation.getArgument(3);
+            pageConsumer.accept(TransformersHelpers.getFixtureEvents());
+            return null;
+        }).when(this.eventRepository).findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any(), Mockito.any());
 
         // Send the JSON payload.
         exportIn.send(consoleCloudEventParser.toJson(cee));
@@ -350,7 +357,7 @@ public class ExportEventListenerTest {
      * the expected body.
      */
     @Test
-    void testExportEventsCSV() throws IOException, URISyntaxException {
+    void testExportEventsCSV() throws IOException, URISyntaxException, TransformationException {
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         // Generate an export request but set a resource type which we don't
@@ -363,7 +370,11 @@ public class ExportEventListenerTest {
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
         // Return fixture events when the repository is called.
-        Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any())).thenReturn(TransformersHelpers.getFixtureEvents());
+        Mockito.doAnswer(invocation -> {
+            final PageConsumer<Event> pageConsumer = invocation.getArgument(3);
+            pageConsumer.accept(TransformersHelpers.getFixtureEvents());
+            return null;
+        }).when(this.eventRepository).findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any(), Mockito.any());
 
         // Send the JSON payload.
         exportIn.send(consoleCloudEventParser.toJson(cee));

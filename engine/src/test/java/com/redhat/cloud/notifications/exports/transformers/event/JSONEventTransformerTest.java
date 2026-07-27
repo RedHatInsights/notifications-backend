@@ -36,7 +36,8 @@ public final class JSONEventTransformerTest {
 
         // Call the function under test.
         final ResultsTransformer<Event> resultsTransformer = new JSONEventTransformer();
-        final String result = resultsTransformer.transform(events);
+        resultsTransformer.addRecords(events);
+        final String result = resultsTransformer.finish();
 
         // Assert that both the expected contents and the result are valid JSON
         // objects.
