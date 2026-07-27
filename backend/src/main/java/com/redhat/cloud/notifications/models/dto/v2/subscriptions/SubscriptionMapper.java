@@ -39,6 +39,9 @@ public interface SubscriptionMapper {
     // availableSeverities field. Sorts by severity rank (CRITICAL...NONE) so the wire format is
     // deterministic - a plain generated Set->List conversion wouldn't guarantee that order.
     default List<SeverityDTO> severitySetToSortedSeverityDTOList(Set<Severity> severities) {
+        if (severities == null) {
+            return List.of();
+        }
         return severities.stream()
             .sorted()
             .map(this::severityToSeverityDTO)

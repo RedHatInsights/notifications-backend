@@ -23,9 +23,11 @@ import com.redhat.cloud.notifications.models.dto.v2.subscriptions.SubscriptionTy
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PUT;
@@ -38,6 +40,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
@@ -57,6 +60,7 @@ import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePer
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_VIEW;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
+import static com.redhat.cloud.notifications.routers.SecurityContextUtil.isServiceAccountAuthentication;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class UserConfigResourceV2 {
@@ -80,7 +84,17 @@ public class UserConfigResourceV2 {
     @GET
     @Path("/subscriptions")
     @Produces(APPLICATION_JSON)
-    @Operation(operationId = "UserConfigResource$V2_getSubscriptions", summary = "Retrieve the authenticated user's notification subscriptions")
+    @Operation(
+        operationId = "UserConfigResource$V2_getSubscriptions",
+        summary = "Retrieve the authenticated user's notification subscriptions",
+        description = "Returns the authenticated user's subscriptions as a bundle/application/event type/channel tree. "
+            + "Query params progressively narrow the returned tree; each requires its parent to also be specified."
+    )
+    @Parameter(name = "bundle", description = "Restrict the response to this bundle")
+    @Parameter(name = "application", description = "Restrict the response to this application; requires 'bundle'")
+    @Parameter(name = "event_type", description = "Restrict the response to this event type; requires 'bundle' and 'application'")
+    @APIResponse(responseCode = "400", description = "A query parameter was specified without its required parent (e.g. 'application' without 'bundle')")
+    @APIResponse(responseCode = "404", description = "The named bundle, application or event type doesn't exist")
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW)
     public List<BundleSubscriptionDTO> getSubscriptions(
         @Context SecurityContext sec,
@@ -88,6 +102,8 @@ public class UserConfigResourceV2 {
         @QueryParam("application") String applicationName,
         @QueryParam("event_type") String eventTypeName
     ) {
+        forbidAccessInCaseOfServiceAccountAuthentication(sec);
+
         if (bundleName == null && applicationName != null) {
             throw new BadRequestException("The 'application' query parameter requires 'bundle' to also be specified");
         }
@@ -229,13 +245,21 @@ public class UserConfigResourceV2 {
     @Consumes(APPLICATION_JSON)
     @Transactional
     @APIResponse(responseCode = "204")
-    @Operation(operationId = "UserConfigResource$V2_updateSubscriptions", summary = "Bulk-update the authenticated user's notification subscriptions")
+    @APIResponse(responseCode = "400", description = "A bundle, application or event type in the request doesn't exist, or requests severities outside the event type's available_severities")
+    @Operation(
+        operationId = "UserConfigResource$V2_updateSubscriptions",
+        summary = "Bulk-update the authenticated user's notification subscriptions",
+        description = "Partial update, not a full replace: any bundle, application, event type or channel omitted "
+            + "from the request tree is left untouched rather than reset or unsubscribed."
+    )
     @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_EDIT)
     public void updateSubscriptions(
         @Context SecurityContext sec,
-        @NotNull @Valid @RequestBody(content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionUpdateDTO.class)))
+        @NotNull @NotEmpty @Valid @RequestBody(content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionUpdateDTO.class)))
             List<@NotNull BundleSubscriptionUpdateDTO> body
     ) {
+        forbidAccessInCaseOfServiceAccountAuthentication(sec);
+
         String orgId = getOrgId(sec);
         String username = getUsername(sec);
 
@@ -256,6 +280,9 @@ public class UserConfigResourceV2 {
         }
 
         Set<Severity> availableSeverities = eventType.getAvailableSeverities();
+        if (availableSeverities == null) {
+            availableSeverities = Set.of();
+        }
         for (SubscriptionChannelDTO channel : eventTypeUpdate.getSubscriptions()) {
             Set<Severity> subscribedSeverities = channel.getSubscribedSeverities().stream()
                 .map(subscriptionMapper::severityDTOToSeverity)
@@ -274,6 +301,12 @@ public class UserConfigResourceV2 {
 
             SubscriptionType subscriptionType = subscriptionMapper.subscriptionTypeDTOToSubscriptionType(channel.getSubscriptionType());
             subscriptionRepository.updateSubscription(orgId, username, eventType.getId(), subscriptionType, !subscribedSeverities.isEmpty(), severitiesMap);
+        }
+    }
+
+    private static void forbidAccessInCaseOfServiceAccountAuthentication(SecurityContext sec) {
+        if (isServiceAccountAuthentication(sec)) {
+            throw new ForbiddenException("This api can't be used with a service account authentication");
         }
     }
 }
