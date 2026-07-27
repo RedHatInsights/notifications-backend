@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
+import com.redhat.cloud.notifications.exports.transformers.TransformationException;
 import com.redhat.cloud.notifications.exports.transformers.TransformersHelpers;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -83,7 +84,7 @@ public class ExportEventListenerMockServerTest {
      * value.
      */
     @Test
-    void testContentTypeHeaders() {
+    void testContentTypeHeaders() throws TransformationException {
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         // Set up a simple helper class.
@@ -116,7 +117,8 @@ public class ExportEventListenerMockServerTest {
             final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
             // Return fixture events when the repository is called.
-            Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any())).thenReturn(TransformersHelpers.getFixtureEvents());
+            Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any()))
+                .thenAnswer(invocation -> List.of(TransformersHelpers.getFixtureEvents()).iterator());
 
             // Send the JSON payload.
             exportIn.send(consoleCloudEventParser.toJson(testCase.cloudEvent()));
@@ -151,7 +153,7 @@ public class ExportEventListenerMockServerTest {
      * service then the failures counter increases.
      */
     @Test
-    void testError400IncreasesFailureMetric() {
+    void testError400IncreasesFailureMetric() throws TransformationException {
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         // Save all the counters to later assert that only the expected ones
@@ -170,7 +172,8 @@ public class ExportEventListenerMockServerTest {
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
         // Return fixture events when the repository is called.
-        Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any())).thenReturn(TransformersHelpers.getFixtureEvents());
+        Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any()))
+            .thenAnswer(invocation -> List.of(TransformersHelpers.getFixtureEvents()).iterator());
 
         // Reset the mock server since we need it to return a specific response.
         MockServerLifecycleManager.getClient().resetAll();
@@ -197,7 +200,7 @@ public class ExportEventListenerMockServerTest {
      * service then the failures counter increases.
      */
     @Test
-    void testError500IncreasesFailureMetric() {
+    void testError500IncreasesFailureMetric() throws TransformationException {
         final InMemorySource<String> exportIn = this.inMemoryConnector.source(EXPORT_CHANNEL);
 
         // Save all the counters to later assert that only the expected ones
@@ -216,7 +219,8 @@ public class ExportEventListenerMockServerTest {
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
         // Return fixture events when the repository is called.
-        Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any())).thenReturn(TransformersHelpers.getFixtureEvents());
+        Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any()))
+            .thenAnswer(invocation -> List.of(TransformersHelpers.getFixtureEvents()).iterator());
 
         // Reset the mock server since we need it to return a specific response.
         MockServerLifecycleManager.getClient().resetAll();

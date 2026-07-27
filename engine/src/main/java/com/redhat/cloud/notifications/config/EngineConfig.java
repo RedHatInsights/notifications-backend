@@ -47,6 +47,7 @@ public class EngineConfig {
     private static final String NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD = "notifications.email.sender.openshift.prod";
     private static final String NOTIFICATIONS_INGRESSREPLAY_START_TIME = "notifications.ingressreplay.start.time";
     private static final String NOTIFICATIONS_INGRESSREPLAY_END_TIME = "notifications.ingressreplay.end.time";
+    private static final String EVENTS_EXPORT_PAGE_SIZE = "notifications.events.export.page-size";
 
     /*
      * Unleash configuration
@@ -137,6 +138,13 @@ public class EngineConfig {
     @ConfigProperty(name = IN_MEMORY_DB_ENABLED, defaultValue = "false")
     boolean inMemoryDbEnabled;
 
+    /**
+     * The number of events fetched per page when running the keyset-paginated
+     * {@code findEventsToExport} query.
+     */
+    @ConfigProperty(name = EVENTS_EXPORT_PAGE_SIZE, defaultValue = "5000")
+    int eventsExportPageSize;
+
     @Inject
     ToggleRegistry toggleRegistry;
 
@@ -188,6 +196,7 @@ public class EngineConfig {
         config.put(toggleSkipProcessingMessagesOnReplayService, isSkipMessageProcessing());
         config.put(valkeyEventDeduplicatorToggle, isValkeyEventDeduplicatorEnabled());
         config.put(IN_MEMORY_DB_ENABLED, isInMemoryDbEnabled());
+        config.put(EVENTS_EXPORT_PAGE_SIZE, getEventsExportPageSize());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -334,5 +343,9 @@ public class EngineConfig {
 
     public boolean isInMemoryDbEnabled() {
         return inMemoryDbEnabled;
+    }
+
+    public int getEventsExportPageSize() {
+        return eventsExportPageSize;
     }
 }

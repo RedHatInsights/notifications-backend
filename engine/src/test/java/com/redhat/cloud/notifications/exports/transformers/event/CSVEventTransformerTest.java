@@ -36,8 +36,44 @@ public final class CSVEventTransformerTest {
 
         // Call the function under test.
         final ResultsTransformer<Event> resultsTransformer = new CSVEventTransformer();
-        final String result = resultsTransformer.transform(events);
+        resultsTransformer.addRecords(events);
+        final String result = resultsTransformer.finish();
 
         Assertions.assertEquals(expectedContents, result, "unexpected CSV transformation performed");
+    }
+
+    /**
+     * Tests that when the events are fed in as several separate pages via
+     * multiple {@code addRecords} calls, the accumulated output is identical
+     * to feeding every event in a single call, proving that state is
+     * correctly carried over across pages instead of being reset or
+     * corrupted.
+     * @throws IOException if the expected CSV file cannot be read.
+     * @throws TransformationException if any unexpected error occurs during
+     * the transformation of the events.
+     * @throws URISyntaxException if the URL of the expected CSV file is not
+     * valid.
+     */
+    @Test
+    void testTransformMultiplePages() throws IOException, URISyntaxException, TransformationException {
+        // Load the expected output for the transformer.
+        final URL csvResourceUrl = this.getClass().getResource("/resultstransformers/event/expectedResult.csv");
+        Assertions.assertNotNull(csvResourceUrl, "the CSV file with the expected result was not located");
+
+        final String expectedContents = Files.readString(Path.of(csvResourceUrl.toURI()));
+
+        // Build a set of events that will be transformed, and split it into
+        // two separate pages.
+        final List<Event> events = TransformersHelpers.getFixtureEvents();
+        final List<Event> firstPage = events.subList(0, 2);
+        final List<Event> secondPage = events.subList(2, events.size());
+
+        // Call the function under test, feeding each page separately.
+        final ResultsTransformer<Event> resultsTransformer = new CSVEventTransformer();
+        resultsTransformer.addRecords(firstPage);
+        resultsTransformer.addRecords(secondPage);
+        final String result = resultsTransformer.finish();
+
+        Assertions.assertEquals(expectedContents, result, "unexpected CSV transformation performed when the events are fed in as several pages");
     }
 }

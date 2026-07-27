@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.exports.filters.FilterExtractionException;
 import com.redhat.cloud.notifications.exports.filters.events.EventFilters;
 import com.redhat.cloud.notifications.exports.filters.events.EventFiltersExtractor;
+import com.redhat.cloud.notifications.exports.transformers.ResultsTransformer;
 import com.redhat.cloud.notifications.exports.transformers.TransformationException;
 import com.redhat.cloud.notifications.exports.transformers.UnsupportedFormatException;
 import com.redhat.cloud.notifications.exports.transformers.event.CSVEventTransformer;
@@ -13,6 +14,7 @@ import com.redhat.cloud.notifications.models.Event;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.util.Iterator;
 import java.util.List;
 
 @ApplicationScoped
@@ -44,17 +46,22 @@ public class EventExporterService {
         // Extract the filters from the request.
         final EventFilters eventFilters = this.eventFiltersExtractor.extract(resourceRequest);
 
-        // Fetch the events from the database.
-        List<Event> events = this.eventRepository.findEventsToExport(orgId, eventFilters.from(), eventFilters.to());
-
-        switch (resourceRequest.getFormat()) {
-            case CSV -> {
-                return new CSVEventTransformer().transform(events);
-            }
-            case JSON -> {
-                return new JSONEventTransformer().transform(events);
-            }
+        final ResultsTransformer<Event> transformer = switch (resourceRequest.getFormat()) {
+            case CSV -> new CSVEventTransformer();
+            case JSON -> new JSONEventTransformer();
             default -> throw new UnsupportedFormatException();
+        };
+
+        // Stream the events page by page directly into the transformer,
+        // instead of fetching every event into a single list and only then
+        // transforming it, so that the full event list and the fully
+        // rendered CSV/JSON output are never both held in memory at once.
+        final Iterator<List<Event>> eventPages = this.eventRepository.findEventsToExport(orgId, eventFilters.from(), eventFilters.to());
+
+        while (eventPages.hasNext()) {
+            transformer.addRecords(eventPages.next());
         }
+
+        return transformer.finish();
     }
 }
