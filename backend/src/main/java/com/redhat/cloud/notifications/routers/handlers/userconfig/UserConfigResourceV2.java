@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.routers.handlers.userconfig;
 
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
-import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
@@ -72,9 +71,6 @@ public class UserConfigResourceV2 {
     ApplicationRepository applicationRepository;
 
     @Inject
-    BackendConfig backendConfig;
-
-    @Inject
     SubscriptionMapper subscriptionMapper;
 
     @Path(API_NOTIFICATIONS_V_2_0 + "/user-config")
@@ -101,13 +97,12 @@ public class UserConfigResourceV2 {
 
         String orgId = getOrgId(sec);
         String username = getUsername(sec);
-        boolean showHiddenEventTypes = backendConfig.isShowHiddenEventTypes(orgId);
 
         List<BundleSubscriptionDTO> tree = new ArrayList<>();
         for (Bundle bundle : resolveBundles(bundleName)) {
             List<ApplicationSubscriptionDTO> applicationDTOs = new ArrayList<>();
             for (Application application : resolveApplications(bundle, applicationName)) {
-                List<EventTypeSubscriptionDTO> eventTypeDTOs = resolveEventTypes(bundle, application, eventTypeName, showHiddenEventTypes).stream()
+                List<EventTypeSubscriptionDTO> eventTypeDTOs = resolveEventTypes(bundle, application, eventTypeName).stream()
                     .map(this::buildDefaultEventTypeSubscription)
                     .collect(Collectors.toList());
                 if (eventTypeDTOs.isEmpty()) {
@@ -158,10 +153,9 @@ public class UserConfigResourceV2 {
         return List.of(application);
     }
 
-    private List<EventType> resolveEventTypes(Bundle bundle, Application application, String eventTypeName, boolean showHiddenEventTypes) {
+    private List<EventType> resolveEventTypes(Bundle bundle, Application application, String eventTypeName) {
         if (eventTypeName == null) {
             return application.getEventTypes().stream()
-                .filter(eventType -> eventType.isVisible() || showHiddenEventTypes)
                 .sorted(Comparator.comparing(EventType::getDisplayName))
                 .collect(Collectors.toList());
         }
