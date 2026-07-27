@@ -168,22 +168,14 @@ public class UserConfigResourceV2 {
     }
 
     private EventTypeSubscriptionDTO buildDefaultEventTypeSubscription(EventType eventType) {
-        List<SeverityDTO> availableSeverities = eventType.getAvailableSeverities().stream()
-            .sorted()
-            .map(subscriptionMapper::severityToSeverityDTO)
-            .collect(Collectors.toList());
+        EventTypeSubscriptionDTO dto = subscriptionMapper.eventTypeToEventTypeSubscriptionDTO(eventType);
 
         List<SubscriptionChannelDTO> channels = new ArrayList<>();
         for (SubscriptionType subscriptionType : SubscriptionType.values()) {
             boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
-            List<SeverityDTO> subscribedSeverities = subscribedByDefault ? new ArrayList<>(availableSeverities) : new ArrayList<>();
+            List<SeverityDTO> subscribedSeverities = subscribedByDefault ? new ArrayList<>(dto.getAvailableSeverities()) : new ArrayList<>();
             channels.add(new SubscriptionChannelDTO(subscriptionMapper.subscriptionTypeToSubscriptionTypeDTO(subscriptionType), subscribedSeverities));
         }
-
-        EventTypeSubscriptionDTO dto = new EventTypeSubscriptionDTO();
-        dto.setEventType(eventType.getName());
-        dto.setDisplayName(eventType.getDisplayName());
-        dto.setAvailableSeverities(availableSeverities);
         dto.setSubscriptions(channels);
         return dto;
     }
@@ -242,7 +234,7 @@ public class UserConfigResourceV2 {
     public void updateSubscriptions(
         @Context SecurityContext sec,
         @NotNull @Valid @RequestBody(content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionUpdateDTO.class)))
-            List<BundleSubscriptionUpdateDTO> body
+            List<@NotNull BundleSubscriptionUpdateDTO> body
     ) {
         String orgId = getOrgId(sec);
         String username = getUsername(sec);

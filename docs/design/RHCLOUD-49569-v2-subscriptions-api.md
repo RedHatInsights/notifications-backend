@@ -27,7 +27,7 @@ mapping is owned entirely by Lightwell (see RHCLOUD-49566 for details).
 
 ## Endpoints
 
-```
+```http
 GET  /api/notifications/v2.0/user-config/subscriptions
 PUT  /api/notifications/v2.0/user-config/subscriptions
 ```
@@ -99,7 +99,7 @@ lowercase `@JsonProperty` values:
 
 ## GET
 
-```
+```http
 GET /api/notifications/v2.0/user-config/subscriptions
 GET /api/notifications/v2.0/user-config/subscriptions?bundle=lightwell
 GET /api/notifications/v2.0/user-config/subscriptions?bundle=lightwell&application=lightwell
@@ -174,7 +174,7 @@ uniformity across event types.
 
 ## PUT
 
-```
+```http
 PUT /api/notifications/v2.0/user-config/subscriptions
 ```
 

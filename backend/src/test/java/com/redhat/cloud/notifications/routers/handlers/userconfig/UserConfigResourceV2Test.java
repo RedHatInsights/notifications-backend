@@ -267,6 +267,28 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
             .statusCode(HttpStatus.SC_BAD_REQUEST);
     }
 
+    @Test
+    void testPutSubscriptionsRejectsNullTopLevelItem() {
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("[null]")
+            .when().put(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testPutSubscriptionsRejectsNullNestedItem() {
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("[{\"bundle\": \"bundle-a\", \"applications\": [null]}]")
+            .when().put(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
     private BundleSubscriptionUpdateDTO buildSingleLeafUpdate(String bundle, String application, String eventType, SubscriptionTypeDTO channel, List<SeverityDTO> severities) {
         BundleSubscriptionUpdateDTO bundleUpdate = new BundleSubscriptionUpdateDTO();
         bundleUpdate.setBundle(bundle);
