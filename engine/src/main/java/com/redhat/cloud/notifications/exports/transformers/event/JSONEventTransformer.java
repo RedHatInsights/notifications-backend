@@ -27,7 +27,7 @@ public final class JSONEventTransformer implements ResultsTransformer<Event> {
             jsonEvent.put("eventType", event.getEventTypeDisplayName());
             jsonEvent.put("created", event.getCreated().toInstant(ZoneOffset.UTC));
 
-            this.jsonEvents.add(jsonEvent);
+            jsonEvents.add(jsonEvent);
         }
     }
 
@@ -37,6 +37,6 @@ public final class JSONEventTransformer implements ResultsTransformer<Event> {
      */
     @Override
     public String finish() {
-        return this.jsonEvents.encode();
+        return jsonEvents.encode();
     }
 }

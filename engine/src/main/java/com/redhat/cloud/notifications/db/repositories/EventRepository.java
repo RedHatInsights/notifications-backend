@@ -1,8 +1,6 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.config.EngineConfig;
-import com.redhat.cloud.notifications.exports.transformers.PageConsumer;
-import com.redhat.cloud.notifications.exports.transformers.TransformationException;
 import com.redhat.cloud.notifications.models.Event;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -14,8 +12,10 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -35,48 +35,59 @@ public class EventRepository {
 
     /**
      * Finds the events related to the provided org id in order to export
-     * them, handing them over to the given {@code pageConsumer} one bounded
-     * page at a time using keyset ("seek") pagination, instead of loading
-     * the whole matching result set into memory at once. It is the caller's
-     * responsibility to provide valid "from" and "to" filters.
+     * them, returning an {@link Iterator} that fetches one bounded page at a
+     * time using keyset ("seek") pagination, instead of loading the whole
+     * matching result set into memory at once. Only the page returned by the
+     * last call to {@link Iterator#next()} is held in memory; the small
+     * "next page of ids" lookahead used internally to answer
+     * {@link Iterator#hasNext()} does not carry the display name columns, so
+     * it does not duplicate a full page of events in memory. It is the
+     * caller's responsibility to provide valid "from" and "to" filters.
      * @param orgId the org id the events are related to.
      * @param from the initial date to filter the dates from.
      * @param to the final date to filter the dates from.
-     * @param pageConsumer the callback invoked with each page of events that
-     *                      comply with the provided filters, in ascending
-     *                      "created" order.
-     * @throws TransformationException if the page consumer fails to handle a
-     * page.
+     * @return an iterator over the pages of events that comply with the
+     * provided filters, in ascending "created" order.
      */
-    public void findEventsToExport(final String orgId, final LocalDate from, final LocalDate to, final PageConsumer<Event> pageConsumer) throws TransformationException {
+    public Iterator<List<Event>> findEventsToExport(final String orgId, final LocalDate from, final LocalDate to) {
         final Timestamp createdMin = from == null ? null : Timestamp.valueOf(from.atStartOfDay());
         final Timestamp createdMax = to == null ? null : Timestamp.valueOf(to.atTime(LocalTime.MAX));
 
         final boolean normalizedQueries = engineConfig.isNormalizedQueriesEnabled(orgId);
         final int pageSize = engineConfig.getEventsExportPageSize();
 
-        Timestamp cursorCreated = null;
-        UUID cursorId = null;
-
-        while (true) {
-            final List<Object[]> idsPage = this.findEventIdsPage(orgId, createdMin, createdMax, cursorCreated, cursorId, pageSize);
-
-            if (idsPage.isEmpty()) {
-                break;
-            }
-
-            final List<UUID> pageIds = idsPage.stream().map(row -> (UUID) row[0]).toList();
-
-            pageConsumer.accept(this.findEventsByIds(pageIds, normalizedQueries));
-
-            final Object[] lastRow = idsPage.get(idsPage.size() - 1);
-            cursorId = (UUID) lastRow[0];
-            cursorCreated = (Timestamp) lastRow[1];
-
-            if (idsPage.size() < pageSize) {
-                break;
-            }
+        if (pageSize <= 0) {
+            throw new IllegalStateException("the \"notifications.events.export.page-size\" configuration property must be a positive integer, but was: " + pageSize);
         }
+
+        return new Iterator<>() {
+            private List<Object[]> idsPage = findEventIdsPage(orgId, createdMin, createdMax, null, null, pageSize);
+
+            @Override
+            public boolean hasNext() {
+                return !idsPage.isEmpty();
+            }
+
+            @Override
+            public List<Event> next() {
+                if (idsPage.isEmpty()) {
+                    throw new NoSuchElementException();
+                }
+
+                final List<UUID> pageIds = idsPage.stream().map(row -> (UUID) row[0]).toList();
+                final Object[] lastRow = idsPage.get(idsPage.size() - 1);
+                final UUID lastId = (UUID) lastRow[0];
+                final Timestamp lastCreated = (Timestamp) lastRow[1];
+
+                final List<Event> events = findEventsByIds(pageIds, normalizedQueries);
+
+                idsPage = idsPage.size() < pageSize
+                    ? List.of()
+                    : findEventIdsPage(orgId, createdMin, createdMax, lastCreated, lastId, pageSize);
+
+                return events;
+            }
+        };
     }
 
     /**

@@ -26,7 +26,7 @@ public final class CSVEventTransformer implements ResultsTransformer<Event> {
             .build();
 
         try {
-            this.csvPrinter = new CSVPrinter(this.stringWriter, csvFormat);
+            csvPrinter = new CSVPrinter(stringWriter, csvFormat);
         } catch (final IOException e) {
             throw new TransformationException(e);
         }
@@ -40,7 +40,7 @@ public final class CSVEventTransformer implements ResultsTransformer<Event> {
     public void addRecords(final List<Event> events) throws TransformationException {
         try {
             for (final Event event : events) {
-                this.csvPrinter.printRecord(
+                csvPrinter.printRecord(
                     event.getId(),
                     event.getBundleDisplayName(),
                     event.getApplicationDisplayName(),
@@ -61,9 +61,9 @@ public final class CSVEventTransformer implements ResultsTransformer<Event> {
     @Override
     public String finish() throws TransformationException {
         try {
-            this.csvPrinter.close();
+            csvPrinter.close();
 
-            return this.stringWriter.toString();
+            return stringWriter.toString();
         } catch (final IOException e) {
             throw new TransformationException(e);
         }

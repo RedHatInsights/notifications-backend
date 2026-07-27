@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
-import com.redhat.cloud.notifications.exports.transformers.TransformationException;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Event;
@@ -25,7 +24,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -108,17 +109,30 @@ public class EventRepositoryTest {
     }
 
     /**
+     * Drains the given pages iterator into a single flat, ordered list of
+     * events.
+     */
+    private static List<Event> drain(final Iterator<List<Event>> pages) {
+        final List<Event> result = new ArrayList<>();
+
+        while (pages.hasNext()) {
+            result.addAll(pages.next());
+        }
+
+        return result;
+    }
+
+    /**
      * Tests that when no date ranges are provided all the events related to
      * the org id are fetched.
      * Tests both denormalized (false) and normalized (true) query modes.
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testGetAll(boolean useNormalizedQueries) throws TransformationException {
+    void testGetAll(boolean useNormalizedQueries) {
         when(engineConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
 
-        final List<Event> result = new ArrayList<>();
-        this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, null, result::addAll);
+        final List<Event> result = drain(this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, null));
 
         Assertions.assertEquals(this.createdEvents.size(), result.size(), "unexpected number of fetched events");
         Assertions.assertIterableEquals(
@@ -134,13 +148,12 @@ public class EventRepositoryTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testGetJustFrom(boolean useNormalizedQueries) throws TransformationException {
+    void testGetJustFrom(boolean useNormalizedQueries) {
         when(engineConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
 
         final LocalDate fourDaysAgo = TODAY.minusDays(4);
 
-        final List<Event> result = new ArrayList<>();
-        this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, null, result::addAll);
+        final List<Event> result = drain(this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, null));
 
         Assertions.assertEquals(4, result.size(), "unexpected number of events received when applying the 'from' filter to four days ago");
 
@@ -166,13 +179,12 @@ public class EventRepositoryTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testGetJustTo(boolean useNormalizedQueries) throws TransformationException {
+    void testGetJustTo(boolean useNormalizedQueries) {
         when(engineConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
 
         final LocalDate threeDaysAgo = TODAY.minusDays(3);
 
-        final List<Event> result = new ArrayList<>();
-        this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, threeDaysAgo, result::addAll);
+        final List<Event> result = drain(this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, threeDaysAgo));
 
         Assertions.assertEquals(3, result.size(), "unexpected number of events received when applying the 'to' filter to three days ago");
 
@@ -197,14 +209,13 @@ public class EventRepositoryTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testGetDateRange(boolean useNormalizedQueries) throws TransformationException {
+    void testGetDateRange(boolean useNormalizedQueries) {
         when(engineConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
 
         final LocalDate fourDaysAgo = TODAY.minusDays(4);
         final LocalDate threeDaysAgo = TODAY.minusDays(3);
 
-        final List<Event> result = new ArrayList<>();
-        this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, threeDaysAgo, result::addAll);
+        final List<Event> result = drain(this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, fourDaysAgo, threeDaysAgo));
 
         Assertions.assertEquals(2, result.size(), "unexpected number of events received when applying the 'from' filter to four days ago, and the 'to' filter to three days ago");
 
@@ -232,6 +243,22 @@ public class EventRepositoryTest {
     }
 
     /**
+     * Tests that when the configured export page size is not a positive
+     * integer, {@code findEventsToExport} fails fast with an
+     * {@link IllegalStateException} instead of silently returning no events.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1, -100})
+    void testGetAllInvalidPageSize(int invalidPageSize) {
+        when(engineConfig.getEventsExportPageSize()).thenReturn(invalidPageSize);
+
+        Assertions.assertThrows(
+            IllegalStateException.class,
+            () -> this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, null),
+            "expected an IllegalStateException to be thrown when the configured page size is not a positive integer");
+    }
+
+    /**
      * Tests that when the configured export page size is smaller than the
      * total number of matching events, {@code findEventsToExport} still
      * returns every event, in order, across multiple pages.
@@ -239,14 +266,18 @@ public class EventRepositoryTest {
      */
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
-    void testGetAllPaginated(boolean useNormalizedQueries) throws TransformationException {
+    void testGetAllPaginated(boolean useNormalizedQueries) {
         when(engineConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
         // Force a page size smaller than the number of fixture events, so
         // that the pagination loop has to run for more than one page.
         when(engineConfig.getEventsExportPageSize()).thenReturn(2);
 
         final List<List<Event>> pages = new ArrayList<>();
-        this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, null, pages::add);
+        final Iterator<List<Event>> iterator = this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, null);
+
+        while (iterator.hasNext()) {
+            pages.add(iterator.next());
+        }
 
         // Five fixtures with a page size of two: three pages, the last one
         // partially filled.
@@ -262,5 +293,80 @@ public class EventRepositoryTest {
             this.createdEvents.stream().sorted(Comparator.comparing(Event::getCreated)).toList(),
             result,
             "the fetched events are not the same as the created ones, or were not returned in ascending 'created' order across pages");
+    }
+
+    /**
+     * Tests that when two events share the exact same "created" timestamp
+     * and a page boundary falls in the middle of that tied group, the
+     * keyset cursor's tie-break clause ({@code e.created = :cursorCreated
+     * AND e.id > :cursorId}) is exercised, and every event is still
+     * returned exactly once, in the correct order, without duplicates or
+     * omissions.
+     * Tests both denormalized (false) and normalized (true) query modes.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    @Transactional
+    void testGetAllPaginatedTiedCreatedTimestamps(boolean useNormalizedQueries) {
+        when(engineConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
+
+        // Insert four extra fixtures which all share the exact same
+        // "created" timestamp, older than every other fixture, so that a
+        // page boundary can be forced to fall right in the middle of the
+        // tied group.
+        final LocalDateTime tiedCreated = LocalDateTime.now(ZoneOffset.UTC).minusDays(10);
+        final List<Event> tiedEvents = new ArrayList<>();
+
+        for (int i = 0; i < 4; i++) {
+            final Event event = new Event();
+
+            event.setAccountId("account-id");
+            event.setOrgId(DEFAULT_ORG_ID);
+            event.setEventType(this.createdEventType);
+            event.setEventTypeDisplayName(this.createdEventType.getDisplayName());
+            event.setApplicationId(this.createdApplication.getId());
+            event.setApplicationDisplayName(this.createdApplication.getDisplayName());
+            event.setBundleId(this.createdBundle.getId());
+            event.setBundleDisplayName(this.createdBundle.getDisplayName());
+            event.setCreated(tiedCreated);
+
+            this.entityManager.persist(event);
+
+            tiedEvents.add(event);
+        }
+
+        this.createdEvents.addAll(tiedEvents);
+
+        // Force a page size of two so that, ordered by (created, id), the
+        // boundary between the first and second page falls right in the
+        // middle of the tied group.
+        when(engineConfig.getEventsExportPageSize()).thenReturn(2);
+
+        final List<Event> result = drain(this.eventRepository.findEventsToExport(DEFAULT_ORG_ID, null, null));
+
+        Assertions.assertEquals(this.createdEvents.size(), result.size(), "unexpected number of fetched events; some tied events were likely duplicated or dropped at a page boundary");
+        Assertions.assertEquals(
+            this.createdEvents.stream().map(Event::getId).collect(Collectors.toSet()),
+            result.stream().map(Event::getId).collect(Collectors.toSet()),
+            "the fetched event ids do not match the created ones; some tied events were likely duplicated or dropped at a page boundary");
+
+        // "created" cannot discriminate the order among the tied events, so
+        // the tie-break clause on "id" must have kicked in: they should
+        // come back sorted by ascending id, as Postgres compares its "uuid"
+        // column type: byte-wise (unsigned), unlike UUID#compareTo, which
+        // compares the most/least significant bits as signed longs.
+        final Comparator<UUID> unsignedPostgresUuidOrder = (a, b) -> {
+            final int msbCompare = Long.compareUnsigned(a.getMostSignificantBits(), b.getMostSignificantBits());
+
+            return msbCompare != 0 ? msbCompare : Long.compareUnsigned(a.getLeastSignificantBits(), b.getLeastSignificantBits());
+        };
+
+        final List<UUID> expectedTiedIds = tiedEvents.stream().map(Event::getId).sorted(unsignedPostgresUuidOrder).toList();
+        final List<UUID> actualTiedIds = result.stream()
+            .filter(evt -> expectedTiedIds.contains(evt.getId()))
+            .map(Event::getId)
+            .toList();
+
+        Assertions.assertEquals(expectedTiedIds, actualTiedIds, "the tied events were not returned in ascending 'id' order, as expected from the cursor's tie-break clause");
     }
 }

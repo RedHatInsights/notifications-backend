@@ -11,10 +11,8 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.MockServerLifecycleManager;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
-import com.redhat.cloud.notifications.exports.transformers.PageConsumer;
 import com.redhat.cloud.notifications.exports.transformers.TransformationException;
 import com.redhat.cloud.notifications.exports.transformers.TransformersHelpers;
-import com.redhat.cloud.notifications.models.Event;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -119,11 +117,8 @@ public class ExportEventListenerMockServerTest {
             final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
             // Return fixture events when the repository is called.
-            Mockito.doAnswer(invocation -> {
-                final PageConsumer<Event> pageConsumer = invocation.getArgument(3);
-                pageConsumer.accept(TransformersHelpers.getFixtureEvents());
-                return null;
-            }).when(this.eventRepository).findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any()))
+                .thenAnswer(invocation -> List.of(TransformersHelpers.getFixtureEvents()).iterator());
 
             // Send the JSON payload.
             exportIn.send(consoleCloudEventParser.toJson(testCase.cloudEvent()));
@@ -177,11 +172,8 @@ public class ExportEventListenerMockServerTest {
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
         // Return fixture events when the repository is called.
-        Mockito.doAnswer(invocation -> {
-            final PageConsumer<Event> pageConsumer = invocation.getArgument(3);
-            pageConsumer.accept(TransformersHelpers.getFixtureEvents());
-            return null;
-        }).when(this.eventRepository).findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any()))
+            .thenAnswer(invocation -> List.of(TransformersHelpers.getFixtureEvents()).iterator());
 
         // Reset the mock server since we need it to return a specific response.
         MockServerLifecycleManager.getClient().resetAll();
@@ -227,11 +219,8 @@ public class ExportEventListenerMockServerTest {
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
         // Return fixture events when the repository is called.
-        Mockito.doAnswer(invocation -> {
-            final PageConsumer<Event> pageConsumer = invocation.getArgument(3);
-            pageConsumer.accept(TransformersHelpers.getFixtureEvents());
-            return null;
-        }).when(this.eventRepository).findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any()))
+            .thenAnswer(invocation -> List.of(TransformersHelpers.getFixtureEvents()).iterator());
 
         // Reset the mock server since we need it to return a specific response.
         MockServerLifecycleManager.getClient().resetAll();

@@ -9,7 +9,6 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.exports.filters.events.EventFiltersExtractor;
-import com.redhat.cloud.notifications.exports.transformers.PageConsumer;
 import com.redhat.cloud.notifications.exports.transformers.TransformationException;
 import com.redhat.cloud.notifications.exports.transformers.TransformersHelpers;
 import com.redhat.cloud.notifications.models.Event;
@@ -301,12 +300,12 @@ public class ExportEventListenerTest {
         // Serialize the payload and send it to the Kafka topic.
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
-        // Return fixture events when the repository is called.
-        Mockito.doAnswer(invocation -> {
-            final PageConsumer<Event> pageConsumer = invocation.getArgument(3);
-            pageConsumer.accept(TransformersHelpers.getFixtureEvents());
-            return null;
-        }).when(this.eventRepository).findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any(), Mockito.any());
+        // Return the fixture events split across two separate pages, so
+        // that the export service's page-consuming loop is exercised beyond
+        // a single iteration.
+        final List<Event> fixtureEvents = TransformersHelpers.getFixtureEvents();
+        Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any()))
+            .thenAnswer(invocation -> List.of(fixtureEvents.subList(0, 2), fixtureEvents.subList(2, fixtureEvents.size())).iterator());
 
         // Send the JSON payload.
         exportIn.send(consoleCloudEventParser.toJson(cee));
@@ -370,11 +369,8 @@ public class ExportEventListenerTest {
         final ConsoleCloudEventParser consoleCloudEventParser = new ConsoleCloudEventParser();
 
         // Return fixture events when the repository is called.
-        Mockito.doAnswer(invocation -> {
-            final PageConsumer<Event> pageConsumer = invocation.getArgument(3);
-            pageConsumer.accept(TransformersHelpers.getFixtureEvents());
-            return null;
-        }).when(this.eventRepository).findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.when(this.eventRepository.findEventsToExport(Mockito.eq(DEFAULT_ORG_ID), Mockito.any(), Mockito.any()))
+            .thenAnswer(invocation -> List.of(TransformersHelpers.getFixtureEvents()).iterator());
 
         // Send the JSON payload.
         exportIn.send(consoleCloudEventParser.toJson(cee));

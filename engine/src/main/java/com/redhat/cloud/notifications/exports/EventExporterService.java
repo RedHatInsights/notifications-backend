@@ -14,6 +14,9 @@ import com.redhat.cloud.notifications.models.Event;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.util.Iterator;
+import java.util.List;
+
 @ApplicationScoped
 public class EventExporterService {
 
@@ -53,7 +56,11 @@ public class EventExporterService {
         // instead of fetching every event into a single list and only then
         // transforming it, so that the full event list and the fully
         // rendered CSV/JSON output are never both held in memory at once.
-        this.eventRepository.findEventsToExport(orgId, eventFilters.from(), eventFilters.to(), transformer::addRecords);
+        final Iterator<List<Event>> eventPages = this.eventRepository.findEventsToExport(orgId, eventFilters.from(), eventFilters.to());
+
+        while (eventPages.hasNext()) {
+            transformer.addRecords(eventPages.next());
+        }
 
         return transformer.finish();
     }
