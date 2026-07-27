@@ -30,6 +30,10 @@ public class IncomingRequestInterceptor implements ContainerRequestFilter {
     private static final Pattern patternIntegrationEndpointsV2 = Pattern.compile("endpoints(.*)");
     private static final Pattern patternIntegrationEndpointsDetailsV2 = Pattern.compile("endpoints/(.*)/details");
     private static final Pattern patternOpenApi = Pattern.compile("openapi.json");
+    // RHCLOUD-49569: user-config/subscriptions is v2-only (no v1 equivalent to fall back to), and
+    // unlike the other v2-only paths below it also has a PUT, not just a GET. See the comment in
+    // routeRedirector() for why that requires its own branch instead of reusing the GET-only ones.
+    private static final Pattern patternUserConfigSubscriptionsV2 = Pattern.compile("user-config/subscriptions");
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -95,24 +99,37 @@ public class IncomingRequestInterceptor implements ContainerRequestFilter {
             uri = requestContext.getUriInfo().getPath();
         }
 
+        // Most v2.0 paths are just an alias of the same v1.0 endpoint (same behavior, versioned
+        // path only), so by default any request to a v2.0 path gets silently rewritten to v1.0
+        // below. A path only needs an entry here once it has *real* v2-only behavior of its own
+        // (a different response shape, or an endpoint with no v1 equivalent at all) that must NOT
+        // be rewritten. Historically only GET endpoints needed this (see the "GET".equals(...)
+        // checks below for notifications/integrations), so the rewriteToV1 = false exemptions were
+        // only ever checked for GET requests. user-config/subscriptions is v2-only for PUT too
+        // (RHCLOUD-49569), so it's checked unconditionally, before the method is even looked at -
+        // without that, its PUT would still match patternV2 (patterns match any method) and would
+        // get rewritten to a v1.0 path that was never implemented, silently 404-ing.
         Matcher matcherUrlV2 = patternV2.matcher(uri);
         if (matcherUrlV2.matches()) {
             boolean rewriteToV1 = true;
-            if ("GET".equals(requestContext.getMethod())) {
-                if (matcherUrlV2.group(1).equals("notifications")) {
+            if (matcherUrlV2.group(1).equals("notifications")) {
+                Matcher userConfigSubscriptions = patternUserConfigSubscriptionsV2.matcher(matcherUrlV2.group(2));
+                if (userConfigSubscriptions.matches()) {
+                    rewriteToV1 = false;
+                } else if ("GET".equals(requestContext.getMethod())) {
                     Matcher notificationsBG = patternNotificationsBgV2.matcher(matcherUrlV2.group(2));
                     Matcher openApi = patternOpenApi.matcher(matcherUrlV2.group(2));
                     if (notificationsBG.matches() || openApi.matches()) {
                         rewriteToV1 = false;
                     }
-                } else if (matcherUrlV2.group(1).equals("integrations")) {
-                    Matcher integrationsEndpoints = patternIntegrationEndpointsV2.matcher(matcherUrlV2.group(2));
-                    Matcher integrationsEndpointsHistoryDetails = patternIntegrationEndpointsDetailsV2.matcher(matcherUrlV2.group(2));
-                    Matcher openApi = patternOpenApi.matcher(matcherUrlV2.group(2));
-                    if ((integrationsEndpoints.matches() && !integrationsEndpointsHistoryDetails.matches())
-                        || openApi.matches()) {
-                        rewriteToV1 = false;
-                    }
+                }
+            } else if ("GET".equals(requestContext.getMethod()) && matcherUrlV2.group(1).equals("integrations")) {
+                Matcher integrationsEndpoints = patternIntegrationEndpointsV2.matcher(matcherUrlV2.group(2));
+                Matcher integrationsEndpointsHistoryDetails = patternIntegrationEndpointsDetailsV2.matcher(matcherUrlV2.group(2));
+                Matcher openApi = patternOpenApi.matcher(matcherUrlV2.group(2));
+                if ((integrationsEndpoints.matches() && !integrationsEndpointsHistoryDetails.matches())
+                    || openApi.matches()) {
+                    rewriteToV1 = false;
                 }
             }
 
