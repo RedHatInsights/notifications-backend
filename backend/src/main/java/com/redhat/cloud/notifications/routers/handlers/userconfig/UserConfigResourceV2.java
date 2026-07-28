@@ -113,6 +113,7 @@ public class UserConfigResourceV2 {
         String orgId = getOrgId(sec);
         String username = getUsername(sec);
 
+        // First fetch Bundles/Applications/EventTypes config tree
         List<BundleSubscriptionDTO> tree = new ArrayList<>();
         Map<EventTypeKey, EventTypeSubscriptionDTO> eventTypeIndex = new HashMap<>();
         for (Bundle bundle : resolveBundles(bundleName)) {
@@ -143,6 +144,7 @@ public class UserConfigResourceV2 {
             tree.add(bundleDTO);
         }
 
+        // Second, update previous tree with user's subscriptions
         List<EventTypeEmailSubscription> subscriptions = subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, username);
         patchWithActualSubscriptions(eventTypeIndex, subscriptions);
         return tree;
