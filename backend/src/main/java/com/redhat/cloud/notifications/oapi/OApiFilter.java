@@ -262,7 +262,7 @@ public class OApiFilter {
         return schema.replace("#/components/schemas/", "");
     }
 
-    private Set<String> findSchemas(JsonObject pathObject) {
+    Set<String> findSchemas(JsonObject pathObject) {
         Set<String> schemasToKeep = new HashSet<>();
         pathObject.stream().forEach(entry -> {
             JsonObject operation = (JsonObject) entry.getValue();

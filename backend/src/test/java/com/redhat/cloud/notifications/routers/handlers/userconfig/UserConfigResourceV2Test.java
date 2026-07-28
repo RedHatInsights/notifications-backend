@@ -208,6 +208,30 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
     }
 
     @Test
+    void testGetSubscriptionsUnknownApplication() {
+        resourceHelpers.createBundle("bundle-a", "Bundle A");
+        assertGetSubscriptionsStatus("bundle-a", "does-not-exist", null, HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    void testGetSubscriptionsUnknownEventType() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+        assertGetSubscriptionsStatus("bundle-a", "app-a", "does-not-exist", HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    void testGetSubscriptionsApplicationWithNoEventTypesReturnsEmptyTree() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+
+        // The application exists but has no event types, so it (and its now-childless bundle) is
+        // pruned from the response tree entirely, rather than coming back as an empty shell or a 404.
+        List<BundleSubscriptionDTO> tree = getSubscriptions("bundle-a", "app-a", null);
+        assertEquals(List.of(), tree);
+    }
+
+    @Test
     void testPutSubscriptionsPartialUpdate() {
         Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
         Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
@@ -301,6 +325,32 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
             .header(identityHeader)
             .contentType(JSON)
             .body("[]")
+            .when().put(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testPutSubscriptionsRejectsInvalidBundleNamePattern() {
+        // Bundle/application/event type names are constrained to "[a-z][a-z_0-9-]*"; an uppercase
+        // name should fail bean validation before any repository lookup happens.
+        BundleSubscriptionUpdateDTO update = buildSingleLeafUpdate("Bundle-A", "app-a", "event-a", SubscriptionTypeDTO.INSTANT, List.of());
+
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body(List.of(update))
+            .when().put(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testPutSubscriptionsRejectsEmptyNestedList() {
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("[{\"bundle\": \"bundle-a\", \"applications\": []}]")
             .when().put(SUBSCRIPTIONS_PATH)
             .then()
             .statusCode(HttpStatus.SC_BAD_REQUEST);

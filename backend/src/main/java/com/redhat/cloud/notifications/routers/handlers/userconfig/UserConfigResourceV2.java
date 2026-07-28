@@ -50,7 +50,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
@@ -115,6 +114,7 @@ public class UserConfigResourceV2 {
         String username = getUsername(sec);
 
         List<BundleSubscriptionDTO> tree = new ArrayList<>();
+        Map<EventTypeKey, EventTypeSubscriptionDTO> eventTypeIndex = new HashMap<>();
         for (Bundle bundle : resolveBundles(bundleName)) {
             List<ApplicationSubscriptionDTO> applicationDTOs = new ArrayList<>();
             for (Application application : resolveApplications(bundle, applicationName)) {
@@ -123,6 +123,9 @@ public class UserConfigResourceV2 {
                     .collect(Collectors.toList());
                 if (eventTypeDTOs.isEmpty()) {
                     continue;
+                }
+                for (EventTypeSubscriptionDTO eventTypeDTO : eventTypeDTOs) {
+                    eventTypeIndex.put(new EventTypeKey(bundle.getName(), application.getName(), eventTypeDTO.getEventType()), eventTypeDTO);
                 }
                 ApplicationSubscriptionDTO applicationDTO = new ApplicationSubscriptionDTO();
                 applicationDTO.setApplication(application.getName());
@@ -141,8 +144,14 @@ public class UserConfigResourceV2 {
         }
 
         List<EventTypeEmailSubscription> subscriptions = subscriptionRepository.getEmailSubscriptionsPerEventTypeForUser(orgId, username);
-        patchWithActualSubscriptions(tree, subscriptions);
+        patchWithActualSubscriptions(eventTypeIndex, subscriptions);
         return tree;
+    }
+
+    // Keyed lookup into the tree built by getSubscriptions(), used by patchWithActualSubscriptions()
+    // to find the right leaf for each stored subscription in O(1) instead of re-scanning the
+    // applications/event-types lists of the tree per subscription row.
+    private record EventTypeKey(String bundle, String application, String eventType) {
     }
 
     private List<Bundle> resolveBundles(String bundleName) {
@@ -196,28 +205,13 @@ public class UserConfigResourceV2 {
         return dto;
     }
 
-    private void patchWithActualSubscriptions(List<BundleSubscriptionDTO> tree, List<EventTypeEmailSubscription> subscriptions) {
-        Map<String, BundleSubscriptionDTO> bundleByName = tree.stream()
-            .collect(Collectors.toMap(BundleSubscriptionDTO::getBundle, Function.identity()));
-
+    private void patchWithActualSubscriptions(Map<EventTypeKey, EventTypeSubscriptionDTO> eventTypeIndex, List<EventTypeEmailSubscription> subscriptions) {
         for (EventTypeEmailSubscription subscription : subscriptions) {
             EventType eventType = subscription.getEventType();
             Application application = eventType.getApplication();
             Bundle bundle = application.getBundle();
 
-            BundleSubscriptionDTO bundleDTO = bundleByName.get(bundle.getName());
-            if (bundleDTO == null) {
-                continue;
-            }
-            ApplicationSubscriptionDTO applicationDTO = bundleDTO.getApplications().stream()
-                .filter(candidate -> candidate.getApplication().equals(application.getName()))
-                .findFirst().orElse(null);
-            if (applicationDTO == null) {
-                continue;
-            }
-            EventTypeSubscriptionDTO eventTypeDTO = applicationDTO.getEventTypes().stream()
-                .filter(candidate -> candidate.getEventType().equals(eventType.getName()))
-                .findFirst().orElse(null);
+            EventTypeSubscriptionDTO eventTypeDTO = eventTypeIndex.get(new EventTypeKey(bundle.getName(), application.getName(), eventType.getName()));
             if (eventTypeDTO == null) {
                 continue;
             }
@@ -245,7 +239,9 @@ public class UserConfigResourceV2 {
     @Consumes(APPLICATION_JSON)
     @Transactional
     @APIResponse(responseCode = "204")
-    @APIResponse(responseCode = "400", description = "A bundle, application or event type in the request doesn't exist, or requests severities outside the event type's available_severities")
+    @APIResponse(responseCode = "400", description = "A bundle, application or event type in the request doesn't exist, or requests severities "
+        + "outside the event type's available_severities. Unlike the read-only GET (which reports an unknown bundle/application/event type as "
+        + "404), this bulk write endpoint reports it as 400: it's a client error to fix and retry in full, not a missing resource to look up.")
     @Operation(
         operationId = "UserConfigResource$V2_updateSubscriptions",
         summary = "Bulk-update the authenticated user's notification subscriptions",
@@ -275,6 +271,9 @@ public class UserConfigResourceV2 {
     private void updateEventTypeSubscriptions(String orgId, String username, String bundleName, String applicationName, EventTypeSubscriptionUpdateDTO eventTypeUpdate) {
         EventType eventType = applicationRepository.getEventType(bundleName, applicationName, eventTypeUpdate.getEventType());
         if (eventType == null) {
+            // BadRequestException (400), not NotFoundException (404) as the GET side of this resource
+            // uses for the same condition: a PUT can touch many entities in one call, so an unknown
+            // identifier here is treated as a client error to fix and retry in full, not a lookup miss.
             throw new BadRequestException(String.format(
                 "No event type named '%s' found for application '%s' in bundle '%s'", eventTypeUpdate.getEventType(), applicationName, bundleName));
         }
