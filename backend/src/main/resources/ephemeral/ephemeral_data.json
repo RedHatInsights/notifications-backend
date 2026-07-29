@@ -177,6 +177,25 @@
           ]
         }
       ]
+    },
+    {
+      "name": "lightwell",
+      "display_name": "Lightwell",
+      "applications": [
+        {
+          "name": "lightwell",
+          "display_name": "Lightwell",
+          "event_types": [
+            {
+              "name": "java-remediated",
+              "display_name": "Java Remediated",
+              "description": "Java Remediated",
+              "default_severity": "NONE",
+              "available_severities": ["UNDEFINED", "LOW", "CRITICAL", "NONE", "MODERATE", "IMPORTANT"]
+            }
+          ]
+        }
+      ]
     }
   ]
 }
