@@ -17,6 +17,23 @@ createdb -U postgres notifications
 # Start Redis
 redis-server --daemonize yes
 
+# Start Redpanda (Kafka-compatible)
+echo "Starting Redpanda..."
+mkdir -p /tmp/redpanda/data
+
+# Use rpk to start Redpanda in container mode
+# Change Schema Registry and Pandaproxy to non-conflicting ports if port 8081/8082 are in use
+nohup rpk redpanda start \
+  --node-id 0 \
+  --kafka-addr 0.0.0.0:9092 \
+  --advertise-kafka-addr localhost:9092 \
+  --schema-registry-addr 0.0.0.0:18081 \
+  --pandaproxy-addr 0.0.0.0:18082 \
+  --set redpanda.data_directory=/tmp/redpanda/data \
+  --set redpanda.empty_seed_starts_cluster=true \
+  --set redpanda.auto_create_topics_enabled=true \
+  > /tmp/redpanda.log 2>&1 &
+
 #
 # On the master branch there is no need to give the pull request details.
 #
