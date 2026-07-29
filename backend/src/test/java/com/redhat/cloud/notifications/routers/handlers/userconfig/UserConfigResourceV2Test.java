@@ -265,6 +265,32 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
     }
 
     @Test
+    void testPutSubscriptionsIgnoresDrawerWhenDisabledForOrg() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+        createEventType(application.getId(), "event-a", Set.of(Severity.CRITICAL, Severity.IMPORTANT), false);
+
+        // drawer.enabled is off for this org (the default from beforeEach), so a write to the DRAWER
+        // channel must be silently ignored rather than persisted: otherwise a later GET (once the org's
+        // flag flips on) would report the caller's own unsubscribe as never having "taken".
+        BundleSubscriptionUpdateDTO update = buildSingleLeafUpdate("bundle-a", "app-a", "event-a", SubscriptionTypeDTO.DRAWER, List.of());
+
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body(List.of(update))
+            .when().put(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        when(backendConfig.isDrawerEnabled(DEFAULT_ORG_ID)).thenReturn(true);
+        List<BundleSubscriptionDTO> tree = getSubscriptions("bundle-a", "app-a", "event-a");
+        var eventTypeDTO = tree.get(0).getApplications().get(0).getEventTypes().get(0);
+        // Still at the hardcoded subscribed-by-default state: the unsubscribe PUT above never wrote a row.
+        assertChannelSeverities(eventTypeDTO.getSubscriptions(), SubscriptionTypeDTO.DRAWER, List.of(SeverityDTO.CRITICAL, SeverityDTO.IMPORTANT));
+    }
+
+    @Test
     void testPutSubscriptionsInvalidSeverity() {
         Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
         Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");

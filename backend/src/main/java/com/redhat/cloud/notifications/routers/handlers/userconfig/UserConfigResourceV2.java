@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.routers.handlers.userconfig;
 
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
+import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
@@ -75,6 +76,9 @@ public class UserConfigResourceV2 {
 
     @Inject
     SubscriptionMapper subscriptionMapper;
+
+    @Inject
+    BackendConfig backendConfig;
 
     @Path(API_NOTIFICATIONS_V_2_0 + "/user-config")
     public static class V2 extends UserConfigResourceV2 {
@@ -285,6 +289,15 @@ public class UserConfigResourceV2 {
             availableSeverities = Set.of();
         }
         for (SubscriptionChannelDTO channel : eventTypeUpdate.getSubscriptions()) {
+            SubscriptionType subscriptionType = subscriptionMapper.subscriptionTypeDTOToSubscriptionType(channel.getSubscriptionType());
+            if (subscriptionType == SubscriptionType.DRAWER && !backendConfig.isDrawerEnabled(orgId)) {
+                // Mirrors the GET side (SubscriptionRepository#getAvailableTypes), which hides DRAWER
+                // from an org until its Unleash flag is on. Without this, a write here would silently
+                // not "take" from the caller's point of view: the GET would keep reporting the
+                // hardcoded subscribed-by-default state instead of what was just written.
+                continue;
+            }
+
             Set<Severity> subscribedSeverities = channel.getSubscribedSeverities().stream()
                 .map(subscriptionMapper::severityDTOToSeverity)
                 .collect(Collectors.toSet());
@@ -300,7 +313,6 @@ public class UserConfigResourceV2 {
                 severitiesMap.put(severity, subscribedSeverities.contains(severity));
             }
 
-            SubscriptionType subscriptionType = subscriptionMapper.subscriptionTypeDTOToSubscriptionType(channel.getSubscriptionType());
             subscriptionRepository.updateSubscription(orgId, username, eventType.getId(), subscriptionType, !subscribedSeverities.isEmpty(), severitiesMap);
         }
     }
