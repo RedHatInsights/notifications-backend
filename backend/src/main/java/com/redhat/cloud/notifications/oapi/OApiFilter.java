@@ -262,7 +262,7 @@ public class OApiFilter {
         return schema.replace("#/components/schemas/", "");
     }
 
-    private Set<String> findSchemas(JsonObject pathObject) {
+    Set<String> findSchemas(JsonObject pathObject) {
         Set<String> schemasToKeep = new HashSet<>();
         pathObject.stream().forEach(entry -> {
             JsonObject operation = (JsonObject) entry.getValue();
@@ -294,6 +294,7 @@ public class OApiFilter {
             }
 
             JsonObject requestBody = operation.getJsonObject("requestBody");
+            // Plain-object request body: schema is a direct {"$ref": "..."}.
             try {
                 String schemaRef = requestBody
                     .getJsonObject("content")
@@ -303,6 +304,26 @@ public class OApiFilter {
                 schemasToKeep.add(removeSchemaPrefix(schemaRef));
             } catch (NullPointerException e) {
                 Log.debug("No linked ref for request of " + operation.getString("operationId"));
+            }
+
+            // Array-of-objects request body (e.g. a JAX-RS method taking a List<SomeDTO>): the
+            // schema is {"type": "array", "items": {"$ref": "..."}}, with no top-level "$ref", so
+            // the block above never finds it and getString("$ref") above returns null rather than
+            // throwing - silently keeping nothing. Without this block, SomeDTO gets dropped from
+            // this per-domain doc's components.schemas below even though requestBody.items still
+            // points at it, producing an OpenAPI document that fails validation (a $ref to a
+            // schema that isn't there). This mirrors the same array-vs-object distinction already
+            // handled for "responses" a few lines down.
+            try {
+                String schemaRef = requestBody
+                    .getJsonObject("content")
+                    .getJsonObject("application/json")
+                    .getJsonObject("schema")
+                    .getJsonObject("items")
+                    .getString("$ref");
+                schemasToKeep.add(removeSchemaPrefix(schemaRef));
+            } catch (NullPointerException e) {
+                Log.debug("No linked array-item ref for request of " + operation.getString("operationId"));
             }
 
             JsonObject responses = operation.getJsonObject("responses");
