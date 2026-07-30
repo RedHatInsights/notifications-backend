@@ -28,7 +28,11 @@ class TestEmailHeaderLogoSection {
 
     private static final String DEFAULT_LOGO_FILENAME = "Logo-Red_Hat-Hybrid_Cloud_Console-A-Reverse-RGB.png";
     private static final String LIGHTWELL_LOGO_FILENAME = "lightwell-logo.png";
-    private static final String LIGHTWELL_LOGO_OVERRIDE = "{#content-header-logo}<img src=\"https://example.com/" + LIGHTWELL_LOGO_FILENAME + "\" alt=\"Lightwell logo\" width=\"340\" />{/content-header-logo}";
+    private static final String LIGHTWELL_LOGO_OVERRIDE = "{#content-header-logo}"
+        + "<a href=\"{environment.url}\" target=\"_blank\">"
+        + "<img src=\"https://example.com/" + LIGHTWELL_LOGO_FILENAME + "\" alt=\"Lightwell logo\" width=\"340\" />"
+        + "</a>"
+        + "{/content-header-logo}";
 
     @Inject
     TemplateService templateService;
@@ -84,6 +88,8 @@ class TestEmailHeaderLogoSection {
     private void assertOverriddenLogo(String result) {
         assertTrue(result.contains(LIGHTWELL_LOGO_FILENAME));
         assertFalse(result.contains(DEFAULT_LOGO_FILENAME));
+        // the override keeps {environment.url} as the click-through link - confirm it still resolved
+        assertTrue(result.contains("href=\"" + environment.url() + "\""));
     }
 
     private String instantEmailSnippet(String templatePath, String logoOverride) {
