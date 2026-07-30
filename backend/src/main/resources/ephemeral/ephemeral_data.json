@@ -191,7 +191,7 @@
               "display_name": "Java Remediated",
               "description": "Java Remediated",
               "default_severity": "NONE",
-              "available_severities": ["UNDEFINED", "LOW", "CRITICAL", "NONE", "MODERATE", "IMPORTANT"]
+              "available_severities": ["LOW", "CRITICAL", "NONE", "MODERATE", "IMPORTANT"]
             }
           ]
         }
