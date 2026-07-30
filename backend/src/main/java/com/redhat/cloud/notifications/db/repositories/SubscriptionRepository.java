@@ -272,11 +272,38 @@ public class SubscriptionRepository {
      * @return list of org id grouped by event types
      */
     public Map<String, List<String>> getOrgSubscriptionsPerEventType(String bundle, String application, List<String> eventTypes) {
-        final String query = "SELECT et.name, string_agg(DISTINCT org_id, ',') " +
-            "FROM email_subscriptions es JOIN event_type et ON event_type_id = et.id " +
-            "WHERE es.subscribed is true AND EXISTS " +
-            "(SELECT 1 FROM applications app JOIN bundles b ON app.bundle_id = b.id " +
-            "WHERE b.name = :bundleName AND app.name = :applicationName and et.application_id = app.id and et.name in (:eventTypeNames)) group by et.name";
+        /*
+         * This query mirrors the willBeNotified() logic from SubscriptionsDeduplicationConfig.
+         * An org is included if it has an enabled endpoint linked to the event type and either:
+         * - The endpoint is a machine-to-machine integration (not DRAWER or EMAIL_SUBSCRIPTION), OR
+         * - The endpoint is a recipient-based integration (DRAWER or EMAIL_SUBSCRIPTION) AND
+         *   at least one user in the org has an active subscription (via subscribed flag or severities)
+         */
+        final String query = "SELECT et.name, string_agg(DISTINCT derived.org_id, ',') " +
+            "FROM event_type et JOIN (" +
+                "SELECT ep.org_id, eet.event_type_id " +
+                "FROM endpoints ep " +
+                "JOIN endpoint_event_type eet ON ep.id = eet.endpoint_id " +
+                "WHERE ep.enabled = true " +
+                "AND ep.endpoint_type_v2 NOT IN ('DRAWER', 'EMAIL_SUBSCRIPTION') " +
+                "AND ep.org_id IS NOT NULL " +
+                "UNION " +
+                "SELECT es.org_id, es.event_type_id " +
+                "FROM email_subscriptions es " +
+                "WHERE (es.subscribed = true OR CAST(es.severities AS text) LIKE '%true%') " +
+                "AND EXISTS (" +
+                    "SELECT 1 FROM endpoints ep " +
+                    "JOIN endpoint_event_type eet ON ep.id = eet.endpoint_id " +
+                    "WHERE eet.event_type_id = es.event_type_id " +
+                    "AND (ep.org_id = es.org_id OR ep.org_id IS NULL) " +
+                    "AND ep.enabled = true " +
+                    "AND ep.endpoint_type_v2 IN ('DRAWER', 'EMAIL_SUBSCRIPTION')" +
+                ")" +
+            ") derived ON et.id = derived.event_type_id " +
+            "WHERE EXISTS (" +
+                "SELECT 1 FROM applications app JOIN bundles b ON app.bundle_id = b.id " +
+                "WHERE b.name = :bundleName AND app.name = :applicationName AND et.application_id = app.id AND et.name IN (:eventTypeNames)" +
+            ") GROUP BY et.name";
         List<Object[]> records = entityManager.createNativeQuery(query)
             .setParameter("bundleName", bundle)
             .setParameter("applicationName", application)
