@@ -59,7 +59,7 @@ export const CreateEditBundleModal: React.FunctionComponent<CreateEditBundleModa
                     <FormGroup label="Name" fieldId="name" isRequired>
                         <TextInput
                             type="text"
-                            value={ bundle.name }
+                            value={ bundle.name ?? '' }
                             onChange={ handleChange }
                             id="name"
                             name="name"
@@ -81,7 +81,7 @@ export const CreateEditBundleModal: React.FunctionComponent<CreateEditBundleModa
                     <FormGroup label="Display name" fieldId="display-name" isRequired>
                         <TextInput
                             type="text"
-                            value={ bundle.displayName }
+                            value={ bundle.displayName ?? '' }
                             onChange={ handleChange }
                             id="display-name"
                             name="displayName"

@@ -53,10 +53,13 @@ export const App: React.FunctionComponent<unknown> = () => {
         newBundle.mutate({
             displayName: bundle.displayName ?? '',
             name: bundle.name ?? ''
-        }).then(() => {
-            setShowBundleModal(false);
+        }).then((response) => {
+            if (!response.error) {
+                setShowBundleModal(false);
+                bundles.query();
+            }
+        }).finally(() => {
             setBundleCreateLoading(false);
-            bundles.query();
         });
     }, [ newBundle, bundles ]);
 
