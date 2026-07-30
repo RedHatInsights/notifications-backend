@@ -24,6 +24,8 @@ const EnhancedNavItem: React.FunctionComponent<EnhancedNavItemProps> = props => 
 
 export interface NavigationProps {
     bundles: ReadonlyArray<Bundle>;
+    isAdmin?: boolean;
+    onCreateBundle?: () => void;
 }
 
 export const Navigation: React.FunctionComponent<NavigationProps> = props => {
@@ -36,6 +38,11 @@ export const Navigation: React.FunctionComponent<NavigationProps> = props => {
                             { b.displayName }
                         </EnhancedNavItem>
                     )) }
+                    { props.isAdmin && props.onCreateBundle && (
+                        <NavItem onClick={ props.onCreateBundle }>
+                            + Create Bundle
+                        </NavItem>
+                    ) }
                 </NavExpandable>
                 <NavExpandable title="Utils" isExpanded>
                     <EnhancedNavItem to={ linkTo.messageValidator() }>

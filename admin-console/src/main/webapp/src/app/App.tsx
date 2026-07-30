@@ -6,7 +6,9 @@ import { BarsIcon } from '@patternfly/react-icons';
 import React, { useMemo } from 'react';
 import { style } from 'typestyle';
 
+import { CreateEditBundleModal } from '../components/Bundles/CreateEditBundleModal';
 import { Routes } from '../Routes';
+import { useCreateBundle } from '../services/Bundles/CreateBundle';
 import { useBundles } from '../services/EventTypes/GetBundles';
 import { usePermissions } from '../services/Permissions';
 import { useServerInfo } from '../services/ServerInfo';
@@ -33,6 +35,30 @@ export const App: React.FunctionComponent<unknown> = () => {
 
     const bundles = useBundles();
     const serverInfo = useServerInfo();
+    const newBundle = useCreateBundle();
+
+    const [ showBundleModal, setShowBundleModal ] = React.useState(false);
+    const [ bundleCreateLoading, setBundleCreateLoading ] = React.useState(false);
+
+    const onCreateBundle = React.useCallback(() => {
+        setShowBundleModal(true);
+    }, []);
+
+    const onBundleModalClose = React.useCallback(() => {
+        setShowBundleModal(false);
+    }, []);
+
+    const handleBundleSubmit = React.useCallback((bundle: { name?: string; displayName?: string }) => {
+        setBundleCreateLoading(true);
+        newBundle.mutate({
+            displayName: bundle.displayName ?? '',
+            name: bundle.name ?? ''
+        }).then(() => {
+            setShowBundleModal(false);
+            setBundleCreateLoading(false);
+            bundles.query();
+        });
+    }, [ newBundle, bundles ]);
 
     const message = useMemo<Message>(() => {
         const payload = serverInfo.payload;
@@ -110,7 +136,11 @@ export const App: React.FunctionComponent<unknown> = () => {
     }
 
     const appSidebar = <PageSidebar isSidebarOpen={ isNavOpen }>
-        <Navigation bundles={ bundles.bundles } />
+        <Navigation
+            bundles={ bundles.bundles }
+            isAdmin={ permission.isAdmin }
+            onCreateBundle={ onCreateBundle }
+        />
     </PageSidebar>;
 
     return (
@@ -126,6 +156,13 @@ export const App: React.FunctionComponent<unknown> = () => {
                 ) }
                 <Routes />
             </Page>
+            { showBundleModal && <CreateEditBundleModal
+                isEdit={ false }
+                showModal={ showBundleModal }
+                isLoading={ bundleCreateLoading }
+                onClose={ onBundleModalClose }
+                onSubmit={ handleBundleSubmit }
+            /> }
         </PermissionContext.Provider>
     );
 };

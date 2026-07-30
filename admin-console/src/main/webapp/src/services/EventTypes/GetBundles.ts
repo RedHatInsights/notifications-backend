@@ -65,6 +65,7 @@ export const useBundles = () => {
 
     return {
         bundles,
-        isLoading
+        isLoading,
+        query
     };
 };
