@@ -10,7 +10,46 @@ import { useCreateSystemBehaviorGroup } from '../../services/SystemBehaviorGroup
 import { useDeleteBehaviorGroup } from '../../services/SystemBehaviorGroups/DeleteSystemBehaviorGroup';
 import { useSystemBehaviorGroups } from '../../services/SystemBehaviorGroups/GetBehaviorGroups';
 import { useUpdateBehaviorGroupActionsMutation } from '../../services/SystemBehaviorGroups/UpdateActions';
-import { BehaviorGroup } from '../../types/Notifications';
+import { BehaviorGroup, BehaviorGroupAction } from '../../types/Notifications';
+
+export const actionsToDropdownValue = (actions?: BehaviorGroupAction[] | null): string | undefined => {
+    if (!actions || actions.length === 0) {
+        return undefined;
+    }
+
+    const action = actions[0];
+    const properties = action.endpoint?.properties as Schemas.SystemSubscriptionProperties;
+    const endpointType = action.endpoint?.type;
+    if (!properties || !endpointType) {
+        return undefined;
+    }
+
+    if (endpointType === 'drawer') {
+        return properties.only_admins ? 'drawer-admin' : 'drawer-all';
+    }
+
+    if (endpointType === 'email_subscription') {
+        return properties.only_admins ? 'email-admin' : 'email-all';
+    }
+
+    return undefined;
+};
+
+export const formatActionLabel = (action: BehaviorGroupAction): string => {
+    const properties = action.endpoint?.properties as Schemas.SystemSubscriptionProperties;
+    const endpointType = action.endpoint?.type;
+    if (!properties || !endpointType) {
+        return '';
+    }
+
+    if (endpointType !== 'drawer' && endpointType !== 'email_subscription') {
+        return '';
+    }
+
+    const channel = endpointType === 'drawer' ? 'Drawer' : 'Email';
+    const audience = properties.only_admins ? 'Admins' : 'All users';
+    return `${channel}: ${audience}`;
+};
 
 interface BundlePageProps {
     bundleId: string;
@@ -41,8 +80,10 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = pro
     const editSystemBehaviorGroup = (b: BehaviorGroup) => {
         setShowModal(true);
         setIsEdit(true);
-        setSystemBehaviorGroup(b);
-
+        setSystemBehaviorGroup({
+            ...b,
+            actions: actionsToDropdownValue(b.actions)
+        } as Partial<BehaviorGroup>);
     };
 
     const deleteBehaviorGroupModal = (b: BehaviorGroup) => {
@@ -130,16 +171,9 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = pro
                         { getBehaviorGroups.payload.value.map(b => <Tr key={ b.id }>
                             <Td>{ b.displayName }</Td>
                             <Td>
-                                { b.actions?.map(action => {
-                                    const properties = action.endpoint?.properties as Schemas.SystemSubscriptionProperties;
-                                    if (properties) {
-                                        if (properties.only_admins) {
-                                            return 'Admins';
-                                        }
-                                        return 'All users';
-
-                                    }
-                                }) }
+                                { b.actions?.map((action, index) => (
+                                    <span key={ index }>{ formatActionLabel(action) }</span>
+                                )) }
                             </Td>
                             <Td>
                                 <Button
