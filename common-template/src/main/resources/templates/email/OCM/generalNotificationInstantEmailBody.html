@@ -39,11 +39,11 @@
 {#switch global_vars.template_sub_type.or("")}
 {#case 'osd-trial-creation-template'}
     <p style="{body-section-p-style}">
-        To learn more about the OpenShift Dedicated trial, please refer to <a style="{body-section-underline-link-style}" href="https://access.redhat.com/articles/5990101" target="_blank">our documentation</a>. You can upgrade your trial to a paid subscription at any time by clicking "Upgrade from trial" in <a style="{body-section-underline-link-style}" href="https://cloud.redhat.com/openshift/details/{action.events[0].payload.global_vars.internal_cluster_id}" target="_blank">OpenShift Cluster Manager</a>.
+        To learn more about the OpenShift Dedicated trial, please refer to <a style="{body-section-underline-link-style}" href="https://access.redhat.com/articles/5990101" target="_blank">our documentation</a>. You can upgrade your trial to a paid subscription at any time by clicking "Upgrade from trial" in <a style="{body-section-underline-link-style}" href="https://cloud.redhat.com/openshift/details/s/{action.events[0].payload.global_vars.subscription_id}#overview" target="_blank">OpenShift Cluster Manager</a>.
     </p>
 {#case 'osd-trial-reminder-template'}
     <p style="{body-section-p-style}">
-        You will be notified once your cluster is deleted. You can prevent this automatic deletion by upgrading your trial to a paid subscription at any time by clicking "Upgrade from trial" in <a style="{body-section-underline-link-style}" href="https://cloud.redhat.com/openshift/details/{action.events[0].payload.global_vars.internal_cluster_id}" target="_blank">OpenShift Cluster Manager</a>.
+        You will be notified once your cluster is deleted. You can prevent this automatic deletion by upgrading your trial to a paid subscription at any time by clicking "Upgrade from trial" in <a style="{body-section-underline-link-style}" href="https://cloud.redhat.com/openshift/details/s/{action.events[0].payload.global_vars.subscription_id}#overview" target="_blank">OpenShift Cluster Manager</a>.
     </p>
 {#case 'osd-trial-deletion-template'}
     <p style="{body-section-p-style}">
