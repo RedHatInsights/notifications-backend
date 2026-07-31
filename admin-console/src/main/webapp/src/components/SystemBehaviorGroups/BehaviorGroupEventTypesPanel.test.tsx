@@ -63,31 +63,40 @@ const renderWithClient = (ui: React.ReactElement, responses: Record<string, any>
 };
 
 describe('BehaviorGroupEventTypesPanel', () => {
-    it('shows spinner while loading', () => {
-        const client = createClient({
-            fetch: () => new Promise(() => {})
-        });
-        render(
-            <ClientContextProvider client={ client }>
-                <BehaviorGroupEventTypesPanel
-                    behaviorGroup={ makeBehaviorGroup([]) }
-                    applications={ mockApplications }
-                    onLinkEventType={ vi.fn() }
-                    onUnlinkEventType={ vi.fn() }
-                />
-            </ClientContextProvider>
+    it('shows application selector with placeholder', () => {
+        renderWithClient(
+            <BehaviorGroupEventTypesPanel
+                behaviorGroup={ makeBehaviorGroup([]) }
+                applications={ mockApplications }
+                onLinkEventType={ vi.fn() }
+                onUnlinkEventType={ vi.fn() }
+            />,
+            {}
         );
 
-        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+        expect(screen.getByLabelText('Select application')).toBeInTheDocument();
+        expect(screen.getByText('Select an application')).toBeInTheDocument();
     });
 
-    it('renders event types grouped by application', async () => {
+    it('shows empty message when no applications', () => {
+        renderWithClient(
+            <BehaviorGroupEventTypesPanel
+                behaviorGroup={ makeBehaviorGroup([]) }
+                applications={ [] }
+                onLinkEventType={ vi.fn() }
+                onUnlinkEventType={ vi.fn() }
+            />,
+            {}
+        );
+
+        expect(screen.getByText('No applications available in this bundle.')).toBeInTheDocument();
+    });
+
+    it('renders event types with checkboxes when application selected', async () => {
         const responses = {
             'app-1': makeEventTypeResponse('app-1', [
-                { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' }
-            ]),
-            'app-2': makeEventTypeResponse('app-2', [
-                { id: 'et-2', name: 'new-recommendation', displayName: 'New Recommendation' }
+                { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' },
+                { id: 'et-2', name: 'policy-created', displayName: 'Policy Created' }
             ])
         };
 
@@ -101,37 +110,43 @@ describe('BehaviorGroupEventTypesPanel', () => {
             responses
         );
 
+        const select = screen.getByLabelText('Select application');
+        await userEvent.selectOptions(select, 'app-1');
+
         await waitFor(() => {
-            expect(screen.getByText('Policies')).toBeInTheDocument();
+            expect(screen.getByLabelText('Policy Triggered')).toBeInTheDocument();
         });
-        expect(screen.getByText('Advisor')).toBeInTheDocument();
-        expect(screen.getByLabelText('Toggle link for Policy Triggered')).toBeInTheDocument();
-        expect(screen.getByLabelText('Toggle link for New Recommendation')).toBeInTheDocument();
+        expect(screen.getByLabelText('Policy Created')).toBeInTheDocument();
     });
 
-    it('shows checked switch for linked event types', async () => {
+    it('pre-checks linked event types', async () => {
         const responses = {
             'app-1': makeEventTypeResponse('app-1', [
-                { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' }
+                { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' },
+                { id: 'et-2', name: 'policy-created', displayName: 'Policy Created' }
             ])
         };
 
         renderWithClient(
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([ 'et-1' ]) }
-                applications={ [ mockApplications[0] ] }
+                applications={ mockApplications }
                 onLinkEventType={ vi.fn() }
                 onUnlinkEventType={ vi.fn() }
             />,
             responses
         );
 
+        const select = screen.getByLabelText('Select application');
+        await userEvent.selectOptions(select, 'app-1');
+
         await waitFor(() => {
-            expect(screen.getByLabelText('Toggle link for Policy Triggered')).toBeChecked();
+            expect(screen.getByLabelText('Policy Triggered')).toBeChecked();
         });
+        expect(screen.getByLabelText('Policy Created')).not.toBeChecked();
     });
 
-    it('shows unchecked switch for unlinked event types', async () => {
+    it('shows disabled Update button when no changes', async () => {
         const responses = {
             'app-1': makeEventTypeResponse('app-1', [
                 { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' }
@@ -141,49 +156,95 @@ describe('BehaviorGroupEventTypesPanel', () => {
         renderWithClient(
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
-                applications={ [ mockApplications[0] ] }
+                applications={ mockApplications }
                 onLinkEventType={ vi.fn() }
                 onUnlinkEventType={ vi.fn() }
             />,
             responses
         );
 
+        const select = screen.getByLabelText('Select application');
+        await userEvent.selectOptions(select, 'app-1');
+
         await waitFor(() => {
-            expect(screen.getByLabelText('Toggle link for Policy Triggered')).not.toBeChecked();
+            expect(screen.getByLabelText('Policy Triggered')).toBeInTheDocument();
         });
+
+        const updateButton = screen.getByRole('button', { name: 'Update' });
+        expect(updateButton).toBeDisabled();
     });
 
-    it('calls onLinkEventType when toggling unlinked switch', async () => {
+    it('enables Update button when checkbox toggled', async () => {
+        const responses = {
+            'app-1': makeEventTypeResponse('app-1', [
+                { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' }
+            ])
+        };
+
+        renderWithClient(
+            <BehaviorGroupEventTypesPanel
+                behaviorGroup={ makeBehaviorGroup([]) }
+                applications={ mockApplications }
+                onLinkEventType={ vi.fn() }
+                onUnlinkEventType={ vi.fn() }
+            />,
+            responses
+        );
+
+        const select = screen.getByLabelText('Select application');
+        await userEvent.selectOptions(select, 'app-1');
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Policy Triggered')).toBeInTheDocument();
+        });
+
+        await userEvent.click(screen.getByLabelText('Policy Triggered'));
+
+        const updateButton = screen.getByRole('button', { name: 'Update' });
+        expect(updateButton).toBeEnabled();
+    });
+
+    it('calls onLinkEventType for newly checked items on Update', async () => {
         const onLink = vi.fn().mockResolvedValue(true);
+        const onUnlink = vi.fn().mockResolvedValue(true);
         const responses = {
             'app-1': makeEventTypeResponse('app-1', [
-                { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' }
+                { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' },
+                { id: 'et-2', name: 'policy-created', displayName: 'Policy Created' }
             ])
         };
 
         renderWithClient(
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
-                applications={ [ mockApplications[0] ] }
+                applications={ mockApplications }
                 onLinkEventType={ onLink }
-                onUnlinkEventType={ vi.fn() }
+                onUnlinkEventType={ onUnlink }
             />,
             responses
         );
 
+        const select = screen.getByLabelText('Select application');
+        await userEvent.selectOptions(select, 'app-1');
+
         await waitFor(() => {
-            expect(screen.getByLabelText('Toggle link for Policy Triggered')).toBeInTheDocument();
+            expect(screen.getByLabelText('Policy Triggered')).toBeInTheDocument();
         });
 
-        const toggle = screen.getByLabelText('Toggle link for Policy Triggered');
-        await userEvent.click(toggle);
+        await userEvent.click(screen.getByLabelText('Policy Triggered'));
+        await userEvent.click(screen.getByLabelText('Policy Created'));
+
+        await userEvent.click(screen.getByRole('button', { name: 'Update' }));
 
         await waitFor(() => {
             expect(onLink).toHaveBeenCalledWith('bg-1', 'et-1');
+            expect(onLink).toHaveBeenCalledWith('bg-1', 'et-2');
         });
+        expect(onUnlink).not.toHaveBeenCalled();
     });
 
-    it('calls onUnlinkEventType when toggling linked switch', async () => {
+    it('calls onUnlinkEventType for unchecked linked items on Update', async () => {
+        const onLink = vi.fn().mockResolvedValue(true);
         const onUnlink = vi.fn().mockResolvedValue(true);
         const responses = {
             'app-1': makeEventTypeResponse('app-1', [
@@ -194,26 +255,64 @@ describe('BehaviorGroupEventTypesPanel', () => {
         renderWithClient(
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([ 'et-1' ]) }
-                applications={ [ mockApplications[0] ] }
-                onLinkEventType={ vi.fn() }
+                applications={ mockApplications }
+                onLinkEventType={ onLink }
                 onUnlinkEventType={ onUnlink }
             />,
             responses
         );
 
+        const select = screen.getByLabelText('Select application');
+        await userEvent.selectOptions(select, 'app-1');
+
         await waitFor(() => {
-            expect(screen.getByLabelText('Toggle link for Policy Triggered')).toBeChecked();
+            expect(screen.getByLabelText('Policy Triggered')).toBeChecked();
         });
 
-        const toggle = screen.getByLabelText('Toggle link for Policy Triggered');
-        await userEvent.click(toggle);
+        await userEvent.click(screen.getByLabelText('Policy Triggered'));
+
+        await userEvent.click(screen.getByRole('button', { name: 'Update' }));
 
         await waitFor(() => {
             expect(onUnlink).toHaveBeenCalledWith('bg-1', 'et-1');
         });
+        expect(onLink).not.toHaveBeenCalled();
     });
 
-    it('shows error alert on failed toggle', async () => {
+    it('shows success alert after successful update', async () => {
+        const onLink = vi.fn().mockResolvedValue(true);
+        const responses = {
+            'app-1': makeEventTypeResponse('app-1', [
+                { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' }
+            ])
+        };
+
+        renderWithClient(
+            <BehaviorGroupEventTypesPanel
+                behaviorGroup={ makeBehaviorGroup([]) }
+                applications={ mockApplications }
+                onLinkEventType={ onLink }
+                onUnlinkEventType={ vi.fn() }
+            />,
+            responses
+        );
+
+        const select = screen.getByLabelText('Select application');
+        await userEvent.selectOptions(select, 'app-1');
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Policy Triggered')).toBeInTheDocument();
+        });
+
+        await userEvent.click(screen.getByLabelText('Policy Triggered'));
+        await userEvent.click(screen.getByRole('button', { name: 'Update' }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Event type links updated successfully.')).toBeInTheDocument();
+        });
+    });
+
+    it('shows error alert on failed update', async () => {
         const onLink = vi.fn().mockResolvedValue(false);
         const responses = {
             'app-1': makeEventTypeResponse('app-1', [
@@ -224,38 +323,44 @@ describe('BehaviorGroupEventTypesPanel', () => {
         renderWithClient(
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
-                applications={ [ mockApplications[0] ] }
+                applications={ mockApplications }
                 onLinkEventType={ onLink }
                 onUnlinkEventType={ vi.fn() }
             />,
             responses
         );
 
+        const select = screen.getByLabelText('Select application');
+        await userEvent.selectOptions(select, 'app-1');
+
         await waitFor(() => {
-            expect(screen.getByLabelText('Toggle link for Policy Triggered')).toBeInTheDocument();
+            expect(screen.getByLabelText('Policy Triggered')).toBeInTheDocument();
         });
 
-        const toggle = screen.getByLabelText('Toggle link for Policy Triggered');
-        await userEvent.click(toggle);
+        await userEvent.click(screen.getByLabelText('Policy Triggered'));
+        await userEvent.click(screen.getByRole('button', { name: 'Update' }));
 
         await waitFor(() => {
-            expect(screen.getByText(/Failed to link/)).toBeInTheDocument();
+            expect(screen.getByText(/Failed to update/)).toBeInTheDocument();
         });
     });
 
-    it('shows empty message when no event types exist', async () => {
+    it('shows empty message when selected app has no event types', async () => {
         renderWithClient(
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
-                applications={ [] }
+                applications={ mockApplications }
                 onLinkEventType={ vi.fn() }
                 onUnlinkEventType={ vi.fn() }
             />,
             {}
         );
 
+        const select = screen.getByLabelText('Select application');
+        await userEvent.selectOptions(select, 'app-1');
+
         await waitFor(() => {
-            expect(screen.getByText('No event types available in this bundle.')).toBeInTheDocument();
+            expect(screen.getByText('No event types found for this application.')).toBeInTheDocument();
         });
     });
 });
