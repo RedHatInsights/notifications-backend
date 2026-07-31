@@ -243,12 +243,12 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = pro
                                 <Td />
                                 <Td colSpan={ 4 }>
                                     <ExpandableRowContent>
-                                        <BehaviorGroupEventTypesPanel
+                                        { expandedRows[b.id ?? ''] && <BehaviorGroupEventTypesPanel
                                             behaviorGroup={ b }
                                             applications={ props.applications }
                                             onLinkEventType={ handleLinkEventType }
                                             onUnlinkEventType={ handleUnlinkEventType }
-                                        />
+                                        /> }
                                     </ExpandableRowContent>
                                 </Td>
                             </Tr>

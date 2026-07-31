@@ -45,32 +45,38 @@ export const BehaviorGroupEventTypesPanel: React.FunctionComponent<BehaviorGroup
             setFetchError(null);
 
             try {
-                const results: ApplicationEventTypes[] = [];
-                for (const app of props.applications) {
+                const responses = await Promise.all(props.applications.map(async app => {
                     const action = Operations.InternalResourceGetEventTypes.actionCreator({ appId: app.id });
                     const response = await query(action);
-                    if (!response.error && response.payload) {
-                        const rawData = response.payload as any;
-                        const value = rawData.status === 200 ? rawData.value : rawData;
-                        const eventTypes: EventType[] = (Array.isArray(value) ? value : []).map((v: any) => ({
-                            id: v.id ?? '',
-                            name: v.name ?? '',
-                            displayName: v.display_name ?? v.displayName ?? '',
-                            description: v.description ?? '',
-                            applicationId: v.application_id ?? v.applicationId ?? app.id,
-                            subscribedByDefault: !!v.subscribed_by_default,
-                            subscriptionLocked: !!v.subscription_locked,
-                            visible: v.visible ?? true,
-                            includedInDrawer: !!v.included_in_drawer
-                        }));
-
-                        if (eventTypes.length > 0) {
-                            results.push({ application: app, eventTypes });
-                        }
+                    if (response.error || !response.payload) {
+                        return { app, succeeded: false, eventTypes: [] as EventType[] };
                     }
-                }
+
+                    const rawData = response.payload as any;
+                    const value = rawData.status === 200 ? rawData.value : rawData;
+                    const eventTypes: EventType[] = (Array.isArray(value) ? value : []).map((v: any) => ({
+                        id: v.id ?? '',
+                        name: v.name ?? '',
+                        displayName: v.display_name ?? v.displayName ?? '',
+                        description: v.description ?? '',
+                        applicationId: v.application_id ?? v.applicationId ?? app.id,
+                        subscribedByDefault: !!v.subscribed_by_default,
+                        subscriptionLocked: !!v.subscription_locked,
+                        visible: v.visible ?? true,
+                        includedInDrawer: !!v.included_in_drawer
+                    }));
+                    return { app, succeeded: true, eventTypes };
+                }));
 
                 if (!cancelled) {
+                    const failedApps = responses.filter(r => !r.succeeded);
+                    if (failedApps.length > 0) {
+                        setFetchError(`Failed to load event types for: ${failedApps.map(r => r.app.displayName).join(', ')}`);
+                    }
+
+                    const results: ApplicationEventTypes[] = responses
+                        .filter(r => r.eventTypes.length > 0)
+                        .map(r => ({ application: r.app, eventTypes: r.eventTypes }));
                     setAppEventTypes(results);
                 }
             } catch {
