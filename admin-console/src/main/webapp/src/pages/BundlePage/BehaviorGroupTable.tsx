@@ -81,8 +81,8 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = pro
     const handleLinkEventType = React.useCallback(async (behaviorGroupId: string, eventTypeId: string) => {
         const response = await linkMutation.mutate({ behaviorGroupId, eventTypeId });
         if (!response.error) {
-            getBehaviorGroups.query();
-            return true;
+            const refreshResult = await getBehaviorGroups.query();
+            return !refreshResult.error;
         }
 
         return false;
@@ -91,8 +91,8 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = pro
     const handleUnlinkEventType = React.useCallback(async (behaviorGroupId: string, eventTypeId: string) => {
         const response = await unlinkMutation.mutate({ behaviorGroupId, eventTypeId });
         if (!response.error) {
-            getBehaviorGroups.query();
-            return true;
+            const refreshResult = await getBehaviorGroups.query();
+            return !refreshResult.error;
         }
 
         return false;
@@ -197,10 +197,12 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = pro
                             { columns.map((column, columnIndex) => (
                                 <Th key={ columnIndex }>{ column }</Th>
                             )) }
+                            <Th />
+                            <Th />
                         </Tr>
                     </Thead>
                     <Tbody>
-                        { getBehaviorGroups.payload.value.map((b, rowIndex) => <React.Fragment key={ b.id }>
+                        { getBehaviorGroups.payload.value.filter(b => b.id).map((b, rowIndex) => <React.Fragment key={ b.id }>
                             <Tr>
                                 <Td
                                     expand={ {
