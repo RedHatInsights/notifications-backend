@@ -41,22 +41,28 @@ export const App: React.FunctionComponent<unknown> = () => {
 
     const [ showBundleModal, setShowBundleModal ] = React.useState(false);
     const [ bundleCreateLoading, setBundleCreateLoading ] = React.useState(false);
+    const [ bundleCreateError, setBundleCreateError ] = React.useState<string | undefined>(undefined);
 
     const onCreateBundle = React.useCallback(() => {
+        setBundleCreateError(undefined);
         setShowBundleModal(true);
     }, []);
 
     const onBundleModalClose = React.useCallback(() => {
+        setBundleCreateError(undefined);
         setShowBundleModal(false);
     }, []);
 
     const handleBundleSubmit = React.useCallback((bundle: { name?: string; displayName?: string }) => {
         setBundleCreateLoading(true);
+        setBundleCreateError(undefined);
         newBundle.mutate({
             displayName: bundle.displayName ?? '',
             name: bundle.name ?? ''
         }).then((response) => {
-            if (!response.error) {
+            if (response.error) {
+                setBundleCreateError('Failed to create bundle. Please check the values and try again.');
+            } else {
                 setShowBundleModal(false);
                 bundles.query();
                 const createdBundle = response.payload?.type === 'Bundle' ? response.payload.value : undefined;
@@ -64,6 +70,8 @@ export const App: React.FunctionComponent<unknown> = () => {
                     navigate(linkTo.bundle(createdBundle.id));
                 }
             }
+        }).catch(() => {
+            setBundleCreateError('An unexpected error occurred while creating the bundle.');
         }).finally(() => {
             setBundleCreateLoading(false);
         });
@@ -169,6 +177,7 @@ export const App: React.FunctionComponent<unknown> = () => {
                 isEdit={ false }
                 showModal={ showBundleModal }
                 isLoading={ bundleCreateLoading }
+                error={ bundleCreateError }
                 onClose={ onBundleModalClose }
                 onSubmit={ handleBundleSubmit }
             /> }

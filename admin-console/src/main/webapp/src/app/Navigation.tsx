@@ -32,19 +32,20 @@ export interface NavigationProps {
 export const Navigation: React.FunctionComponent<NavigationProps> = props => {
     return (
         <Nav>
+            { props.isAdmin && props.onCreateBundle && (
+                <div style={ { padding: '8px 16px' } }>
+                    <Button
+                        variant="primary"
+                        icon={ <PlusCircleIcon /> }
+                        onClick={ props.onCreateBundle }
+                        isBlock
+                        style={ { justifyContent: 'flex-start' } }
+                    >
+                        Create Bundle
+                    </Button>
+                </div>
+            ) }
             <NavList>
-                { props.isAdmin && props.onCreateBundle && (
-                    <NavItem>
-                        <Button
-                            variant="secondary"
-                            icon={ <PlusCircleIcon /> }
-                            onClick={ props.onCreateBundle }
-                            isBlock
-                        >
-                            Create Bundle
-                        </Button>
-                    </NavItem>
-                ) }
                 <NavExpandable title="Bundles">
                     { props.bundles.map(b => (
                         <EnhancedNavItem key={ b.id } to={ linkTo.bundle(b.id) }>

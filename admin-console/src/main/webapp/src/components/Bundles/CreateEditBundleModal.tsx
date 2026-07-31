@@ -1,4 +1,6 @@
 import {
+    Alert,
+    AlertVariant,
     Button,
     Form,
     FormGroup,
@@ -25,6 +27,7 @@ interface CreateEditBundleModalProps {
     bundleName?: string;
     initialBundle?: BundleForm;
     isLoading: boolean;
+    error?: string;
     onClose: () => void;
     onSubmit: (bundle: BundleForm) => void;
 }
@@ -55,6 +58,9 @@ export const CreateEditBundleModal: React.FunctionComponent<CreateEditBundleModa
         >
             <ModalHeader title={ props.isEdit ? `Update ${props.bundleName}` : 'Create Bundle' } />
             <ModalBody>
+                { props.error && (
+                    <Alert variant={ AlertVariant.danger } title={ props.error } isInline />
+                ) }
                 <Form isHorizontal>
                     <FormGroup label="Name" fieldId="name" isRequired>
                         <TextInput
