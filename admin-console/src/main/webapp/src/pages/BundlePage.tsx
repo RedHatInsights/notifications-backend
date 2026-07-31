@@ -9,10 +9,12 @@ import { Link, useParams } from 'react-router-dom';
 
 import { useUserPermissions } from '../app/PermissionContext';
 import { CreateEditApplicationModal } from '../components/Applications/CreateEditApplicationModal';
+import { CreateEditBundleModal } from '../components/Bundles/CreateEditBundleModal';
 import { DeleteApplicationModal } from '../components/Applications/DeleteApplicationModal';
 import { ListEventTypes } from '../components/EventTypes/ListEventTypes';
 import { linkTo } from '../Routes';
 import { useCreateApplication } from '../services/Applications/CreateApplication';
+import { useCreateBundle } from '../services/Bundles/CreateBundle';
 import { useDeleteApplication } from '../services/Applications/DeleteApplication';
 import { useApplications } from '../services/Applications/GetApplicationById';
 import { useBundleTypes } from '../services/Applications/GetBundleById';
@@ -29,6 +31,7 @@ export const BundlePage: React.FunctionComponent = () => {
     const getBundles = useBundleTypes(bundleId!);
     const getApplications = useApplications(bundleId!);
     const newApplication = useCreateApplication();
+    const newBundle = useCreateBundle();
     const deleteApplicationMutation = useDeleteApplication();
 
     const columns = [ 'Application', 'Name', 'Event Types', 'Application Id' ];
@@ -37,6 +40,11 @@ export const BundlePage: React.FunctionComponent = () => {
     const [ showModal, setShowModal ] = React.useState(false);
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
+    const [ applicationEditError, setApplicationEditError ] = React.useState<string | undefined>(undefined);
+
+    const [ showBundleEditModal, setShowBundleEditModal ] = React.useState(false);
+    const [ bundleEditLoading, setBundleEditLoading ] = React.useState(false);
+    const [ bundleEditError, setBundleEditError ] = React.useState<string | undefined>(undefined);
 
     const bundle = React.useMemo(() => {
         if (getBundles.payload?.status === 200) {
@@ -46,21 +54,53 @@ export const BundlePage: React.FunctionComponent = () => {
         return undefined;
     }, [ getBundles.payload?.status, getBundles.payload?.value ]);
 
+    const editBundle = React.useCallback(() => {
+        setBundleEditError(undefined);
+        setShowBundleEditModal(true);
+    }, []);
+
+    const onBundleEditClose = React.useCallback(() => {
+        setBundleEditError(undefined);
+        setShowBundleEditModal(false);
+    }, []);
+
+    const handleBundleEditSubmit = React.useCallback((bundleForm: { id?: string; name?: string; displayName?: string }) => {
+        setBundleEditLoading(true);
+        setBundleEditError(undefined);
+        newBundle.mutate({
+            id: bundleId!,
+            displayName: bundleForm.displayName ?? '',
+            name: bundleForm.name ?? ''
+        }).then((response) => {
+            if (response.error) {
+                setBundleEditError('Failed to update bundle. Please check the values and try again.');
+            } else {
+                setShowBundleEditModal(false);
+                getBundles.query();
+            }
+        }).catch(() => {
+            setBundleEditError('An unexpected error occurred while updating the bundle.');
+        }).finally(() => {
+            setBundleEditLoading(false);
+        });
+    }, [ bundleId, newBundle, getBundles ]);
+
     const createApplication = () => {
         setShowModal(true);
         setIsEdit(false);
         setApplication({});
+        setApplicationEditError(undefined);
     };
 
     const editApplication = (a: Application) => {
         setShowModal(true);
         setIsEdit(true);
         setApplication(a);
-
+        setApplicationEditError(undefined);
     };
 
     const handleSubmit = React.useCallback((application: Partial<RoleOwnedApplication>) => {
-        setShowModal(false);
+        setApplicationEditError(undefined);
         const mutate = newApplication.mutate;
         mutate({
             id: application.id,
@@ -70,19 +110,29 @@ export const BundlePage: React.FunctionComponent = () => {
             ownerRole: application.ownerRole
         })
             .then(r => {
+                if (r.error) {
+                    setApplicationEditError('Failed to save application. Please check the values and try again.');
+                    return r;
+                }
+
+                setShowModal(false);
                 if (r.payload?.status === 200 && !isAdmin) {
                     refresh();
                 }
 
+                getApplications.query();
                 return r;
             })
-            .then(getApplications.query);
+            .catch(() => {
+                setApplicationEditError('An unexpected error occurred while saving the application.');
+            });
 
     }, [ bundleId, getApplications.query, newApplication.mutate, isAdmin, refresh ]);
 
     const onClose = () => {
         setShowModal(false);
         setApplication({});
+        setApplicationEditError(undefined);
         getApplications.query();
     };
 
@@ -125,7 +175,18 @@ export const BundlePage: React.FunctionComponent = () => {
                     <BreadcrumbItem> Bundles </BreadcrumbItem>
                     <BreadcrumbItem>
                         { (getBundles.loading || getBundles.payload?.status !== 200)
-                            ? <Skeleton width="60px" /> : getBundles.payload.value.displayName }
+                            ? <Skeleton width="60px" /> : <>
+                                { getBundles.payload.value.displayName }
+                                { isAdmin && <Button
+                                    className="edit"
+                                    variant="plain"
+                                    onClick={ editBundle }
+                                    aria-label="Edit bundle"
+                                    style={ { marginLeft: '4px' } }
+                                >
+                                    <PencilAltIcon />
+                                </Button> }
+                            </> }
                     </BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
@@ -148,7 +209,7 @@ export const BundlePage: React.FunctionComponent = () => {
                                         onClose={ onClose }
                                         onSubmit={ handleSubmit }
                                         isLoading={ getApplications.loading }
-
+                                        error={ applicationEditError }
                                     /> }
                                     <>
                                         <DeleteApplicationModal
@@ -220,6 +281,20 @@ export const BundlePage: React.FunctionComponent = () => {
                 bundleId={ bundleId! }
                 bundle={ bundle?.displayName }
             />
+            { showBundleEditModal && <CreateEditBundleModal
+                isEdit
+                showModal={ showBundleEditModal }
+                bundleName={ bundle?.displayName }
+                initialBundle={ {
+                    id: bundleId,
+                    name: bundle?.name,
+                    displayName: bundle?.displayName
+                } }
+                isLoading={ bundleEditLoading }
+                error={ bundleEditError }
+                onClose={ onBundleEditClose }
+                onSubmit={ handleBundleEditSubmit }
+            /> }
         </>
 
     );

@@ -50,6 +50,10 @@ export const CreateEditBundleModal: React.FunctionComponent<CreateEditBundleModa
         props.onSubmit(bundle);
     }, [ bundle, props ]);
 
+    React.useEffect(() => {
+        setBundle({ ...props.initialBundle });
+    }, [ props.initialBundle ]);
+
     return (
         <Modal
             variant={ ModalVariant.medium }

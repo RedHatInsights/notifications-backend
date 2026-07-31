@@ -10,6 +10,7 @@ const validateResponse = validationResponseTransformer(
         if (payload.status === 200) {
             const bundleTypes: Bundle = {
                 id: payload.value.id ?? '',
+                name: payload.value.name,
                 displayName: payload.value.display_name,
                 applications: []
             };

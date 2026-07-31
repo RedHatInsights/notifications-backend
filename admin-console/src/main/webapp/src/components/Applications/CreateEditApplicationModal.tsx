@@ -1,4 +1,6 @@
 import {
+    Alert,
+    AlertVariant,
     Button,
     Form,
     FormGroup,
@@ -24,6 +26,7 @@ interface CreateEditApplicationModalProps {
     bundleName?: string;
     initialApplication?: Partial<Application>;
     isLoading: boolean;
+    error?: string;
     onClose: () => void;
     onSubmit: (application: Partial<RoleOwnedApplication>) => void;
 }
@@ -64,6 +67,9 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
         >
             <ModalHeader title={ `${props.isEdit ? `Update ${props.applicationName}` : 'Create Application'} for ${props.bundleName}` } />
             <ModalBody>
+                { props.error && (
+                    <Alert variant={ AlertVariant.danger } title={ props.error } isInline />
+                ) }
                 <Form isHorizontal>
                     <FormGroup label="Name" fieldId="name" isRequired>
                         <TextInput
