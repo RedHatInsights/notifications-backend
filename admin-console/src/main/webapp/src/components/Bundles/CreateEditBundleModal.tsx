@@ -51,8 +51,12 @@ export const CreateEditBundleModal: React.FunctionComponent<CreateEditBundleModa
     }, [ bundle, props ]);
 
     React.useEffect(() => {
-        setBundle({ ...props.initialBundle });
-    }, [ props.initialBundle ]);
+        setBundle({
+            id: props.initialBundle?.id,
+            name: props.initialBundle?.name,
+            displayName: props.initialBundle?.displayName
+        });
+    }, [ props.initialBundle?.id, props.initialBundle?.name, props.initialBundle?.displayName ]);
 
     return (
         <Modal

@@ -41,6 +41,7 @@ export const BundlePage: React.FunctionComponent = () => {
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
     const [ isEdit, setIsEdit ] = React.useState(false);
     const [ applicationEditError, setApplicationEditError ] = React.useState<string | undefined>(undefined);
+    const [ applicationEditLoading, setApplicationEditLoading ] = React.useState(false);
 
     const [ showBundleEditModal, setShowBundleEditModal ] = React.useState(false);
     const [ bundleEditLoading, setBundleEditLoading ] = React.useState(false);
@@ -101,6 +102,7 @@ export const BundlePage: React.FunctionComponent = () => {
 
     const handleSubmit = React.useCallback((application: Partial<RoleOwnedApplication>) => {
         setApplicationEditError(undefined);
+        setApplicationEditLoading(true);
         const mutate = newApplication.mutate;
         mutate({
             id: application.id,
@@ -125,6 +127,9 @@ export const BundlePage: React.FunctionComponent = () => {
             })
             .catch(() => {
                 setApplicationEditError('An unexpected error occurred while saving the application.');
+            })
+            .finally(() => {
+                setApplicationEditLoading(false);
             });
 
     }, [ bundleId, getApplications.query, newApplication.mutate, isAdmin, refresh ]);
@@ -208,7 +213,7 @@ export const BundlePage: React.FunctionComponent = () => {
                                         applicationName={ application.displayName }
                                         onClose={ onClose }
                                         onSubmit={ handleSubmit }
-                                        isLoading={ getApplications.loading }
+                                        isLoading={ applicationEditLoading }
                                         error={ applicationEditError }
                                     /> }
                                     <>
