@@ -3,6 +3,7 @@ import Endpoint = Schemas.Endpoint;
 
 export interface Bundle {
     id: string;
+    name: string;
     displayName: string;
     applications: ReadonlyArray<Application>;
 }

@@ -24,6 +24,7 @@ export const useBundles = () => {
 
             const bundles: ReadonlyArray<Bundle> = bundleResponse.payload.value.map(bundleResponse => ({
                 id: bundleResponse.id ?? '',
+                name: bundleResponse.name,
                 displayName: bundleResponse.display_name,
                 applications: []
             }));
