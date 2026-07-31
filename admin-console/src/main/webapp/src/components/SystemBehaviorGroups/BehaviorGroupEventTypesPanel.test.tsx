@@ -345,6 +345,56 @@ describe('BehaviorGroupEventTypesPanel', () => {
         });
     });
 
+    it('confirms before switching application with unsaved changes', async () => {
+        const responses = {
+            'app-1': makeEventTypeResponse('app-1', [
+                { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' }
+            ]),
+            'app-2': makeEventTypeResponse('app-2', [
+                { id: 'et-3', name: 'advisor-new', displayName: 'New Recommendation' }
+            ])
+        };
+
+        renderWithClient(
+            <BehaviorGroupEventTypesPanel
+                behaviorGroup={ makeBehaviorGroup([]) }
+                applications={ mockApplications }
+                onLinkEventType={ vi.fn() }
+                onUnlinkEventType={ vi.fn() }
+            />,
+            responses
+        );
+
+        const select = screen.getByLabelText('Select application');
+        await userEvent.selectOptions(select, 'app-1');
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Policy Triggered')).toBeInTheDocument();
+        });
+
+        // Make unsaved change
+        await userEvent.click(screen.getByLabelText('Policy Triggered'));
+
+        // Decline the confirmation — should stay on app-1
+        vi.spyOn(window, 'confirm').mockReturnValueOnce(false);
+        await userEvent.selectOptions(select, 'app-2');
+
+        // Still showing app-1 event types
+        expect(screen.getByLabelText('Policy Triggered')).toBeInTheDocument();
+        expect(screen.queryByLabelText('New Recommendation')).not.toBeInTheDocument();
+
+        // Accept the confirmation — should switch to app-2
+        vi.spyOn(window, 'confirm').mockReturnValueOnce(true);
+        await userEvent.selectOptions(select, 'app-2');
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('New Recommendation')).toBeInTheDocument();
+        });
+        expect(screen.queryByLabelText('Policy Triggered')).not.toBeInTheDocument();
+
+        vi.restoreAllMocks();
+    });
+
     it('shows empty message when selected app has no event types', async () => {
         renderWithClient(
             <BehaviorGroupEventTypesPanel

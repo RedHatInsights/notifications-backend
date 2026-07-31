@@ -70,7 +70,7 @@ export const BehaviorGroupEventTypesPanel: React.FunctionComponent<BehaviorGroup
                 const rawData = response.payload as any;
                 const value = rawData.status === 200 ? rawData.value : rawData;
                 const ets: EventType[] = (Array.isArray(value) ? value : []).map((v: any) => ({
-                    id: v.id ?? '',
+                    id: v.id,
                     name: v.name ?? '',
                     displayName: v.display_name ?? v.displayName ?? '',
                     description: v.description ?? '',
@@ -79,7 +79,7 @@ export const BehaviorGroupEventTypesPanel: React.FunctionComponent<BehaviorGroup
                     subscriptionLocked: !!v.subscription_locked,
                     visible: v.visible ?? true,
                     includedInDrawer: !!v.included_in_drawer
-                }));
+                })).filter((et: EventType) => !!et.id);
 
                 if (!cancelled) {
                     setEventTypes(ets);
@@ -108,7 +108,22 @@ export const BehaviorGroupEventTypesPanel: React.FunctionComponent<BehaviorGroup
         };
     }, [ selectedAppId, query, props.behaviorGroup ]);
 
+    const hasChanges = React.useMemo(() => {
+        return eventTypes.some(et => {
+            const wasLinked = isEventTypeLinked(props.behaviorGroup, et.id);
+            const isChecked = checkedIds.has(et.id);
+            return wasLinked !== isChecked;
+        });
+    }, [ eventTypes, checkedIds, props.behaviorGroup ]);
+
+    const hasChangesRef = React.useRef(hasChanges);
+    hasChangesRef.current = hasChanges;
+
     const handleAppChange = React.useCallback((_event: React.FormEvent<HTMLSelectElement>, value: string) => {
+        if (hasChangesRef.current && !window.confirm('You have unsaved event type changes. Discard them?')) {
+            return;
+        }
+
         setSelectedAppId(value);
     }, []);
 
@@ -161,14 +176,6 @@ export const BehaviorGroupEventTypesPanel: React.FunctionComponent<BehaviorGroup
             setSaveSuccess(true);
         }
     }, [ props, eventTypes, checkedIds ]);
-
-    const hasChanges = React.useMemo(() => {
-        return eventTypes.some(et => {
-            const wasLinked = isEventTypeLinked(props.behaviorGroup, et.id);
-            const isChecked = checkedIds.has(et.id);
-            return wasLinked !== isChecked;
-        });
-    }, [ eventTypes, checkedIds, props.behaviorGroup ]);
 
     if (props.applications.length === 0) {
         return <span>No applications available in this bundle.</span>;
