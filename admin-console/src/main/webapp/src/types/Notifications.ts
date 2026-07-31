@@ -33,8 +33,20 @@ export type BehaviorGroupActionId = {
     endpointId: UUID;
   };
 
+export type EventTypeBehaviorId = {
+    behaviorGroupId: UUID;
+    eventTypeId: UUID;
+};
+
+export type EventTypeBehavior = {
+    created?: string | undefined | null;
+    eventType?: EventType | undefined | null;
+    id?: EventTypeBehaviorId | undefined | null;
+};
+
 export type BehaviorGroup = {
     actions?: Array<BehaviorGroupAction> | undefined | null;
+    behaviors?: Array<EventTypeBehavior> | undefined | null;
     bundle?: Bundle | undefined | null;
     bundleId: UUID;
     isDefault?: boolean | undefined | null;

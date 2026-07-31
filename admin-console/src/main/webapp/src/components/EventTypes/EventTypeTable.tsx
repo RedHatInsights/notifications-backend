@@ -153,7 +153,9 @@ const EventTypeTableImpl: React.FunctionComponent<EventTypeTableImplProps> = pro
                     <Td />
                     <Td colSpan={ 7 }>
                         <ExpandableRowContent>
-                            <EventTypeExpandableRow eventType={ eventType } />
+                            <EventTypeExpandableRow
+                                eventType={ eventType }
+                            />
                         </ExpandableRowContent>
                     </Td>
                 </Tr>

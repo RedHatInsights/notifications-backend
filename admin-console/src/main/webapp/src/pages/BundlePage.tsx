@@ -288,6 +288,7 @@ export const BundlePage: React.FunctionComponent = () => {
             <BehaviorGroupsTable
                 bundleId={ bundleId! }
                 bundle={ bundle?.displayName }
+                applications={ getApplications.payload?.status === 200 ? getApplications.payload.value : [] }
             />
             { showBundleEditModal && <CreateEditBundleModal
                 isEdit

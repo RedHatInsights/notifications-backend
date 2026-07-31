@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { useQuery } from 'react-fetching-library';
 
 import { Operations } from '../../generated/OpenapiInternal';
-import { BehaviorGroup } from '../../types/Notifications';
+import { BehaviorGroup, EventTypeBehavior } from '../../types/Notifications';
 
 const validateResponse = validationResponseTransformer(
     (payload: Operations.InternalResourceGetDefaultBehaviorGroups.Payload) => {
@@ -12,7 +12,22 @@ const validateResponse = validationResponseTransformer(
                 bundleId: value.bundle_id,
                 displayName: value.display_name,
                 actions: value.actions,
-                id: value.id
+                id: value.id,
+                behaviors: value.behaviors?.map(b => ({
+                    created: b.created,
+                    eventType: b.event_type ? {
+                        id: b.event_type.id ?? '',
+                        displayName: b.event_type.display_name ?? '',
+                        name: b.event_type.name ?? '',
+                        description: b.event_type.description ?? '',
+                        applicationId: b.event_type.application_id ?? '',
+                        subscribedByDefault: b.event_type.subscribed_by_default ?? false,
+                        subscriptionLocked: b.event_type.subscription_locked ?? false,
+                        visible: b.event_type.visible ?? true,
+                        includedInDrawer: b.event_type.included_in_drawer ?? false
+                    } : undefined,
+                    id: b.id
+                } as EventTypeBehavior)) ?? null
             }));
 
             return validatedResponse(
