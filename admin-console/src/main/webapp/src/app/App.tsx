@@ -4,9 +4,12 @@ import './app.css';
 import { Alert, AlertVariant, Brand, Button, Masthead, MastheadToggle, MastheadMain, MastheadBrand, Page, PageSection, PageSidebar, Spinner } from '@patternfly/react-core';
 import { BarsIcon } from '@patternfly/react-icons';
 import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { style } from 'typestyle';
 
-import { Routes } from '../Routes';
+import { CreateEditBundleModal } from '../components/Bundles/CreateEditBundleModal';
+import { linkTo, Routes } from '../Routes';
+import { useCreateBundle } from '../services/Bundles/CreateBundle';
 import { useBundles } from '../services/EventTypes/GetBundles';
 import { usePermissions } from '../services/Permissions';
 import { useServerInfo } from '../services/ServerInfo';
@@ -33,6 +36,46 @@ export const App: React.FunctionComponent<unknown> = () => {
 
     const bundles = useBundles();
     const serverInfo = useServerInfo();
+    const newBundle = useCreateBundle();
+    const navigate = useNavigate();
+
+    const [ showBundleModal, setShowBundleModal ] = React.useState(false);
+    const [ bundleCreateLoading, setBundleCreateLoading ] = React.useState(false);
+    const [ bundleCreateError, setBundleCreateError ] = React.useState<string | undefined>(undefined);
+
+    const onCreateBundle = React.useCallback(() => {
+        setBundleCreateError(undefined);
+        setShowBundleModal(true);
+    }, []);
+
+    const onBundleModalClose = React.useCallback(() => {
+        setBundleCreateError(undefined);
+        setShowBundleModal(false);
+    }, []);
+
+    const handleBundleSubmit = React.useCallback((bundle: { name?: string; displayName?: string }) => {
+        setBundleCreateLoading(true);
+        setBundleCreateError(undefined);
+        newBundle.mutate({
+            displayName: bundle.displayName ?? '',
+            name: bundle.name ?? ''
+        }).then((response) => {
+            if (response.error) {
+                setBundleCreateError('Failed to create bundle. Please check the values and try again.');
+            } else {
+                setShowBundleModal(false);
+                bundles.query();
+                const createdBundle = response.payload?.type === 'Bundle' ? response.payload.value : undefined;
+                if (createdBundle?.id) {
+                    navigate(linkTo.bundle(createdBundle.id));
+                }
+            }
+        }).catch(() => {
+            setBundleCreateError('An unexpected error occurred while creating the bundle.');
+        }).finally(() => {
+            setBundleCreateLoading(false);
+        });
+    }, [ newBundle, bundles, navigate ]);
 
     const message = useMemo<Message>(() => {
         const payload = serverInfo.payload;
@@ -110,7 +153,11 @@ export const App: React.FunctionComponent<unknown> = () => {
     }
 
     const appSidebar = <PageSidebar isSidebarOpen={ isNavOpen }>
-        <Navigation bundles={ bundles.bundles } />
+        <Navigation
+            bundles={ bundles.bundles }
+            isAdmin={ permission.isAdmin }
+            onCreateBundle={ onCreateBundle }
+        />
     </PageSidebar>;
 
     return (
@@ -126,6 +173,14 @@ export const App: React.FunctionComponent<unknown> = () => {
                 ) }
                 <Routes />
             </Page>
+            { showBundleModal && <CreateEditBundleModal
+                isEdit={ false }
+                showModal={ showBundleModal }
+                isLoading={ bundleCreateLoading }
+                error={ bundleCreateError }
+                onClose={ onBundleModalClose }
+                onSubmit={ handleBundleSubmit }
+            /> }
         </PermissionContext.Provider>
     );
 };

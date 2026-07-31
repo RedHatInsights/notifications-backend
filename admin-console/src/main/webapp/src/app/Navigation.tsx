@@ -1,4 +1,5 @@
-import { Nav, NavExpandable, NavItem, NavList } from '@patternfly/react-core';
+import { Button, Nav, NavExpandable, NavItem, NavList } from '@patternfly/react-core';
+import { PlusCircleIcon } from '@patternfly/react-icons';
 import * as React from 'react';
 import { Link, useMatch } from 'react-router-dom';
 
@@ -24,11 +25,26 @@ const EnhancedNavItem: React.FunctionComponent<EnhancedNavItemProps> = props => 
 
 export interface NavigationProps {
     bundles: ReadonlyArray<Bundle>;
+    isAdmin?: boolean;
+    onCreateBundle?: () => void;
 }
 
 export const Navigation: React.FunctionComponent<NavigationProps> = props => {
     return (
         <Nav>
+            { props.isAdmin && props.onCreateBundle && (
+                <div style={ { padding: '8px 16px' } }>
+                    <Button
+                        variant="primary"
+                        icon={ <PlusCircleIcon /> }
+                        onClick={ props.onCreateBundle }
+                        isBlock
+                        style={ { justifyContent: 'flex-start' } }
+                    >
+                        Create Bundle
+                    </Button>
+                </div>
+            ) }
             <NavList>
                 <NavExpandable title="Bundles">
                     { props.bundles.map(b => (
