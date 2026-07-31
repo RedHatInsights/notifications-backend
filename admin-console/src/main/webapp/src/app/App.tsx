@@ -13,6 +13,7 @@ import { useCreateBundle } from '../services/Bundles/CreateBundle';
 import { useBundles } from '../services/EventTypes/GetBundles';
 import { usePermissions } from '../services/Permissions';
 import { useServerInfo } from '../services/ServerInfo';
+import { BundlesContext } from './BundlesContext';
 import { Navigation } from './Navigation';
 import { PermissionContext } from './PermissionContext';
 import logo from './redhat-logo.svg';
@@ -140,6 +141,10 @@ export const App: React.FunctionComponent<unknown> = () => {
         };
     }, [ permissionQuery.payload, permissionQuery.query ]);
 
+    const bundlesContextValue = React.useMemo<BundlesContext>(() => ({
+        refreshBundles: bundles.query
+    }), [ bundles.query ]);
+
     if (bundles.isLoading || serverInfo.loading || permissionQuery.loading) {
         return (
             <Page
@@ -161,26 +166,28 @@ export const App: React.FunctionComponent<unknown> = () => {
     </PageSidebar>;
 
     return (
-        <PermissionContext.Provider value={ permission }>
-            <Page
-                sidebar={ appSidebar }
-                masthead={ appHeader }
-            >
-                { message.show && (
-                    <PageSection>
-                        <Alert variant={ AlertVariant.warning } title={ message.content } />
-                    </PageSection>
-                ) }
-                <Routes />
-            </Page>
-            { showBundleModal && <CreateEditBundleModal
-                isEdit={ false }
-                showModal={ showBundleModal }
-                isLoading={ bundleCreateLoading }
-                error={ bundleCreateError }
-                onClose={ onBundleModalClose }
-                onSubmit={ handleBundleSubmit }
-            /> }
-        </PermissionContext.Provider>
+        <BundlesContext.Provider value={ bundlesContextValue }>
+            <PermissionContext.Provider value={ permission }>
+                <Page
+                    sidebar={ appSidebar }
+                    masthead={ appHeader }
+                >
+                    { message.show && (
+                        <PageSection>
+                            <Alert variant={ AlertVariant.warning } title={ message.content } />
+                        </PageSection>
+                    ) }
+                    <Routes />
+                </Page>
+                { showBundleModal && <CreateEditBundleModal
+                    isEdit={ false }
+                    showModal={ showBundleModal }
+                    isLoading={ bundleCreateLoading }
+                    error={ bundleCreateError }
+                    onClose={ onBundleModalClose }
+                    onSubmit={ handleBundleSubmit }
+                /> }
+            </PermissionContext.Provider>
+        </BundlesContext.Provider>
     );
 };

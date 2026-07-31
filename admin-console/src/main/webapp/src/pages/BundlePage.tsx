@@ -7,6 +7,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 import { Link, useParams } from 'react-router-dom';
 
+import { useBundlesRefresh } from '../app/BundlesContext';
 import { useUserPermissions } from '../app/PermissionContext';
 import { CreateEditApplicationModal } from '../components/Applications/CreateEditApplicationModal';
 import { CreateEditBundleModal } from '../components/Bundles/CreateEditBundleModal';
@@ -27,6 +28,7 @@ type BundlePageParams = {
 
 export const BundlePage: React.FunctionComponent = () => {
     const { hasPermission, refresh, isAdmin } = useUserPermissions();
+    const { refreshBundles } = useBundlesRefresh();
     const { bundleId } = useParams<BundlePageParams>();
     const getBundles = useBundleTypes(bundleId!);
     const getApplications = useApplications(bundleId!);
@@ -78,13 +80,14 @@ export const BundlePage: React.FunctionComponent = () => {
             } else {
                 setShowBundleEditModal(false);
                 getBundles.query();
+                refreshBundles();
             }
         }).catch(() => {
             setBundleEditError('An unexpected error occurred while updating the bundle.');
         }).finally(() => {
             setBundleEditLoading(false);
         });
-    }, [ bundleId, newBundle, getBundles ]);
+    }, [ bundleId, newBundle, getBundles, refreshBundles ]);
 
     const createApplication = () => {
         setShowModal(true);
