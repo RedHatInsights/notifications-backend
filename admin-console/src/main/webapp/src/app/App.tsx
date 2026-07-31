@@ -4,10 +4,11 @@ import './app.css';
 import { Alert, AlertVariant, Brand, Button, Masthead, MastheadToggle, MastheadMain, MastheadBrand, Page, PageSection, PageSidebar, Spinner } from '@patternfly/react-core';
 import { BarsIcon } from '@patternfly/react-icons';
 import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { style } from 'typestyle';
 
 import { CreateEditBundleModal } from '../components/Bundles/CreateEditBundleModal';
-import { Routes } from '../Routes';
+import { linkTo, Routes } from '../Routes';
 import { useCreateBundle } from '../services/Bundles/CreateBundle';
 import { useBundles } from '../services/EventTypes/GetBundles';
 import { usePermissions } from '../services/Permissions';
@@ -36,6 +37,7 @@ export const App: React.FunctionComponent<unknown> = () => {
     const bundles = useBundles();
     const serverInfo = useServerInfo();
     const newBundle = useCreateBundle();
+    const navigate = useNavigate();
 
     const [ showBundleModal, setShowBundleModal ] = React.useState(false);
     const [ bundleCreateLoading, setBundleCreateLoading ] = React.useState(false);
@@ -57,11 +59,15 @@ export const App: React.FunctionComponent<unknown> = () => {
             if (!response.error) {
                 setShowBundleModal(false);
                 bundles.query();
+                const createdBundle = response.payload?.type === 'Bundle' ? response.payload.value : undefined;
+                if (createdBundle?.id) {
+                    navigate(linkTo.bundle(createdBundle.id));
+                }
             }
         }).finally(() => {
             setBundleCreateLoading(false);
         });
-    }, [ newBundle, bundles ]);
+    }, [ newBundle, bundles, navigate ]);
 
     const message = useMemo<Message>(() => {
         const payload = serverInfo.payload;
