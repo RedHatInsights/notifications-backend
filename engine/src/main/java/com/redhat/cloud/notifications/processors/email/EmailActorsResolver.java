@@ -24,7 +24,11 @@ public class EmailActorsResolver {
      */
     public String getEmailSender(final Event event) {
         try {
-            if (isOCMApp(event)) {
+            final String bundle = event.getEventType().getApplication().getBundle().getName();
+            final String application = event.getEventType().getApplication().getName();
+            if (isLightwellApp(bundle, application)) {
+                return engineConfig.getLightwellSender();
+            } else if (isOCMApp(bundle, application)) {
                 return getOCMEmailSender(event);
             }
         } catch (Exception e) {
@@ -41,9 +45,11 @@ public class EmailActorsResolver {
         }
     }
 
-    public static boolean isOCMApp(Event event) {
-        String bundle = event.getEventType().getApplication().getBundle().getName();
-        String application = event.getEventType().getApplication().getName();
+    public static boolean isOCMApp(final String bundle, final String application) {
         return "openshift".equals(bundle) && "cluster-manager".equals(application);
+    }
+
+    public static boolean isLightwellApp(final String bundle, final String application) {
+        return "lightwell".equals(bundle) && "lightwell".equals(application);
     }
 }

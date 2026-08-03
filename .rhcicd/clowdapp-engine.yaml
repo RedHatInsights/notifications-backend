@@ -127,6 +127,8 @@ objects:
           value: ${NOTIFICATIONS_EMAILS_ONLY_MODE_ENABLED}
         - name: NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE
           value: ${NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE}
+        - name: NOTIFICATIONS_EMAIL_SENDER_LIGHTWELL
+          value: ${NOTIFICATIONS_EMAIL_SENDER_LIGHTWELL}
         - name: NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE
           value: ${NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE}
         - name: NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD
@@ -358,6 +360,9 @@ parameters:
 - name: NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE
   description: The email sender address for the Red Hat Hybrid Cloud Console.
   value: "\"Red Hat Hybrid Cloud Console\" noreply@redhat.com"
+- name: NOTIFICATIONS_EMAIL_SENDER_LIGHTWELL
+  description: The email sender address for the Lightwell application.
+  value: "\"Lightwell\" noreply@redhat.com"
 - name: NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE
   description: The email sender address for the OpenShift domain in stage.
   value: "\"Red Hat OpenShift (staging)\" noreply@redhat.com"

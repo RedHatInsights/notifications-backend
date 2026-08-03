@@ -37,6 +37,8 @@ public class EmailPendoResolver {
 
     private boolean isPendoMessageEnabled(final Event event, boolean forcedEmail) {
         // pendo message must not be shown on OCM and environment with emails only mode
-        return !EmailActorsResolver.isOCMApp(event) && !engineConfig.isEmailsOnlyModeEnabled() && !forcedEmail;
+        final String bundle = event.getEventType().getApplication().getBundle().getName();
+        final String application = event.getEventType().getApplication().getName();
+        return !EmailActorsResolver.isOCMApp(bundle, application) && !engineConfig.isEmailsOnlyModeEnabled() && !forcedEmail;
     }
 }
