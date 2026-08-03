@@ -13,14 +13,16 @@ interface EventTypeExpandableRowProps {
 }
 
 export const EventTypeExpandableRow: React.FunctionComponent<EventTypeExpandableRowProps> = props => {
-    return <DescriptionList isHorizontal>
-        <DescriptionListGroup>
-            <DescriptionListTerm>Event type id</DescriptionListTerm>
-            <DescriptionListDescription>{ props.eventType.id }</DescriptionListDescription>
-        </DescriptionListGroup>
-        <DescriptionListGroup>
-            <DescriptionListTerm>Description</DescriptionListTerm>
-            <DescriptionListDescription>{ props.eventType.description }</DescriptionListDescription>
-        </DescriptionListGroup>
-    </DescriptionList>;
+    return <>
+        <DescriptionList isHorizontal>
+            <DescriptionListGroup>
+                <DescriptionListTerm>Event type id</DescriptionListTerm>
+                <DescriptionListDescription>{ props.eventType.id }</DescriptionListDescription>
+            </DescriptionListGroup>
+            <DescriptionListGroup>
+                <DescriptionListTerm>Description</DescriptionListTerm>
+                <DescriptionListDescription>{ props.eventType.description }</DescriptionListDescription>
+            </DescriptionListGroup>
+        </DescriptionList>
+    </>;
 };

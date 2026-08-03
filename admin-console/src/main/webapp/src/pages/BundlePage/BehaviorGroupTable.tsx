@@ -1,16 +1,19 @@
 import { Button, PageSection, Spinner, Title, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
-import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import * as React from 'react';
 
+import { BehaviorGroupEventTypesPanel } from '../../components/SystemBehaviorGroups/BehaviorGroupEventTypesPanel';
 import { CreateEditBehaviorGroupModal } from '../../components/SystemBehaviorGroups/CreateEditBehaviorGroupModal';
 import { DeleteBehaviorGroupModal } from '../../components/SystemBehaviorGroups/DeleteBehaviorGroupModal';
 import { Schemas } from '../../generated/OpenapiInternal';
 import { useCreateSystemBehaviorGroup } from '../../services/SystemBehaviorGroups/CreateSystemBehaviorGroup';
 import { useDeleteBehaviorGroup } from '../../services/SystemBehaviorGroups/DeleteSystemBehaviorGroup';
 import { useSystemBehaviorGroups } from '../../services/SystemBehaviorGroups/GetBehaviorGroups';
+import { useLinkDefaultBehaviorToEventType } from '../../services/SystemBehaviorGroups/LinkDefaultBehaviorToEventType';
+import { useUnlinkDefaultBehaviorToEventType } from '../../services/SystemBehaviorGroups/UnlinkDefaultBehaviorToEventType';
 import { useUpdateBehaviorGroupActionsMutation } from '../../services/SystemBehaviorGroups/UpdateActions';
-import { BehaviorGroup, BehaviorGroupAction } from '../../types/Notifications';
+import { Application, BehaviorGroup, BehaviorGroupAction } from '../../types/Notifications';
 
 export const actionsToDropdownValue = (actions?: BehaviorGroupAction[] | null): string | undefined => {
     if (!actions || actions.length === 0) {
@@ -54,6 +57,7 @@ export const formatActionLabel = (action: BehaviorGroupAction): string => {
 interface BundlePageProps {
     bundleId: string;
     bundle: string | undefined;
+    applications: ReadonlyArray<Application>;
 }
 
 export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = props => {
@@ -61,6 +65,8 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = pro
     const newBehaviorGroup = useCreateSystemBehaviorGroup();
     const deleteBehaviorGroupMutation = useDeleteBehaviorGroup();
     const updateBehaviorActions = useUpdateBehaviorGroupActionsMutation();
+    const linkMutation = useLinkDefaultBehaviorToEventType();
+    const unlinkMutation = useUnlinkDefaultBehaviorToEventType();
 
     const columns = [ 'System Behavior Group', 'Action' ];
 
@@ -68,8 +74,33 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = pro
     const [ showDeleteModal, setShowDeleteModal ] = React.useState(false);
 
     const [ isEdit, setIsEdit ] = React.useState(false);
+    const [ expandedRows, setExpandedRows ] = React.useState<Record<string, boolean>>({});
 
     const [ systemBehaviorGroup, setSystemBehaviorGroup ] = React.useState<Partial<BehaviorGroup>>({});
+
+    const handleLinkEventType = React.useCallback(async (behaviorGroupId: string, eventTypeId: string) => {
+        const response = await linkMutation.mutate({ behaviorGroupId, eventTypeId });
+        if (!response.error) {
+            const refreshResult = await getBehaviorGroups.query();
+            return !refreshResult.error;
+        }
+
+        return false;
+    }, [ linkMutation.mutate, getBehaviorGroups.query ]);
+
+    const handleUnlinkEventType = React.useCallback(async (behaviorGroupId: string, eventTypeId: string) => {
+        const response = await unlinkMutation.mutate({ behaviorGroupId, eventTypeId });
+        if (!response.error) {
+            const refreshResult = await getBehaviorGroups.query();
+            return !refreshResult.error;
+        }
+
+        return false;
+    }, [ unlinkMutation.mutate, getBehaviorGroups.query ]);
+
+    const toggleExpand = React.useCallback((bgId: string) => {
+        setExpandedRows(prev => ({ ...prev, [bgId]: !prev[bgId] }));
+    }, []);
 
     const createBehaviorGroup = () => {
         setShowModal(true);
@@ -162,43 +193,68 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = pro
                             </ToolbarContent>
                         </Toolbar>
                         <Tr>
+                            <Th />
                             { columns.map((column, columnIndex) => (
                                 <Th key={ columnIndex }>{ column }</Th>
                             )) }
+                            <Th />
+                            <Th />
                         </Tr>
                     </Thead>
                     <Tbody>
-                        { getBehaviorGroups.payload.value.map(b => <Tr key={ b.id }>
-                            <Td>{ b.displayName }</Td>
-                            <Td>
-                                { b.actions?.map((action, index) => (
-                                    <span key={ index }>{ formatActionLabel(action) }</span>
-                                )) }
-                            </Td>
-                            <Td>
-                                <Button
-                                    className="edit"
-                                    type="button"
-                                    variant="plain"
-                                    onClick={ () => editSystemBehaviorGroup(b) }
-                                >
-                                    { ' ' }
-                                    <PencilAltIcon />
-                                    { ' ' }
-                                </Button>
-                            </Td>
-                            <Td>
-                                <Button
-                                    className="delete"
-                                    type="button"
-                                    variant="plain"
-                                    onClick={ () => deleteBehaviorGroupModal(b) }
-                                >
-                                    <TrashIcon />
-                                    { ' ' }
-                                </Button>
-                            </Td>
-                        </Tr>) }
+                        { getBehaviorGroups.payload.value.filter(b => b.id).map((b, rowIndex) => <React.Fragment key={ b.id }>
+                            <Tr>
+                                <Td
+                                    expand={ {
+                                        rowIndex,
+                                        isExpanded: !!expandedRows[b.id ?? ''],
+                                        onToggle: () => toggleExpand(b.id ?? '')
+                                    } }
+                                />
+                                <Td>{ b.displayName }</Td>
+                                <Td>
+                                    { b.actions?.map((action, index) => (
+                                        <span key={ index }>{ formatActionLabel(action) }</span>
+                                    )) }
+                                </Td>
+                                <Td>
+                                    <Button
+                                        className="edit"
+                                        type="button"
+                                        variant="plain"
+                                        onClick={ () => editSystemBehaviorGroup(b) }
+                                    >
+                                        { ' ' }
+                                        <PencilAltIcon />
+                                        { ' ' }
+                                    </Button>
+                                </Td>
+                                <Td>
+                                    <Button
+                                        className="delete"
+                                        type="button"
+                                        variant="plain"
+                                        onClick={ () => deleteBehaviorGroupModal(b) }
+                                    >
+                                        <TrashIcon />
+                                        { ' ' }
+                                    </Button>
+                                </Td>
+                            </Tr>
+                            <Tr isExpanded={ !!expandedRows[b.id ?? ''] }>
+                                <Td />
+                                <Td colSpan={ 4 }>
+                                    <ExpandableRowContent>
+                                        { expandedRows[b.id ?? ''] && <BehaviorGroupEventTypesPanel
+                                            behaviorGroup={ b }
+                                            applications={ props.applications }
+                                            onLinkEventType={ handleLinkEventType }
+                                            onUnlinkEventType={ handleUnlinkEventType }
+                                        /> }
+                                    </ExpandableRowContent>
+                                </Td>
+                            </Tr>
+                        </React.Fragment>) }
                     </Tbody>
                 </Table>
             </PageSection>
