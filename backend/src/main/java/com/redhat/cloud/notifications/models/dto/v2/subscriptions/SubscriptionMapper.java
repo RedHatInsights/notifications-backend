@@ -9,16 +9,18 @@ import org.mapstruct.MappingConstants;
 import org.mapstruct.ValueMapping;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.CDI)
 public interface SubscriptionMapper {
 
-    // ANY_REMAINING keeps normal by-name matching for every constant that has a SeverityDTO
-    // counterpart, and only catches the ones that don't (currently just UNDEFINED, which is
-    // slated for removal from Severity) without naming it explicitly, so this needs no
-    // follow-up change once that removal happens.
+    // UNDEFINED means "no severity was provided" and has no SeverityDTO counterpart, so it's
+    // mapped to null and filtered out wherever this mapping is used instead of being surfaced by
+    // the API. ANY_REMAINING keeps normal by-name matching for every other constant, and throws
+    // if a future Severity value is added without a matching SeverityDTO counterpart.
+    @ValueMapping(source = "UNDEFINED", target = MappingConstants.NULL)
     @ValueMapping(source = MappingConstants.ANY_REMAINING, target = MappingConstants.THROW_EXCEPTION)
     SeverityDTO severityToSeverityDTO(Severity severity);
 
@@ -45,6 +47,7 @@ public interface SubscriptionMapper {
         return severities.stream()
             .sorted()
             .map(this::severityToSeverityDTO)
+            .filter(Objects::nonNull)
             .collect(Collectors.toList());
     }
 }

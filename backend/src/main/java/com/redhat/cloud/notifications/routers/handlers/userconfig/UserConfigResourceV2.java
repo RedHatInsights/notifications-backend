@@ -50,6 +50,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -235,6 +236,7 @@ public class UserConfigResourceV2 {
                 .map(Map.Entry::getKey)
                 .sorted()
                 .map(subscriptionMapper::severityToSeverityDTO)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
             channel.setSubscribedSeverities(subscribedSeverities);
         }
