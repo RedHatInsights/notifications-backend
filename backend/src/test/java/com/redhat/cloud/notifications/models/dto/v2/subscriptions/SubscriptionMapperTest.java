@@ -7,7 +7,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @QuarkusTest
 class SubscriptionMapperTest {
@@ -33,10 +33,10 @@ class SubscriptionMapperTest {
     }
 
     @Test
-    void shouldThrowWhenMappingASeverityWithNoDTOCounterpart() {
+    void shouldMapUndefinedSeverityToNull() {
         // Severity.UNDEFINED has no SeverityDTO counterpart and must never be surfaced by this API;
-        // the ANY_REMAINING/THROW_EXCEPTION value mapping on severityToSeverityDTO() is what enforces that.
-        assertThrows(IllegalArgumentException.class, () -> subscriptionMapper.severityToSeverityDTO(Severity.UNDEFINED));
+        // callers filter out the null this returns instead of exposing it.
+        assertNull(subscriptionMapper.severityToSeverityDTO(Severity.UNDEFINED));
     }
 
     @Test

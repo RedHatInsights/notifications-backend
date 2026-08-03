@@ -12,9 +12,11 @@ import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
+import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.dto.v2.subscriptions.ApplicationSubscriptionUpdateDTO;
 import com.redhat.cloud.notifications.models.dto.v2.subscriptions.BundleSubscriptionDTO;
 import com.redhat.cloud.notifications.models.dto.v2.subscriptions.BundleSubscriptionUpdateDTO;
@@ -64,6 +66,9 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
 
     @Inject
     ApplicationRepository applicationRepository;
+
+    @Inject
+    SubscriptionRepository subscriptionRepository;
 
     @InjectMock
     BackendConfig backendConfig;
@@ -165,6 +170,29 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
         assertChannelSeverities(subscribedByDefault.getSubscriptions(), SubscriptionTypeDTO.INSTANT, allSeverities);
         assertChannelSeverities(subscribedByDefault.getSubscriptions(), SubscriptionTypeDTO.DAILY, allSeverities);
         assertChannelSeverities(subscribedByDefault.getSubscriptions(), SubscriptionTypeDTO.DRAWER, allSeverities);
+    }
+
+    @Test
+    void testGetSubscriptionsExcludesUndefinedSeverity() {
+        // Severity.UNDEFINED has no SeverityDTO counterpart. It can end up in an event type's
+        // available severities, or in a stored subscription's severities map (e.g. legacy data),
+        // even though the write side of this API can never produce it. The GET side must ignore
+        // it rather than fail the whole request.
+        Bundle bundle = resourceHelpers.createBundle("bundle-undefined", "Bundle Undefined");
+        Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+        EventType eventType = createEventType(application.getId(), "event-a",
+            Set.of(Severity.CRITICAL, Severity.UNDEFINED), false);
+
+        Map<Severity, Boolean> severities = new HashMap<>();
+        severities.put(Severity.CRITICAL, true);
+        severities.put(Severity.UNDEFINED, true);
+        subscriptionRepository.updateSubscription(DEFAULT_ORG_ID, DEFAULT_USER, eventType.getId(), SubscriptionType.INSTANT, true, severities);
+
+        List<BundleSubscriptionDTO> tree = getSubscriptions("bundle-undefined", "app-a", "event-a");
+
+        var eventTypeDTO = tree.get(0).getApplications().get(0).getEventTypes().get(0);
+        assertEquals(List.of(SeverityDTO.CRITICAL), eventTypeDTO.getAvailableSeverities());
+        assertChannelSeverities(eventTypeDTO.getSubscriptions(), SubscriptionTypeDTO.INSTANT, List.of(SeverityDTO.CRITICAL));
     }
 
     private void assertChannelSeverities(List<SubscriptionChannelDTO> channels, SubscriptionTypeDTO type, List<SeverityDTO> expected) {
