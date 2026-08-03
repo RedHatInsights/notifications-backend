@@ -42,9 +42,11 @@ public class EngineConfig {
     private static final String RH_HCC_SENDER = "\"Red Hat Hybrid Cloud Console\" noreply@redhat.com";
     private static final String OPENSHIFT_SENDER_STAGE_NOREPLY_REDHAT = "\"Red Hat OpenShift (staging)\" noreply@redhat.com";
     private static final String OPENSHIFT_SENDER_PROD_NOREPLY_REDHAT = "\"Red Hat OpenShift\" noreply@redhat.com";
+    private static final String LIGHTWELL_SENDER_NOREPLY_REDHAT = "\"Lightwell\" noreply@redhat.com";
     private static final String NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE = "notifications.email.sender.hybrid.cloud.console";
     private static final String NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE = "notifications.email.sender.openshift.stage";
     private static final String NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD = "notifications.email.sender.openshift.prod";
+    private static final String NOTIFICATIONS_EMAIL_SENDER_LIGHTWELL = "notifications.email.sender.lightwell";
     private static final String NOTIFICATIONS_INGRESSREPLAY_START_TIME = "notifications.ingressreplay.start.time";
     private static final String NOTIFICATIONS_INGRESSREPLAY_END_TIME = "notifications.ingressreplay.end.time";
     private static final String EVENTS_EXPORT_PAGE_SIZE = "notifications.events.export.page-size";
@@ -118,6 +120,12 @@ public class EngineConfig {
     String rhHccSender;
 
     /**
+     * The email sender address for Lightwell
+     */
+    @ConfigProperty(name = NOTIFICATIONS_EMAIL_SENDER_LIGHTWELL, defaultValue = LIGHTWELL_SENDER_NOREPLY_REDHAT)
+    String rhLightwellSender;
+
+    /**
      * The email sender address for OpenShift in stage.
      */
     @ConfigProperty(name = NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE, defaultValue = OPENSHIFT_SENDER_STAGE_NOREPLY_REDHAT)
@@ -188,6 +196,7 @@ public class EngineConfig {
         config.put(NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE, rhHccSender);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE, rhOpenshiftSenderStage);
         config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, rhOpenshiftSenderProd);
+        config.put(NOTIFICATIONS_EMAIL_SENDER_LIGHTWELL, rhLightwellSender);
         config.put(NOTIFICATIONS_INGRESSREPLAY_START_TIME, replayStartTime);
         config.put(NOTIFICATIONS_INGRESSREPLAY_END_TIME, replayEndTime);
         config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
@@ -347,5 +356,9 @@ public class EngineConfig {
 
     public int getEventsExportPageSize() {
         return eventsExportPageSize;
+    }
+
+    public String getLightwellSender() {
+        return rhLightwellSender;
     }
 }

@@ -47,6 +47,15 @@ class EmailActorsResolverTest {
         assertEquals(engineConfig.getRhOpenshiftSenderProd(), emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
     }
 
+    /**
+     * Tests that the Lightwell sender is returned for Lightwell events.
+     */
+    @Test
+    void testLightwellEmailSender() {
+        Event event = buildEvent(null, "lightwell", "lightwell");
+        assertEquals(engineConfig.getLightwellSender(), emailActorsResolver.getEmailSender(event), "unexpected email sender returned from the function under test");
+    }
+
     private static Event buildEvent(String sourceEnvironment, String bundleName, String appName) {
 
         Bundle bundle = new Bundle();

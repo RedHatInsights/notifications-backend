@@ -75,6 +75,17 @@ class EmailPendoResolverTest {
         assertNull(emailPendoResolver.getPendoEmailMessage(event, ignoreUserPreferences, false), "unexpected email pendo message returned from the function under test");
     }
 
+    /**
+     * Tests that the pendo message is still shown for Lightwell events (only OCM is excluded).
+     */
+    @Test
+    void testLightwellPendoMessage() {
+        Event event = buildEvent(null, "lightwell", "lightwell");
+        assertEquals(String.format(GENERAL_PENDO_MESSAGE, environment.url(), environment.url()), emailPendoResolver.getPendoEmailMessage(event, false, false).getPendoMessage(), "unexpected email pendo message returned from the function under test");
+        assertEquals(GENERAL_PENDO_TITLE, emailPendoResolver.getPendoEmailMessage(event, false, false).getPendoTitle(), "unexpected email pendo title returned from the function under test");
+        assertNull(emailPendoResolver.getPendoEmailMessage(event, true, false), "current pendo message should not be generated in case of forced email (ignoreUserPreferences)");
+    }
+
     private static Event buildEvent(String sourceEnvironment, String bundleName, String appName) {
 
         Bundle bundle = new Bundle();
