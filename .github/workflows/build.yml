@@ -106,7 +106,7 @@ jobs:
       - name: Set up Node for Mintmaker lockfile refresh
         # Keep this version in sync with <nodeVersion> in admin-console/pom.xml.
         if: steps.yarn-files-changed.outputs.any_changed == 'true' && github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 22.20.0
       - name: Regenerate yarn.lock for Mintmaker branches
