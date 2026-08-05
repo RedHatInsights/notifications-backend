@@ -1,0 +1,82 @@
+{@boolean renderTitleRightPart=true}
+{@boolean renderHeaderTitle=false}
+{@String renderLowTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; border-color: #5e40be; border-width: 1px; border-style: solid; background-color: #ffffff; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/minor-purple.png" height="10px" style="margin-right: 4px;">Low</td></tr></table>'}
+{@String renderModerateTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; border-color: #dba614; border-width: 1px; border-style: solid; background-color: #ffffff; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/moderate.png" height="10px" style="margin-right: 4px;">Moderate</td></tr></table>'}
+{@String renderImportantTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; background-color: #ffcd17; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400;"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/important-black.png" height="10px" style="margin-right: 4px;">Important</td></tr></table>'}
+{@String renderCriticalTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; background-color: #b0370b; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400; color: #ffffff;"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/critical-white.png" height="10px" style="margin-right: 4px;">Critical</td></tr></table>'}
+{#include email/Common/insightsEmailBody}
+{#content-header-logo}
+    <a href="https://console.redhat.com/lightwell" target="_blank">
+        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/Logo_lightwell_dark.png" alt="Lightwell logo" width="340" />
+    </a>
+{/content-header-logo}
+{#content-title}
+    New Package{#if action.events.size() > 1}s{/if} Available for {source.event_type.display_name}
+{/content-title}
+{#content-title-right-part}
+    <a style="{title-right-part-link-style}" href="https://console.redhat.com/lightwell" target="_blank">{action.events.size()}</a>
+{/content-title-right-part}
+{#content-body}
+<p style="{body-section-p-style}">
+    {#if action.events.size() > 1}
+    These following packages were fixed by Lightwell in the {source.event_type.display_name} and are available for your access.
+    {#else}
+    The following package was fixed by Lightwell in the {source.event_type.display_name} and is available for your access.
+    {/if}
+</p>
+<table style="{body-section-table-style}">
+    <thead>
+    <tr>
+        <th style="{body-section-table-th-style}">Package{#if action.events.size() > 1}s{/if}</th>
+        <th style="{body-section-table-th-style} min-width: 90px;">Release</th>
+        <th style="{body-section-table-th-style}" colspan="2">Related CVE(s)</th>
+    </tr>
+    </thead>
+    <tbody style="{body-section-table-tbody-style}">
+        {#each action.events}
+            {#each it.payload.releases}
+            <tr>
+                <td style="{body-section-table-td-style}{#if !it_isLast}; border-bottom-width: 0 !important;{/if}">
+
+                    {#if it_isFirst}
+                        <a style="{body-section-table-td-a-style}" href="{it.meta.package_link}" target="_blank">{it.meta.package_name}</a>
+                    {/if}
+                </td>
+                <td style="{body-section-table-td-style}{#if !it_isLast}; border-bottom-width: 0 !important;{/if}">
+                {#each it.release_names}
+                    {it.name}{#if it_hasNext}<br>{/if}
+                {/each}
+                </td>
+                <td style="{body-section-table-td-style}{#if !it_isLast}; border-bottom-width: 0 !important;{/if}">
+                <table>
+                {#each it.related_cve}
+                    <tr>
+                    <td><a style="{body-section-table-td-a-style}" href="{it.url}" target="_blank">{it.cve}</a></td>
+                    <td style="min-width: 90px">{#switch it.payload.total_risk}
+                        {#case 'low'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v2.png" alt="Low" width="55" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderLowTag}<!--<![endif]-->
+                        {#case 'moderate'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v2.png" alt="Moderate" width="85" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderModerateTag}<!--<![endif]-->
+                        {#case 'important'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v2.png" alt="Important" width="86" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderImportantTag}<!--<![endif]-->
+                        {#case 'critical'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v2.png" alt="Critical" width="70" border="0"><![endif]--><!--[if !mso]><!-->{renderCriticalTag}<!--<![endif]-->
+                    {/switch}
+                    </td>
+                    </tr>
+                {/each}
+                </table>
+                </td>
+            </tr>
+            {/each}
+        {/each}
+    </tbody>
+</table>
+{/content-body}
+{#content-footer}
+    {#if ignore_user_preferences??}
+        This email was sent by Lightwell, it is critical or requires action.<br/>
+        Therefore, you are receiving this message regardless of your email preferences.
+    {#else}
+        This email was sent by Lightwell | <a href="https://console.redhat.com/lightwell" target="_blank" style="color: rgb(31, 167, 248); font-size: 14px; font-weight: 400; text-align: center; text-decoration-color: rgb(31, 167, 248); text-decoration-line: none; text-decoration-style: solid;">Manage email preferences</a>
+    {/if}
+{/content-footer}
+{#content-button-href}https://console.redhat.com/lightwell{/content-button-href}
+{#content-button-service-name}Lightwell{/content-button-service-name}
+{/include}
