@@ -96,7 +96,7 @@ public class TestLightwellTemplate extends EmailTemplatesRendererHelper {
     @Test
     public void testJavaRemediatedEmailBodySingleEvent() {
         Action action = createLightwellActionWithReleases(List.of(
-            buildRelease("org.glassfish.jaxb:codemodel", List.of("4.0.4.rhlw003"), List.of(
+            buildRelease(List.of("4.0.4.rhlw003"), List.of(
                 buildCve("CVE-2026-1234", "critical")
             ))
         ));
@@ -113,7 +113,7 @@ public class TestLightwellTemplate extends EmailTemplatesRendererHelper {
     @Test
     public void testJavaRemediatedEmailBodyAllSeverityLevels() {
         Action action = createLightwellActionWithReleases(List.of(
-            buildRelease("org.glassfish.jaxb:codemodel", List.of("4.0.4.rhlw003"), List.of(
+            buildRelease(List.of("4.0.4.rhlw003"), List.of(
                 buildCve("CVE-2026-1001", "low"),
                 buildCve("CVE-2026-1002", "moderate"),
                 buildCve("CVE-2026-1003", "important"),
@@ -176,61 +176,61 @@ public class TestLightwellTemplate extends EmailTemplatesRendererHelper {
         action.setContext(new Context.ContextBuilder().build());
         action.setEvents(List.of(
             buildPackageEvent("org.glassfish.jaxb:codemodel", List.of(
-                buildRelease("org.glassfish.jaxb:codemodel", List.of("4.0.4.rhlw003", "4.0.4.rhlw004"), List.of(
+                buildRelease(List.of("4.0.4.rhlw003", "4.0.4.rhlw004"), List.of(
                     buildCve("CVE-2026-1234", "critical"),
                     buildCve("CVE-2026-5678", "critical"),
                     buildCve("CVE-2026-9999", "critical")
                 )),
-                buildRelease("org.glassfish.jaxb:codemodel", List.of("5.0.0.rhlw001"), List.of(
+                buildRelease(List.of("5.0.0.rhlw001"), List.of(
                     buildCve("CVE-2026-1234", "critical"),
                     buildCve("CVE-2026-5678", "critical"),
                     buildCve("CVE-2026-9999", "critical")
                 )),
-                buildRelease("org.glassfish.jaxb:codemodel", List.of("5.5.5.rhlw001"), List.of(
+                buildRelease(List.of("5.5.5.rhlw001"), List.of(
                     buildCve("CVE-2026-1234", "critical"),
                     buildCve("CVE-2026-5678", "critical"),
                     buildCve("CVE-2026-9999", "critical")
                 ))
             )),
             buildPackageEvent("org.glassfish.jaxb:jaxb-core", List.of(
-                buildRelease("org.glassfish.jaxb:jaxb-core", List.of("4.0.4.rhlw003"), List.of(
+                buildRelease(List.of("4.0.4.rhlw003"), List.of(
                     buildCve("CVE-2026-1111", "important"),
                     buildCve("CVE-2026-2222", "important"),
                     buildCve("CVE-2026-9999", "critical")
                 ))
             )),
             buildPackageEvent("org.glassfish.jaxb:jaxb-jxc", List.of(
-                buildRelease("org.glassfish.jaxb:jaxb-jxc", List.of("4.0.4.rhlw003"), List.of(
+                buildRelease(List.of("4.0.4.rhlw003"), List.of(
                     buildCve("CVE-2026-2222", "important")
                 ))
             )),
             buildPackageEvent("org.glassfish.jaxb:jaxb-runtime", List.of(
-                buildRelease("org.glassfish.jaxb:jaxb-runtime", List.of("4.0.4.rhlw003"), List.of(
+                buildRelease(List.of("4.0.4.rhlw003"), List.of(
                     buildCve("CVE-2026-3333", "important")
                 ))
             )),
             buildPackageEvent("org.glassfish.jaxb:jaxb-xjc", List.of(
-                buildRelease("org.glassfish.jaxb:jaxb-xjc", List.of("4.1.0.rhlw001"), List.of(
+                buildRelease(List.of("4.1.0.rhlw001"), List.of(
                     buildCve("CVE-2026-4242", "important")
                 ))
             )),
             buildPackageEvent("org.glassfish.jaxb:txw2", List.of(
-                buildRelease("org.glassfish.jaxb:txw2", List.of("4.1.0.rhlw001"), List.of(
+                buildRelease(List.of("4.1.0.rhlw001"), List.of(
                     buildCve("CVE-2026-4242", "important")
                 ))
             )),
             buildPackageEvent("org.glassfish.jaxb:txwc2", List.of(
-                buildRelease("org.glassfish.jaxb:txwc2", List.of("4.1.0.rhlw001"), List.of(
+                buildRelease(List.of("4.1.0.rhlw001"), List.of(
                     buildCve("CVE-2026-4242", "important")
                 ))
             )),
             buildPackageEvent("org.glassfish.jaxb:xsom", List.of(
-                buildRelease("org.glassfish.jaxb:xsom", List.of("4.0.4.rhlw003"), List.of(
+                buildRelease(List.of("4.0.4.rhlw003"), List.of(
                     buildCve("CVE-2026-0909", "critical")
                 ))
             )),
             buildPackageEvent("org.json:json", List.of(
-                buildRelease("org.json:json", List.of("20220320.0.0.rhlw-00002", "20220320.0.0.rhlw-00001"), List.of(
+                buildRelease(List.of("20220320.0.0.rhlw-00002", "20220320.0.0.rhlw-00001"), List.of(
                     buildCve("CVE-2026-0909", "critical")
                 ))
             ))
@@ -244,18 +244,15 @@ public class TestLightwellTemplate extends EmailTemplatesRendererHelper {
             .withPayload(
                 new Payload.PayloadBuilder()
                     .withAdditionalProperty("package_name", packageName)
+                    .withAdditionalProperty("package_link", "https://console.redhat.com/lightwell/packages/" + packageName)
                     .withAdditionalProperty("releases", releases)
                     .build()
             )
             .build();
     }
 
-    private static Map<String, Object> buildRelease(String packageName, List<String> releaseNames, List<Map<String, Object>> relatedCves) {
+    private static Map<String, Object> buildRelease(List<String> releaseNames, List<Map<String, Object>> relatedCves) {
         return Map.of(
-            "meta", Map.of(
-                "package_name", packageName,
-                "package_link", "https://console.redhat.com/lightwell/packages/" + packageName
-            ),
             "release_names", releaseNames.stream().map(name -> Map.of("name", (Object) name)).toList(),
             "related_cve", relatedCves
         );
