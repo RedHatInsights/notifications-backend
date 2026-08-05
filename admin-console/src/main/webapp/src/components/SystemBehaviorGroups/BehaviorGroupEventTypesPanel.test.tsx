@@ -68,8 +68,7 @@ describe('BehaviorGroupEventTypesPanel', () => {
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
                 applications={ mockApplications }
-                onLinkEventType={ vi.fn() }
-                onUnlinkEventType={ vi.fn() }
+                onBulkUpdateEventTypes={ vi.fn() }
             />,
             {}
         );
@@ -83,8 +82,7 @@ describe('BehaviorGroupEventTypesPanel', () => {
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
                 applications={ [] }
-                onLinkEventType={ vi.fn() }
-                onUnlinkEventType={ vi.fn() }
+                onBulkUpdateEventTypes={ vi.fn() }
             />,
             {}
         );
@@ -104,8 +102,7 @@ describe('BehaviorGroupEventTypesPanel', () => {
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
                 applications={ mockApplications }
-                onLinkEventType={ vi.fn() }
-                onUnlinkEventType={ vi.fn() }
+                onBulkUpdateEventTypes={ vi.fn() }
             />,
             responses
         );
@@ -131,8 +128,7 @@ describe('BehaviorGroupEventTypesPanel', () => {
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([ 'et-1' ]) }
                 applications={ mockApplications }
-                onLinkEventType={ vi.fn() }
-                onUnlinkEventType={ vi.fn() }
+                onBulkUpdateEventTypes={ vi.fn() }
             />,
             responses
         );
@@ -157,8 +153,7 @@ describe('BehaviorGroupEventTypesPanel', () => {
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
                 applications={ mockApplications }
-                onLinkEventType={ vi.fn() }
-                onUnlinkEventType={ vi.fn() }
+                onBulkUpdateEventTypes={ vi.fn() }
             />,
             responses
         );
@@ -185,8 +180,7 @@ describe('BehaviorGroupEventTypesPanel', () => {
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
                 applications={ mockApplications }
-                onLinkEventType={ vi.fn() }
-                onUnlinkEventType={ vi.fn() }
+                onBulkUpdateEventTypes={ vi.fn() }
             />,
             responses
         );
@@ -204,9 +198,8 @@ describe('BehaviorGroupEventTypesPanel', () => {
         expect(updateButton).toBeEnabled();
     });
 
-    it('calls onLinkEventType for newly checked items on Update', async () => {
-        const onLink = vi.fn().mockResolvedValue(true);
-        const onUnlink = vi.fn().mockResolvedValue(true);
+    it('calls onBulkUpdateEventTypes with link IDs for newly checked items on Update', async () => {
+        const onBulkUpdate = vi.fn().mockResolvedValue(true);
         const responses = {
             'app-1': makeEventTypeResponse('app-1', [
                 { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' },
@@ -218,8 +211,7 @@ describe('BehaviorGroupEventTypesPanel', () => {
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
                 applications={ mockApplications }
-                onLinkEventType={ onLink }
-                onUnlinkEventType={ onUnlink }
+                onBulkUpdateEventTypes={ onBulkUpdate }
             />,
             responses
         );
@@ -237,15 +229,12 @@ describe('BehaviorGroupEventTypesPanel', () => {
         await userEvent.click(screen.getByRole('button', { name: 'Update' }));
 
         await waitFor(() => {
-            expect(onLink).toHaveBeenCalledWith('bg-1', 'et-1');
-            expect(onLink).toHaveBeenCalledWith('bg-1', 'et-2');
+            expect(onBulkUpdate).toHaveBeenCalledWith('bg-1', [ 'et-1', 'et-2' ], []);
         });
-        expect(onUnlink).not.toHaveBeenCalled();
     });
 
-    it('calls onUnlinkEventType for unchecked linked items on Update', async () => {
-        const onLink = vi.fn().mockResolvedValue(true);
-        const onUnlink = vi.fn().mockResolvedValue(true);
+    it('calls onBulkUpdateEventTypes with unlink IDs for unchecked linked items on Update', async () => {
+        const onBulkUpdate = vi.fn().mockResolvedValue(true);
         const responses = {
             'app-1': makeEventTypeResponse('app-1', [
                 { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' }
@@ -256,8 +245,7 @@ describe('BehaviorGroupEventTypesPanel', () => {
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([ 'et-1' ]) }
                 applications={ mockApplications }
-                onLinkEventType={ onLink }
-                onUnlinkEventType={ onUnlink }
+                onBulkUpdateEventTypes={ onBulkUpdate }
             />,
             responses
         );
@@ -274,13 +262,48 @@ describe('BehaviorGroupEventTypesPanel', () => {
         await userEvent.click(screen.getByRole('button', { name: 'Update' }));
 
         await waitFor(() => {
-            expect(onUnlink).toHaveBeenCalledWith('bg-1', 'et-1');
+            expect(onBulkUpdate).toHaveBeenCalledWith('bg-1', [], [ 'et-1' ]);
         });
-        expect(onLink).not.toHaveBeenCalled();
+    });
+
+    it('calls onBulkUpdateEventTypes with both link and unlink IDs', async () => {
+        const onBulkUpdate = vi.fn().mockResolvedValue(true);
+        const responses = {
+            'app-1': makeEventTypeResponse('app-1', [
+                { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' },
+                { id: 'et-2', name: 'policy-created', displayName: 'Policy Created' }
+            ])
+        };
+
+        renderWithClient(
+            <BehaviorGroupEventTypesPanel
+                behaviorGroup={ makeBehaviorGroup([ 'et-1' ]) }
+                applications={ mockApplications }
+                onBulkUpdateEventTypes={ onBulkUpdate }
+            />,
+            responses
+        );
+
+        const select = screen.getByLabelText('Select application');
+        await userEvent.selectOptions(select, 'app-1');
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Policy Triggered')).toBeChecked();
+        });
+
+        // Uncheck et-1 (unlink) and check et-2 (link)
+        await userEvent.click(screen.getByLabelText('Policy Triggered'));
+        await userEvent.click(screen.getByLabelText('Policy Created'));
+
+        await userEvent.click(screen.getByRole('button', { name: 'Update' }));
+
+        await waitFor(() => {
+            expect(onBulkUpdate).toHaveBeenCalledWith('bg-1', [ 'et-2' ], [ 'et-1' ]);
+        });
     });
 
     it('shows success alert after successful update', async () => {
-        const onLink = vi.fn().mockResolvedValue(true);
+        const onBulkUpdate = vi.fn().mockResolvedValue(true);
         const responses = {
             'app-1': makeEventTypeResponse('app-1', [
                 { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' }
@@ -291,8 +314,7 @@ describe('BehaviorGroupEventTypesPanel', () => {
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
                 applications={ mockApplications }
-                onLinkEventType={ onLink }
-                onUnlinkEventType={ vi.fn() }
+                onBulkUpdateEventTypes={ onBulkUpdate }
             />,
             responses
         );
@@ -313,7 +335,7 @@ describe('BehaviorGroupEventTypesPanel', () => {
     });
 
     it('shows error alert on failed update', async () => {
-        const onLink = vi.fn().mockResolvedValue(false);
+        const onBulkUpdate = vi.fn().mockResolvedValue(false);
         const responses = {
             'app-1': makeEventTypeResponse('app-1', [
                 { id: 'et-1', name: 'policy-triggered', displayName: 'Policy Triggered' }
@@ -324,8 +346,7 @@ describe('BehaviorGroupEventTypesPanel', () => {
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
                 applications={ mockApplications }
-                onLinkEventType={ onLink }
-                onUnlinkEventType={ vi.fn() }
+                onBulkUpdateEventTypes={ onBulkUpdate }
             />,
             responses
         );
@@ -359,8 +380,7 @@ describe('BehaviorGroupEventTypesPanel', () => {
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
                 applications={ mockApplications }
-                onLinkEventType={ vi.fn() }
-                onUnlinkEventType={ vi.fn() }
+                onBulkUpdateEventTypes={ vi.fn() }
             />,
             responses
         );
@@ -400,8 +420,7 @@ describe('BehaviorGroupEventTypesPanel', () => {
             <BehaviorGroupEventTypesPanel
                 behaviorGroup={ makeBehaviorGroup([]) }
                 applications={ mockApplications }
-                onLinkEventType={ vi.fn() }
-                onUnlinkEventType={ vi.fn() }
+                onBulkUpdateEventTypes={ vi.fn() }
             />,
             {}
         );

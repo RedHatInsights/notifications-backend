@@ -366,6 +366,33 @@ public class BehaviorGroupRepository {
         return true;
     }
 
+    @Transactional
+    public void bulkLinkUnlinkEventTypeDefaultBehavior(UUID behaviorGroupId, Set<UUID> eventTypeIdsToLink, Set<UUID> eventTypeIdsToUnlink) {
+        checkBehaviorGroup(behaviorGroupId, true);
+
+        LocalDateTime now = LocalDateTime.now(UTC);
+        for (UUID eventTypeId : eventTypeIdsToLink) {
+            String insertQuery = "INSERT INTO event_type_behavior (event_type_id, behavior_group_id, created) " +
+                    "VALUES (:eventTypeId, :behaviorGroupId, :created) " +
+                    "ON CONFLICT (event_type_id, behavior_group_id) DO NOTHING";
+            entityManager.createNativeQuery(insertQuery)
+                    .setParameter("eventTypeId", eventTypeId)
+                    .setParameter("behaviorGroupId", behaviorGroupId)
+                    .setParameter("created", now)
+                    .executeUpdate();
+        }
+
+        if (!eventTypeIdsToUnlink.isEmpty()) {
+            String deleteQuery = "DELETE FROM EventTypeBehavior " +
+                    "WHERE eventType.id IN (:eventTypeIds) " +
+                    "AND id.behaviorGroupId = :behaviorGroupId";
+            entityManager.createQuery(deleteQuery)
+                    .setParameter("eventTypeIds", eventTypeIdsToUnlink)
+                    .setParameter("behaviorGroupId", behaviorGroupId)
+                    .executeUpdate();
+        }
+    }
+
     /**
      * Sets the event types of a behavior group
      * @param behaviorGroupId Id of the behavior group

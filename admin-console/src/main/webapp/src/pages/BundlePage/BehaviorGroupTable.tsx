@@ -10,8 +10,7 @@ import { Schemas } from '../../generated/OpenapiInternal';
 import { useCreateSystemBehaviorGroup } from '../../services/SystemBehaviorGroups/CreateSystemBehaviorGroup';
 import { useDeleteBehaviorGroup } from '../../services/SystemBehaviorGroups/DeleteSystemBehaviorGroup';
 import { useSystemBehaviorGroups } from '../../services/SystemBehaviorGroups/GetBehaviorGroups';
-import { useLinkDefaultBehaviorToEventType } from '../../services/SystemBehaviorGroups/LinkDefaultBehaviorToEventType';
-import { useUnlinkDefaultBehaviorToEventType } from '../../services/SystemBehaviorGroups/UnlinkDefaultBehaviorToEventType';
+import { useBulkUpdateEventTypeLinks } from '../../services/SystemBehaviorGroups/BulkUpdateEventTypeLinks';
 import { useUpdateBehaviorGroupActionsMutation } from '../../services/SystemBehaviorGroups/UpdateActions';
 import { Application, BehaviorGroup, BehaviorGroupAction } from '../../types/Notifications';
 
@@ -65,8 +64,7 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = pro
     const newBehaviorGroup = useCreateSystemBehaviorGroup();
     const deleteBehaviorGroupMutation = useDeleteBehaviorGroup();
     const updateBehaviorActions = useUpdateBehaviorGroupActionsMutation();
-    const linkMutation = useLinkDefaultBehaviorToEventType();
-    const unlinkMutation = useUnlinkDefaultBehaviorToEventType();
+    const bulkUpdateMutation = useBulkUpdateEventTypeLinks();
 
     const columns = [ 'System Behavior Group', 'Action' ];
 
@@ -78,25 +76,23 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = pro
 
     const [ systemBehaviorGroup, setSystemBehaviorGroup ] = React.useState<Partial<BehaviorGroup>>({});
 
-    const handleLinkEventType = React.useCallback(async (behaviorGroupId: string, eventTypeId: string) => {
-        const response = await linkMutation.mutate({ behaviorGroupId, eventTypeId });
+    const handleBulkUpdateEventTypes = React.useCallback(async (
+        behaviorGroupId: string,
+        eventTypeIdsToLink: string[],
+        eventTypeIdsToUnlink: string[]
+    ) => {
+        const response = await bulkUpdateMutation.mutate({
+            behaviorGroupId,
+            eventTypeIdsToLink,
+            eventTypeIdsToUnlink
+        });
         if (!response.error) {
             const refreshResult = await getBehaviorGroups.query();
             return !refreshResult.error;
         }
 
         return false;
-    }, [ linkMutation.mutate, getBehaviorGroups.query ]);
-
-    const handleUnlinkEventType = React.useCallback(async (behaviorGroupId: string, eventTypeId: string) => {
-        const response = await unlinkMutation.mutate({ behaviorGroupId, eventTypeId });
-        if (!response.error) {
-            const refreshResult = await getBehaviorGroups.query();
-            return !refreshResult.error;
-        }
-
-        return false;
-    }, [ unlinkMutation.mutate, getBehaviorGroups.query ]);
+    }, [ bulkUpdateMutation.mutate, getBehaviorGroups.query ]);
 
     const toggleExpand = React.useCallback((bgId: string) => {
         setExpandedRows(prev => ({ ...prev, [bgId]: !prev[bgId] }));
@@ -248,8 +244,7 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = pro
                                         { expandedRows[b.id ?? ''] && <BehaviorGroupEventTypesPanel
                                             behaviorGroup={ b }
                                             applications={ props.applications }
-                                            onLinkEventType={ handleLinkEventType }
-                                            onUnlinkEventType={ handleUnlinkEventType }
+                                            onBulkUpdateEventTypes={ handleBulkUpdateEventTypes }
                                         /> }
                                     </ExpandableRowContent>
                                 </Td>
