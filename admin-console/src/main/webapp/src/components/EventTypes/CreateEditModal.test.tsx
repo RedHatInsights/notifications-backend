@@ -69,4 +69,43 @@ describe('CreateEditModal', () => {
         expect(displayNameInput).toHaveValue('');
         expect(descriptionInput).toHaveValue('');
     });
+
+    it('clears fields when rerendered from populated to omitted values', () => {
+        const { rerender } = render(
+            <CreateEditModal
+                { ...baseProps }
+                initialEventType={{
+                    name: 'test-event',
+                    displayName: 'Test Event',
+                    description: 'A test description',
+                    visible: true,
+                    includedInDrawer: false,
+                }}
+            />
+        );
+
+        // Verify populated values rendered
+        expect(screen.getByRole('textbox', { name: /^Name$/i })).toHaveValue('test-event');
+        expect(screen.getByRole('textbox', { name: /display name/i })).toHaveValue('Test Event');
+        expect(screen.getByRole('textbox', { name: /description/i })).toHaveValue('A test description');
+
+        // Rerender with initialEventType that omits text fields
+        rerender(
+            <CreateEditModal
+                { ...baseProps }
+                initialEventType={{ visible: false, includedInDrawer: true }}
+            />
+        );
+
+        expect(screen.getByRole('textbox', { name: /^Name$/i })).toHaveValue('');
+        expect(screen.getByRole('textbox', { name: /display name/i })).toHaveValue('');
+        expect(screen.getByRole('textbox', { name: /description/i })).toHaveValue('');
+
+        // Rerender without initialEventType entirely
+        rerender(<CreateEditModal { ...baseProps } />);
+
+        expect(screen.getByRole('textbox', { name: /^Name$/i })).toHaveValue('');
+        expect(screen.getByRole('textbox', { name: /display name/i })).toHaveValue('');
+        expect(screen.getByRole('textbox', { name: /description/i })).toHaveValue('');
+    });
 });
