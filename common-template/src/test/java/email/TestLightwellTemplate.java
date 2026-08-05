@@ -261,13 +261,11 @@ public class TestLightwellTemplate extends EmailTemplatesRendererHelper {
         );
     }
 
-    private static Map<String, Object> buildCve(String cveId, String totalRisk) {
-        String severity = Character.toUpperCase(totalRisk.charAt(0)) + totalRisk.substring(1);
+    private static Map<String, Object> buildCve(String cveId, String severity) {
         return Map.of(
             "cve", cveId,
             "url", "https://console.redhat.com/api/lightwell/cves/" + cveId + ".json",
-            "severity", severity,
-            "payload", Map.of("total_risk", totalRisk)
+            "severity", severity
         );
     }
 }

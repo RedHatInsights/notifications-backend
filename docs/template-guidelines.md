@@ -44,6 +44,7 @@ Templates are registered in static `Map<TemplateDefinition, String>` fields insi
 | `Console` | `console` |
 | `SubscriptionServices` | `subscription-services` |
 | `AnsibleAutomationPlatform` | `ansible-automation-platform` |
+| `Lightwell` | `lightwell` |
 | `DefaultTemplates` | System defaults (bundle=null) |
 | `SecureEmailTemplates` | Secured environment overrides |
 | `DefaultInstantEmailTemplates` | Stage-only fallback (bundle=null) |
