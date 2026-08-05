@@ -81,14 +81,18 @@ export const BehaviorGroupsTable: React.FunctionComponent<BundlePageProps> = pro
         eventTypeIdsToLink: string[],
         eventTypeIdsToUnlink: string[]
     ) => {
-        const response = await bulkUpdateMutation.mutate({
-            behaviorGroupId,
-            eventTypeIdsToLink,
-            eventTypeIdsToUnlink
-        });
-        if (!response.error) {
-            const refreshResult = await getBehaviorGroups.query();
-            return !refreshResult.error;
+        try {
+            const response = await bulkUpdateMutation.mutate({
+                behaviorGroupId,
+                eventTypeIdsToLink,
+                eventTypeIdsToUnlink
+            });
+            if (!response.error) {
+                const refreshResult = await getBehaviorGroups.query();
+                return !refreshResult.error;
+            }
+        } catch {
+            return false;
         }
 
         return false;
