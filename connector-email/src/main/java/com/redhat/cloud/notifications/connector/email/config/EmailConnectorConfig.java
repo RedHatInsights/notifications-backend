@@ -14,8 +14,6 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     private static final String BOP_API_TOKEN = "notifications.connector.user-provider.bop.api_token";
     private static final String BOP_CLIENT_ID = "notifications.connector.user-provider.bop.client_id";
     private static final String BOP_ENV = "notifications.connector.user-provider.bop.env";
-    private static final String KAFKA_INCOMING_HIGH_VOLUME_TOPIC = "mp.messaging.incoming.highvolumemessages.topic";
-    private static final String KAFKA_INCOMING_HIGH_VOLUME_TOPIC_ENABLED = "mp.messaging.incoming.highvolumemessages.topic.enabled";
     private static final String MAX_RECIPIENTS_PER_EMAIL = "notifications.connector.max-recipients-per-email";
     private static final String NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED = "notifications.emails-internal-only.enabled";
 
@@ -27,12 +25,6 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
     @ConfigProperty(name = BOP_ENV)
     String bopEnv;
-
-    @ConfigProperty(name = KAFKA_INCOMING_HIGH_VOLUME_TOPIC)
-    String incomingKafkaHighVolumeTopic;
-
-    @ConfigProperty(name = KAFKA_INCOMING_HIGH_VOLUME_TOPIC_ENABLED, defaultValue = "false")
-    Boolean incomingKafkaHighVolumeTopicEnabled;
 
     @ConfigProperty(name = MAX_RECIPIENTS_PER_EMAIL, defaultValue = "50")
     int maxRecipientsPerEmail;
@@ -59,8 +51,6 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
          */
 
         config.put(BOP_ENV, bopEnv);
-        config.put(KAFKA_INCOMING_HIGH_VOLUME_TOPIC, incomingKafkaHighVolumeTopic);
-        config.put(KAFKA_INCOMING_HIGH_VOLUME_TOPIC_ENABLED, incomingKafkaHighVolumeTopicEnabled);
         config.put(MAX_RECIPIENTS_PER_EMAIL, maxRecipientsPerEmail);
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
         config.put(toggleKafkaIncomingHighVolumeTopic, isIncomingKafkaHighVolumeTopicEnabled());
