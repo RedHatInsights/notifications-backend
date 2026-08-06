@@ -58,7 +58,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = pr
                     <FormGroup label="Name" fieldId="name" isRequired>
                         <TextInput
                             type="text"
-                            value={ eventType.name }
+                            value={ eventType.name ?? '' }
                             onChange={ handleChange }
                             id="name"
                             name="name"
@@ -80,7 +80,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = pr
                     <FormGroup label="Display name" fieldId="display-name" isRequired>
                         <TextInput
                             type="text"
-                            value={ eventType.displayName }
+                            value={ eventType.displayName ?? '' }
                             onChange={ handleChange }
                             id="display-name"
                             name="displayName"
@@ -94,7 +94,7 @@ export const CreateEditModal: React.FunctionComponent<CreateEditModalProps> = pr
                     <FormGroup label="Description" fieldId="description">
                         <TextArea
                             type="text"
-                            value={ eventType.description }
+                            value={ eventType.description ?? '' }
                             onChange={ handleChange }
                             id="description"
                             name="description"
