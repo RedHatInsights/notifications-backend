@@ -1,0 +1,1 @@
+{action.severity.or('').severityAsEmailTitle}Instant notification - {source.event_type.display_name} - {source.bundle.display_name}
