@@ -7,6 +7,7 @@ public class HandledHttpExceptionDetails extends HandledExceptionDetails {
     public Integer httpStatusCode;
     public HttpErrorType httpErrorType;
     public String targetUrl;
+    public String responseBody;
 
     public HandledHttpExceptionDetails() {
     }
