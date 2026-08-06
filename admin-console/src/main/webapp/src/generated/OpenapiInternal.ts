@@ -1794,6 +1794,43 @@ export namespace Operations {
         .build();
     };
   }
+  // PUT /behaviorGroups/default/{behaviorGroupId}/eventTypes
+  // Bulk link and unlink event types for a default behavior group.
+  export namespace InternalResourceBulkUpdateDefaultBehaviorEventTypes {
+    const Response200 = z.string();
+    type Response200 = string;
+    export interface Params {
+      behaviorGroupId: Schemas.UUID;
+      body: {
+        event_type_ids_to_link: Schemas.UUID[];
+        event_type_ids_to_unlink: Schemas.UUID[];
+      };
+    }
+
+    export type Payload =
+      | ValidatedResponse<'unknown', 200, Response200>
+      | ValidatedResponse<'__Empty', 401, Schemas.__Empty>
+      | ValidatedResponse<'__Empty', 403, Schemas.__Empty>
+      | ValidatedResponse<'unknown', undefined, unknown>;
+    export type ActionCreator = Action<Payload, ActionValidatableConfig>;
+    export const actionCreator = (params: Params): ActionCreator => {
+        const path =
+        './behaviorGroups/default/{behaviorGroupId}/eventTypes'
+        .replace('{behaviorGroupId}', params['behaviorGroupId'].toString());
+        const query = {} as Record<string, any>;
+        return actionBuilder('PUT', path)
+        .queryParams(query)
+        .data(params.body)
+        .config({
+            rules: [
+                new ValidateRule(Response200, 'unknown', 200),
+                new ValidateRule(Schemas.__Empty, '__Empty', 401),
+                new ValidateRule(Schemas.__Empty, '__Empty', 403),
+            ],
+        })
+        .build();
+    };
+  }
   // PUT /behaviorGroups/default/{id}
   // Update a default behavior group.
   export namespace InternalResourceUpdateDefaultBehaviorGroup {

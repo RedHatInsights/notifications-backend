@@ -366,6 +366,57 @@ public class BehaviorGroupRepository {
         return true;
     }
 
+    @Transactional
+    public void bulkLinkUnlinkEventTypeDefaultBehavior(UUID behaviorGroupId, Set<UUID> eventTypeIdsToLink, Set<UUID> eventTypeIdsToUnlink) {
+        checkBehaviorGroup(behaviorGroupId, true);
+
+        // Reject overlapping IDs — an ID in both sets is ambiguous
+        if (!eventTypeIdsToLink.isEmpty() && !eventTypeIdsToUnlink.isEmpty()) {
+            Set<UUID> intersection = new HashSet<>(eventTypeIdsToLink);
+            intersection.retainAll(eventTypeIdsToUnlink);
+            if (!intersection.isEmpty()) {
+                throw new BadRequestException("Event type IDs cannot appear in both link and unlink sets: " + intersection);
+            }
+        }
+
+        // Validate all event types to link belong to the same bundle as the behavior group
+        if (!eventTypeIdsToLink.isEmpty()) {
+            BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
+            String integrityCheckHql = "SELECT id FROM EventType WHERE id IN (:eventTypeIds) "
+                    + "AND application.bundle.id != :bundleId";
+            List<UUID> differentBundle = entityManager.createQuery(integrityCheckHql, UUID.class)
+                    .setParameter("eventTypeIds", eventTypeIdsToLink)
+                    .setParameter("bundleId", behaviorGroup.getBundleId())
+                    .getResultList();
+            if (!differentBundle.isEmpty()) {
+                throw new BadRequestException("Some event types can't be linked to the behavior group because they "
+                        + "belong to a different bundle: " + differentBundle);
+            }
+        }
+
+        LocalDateTime now = LocalDateTime.now(UTC);
+        for (UUID eventTypeId : eventTypeIdsToLink) {
+            String insertQuery = "INSERT INTO event_type_behavior (event_type_id, behavior_group_id, created) " +
+                    "VALUES (:eventTypeId, :behaviorGroupId, :created) " +
+                    "ON CONFLICT (event_type_id, behavior_group_id) DO NOTHING";
+            entityManager.createNativeQuery(insertQuery)
+                    .setParameter("eventTypeId", eventTypeId)
+                    .setParameter("behaviorGroupId", behaviorGroupId)
+                    .setParameter("created", now)
+                    .executeUpdate();
+        }
+
+        if (!eventTypeIdsToUnlink.isEmpty()) {
+            String deleteQuery = "DELETE FROM EventTypeBehavior " +
+                    "WHERE eventType.id IN (:eventTypeIds) " +
+                    "AND id.behaviorGroupId = :behaviorGroupId";
+            entityManager.createQuery(deleteQuery)
+                    .setParameter("eventTypeIds", eventTypeIdsToUnlink)
+                    .setParameter("behaviorGroupId", behaviorGroupId)
+                    .executeUpdate();
+        }
+    }
+
     /**
      * Sets the event types of a behavior group
      * @param behaviorGroupId Id of the behavior group

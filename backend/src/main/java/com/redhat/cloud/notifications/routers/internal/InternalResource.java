@@ -30,6 +30,7 @@ import com.redhat.cloud.notifications.routers.engine.GeneralCommunicationsServic
 import com.redhat.cloud.notifications.routers.engine.ReplayService;
 import com.redhat.cloud.notifications.routers.general.communication.SendGeneralCommunicationResponse;
 import com.redhat.cloud.notifications.routers.internal.models.AddApplicationRequest;
+import com.redhat.cloud.notifications.routers.internal.models.BulkEventTypeBehaviorRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.internal.models.ServerInfo;
 import com.redhat.cloud.notifications.routers.internal.models.UpdateApplicationRequest;
@@ -595,6 +596,38 @@ public class InternalResource {
         } else {
             return Response.status(BAD_REQUEST).build();
         }
+    }
+
+    @PUT
+    @Path("/behaviorGroups/default/{behaviorGroupId}/eventTypes")
+    @Consumes(APPLICATION_JSON)
+    @Produces(TEXT_PLAIN)
+    @Operation(summary = "Bulk link and unlink event types for a default behavior group.")
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @Transactional
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
+    public Response bulkUpdateDefaultBehaviorEventTypes(
+            @Context SecurityContext sec,
+            @PathParam("behaviorGroupId") UUID behaviorGroupId,
+            @NotNull @Valid BulkEventTypeBehaviorRequest request) {
+
+        for (UUID eventTypeId : request.eventTypeIdsToLink) {
+            securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
+        }
+
+        for (UUID eventTypeId : request.eventTypeIdsToUnlink) {
+            securityContextUtil.hasPermissionForEventType(sec, eventTypeId);
+        }
+
+        behaviorGroupRepository.bulkLinkUnlinkEventTypeDefaultBehavior(
+                behaviorGroupId,
+                request.eventTypeIdsToLink,
+                request.eventTypeIdsToUnlink
+        );
+
+        // Sync new endpoint to eventType data model
+        endpointEventTypeRepository.refreshEndpointLinksToEventTypeFromBehaviorGroup(null, Set.of(behaviorGroupId));
+        return Response.ok().build();
     }
 
     @PUT

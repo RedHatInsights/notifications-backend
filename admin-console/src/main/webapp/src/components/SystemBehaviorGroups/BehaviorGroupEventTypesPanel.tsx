@@ -18,8 +18,7 @@ import { Application, BehaviorGroup, EventType } from '../../types/Notifications
 interface BehaviorGroupEventTypesPanelProps {
     behaviorGroup: BehaviorGroup;
     applications: ReadonlyArray<Application>;
-    onLinkEventType: (behaviorGroupId: string, eventTypeId: string) => Promise<boolean>;
-    onUnlinkEventType: (behaviorGroupId: string, eventTypeId: string) => Promise<boolean>;
+    onBulkUpdateEventTypes: (behaviorGroupId: string, eventTypeIdsToLink: string[], eventTypeIdsToUnlink: string[]) => Promise<boolean>;
 }
 
 const isEventTypeLinked = (behaviorGroup: BehaviorGroup, eventTypeId: string): boolean => {
@@ -150,28 +149,25 @@ export const BehaviorGroupEventTypesPanel: React.FunctionComponent<BehaviorGroup
         setSaveError(null);
         setSaveSuccess(false);
 
-        const errors: string[] = [];
+        const toLink: string[] = [];
+        const toUnlink: string[] = [];
 
         for (const et of eventTypes) {
             const wasLinked = isEventTypeLinked(props.behaviorGroup, et.id);
             const isChecked = checkedIds.has(et.id);
 
             if (isChecked && !wasLinked) {
-                const success = await props.onLinkEventType(bgId, et.id);
-                if (!success) {
-                    errors.push(et.displayName);
-                }
+                toLink.push(et.id);
             } else if (!isChecked && wasLinked) {
-                const success = await props.onUnlinkEventType(bgId, et.id);
-                if (!success) {
-                    errors.push(et.displayName);
-                }
+                toUnlink.push(et.id);
             }
         }
 
+        const success = await props.onBulkUpdateEventTypes(bgId, toLink, toUnlink);
+
         setSaving(false);
-        if (errors.length > 0) {
-            setSaveError(`Failed to update: ${errors.join(', ')}`);
+        if (!success) {
+            setSaveError('Failed to update event type links.');
         } else {
             setSaveSuccess(true);
         }
