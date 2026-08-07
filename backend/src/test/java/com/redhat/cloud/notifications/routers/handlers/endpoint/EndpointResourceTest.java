@@ -109,6 +109,7 @@ import static com.redhat.cloud.notifications.models.HttpType.POST;
 import static com.redhat.cloud.notifications.routers.handlers.endpoint.EndpointResource.AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE;
 import static com.redhat.cloud.notifications.routers.handlers.endpoint.EndpointResource.DEPRECATED_SLACK_CHANNEL_ERROR;
 import static com.redhat.cloud.notifications.routers.handlers.endpoint.EndpointResource.HTTPS_ENDPOINT_SCHEME_REQUIRED;
+import static com.redhat.cloud.notifications.routers.handlers.endpoint.EndpointResource.SPLUNK_HEC_TOKEN_REQUIRED;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
@@ -910,7 +911,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         }
 
         URI sNowUri = URI.create("http://redhat.com");
-        testRequireHttpsScheme("servicenow", sNowUri);
+        testRequireHttpsScheme("servicenow", sNowUri, null);
     }
 
     @ParameterizedTest
@@ -923,16 +924,19 @@ public class EndpointResourceTest extends DbIsolatedTest {
         }
 
         URI splunkUri = URI.create("http://redhat.com");
-        testRequireHttpsScheme("splunk", splunkUri);
+        testRequireHttpsScheme("splunk", splunkUri, "my-splunk-hec-token");
     }
 
-    private void testRequireHttpsScheme(String subtype, URI uriWithHttpScheme) {
+    private void testRequireHttpsScheme(String subtype, URI uriWithHttpScheme, String secretToken) {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
 
         CamelProperties camelProperties = new CamelProperties();
         camelProperties.setUrl(uriWithHttpScheme.toString());
+        if (secretToken != null) {
+            camelProperties.setSecretToken(secretToken);
+        }
         Endpoint endpoint = new Endpoint();
         endpoint.setType(EndpointType.CAMEL);
         endpoint.setSubType(subtype);
@@ -1018,6 +1022,102 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .post("/endpoints")
                 .then()
                 .statusCode(HttpStatus.SC_OK);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testRequireSplunkHecToken(boolean kesselEnabled) {
+
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
+        if (kesselEnabled) {
+            mockDefaultKesselUpdatePermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
+        }
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Create Splunk endpoint without secret token — should fail
+        CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setUrl("https://splunk.redhat.com:8088");
+
+        Endpoint endpoint = new Endpoint();
+        endpoint.setType(EndpointType.CAMEL);
+        endpoint.setSubType("splunk");
+        endpoint.setName("splunk-no-token");
+        endpoint.setDescription("Splunk integration without HEC token");
+        endpoint.setProperties(camelProperties);
+
+        String responseBody = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract().asString();
+
+        assertEquals(SPLUNK_HEC_TOKEN_REQUIRED, responseBody);
+
+        // Create Splunk endpoint with blank secret token — should fail
+        camelProperties.setSecretToken("   ");
+        endpoint.setName("splunk-blank-token");
+
+        responseBody = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract().asString();
+
+        assertEquals(SPLUNK_HEC_TOKEN_REQUIRED, responseBody);
+
+        // Create Splunk endpoint with valid secret token — should succeed
+        camelProperties.setSecretToken("my-splunk-hec-token");
+        endpoint.setName("splunk-valid-token");
+
+        String createdEndpoint = given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
+            .post("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .extract().asString();
+
+        final String endpointUuidRaw = new JsonObject(createdEndpoint).getString("id");
+
+        // Update Splunk endpoint with blank secret token — should fail
+        camelProperties.setSecretToken("");
+        responseBody = given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("id", endpointUuidRaw)
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
+            .when()
+            .put("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract().asString();
+
+        assertEquals(SPLUNK_HEC_TOKEN_REQUIRED, responseBody);
+
+        // Update Splunk endpoint with valid secret token — should succeed
+        camelProperties.setSecretToken("updated-splunk-hec-token");
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("id", endpointUuidRaw)
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
+            .when()
+            .put("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
     }
 
     @ParameterizedTest
