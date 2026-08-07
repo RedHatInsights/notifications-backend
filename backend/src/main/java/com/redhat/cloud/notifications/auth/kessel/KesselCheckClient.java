@@ -15,6 +15,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.project_kessel.api.auth.OAuth2ClientCredentials;
+import org.project_kessel.api.auth.OAuth2Exception;
 import org.project_kessel.api.inventory.v1beta2.CheckForUpdateRequest;
 import org.project_kessel.api.inventory.v1beta2.CheckForUpdateResponse;
 import org.project_kessel.api.inventory.v1beta2.CheckRequest;
@@ -126,6 +127,9 @@ public class KesselCheckClient {
                 .check(request);
         } catch (StatusRuntimeException e) {
             throw handleGrpcException(e);
+        } catch (OAuth2Exception e) {
+            Log.warnf("Transient error fetching Kessel OAuth2 credentials (may retry): %s", e.getMessage());
+            throw new KesselTransientException(e);
         }
     }
 
@@ -137,6 +141,9 @@ public class KesselCheckClient {
                 .checkForUpdate(request);
         } catch (StatusRuntimeException e) {
             throw handleGrpcException(e);
+        } catch (OAuth2Exception e) {
+            Log.warnf("Transient error fetching Kessel OAuth2 credentials (may retry): %s", e.getMessage());
+            throw new KesselTransientException(e);
         }
     }
 
@@ -148,7 +155,15 @@ public class KesselCheckClient {
         // UNAUTHENTICATED usually means the OAuth2 token expired. Recreate channel with fresh credentials.
         if (code == UNAUTHENTICATED) {
             Log.warnf("Transient gRPC error from Kessel (may retry): %s - %s. Recreating channel with fresh credentials.", code, e.getMessage());
-            initializeChannel("unauthenticated");
+            try {
+                initializeChannel("unauthenticated");
+            } catch (OAuth2Exception oauthEx) {
+                Log.warnf("Failed to refresh OAuth2 credentials after UNAUTHENTICATED error: %s", oauthEx.getMessage());
+                if (grpcChannel != null) {
+                    grpcChannel.shutdown();
+                }
+                return new KesselTransientException(oauthEx);
+            }
             return new KesselTransientException(e);
         }
 

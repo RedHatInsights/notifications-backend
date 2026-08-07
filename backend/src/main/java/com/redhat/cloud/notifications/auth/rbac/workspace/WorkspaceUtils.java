@@ -6,8 +6,10 @@ import io.quarkus.cache.CacheResult;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.faulttolerance.Retry;
 import org.project_kessel.api.auth.OAuth2AuthRequest;
 import org.project_kessel.api.auth.OAuth2ClientCredentials;
+import org.project_kessel.api.auth.OAuth2Exception;
 import org.project_kessel.api.rbac.v2.FetchWorkspace;
 import org.project_kessel.api.rbac.v2.Workspace;
 
@@ -31,9 +33,16 @@ public class WorkspaceUtils {
      * @return the identifier of the workspace.
      */
     @CacheResult(cacheName = "kessel-rbac-workspace-id")
+    @Retry(maxRetries = 3, delay = 100, retryOn = {OAuth2Exception.class, IOException.class})
     public UUID getDefaultWorkspaceId(final String orgId) {
 
-        OAuth2ClientCredentials credentials = oauth2ClientCredentialsCache.getCredentials();
+        OAuth2ClientCredentials credentials;
+        try {
+            credentials = oauth2ClientCredentialsCache.getCredentials();
+        } catch (OAuth2Exception e) {
+            Log.warnf("Transient error fetching OAuth2 credentials for RBAC workspace lookup (may retry): %s", e.getMessage());
+            throw e;
+        }
         OAuth2AuthRequest authRequest = new OAuth2AuthRequest(credentials);
 
         Workspace workspace;
