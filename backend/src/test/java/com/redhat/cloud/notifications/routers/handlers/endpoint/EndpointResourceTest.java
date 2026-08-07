@@ -96,6 +96,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
+import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerHttpsUrl;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
@@ -924,6 +925,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         }
 
         URI splunkUri = URI.create("http://redhat.com");
+        mockSources("my-splunk-hec-token");
         testRequireHttpsScheme("splunk", splunkUri, "my-splunk-hec-token");
     }
 
@@ -1039,7 +1041,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         // Create Splunk endpoint without secret token — should fail
         CamelProperties camelProperties = new CamelProperties();
-        camelProperties.setUrl("https://splunk.redhat.com:8088");
+        camelProperties.setUrl(getMockServerHttpsUrl());
 
         Endpoint endpoint = new Endpoint();
         endpoint.setType(EndpointType.CAMEL);
@@ -1079,6 +1081,7 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // Create Splunk endpoint with valid secret token — should succeed
         camelProperties.setSecretToken("my-splunk-hec-token");
         endpoint.setName("splunk-valid-token");
+        mockSources("my-splunk-hec-token");
 
         String createdEndpoint = given()
             .header(identityHeader)
@@ -1091,6 +1094,21 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .extract().asString();
 
         final String endpointUuidRaw = new JsonObject(createdEndpoint).getString("id");
+
+        // Update Splunk endpoint with null secret token — should fail
+        camelProperties.setSecretToken(null);
+        responseBody = given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .pathParam("id", endpointUuidRaw)
+            .body(Json.encode(this.endpointMapper.toDTO(endpoint)))
+            .when()
+            .put("/endpoints/{id}")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST)
+            .extract().asString();
+
+        assertEquals(SPLUNK_HEC_TOKEN_REQUIRED, responseBody);
 
         // Update Splunk endpoint with blank secret token — should fail
         camelProperties.setSecretToken("");
