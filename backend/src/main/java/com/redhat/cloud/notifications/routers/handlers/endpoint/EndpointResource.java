@@ -279,12 +279,12 @@ public class EndpointResource extends EndpointResourceCommon {
             checkSslDisabledEndpoint(endpoint);
             String subType = endpoint.getSubType();
 
-            if (subType.equals("slack")) {
+            if (subType.equals(SLACK_ENDPOINT_SUBTYPE)) {
                 checkSlackChannel(endpoint.getProperties(CamelProperties.class), null);
-            } else if (subType.equals("servicenow") || subType.equals("splunk")) {
+            } else if (subType.equals(SERVICE_NOW_ENDPOINT_SUBTYPE) || subType.equals(SPLUNK_ENDPOINT_SUBTYPE)) {
                 checkHttpsEndpoint(endpoint.getProperties(CamelProperties.class));
             }
-            if (subType.equals("splunk")) {
+            if (subType.equals(SPLUNK_ENDPOINT_SUBTYPE)) {
                 checkSplunkHecToken(endpoint.getProperties(CamelProperties.class));
             }
         } else if (endpoint.getType() == WEBHOOK || endpoint.getType() == ANSIBLE) {
