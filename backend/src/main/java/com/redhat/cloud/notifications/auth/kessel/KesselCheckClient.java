@@ -159,6 +159,9 @@ public class KesselCheckClient {
                 initializeChannel("unauthenticated");
             } catch (OAuth2Exception oauthEx) {
                 Log.warnf("Failed to refresh OAuth2 credentials after UNAUTHENTICATED error: %s", oauthEx.getMessage());
+                if (grpcChannel != null) {
+                    grpcChannel.shutdown();
+                }
                 return new KesselTransientException(oauthEx);
             }
             return new KesselTransientException(e);

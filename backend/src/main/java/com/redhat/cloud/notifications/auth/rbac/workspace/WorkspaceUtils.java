@@ -33,7 +33,7 @@ public class WorkspaceUtils {
      * @return the identifier of the workspace.
      */
     @CacheResult(cacheName = "kessel-rbac-workspace-id")
-    @Retry(maxRetries = 3, delay = 100)
+    @Retry(maxRetries = 3, delay = 100, retryOn = {OAuth2Exception.class, IOException.class})
     public UUID getDefaultWorkspaceId(final String orgId) {
 
         OAuth2ClientCredentials credentials;
