@@ -379,9 +379,21 @@ public class BehaviorGroupRepository {
             }
         }
 
-        // Validate all event types to link belong to the same bundle as the behavior group
+        // Validate all event types to link exist and belong to the same bundle as the behavior group
         if (!eventTypeIdsToLink.isEmpty()) {
             BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
+
+            // Verify all event type IDs actually exist (prevents FK constraint 500s)
+            List<UUID> existingIds = entityManager.createQuery(
+                    "SELECT id FROM EventType WHERE id IN (:eventTypeIds)", UUID.class)
+                    .setParameter("eventTypeIds", eventTypeIdsToLink)
+                    .getResultList();
+            if (existingIds.size() != eventTypeIdsToLink.size()) {
+                Set<UUID> missing = new HashSet<>(eventTypeIdsToLink);
+                missing.removeAll(new HashSet<>(existingIds));
+                throw new BadRequestException("Some event type IDs do not exist: " + missing);
+            }
+
             String integrityCheckHql = "SELECT id FROM EventType WHERE id IN (:eventTypeIds) "
                     + "AND application.bundle.id != :bundleId";
             List<UUID> differentBundle = entityManager.createQuery(integrityCheckHql, UUID.class)
@@ -393,6 +405,17 @@ public class BehaviorGroupRepository {
                         + "belong to a different bundle: " + differentBundle);
             }
         }
+
+        /*
+         * Lock related rows to avoid deadlocks, consistent with the locking
+         * pattern used in updateBehaviorEventTypes and updateEventTypeBehaviors.
+         */
+        String lockQuery = "FROM EventTypeBehavior " +
+                "WHERE id.behaviorGroupId = :behaviorGroupId";
+        entityManager.createQuery(lockQuery, EventTypeBehavior.class)
+                .setParameter("behaviorGroupId", behaviorGroupId)
+                .setLockMode(PESSIMISTIC_WRITE)
+                .getResultList();
 
         LocalDateTime now = LocalDateTime.now(UTC);
         for (UUID eventTypeId : eventTypeIdsToLink) {

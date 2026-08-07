@@ -15,6 +15,7 @@ import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequ
 import com.redhat.cloud.notifications.routers.engine.DailyDigestService;
 import com.redhat.cloud.notifications.routers.engine.GeneralCommunicationsService;
 import com.redhat.cloud.notifications.routers.general.communication.SendGeneralCommunicationResponse;
+import com.redhat.cloud.notifications.routers.internal.models.BulkEventTypeBehaviorRequest;
 import com.redhat.cloud.notifications.routers.internal.models.RequestDefaultBehaviorGroupPropertyList;
 import com.redhat.cloud.notifications.routers.internal.models.dto.SendGeneralCommunicationRequest;
 import io.quarkus.test.InjectMock;
@@ -491,6 +492,138 @@ public class InternalResourceTest extends DbIsolatedTest {
 
         assertEquals(0, resourceHelpers.getEndpoint(endpointId1).getEventTypes().size());
 
+    }
+
+    @Test
+    void testBulkUpdateDefaultBehaviorEventTypes() {
+        Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+
+        // Setup: bundle, app, three event types, default behavior group.
+        String bundleId = createBundle(identity, "bulk-bundle", "Bundle", OK).get();
+        String appId = createApp(identity, bundleId, "bulk-app", "App", null, OK).get();
+
+        EventType eventType1 = new EventType();
+        eventType1.setName(RandomStringUtils.randomAlphabetic(10).toLowerCase());
+        eventType1.setDisplayName(RandomStringUtils.randomAlphabetic(10));
+        eventType1.setDescription(RandomStringUtils.randomAlphabetic(10));
+        eventType1.setApplicationId(UUID.fromString(appId));
+        UUID et1Id = UUID.fromString(createEventType(identity, eventType1, OK).get());
+
+        EventType eventType2 = new EventType();
+        eventType2.setName(RandomStringUtils.randomAlphabetic(10).toLowerCase());
+        eventType2.setDisplayName(RandomStringUtils.randomAlphabetic(10));
+        eventType2.setDescription(RandomStringUtils.randomAlphabetic(10));
+        eventType2.setApplicationId(UUID.fromString(appId));
+        UUID et2Id = UUID.fromString(createEventType(identity, eventType2, OK).get());
+
+        EventType eventType3 = new EventType();
+        eventType3.setName(RandomStringUtils.randomAlphabetic(10).toLowerCase());
+        eventType3.setDisplayName(RandomStringUtils.randomAlphabetic(10));
+        eventType3.setDescription(RandomStringUtils.randomAlphabetic(10));
+        eventType3.setApplicationId(UUID.fromString(appId));
+        UUID et3Id = UUID.fromString(createEventType(identity, eventType3, OK).get());
+
+        UUID dbgId = UUID.fromString(createDefaultBehaviorGroup(identity, "BulkTestBG", bundleId, OK).get());
+
+        // AC1: Bulk link two event types.
+        BulkEventTypeBehaviorRequest linkRequest = new BulkEventTypeBehaviorRequest();
+        linkRequest.eventTypeIdsToLink = Set.of(et1Id, et2Id);
+
+        given()
+            .basePath(API_INTERNAL)
+            .header(identity)
+            .contentType(JSON)
+            .pathParam("behaviorGroupId", dbgId)
+            .body(Json.encode(linkRequest))
+            .when()
+            .put("/behaviorGroups/default/{behaviorGroupId}/eventTypes")
+            .then()
+            .statusCode(200);
+
+        List<BehaviorGroup> bgs = getDefaultBehaviorGroups(identity);
+        BehaviorGroup bg = bgs.stream().filter(b -> b.getId().equals(dbgId)).findFirst().get();
+        assertEquals(2, bg.getBehaviors().size());
+
+        // AC2: Bulk link and unlink in the same call — link et3, unlink et1.
+        BulkEventTypeBehaviorRequest linkUnlinkRequest = new BulkEventTypeBehaviorRequest();
+        linkUnlinkRequest.eventTypeIdsToLink = Set.of(et3Id);
+        linkUnlinkRequest.eventTypeIdsToUnlink = Set.of(et1Id);
+
+        given()
+            .basePath(API_INTERNAL)
+            .header(identity)
+            .contentType(JSON)
+            .pathParam("behaviorGroupId", dbgId)
+            .body(Json.encode(linkUnlinkRequest))
+            .when()
+            .put("/behaviorGroups/default/{behaviorGroupId}/eventTypes")
+            .then()
+            .statusCode(200);
+
+        bgs = getDefaultBehaviorGroups(identity);
+        bg = bgs.stream().filter(b -> b.getId().equals(dbgId)).findFirst().get();
+        assertEquals(2, bg.getBehaviors().size());
+        Set<UUID> linkedIds = bg.getBehaviors().stream()
+                .map(b -> b.getId().eventTypeId)
+                .collect(Collectors.toSet());
+        assertTrue(linkedIds.contains(et2Id));
+        assertTrue(linkedIds.contains(et3Id));
+        Assertions.assertFalse(linkedIds.contains(et1Id));
+
+        // AC3: Overlap validation — same ID in both link and unlink sets returns 400.
+        BulkEventTypeBehaviorRequest overlapRequest = new BulkEventTypeBehaviorRequest();
+        overlapRequest.eventTypeIdsToLink = Set.of(et1Id);
+        overlapRequest.eventTypeIdsToUnlink = Set.of(et1Id);
+
+        given()
+            .basePath(API_INTERNAL)
+            .header(identity)
+            .contentType(JSON)
+            .pathParam("behaviorGroupId", dbgId)
+            .body(Json.encode(overlapRequest))
+            .when()
+            .put("/behaviorGroups/default/{behaviorGroupId}/eventTypes")
+            .then()
+            .statusCode(BAD_REQUEST);
+
+        // AC4: Cross-bundle validation — event type from a different bundle returns 400.
+        String otherBundleId = createBundle(identity, "other-bundle", "Other", OK).get();
+        String otherAppId = createApp(identity, otherBundleId, "other-app", "Other App", null, OK).get();
+        EventType crossBundleEt = new EventType();
+        crossBundleEt.setName(RandomStringUtils.randomAlphabetic(10).toLowerCase());
+        crossBundleEt.setDisplayName(RandomStringUtils.randomAlphabetic(10));
+        crossBundleEt.setDescription(RandomStringUtils.randomAlphabetic(10));
+        crossBundleEt.setApplicationId(UUID.fromString(otherAppId));
+        UUID crossBundleEtId = UUID.fromString(createEventType(identity, crossBundleEt, OK).get());
+
+        BulkEventTypeBehaviorRequest crossBundleRequest = new BulkEventTypeBehaviorRequest();
+        crossBundleRequest.eventTypeIdsToLink = Set.of(crossBundleEtId);
+
+        given()
+            .basePath(API_INTERNAL)
+            .header(identity)
+            .contentType(JSON)
+            .pathParam("behaviorGroupId", dbgId)
+            .body(Json.encode(crossBundleRequest))
+            .when()
+            .put("/behaviorGroups/default/{behaviorGroupId}/eventTypes")
+            .then()
+            .statusCode(BAD_REQUEST);
+
+        // AC5: Nonexistent eventTypeId returns 400 instead of 500.
+        BulkEventTypeBehaviorRequest nonexistentRequest = new BulkEventTypeBehaviorRequest();
+        nonexistentRequest.eventTypeIdsToLink = Set.of(UUID.randomUUID());
+
+        given()
+            .basePath(API_INTERNAL)
+            .header(identity)
+            .contentType(JSON)
+            .pathParam("behaviorGroupId", dbgId)
+            .body(Json.encode(nonexistentRequest))
+            .when()
+            .put("/behaviorGroups/default/{behaviorGroupId}/eventTypes")
+            .then()
+            .statusCode(BAD_REQUEST);
     }
 
     @Test
