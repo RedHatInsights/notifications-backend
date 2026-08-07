@@ -9,6 +9,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
@@ -26,6 +27,7 @@ public interface RbacWorkspacesOidcClient {
     @GET
     @Path("/api/rbac/v2/workspaces/")
     @Produces(MediaType.APPLICATION_JSON)
+    @Retry(maxRetries = 3)
     Page<RbacWorkspace> getWorkspaces(
         @HeaderParam("x-rh-rbac-org-id") String orgId,
         @QueryParam("type") String workspaceType,
