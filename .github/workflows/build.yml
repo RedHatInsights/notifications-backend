@@ -108,7 +108,7 @@ jobs:
         if: steps.yarn-files-changed.outputs.any_changed == 'true' && github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')
         uses: actions/setup-node@v5
         with:
-          node-version: 22.23.2
+          node-version: 24.19.0
       - name: Regenerate yarn.lock for Mintmaker branches
         # Mintmaker bumps package.json dependency ranges (or, for lock file
         # maintenance PRs, rewrites yarn.lock itself) without necessarily
