@@ -544,4 +544,18 @@ public class EndpointRepository {
             .setMaxResults(limit)
             .getResultList();
     }
+
+    @Transactional
+    public int deleteOrphanEmailIntegrations() {
+        String query = "DELETE FROM Endpoint e "
+            + "WHERE e.compositeType.type = :endpointType "
+            + "AND NOT EXISTS (SELECT 1 FROM EndpointEventType eet WHERE eet.endpoint = e) "
+            + "AND NOT EXISTS (SELECT 1 FROM BehaviorGroupAction bga WHERE bga.endpoint = e) "
+            + "AND NOT EXISTS (SELECT 1 FROM NotificationHistory nh WHERE nh.endpoint = e)";
+        int deleted = entityManager.createQuery(query)
+            .setParameter("endpointType", EndpointType.EMAIL_SUBSCRIPTION)
+            .executeUpdate();
+        Log.infof("Deleted %d orphan email integrations", deleted);
+        return deleted;
+    }
 }

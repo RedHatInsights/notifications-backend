@@ -712,4 +712,13 @@ public class InternalResource {
 
         return this.generalCommunicationsService.sendGeneralCommunication();
     }
+
+    @DELETE
+    @Path("/orphanEmailIntegrations")
+    @Produces(APPLICATION_JSON)
+    @Transactional
+    public Response deleteOrphanEmailIntegrations() {
+        int deleted = endpointRepository.deleteOrphanEmailIntegrations();
+        return Response.ok(new JsonObject().put("deleted", deleted).encode()).build();
+    }
 }

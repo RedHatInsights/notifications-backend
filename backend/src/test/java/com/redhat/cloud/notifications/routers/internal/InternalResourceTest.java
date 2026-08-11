@@ -9,6 +9,7 @@ import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
@@ -1133,5 +1134,45 @@ public class InternalResourceTest extends DbIsolatedTest {
         // Assert that the received response from the back end is the same as
         // the one received from the engine.
         Assertions.assertEquals(response, receivedResponse, "the received response from the back end is not the same as the one received from the engine");
+    }
+
+    @Test
+    void testDeleteOrphanEmailIntegrations() {
+        Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
+        String orgId = "orphan-email-test-org";
+        String accountId = "orphan-email-test-account";
+
+        resourceHelpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION);
+        resourceHelpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION);
+
+        resourceHelpers.createEndpoint(accountId, orgId, EndpointType.WEBHOOK);
+
+        String response = given()
+            .header(identity)
+            .basePath(API_INTERNAL)
+            .when()
+            .delete("/orphanEmailIntegrations")
+            .then()
+            .statusCode(OK)
+            .extract()
+            .asString();
+
+        JsonObject json = new JsonObject(response);
+        int deleted = json.getInteger("deleted");
+        assertTrue(deleted >= 2, "Expected at least 2 orphan email endpoints to be deleted, got " + deleted);
+
+        Long remainingOrphans = entityManager.createQuery(
+            "SELECT COUNT(e) FROM Endpoint e WHERE e.orgId = :orgId AND e.compositeType.type = :type", Long.class)
+            .setParameter("orgId", orgId)
+            .setParameter("type", EndpointType.EMAIL_SUBSCRIPTION)
+            .getSingleResult();
+        assertEquals(0L, remainingOrphans);
+
+        Long remainingWebhooks = entityManager.createQuery(
+            "SELECT COUNT(e) FROM Endpoint e WHERE e.orgId = :orgId AND e.compositeType.type = :type", Long.class)
+            .setParameter("orgId", orgId)
+            .setParameter("type", EndpointType.WEBHOOK)
+            .getSingleResult();
+        assertEquals(1L, remainingWebhooks);
     }
 }
