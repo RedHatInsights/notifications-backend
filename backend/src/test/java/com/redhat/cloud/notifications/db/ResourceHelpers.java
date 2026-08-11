@@ -256,6 +256,21 @@ public class ResourceHelpers {
         return stats;
     }
 
+    @Transactional
+    public Event createEvent(String accountId, String orgId, Bundle bundle, Application app, EventType eventType) {
+        Event event = new Event();
+        event.setAccountId(accountId);
+        event.setOrgId(orgId);
+        event.setBundleId(bundle.getId());
+        event.setBundleDisplayName(bundle.getDisplayName());
+        event.setApplicationId(app.getId());
+        event.setApplicationDisplayName(app.getDisplayName());
+        event.setEventType(eventType);
+        event.setEventTypeDisplayName(eventType.getDisplayName());
+        entityManager.persist(event);
+        return event;
+    }
+
     public NotificationHistory createNotificationHistory(Event event, Endpoint endpoint, NotificationStatus status) {
         return createNotificationHistory(event, endpoint, status, null);
     }

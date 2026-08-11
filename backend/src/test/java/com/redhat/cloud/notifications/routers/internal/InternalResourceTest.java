@@ -5,13 +5,18 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
+import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Environment;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.routers.dailydigest.TriggerDailyDigestRequest;
 import com.redhat.cloud.notifications.routers.engine.DailyDigestService;
 import com.redhat.cloud.notifications.routers.engine.GeneralCommunicationsService;
@@ -125,6 +130,12 @@ public class InternalResourceTest extends DbIsolatedTest {
 
     @InjectSpy
     SubscriptionRepository subscriptionRepository;
+
+    @Inject
+    BehaviorGroupRepository behaviorGroupRepository;
+
+    @Inject
+    EndpointEventTypeRepository endpointEventTypeRepository;
 
     @Test
     void testCreateNullBundle() {
@@ -1142,10 +1153,25 @@ public class InternalResourceTest extends DbIsolatedTest {
         String orgId = "orphan-email-test-org";
         String accountId = "orphan-email-test-account";
 
-        resourceHelpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION);
-        resourceHelpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION);
+        Endpoint orphan1 = resourceHelpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION);
+        Endpoint orphan2 = resourceHelpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION);
 
-        resourceHelpers.createEndpoint(accountId, orgId, EndpointType.WEBHOOK);
+        Bundle bundle = resourceHelpers.createBundle("orphan-test-bundle", "Orphan Test Bundle");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "orphan-test-app", "Orphan Test App");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "orphan-test-event", "Orphan Test Event", "desc");
+
+        Endpoint linkedToEventType = resourceHelpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION);
+        endpointEventTypeRepository.addEventTypeToEndpoint(eventType.getId(), linkedToEventType.getId(), orgId);
+
+        BehaviorGroup bg = resourceHelpers.createBehaviorGroup(accountId, orgId, "orphan-test-bg", bundle.getId());
+        Endpoint linkedToBehaviorGroup = resourceHelpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION);
+        behaviorGroupRepository.updateBehaviorGroupActions(orgId, bg.getId(), List.of(linkedToBehaviorGroup.getId()));
+
+        Endpoint linkedToHistory = resourceHelpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION);
+        Event event = resourceHelpers.createEvent(accountId, orgId, bundle, app, eventType);
+        resourceHelpers.createNotificationHistory(event, linkedToHistory, NotificationStatus.SUCCESS);
+
+        Endpoint webhook = resourceHelpers.createEndpoint(accountId, orgId, EndpointType.WEBHOOK);
 
         String response = given()
             .header(identity)
@@ -1161,18 +1187,20 @@ public class InternalResourceTest extends DbIsolatedTest {
         int deleted = json.getInteger("deleted");
         assertTrue(deleted >= 2, "Expected at least 2 orphan email endpoints to be deleted, got " + deleted);
 
-        Long remainingOrphans = entityManager.createQuery(
+        Long remainingEmail = entityManager.createQuery(
             "SELECT COUNT(e) FROM Endpoint e WHERE e.orgId = :orgId AND e.compositeType.type = :type", Long.class)
             .setParameter("orgId", orgId)
             .setParameter("type", EndpointType.EMAIL_SUBSCRIPTION)
             .getSingleResult();
-        assertEquals(0L, remainingOrphans);
+        assertEquals(3L, remainingEmail);
 
-        Long remainingWebhooks = entityManager.createQuery(
-            "SELECT COUNT(e) FROM Endpoint e WHERE e.orgId = :orgId AND e.compositeType.type = :type", Long.class)
-            .setParameter("orgId", orgId)
-            .setParameter("type", EndpointType.WEBHOOK)
-            .getSingleResult();
-        assertEquals(1L, remainingWebhooks);
+        Assertions.assertNotNull(entityManager.find(Endpoint.class, linkedToEventType.getId()));
+        Assertions.assertNotNull(entityManager.find(Endpoint.class, linkedToBehaviorGroup.getId()));
+        Assertions.assertNotNull(entityManager.find(Endpoint.class, linkedToHistory.getId()));
+
+        Assertions.assertNull(entityManager.find(Endpoint.class, orphan1.getId()));
+        Assertions.assertNull(entityManager.find(Endpoint.class, orphan2.getId()));
+
+        Assertions.assertNotNull(entityManager.find(Endpoint.class, webhook.getId()));
     }
 }
