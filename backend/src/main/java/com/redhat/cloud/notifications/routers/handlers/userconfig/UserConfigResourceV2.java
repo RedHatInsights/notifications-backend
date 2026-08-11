@@ -97,6 +97,7 @@ public class UserConfigResourceV2 {
     @Parameter(name = "bundle", description = "Restrict the response to this bundle")
     @Parameter(name = "application", description = "Restrict the response to this application; requires 'bundle'")
     @Parameter(name = "event_type", description = "Restrict the response to this event type; requires 'bundle' and 'application'")
+    @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionDTO.class)))
     @APIResponse(responseCode = "400", description = "A query parameter was specified without its required parent (e.g. 'application' without 'bundle')")
     @APIResponse(responseCode = "404", description = "The named bundle, application or event type doesn't exist")
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW)
