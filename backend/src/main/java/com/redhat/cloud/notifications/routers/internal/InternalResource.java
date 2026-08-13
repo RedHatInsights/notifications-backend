@@ -717,6 +717,7 @@ public class InternalResource {
     @DELETE
     @Path("/orphanEmailIntegrations")
     @Produces(APPLICATION_JSON)
+    @Transactional
     @TransactionConfiguration(timeout = 600)
     public Response deleteOrphanEmailIntegrations(@RestQuery String orgId) {
         int deleted = endpointRepository.deleteOrphanEmailIntegrations(orgId);
