@@ -717,7 +717,8 @@ public class InternalResource {
     @Path("/orphanEmailIntegrations")
     @Produces(APPLICATION_JSON)
     @Transactional
-    public Response deleteOrphanEmailIntegrations() {
+    public Response deleteOrphanEmailIntegrations(@RestParam String orgId) {
+    // pass the orgId to EndpointRepository and optionally restrict the query to a specific org ID if provided, or to all orgs if not.
         int deleted = endpointRepository.deleteOrphanEmailIntegrations();
         return Response.ok(new JsonObject().put("deleted", deleted).encode()).build();
     }
