@@ -72,6 +72,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestHeader;
 import org.jboss.resteasy.reactive.RestPath;
+import org.jboss.resteasy.reactive.RestQuery;
 
 import java.net.URI;
 import java.time.LocalTime;
@@ -716,10 +717,9 @@ public class InternalResource {
     @DELETE
     @Path("/orphanEmailIntegrations")
     @Produces(APPLICATION_JSON)
-    @Transactional
-    public Response deleteOrphanEmailIntegrations(@RestParam String orgId) {
-    // pass the orgId to EndpointRepository and optionally restrict the query to a specific org ID if provided, or to all orgs if not.
-        int deleted = endpointRepository.deleteOrphanEmailIntegrations();
+    @TransactionConfiguration(timeout = 600)
+    public Response deleteOrphanEmailIntegrations(@RestQuery String orgId) {
+        int deleted = endpointRepository.deleteOrphanEmailIntegrations(orgId);
         return Response.ok(new JsonObject().put("deleted", deleted).encode()).build();
     }
 }

@@ -1153,8 +1153,9 @@ public class InternalResourceTest extends DbIsolatedTest {
         String orgId = "orphan-email-test-org";
         String accountId = "orphan-email-test-account";
 
-        Endpoint orphan1 = resourceHelpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION);
-        Endpoint orphan2 = resourceHelpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION);
+        LocalDateTime oldTimestamp = LocalDateTime.now(java.time.ZoneOffset.UTC).minusHours(2);
+        Endpoint orphan1 = resourceHelpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION, null, UUID.randomUUID().toString(), "orphan1", null, false, oldTimestamp);
+        Endpoint orphan2 = resourceHelpers.createEndpoint(accountId, orgId, EndpointType.EMAIL_SUBSCRIPTION, null, UUID.randomUUID().toString(), "orphan2", null, false, oldTimestamp);
 
         Bundle bundle = resourceHelpers.createBundle("orphan-test-bundle", "Orphan Test Bundle");
         Application app = resourceHelpers.createApplication(bundle.getId(), "orphan-test-app", "Orphan Test App");
@@ -1185,7 +1186,7 @@ public class InternalResourceTest extends DbIsolatedTest {
 
         JsonObject json = new JsonObject(response);
         int deleted = json.getInteger("deleted");
-        assertTrue(deleted >= 2, "Expected at least 2 orphan email endpoints to be deleted, got " + deleted);
+        assertEquals(2, deleted);
 
         Long remainingEmail = entityManager.createQuery(
             "SELECT COUNT(e) FROM Endpoint e WHERE e.orgId = :orgId AND e.compositeType.type = :type", Long.class)
