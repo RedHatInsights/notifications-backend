@@ -83,16 +83,16 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_1"));
         assertTrue(result.contains("Active rule 1</a>"));
         assertTrue(result.contains("https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png"));
-        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important_v2.png"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important_v3.png"));
 
         assertTrue(result.contains("Resolved Recommendation"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
         assertTrue(result.contains("Active rule 2</a>"));
-        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low_v2.png"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low_v3.png"));
         assertTrue(result.contains("Deactivated Recommendations"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_3"));
         assertTrue(result.contains("Active rule 3</a>"));
-        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical_v2.png"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical_v3.png"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -168,10 +168,10 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("Resolved Recommendation"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
         assertTrue(result.contains("Active rule 2</a>"));
-        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low_v2.png"));
+        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low_v3.png"));
         assertFalse(result.contains("New Recommendation"));
         assertFalse(result.contains("Deactivated Recommendation"));
-        assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical_v2.png"));
+        assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical_v3.png"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 

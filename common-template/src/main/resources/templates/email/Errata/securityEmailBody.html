@@ -30,10 +30,10 @@
                     <td style="{body-section-table-td-style}"><a style="{body-section-table-td-a-style}" href="{action.context.base_url}{it.payload.id}" target="_blank">{it.payload.id}</a></td>
                     <td style="{body-section-table-td-style}">
                         {#switch it.payload.severity.toLowerCase}
-                            {#case 'low'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v2.png" alt="Low" width="55" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderLowTag}<!--<![endif]-->
-                            {#case 'moderate'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v2.png" alt="Moderate" width="85" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderModerateTag}<!--<![endif]-->
-                            {#case 'important'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v2.png" alt="Important" width="86" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderImportantTag}<!--<![endif]-->
-                            {#case 'critical'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v2.png" alt="Critical" width="70" border="0"><![endif]--><!--[if !mso]><!-->{renderCriticalTag}<!--<![endif]-->
+                            {#case 'low'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v3.png" alt="Low" width="55" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderLowTag}<!--<![endif]-->
+                            {#case 'moderate'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v3.png" alt="Moderate" width="85" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderModerateTag}<!--<![endif]-->
+                            {#case 'important'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v3.png" alt="Important" width="86" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderImportantTag}<!--<![endif]-->
+                            {#case 'critical'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v3.png" alt="Critical" width="70" border="0"><![endif]--><!--[if !mso]><!-->{renderCriticalTag}<!--<![endif]-->
                         {/switch}
                     </td>
                     <td style="{body-section-table-td-style}">{it.payload.synopsis}</td>
