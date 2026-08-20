@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS workspace (
     CONSTRAINT pk_workspace PRIMARY KEY (id)
 );
 
+CREATE INDEX IF NOT EXISTS ix_workspace_org_id ON workspace (org_id);
+
 -- Nullable during the transition window only; a follow-up migration makes it NOT NULL once
 -- every endpoint has been assigned a workspace.
 ALTER TABLE endpoints ADD COLUMN IF NOT EXISTS workspace_id UUID;
@@ -20,3 +22,5 @@ ALTER TABLE endpoints ADD CONSTRAINT fk_endpoints_workspace_id
     FOREIGN KEY (workspace_id)
     REFERENCES workspace(id)
     ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS ix_endpoints_workspace_id ON endpoints (workspace_id);
