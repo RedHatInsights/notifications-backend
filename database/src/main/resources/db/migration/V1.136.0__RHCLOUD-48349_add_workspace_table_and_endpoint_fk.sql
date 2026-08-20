@@ -6,8 +6,8 @@
 CREATE TABLE IF NOT EXISTS workspace (
     id UUID NOT NULL DEFAULT public.gen_random_uuid(),
     org_id TEXT NOT NULL,
-    created timestamp with time zone DEFAULT now() NOT NULL,
-    updated timestamp with time zone,
+    created timestamp DEFAULT now() NOT NULL,
+    updated timestamp,
     CONSTRAINT pk_workspace PRIMARY KEY (id)
 );
 
