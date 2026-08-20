@@ -30,13 +30,13 @@
             <td style="{body-section-table-td-style}">
                 {#switch it.payload.total_risk}
                 {#case '1'}
-                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v2.png" alt="Low severity" width="55" border="0">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v3.png" alt="Low severity" width="55" border="0">
                 {#case '2'}
-                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v2.png" alt="Moderate severity" width="85" border="0">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v3.png" alt="Moderate severity" width="85" border="0">
                 {#case '3'}
-                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v2.png" alt="Important severity" width="86" border="0">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v3.png" alt="Important severity" width="86" border="0">
                 {#case '4'}
-                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v2.png" alt="Critical severity" width="70" border="0">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v3.png" alt="Critical severity" width="70" border="0">
                 {/switch}
             </td>
             <td style="{body-section-table-td-style}">{it.payload.publish_date.toTimeAgo()}</td>
