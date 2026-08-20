@@ -5,8 +5,7 @@
 
 CREATE TABLE IF NOT EXISTS workspace (
     id UUID NOT NULL DEFAULT public.gen_random_uuid(),
-    -- Nullable during the workspace rollout: the Red Hat-controlled system workspace has a null org_id.
-    org_id TEXT,
+    org_id TEXT NOT NULL,
     created timestamp with time zone DEFAULT now() NOT NULL,
     updated timestamp with time zone,
     CONSTRAINT pk_workspace PRIMARY KEY (id)
