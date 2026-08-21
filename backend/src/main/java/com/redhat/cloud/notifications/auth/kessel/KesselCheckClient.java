@@ -15,6 +15,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.project_kessel.api.auth.OAuth2ClientCredentials;
+import org.project_kessel.api.auth.OAuth2Exception;
 import org.project_kessel.api.inventory.v1beta2.CheckForUpdateRequest;
 import org.project_kessel.api.inventory.v1beta2.CheckForUpdateResponse;
 import org.project_kessel.api.inventory.v1beta2.CheckRequest;
@@ -120,27 +121,41 @@ public class KesselCheckClient {
 
     @Retry(maxRetries = 3, delay = 100, retryOn = KesselTransientException.class)
     public CheckResponse check(CheckRequest request) {
+        // Capture the channel backing this call so, on failure, we can act on the exact channel that failed
+        // rather than the shared field, which another thread may have concurrently reinitialized.
+        KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub client = getClient();
+        ManagedChannel channel = grpcChannel;
         try {
-            return getClient()
+            return client
                 .withDeadlineAfter(backendConfig.getKesselTimeoutMs(), TimeUnit.MILLISECONDS)
                 .check(request);
         } catch (StatusRuntimeException e) {
-            throw handleGrpcException(e);
+            throw handleGrpcException(e, channel);
+        } catch (OAuth2Exception e) {
+            Log.warnf("Transient error fetching Kessel OAuth2 credentials (may retry): %s", e.getMessage());
+            throw new KesselTransientException(e);
         }
     }
 
     @Retry(maxRetries = 3, delay = 100, retryOn = KesselTransientException.class)
     public CheckForUpdateResponse checkForUpdate(CheckForUpdateRequest request) {
+        // Capture the channel backing this call so, on failure, we can act on the exact channel that failed
+        // rather than the shared field, which another thread may have concurrently reinitialized.
+        KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub client = getClient();
+        ManagedChannel channel = grpcChannel;
         try {
-            return getClient()
+            return client
                 .withDeadlineAfter(backendConfig.getKesselTimeoutMs(), TimeUnit.MILLISECONDS)
                 .checkForUpdate(request);
         } catch (StatusRuntimeException e) {
-            throw handleGrpcException(e);
+            throw handleGrpcException(e, channel);
+        } catch (OAuth2Exception e) {
+            Log.warnf("Transient error fetching Kessel OAuth2 credentials (may retry): %s", e.getMessage());
+            throw new KesselTransientException(e);
         }
     }
 
-    private RuntimeException handleGrpcException(StatusRuntimeException e) {
+    private RuntimeException handleGrpcException(StatusRuntimeException e, ManagedChannel failedChannel) {
         Status.Code code = e.getStatus().getCode();
 
         meterRegistry.counter(KESSEL_GRPC_ERROR_COUNTER_NAME, Tags.of(KESSEL_GRPC_ERROR_TAG_ERROR_TYPE, code.name())).increment();
@@ -148,7 +163,15 @@ public class KesselCheckClient {
         // UNAUTHENTICATED usually means the OAuth2 token expired. Recreate channel with fresh credentials.
         if (code == UNAUTHENTICATED) {
             Log.warnf("Transient gRPC error from Kessel (may retry): %s - %s. Recreating channel with fresh credentials.", code, e.getMessage());
-            initializeChannel("unauthenticated");
+            try {
+                initializeChannel("unauthenticated");
+            } catch (OAuth2Exception oauthEx) {
+                Log.warnf("Failed to refresh OAuth2 credentials after UNAUTHENTICATED error: %s", oauthEx.getMessage());
+                if (failedChannel != null) {
+                    failedChannel.shutdown();
+                }
+                return new KesselTransientException(oauthEx);
+            }
             return new KesselTransientException(e);
         }
 
