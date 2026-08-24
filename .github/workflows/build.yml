@@ -51,7 +51,7 @@ jobs:
         # Needed before "Regenerate yarn.lock for Mintmaker branches" (so that
         # commit is signed too), not just before "Create PR for admin-console
         # updates" further down.
-        if: github.event_name == 'push' && ((steps.admin-console-changed.outputs.any_changed == 'true' && github.ref == 'refs/heads/master') || (steps.yarn-files-changed.outputs.any_changed == 'true' && startsWith(github.ref_name, 'konflux/mintmaker/')))
+        if: (github.event_name == 'push' && steps.admin-console-changed.outputs.any_changed == 'true' && github.ref == 'refs/heads/master') || (steps.yarn-files-changed.outputs.any_changed == 'true' && ((github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')) || (github.event_name == 'pull_request' && startsWith(github.head_ref, 'konflux/mintmaker/') && github.event.pull_request.head.repo.fork == false)))
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
@@ -105,7 +105,7 @@ jobs:
           fi
       - name: Set up Node for Mintmaker lockfile refresh
         # Keep this version in sync with <nodeVersion> in admin-console/pom.xml.
-        if: steps.yarn-files-changed.outputs.any_changed == 'true' && github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')
+        if: steps.yarn-files-changed.outputs.any_changed == 'true' && ((github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')) || (github.event_name == 'pull_request' && startsWith(github.head_ref, 'konflux/mintmaker/') && github.event.pull_request.head.repo.fork == false))
         uses: actions/setup-node@v7
         with:
           node-version: 22.23.2
@@ -118,12 +118,23 @@ jobs:
         # check below makes this a no-op when nothing actually changes.
         # Relies on the git identity and signing key set up by "Configure GPG
         # signing" so the pushed commit shows as Verified.
-        if: steps.yarn-files-changed.outputs.any_changed == 'true' && github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')
+        #
+        # Also runs on pull_request (restricted to non-fork Mintmaker branches)
+        # as a fallback for when the branch's own copy of this workflow
+        # predates this step and never ran it on push: the base branch's
+        # (master's) workflow is what actually executes for pull_request
+        # events, so it still catches the mismatch even if the branch is
+        # stale. Explicit checkout of the head branch below is required
+        # because pull_request builds a detached merge commit, not the
+        # branch tip.
+        if: steps.yarn-files-changed.outputs.any_changed == 'true' && ((github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')) || (github.event_name == 'pull_request' && startsWith(github.head_ref, 'konflux/mintmaker/') && github.event.pull_request.head.repo.fork == false))
         working-directory: admin-console/src/main/webapp
         env:
           YARN_ENABLE_IMMUTABLE_INSTALLS: "false"
-          BRANCH_REF: ${{ github.ref_name }}
+          BRANCH_REF: ${{ github.head_ref || github.ref_name }}
         run: |
+          git fetch origin "${BRANCH_REF}"
+          git checkout -B "${BRANCH_REF}" FETCH_HEAD
           corepack enable
           yarn install
           if git diff --quiet -- yarn.lock; then
@@ -142,7 +153,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash .github/scripts/push-admin-console.sh
       - name: Cleanup GPG key
-        if: always() && github.event_name == 'push' && ((steps.admin-console-changed.outputs.any_changed == 'true' && github.ref == 'refs/heads/master') || (steps.yarn-files-changed.outputs.any_changed == 'true' && startsWith(github.ref_name, 'konflux/mintmaker/')))
+        if: always() && ((github.event_name == 'push' && steps.admin-console-changed.outputs.any_changed == 'true' && github.ref == 'refs/heads/master') || (steps.yarn-files-changed.outputs.any_changed == 'true' && ((github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')) || (github.event_name == 'pull_request' && startsWith(github.head_ref, 'konflux/mintmaker/') && github.event.pull_request.head.repo.fork == false))))
         run: |
           if [ -n "${GPG_KEY_FINGERPRINT}" ]; then
             gpg --batch --yes --delete-secret-and-public-key "${GPG_KEY_FINGERPRINT}" || true
