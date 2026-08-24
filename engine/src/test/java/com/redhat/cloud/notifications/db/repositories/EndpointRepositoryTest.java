@@ -497,4 +497,29 @@ public class EndpointRepositoryTest {
             }
         }
     }
+
+    /**
+     * Tests that the function under test finds integration names for a
+     * type that has no subtype -- e.g. PagerDuty -- since the "subType"
+     * column being null requires an "IS NULL" comparison rather than an
+     * equality comparison.
+     */
+    @Test
+    @Transactional
+    void testFindIntegrationNamesByTypeGroupedByOrganizationIdWithNullSubType() {
+        final Endpoint pagerDutyEndpoint = this.resourceHelpers.createEndpoint(PAGERDUTY, null, true, 0);
+        pagerDutyEndpoint.setOrgId(DEFAULT_ORG_ID);
+        this.entityManager.persist(pagerDutyEndpoint);
+
+        // Create a "noise" endpoint of a different type to make sure it
+        // does not get incorrectly picked up.
+        final Endpoint camelEndpoint = this.resourceHelpers.createEndpoint(CAMEL, "teams", true, 0);
+        camelEndpoint.setOrgId(DEFAULT_ORG_ID);
+        this.entityManager.persist(camelEndpoint);
+
+        final Map<String, List<String>> result = this.endpointRepository.findIntegrationNamesByTypeGroupedByOrganizationId(new CompositeEndpointType(PAGERDUTY));
+
+        Assertions.assertTrue(result.containsKey(DEFAULT_ORG_ID), "the organization ID should be present in the result");
+        Assertions.assertEquals(List.of(pagerDutyEndpoint.getName()), result.get(DEFAULT_ORG_ID), "the PagerDuty endpoint should have been found");
+    }
 }

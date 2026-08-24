@@ -16,6 +16,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 
 import java.time.Duration;
@@ -323,18 +324,32 @@ public class EndpointRepository {
      * integration names as the value.
      */
     public Map<String, List<String>> findIntegrationNamesByTypeGroupedByOrganizationId(final CompositeEndpointType integrationType) {
+        // The "subType" column can be null, and in SQL "column = NULL" never
+        // evaluates to true, so it needs to be compared with "IS NULL"
+        // instead of the equality operator.
+        final String subTypeCondition = integrationType.getSubType() == null
+            ? "e.compositeType.subType IS NULL"
+            : "e.compositeType.subType = :subType";
+
         final String findByTypeQuery =
             "SELECT " +
                 "e " +
             "FROM " +
                 "Endpoint AS e " +
             "WHERE " +
-                "e.compositeType = :type";
+                "e.compositeType.type = :type " +
+            "AND " +
+                subTypeCondition;
+
+        final TypedQuery<Endpoint> query = this.entityManager.createQuery(findByTypeQuery, Endpoint.class)
+            .setParameter("type", integrationType.getType());
+
+        if (integrationType.getSubType() != null) {
+            query.setParameter("subType", integrationType.getSubType());
+        }
 
         // Fetch the endpoints from the database.
-        final List<Endpoint> endpoints = this.entityManager.createQuery(findByTypeQuery, Endpoint.class)
-            .setParameter("type", integrationType)
-            .getResultList();
+        final List<Endpoint> endpoints = query.getResultList();
 
         // Group the endpoints by org ID.
         final Map<String, List<String>> result = new HashMap<>();
