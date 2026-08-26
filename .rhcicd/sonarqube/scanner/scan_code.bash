@@ -20,8 +20,9 @@ redis-server --daemonize yes
 #
 # On the master branch there is no need to give the pull request details.
 #
+# Run the Maven/SonarQube analysis as the non-root 'default' user.
 if [ -n "${GIT_BRANCH:-}" ] && [ "${GIT_BRANCH}" == "origin/master" ]; then
-  ./mvnw clean verify sonar:sonar \
+  runuser -u default -- ./mvnw clean verify sonar:sonar \
     -Dsonar.host.url="${SONARQUBE_HOST_URL}" \
     -Dsonar.exclusions="**/*.sql" \
     -Dsonar.projectKey="com.redhat.console.notifications.backend" \
@@ -34,7 +35,7 @@ if [ -n "${GIT_BRANCH:-}" ] && [ "${GIT_BRANCH}" == "origin/master" ]; then
     -Dquarkus.redis.hosts=redis://localhost/ \
     --no-transfer-progress
 else
-  ./mvnw clean verify sonar:sonar \
+  runuser -u default -- ./mvnw clean verify sonar:sonar \
     -Dsonar.host.url="${SONARQUBE_HOST_URL}" \
     -Dsonar.exclusions="**/*.sql" \
     -Dsonar.projectKey="com.redhat.console.notifications.backend" \

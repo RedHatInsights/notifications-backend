@@ -30,6 +30,7 @@ docker build \
 #
 if [ -n "${GIT_BRANCH:-}" ] && [ "${GIT_BRANCH}" == "origin/master" ]; then
   docker run \
+    --user root \
     --env COMMIT_SHORT="${COMMIT_SHORT}" \
     --env GIT_BRANCH="${GIT_BRANCH}" \
     --env RH_IT_ROOT_CA_CERT_URL="${RH_IT_ROOT_CA_CERT_URL}" \
@@ -41,6 +42,7 @@ if [ -n "${GIT_BRANCH:-}" ] && [ "${GIT_BRANCH}" == "origin/master" ]; then
     bash .rhcicd/sonarqube/scanner/scan_code.bash
 else
   docker run \
+    --user root \
     --env COMMIT_SHORT="${COMMIT_SHORT}" \
     --env GIT_BRANCH="${GIT_BRANCH}" \
     --env GITHUB_PULL_REQUEST_ID="${ghprbPullId}" \
