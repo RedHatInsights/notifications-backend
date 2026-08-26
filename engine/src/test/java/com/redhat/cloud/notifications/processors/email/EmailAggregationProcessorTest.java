@@ -379,13 +379,12 @@ class EmailAggregationProcessorTest {
     private void mockUsers(User user1, User user2, User user3) {
         when(externalRecipientsResolver.recipientUsers(anyString(), anySet(), anySet(), anySet(), anyBoolean(), any()))
             .then(invocation -> {
-                    Set<RecipientSettings> list = invocation.getArgument(1);
-                    if (list.isEmpty()) {
-                        return Set.of(user1, user2);
-                    }
-                    return Set.of(user1, user2, user3);
+                Set<RecipientSettings> list = invocation.getArgument(1);
+                if (list.isEmpty()) {
+                    return Set.of(user1, user2);
                 }
-            );
+                return Set.of(user1, user2, user3);
+            });
     }
 
     private void createAggregatorEventTypeIfNeeded() {
