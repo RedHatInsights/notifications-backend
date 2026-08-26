@@ -25,6 +25,22 @@ Red Hat Enterprise Linux - Life Cycle Monthly Report - {action.context.lifecycle
     rhel8SystemsCount = action.events[0].payload.appstream_retired.orEmpty.rhel8.orEmpty.systems_count.or(0)
 }
 <table style="width: 100%; border: 0">
+<tr><td>
+    <table cellspacing="0" cellpadding="0" border="0" width="100%" style="border-radius: 16px; border-color: #5e40be; border-width: 2px; border-style: solid; overflow: hidden; background-color: #ffffff;">
+        <tr>
+            <td style="padding: 10px 0 10px 10px; vertical-align: top;">
+                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_info_purple.png" title="Info" alt="Info" border="0" width="16" style="vertical-align: -2px;"/>
+            </td>
+            <td style="padding: 10px 10px 10px 8px;">
+                <p style="margin-top: 0; font-size: 14px; font-weight: 700; color: #151515;">Systems on RHEL 6 and below are not shown in this report</p>
+                <p style="margin-bottom: 0; font-size: 14px; font-weight: 400; color: #151515;">
+                    Only RHEL 7 and above and Application Streams are displayed.
+                </p>
+            </td>
+        </tr>
+    </table>
+</td></tr>
+<tr><td style="line-height: 24px">&#xA0;</td></tr>
 {#if rhelData.rhel_versions_count.or(-1) >= 0 || rhel10Data.count.or(-1) >= 0 || rhel9Data.count.or(-1) >= 0 || rhel8Data.count.or(-1) >= 0}
 {! RHEL life cycle section !}
 {#if rhelData.rhel_versions_count.or(-1) >= 0}
