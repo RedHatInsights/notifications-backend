@@ -26,6 +26,7 @@ import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupRequest;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.CreateBehaviorGroupResponse;
 import com.redhat.cloud.notifications.routers.models.behaviorgroup.UpdateBehaviorGroupRequest;
+import com.redhat.cloud.notifications.security.SecurityLog;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -347,6 +348,7 @@ public class NotificationResource {
         response.created = behaviorGroup.getCreated();
 
         endpointEventTypeRepository.refreshEndpointLinksToEventTypeFromBehaviorGroup(orgId, Set.of(behaviorGroup.getId()));
+        SecurityLog.logCrudSuccess("CREATE", "behavior_group", behaviorGroup.getId().toString(), sec, "Created behavior group: " + request.displayName);
         return response;
     }
 
@@ -390,6 +392,7 @@ public class NotificationResource {
 
         final List<UUID> endpointLinkedToBgAfterUpdate = endpointEventTypeRepository.findEndpointsByBehaviorGroupId(orgId, Set.of(id));
         endpointEventTypeRepository.refreshEndpointLinksToEventType(orgId, Stream.concat(endpointLinkedToBgBeforeUpdate.stream(), endpointLinkedToBgAfterUpdate.stream()).toList());
+        SecurityLog.logCrudSuccess("UPDATE", "behavior_group", id.toString(), sec, "Updated behavior group");
         return Response.status(200).type(APPLICATION_JSON).entity(true).build();
     }
 
@@ -405,6 +408,7 @@ public class NotificationResource {
         final List<UUID> endpointsLinkedToBgToDelete = endpointEventTypeRepository.findEndpointsByBehaviorGroupId(orgId, Set.of(behaviorGroupId));
         final Boolean response = behaviorGroupRepository.delete(orgId, behaviorGroupId);
         endpointEventTypeRepository.refreshEndpointLinksToEventType(orgId, endpointsLinkedToBgToDelete);
+        SecurityLog.logCrudSuccess("DELETE", "behavior_group", behaviorGroupId.toString(), sec, "Deleted behavior group");
         return response;
     }
 

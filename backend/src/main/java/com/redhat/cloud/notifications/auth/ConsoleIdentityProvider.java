@@ -11,9 +11,9 @@ import com.redhat.cloud.notifications.auth.rbac.RbacServer;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
+import com.redhat.cloud.notifications.security.SecurityLog;
 import io.netty.channel.ConnectTimeoutException;
 import io.quarkus.cache.CacheResult;
-import io.quarkus.logging.Log;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.IdentityProvider;
@@ -83,9 +83,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
         try {
             consoleIdentity = getRhIdentityFromString(request.getXRhIdentityHeaderValue());
         } catch (final IllegalArgumentException e) {
-            // Authentication failure - SEC-MON-REQ-1 compliance (EOI-7 invalid_login)
-            Log.warnf("[action: AUTHENTICATE][auth_method: x-rh-identity][outcome: failure][reason: invalid_header] Unable to decode identity header");
-
+            SecurityLog.logAuthFailure("x-rh-identity", "invalid_header");
             throw new AuthenticationFailedException();
         }
 
@@ -96,9 +94,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                 // with an "org_id", since it is crucial for our application
                 // to work and make the proper relations.
                 if (rhIdentity.getOrgId() == null || rhIdentity.getOrgId().isBlank()) {
-                    // Authentication failure - SEC-MON-REQ-1 compliance (EOI-7 invalid_login)
-                    Log.warnf("[action: AUTHENTICATE][auth_method: x-rh-identity][outcome: failure][reason: missing_org_id] Rejected request header because the \"org_id\" field is missing in the identity header");
-
+                    SecurityLog.logAuthFailure("x-rh-identity", "missing_org_id");
                     return Uni.createFrom().failure(new AuthenticationFailedException());
                 }
 
@@ -124,9 +120,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                 if (this.backendConfig.isRBACEnabled()) {
                     return this.buildRBACSecurityIdentity(request.getXRhIdentityHeaderValue(), rhIdPrincipal);
                 } else if (!this.environment.isLocal()) {
-                    // Authentication failure - SEC-MON-REQ-1 compliance (EOI-7 invalid_login)
-                    Log.errorf("[action: AUTHENTICATE][auth_method: x-rh-identity][outcome: failure][reason: kessel_rbac_disabled] Kessel and RBAC are disabled in a non development environment");
-
+                    SecurityLog.logAuthFailure("x-rh-identity", "kessel_rbac_disabled");
                     return Uni.createFrom().failure(new AuthenticationFailedException());
                 } else {
                     return this.buildDevelopmentSecurityIdentity(rhIdPrincipal);
@@ -142,10 +136,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
             // We do not support any other authentication methods for the
             // moment.
             default -> {
-                // Authentication failure - SEC-MON-REQ-1 compliance (EOI-7 invalid_login)
-                Log.warnf("[action: AUTHENTICATE][auth_method: x-rh-identity][outcome: failure][reason: unprocessable_identity][identity_type: %s][identity_name: %s] Unprocessable identity",
-                    consoleIdentity.type, consoleIdentity.getName());
-
+                SecurityLog.logAuthFailure("x-rh-identity", "unprocessable_identity");
                 return Uni.createFrom().failure(new AuthenticationFailedException());
             }
         }
@@ -193,8 +184,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
         // Kessel uses the "user_id" from the "user" and "service account
         // identities, so it needs to be present for the authorization to work.
         if (rhIdentity.getUserId() == null || rhIdentity.getUserId().isBlank()) {
-            Log.warnf("[x-rh-identity: %s] Rejected identity header due to the \"user_id\" field missing on a Kessel context");
-
+            SecurityLog.logAuthFailure("x-rh-identity", "missing_user_id_kessel");
             return Uni.createFrom().failure(new AuthenticationFailedException());
         } else {
             return Uni.createFrom().item(
