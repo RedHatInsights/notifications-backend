@@ -52,7 +52,7 @@
                 <table role="presentation">
                 {#for cve in release.related_cve}
                     <tr>
-                    <td><a style="{body-section-table-td-a-style}" href="{cve.url}" target="_blank">{cve.cve}</a></td>
+                    <td>{cve.cve}</td>
                     <td style="min-width: 85px">
                     {#switch cve.severity}
                         {#case 'low'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v3.png" alt="Low" width="55" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderLowTag}<!--<![endif]-->
