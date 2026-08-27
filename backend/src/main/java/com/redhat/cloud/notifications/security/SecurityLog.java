@@ -77,12 +77,16 @@ public final class SecurityLog {
     /**
      * Logs an authorization (permission) failure.
      *
+     * <p>Logged at INFO level because authorization denials are normal
+     * operational events (users accessing endpoints they lack permissions for)
+     * and do not require engineering action.</p>
+     *
      * @param resourceType       the type of resource being accessed
      * @param requiredPermission the permission that was required
      * @param sec                the security context of the request
      */
     public static void logAuthzFailure(String resourceType, String requiredPermission, SecurityContext sec) {
-        Log.warnf("[security_event: true][action: AUTHORIZE][resource_type: %s][resource_id: N/A][outcome: failure][principal: %s][required_permission: %s] Authorization denied",
+        Log.infof("[security_event: true][action: AUTHORIZE][resource_type: %s][resource_id: N/A][outcome: failure][principal: %s][required_permission: %s] Authorization denied",
             resourceType, principalFromContext(sec), requiredPermission);
     }
 
