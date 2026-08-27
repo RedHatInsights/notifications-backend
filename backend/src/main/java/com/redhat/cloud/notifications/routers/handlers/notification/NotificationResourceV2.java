@@ -52,7 +52,7 @@ public class NotificationResourceV2 {
         schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
     )
     @Operation(operationId = "NotificationResource$V2_getLinkedBehaviorGroups", summary = "Retrieve the behavior groups linked to an event type.")
-    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW)
+    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "behavior_group")
     public Page<BehaviorGroup> getLinkedBehaviorGroups(
         @Context SecurityContext sec,
         @PathParam("eventTypeId") UUID eventTypeId,

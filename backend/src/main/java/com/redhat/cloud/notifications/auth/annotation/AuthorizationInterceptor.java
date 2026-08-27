@@ -84,7 +84,7 @@ public class AuthorizationInterceptor {
             if (securityContext.isUserInRole(annotation.legacyRBACRole())) {
                 return ctx.proceed();
             } else {
-                SecurityLog.logAuthzFailure("endpoint", annotation.legacyRBACRole(), securityContext);
+                SecurityLog.logAuthzFailure(annotation.resourceType(), annotation.legacyRBACRole(), securityContext);
                 throw new ForbiddenException();
             }
         }

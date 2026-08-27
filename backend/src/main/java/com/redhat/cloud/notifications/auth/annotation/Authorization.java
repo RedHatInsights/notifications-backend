@@ -25,6 +25,13 @@ public @interface Authorization {
     @Nonbinding String legacyRBACRole();
 
     /**
+     * The type of resource being guarded by this authorization check.
+     * Used in security audit logs when an RBAC authorization denial occurs.
+     * @return the resource type for audit logging (e.g. "integration", "behavior_group", "event").
+     */
+    @Nonbinding String resourceType() default "integration";
+
+    /**
      * The Kessel workspace permissions defined by the developer.
      * @return an array of defined workspace permissions.
      */
