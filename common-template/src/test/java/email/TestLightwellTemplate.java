@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
+import com.redhat.cloud.notifications.qute.templates.Severity;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +15,7 @@ import java.util.Map;
 
 import static com.redhat.cloud.notifications.qute.templates.mapping.Lightwell.LIGHTWELL_JAVA_REMEDIATED_EVENT_TYPE;
 import static helpers.TestHelpers.DEFAULT_ORG_ID;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -91,6 +93,27 @@ public class TestLightwellTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("CVE-2026-0909"));
         assertTrue(result.contains(">Critical</td>"));
         assertTrue(result.contains(">Important</td>"));
+    }
+
+    @Test
+    public void testJavaRemediatedEmailTitle() {
+        Action action = createLightwellAction();
+        eventTypeDisplayName = "Java Remediated";
+
+        String result = generateEmailSubject(LIGHTWELL_JAVA_REMEDIATED_EVENT_TYPE, action);
+        assertEquals("Instant notification - Java Remediated - Lightwell", result);
+
+        action.setSeverity(Severity.CRITICAL.name());
+        String criticalResult = generateEmailSubject(LIGHTWELL_JAVA_REMEDIATED_EVENT_TYPE, action);
+        assertEquals("[CRITICAL] Instant notification - Java Remediated - Lightwell", criticalResult);
+
+        action.setSeverity(Severity.NONE.name());
+        String noneResult = generateEmailSubject(LIGHTWELL_JAVA_REMEDIATED_EVENT_TYPE, action);
+        assertEquals("Instant notification - Java Remediated - Lightwell", noneResult);
+
+        action.setSeverity(Severity.UNDEFINED.name());
+        String undefinedResult = generateEmailSubject(LIGHTWELL_JAVA_REMEDIATED_EVENT_TYPE, action);
+        assertEquals("Instant notification - Java Remediated - Lightwell", undefinedResult);
     }
 
     @Test

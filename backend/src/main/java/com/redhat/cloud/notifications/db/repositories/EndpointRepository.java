@@ -21,6 +21,8 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 
 import javax.annotation.Nullable;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -543,5 +545,28 @@ public class EndpointRepository {
             .setFirstResult(offset)
             .setMaxResults(limit)
             .getResultList();
+    }
+
+    @Transactional
+    public int deleteOrphanEmailIntegrations(String orgId) {
+        StringBuilder hql = new StringBuilder("DELETE FROM Endpoint e "
+            + "WHERE e.compositeType.type = :endpointType "
+            + "AND e.created < :gracePeriod "
+            + "AND NOT EXISTS (SELECT 1 FROM EndpointEventType eet WHERE eet.endpoint = e) "
+            + "AND NOT EXISTS (SELECT 1 FROM BehaviorGroupAction bga WHERE bga.endpoint = e) "
+            + "AND NOT EXISTS (SELECT 1 FROM NotificationHistory nh WHERE nh.endpoint = e)");
+        if (orgId != null) {
+            hql.append(" AND e.orgId = :orgId");
+        }
+        var query = entityManager.createQuery(hql.toString())
+            .setParameter("endpointType", EndpointType.EMAIL_SUBSCRIPTION)
+            .setParameter("gracePeriod", LocalDateTime.now(ZoneId.of("UTC")).minusHours(1));
+        if (orgId != null) {
+            query.setParameter("orgId", orgId);
+        }
+        int deleted = query.executeUpdate();
+        Log.infof("[action: DELETE][resource_type: endpoint][org_id: %s][outcome: success] Deleted %d orphan email integrations",
+            orgId != null ? orgId : "all", deleted);
+        return deleted;
     }
 }

@@ -1,9 +1,9 @@
 {@boolean renderTitleRightPart=true}
 {@boolean renderHeaderTitle=false}
-{@String renderLowTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; border-color: #5e40be; border-width: 1px; border-style: solid; background-color: #ffffff; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/minor-purple.png" height="10px" style="margin-right: 4px;">Low</td></tr></table>'}
-{@String renderModerateTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; border-color: #dba614; border-width: 1px; border-style: solid; background-color: #ffffff; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/moderate.png" height="10px" style="margin-right: 4px;">Moderate</td></tr></table>'}
-{@String renderImportantTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; background-color: #ffcd17; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400;"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/important-black.png" height="10px" style="margin-right: 4px;">Important</td></tr></table>'}
-{@String renderCriticalTag='<table cellspacing="0" cellpadding="0" style="border-radius: 999px; background-color: #b0370b; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400; color: #ffffff;"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/critical-white.png" height="10px" style="margin-right: 4px;">Critical</td></tr></table>'}
+{@String renderLowTag='<table cellspacing="0" cellpadding="0" role="presentation" style="border-radius: 999px; background-color: #707070; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400; color: #ffffff"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/icon_minor_v3_white.png" height="10px" style="margin-right: 4px;">Low</td></tr></table>'}
+{@String renderModerateTag='<table cellspacing="0" cellpadding="0" role="presentation" style="border-radius: 999px; background-color: #DCA614; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/icon_moderate_v3_black.png" height="10px" style="margin-right: 4px;">Moderate</td></tr></table>'}
+{@String renderImportantTag='<table cellspacing="0" cellpadding="0" role="presentation" style="border-radius: 999px; background-color: #CA6C0F; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400;"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/icon_important_v3_black.png" height="10px" style="margin-right: 4px;">Important</td></tr></table>'}
+{@String renderCriticalTag='<table cellspacing="0" cellpadding="0" role="presentation" style="border-radius: 999px; background-color: #B1380B; vertical-align: middle; line-height: 18px;"><tr><td style="padding-top: 1px; padding-bottom: 1px; padding-left: 8px; padding-right: 8px; font-size: 12px; font-weight: 400; color: #ffffff;"><img src="https://console.redhat.com/apps/frontend-assets/email-assets/severities/icon_critical_v3_white.png" height="10px" style="margin-right: 4px;">Critical</td></tr></table>'}
 {#include email/Common/insightsEmailBody}
 {#content-header-logo}
     <a href="https://console.redhat.com/lightwell" target="_blank">
@@ -28,9 +28,9 @@
 <table style="{body-section-table-style}">
     <thead>
     <tr>
-        <th style="{body-section-table-th-style}">Package{#if eventsCount > 1}s{/if}</th>
-        <th style="{body-section-table-th-style} min-width: 90px;">Release</th>
-        <th style="{body-section-table-th-style}; min-width: 210px" colspan="2">Related CVE(s)</th>
+        <th scope="col" style="{body-section-table-th-style}">Package{#if eventsCount > 1}s{/if}</th>
+        <th scope="col" style="{body-section-table-th-style} min-width: 90px;">Release</th>
+        <th scope="col" style="{body-section-table-th-style}; min-width: 210px" colspan="2">Related CVE(s)</th>
     </tr>
     </thead>
     <tbody style="{body-section-table-tbody-style}">
@@ -49,16 +49,16 @@
                 {/for}
                 </td>
                 <td style="{body-section-table-td-style}{#if !release_isLast}; border-bottom-width: 0 !important;{/if}">
-                <table>
+                <table role="presentation">
                 {#for cve in release.related_cve}
                     <tr>
-                    <td><a style="{body-section-table-td-a-style}" href="{cve.url}" target="_blank">{cve.cve}</a></td>
+                    <td>{cve.cve}</td>
                     <td style="min-width: 85px">
                     {#switch cve.severity}
-                        {#case 'low'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v2.png" alt="Low" width="55" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderLowTag}<!--<![endif]-->
-                        {#case 'moderate'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v2.png" alt="Moderate" width="85" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderModerateTag}<!--<![endif]-->
-                        {#case 'important'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v2.png" alt="Important" width="86" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderImportantTag}<!--<![endif]-->
-                        {#case 'critical'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v2.png" alt="Critical" width="70" border="0"><![endif]--><!--[if !mso]><!-->{renderCriticalTag}<!--<![endif]-->
+                        {#case 'low'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v3.png" alt="Low" width="55" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderLowTag}<!--<![endif]-->
+                        {#case 'moderate'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v3.png" alt="Moderate" width="85" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderModerateTag}<!--<![endif]-->
+                        {#case 'important'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v3.png" alt="Important" width="86" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderImportantTag}<!--<![endif]-->
+                        {#case 'critical'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v3.png" alt="Critical" width="70" border="0"><![endif]--><!--[if !mso]><!-->{renderCriticalTag}<!--<![endif]-->
                     {/switch}
                     </td>
                     </tr>

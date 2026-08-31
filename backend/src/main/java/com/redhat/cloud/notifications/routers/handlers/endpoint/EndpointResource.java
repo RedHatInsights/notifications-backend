@@ -103,6 +103,7 @@ public class EndpointResource extends EndpointResourceCommon {
 
     public static final String DEPRECATED_SLACK_CHANNEL_ERROR = "The channel field is deprecated";
     public static final String HTTPS_ENDPOINT_SCHEME_REQUIRED = "The endpoint URL must start with \"https\"";
+    public static final String SPLUNK_HEC_TOKEN_REQUIRED = "The Splunk HEC token is required";
     public static final String UNSUPPORTED_ENDPOINT_TYPE = "Unsupported endpoint type";
     public static final String AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE = "Integration \"%s\" behavior group";
 
@@ -278,10 +279,13 @@ public class EndpointResource extends EndpointResourceCommon {
             checkSslDisabledEndpoint(endpoint);
             String subType = endpoint.getSubType();
 
-            if (subType.equals("slack")) {
+            if (subType.equals(SLACK_ENDPOINT_SUBTYPE)) {
                 checkSlackChannel(endpoint.getProperties(CamelProperties.class), null);
-            } else if (subType.equals("servicenow") || subType.equals("splunk")) {
+            } else if (subType.equals(SERVICE_NOW_ENDPOINT_SUBTYPE) || subType.equals(SPLUNK_ENDPOINT_SUBTYPE)) {
                 checkHttpsEndpoint(endpoint.getProperties(CamelProperties.class));
+            }
+            if (subType.equals(SPLUNK_ENDPOINT_SUBTYPE)) {
+                checkSplunkHecToken(endpoint.getProperties(CamelProperties.class));
             }
         } else if (endpoint.getType() == WEBHOOK || endpoint.getType() == ANSIBLE) {
             checkSslDisabledEndpoint(endpoint);
@@ -325,6 +329,15 @@ public class EndpointResource extends EndpointResourceCommon {
             if (!endpointUri.getScheme().equalsIgnoreCase("https")) {
                 // throw an exception if a non-HTTPS URL scheme is used on endpoint creation or update
                 throw new BadRequestException(HTTPS_ENDPOINT_SCHEME_REQUIRED);
+            }
+        }
+    }
+
+    private void checkSplunkHecToken(CamelProperties camelProperties) {
+        if (camelProperties != null) {
+            String secretToken = camelProperties.getSecretToken();
+            if (secretToken == null || secretToken.isBlank()) {
+                throw new BadRequestException(SPLUNK_HEC_TOKEN_REQUIRED);
             }
         }
     }
@@ -534,6 +547,9 @@ public class EndpointResource extends EndpointResourceCommon {
                 checkSlackChannel(endpoint.getProperties(CamelProperties.class), dbEndpoint.getProperties(CamelProperties.class));
             } else if (subType.equals(SERVICE_NOW_ENDPOINT_SUBTYPE) || subType.equals(SPLUNK_ENDPOINT_SUBTYPE)) {
                 checkHttpsEndpoint(endpoint.getProperties(CamelProperties.class));
+            }
+            if (subType.equals(SPLUNK_ENDPOINT_SUBTYPE)) {
+                checkSplunkHecToken(endpoint.getProperties(CamelProperties.class));
             }
         } else if (Set.of(EMAIL_SUBSCRIPTION, DRAWER).contains(endpoint.getType())) {
             getOrCreateInternalEndpointCommonChecks(endpoint.getProperties(SystemSubscriptionProperties.class), principal);
