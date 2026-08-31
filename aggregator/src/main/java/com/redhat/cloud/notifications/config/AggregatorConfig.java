@@ -23,6 +23,8 @@ public class AggregatorConfig {
      * Env vars configuration
      */
     private static final String CLUSTER_ID = "notifications.aggregator.cluster-id";
+    private static final String METRICS_SCRAPE_MODE_ENABLED = "notifications.aggregator.metrics.scrape-mode-enabled";
+    private static final String METRICS_SCRAPE_KEEP_ALIVE_SECONDS = "notifications.aggregator.metrics.scrape-keep-alive-seconds";
 
     /*
      * Unleash configuration
@@ -31,6 +33,12 @@ public class AggregatorConfig {
 
     @ConfigProperty(name = CLUSTER_ID)
     Optional<String> clusterId;
+
+    @ConfigProperty(name = METRICS_SCRAPE_MODE_ENABLED, defaultValue = "false")
+    boolean metricsScrapeModeEnabled;
+
+    @ConfigProperty(name = METRICS_SCRAPE_KEEP_ALIVE_SECONDS, defaultValue = "150")
+    int metricsScrapeKeepAliveSeconds;
 
     @Inject
     Unleash unleash;
@@ -46,6 +54,14 @@ public class AggregatorConfig {
 
     public Optional<String> getClusterId() {
         return clusterId.map(String::trim).filter(value -> !value.isEmpty());
+    }
+
+    public boolean isScrapeExportMode() {
+        return metricsScrapeModeEnabled;
+    }
+
+    public int getMetricsScrapeKeepAliveSeconds() {
+        return metricsScrapeKeepAliveSeconds;
     }
 
     /**
@@ -86,6 +102,8 @@ public class AggregatorConfig {
     void logConfigAtStartup(@Observes Startup event) {
         Map<String, Object> config = new TreeMap<>();
         config.put(CLUSTER_ID, getClusterId().orElse("not-configured"));
+        config.put(METRICS_SCRAPE_MODE_ENABLED, metricsScrapeModeEnabled);
+        config.put(METRICS_SCRAPE_KEEP_ALIVE_SECONDS, metricsScrapeKeepAliveSeconds);
         if (activeClusterToggle != null) {
             config.put(activeClusterToggle, getActiveCluster().orElse("unable-to-determine"));
         }

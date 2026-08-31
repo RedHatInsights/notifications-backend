@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.AggregatorConfig;
 import com.redhat.cloud.notifications.db.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.EmailAggregationRepository;
@@ -12,6 +14,7 @@ import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
+import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.exporter.PushGateway;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.LaunchMode;
@@ -24,6 +27,7 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -124,13 +128,65 @@ public class DailyEmailAggregationJob {
         } finally {
             durationTimer.setDuration();
             if (!LaunchMode.current().isDevOrTest()) {
-                PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
-                try {
-                    pg.pushAdd(registry, "aggregator_job");
-                } catch (IOException e) {
-                    Log.warn("Could not push metrics to Prometheus Pushgateway.", e);
+                if (aggregatorConfig.isScrapeExportMode()) {
+                    exposeMetricsForScraping(registry);
+                } else {
+                    pushMetricsToGateway(registry);
                 }
             }
+        }
+    }
+
+    private void pushMetricsToGateway(CollectorRegistry registry) {
+        PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
+        try {
+            pg.pushAdd(registry, "aggregator_job");
+        } catch (IOException e) {
+            Log.warn("Could not push metrics to Prometheus Pushgateway.", e);
+        }
+    }
+
+    /**
+     * Interim fix for RHCLOUD-50496: Pushgateway isn't deployed on HCC clusters yet
+     * (RHCLOUD-48965), so instead of pushing, expose the registry on an embedded HTTP
+     * server for long enough to be scraped, then let the job exit normally. To be
+     * removed once Pushgateway is available on HCC.
+     */
+    private void exposeMetricsForScraping(CollectorRegistry registry) {
+        try {
+            // Read cdappconfig.json directly instead of @ConfigProperty: clowder-quarkus-config-source
+            // has no property handler for metricsPort/metricsPath, so they're not injectable.
+            String cdAppConfigPath = System.getenv("ACG_CONFIG");
+            if (cdAppConfigPath == null || cdAppConfigPath.isBlank()) {
+                Log.warn("ACG_CONFIG is not set, cannot determine the metrics port for scrape mode.");
+                return;
+            }
+
+            JsonNode cdAppConfig = new ObjectMapper().readTree(new File(cdAppConfigPath));
+            JsonNode metricsPortNode = cdAppConfig.get("metricsPort");
+            if (metricsPortNode == null) {
+                Log.warn("cdappconfig.json has no metricsPort field, cannot expose metrics for scraping.");
+                return;
+            }
+            int metricsPort = metricsPortNode.asInt();
+
+            int keepAliveSeconds = aggregatorConfig.getMetricsScrapeKeepAliveSeconds();
+            HTTPServer server = new HTTPServer.Builder()
+                    .withPort(metricsPort)
+                    .withRegistry(registry)
+                    .withDaemonThreads(true)
+                    .build();
+            try {
+                Log.infof("Exposing metrics for scraping on port %d for %d seconds", metricsPort, keepAliveSeconds);
+                Thread.sleep(keepAliveSeconds * 1000L);
+            } finally {
+                server.close();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Log.warn("Interrupted while exposing metrics for scraping.", e);
+        } catch (Exception e) {
+            Log.warn("Could not expose metrics for scraping.", e);
         }
     }
 
