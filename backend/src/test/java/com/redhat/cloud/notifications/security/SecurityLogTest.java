@@ -2,9 +2,8 @@ package com.redhat.cloud.notifications.security;
 
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdentity;
-import org.junit.jupiter.api.Test;
-
 import jakarta.ws.rs.core.SecurityContext;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
