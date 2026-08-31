@@ -59,17 +59,43 @@ public final class SecurityLog {
             action, resourceType, resourceId, principalFromContext(sec), reason);
     }
 
+    // ── Log levels ─────────────────────────────────────────────────────────
+
+    /**
+     * Log level for security events. Allows callers to honor the original
+     * severity of a security event (e.g. ERROR for critical configuration
+     * issues vs WARN for routine authentication failures).
+     */
+    public enum LogLevel {
+        INFO, WARN, ERROR
+    }
+
     // ── EOI-7  Authentication failures ────────────────────────────────────
 
     /**
-     * Logs an authentication failure.
+     * Logs an authentication failure at WARN level (the default).
      *
      * @param authMethod the authentication method (e.g. "x-rh-identity")
      * @param reason     the reason for the failure
      */
     public static void logAuthFailure(String authMethod, String reason) {
-        Log.warnf("[security_event: true][action: AUTHENTICATE][resource_type: session][resource_id: N/A][outcome: failure][principal: anonymous][auth_method: %s][reason: %s] Authentication failed",
-            authMethod, reason);
+        logAuthFailure(authMethod, reason, LogLevel.WARN);
+    }
+
+    /**
+     * Logs an authentication failure at the specified level.
+     *
+     * @param authMethod the authentication method (e.g. "x-rh-identity")
+     * @param reason     the reason for the failure
+     * @param level      the log level to use
+     */
+    public static void logAuthFailure(String authMethod, String reason, LogLevel level) {
+        String message = "[security_event: true][action: AUTHENTICATE][resource_type: session][resource_id: N/A][outcome: failure][principal: anonymous][auth_method: %s][reason: %s] Authentication failed";
+        switch (level) {
+            case INFO -> Log.infof(message, authMethod, reason);
+            case ERROR -> Log.errorf(message, authMethod, reason);
+            default -> Log.warnf(message, authMethod, reason);
+        }
     }
 
     // ── EOI-8  Authorization failures ─────────────────────────────────────

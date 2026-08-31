@@ -120,7 +120,7 @@ public class ConsoleIdentityProvider implements IdentityProvider<ConsoleAuthenti
                 if (this.backendConfig.isRBACEnabled()) {
                     return this.buildRBACSecurityIdentity(request.getXRhIdentityHeaderValue(), rhIdPrincipal);
                 } else if (!this.environment.isLocal()) {
-                    SecurityLog.logAuthFailure("x-rh-identity", "kessel_rbac_disabled");
+                    SecurityLog.logAuthFailure("x-rh-identity", "kessel_rbac_disabled", SecurityLog.LogLevel.ERROR);
                     return Uni.createFrom().failure(new AuthenticationFailedException());
                 } else {
                     return this.buildDevelopmentSecurityIdentity(rhIdPrincipal);
