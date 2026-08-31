@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.auth;
 
 import com.redhat.cloud.notifications.auth.principal.ConsolePrincipal;
 import com.redhat.cloud.notifications.models.InternalRoleAccess;
+import com.redhat.cloud.notifications.security.SecurityLog;
 import io.quarkus.logging.Log;
 import io.quarkus.security.AuthenticationFailedException;
 import io.quarkus.security.identity.IdentityProviderManager;
@@ -83,6 +84,7 @@ public class ConsoleAuthMechanism implements HttpAuthenticationMechanism {
             }
 
             if (!good) {
+                SecurityLog.logAuthFailure("x-rh-identity", "missing_header");
                 return Uni.createFrom().failure(new AuthenticationFailedException("No " + X_RH_IDENTITY_HEADER + " provided"));
             } else {
                 return Uni.createFrom().item(QuarkusSecurityIdentity.builder()

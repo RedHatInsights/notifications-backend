@@ -33,6 +33,7 @@ import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
+import com.redhat.cloud.notifications.security.SecurityLog;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
@@ -229,10 +230,11 @@ public class EndpointResource extends EndpointResourceCommon {
         final Endpoint endpoint = this.endpointMapper.toEntity(endpointDTO);
 
         try {
-            return this.endpointMapper.toDTO(
-                this.internalCreateEndpoint(sec, endpoint, endpointDTO.eventTypes)
-            );
+            Endpoint created = this.internalCreateEndpoint(sec, endpoint, endpointDTO.eventTypes);
+            SecurityLog.logCrudSuccess("CREATE", "integration", created.getId().toString(), sec, "Created integration: " + created.getName());
+            return this.endpointMapper.toDTO(created);
         } catch (final Exception e) {
+            SecurityLog.logCrudFailure("CREATE", "integration", "N/A", sec, e.getMessage());
             // Clean up the secrets from Sources if any were created.
             this.secretUtils.deleteSecretsForEndpoint(endpoint);
 
@@ -452,6 +454,7 @@ public class EndpointResource extends EndpointResourceCommon {
             }
         }
 
+        SecurityLog.logCrudSuccess("DELETE", "integration", id.toString(), sec, "Deleted integration");
         return Response.noContent().build();
     }
 
@@ -473,6 +476,7 @@ public class EndpointResource extends EndpointResourceCommon {
             checkSslDisabledEndpoint(orgId, id);
         }
         endpointRepository.enableEndpoint(orgId, id);
+        SecurityLog.logCrudSuccess("UPDATE", "integration", id.toString(), sec, "Enabled integration");
         return Response.ok().build();
     }
 
@@ -489,6 +493,7 @@ public class EndpointResource extends EndpointResourceCommon {
             throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
         }
         endpointRepository.disableEndpoint(orgId, id);
+        SecurityLog.logCrudSuccess("UPDATE", "integration", id.toString(), sec, "Disabled integration");
         return Response.noContent().build();
     }
 
@@ -591,6 +596,7 @@ public class EndpointResource extends EndpointResourceCommon {
         if (null != endpointDTO.eventTypes) {
             internalUpdateEventTypesLinkedToEndpoint(securityContext, id, endpointDTO.eventTypes);
         }
+        SecurityLog.logCrudSuccess("UPDATE", "integration", id.toString(), securityContext, "Updated integration");
         return Response.ok().build();
     }
 

@@ -100,7 +100,7 @@ public class UserConfigResourceV2 {
     @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionDTO.class)))
     @APIResponse(responseCode = "400", description = "A query parameter was specified without its required parent (e.g. 'application' without 'bundle')")
     @APIResponse(responseCode = "404", description = "The named bundle, application or event type doesn't exist")
-    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW)
+    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "notification_preference")
     public List<BundleSubscriptionDTO> getSubscriptions(
         @Context SecurityContext sec,
         @QueryParam("bundle") String bundleName,
@@ -257,7 +257,7 @@ public class UserConfigResourceV2 {
         description = "Partial update, not a full replace: any bundle, application, event type or channel omitted "
             + "from the request tree is left untouched rather than reset or unsubscribed."
     )
-    @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_EDIT)
+    @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_EDIT, resourceType = "notification_preference")
     public void updateSubscriptions(
         @Context SecurityContext sec,
         @NotNull @NotEmpty @Valid @RequestBody(content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionUpdateDTO.class)))

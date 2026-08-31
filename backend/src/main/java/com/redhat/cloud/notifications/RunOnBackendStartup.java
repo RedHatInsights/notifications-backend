@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
-import io.quarkus.logging.Log;
+import com.redhat.cloud.notifications.security.SecurityLog;
 import io.quarkus.runtime.Startup;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -18,8 +18,7 @@ public class RunOnBackendStartup {
 
     @PostConstruct
     void postConstruct() {
-        // Startup - SEC-MON-REQ-1 compliance (EOI-5 process_status)
-        Log.infof("[action: STARTUP][resource_type: notifications_backend][principal: system][outcome: success] Notifications backend starting");
+        SecurityLog.logLifecycle("STARTUP", "notifications_backend", "success", "Notifications backend starting");
 
         startupUtils.initAccessLogFilter();
         startupUtils.logGitProperties();
@@ -32,7 +31,6 @@ public class RunOnBackendStartup {
 
     @PreDestroy
     void preDestroy() {
-        // Graceful shutdown - SEC-MON-REQ-1 compliance (EOI-5 process_status)
-        Log.infof("[action: SHUTDOWN][resource_type: notifications_backend][principal: system][outcome: success] Notifications backend shutting down gracefully");
+        SecurityLog.logLifecycle("SHUTDOWN", "notifications_backend", "success", "Notifications backend shutting down gracefully");
     }
 }
