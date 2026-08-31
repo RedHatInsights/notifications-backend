@@ -26,3 +26,6 @@ RUN curl --output rh_it_root_ca_file.crt --insecure "${rh_it_root_ca_cert_url}" 
 
 # Copy the repository contents.
 COPY --chown=default:default . /home/default
+
+# Drop back to non-root user for runtime security.
+USER default
