@@ -25,6 +25,7 @@ public class AggregatorConfig {
     private static final String CLUSTER_ID = "notifications.aggregator.cluster-id";
     private static final String METRICS_SCRAPE_MODE_ENABLED = "notifications.aggregator.metrics.scrape-mode-enabled";
     private static final String METRICS_SCRAPE_KEEP_ALIVE_SECONDS = "notifications.aggregator.metrics.scrape-keep-alive-seconds";
+    private static final int DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS = 150;
 
     /*
      * Unleash configuration
@@ -37,7 +38,7 @@ public class AggregatorConfig {
     @ConfigProperty(name = METRICS_SCRAPE_MODE_ENABLED, defaultValue = "false")
     boolean metricsScrapeModeEnabled;
 
-    @ConfigProperty(name = METRICS_SCRAPE_KEEP_ALIVE_SECONDS, defaultValue = "150")
+    @ConfigProperty(name = METRICS_SCRAPE_KEEP_ALIVE_SECONDS, defaultValue = DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS + "")
     int metricsScrapeKeepAliveSeconds;
 
     @Inject
@@ -61,6 +62,11 @@ public class AggregatorConfig {
     }
 
     public int getMetricsScrapeKeepAliveSeconds() {
+        if (metricsScrapeKeepAliveSeconds < 1) {
+            Log.warnf("%s must be a positive number of seconds, got %d. Falling back to %d.",
+                    METRICS_SCRAPE_KEEP_ALIVE_SECONDS, metricsScrapeKeepAliveSeconds, DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS);
+            return DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS;
+        }
         return metricsScrapeKeepAliveSeconds;
     }
 

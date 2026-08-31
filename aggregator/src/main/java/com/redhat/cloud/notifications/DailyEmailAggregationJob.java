@@ -164,11 +164,15 @@ public class DailyEmailAggregationJob {
 
             JsonNode cdAppConfig = new ObjectMapper().readTree(new File(cdAppConfigPath));
             JsonNode metricsPortNode = cdAppConfig.get("metricsPort");
-            if (metricsPortNode == null) {
-                Log.warn("cdappconfig.json has no metricsPort field, cannot expose metrics for scraping.");
+            if (metricsPortNode == null || !metricsPortNode.isIntegralNumber()) {
+                Log.warnf("cdappconfig.json has no valid metricsPort field (value: %s), cannot expose metrics for scraping.", metricsPortNode);
                 return;
             }
             int metricsPort = metricsPortNode.asInt();
+            if (metricsPort < 1 || metricsPort > 65535) {
+                Log.warnf("cdappconfig.json metricsPort %d is out of the valid port range, cannot expose metrics for scraping.", metricsPort);
+                return;
+            }
 
             int keepAliveSeconds = aggregatorConfig.getMetricsScrapeKeepAliveSeconds();
             HTTPServer server = new HTTPServer.Builder()
