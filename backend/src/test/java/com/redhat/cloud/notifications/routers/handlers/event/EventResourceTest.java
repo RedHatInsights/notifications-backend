@@ -55,6 +55,7 @@ import org.project_kessel.api.inventory.v1beta2.CheckRequest;
 import org.project_kessel.api.inventory.v1beta2.CheckResponse;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
@@ -108,7 +109,7 @@ public class EventResourceTest extends DbIsolatedTest {
     private static final String OTHER_ACCOUNT_ID = "other-account-id";
     private static final String OTHER_ORG_ID = "other-org-id";
     private static final String OTHER_USERNAME = "other-username";
-    private static final LocalDateTime NOW = LocalDateTime.now(UTC);
+    private static final LocalDateTime NOW = LocalDateTime.now(UTC).truncatedTo(ChronoUnit.DAYS).plusHours(12L);
     private static final String PAYLOAD = "payload";
     private static final String PATH = API_NOTIFICATIONS_V_1_0 + "/notifications/events";
     private static final String PATH_V_1 = API_NOTIFICATIONS_V_1 + "/notifications/events";
