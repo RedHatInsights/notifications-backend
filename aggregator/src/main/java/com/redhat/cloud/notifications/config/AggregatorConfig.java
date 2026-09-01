@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.config;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
 import io.getunleash.Unleash;
 import io.getunleash.variant.Payload;
@@ -12,6 +14,7 @@ import jakarta.enterprise.event.Startup;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.io.File;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -68,6 +71,40 @@ public class AggregatorConfig {
             return DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS;
         }
         return metricsScrapeKeepAliveSeconds;
+    }
+
+    /**
+     * POC for RHCLOUD-50496: clowder-quarkus-config-source has no property handler for
+     * cdappconfig.json's metricsPort, so it can't be injected via {@code @ConfigProperty}.
+     * Reads it directly instead. Once metricsPort is exposed as a proper config property,
+     * this should be replaced by one.
+     */
+    public Optional<Integer> getMetricsPort() {
+        String cdAppConfigPath = System.getenv("ACG_CONFIG");
+        if (cdAppConfigPath == null || cdAppConfigPath.isBlank()) {
+            Log.warn("ACG_CONFIG is not set, cannot determine the metrics port for scrape mode.");
+            return Optional.empty();
+        }
+
+        try {
+            JsonNode cdAppConfig = new ObjectMapper().readTree(new File(cdAppConfigPath));
+            JsonNode metricsPortNode = cdAppConfig.get("metricsPort");
+            if (metricsPortNode == null || !metricsPortNode.isIntegralNumber()) {
+                Log.warnf("cdappconfig.json has no valid metricsPort field (value: %s), cannot expose metrics for scraping.", metricsPortNode);
+                return Optional.empty();
+            }
+
+            int metricsPort = metricsPortNode.asInt();
+            if (metricsPort < 1 || metricsPort > 65535) {
+                Log.warnf("cdappconfig.json metricsPort %d is out of the valid port range, cannot expose metrics for scraping.", metricsPort);
+                return Optional.empty();
+            }
+
+            return Optional.of(metricsPort);
+        } catch (Exception e) {
+            Log.warn("Could not read metricsPort from cdappconfig.json.", e);
+            return Optional.empty();
+        }
     }
 
     /**

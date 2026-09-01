@@ -1,7 +1,5 @@
 package com.redhat.cloud.notifications;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.AggregatorConfig;
 import com.redhat.cloud.notifications.db.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.EmailAggregationRepository;
@@ -27,7 +25,6 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
-import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -153,35 +150,20 @@ public class DailyEmailAggregationJob {
      * removed once Pushgateway is available on HCC.
      */
     private void exposeMetricsForScraping(CollectorRegistry registry) {
+        Optional<Integer> metricsPort = aggregatorConfig.getMetricsPort();
+        if (metricsPort.isEmpty()) {
+            return;
+        }
+
         try {
-            // Read cdappconfig.json directly instead of @ConfigProperty: clowder-quarkus-config-source
-            // has no property handler for metricsPort/metricsPath, so they're not injectable.
-            String cdAppConfigPath = System.getenv("ACG_CONFIG");
-            if (cdAppConfigPath == null || cdAppConfigPath.isBlank()) {
-                Log.warn("ACG_CONFIG is not set, cannot determine the metrics port for scrape mode.");
-                return;
-            }
-
-            JsonNode cdAppConfig = new ObjectMapper().readTree(new File(cdAppConfigPath));
-            JsonNode metricsPortNode = cdAppConfig.get("metricsPort");
-            if (metricsPortNode == null || !metricsPortNode.isIntegralNumber()) {
-                Log.warnf("cdappconfig.json has no valid metricsPort field (value: %s), cannot expose metrics for scraping.", metricsPortNode);
-                return;
-            }
-            int metricsPort = metricsPortNode.asInt();
-            if (metricsPort < 1 || metricsPort > 65535) {
-                Log.warnf("cdappconfig.json metricsPort %d is out of the valid port range, cannot expose metrics for scraping.", metricsPort);
-                return;
-            }
-
             int keepAliveSeconds = aggregatorConfig.getMetricsScrapeKeepAliveSeconds();
             HTTPServer server = new HTTPServer.Builder()
-                    .withPort(metricsPort)
+                    .withPort(metricsPort.get())
                     .withRegistry(registry)
                     .withDaemonThreads(true)
                     .build();
             try {
-                Log.infof("Exposing metrics for scraping on port %d for %d seconds", metricsPort, keepAliveSeconds);
+                Log.infof("Exposing metrics for scraping on port %d for %d seconds", metricsPort.get(), keepAliveSeconds);
                 Thread.sleep(keepAliveSeconds * 1000L);
             } finally {
                 server.close();
