@@ -89,7 +89,10 @@ public class AggregatorConfig {
         try {
             JsonNode cdAppConfig = new ObjectMapper().readTree(new File(cdAppConfigPath));
             JsonNode metricsPortNode = cdAppConfig.get("metricsPort");
-            if (metricsPortNode == null || !metricsPortNode.isIntegralNumber()) {
+            // isIntegralNumber() alone is not enough: it's also true for integral values that don't
+            // fit in an int (e.g. a corrupted LongNode), and asInt() silently narrows those instead
+            // of rejecting them. canConvertToInt() is the guard that actually catches that case.
+            if (metricsPortNode == null || !metricsPortNode.isIntegralNumber() || !metricsPortNode.canConvertToInt()) {
                 Log.warnf("cdappconfig.json has no valid metricsPort field (value: %s), cannot expose metrics for scraping.", metricsPortNode);
                 return Optional.empty();
             }
