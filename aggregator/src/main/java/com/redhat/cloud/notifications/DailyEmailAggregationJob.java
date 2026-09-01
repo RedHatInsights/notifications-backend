@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
+import io.prometheus.client.exporter.HTTPServer;
 import io.prometheus.client.exporter.PushGateway;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.LaunchMode;
@@ -124,13 +125,54 @@ public class DailyEmailAggregationJob {
         } finally {
             durationTimer.setDuration();
             if (!LaunchMode.current().isDevOrTest()) {
-                PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
-                try {
-                    pg.pushAdd(registry, "aggregator_job");
-                } catch (IOException e) {
-                    Log.warn("Could not push metrics to Prometheus Pushgateway.", e);
+                if (aggregatorConfig.isScrapeExportMode()) {
+                    exposeMetricsForScraping(registry);
+                } else {
+                    pushMetricsToGateway(registry);
                 }
             }
+        }
+    }
+
+    private void pushMetricsToGateway(CollectorRegistry registry) {
+        PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
+        try {
+            pg.pushAdd(registry, "aggregator_job");
+        } catch (IOException e) {
+            Log.warn("Could not push metrics to Prometheus Pushgateway.", e);
+        }
+    }
+
+    /**
+     * Interim fix for RHCLOUD-50496: Pushgateway isn't deployed on HCC clusters yet
+     * (RHCLOUD-48965), so instead of pushing, expose the registry on an embedded HTTP
+     * server for long enough to be scraped, then let the job exit normally. To be
+     * removed once Pushgateway is available on HCC.
+     */
+    private void exposeMetricsForScraping(CollectorRegistry registry) {
+        Optional<Integer> metricsPort = aggregatorConfig.getMetricsPort();
+        if (metricsPort.isEmpty()) {
+            return;
+        }
+
+        try {
+            int keepAliveSeconds = aggregatorConfig.getMetricsScrapeKeepAliveSeconds();
+            HTTPServer server = new HTTPServer.Builder()
+                    .withPort(metricsPort.get())
+                    .withRegistry(registry)
+                    .withDaemonThreads(true)
+                    .build();
+            try {
+                Log.infof("Exposing metrics for scraping on port %d for %d seconds", metricsPort.get(), keepAliveSeconds);
+                Thread.sleep(keepAliveSeconds * 1000L);
+            } finally {
+                server.close();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Log.warn("Interrupted while exposing metrics for scraping.", e);
+        } catch (Exception e) {
+            Log.warn("Could not expose metrics for scraping.", e);
         }
     }
 

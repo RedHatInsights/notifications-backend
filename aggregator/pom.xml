@@ -92,6 +92,12 @@
             <version>${pushgateway.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_httpserver</artifactId>
+            <version>${pushgateway.version}</version>
+        </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>

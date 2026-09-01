@@ -66,6 +66,10 @@ objects:
           value: ${CLUSTER_ID}
         - name: PROMETHEUS_PUSHGATEWAY_URL
           value: ${PROMETHEUS_PUSHGATEWAY}
+        - name: NOTIFICATIONS_AGGREGATOR_METRICS_SCRAPE_MODE_ENABLED
+          value: ${METRICS_SCRAPE_MODE_ENABLED}
+        - name: NOTIFICATIONS_AGGREGATOR_METRICS_SCRAPE_KEEP_ALIVE_SECONDS
+          value: ${METRICS_SCRAPE_KEEP_ALIVE_SECONDS}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -98,6 +102,12 @@ parameters:
 - name: MEMORY_REQUEST
   description: Memory request
   value: 250Mi
+- name: METRICS_SCRAPE_MODE_ENABLED
+  description: "Metrics scrape mode: false (default, crc - push to Pushgateway) or true (interim HCC fix, RHCLOUD-50496)"
+  value: "false"
+- name: METRICS_SCRAPE_KEEP_ALIVE_SECONDS
+  description: How long the job stays alive after completion in "scrape" mode, to allow Prometheus to scrape /metrics
+  value: "150"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO
