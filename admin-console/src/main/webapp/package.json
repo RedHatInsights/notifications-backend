@@ -9,7 +9,7 @@
     "@patternfly/react-icons": "6.6.1",
     "@patternfly/react-table": "6.6.1",
     "buffer": "^6.0.3",
-    "immer": "11.1.16",
+    "immer": "11.1.18",
     "monaco-editor": "0.56.0",
     "openapi2typescript": "0.2.1",
     "react": "19.2.7",
