@@ -80,7 +80,7 @@ public class EmailAggregator {
                 .getUnsubscribersByEventType(aggregationKey.getOrgId(), appId, subscriptionType);
 
         Optional<Map<String, Set<SubscribedEventTypeSeverities>>> subscribersWithSeverities = Optional.empty();
-        if (engineConfig.isIncludeSeverityToFilterRecipientsEnabled(aggregationKey.getOrgId())) {
+        if (engineConfig.isIncludeSeverityToFilterRecipientsEnabled(aggregationKey.getOrgId(), appId)) {
             subscribersWithSeverities = Optional.of(subscriptionRepository.getSubscriptionsByEventTypeWithSeverities(aggregationKey.getOrgId(), appId, subscriptionType));
         }
 

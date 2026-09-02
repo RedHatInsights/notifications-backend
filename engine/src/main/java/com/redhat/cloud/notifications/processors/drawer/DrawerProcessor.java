@@ -106,7 +106,7 @@ public class DrawerProcessor extends SystemEndpointTypeProcessor {
         DrawerEntryPayload drawerEntryPayload = buildJsonPayloadFromEvent(event);
 
         Optional<Severity> eventSeverity = Optional.empty();
-        if (engineConfig.isIncludeSeverityToFilterRecipientsEnabled(event.getOrgId())) {
+        if (engineConfig.isIncludeSeverityToFilterRecipientsEnabled(event.getOrgId(), event.getApplicationId())) {
             eventSeverity = Optional.ofNullable(event.getSeverity());
         }
 
