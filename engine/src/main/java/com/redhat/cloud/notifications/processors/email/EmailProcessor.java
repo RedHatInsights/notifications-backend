@@ -92,7 +92,7 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
         Set<String> unsubscribers;
 
         Optional<Severity> eventSeverity = Optional.empty();
-        if (engineConfig.isIncludeSeverityToFilterRecipientsEnabled(event.getOrgId())) {
+        if (engineConfig.isIncludeSeverityToFilterRecipientsEnabled(event.getOrgId(), event.getApplicationId())) {
             eventSeverity = Optional.ofNullable(event.getSeverity());
         }
 

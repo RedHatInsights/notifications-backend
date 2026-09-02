@@ -160,14 +160,14 @@ class EmailAggregatorTest {
     @Test
     void shouldTestOneRecipientSubscribedSeverityEnabled() {
         // enable filter on severity without any user severity subscription config
-        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString())).thenReturn(true);
+        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString(), any())).thenReturn(true);
         // nothing should change
         shouldTestOneRecipientSubscribed();
     }
 
     @Test
     void shouldTestOneRecipientSubscribedToModerateSeverity() {
-        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString())).thenReturn(true);
+        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString(), any())).thenReturn(true);
         initDataForSubscriptionTests();
 
         // enable filter on "MODERATE" severity
@@ -189,7 +189,7 @@ class EmailAggregatorTest {
 
     @Test
     void shouldTestOneRecipientUnsubscribedFromAllSeverities() {
-        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString())).thenReturn(true);
+        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString(), any())).thenReturn(true);
         initDataForSubscriptionTests();
 
         // User unsubscribe from all severities (don't make real sens, but just to check)
@@ -214,7 +214,7 @@ class EmailAggregatorTest {
         verify(recipientsResolverService, times(4)).getRecipients(any(RecipientsQuery.class));
 
         // disable the severity filtering
-        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString())).thenReturn(false);
+        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString(), any())).thenReturn(false);
 
         result = aggregate();
 

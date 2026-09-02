@@ -201,7 +201,7 @@ public class EngineConfig {
         config.put(NOTIFICATIONS_INGRESSREPLAY_END_TIME, replayEndTime);
         config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
         config.put(asyncEventProcessingToggle, isAsyncEventProcessing());
-        config.put(toggleIncludeSeverityToFilterRecipients, isIncludeSeverityToFilterRecipientsEnabled(""));
+        config.put(toggleIncludeSeverityToFilterRecipients, isIncludeSeverityToFilterRecipientsEnabled("", null));
         config.put(toggleSkipProcessingMessagesOnReplayService, isSkipMessageProcessing());
         config.put(valkeyEventDeduplicatorToggle, isValkeyEventDeduplicatorEnabled());
         config.put(IN_MEMORY_DB_ENABLED, isInMemoryDbEnabled());
@@ -318,8 +318,16 @@ public class EngineConfig {
         return this.unleash.isEnabled(this.toggleKafkaOutgoingHighVolumeTopic, false);
     }
 
-    public boolean isIncludeSeverityToFilterRecipientsEnabled(String orgId) {
-        return unleash.isEnabled(toggleIncludeSeverityToFilterRecipients, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+    public boolean isIncludeSeverityToFilterRecipientsEnabled(String orgId, UUID applicationId) {
+        final UnleashContext.Builder builder = UnleashContext.builder();
+        if (orgId != null) {
+            builder.addProperty("orgId", orgId);
+        }
+        if (applicationId != null) {
+            builder.addProperty("applicationId", applicationId.toString());
+        }
+
+        return unleash.isEnabled(toggleIncludeSeverityToFilterRecipients, builder.build(), false);
     }
 
     public boolean isSkipMessageProcessing() {

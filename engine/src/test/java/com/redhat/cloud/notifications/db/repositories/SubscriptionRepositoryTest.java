@@ -26,6 +26,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -76,7 +77,7 @@ public class SubscriptionRepositoryTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testEmailSubscribersUserIdWithoutSeverity(boolean useSeverity) {
-        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString())).thenReturn(useSeverity);
+        when(engineConfig.isIncludeSeverityToFilterRecipientsEnabled(anyString(), any())).thenReturn(useSeverity);
 
         Bundle bundle = resourceHelpers.createBundle(BUNDLE_NAME);
         Application application = resourceHelpers.createApp(bundle.getId(), APP_NAME);
