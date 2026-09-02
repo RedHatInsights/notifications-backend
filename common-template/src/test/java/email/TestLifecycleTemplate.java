@@ -90,9 +90,9 @@ public class TestLifecycleTemplate extends EmailTemplatesRendererHelper {
     @Test
     public void testRetiringLifecycleEmailBodyContainsRhelVersionInfoBox() {
         String result = generateEmailBody(RETIRING_LIFECYCLE_REPORT, createLifecycleAction());
-        assertTrue(result.contains("Systems on RHEL 6 and below are not shown in this report"),
+        assertTrue(result.contains("Systems on RHEL 6 and earlier are not shown in this report"),
             "Body should contain the RHEL 6 info box headline");
-        assertTrue(result.contains("Only RHEL 7 and above and Application Streams are displayed."),
+        assertTrue(result.contains("Only systems on RHEL 7 and later, and Application Streams, are displayed"),
             "Body should contain the RHEL 6 info box body text");
         assertTrue(result.contains("img_info_purple.png"),
             "Info box should use the purple info icon");
