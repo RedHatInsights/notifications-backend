@@ -41,27 +41,26 @@ public class TestSchedulerTemplate extends EmailTemplatesRendererHelper {
     public void testExportCompleteEmailBody() {
         Action action = createSchedulerExportCompleteAction();
         String result = generateEmailBody(SCHEDULER_EXPORT_COMPLETE, action);
-        assertTrue(result.contains("scheduled export has completed successfully"));
-        assertTrue(result.contains("Test Export Job"));
-        assertTrue(result.contains("/insights/jobs/"));
-        assertTrue(result.contains("Download exported data"));
+        assertTrue(result.contains("has generated successfully"));
+        assertTrue(result.contains("Test Export Job has generated successfully"));
+        assertTrue(result.contains("/scheduler/download/"));
+        assertTrue(result.contains("Download the report"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testExportCompleteEmailTitle() {
-        eventTypeDisplayName = "Scheduler export completed";
+        eventTypeDisplayName = "Scheduled report ready to download";
         String result = generateEmailSubject(SCHEDULER_EXPORT_COMPLETE, createSchedulerExportCompleteAction());
-        assertEquals("Instant notification - Scheduler export completed - Scheduler - Console", result);
+        assertEquals("Instant notification - Scheduled report ready to download - Scheduler - Console", result);
     }
 
     @Test
     public void testJobFailedEmailBody() {
         Action action = createSchedulerJobFailedAction();
         String result = generateEmailBody(SCHEDULER_JOB_FAILED, action);
-        assertTrue(result.contains("scheduled job has failed"));
+        assertTrue(result.contains("has failed"));
         assertTrue(result.contains("Test Failed Job"));
-        assertTrue(result.contains("/insights/jobs/"));
         assertTrue(result.contains("<strong>Error:</strong>"));
         assertTrue(result.contains("Connection timeout"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
@@ -69,29 +68,29 @@ public class TestSchedulerTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     public void testJobFailedEmailTitle() {
-        eventTypeDisplayName = "Scheduler job failed";
+        eventTypeDisplayName = "Scheduled report generation failed";
         String result = generateEmailSubject(SCHEDULER_JOB_FAILED, createSchedulerJobFailedAction());
-        assertEquals("Instant notification - Scheduler job failed - Scheduler - Console", result);
+        assertEquals("Instant notification - Scheduled report generation failed - Scheduler - Console", result);
     }
 
     @Test
     public void testJobFailedPausedEmailBody() {
         Action action = createSchedulerJobFailedPausedAction();
         String result = generateEmailBody(SCHEDULER_JOB_FAILED_PAUSED, action);
-        assertTrue(result.contains("scheduled job has failed and been automatically paused"));
+        assertTrue(result.contains("generation has failed"));
         assertTrue(result.contains("Test Paused Job"));
-        assertTrue(result.contains("/insights/jobs/"));
         assertTrue(result.contains("<strong>Error:</strong>"));
         assertTrue(result.contains("Database connection failed"));
-        assertTrue(result.contains("The scheduled job has been paused to prevent further failures"));
+        assertTrue(result.contains("The scheduled report has been paused to prevent further failures"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testJobFailedPausedEmailTitle() {
-        eventTypeDisplayName = "Scheduler job failed";
+        eventTypeDisplayName = "Scheduled report generation failed - paused";
+
         String result = generateEmailSubject(SCHEDULER_JOB_FAILED_PAUSED, createSchedulerJobFailedPausedAction());
-        assertEquals("Instant notification - Scheduler job failed - Scheduler - Console", result);
+        assertEquals("Instant notification - Scheduled report generation failed - paused - Scheduler - Console", result);
     }
 
     @Test
@@ -99,7 +98,7 @@ public class TestSchedulerTemplate extends EmailTemplatesRendererHelper {
         Action action = createSchedulerJobFailedAction();
         action.getContext().setAdditionalProperty("error_message", null);
         String result = generateEmailBody(SCHEDULER_JOB_FAILED, action);
-        assertTrue(result.contains("scheduled job has failed"));
+        assertTrue(result.contains("generation has failed"));
         assertTrue(result.contains("Test Failed Job"));
         // Should not contain error section if no error message
         assertTrue(!result.contains("<strong>Error:</strong>") || result.contains("<strong>Error:</strong>  "));
