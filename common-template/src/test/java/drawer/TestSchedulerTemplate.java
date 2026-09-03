@@ -28,6 +28,7 @@ class TestSchedulerTemplate {
         String result = renderTemplate(SCHEDULER_EXPORT_COMPLETE, action);
         assertTrue(result.contains("The scheduled report"));
         assertTrue(result.contains("**[Test Export Job]"));
+        assertTrue(result.contains("/scheduler/download/job-12345/run-11111?from=notifications&integration=drawer)**"));
         assertTrue(result.contains("has completed"));
     }
 
