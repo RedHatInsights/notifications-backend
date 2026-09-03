@@ -64,9 +64,16 @@ public class KesselCheckClient {
     @Inject
     BackendConfig backendConfig;
 
-    // Volatile: these fields are read by multiple request threads and written during channel initialization.
-    private volatile KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub grpcClient;
-    private volatile ManagedChannel grpcChannel;
+    /**
+     * Immutable pairing of a gRPC stub and the channel that backs it. Holding both in a single
+     * volatile reference lets request threads read a consistent (stub, channel) pair with one
+     * volatile read, so a concurrent channel reinitialization can never leave a thread with a stub
+     * from one channel and a reference to a different channel.
+     */
+    record ChannelHolder(KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub stub, ManagedChannel channel) { }
+
+    // Volatile: read by multiple request threads and written during channel initialization.
+    private volatile ChannelHolder channelHolder;
 
     @PostConstruct
     void postConstruct() {
@@ -75,7 +82,7 @@ public class KesselCheckClient {
 
     private void initializeChannel(String reason) {
         // Capture before overwriting so we can shut it down after.
-        ManagedChannel oldGrpcChannel = grpcChannel;
+        ChannelHolder oldHolder = channelHolder;
 
         Pair<KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub, ManagedChannel> clientAndChannel;
         /*
@@ -97,40 +104,41 @@ public class KesselCheckClient {
                 .build();
         }
 
-        grpcClient = clientAndChannel.getLeft();
-        grpcChannel = clientAndChannel.getRight();
+        channelHolder = new ChannelHolder(clientAndChannel.getLeft(), clientAndChannel.getRight());
 
         Log.debugf("Kessel gRPC channel initialized: %s", reason);
         meterRegistry.counter(KESSEL_CHANNEL_INIT_COUNTER_NAME, Tags.of(KESSEL_CHANNEL_INIT_TAG_REASON, reason)).increment();
 
         // Shutdown old gRPC channel without waiting (let in-flight requests drain in background).
-        if (oldGrpcChannel != null) {
-            oldGrpcChannel.shutdown();
+        if (oldHolder != null && oldHolder.channel() != null) {
+            oldHolder.channel().shutdown();
         }
     }
 
-    private KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub getClient() {
+    private ChannelHolder getClient() {
+        ChannelHolder holder = channelHolder;
         // SHUTDOWN state is terminal - channel cannot recover and must be recreated.
-        if (grpcChannel != null && grpcChannel.getState(false) != ConnectivityState.SHUTDOWN) {
-            return grpcClient;
+        if (holder != null && holder.channel() != null && holder.channel().getState(false) != ConnectivityState.SHUTDOWN) {
+            return holder;
         }
         Log.warn("Kessel gRPC channel is unhealthy, recreating");
         initializeChannel("unhealthy_channel");
-        return grpcClient;
+        return channelHolder;
     }
 
     @Retry(maxRetries = 3, delay = 100, retryOn = KesselTransientException.class)
     public CheckResponse check(CheckRequest request) {
-        // Capture the channel backing this call so, on failure, we can act on the exact channel that failed
-        // rather than the shared field, which another thread may have concurrently reinitialized.
-        KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub client = getClient();
-        ManagedChannel channel = grpcChannel;
+        // getClient() is inside the try so an OAuth2Exception thrown while lazily reinitializing the channel is
+        // wrapped in KesselTransientException and retried, instead of propagating past the @Retry interceptor.
+        // The holder gives us a consistent (stub, channel) snapshot for this call from a single volatile read.
+        ChannelHolder holder = null;
         try {
-            return client
+            holder = getClient();
+            return holder.stub()
                 .withDeadlineAfter(backendConfig.getKesselTimeoutMs(), TimeUnit.MILLISECONDS)
                 .check(request);
         } catch (StatusRuntimeException e) {
-            throw handleGrpcException(e, channel);
+            throw handleGrpcException(e, holder);
         } catch (OAuth2Exception e) {
             Log.warnf("Transient error fetching Kessel OAuth2 credentials (may retry): %s", e.getMessage());
             throw new KesselTransientException(e);
@@ -139,23 +147,24 @@ public class KesselCheckClient {
 
     @Retry(maxRetries = 3, delay = 100, retryOn = KesselTransientException.class)
     public CheckForUpdateResponse checkForUpdate(CheckForUpdateRequest request) {
-        // Capture the channel backing this call so, on failure, we can act on the exact channel that failed
-        // rather than the shared field, which another thread may have concurrently reinitialized.
-        KesselInventoryServiceGrpc.KesselInventoryServiceBlockingStub client = getClient();
-        ManagedChannel channel = grpcChannel;
+        // getClient() is inside the try so an OAuth2Exception thrown while lazily reinitializing the channel is
+        // wrapped in KesselTransientException and retried, instead of propagating past the @Retry interceptor.
+        // The holder gives us a consistent (stub, channel) snapshot for this call from a single volatile read.
+        ChannelHolder holder = null;
         try {
-            return client
+            holder = getClient();
+            return holder.stub()
                 .withDeadlineAfter(backendConfig.getKesselTimeoutMs(), TimeUnit.MILLISECONDS)
                 .checkForUpdate(request);
         } catch (StatusRuntimeException e) {
-            throw handleGrpcException(e, channel);
+            throw handleGrpcException(e, holder);
         } catch (OAuth2Exception e) {
             Log.warnf("Transient error fetching Kessel OAuth2 credentials (may retry): %s", e.getMessage());
             throw new KesselTransientException(e);
         }
     }
 
-    private RuntimeException handleGrpcException(StatusRuntimeException e, ManagedChannel failedChannel) {
+    private RuntimeException handleGrpcException(StatusRuntimeException e, ChannelHolder failedHolder) {
         Status.Code code = e.getStatus().getCode();
 
         meterRegistry.counter(KESSEL_GRPC_ERROR_COUNTER_NAME, Tags.of(KESSEL_GRPC_ERROR_TAG_ERROR_TYPE, code.name())).increment();
@@ -167,8 +176,10 @@ public class KesselCheckClient {
                 initializeChannel("unauthenticated");
             } catch (OAuth2Exception oauthEx) {
                 Log.warnf("Failed to refresh OAuth2 credentials after UNAUTHENTICATED error: %s", oauthEx.getMessage());
-                if (failedChannel != null) {
-                    failedChannel.shutdown();
+                // Shut down only the exact channel that produced this failed call, so a channel another thread
+                // concurrently reinitialized to a healthy state is never torn down here.
+                if (failedHolder != null && failedHolder.channel() != null) {
+                    failedHolder.channel().shutdown();
                 }
                 return new KesselTransientException(oauthEx);
             }
@@ -190,17 +201,19 @@ public class KesselCheckClient {
 
     @PreDestroy
     void preDestroy() {
-        if (grpcChannel == null) {
+        ChannelHolder holder = channelHolder;
+        if (holder == null || holder.channel() == null) {
             return;
         }
-        grpcChannel.shutdown();
+        ManagedChannel channel = holder.channel();
+        channel.shutdown();
         try {
-            if (!grpcChannel.awaitTermination(CHANNEL_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            if (!channel.awaitTermination(CHANNEL_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 Log.warn("Kessel gRPC channel did not terminate gracefully, forcing shutdown");
-                grpcChannel.shutdownNow();
+                channel.shutdownNow();
             }
         } catch (InterruptedException e) {
-            grpcChannel.shutdownNow();
+            channel.shutdownNow();
             Thread.currentThread().interrupt();
         }
     }
