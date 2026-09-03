@@ -80,7 +80,9 @@ public class KesselCheckClient {
         initializeChannel("startup");
     }
 
-    private void initializeChannel(String reason) {
+    // Synchronized so concurrent callers replace and shut down channels sequentially: each call captures the
+    // holder it actually displaces and closes it, so no newly created channel can be overwritten and leaked.
+    private synchronized void initializeChannel(String reason) {
         // Capture before overwriting so we can shut it down after.
         ChannelHolder oldHolder = channelHolder;
 
