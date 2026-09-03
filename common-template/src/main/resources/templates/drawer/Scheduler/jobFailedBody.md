@@ -1,5 +1,5 @@
 {#include drawer/Common/commonDrawerNotification.md}
 {#body}
-The scheduled report **[{data.context.job_name}]** has failed to generated successfully.
+The scheduled report **[{data.context.job_name}]** has failed to generate successfully.
 {/body}
 {/include}
