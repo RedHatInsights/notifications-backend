@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.drawer;
 
+import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
@@ -39,6 +40,11 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
+import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_3_0;
+import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS;
+import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_EDIT;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_VIEW;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
@@ -48,6 +54,10 @@ public class DrawerResource {
 
     @Path(API_NOTIFICATIONS_V_1_0 + "/notifications/drawer")
     public static class V1 extends DrawerResource {
+    }
+
+    @Path(API_NOTIFICATIONS_V_3_0 + "/notifications/drawer")
+    public static class V3 extends DrawerResource {
     }
 
     @Inject
@@ -77,6 +87,7 @@ public class DrawerResource {
         description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used",
         schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
     )
+    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW)
     public Page<DrawerEntryPayload> getDrawerEntries(@Context SecurityContext securityContext, @Context UriInfo uriInfo,
                                          @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
                                          @RestQuery Set<UUID> eventTypeIds, @RestQuery LocalDateTime startDate, @RestQuery LocalDateTime endDate,
@@ -128,6 +139,7 @@ public class DrawerResource {
     @Operation(summary = "Update drawer notifications status.", description =
         "Update drawer notifications status."
     )
+    @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_EDIT)
     public Integer updateNotificationReadStatus(@Context SecurityContext securityContext, UpdateNotificationDrawerStatus drawerStatus) {
         String orgId = getOrgId(securityContext);
         String username = getUsername(securityContext);

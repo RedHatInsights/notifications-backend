@@ -92,6 +92,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -208,6 +209,27 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
     @Inject
     BehaviorGroupRepository behaviorGroupRepository;
+
+    /**
+     * The V1, V2 and V3 integrations base paths. Several endpoints (get, delete, enable, disable,
+     * history, history details, test) share the exact same implementation across all three
+     * versions, so their behavior can be asserted once per version instead of being duplicated.
+     */
+    private static final List<String> ALL_INTEGRATIONS_BASE_PATHS = List.of(
+        TestConstants.API_INTEGRATIONS_V_1_0,
+        TestConstants.API_INTEGRATIONS_V_2_0,
+        TestConstants.API_INTEGRATIONS_V_3_0
+    );
+
+    /**
+     * Runs the given assertion once for each of {@link #ALL_INTEGRATIONS_BASE_PATHS},
+     * using per-request basePath instead of mutating the shared static {@code RestAssured.basePath}.
+     */
+    private void assertOnAllIntegrationsBasePaths(Consumer<String> assertion) {
+        for (final String basePath : ALL_INTEGRATIONS_BASE_PATHS) {
+            assertion.accept(basePath);
+        }
+    }
 
     // Mock the Sources service calls.
     private Secret mockSources(SourcesSecretable properties) {
@@ -3642,22 +3664,10 @@ public class EndpointResourceTest extends DbIsolatedTest {
         // unauthorized response from the endpoints.
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
 
-        // Call the notifications history endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", createdEndpoint.getId())
-            .queryParam("includeDetail", false)
-            .get("/endpoints/{endpointId}/history")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
-
-        try {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
-
-            // Call the notifications history endpoint in the V2 path.
+        // Call the notifications history endpoint. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
             given()
+                .basePath(basePath)
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
@@ -3665,10 +3675,8 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 .queryParam("includeDetail", false)
                 .get("/endpoints/{endpointId}/history")
                 .then()
-                .statusCode(HttpStatus.SC_FORBIDDEN);
-        } finally {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
-        }
+                .statusCode(HttpStatus.SC_FORBIDDEN)
+        );
 
         mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
 
@@ -3716,60 +3724,57 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(HttpStatus.SC_FORBIDDEN);
 
-        try {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
-
-            // Call the "get endpoint" endpoint in the V2 path.
+        // Get an endpoint. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
             given()
+                .basePath(basePath)
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
                 .pathParam("id", createdEndpoint.getId())
                 .get("/endpoints/{id}")
                 .then()
-                .statusCode(HttpStatus.SC_FORBIDDEN);
-        } finally {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
-        }
-        // Get an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("id", createdEndpoint.getId())
-            .get("/endpoints/{id}")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+                .statusCode(HttpStatus.SC_FORBIDDEN)
+        );
 
-        // Delete an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("id", createdEndpoint.getId())
-            .delete("/endpoints/{id}")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+        // Delete an endpoint. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
+            given()
+                .basePath(basePath)
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("id", createdEndpoint.getId())
+                .delete("/endpoints/{id}")
+                .then()
+                .statusCode(HttpStatus.SC_FORBIDDEN)
+        );
 
-        // Enable an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("id", createdEndpoint.getId())
-            .put("/endpoints/{id}/enable")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+        // Enable an endpoint. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
+            given()
+                .basePath(basePath)
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("id", createdEndpoint.getId())
+                .put("/endpoints/{id}/enable")
+                .then()
+                .statusCode(HttpStatus.SC_FORBIDDEN)
+        );
 
-        // Disable an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("id", createdEndpoint.getId())
-            .delete("/endpoints/{id}/enable")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+        // Disable an endpoint. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
+            given()
+                .basePath(basePath)
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("id", createdEndpoint.getId())
+                .delete("/endpoints/{id}/enable")
+                .then()
+                .statusCode(HttpStatus.SC_FORBIDDEN)
+        );
 
         // Update an endpoint.
         given()
@@ -3782,26 +3787,32 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(HttpStatus.SC_FORBIDDEN);
 
-        // Retrieve the history details.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", createdEndpoint.getId())
-            .pathParam("historyId", UUID.randomUUID())
-            .get("/endpoints/{endpointId}/history/{historyId}/details")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+        // Retrieve the history details. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
+            given()
+                .basePath(basePath)
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", createdEndpoint.getId())
+                .pathParam("historyId", UUID.randomUUID())
+                .get("/endpoints/{endpointId}/history/{historyId}/details")
+                .then()
+                .statusCode(HttpStatus.SC_FORBIDDEN)
+        );
 
-        // Test an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("id", createdEndpoint.getId())
-            .post("/endpoints/{id}/test")
-            .then()
-            .statusCode(HttpStatus.SC_FORBIDDEN);
+        // Test an endpoint. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
+            given()
+                .basePath(basePath)
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("id", createdEndpoint.getId())
+                .post("/endpoints/{id}/test")
+                .then()
+                .statusCode(HttpStatus.SC_FORBIDDEN)
+        );
     }
 
     private void assertSystemEndpointTypeError(String message, EndpointType endpointType) {
@@ -4504,86 +4515,70 @@ public class EndpointResourceTest extends DbIsolatedTest {
 
         final UUID nonExistentEndpointId = UUID.randomUUID();
 
-        try {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
-
-            // Call the notifications history endpoint in the V2 path.
+        // Call the notifications history endpoint. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
             given()
+                .basePath(basePath)
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
                 .pathParam("endpointId", nonExistentEndpointId)
                 .get("/endpoints/{endpointId}/history")
                 .then()
-                .statusCode(HttpStatus.SC_NOT_FOUND);
-        } finally {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
-        }
+                .statusCode(HttpStatus.SC_NOT_FOUND)
+        );
 
-        // Call the notifications history endpoint in the V1 path.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .get("/endpoints/{endpointId}/history")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
-
-        try {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_2_0;
-
-            // Call the "get endpoint" endpoint in the V2 path.
+        // Get an endpoint. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
             given()
+                .basePath(basePath)
                 .header(identityHeader)
                 .when()
                 .contentType(JSON)
                 .pathParam("endpointId", nonExistentEndpointId)
                 .get("/endpoints/{endpointId}")
                 .then()
-                .statusCode(HttpStatus.SC_NOT_FOUND);
-        } finally {
-            RestAssured.basePath = TestConstants.API_INTEGRATIONS_V_1_0;
-        }
-        // Get an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .get("/endpoints/{endpointId}")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
+                .statusCode(HttpStatus.SC_NOT_FOUND)
+        );
 
-        // Delete an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .delete("/endpoints/{endpointId}")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
+        // Delete an endpoint. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
+            given()
+                .basePath(basePath)
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", nonExistentEndpointId)
+                .delete("/endpoints/{endpointId}")
+                .then()
+                .statusCode(HttpStatus.SC_NOT_FOUND)
+        );
 
-        // Enable an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .put("/endpoints/{endpointId}/enable")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
+        // Enable an endpoint. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
+            given()
+                .basePath(basePath)
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", nonExistentEndpointId)
+                .put("/endpoints/{endpointId}/enable")
+                .then()
+                .statusCode(HttpStatus.SC_NOT_FOUND)
+        );
 
-        // Disable an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .delete("/endpoints/{endpointId}/enable")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
+        // Disable an endpoint. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
+            given()
+                .basePath(basePath)
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", nonExistentEndpointId)
+                .delete("/endpoints/{endpointId}/enable")
+                .then()
+                .statusCode(HttpStatus.SC_NOT_FOUND)
+        );
 
         // Update an endpoint. Create an endpoint so that we can avoid
         // receiving a "bad request" response for not including a body.
@@ -4598,26 +4593,32 @@ public class EndpointResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(HttpStatus.SC_NOT_FOUND);
 
-        // Get the history details.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .pathParam("historyId", UUID.randomUUID())
-            .get("/endpoints/{endpointId}/history/{historyId}/details")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
+        // Get the history details. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
+            given()
+                .basePath(basePath)
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", nonExistentEndpointId)
+                .pathParam("historyId", UUID.randomUUID())
+                .get("/endpoints/{endpointId}/history/{historyId}/details")
+                .then()
+                .statusCode(HttpStatus.SC_NOT_FOUND)
+        );
 
-        // Test an endpoint.
-        given()
-            .header(identityHeader)
-            .when()
-            .contentType(JSON)
-            .pathParam("endpointId", nonExistentEndpointId)
-            .post("/endpoints/{endpointId}/test")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
+        // Test an endpoint. Shared implementation across V1, V2 and V3.
+        assertOnAllIntegrationsBasePaths(basePath ->
+            given()
+                .basePath(basePath)
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .pathParam("endpointId", nonExistentEndpointId)
+                .post("/endpoints/{endpointId}/test")
+                .then()
+                .statusCode(HttpStatus.SC_NOT_FOUND)
+        );
 
         // Delete an event type.
         given()

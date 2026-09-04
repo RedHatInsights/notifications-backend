@@ -3,44 +3,26 @@ package com.redhat.cloud.notifications.routers.handlers.endpoint;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.auth.principal.rhid.RhIdPrincipal;
-import com.redhat.cloud.notifications.auth.rbac.RbacGroupValidator;
-import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
-import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
-import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
-import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
-import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
-import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
-import com.redhat.cloud.notifications.models.Bundle;
-import com.redhat.cloud.notifications.models.CamelProperties;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.EndpointProperties;
-import com.redhat.cloud.notifications.models.EndpointStatus;
 import com.redhat.cloud.notifications.models.EndpointType;
-import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
-import com.redhat.cloud.notifications.models.WebhookProperties;
-import com.redhat.cloud.notifications.models.dto.v1.CommonMapper;
+import com.redhat.cloud.notifications.models.dto.CommonMapper;
 import com.redhat.cloud.notifications.models.dto.v1.NotificationHistoryDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointDTO;
 import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.endpoints.EndpointTestRequest;
-import com.redhat.cloud.notifications.routers.endpoints.InternalEndpointTestRequest;
-import com.redhat.cloud.notifications.routers.engine.EndpointTestService;
 import com.redhat.cloud.notifications.routers.models.EndpointPage;
 import com.redhat.cloud.notifications.routers.models.RequestSystemSubscriptionProperties;
 import com.redhat.cloud.notifications.routers.sources.SecretUtils;
 import com.redhat.cloud.notifications.security.SecurityLog;
-import io.quarkus.logging.Log;
-import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -66,16 +48,9 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.resteasy.reactive.RestPath;
 
-import java.net.URI;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -85,14 +60,8 @@ import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_W
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_EDIT;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_VIEW;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
-import static com.redhat.cloud.notifications.models.Endpoint.SERVICE_NOW_ENDPOINT_SUBTYPE;
-import static com.redhat.cloud.notifications.models.Endpoint.SLACK_ENDPOINT_SUBTYPE;
-import static com.redhat.cloud.notifications.models.Endpoint.SPLUNK_ENDPOINT_SUBTYPE;
-import static com.redhat.cloud.notifications.models.EndpointType.ANSIBLE;
-import static com.redhat.cloud.notifications.models.EndpointType.CAMEL;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
-import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getAccountId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -102,12 +71,6 @@ import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 // TODO Needs documentation annotations
 public class EndpointResource extends EndpointResourceCommon {
 
-    public static final String DEPRECATED_SLACK_CHANNEL_ERROR = "The channel field is deprecated";
-    public static final String HTTPS_ENDPOINT_SCHEME_REQUIRED = "The endpoint URL must start with \"https\"";
-    public static final String SPLUNK_HEC_TOKEN_REQUIRED = "The Splunk HEC token is required";
-    public static final String UNSUPPORTED_ENDPOINT_TYPE = "Unsupported endpoint type";
-    public static final String AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE = "Integration \"%s\" behavior group";
-
     @Inject
     EndpointRepository endpointRepository;
 
@@ -116,31 +79,6 @@ public class EndpointResource extends EndpointResourceCommon {
 
     @Inject
     CommonMapper commonMapper;
-
-    @Inject
-    @RestClient
-    EndpointTestService endpointTestService;
-
-    @Inject
-    NotificationRepository notificationRepository;
-
-    @Inject
-    RbacGroupValidator rbacGroupValidator;
-
-    @Inject
-    BackendConfig backendConfig;
-
-    @Inject
-    EndpointEventTypeRepository endpointEventTypeRepository;
-
-    @Inject
-    BehaviorGroupRepository behaviorGroupRepository;
-
-    @Inject
-    EventTypeRepository eventTypeRepository;
-
-    @Inject
-    WorkspaceUtils workspaceUtils;
 
     /**
      * Used to create the secrets in Sources and update the endpoint's properties' IDs.
@@ -230,117 +168,13 @@ public class EndpointResource extends EndpointResourceCommon {
         final Endpoint endpoint = this.endpointMapper.toEntity(endpointDTO);
 
         try {
-            Endpoint created = this.internalCreateEndpoint(sec, endpoint, endpointDTO.eventTypes);
-            SecurityLog.logCrudSuccess("CREATE", "integration", created.getId().toString(), sec, "Created integration: " + created.getName());
-            return this.endpointMapper.toDTO(created);
+            return endpointMapper.toDTO(internalCreateEndpoint(sec, endpoint, endpointDTO.eventTypes));
         } catch (final Exception e) {
             SecurityLog.logCrudFailure("CREATE", "integration", "N/A", sec, e.getMessage());
             // Clean up the secrets from Sources if any were created.
             this.secretUtils.deleteSecretsForEndpoint(endpoint);
 
             throw e;
-        }
-    }
-
-    /**
-     * Internal function which creates the given endpoint. The reason why there
-     * is this internal function is so that we can wrap it with a "try/catch"
-     * block, so that if any Sources secrets are created and an exception is
-     * raised upon saving the endpoint, we can call Sources again to clean up
-     * the secrets, as otherwise we would be leaving dangling secrets in
-     * Sources.
-     *
-     * @param sec        the security context of the request.
-     * @param endpoint   the endpoint to be created.
-     * @param eventTypes
-     * @return the created endpoint in the database.
-     */
-    @Transactional
-    protected Endpoint internalCreateEndpoint(
-        final SecurityContext sec,
-        final Endpoint endpoint,
-        final Set<UUID> eventTypes
-    ) {
-        if (!isEndpointTypeAllowed(endpoint.getType())) {
-            throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
-        }
-        String accountId = getAccountId(sec);
-        String orgId = getOrgId(sec);
-
-        endpoint.setAccountId(accountId);
-        endpoint.setOrgId(orgId);
-
-        if (endpoint.getProperties() == null) {
-            throw new BadRequestException("Properties is required");
-        }
-
-        if (endpoint.getType() == CAMEL) {
-            if (!endpoint.isCamelSubTypeSupported()) {
-                throw new BadRequestException("The sub type '" + endpoint.getSubType() + "' is not supported with type 'CAMEL'");
-            }
-            checkSslDisabledEndpoint(endpoint);
-            String subType = endpoint.getSubType();
-
-            if (subType.equals(SLACK_ENDPOINT_SUBTYPE)) {
-                checkSlackChannel(endpoint.getProperties(CamelProperties.class), null);
-            } else if (subType.equals(SERVICE_NOW_ENDPOINT_SUBTYPE) || subType.equals(SPLUNK_ENDPOINT_SUBTYPE)) {
-                checkHttpsEndpoint(endpoint.getProperties(CamelProperties.class));
-            }
-            if (subType.equals(SPLUNK_ENDPOINT_SUBTYPE)) {
-                checkSplunkHecToken(endpoint.getProperties(CamelProperties.class));
-            }
-        } else if (endpoint.getType() == WEBHOOK || endpoint.getType() == ANSIBLE) {
-            checkSslDisabledEndpoint(endpoint);
-        } else if (Set.of(EMAIL_SUBSCRIPTION, DRAWER).contains(endpoint.getType())) {
-            RhIdPrincipal principal = (RhIdPrincipal) sec.getUserPrincipal();
-            getOrCreateInternalEndpointCommonChecks(endpoint.getProperties(SystemSubscriptionProperties.class), principal);
-        }
-
-        endpoint.setStatus(EndpointStatus.READY);
-
-        endpoint.setEventTypes(endpointEventTypeRepository.fetchAndValidateEndpointsEventTypesAssociation(eventTypes, Set.of(endpoint.getType())));
-
-        this.secretUtils.createSecretsForEndpoint(endpoint);
-
-        final Endpoint createdEndpoint = this.endpointRepository.createEndpoint(endpoint);
-
-        // Sync behavior group model
-        if (null != eventTypes && !eventTypes.isEmpty()) {
-            createOrUpdateLinkedBehaviorGroup(eventTypes, createdEndpoint.getId(), createdEndpoint.getName(), orgId, accountId);
-        }
-
-        return createdEndpoint;
-    }
-
-    private void checkSlackChannel(CamelProperties camelProperties, CamelProperties previousCamelProperties) {
-        String channel = camelProperties.getExtras() != null ? camelProperties.getExtras().get("channel") : null;
-
-        // throw an exception if we receive a channel on endpoint creation
-        if (null == previousCamelProperties && channel != null) {
-            throw new BadRequestException(DEPRECATED_SLACK_CHANNEL_ERROR);
-        // throw an exception if we receive a channel update
-        } else if (channel != null && !channel.equals(previousCamelProperties.getExtras().get("channel"))) {
-            throw new BadRequestException(DEPRECATED_SLACK_CHANNEL_ERROR);
-        }
-    }
-
-    private void checkHttpsEndpoint(CamelProperties camelProperties) {
-        if (camelProperties != null) {
-            URI endpointUri = URI.create(camelProperties.getUrl());
-
-            if (!endpointUri.getScheme().equalsIgnoreCase("https")) {
-                // throw an exception if a non-HTTPS URL scheme is used on endpoint creation or update
-                throw new BadRequestException(HTTPS_ENDPOINT_SCHEME_REQUIRED);
-            }
-        }
-    }
-
-    private void checkSplunkHecToken(CamelProperties camelProperties) {
-        if (camelProperties != null) {
-            String secretToken = camelProperties.getSecretToken();
-            if (secretToken == null || secretToken.isBlank()) {
-                throw new BadRequestException(SPLUNK_HEC_TOKEN_REQUIRED);
-            }
         }
     }
 
@@ -383,32 +217,6 @@ public class EndpointResource extends EndpointResourceCommon {
         return endpointRepository.getOrCreateSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType);
     }
 
-    private void getOrCreateInternalEndpointCommonChecks(RequestSystemSubscriptionProperties requestProps, RhIdPrincipal principal) {
-        if (requestProps.getGroupId() != null && requestProps.isOnlyAdmins()) {
-            throw new BadRequestException("Cannot use RBAC groups and only admins in the same endpoint");
-        }
-
-        if (requestProps.getGroupId() != null) {
-            boolean isValid = rbacGroupValidator.validate(requestProps.getGroupId(), principal.getIdentity().rawIdentity);
-            if (!isValid) {
-                throw new BadRequestException(String.format("Invalid RBAC group identified with id %s", requestProps.getGroupId()));
-            }
-        }
-    }
-
-    private void getOrCreateInternalEndpointCommonChecks(SystemSubscriptionProperties requestProps, RhIdPrincipal principal) {
-        if (requestProps.getGroupId() != null && requestProps.isOnlyAdmins()) {
-            throw new BadRequestException("Cannot use RBAC groups and only admins in the same endpoint");
-        }
-
-        if (requestProps.getGroupId() != null) {
-            boolean isValid = rbacGroupValidator.validate(requestProps.getGroupId(), principal.getIdentity().rawIdentity);
-            if (!isValid) {
-                throw new BadRequestException(String.format("Invalid RBAC group identified with id %s", requestProps.getGroupId()));
-            }
-        }
-    }
-
     @GET
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
@@ -425,37 +233,7 @@ public class EndpointResource extends EndpointResourceCommon {
     @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
     @Transactional
     public Response deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
-        String orgId = getOrgId(sec);
-        EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
-        if (!isEndpointTypeAllowed(endpointType)) {
-            throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
-        }
-
-        // Clean up the secrets in Sources.
-        final Endpoint endpoint = endpointRepository.getEndpoint(orgId, id);
-
-        endpointRepository.deleteEndpoint(orgId, id);
-
-        // Attempt deleting the secrets for the given endpoint. In the case
-        // that the secrets deletion goes wrong:
-        //
-        // - The transaction will be rolled back and the integration will not
-        // be deleted.
-        // - The secrets will not have been deleted from Sources.
-        // - We need to recreate the integration in Kessel Inventory, so that
-        // everything stays in sync.
-        try {
-            this.secretUtils.deleteSecretsForEndpoint(endpoint);
-        } catch (final Exception e) {
-            if (this.backendConfig.isIgnoreSourcesErrorOnEndpointDelete(orgId)) {
-                Log.errorf(e, "Sources error deleting endpoint %s", endpoint);
-            } else {
-                throw e;
-            }
-        }
-
-        SecurityLog.logCrudSuccess("DELETE", "integration", id.toString(), sec, "Deleted integration");
-        return Response.noContent().build();
+        return super.deleteEndpoint(sec, id);
     }
 
     @PUT
@@ -466,18 +244,7 @@ public class EndpointResource extends EndpointResourceCommon {
     @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
     @Transactional
     public Response enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
-        String orgId = getOrgId(sec);
-        EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
-        if (!isEndpointTypeAllowed(endpointType)) {
-            throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
-        }
-
-        if (List.of(CAMEL, WEBHOOK, ANSIBLE).contains(endpointType)) {
-            checkSslDisabledEndpoint(orgId, id);
-        }
-        endpointRepository.enableEndpoint(orgId, id);
-        SecurityLog.logCrudSuccess("UPDATE", "integration", id.toString(), sec, "Enabled integration");
-        return Response.ok().build();
+        return super.enableEndpoint(sec, id);
     }
 
     @DELETE
@@ -487,14 +254,7 @@ public class EndpointResource extends EndpointResourceCommon {
     @Transactional
     @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
     public Response disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
-        String orgId = getOrgId(sec);
-        EndpointType endpointType = endpointRepository.getEndpointTypeById(orgId, id);
-        if (!isEndpointTypeAllowed(endpointType)) {
-            throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
-        }
-        endpointRepository.disableEndpoint(orgId, id);
-        SecurityLog.logCrudSuccess("UPDATE", "integration", id.toString(), sec, "Disabled integration");
-        return Response.noContent().build();
+        return super.disableEndpoint(sec, id);
     }
 
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
@@ -510,94 +270,8 @@ public class EndpointResource extends EndpointResourceCommon {
         @PathParam("id")                                UUID id,
         @RequestBody(required = true) @NotNull @Valid   EndpointDTO endpointDTO
     ) {
-        final Endpoint endpoint = this.endpointMapper.toEntity(endpointDTO);
-
-        if (!isEndpointTypeAllowed(endpoint.getType())) {
-            throw new BadRequestException(UNSUPPORTED_ENDPOINT_TYPE);
-        }
-        RhIdPrincipal principal = (RhIdPrincipal) securityContext.getUserPrincipal();
-        String accountId = getAccountId(securityContext);
-        String orgId = getOrgId(securityContext);
-        endpoint.setAccountId(accountId);
-        endpoint.setOrgId(orgId);
-        endpoint.setId(id);
-
-        final Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, id);
-        if (dbEndpoint == null) {
-            throw new NotFoundException("Endpoint not found");
-        }
-        EndpointType endpointType = dbEndpoint.getType();
-
-        if (endpointType != endpoint.getType() ||
-            !Objects.equals(dbEndpoint.getSubType(), endpoint.getSubType())) {
-            throw new BadRequestException("The integration type or sub type can't be modified");
-        }
-
-        if (endpoint.getType() == CAMEL) {
-            String subType = endpoint.getSubType();
-            checkSslDisabledEndpoint(endpoint);
-
-            // If SSL verification is disabled on the existing endpoint, only permit updates which re-enable verification.
-            try {
-                if (endpointType == CAMEL) {
-                    checkSslDisabledEndpoint(dbEndpoint);
-                }
-            } catch (BadRequestException e) {
-                if (endpoint.getProperties(CamelProperties.class).getDisableSslVerification()) {
-                    throw e;
-                }
-            }
-
-            if (subType.equals(SLACK_ENDPOINT_SUBTYPE)) {
-                checkSlackChannel(endpoint.getProperties(CamelProperties.class), dbEndpoint.getProperties(CamelProperties.class));
-            } else if (subType.equals(SERVICE_NOW_ENDPOINT_SUBTYPE) || subType.equals(SPLUNK_ENDPOINT_SUBTYPE)) {
-                checkHttpsEndpoint(endpoint.getProperties(CamelProperties.class));
-            }
-            if (subType.equals(SPLUNK_ENDPOINT_SUBTYPE)) {
-                checkSplunkHecToken(endpoint.getProperties(CamelProperties.class));
-            }
-        } else if (Set.of(EMAIL_SUBSCRIPTION, DRAWER).contains(endpoint.getType())) {
-            getOrCreateInternalEndpointCommonChecks(endpoint.getProperties(SystemSubscriptionProperties.class), principal);
-        } else if (endpoint.getType() == WEBHOOK || endpoint.getType() == ANSIBLE) {
-            checkSslDisabledEndpoint(endpoint);
-            // If SSL verification is disabled on the existing endpoint, only permit updates which re-enable verification.
-            try {
-                if (endpointType == WEBHOOK || endpointType == ANSIBLE) {
-                    checkSslDisabledEndpoint(dbEndpoint);
-                }
-            } catch (BadRequestException e) {
-                if (endpoint.getProperties(WebhookProperties.class).getDisableSslVerification()) {
-                    throw e;
-                }
-            }
-        }
-
-        endpointRepository.updateEndpoint(endpoint);
-
-        if (!dbEndpoint.getName().equals(endpoint.getName())) {
-            String behaviorGroupName = String.format(AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE, dbEndpoint.getName());
-            String newBehaviorGroupName = String.format(AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE, endpoint.getName());
-            behaviorGroupRepository.updateBehaviorGroupName(dbEndpoint.getOrgId(), behaviorGroupName, newBehaviorGroupName);
-        }
-
-        // Update the secrets in Sources.
-        final Endpoint updatedDbEndpoint = endpointRepository.getEndpoint(orgId, id);
-        final EndpointProperties endpointProperties = endpoint.getProperties();
-        final EndpointProperties databaseEndpointProperties = updatedDbEndpoint.getProperties();
-
-        if (endpointProperties instanceof SourcesSecretable incomingProperties && databaseEndpointProperties instanceof SourcesSecretable dep) {
-            // In order to be able to update the secrets in Sources, we need to grab the IDs of these secrets from the
-            // database endpoint, since the client won't be sending those IDs.
-            dep.setSecretToken(incomingProperties.getSecretToken());
-            dep.setBearerAuthentication(incomingProperties.getBearerAuthentication());
-            this.secretUtils.updateSecretsForEndpoint(updatedDbEndpoint);
-        }
-
-        if (null != endpointDTO.eventTypes) {
-            internalUpdateEventTypesLinkedToEndpoint(securityContext, id, endpointDTO.eventTypes);
-        }
-        SecurityLog.logCrudSuccess("UPDATE", "integration", id.toString(), securityContext, "Updated integration");
-        return Response.ok().build();
+        final Endpoint endpoint = endpointMapper.toEntity(endpointDTO);
+        return super.commonUpdateEndpoint(securityContext, id, endpoint, endpointDTO.eventTypes, true);
     }
 
     @GET
@@ -607,17 +281,7 @@ public class EndpointResource extends EndpointResourceCommon {
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
     @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
     public Response getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId) {
-        String orgId = getOrgId(sec);
-        JsonObject json = notificationRepository.getNotificationDetails(orgId, endpointId, historyId);
-        if (json == null) {
-            // Maybe 404 should only be returned if history_id matches nothing? Otherwise 204
-            throw new NotFoundException();
-        } else {
-            if (json.isEmpty()) {
-                return Response.noContent().build();
-            }
-            return Response.ok(json).build();
-        }
+        return super.getDetailedEndpointHistory(sec, endpointId, historyId);
     }
 
     /**
@@ -640,53 +304,7 @@ public class EndpointResource extends EndpointResourceCommon {
     })
     @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
     public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid, @Valid @RequestBody final EndpointTestRequest requestBody) {
-        if (!this.endpointRepository.existsByUuidAndOrgId(uuid, getOrgId(sec))) {
-            throw new NotFoundException("integration not found");
-        }
-        EndpointType endpointType = endpointRepository.getEndpointTypeById(getOrgId(sec), uuid);
-        if (endpointType == CAMEL || endpointType == WEBHOOK || endpointType == ANSIBLE) {
-            checkSslDisabledEndpoint(getOrgId(sec), uuid);
-        }
-
-        final InternalEndpointTestRequest internalEndpointTestRequest = new InternalEndpointTestRequest();
-        internalEndpointTestRequest.endpointUuid = uuid;
-        internalEndpointTestRequest.orgId = getOrgId(sec);
-        if (requestBody != null) {
-            internalEndpointTestRequest.message = requestBody.message;
-        }
-
-        this.endpointTestService.testEndpoint(internalEndpointTestRequest);
-    }
-
-    /** @deprecated to be removed once all endpoints with {@code disableSslVerification = true} are deleted. */
-    @Deprecated(forRemoval = true)
-    private void checkSslDisabledEndpoint(String orgId, UUID id) {
-        checkSslDisabledEndpoint(endpointRepository.getEndpoint(orgId, id));
-    }
-
-    /**
-     * @param endpoint A {@link EndpointType#CAMEL}, {@link EndpointType#WEBHOOK}, or {@link EndpointType#ANSIBLE} endpoint.
-     * @deprecated to be removed once all endpoints with {@code disableSslVerification = true} are deleted.
-     */
-    @Deprecated(forRemoval = true)
-    private void checkSslDisabledEndpoint(Endpoint endpoint) {
-        // Early return to simplify error message
-        if (endpoint.getType() == CAMEL) {
-            if (endpoint.getProperties() == null || !endpoint.getProperties(CamelProperties.class).getDisableSslVerification()) {
-                return;
-            }
-        } else {
-            if (endpoint.getProperties() == null || !endpoint.getProperties(WebhookProperties.class).getDisableSslVerification()) {
-                return;
-            }
-        }
-
-        throw new BadRequestException("Endpoints are no longer permitted to disable SSL/TLS verification, and existing integrations which have disabled " +
-                "verification will be removed soon. Please enable SSL/TLS verification to continue using this integration, or contact Red Hat Support for assistance.");
-    }
-
-    private boolean isEndpointTypeAllowed(EndpointType endpointType) {
-        return !backendConfig.isEmailsOnlyModeEnabled() || EMAIL_SUBSCRIPTION.equals(endpointType) || DRAWER.equals(endpointType);
+        super.commonTestEndpoint(sec, uuid, requestBody);
     }
 
     @DELETE
@@ -751,71 +369,4 @@ public class EndpointResource extends EndpointResourceCommon {
     public void updateEventTypesLinkedToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID endpointId, @Parameter(description = "Set of event type ids to associate") Set<UUID> eventTypeIds) {
         internalUpdateEventTypesLinkedToEndpoint(securityContext, endpointId, eventTypeIds);
     }
-
-    private void internalUpdateEventTypesLinkedToEndpoint(final SecurityContext securityContext, final UUID endpointId, final Set<UUID> eventTypeIds) {
-        final String orgId = getOrgId(securityContext);
-        final String accountId = getAccountId(securityContext);
-        final Endpoint updatedEndpoint = endpointEventTypeRepository.updateEventTypesLinkedToEndpoint(endpointId, eventTypeIds, orgId);
-
-        // Sync behavior group model
-
-        // delete endpoint from existing behavior group
-        List<BehaviorGroup> behaviorGroupsLinkedToThisEndpoint = behaviorGroupRepository.findBehaviorGroupsByEndpointId(orgId, endpointId);
-        for (BehaviorGroup behaviorGroup : behaviorGroupsLinkedToThisEndpoint) {
-            if (behaviorGroup.getActions().size() == 1) {
-                behaviorGroupRepository.delete(orgId, behaviorGroup.getId());
-            } else {
-                behaviorGroupRepository.deleteEndpointFromBehaviorGroup(behaviorGroup.getId(), endpointId, orgId);
-            }
-        }
-
-        // Create or update relevant behavior groups
-        createOrUpdateLinkedBehaviorGroup(eventTypeIds, endpointId, updatedEndpoint.getName(), orgId, accountId);
-    }
-
-    private void createOrUpdateLinkedBehaviorGroup(Set<UUID> eventTypeIds, UUID endpointId, String endpointName, String orgId, String accountId) {
-        String behaviorGroupName = String.format(AUTO_CREATED_BEHAVIOR_GROUP_NAME_TEMPLATE, endpointName);
-
-        // group event types by bundle
-        Map<UUID, Set<UUID>> eventTypesGroupedByBundle = new HashMap<>();
-        for (UUID eventTypeId : eventTypeIds) {
-            Optional<Bundle> bundle = eventTypeRepository.findBundleByEventTypeId(eventTypeId);
-            if (bundle.isPresent()) {
-                eventTypesGroupedByBundle.computeIfAbsent(bundle.get().getId(), ignored -> new HashSet<>())
-                        .add(eventTypeId);
-            }
-        }
-
-        for (UUID bundleId : eventTypesGroupedByBundle.keySet()) {
-            Optional<BehaviorGroup> existingBg = behaviorGroupRepository.findBehaviorGroupsByName(orgId, bundleId, behaviorGroupName);
-            if (existingBg.isPresent()) {
-                Boolean alreadyAssociatedAction = existingBg.get().getActions().stream().anyMatch(bga -> bga.getId().endpointId.equals(endpointId));
-
-                if (!alreadyAssociatedAction) {
-                    int position = existingBg.get().getActions().stream().mapToInt(ba -> ba.getPosition()).max().orElse(-1) + 1;
-                    behaviorGroupRepository.appendActionToBehaviorGroup(existingBg.get().getId(), endpointId, position, orgId);
-                }
-                for (UUID eventTypeId : eventTypesGroupedByBundle.get(bundleId)) {
-                    Boolean alreadyAssociatedEventType = existingBg.get().getBehaviors().stream().anyMatch(bh -> bh.getId().eventTypeId.equals(eventTypeId));
-                    if (!alreadyAssociatedEventType) {
-                        behaviorGroupRepository.appendBehaviorGroupToEventType(orgId, existingBg.get().getId(), eventTypeId);
-                    }
-                }
-            } else {
-                // Create or update legacy behavior group structure
-                BehaviorGroup behaviorGroup = new BehaviorGroup();
-                behaviorGroup.setBundleId(bundleId);
-                behaviorGroup.setDisplayName(behaviorGroupName);
-
-                behaviorGroupRepository.createFull(
-                    accountId,
-                    orgId,
-                    behaviorGroup,
-                    List.of(endpointId),
-                    eventTypesGroupedByBundle.get(bundleId)
-                );
-            }
-        }
-    }
-
 }
