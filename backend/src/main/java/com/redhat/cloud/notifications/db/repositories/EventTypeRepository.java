@@ -7,7 +7,9 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -39,6 +41,23 @@ public class EventTypeRepository {
         } catch (NoResultException e) {
             return Optional.empty();
         }
+    }
+
+    public Map<UUID, Bundle> findBundlesByEventTypeIds(Set<UUID> eventTypeIds) {
+        if (eventTypeIds == null || eventTypeIds.isEmpty()) {
+            return Map.of();
+        }
+
+        String query = "SELECT evt FROM EventType evt JOIN FETCH evt.application app JOIN FETCH app.bundle WHERE evt.id IN (:eventTypeIds)";
+        List<EventType> eventTypes = entityManager.createQuery(query, EventType.class)
+            .setParameter("eventTypeIds", eventTypeIds)
+            .getResultList();
+
+        Map<UUID, Bundle> result = new HashMap<>();
+        for (EventType eventType : eventTypes) {
+            result.put(eventType.getId(), eventType.getApplication().getBundle());
+        }
+        return result;
     }
 
     /**
