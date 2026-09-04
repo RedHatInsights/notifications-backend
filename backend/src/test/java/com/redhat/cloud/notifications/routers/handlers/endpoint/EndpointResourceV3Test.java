@@ -48,6 +48,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
@@ -117,6 +118,13 @@ public class EndpointResourceV3Test extends DbIsolatedTest {
     private static EndpointSecretsDTO secretsDto(final String secretToken) {
         final EndpointSecretsDTO dto = new EndpointSecretsDTO();
         dto.setSecretToken(secretToken);
+        return dto;
+    }
+
+    private static EndpointSecretsDTO secretsDto(final String secretToken, final String bearerAuthentication) {
+        final EndpointSecretsDTO dto = new EndpointSecretsDTO();
+        dto.setSecretToken(secretToken);
+        dto.setBearerAuthentication(bearerAuthentication);
         return dto;
     }
 
@@ -673,6 +681,563 @@ public class EndpointResourceV3Test extends DbIsolatedTest {
                 .statusCode(HttpStatus.SC_OK)
                 .body("meta.count", Matchers.is(4))
                 .body("data", Matchers.hasSize(2));
+    }
+
+    @Test
+    void testCreateEndpointWithSecretsOnUnsupportedTypeReturnsBadRequest() {
+        final JsonObject requestBody = new JsonObject()
+            .put("type", "drawer")
+            .put("name", "v3 drawer with secrets")
+            .put("description", "secrets are not supported on drawer endpoints")
+            .put("enabled", true)
+            .put("properties", new JsonObject().put("only_admins", false))
+            .put("secrets", new JsonObject().put("secret_token", "should-fail"));
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(requestBody.encode())
+                .post("/endpoints")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testDeleteEndpointSecretsOnUnsupportedTypeReturnsBadRequest() {
+        final SystemSubscriptionPropertiesDTO properties = new SystemSubscriptionPropertiesDTO();
+
+        final EndpointDTO endpointDTO = new EndpointDTO();
+        endpointDTO.setType(EndpointTypeDTO.DRAWER);
+        endpointDTO.setName("v3 drawer for delete-secrets test");
+        endpointDTO.setDescription("used to test RHCLOUD-34316");
+        endpointDTO.setEnabled(true);
+        endpointDTO.setProperties(properties);
+
+        final String id = new JsonObject(
+                given()
+                        .header(identityHeader)
+                        .when()
+                        .contentType(JSON)
+                        .body(Json.encode(endpointDTO))
+                        .post("/endpoints")
+                        .then()
+                        .statusCode(HttpStatus.SC_OK)
+                        .extract().body().asString()
+        ).getString("id");
+
+        given()
+                .header(identityHeader)
+                .when()
+                .delete("/endpoints/" + id + "/secrets")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testBothSecretTokenAndBearerAuthenticationTogether() {
+        final JsonObject created = createCamelSlackEndpoint();
+        final String id = created.getString("id");
+
+        final Secret secret = this.mockSecretCreation();
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(secretsDto("my-token", "my-bearer")))
+                .put("/endpoints/" + id + "/secrets")
+                .then()
+                .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        final JsonObject fetched = new JsonObject(
+                given()
+                        .header(identityHeader)
+                        .when().get("/endpoints/" + id)
+                        .then()
+                        .statusCode(HttpStatus.SC_OK)
+                        .extract().body().asString()
+        );
+        final JsonObject fetchedProperties = fetched.getJsonObject("properties");
+        assertFalse(fetchedProperties.containsKey("secret_token"));
+        assertFalse(fetchedProperties.containsKey("bearer_authentication"));
+    }
+
+    @Test
+    void testPartialSecretUpdateClearsOmittedField() {
+        final JsonObject created = createCamelSlackEndpoint();
+        final String id = created.getString("id");
+
+        final Secret secret = this.mockSecretCreation();
+
+        // Set both secrets.
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(secretsDto("my-token", "my-bearer")))
+                .put("/endpoints/" + id + "/secrets")
+                .then()
+                .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        // Update with only secretToken, bearerAuthentication omitted (null) -> should clear it.
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(secretsDto("updated-token")))
+                .put("/endpoints/" + id + "/secrets")
+                .then()
+                .statusCode(HttpStatus.SC_NO_CONTENT);
+    }
+
+    @Test
+    void testWebhookEndpointWithSecret() {
+        final Secret secret = this.mockSecretCreation();
+
+        final JsonObject requestBody = new JsonObject()
+            .put("type", "webhook")
+            .put("name", "v3 webhook with secret")
+            .put("description", "webhook with secret at creation")
+            .put("enabled", true)
+            .put("properties", new JsonObject().put("url", "https://redhat.com/hook"))
+            .put("secrets", new JsonObject().put("secret_token", "webhook-secret"));
+
+        final JsonObject created = new JsonObject(
+                given()
+                        .header(identityHeader)
+                        .when()
+                        .contentType(JSON)
+                        .body(requestBody.encode())
+                        .post("/endpoints")
+                        .then()
+                        .statusCode(HttpStatus.SC_OK)
+                        .contentType(JSON)
+                        .extract().body().asString()
+        );
+
+        verify(sourcesServiceMock).create(anyString(), anyString(), any(Secret.class));
+
+        final JsonObject createdProperties = created.getJsonObject("properties");
+        assertFalse(createdProperties.containsKey("secret_token"));
+        assertFalse(created.containsKey("secrets"));
+
+        final Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, UUID.fromString(created.getString("id")));
+        assertEquals(secret.id, ((SourcesSecretable) dbEndpoint.getProperties()).getSecretTokenSourcesId());
+    }
+
+    @Test
+    void testPagerDutyEndpointWithSecret() {
+        final Secret secret = this.mockSecretCreation();
+
+        final JsonObject requestBody = new JsonObject()
+            .put("type", "pagerduty")
+            .put("name", "v3 pagerduty with secret")
+            .put("description", "pagerduty with secret at creation")
+            .put("enabled", true)
+            .put("properties", new JsonObject())
+            .put("secrets", new JsonObject().put("secret_token", "pagerduty-secret"));
+
+        final JsonObject created = new JsonObject(
+                given()
+                        .header(identityHeader)
+                        .when()
+                        .contentType(JSON)
+                        .body(requestBody.encode())
+                        .post("/endpoints")
+                        .then()
+                        .statusCode(HttpStatus.SC_OK)
+                        .contentType(JSON)
+                        .extract().body().asString()
+        );
+
+        verify(sourcesServiceMock).create(anyString(), anyString(), any(Secret.class));
+        assertFalse(created.containsKey("secrets"));
+
+        final Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, UUID.fromString(created.getString("id")));
+        assertEquals(secret.id, ((SourcesSecretable) dbEndpoint.getProperties()).getSecretTokenSourcesId());
+    }
+
+    @Test
+    void testSecretsValidationRejectsOversizedValues() {
+        final JsonObject created = createCamelSlackEndpoint();
+        final String id = created.getString("id");
+
+        final String tooLong = RandomStringUtils.randomAlphanumeric(256);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(secretsDto(tooLong)))
+                .put("/endpoints/" + id + "/secrets")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+
+        final EndpointSecretsDTO bearerTooLong = new EndpointSecretsDTO();
+        bearerTooLong.setBearerAuthentication(tooLong);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(bearerTooLong))
+                .put("/endpoints/" + id + "/secrets")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testCreateEndpointValidationRejectsNullName() {
+        final JsonObject requestBody = new JsonObject()
+            .put("type", "webhook")
+            .put("description", "missing name")
+            .put("enabled", true)
+            .put("properties", new JsonObject().put("url", "https://redhat.com/hook"));
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(requestBody.encode())
+                .post("/endpoints")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testCreateEndpointValidationRejectsOversizedName() {
+        final String tooLongName = RandomStringUtils.randomAlphanumeric(256);
+
+        final WebhookPropertiesDTO properties = new WebhookPropertiesDTO();
+        properties.setUrl("https://redhat.com/hook");
+
+        final EndpointDTO endpointDTO = new EndpointDTO();
+        endpointDTO.setType(EndpointTypeDTO.WEBHOOK);
+        endpointDTO.setName(tooLongName);
+        endpointDTO.setDescription("name too long");
+        endpointDTO.setEnabled(true);
+        endpointDTO.setProperties(properties);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(endpointDTO))
+                .post("/endpoints")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testListEndpointsWithMultipleTypeFilters() {
+        final WebhookProperties webhookProperties = new WebhookProperties();
+        webhookProperties.setMethod(HttpType.POST);
+        webhookProperties.setUrl("https://redhat.com/multi-filter");
+
+        final CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setUrl("https://redhat.com/multi-filter-camel");
+        camelProperties.setExtras(new HashMap<>());
+
+        this.resourceHelpers.createEndpoint(this.accountId, this.orgId, EndpointType.WEBHOOK, null, "multi-wh", "d", webhookProperties, true);
+        this.resourceHelpers.createEndpoint(this.accountId, this.orgId, EndpointType.CAMEL, "slack", "multi-slack", "d", camelProperties, true);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .queryParam("type", List.of("webhook", "camel:slack"))
+                .get("/endpoints")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .body("meta.count", Matchers.is(2))
+                .body("data", Matchers.hasSize(2));
+    }
+
+    @Test
+    void testListEndpointsCombinedFilters() {
+        final WebhookProperties enabledWebhook = new WebhookProperties();
+        enabledWebhook.setMethod(HttpType.POST);
+        enabledWebhook.setUrl("https://redhat.com/combined-1");
+
+        final WebhookProperties disabledWebhook = new WebhookProperties();
+        disabledWebhook.setMethod(HttpType.POST);
+        disabledWebhook.setUrl("https://redhat.com/combined-2");
+
+        final CamelProperties camelProperties = new CamelProperties();
+        camelProperties.setUrl("https://redhat.com/combined-3");
+        camelProperties.setExtras(new HashMap<>());
+
+        this.resourceHelpers.createEndpoint(this.accountId, this.orgId, EndpointType.WEBHOOK, null, "target-hook", "d", enabledWebhook, true);
+        this.resourceHelpers.createEndpoint(this.accountId, this.orgId, EndpointType.WEBHOOK, null, "target-hook-off", "d", disabledWebhook, false);
+        this.resourceHelpers.createEndpoint(this.accountId, this.orgId, EndpointType.CAMEL, "slack", "target-camel", "d", camelProperties, true);
+
+        // type=webhook AND active=true AND name contains "target"
+        given()
+                .header(identityHeader)
+                .when()
+                .queryParam("type", "webhook")
+                .queryParam("active", true)
+                .queryParam("name", "target")
+                .get("/endpoints")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .body("meta.count", Matchers.is(1))
+                .body("data", Matchers.hasSize(1))
+                .body("data[0].name", Matchers.is("target-hook"));
+    }
+
+    @Test
+    void testListEndpointsPaginationEdgeCases() {
+        final WebhookProperties properties = new WebhookProperties();
+        properties.setMethod(HttpType.POST);
+        properties.setUrl("https://redhat.com/page-edge");
+        this.resourceHelpers.createEndpoint(this.accountId, this.orgId, EndpointType.WEBHOOK, null, "page-edge-1", "d", properties, true);
+
+        // Offset beyond total count returns empty data with correct count.
+        given()
+                .header(identityHeader)
+                .when()
+                .queryParam("limit", 10)
+                .queryParam("offset", 999)
+                .get("/endpoints")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .body("data", Matchers.hasSize(0))
+                .body("meta.count", Matchers.greaterThanOrEqualTo(1));
+    }
+
+    @Test
+    void testEventTypesGroupingWithMultipleBundlesAndApplications() {
+        final Bundle bundle1 = this.resourceHelpers.createBundle(RandomStringUtils.randomAlphabetic(10).toLowerCase(), "v3 bundle 1");
+        final Application app1 = this.resourceHelpers.createApplication(bundle1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "v3 app 1");
+        final EventType evt1 = this.resourceHelpers.createEventType(app1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "v3 event 1", "desc");
+
+        final Bundle bundle2 = this.resourceHelpers.createBundle(RandomStringUtils.randomAlphabetic(10).toLowerCase(), "v3 bundle 2");
+        final Application app2 = this.resourceHelpers.createApplication(bundle2.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "v3 app 2");
+        final EventType evt2 = this.resourceHelpers.createEventType(app2.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "v3 event 2", "desc");
+
+        final Application app3 = this.resourceHelpers.createApplication(bundle1.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "v3 app 3");
+        final EventType evt3 = this.resourceHelpers.createEventType(app3.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "v3 event 3", "desc");
+
+        final JsonObject requestBody = new JsonObject()
+            .put("type", "camel")
+            .put("sub_type", "slack")
+            .put("name", "v3 endpoint multi bundle")
+            .put("description", "multi-bundle grouping test")
+            .put("enabled", true)
+            .put("properties", new JsonObject().put("url", "https://redhat.com"))
+            .put("event_types", new io.vertx.core.json.JsonArray()
+                .add(evt1.getId().toString())
+                .add(evt2.getId().toString())
+                .add(evt3.getId().toString()));
+
+        final String id = new JsonObject(
+                given()
+                        .header(identityHeader)
+                        .when()
+                        .contentType(JSON)
+                        .body(requestBody.encode())
+                        .post("/endpoints")
+                        .then()
+                        .statusCode(HttpStatus.SC_OK)
+                        .extract().body().asString()
+        ).getString("id");
+
+        final JsonObject fetched = new JsonObject(
+                given()
+                        .header(identityHeader)
+                        .when().get("/endpoints/" + id)
+                        .then()
+                        .statusCode(HttpStatus.SC_OK)
+                        .extract().body().asString()
+        );
+
+        final JsonArray bundles = fetched.getJsonArray("event_types_group_by_bundles_and_applications");
+        assertEquals(2, bundles.size());
+
+        // Find the bundle that has 2 apps (bundle1).
+        JsonObject bundleWith2Apps = null;
+        JsonObject bundleWith1App = null;
+        for (int i = 0; i < bundles.size(); i++) {
+            final JsonObject b = bundles.getJsonObject(i);
+            if (b.getJsonArray("applications").size() == 2) {
+                bundleWith2Apps = b;
+            } else {
+                bundleWith1App = b;
+            }
+        }
+        assertNotNull(bundleWith2Apps);
+        assertNotNull(bundleWith1App);
+        assertEquals(bundle1.getId().toString(), bundleWith2Apps.getString("id"));
+        assertEquals(bundle2.getId().toString(), bundleWith1App.getString("id"));
+    }
+
+    @Test
+    void testUpdateEndpointProperties() {
+        final WebhookPropertiesDTO properties = new WebhookPropertiesDTO();
+        properties.setUrl("https://redhat.com/original");
+
+        final EndpointDTO endpointDTO = new EndpointDTO();
+        endpointDTO.setType(EndpointTypeDTO.WEBHOOK);
+        endpointDTO.setName("v3 webhook to update");
+        endpointDTO.setDescription("original description");
+        endpointDTO.setEnabled(true);
+        endpointDTO.setProperties(properties);
+
+        final JsonObject created = new JsonObject(
+                given()
+                        .header(identityHeader)
+                        .when()
+                        .contentType(JSON)
+                        .body(Json.encode(endpointDTO))
+                        .post("/endpoints")
+                        .then()
+                        .statusCode(HttpStatus.SC_OK)
+                        .contentType(JSON)
+                        .extract().body().asString()
+        );
+
+        final String id = created.getString("id");
+
+        final WebhookPropertiesDTO updatedProperties = new WebhookPropertiesDTO();
+        updatedProperties.setUrl("https://redhat.com/updated");
+
+        final EndpointDTO updateDTO = new EndpointDTO();
+        updateDTO.setType(EndpointTypeDTO.WEBHOOK);
+        updateDTO.setName("v3 webhook updated");
+        updateDTO.setDescription("updated description");
+        updateDTO.setEnabled(true);
+        updateDTO.setProperties(updatedProperties);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(updateDTO))
+                .put("/endpoints/" + id)
+                .then()
+                .statusCode(HttpStatus.SC_OK);
+
+        final JsonObject fetched = new JsonObject(
+                given()
+                        .header(identityHeader)
+                        .when().get("/endpoints/" + id)
+                        .then()
+                        .statusCode(HttpStatus.SC_OK)
+                        .extract().body().asString()
+        );
+
+        assertEquals("v3 webhook updated", fetched.getString("name"));
+        assertEquals("updated description", fetched.getString("description"));
+        assertEquals("https://redhat.com/updated", fetched.getJsonObject("properties").getString("url"));
+    }
+
+    @Test
+    void testUpdateEndpointTypeChangeReturnsBadRequest() {
+        final WebhookPropertiesDTO properties = new WebhookPropertiesDTO();
+        properties.setUrl("https://redhat.com/no-type-change");
+
+        final EndpointDTO endpointDTO = new EndpointDTO();
+        endpointDTO.setType(EndpointTypeDTO.WEBHOOK);
+        endpointDTO.setName("v3 webhook type-change");
+        endpointDTO.setDescription("d");
+        endpointDTO.setEnabled(true);
+        endpointDTO.setProperties(properties);
+
+        final String id = new JsonObject(
+                given()
+                        .header(identityHeader)
+                        .when()
+                        .contentType(JSON)
+                        .body(Json.encode(endpointDTO))
+                        .post("/endpoints")
+                        .then()
+                        .statusCode(HttpStatus.SC_OK)
+                        .extract().body().asString()
+        ).getString("id");
+
+        // Attempt to change the type from WEBHOOK to PAGERDUTY.
+        final EndpointDTO updateDTO = new EndpointDTO();
+        updateDTO.setType(EndpointTypeDTO.PAGERDUTY);
+        updateDTO.setName("v3 webhook type-change");
+        updateDTO.setDescription("d");
+        updateDTO.setEnabled(true);
+        updateDTO.setProperties(new PagerDutyPropertiesDTO());
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(updateDTO))
+                .put("/endpoints/" + id)
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testUpdateSecretsOnNonExistentEndpointReturnsNotFound() {
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(secretsDto("irrelevant")))
+                .put("/endpoints/" + UUID.randomUUID() + "/secrets")
+                .then()
+                .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    void testDeleteSecretsOnNonExistentEndpointReturnsNotFound() {
+        given()
+                .header(identityHeader)
+                .when()
+                .delete("/endpoints/" + UUID.randomUUID() + "/secrets")
+                .then()
+                .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    void testListEndpointsEventTypesGroupingPopulatedInList() {
+        final Bundle bundle = this.resourceHelpers.createBundle(RandomStringUtils.randomAlphabetic(10).toLowerCase(), "v3 list bundle");
+        final Application application = this.resourceHelpers.createApplication(bundle.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "v3 list app");
+        final EventType eventType = this.resourceHelpers.createEventType(application.getId(), RandomStringUtils.randomAlphabetic(10).toLowerCase(), "v3 list event", "desc");
+
+        final JsonObject requestBody = new JsonObject()
+            .put("type", "camel")
+            .put("sub_type", "slack")
+            .put("name", "v3 listed endpoint with event type")
+            .put("description", "test list grouping")
+            .put("enabled", true)
+            .put("properties", new JsonObject().put("url", "https://redhat.com"))
+            .put("event_types", new io.vertx.core.json.JsonArray().add(eventType.getId().toString()));
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(requestBody.encode())
+                .post("/endpoints")
+                .then()
+                .statusCode(HttpStatus.SC_OK);
+
+        // Verify that the list endpoint also populates eventTypesGroupByBundlesAndApplications.
+        final JsonObject list = new JsonObject(
+                given()
+                        .header(identityHeader)
+                        .when()
+                        .queryParam("name", "v3 listed endpoint with event type")
+                        .get("/endpoints")
+                        .then()
+                        .statusCode(HttpStatus.SC_OK)
+                        .extract().body().asString()
+        );
+
+        final JsonArray data = list.getJsonArray("data");
+        assertEquals(1, data.size());
+        final JsonArray bundles = data.getJsonObject(0).getJsonArray("event_types_group_by_bundles_and_applications");
+        assertNotNull(bundles);
+        assertEquals(1, bundles.size());
+        assertEquals(bundle.getId().toString(), bundles.getJsonObject(0).getString("id"));
     }
 
     void overridePagerDutySeverity(UUID endpointId, PagerDutySeverity severity) {
