@@ -3,14 +3,17 @@
     Scheduler - Console
 {/content-header-title}
 {#content-title}
-    Scheduler export completed
+    Scheduled report ready to download
 {/content-title}
 {#content-body}
     <p style="{body-section-p-style}">
-        The <a style="{body-section-underline-link-style}" href="{environment.url}/insights/jobs/{action.context.job_id}?{query_params}" target="_blank">{action.context.job_name}</a> scheduled export has completed successfully.
-        <a style="{body-section-underline-link-style}" href="{environment.url}/api/export/v1/exports/{action.context.export_id}?{query_params}" target="_blank">Download exported data</a>.
+
+        The scheduled report {action.context.job_name} has generated successfully.  Click the link below to access and download the report.
+    </p>
+    <p style="{body-section-p-style}">
+        The next upcoming scheduled report: {action.context.next_run_at}
     </p>
 {/content-body}
-{#content-button-href}{environment.url}/insights/jobs/{action.context.job_id}{/content-button-href}
-{#content-button-service-name}Scheduled jobs{/content-button-service-name}
+{#content-button-href}{environment.url}/scheduler/download/{action.context.job_id}/{action.context.run_id}{/content-button-href}
+{#content-button-service-name}Download the report{/content-button-service-name}
 {/include}
