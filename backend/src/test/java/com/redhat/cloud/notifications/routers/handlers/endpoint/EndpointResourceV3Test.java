@@ -736,8 +736,28 @@ public class EndpointResourceV3Test extends DbIsolatedTest {
 
     @Test
     void testBothSecretTokenAndBearerAuthenticationTogether() {
-        final JsonObject created = createCamelSlackEndpoint();
-        final String id = created.getString("id");
+        // Use a webhook endpoint because CamelProperties (slack) doesn't support bearer authentication.
+        final WebhookPropertiesDTO properties = new WebhookPropertiesDTO();
+        properties.setUrl("https://redhat.com/both-secrets");
+
+        final EndpointDTO endpointDTO = new EndpointDTO();
+        endpointDTO.setType(EndpointTypeDTO.WEBHOOK);
+        endpointDTO.setName("v3 webhook both secrets");
+        endpointDTO.setDescription("test both secret fields");
+        endpointDTO.setEnabled(true);
+        endpointDTO.setProperties(properties);
+
+        final String id = new JsonObject(
+                given()
+                        .header(identityHeader)
+                        .when()
+                        .contentType(JSON)
+                        .body(Json.encode(endpointDTO))
+                        .post("/endpoints")
+                        .then()
+                        .statusCode(HttpStatus.SC_OK)
+                        .extract().body().asString()
+        ).getString("id");
 
         final Secret secret = this.mockSecretCreation();
 
@@ -750,6 +770,10 @@ public class EndpointResourceV3Test extends DbIsolatedTest {
                 .then()
                 .statusCode(HttpStatus.SC_NO_CONTENT);
 
+        // Verify secrets were persisted via Sources mock calls.
+        verify(sourcesServiceMock, org.mockito.Mockito.atLeastOnce()).create(anyString(), anyString(), any(Secret.class));
+
+        // Verify secrets are never exposed in GET responses.
         final JsonObject fetched = new JsonObject(
                 given()
                         .header(identityHeader)
@@ -761,6 +785,12 @@ public class EndpointResourceV3Test extends DbIsolatedTest {
         final JsonObject fetchedProperties = fetched.getJsonObject("properties");
         assertFalse(fetchedProperties.containsKey("secret_token"));
         assertFalse(fetchedProperties.containsKey("bearer_authentication"));
+
+        // Verify both Sources IDs were stored in the database.
+        final Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, UUID.fromString(id));
+        final SourcesSecretable props = (SourcesSecretable) dbEndpoint.getProperties();
+        assertNotNull(props.getSecretTokenSourcesId());
+        assertNotNull(props.getBearerAuthenticationSourcesId());
     }
 
     @Test
