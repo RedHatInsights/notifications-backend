@@ -12,9 +12,13 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.CompletionStage;
+
 import static com.redhat.cloud.notifications.connector.v2.MessageConsumer.FAILED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.connector.v2.MessageConsumer.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -37,11 +41,47 @@ class MessageConsumerTest {
 
     @Test
     void testMissingCloudEventMetadata() {
-        Message<JsonObject> message = Message.of(new JsonObject());
+        Headers headers = new RecordHeaders()
+            .add(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, connectorConfig.getConnectorName().getBytes(UTF_8));
+
+        OutgoingKafkaRecordMetadata<String> kafkaHeaders = OutgoingKafkaRecordMetadata.<String>builder()
+            .withHeaders(headers)
+            .build();
+
+        Message<JsonObject> message = Message.of(new JsonObject())
+            .addMetadata(kafkaHeaders);
 
         messageConsumer.processMessage(message);
 
         micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(FAILED_COUNTER_NAME, "connector", connectorConfig.getConnectorName(), 1);
+    }
+
+    @Test
+    void testMessageFilteredByWrongConnectorHeader() {
+        Headers headers = new RecordHeaders()
+            .add(X_RH_NOTIFICATIONS_CONNECTOR_HEADER, "wrong-connector-name".getBytes(UTF_8));
+
+        OutgoingKafkaRecordMetadata<String> kafkaHeaders = OutgoingKafkaRecordMetadata.<String>builder()
+            .withHeaders(headers)
+            .build();
+
+        Message<JsonObject> message = Message.of(new JsonObject())
+            .addMetadata(kafkaHeaders);
+
+        CompletionStage<Void> result = messageConsumer.processMessage(message);
+
+        assertDoesNotThrow(() -> result.toCompletableFuture().get(5, SECONDS));
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(FAILED_COUNTER_NAME, "connector", connectorConfig.getConnectorName(), 0);
+    }
+
+    @Test
+    void testMessageFilteredByMissingConnectorHeader() {
+        Message<JsonObject> message = Message.of(new JsonObject());
+
+        CompletionStage<Void> result = messageConsumer.processMessage(message);
+
+        assertDoesNotThrow(() -> result.toCompletableFuture().get(5, SECONDS));
+        micrometerAssertionHelper.assertCounterValueFilteredByTagsIncrement(FAILED_COUNTER_NAME, "connector", connectorConfig.getConnectorName(), 0);
     }
 
     @Test
