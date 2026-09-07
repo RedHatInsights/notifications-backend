@@ -1,0 +1,239 @@
+package com.redhat.cloud.notifications.models.dto.v3.endpoint;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.redhat.cloud.notifications.models.dto.v1.BundleDTO;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointStatusDTO;
+import com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointTypeDTO;
+import com.redhat.cloud.notifications.models.dto.v3.endpoint.properties.CamelPropertiesDTO;
+import com.redhat.cloud.notifications.models.dto.v3.endpoint.properties.EndpointPropertiesDTO;
+import com.redhat.cloud.notifications.models.dto.v3.endpoint.properties.PagerDutyPropertiesDTO;
+import com.redhat.cloud.notifications.models.dto.v3.endpoint.properties.SystemSubscriptionPropertiesDTO;
+import com.redhat.cloud.notifications.models.dto.v3.endpoint.properties.WebhookPropertiesDTO;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.UUID;
+
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+public final class EndpointDTO {
+
+    private UUID id;
+
+    @NotNull
+    @Size(max = 255)
+    private String name;
+
+    @NotNull
+    private String description;
+
+    private Boolean enabled = Boolean.FALSE;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointStatusDTO status = com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointStatusDTO.UNKNOWN;
+
+    @Min(0)
+    private int serverErrors;
+
+    @NotNull
+    private com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointTypeDTO type;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Size(max = 20)
+    private String subType;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private LocalDateTime created;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private LocalDateTime updated;
+
+    @JsonSubTypes({
+        @JsonSubTypes.Type(value = CamelPropertiesDTO.class, name = "camel"),
+        @JsonSubTypes.Type(value = SystemSubscriptionPropertiesDTO.class, name = "drawer"),
+        @JsonSubTypes.Type(value = SystemSubscriptionPropertiesDTO.class, name = "email_subscription"),
+        @JsonSubTypes.Type(value = WebhookPropertiesDTO.class, name = "ansible"),
+        @JsonSubTypes.Type(value = WebhookPropertiesDTO.class, name = "webhook"),
+        @JsonSubTypes.Type(value = PagerDutyPropertiesDTO.class, name = "pagerduty"),
+    })
+    @JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        property = "type",
+        include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
+    @Schema(oneOf = {
+        CamelPropertiesDTO.class, SystemSubscriptionPropertiesDTO.class,
+        WebhookPropertiesDTO.class, PagerDutyPropertiesDTO.class
+    })
+    @Valid
+    private EndpointPropertiesDTO properties;
+
+    @JsonIgnore
+    @AssertTrue(message = "This type requires a sub_type")
+    private boolean isSubTypePresentWhenRequired() {
+        if (this.type == null) {
+            return true;
+        }
+        return !this.type.requiresSubType || this.subType != null;
+    }
+
+    @JsonIgnore
+    @AssertTrue(message = "This type does not support sub_type")
+    private boolean isSubTypeNotPresentWhenNotRequired() {
+        if (this.type == null) {
+            return true;
+        }
+        return this.type.requiresSubType || this.subType == null;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Set<BundleDTO> eventTypesGroupByBundlesAndApplications;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private Set<UUID> eventTypes;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean readOnly;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Schema(writeOnly = true, description = "Optional secrets (secret token, bearer authentication) to associate with the endpoint being created. Only used on creation: never returned by the API, and ignored when updating an existing endpoint through this resource -- use the dedicated \"PUT/DELETE .../secrets\" endpoints instead.")
+    @Valid
+    private EndpointSecretsDTO secrets;
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(final UUID id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(final String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(final String description) {
+        this.description = description;
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(final Boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointStatusDTO getStatus() {
+        return status;
+    }
+
+    public void setStatus(final EndpointStatusDTO status) {
+        this.status = status;
+    }
+
+    public int getServerErrors() {
+        return serverErrors;
+    }
+
+    public void setServerErrors(final int serverErrors) {
+        this.serverErrors = serverErrors;
+    }
+
+    public com.redhat.cloud.notifications.models.dto.v1.endpoint.EndpointTypeDTO getType() {
+        return type;
+    }
+
+    public void setType(final EndpointTypeDTO type) {
+        this.type = type;
+    }
+
+    public String getSubType() {
+        return subType;
+    }
+
+    public void setSubType(final String subType) {
+        this.subType = subType;
+    }
+
+    public LocalDateTime getCreated() {
+        return created;
+    }
+
+    public void setCreated(final LocalDateTime created) {
+        this.created = created;
+    }
+
+    public LocalDateTime getUpdated() {
+        return updated;
+    }
+
+    public void setUpdated(final LocalDateTime updated) {
+        this.updated = updated;
+    }
+
+    public Boolean getReadOnly() {
+        return readOnly;
+    }
+
+    public void setReadOnly(Boolean readOnly) {
+        this.readOnly = readOnly;
+    }
+
+    public EndpointPropertiesDTO getProperties() {
+        return properties;
+    }
+
+    public void setProperties(final EndpointPropertiesDTO properties) {
+        this.properties = properties;
+    }
+
+    public Set<BundleDTO> getEventTypesGroupByBundlesAndApplications() {
+        return eventTypesGroupByBundlesAndApplications;
+    }
+
+    public void setEventTypesGroupByBundlesAndApplications(Set<BundleDTO> eventTypesGroupByBundlesAndApplications) {
+        this.eventTypesGroupByBundlesAndApplications = eventTypesGroupByBundlesAndApplications;
+    }
+
+    public Set<UUID> getEventTypes() {
+        return eventTypes;
+    }
+
+    public void setEventTypes(final Set<UUID> eventTypes) {
+        this.eventTypes = eventTypes;
+    }
+
+    public EndpointSecretsDTO getSecrets() {
+        return secrets;
+    }
+
+    public void setSecrets(final EndpointSecretsDTO secrets) {
+        this.secrets = secrets;
+    }
+}

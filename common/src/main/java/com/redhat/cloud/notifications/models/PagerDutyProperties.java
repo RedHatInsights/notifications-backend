@@ -9,7 +9,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -21,7 +20,6 @@ import jakarta.validation.constraints.Size;
 @Table(name = "pagerduty_properties")
 public class PagerDutyProperties extends EndpointProperties implements SourcesSecretable {
 
-    @NotNull
     @Enumerated(EnumType.STRING)
     private PagerDutySeverity severity;
 

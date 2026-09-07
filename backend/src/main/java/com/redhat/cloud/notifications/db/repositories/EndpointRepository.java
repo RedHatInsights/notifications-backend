@@ -399,10 +399,14 @@ public class EndpointRepository {
                     break;
                 case PAGERDUTY:
                     PagerDutyProperties pdAttr = (PagerDutyProperties) endpoint.getProperties();
-                    success = entityManager.createQuery(pagerDutyQuery)
-                            .setParameter("severity", pdAttr.getSeverity())
-                            .setParameter("endpointId", endpoint.getId())
-                            .executeUpdate() > 0;
+                    if (pdAttr.getSeverity() != null) {
+                        success = entityManager.createQuery(pagerDutyQuery)
+                                .setParameter("severity", pdAttr.getSeverity())
+                                .setParameter("endpointId", endpoint.getId())
+                                .executeUpdate() > 0;
+                    } else {
+                        success = true;
+                    }
                     break;
                 default:
                     success = true;
@@ -453,6 +457,21 @@ public class EndpointRepository {
                 }
             }
         }
+    }
+
+    public void loadEventTypes(List<Endpoint> endpoints) {
+        if (endpoints.isEmpty()) {
+            return;
+        }
+        List<UUID> ids = endpoints.stream().map(Endpoint::getId).toList();
+        entityManager.createQuery(
+            "SELECT DISTINCT e FROM Endpoint e " +
+            "LEFT JOIN FETCH e.eventTypes ep " +
+            "LEFT JOIN FETCH ep.application ap " +
+            "LEFT JOIN FETCH ap.bundle " +
+            "WHERE e.id IN (:ids)", Endpoint.class)
+            .setParameter("ids", ids)
+            .getResultList();
     }
 
     public Endpoint loadProperties(Endpoint endpoint) {
