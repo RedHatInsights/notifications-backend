@@ -16,6 +16,8 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -165,9 +167,19 @@ public class OApiFilter {
 
         String rootStr = root.toString();
         List<String> schemasNames = root.getJsonObject("components").getJsonObject("schemas").stream().map(entry -> entry.getKey()).toList();
-        for (String schemaName : schemasNames) {
-            if (schemaName.endsWith("DTO") && !schemasNames.contains(schemaName.replace("DTO", ""))) {
-                rootStr = rootStr.replaceAll(schemaName, schemaName.replace("DTO", ""));
+        // Process longest names first so that e.g. "EndpointDTO1" is replaced before
+        // "EndpointDTO", preventing partial substring matches.
+        List<String> sortedSchemaNames = new ArrayList<>(schemasNames);
+        sortedSchemaNames.sort(Comparator.comparingInt(String::length).reversed());
+        Set<String> usedStrippedNames = new HashSet<>(schemasNames);
+        for (String schemaName : sortedSchemaNames) {
+            // SmallRye disambiguates same-named schemas from different packages (e.g. v1 and v3
+            // DTOs) by appending a digit (EndpointDTO, EndpointDTO1, ...). Strip that suffix too
+            // so the generated OpenAPI document doesn't leak the numbering.
+            String strippedName = schemaName.replaceFirst("DTO\\d*$", "");
+            if (!strippedName.equals(schemaName) && !usedStrippedNames.contains(strippedName)) {
+                rootStr = rootStr.replace(schemaName, strippedName);
+                usedStrippedNames.add(strippedName);
             }
         }
         return new JsonObject(rootStr);
