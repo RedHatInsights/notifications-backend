@@ -10,6 +10,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -60,6 +61,18 @@ public class CleanUpResource {
         if (environment.isStage() || environment.isLocal()) {
             notificationRepository.cleanupEmailAggregation(limit);
             return Response.ok().build();
+        }
+        return Response.status(Response.Status.FORBIDDEN).build();
+    }
+
+    @POST
+    @Path("/severity_order_backfill")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response backfillSeverityOrder(int limit) {
+        if (environment.isStage() || environment.isLocal()) {
+            int updated = eventRepository.backfillSeverityOrder(limit);
+            return Response.ok(updated).build();
         }
         return Response.status(Response.Status.FORBIDDEN).build();
     }
