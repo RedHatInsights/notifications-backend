@@ -447,6 +447,9 @@ public class EndpointResourceV3Test extends DbIsolatedTest {
                         .extract().body().asString()
         );
         assertEquals("https://redhat.com/webhook", fetched.getJsonObject("properties").getString("url"));
+
+        final Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, UUID.fromString(id));
+        assertEquals(HttpType.POST, dbEndpoint.getProperties(WebhookProperties.class).getMethod());
     }
 
     @Test
@@ -844,11 +847,12 @@ public class EndpointResourceV3Test extends DbIsolatedTest {
                 .then()
                 .statusCode(HttpStatus.SC_NO_CONTENT);
 
-        // Verify secret token Sources ID is still present after partial update.
+        // Verify secret token Sources ID is still present and bearer was cleared.
         entityManager.clear();
         dbEndpoint = endpointRepository.getEndpoint(orgId, UUID.fromString(id));
         props = (SourcesSecretable) dbEndpoint.getProperties();
         assertNotNull(props.getSecretTokenSourcesId());
+        assertNull(props.getBearerAuthenticationSourcesId());
     }
 
     @Test
