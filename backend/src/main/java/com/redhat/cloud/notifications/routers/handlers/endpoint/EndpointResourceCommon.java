@@ -296,7 +296,6 @@ public class EndpointResourceCommon {
         }
     }
 
-
     protected Set<BundleDTO> includeLinkedEventTypes(Set<EventType> eventTypes) {
         Set<BundleDTO> bundleDTOSet = null;
         if (null != eventTypes && !eventTypes.isEmpty()) {
