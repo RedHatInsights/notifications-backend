@@ -103,7 +103,7 @@ public class SeverityTransformer {
                             // try to read severity using Red Hat standard format
                             return Severity.valueOf(severityFromOcmPayload);
                         } catch (Exception ex) {
-                            Log.debugf("Ocm is using old Severity format: '%s' for org :'%s'", severityFromOcmPayload, action.getOrgId());
+                            Log.debugf("Ocm is using old severity format: '%s' for org :'%s'", severityFromOcmPayload, action.getOrgId());
                             // try to read severity using OCM legacy format
                             return OcmServiceLogSeverity.valueOf(severityFromOcmPayload).getSeverity();
                         }
