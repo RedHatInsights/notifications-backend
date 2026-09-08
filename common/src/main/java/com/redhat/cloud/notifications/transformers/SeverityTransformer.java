@@ -97,10 +97,16 @@ public class SeverityTransformer {
                 );
                 case "cluster-manager" -> events.stream().map(event -> {
                     try {
-                        return OcmServiceLogSeverity.valueOf(
-                            ((Map<String, Object>) event.getPayload().getAdditionalProperties().get("global_vars"))
-                                .get(SEVERITY).toString().toUpperCase()
-                        ).getSeverity();
+                        final String severityFromOcmPayload = ((Map<String, Object>) event.getPayload().getAdditionalProperties().get("global_vars"))
+                                .get(SEVERITY).toString().toUpperCase();
+                        try {
+                            // try to read severity using Red Hat standard format
+                            return Severity.valueOf(severityFromOcmPayload);
+                        } catch (Exception ex) {
+                            Log.debugf("Ocm is using old Severity format: '%s' for org :'%s'", severityFromOcmPayload, action.getOrgId());
+                            // try to read severity using OCM legacy format
+                            return OcmServiceLogSeverity.valueOf(severityFromOcmPayload).getSeverity();
+                        }
                     } catch (Exception ex) {
                         Log.errorf(ex, "Error extracting 'cluster-manager' severity from event '%s'", event);
                         return null;

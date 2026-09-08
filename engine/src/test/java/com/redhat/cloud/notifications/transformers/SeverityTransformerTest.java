@@ -141,6 +141,18 @@ class SeverityTransformerTest {
     }
 
     @Test
+    public void testOcmPayloadStandardRhSeverity() {
+        Optional<Map<String, Object>> severity = Optional.of(Map.of(SEVERITY, Severity.MODERATE));
+        Action action = OcmTestHelpers.createOcmAction("test-cluster-name", "Premium", "System rebooting",
+                "System reboot in progress", "test-title", severity);
+        Event event = new Event();
+        event.setEventWrapper(new EventWrapperAction(action));
+        event.setEventType(DEFAULT_EVENT_TYPE);
+
+        assertEquals(Severity.MODERATE, severityTransformer.getSeverity(event));
+    }
+
+    @Test
     public void testInventoryPayloadWithLegacySeverity() {
         Action action = InventoryTestHelpers.createInventoryAction("test-tenant", "rhel", "inventory", "validation-error");
         Event event = new Event();
