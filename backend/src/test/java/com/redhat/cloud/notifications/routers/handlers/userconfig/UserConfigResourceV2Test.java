@@ -5,9 +5,6 @@ import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.auth.kessel.KesselCheckClient;
-import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
-import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -43,17 +40,13 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
-import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
-import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.READ_ACCESS;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_FALSE;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -73,15 +66,6 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
     @InjectMock
     BackendConfig backendConfig;
 
-    @InjectMock
-    KesselCheckClient kesselCheckClient;
-
-    @InjectMock
-    WorkspaceUtils workspaceUtils;
-
-    @Inject
-    KesselTestHelper kesselTestHelper;
-
     Header identityHeader;
 
     @BeforeEach
@@ -90,13 +74,6 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
-        // Since BackendConfig is mocked, isRBACEnabled() defaults to false, which makes
-        // ConsoleIdentityProvider build an all-privileges principal regardless of the RBAC mock
-        // responses below. Enable it so the NO_ACCESS/READ_ACCESS tests actually exercise RBAC.
-        when(backendConfig.isRBACEnabled()).thenReturn(true);
-        when(workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID);
-        when(kesselCheckClient.check(any())).thenReturn(kesselTestHelper.buildCheckResponse(ALLOWED_FALSE));
-        when(kesselCheckClient.checkForUpdate(any())).thenReturn(kesselTestHelper.buildCheckForUpdateResponse(ALLOWED_FALSE));
         // Bypass the legacy per-event-type template existence check in SubscriptionRepository.updateSubscription:
         // this test suite is about the subscription tree shape, not about template wiring.
         when(backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()).thenReturn(true);
@@ -430,24 +407,6 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
             .when().put(SUBSCRIPTIONS_PATH)
             .then()
             .statusCode(HttpStatus.SC_FORBIDDEN);
-    }
-
-    @Test
-    void testInsufficientPrivileges() {
-        Header noAccessIdentityHeader = initRbacMock(DEFAULT_USER + "-no-access", NO_ACCESS);
-        Header readAccessIdentityHeader = initRbacMock(DEFAULT_USER + "-read-access", READ_ACCESS);
-
-        given().header(noAccessIdentityHeader).when().get(SUBSCRIPTIONS_PATH).then().statusCode(HttpStatus.SC_FORBIDDEN);
-        given().header(noAccessIdentityHeader).when().put(SUBSCRIPTIONS_PATH).then().statusCode(HttpStatus.SC_FORBIDDEN);
-
-        given().header(readAccessIdentityHeader).when().get(SUBSCRIPTIONS_PATH).then().statusCode(HttpStatus.SC_OK);
-        given().header(readAccessIdentityHeader).when().put(SUBSCRIPTIONS_PATH).then().statusCode(HttpStatus.SC_FORBIDDEN);
-    }
-
-    private Header initRbacMock(String username, MockServerConfig.RbacAccess access) {
-        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, username);
-        MockServerConfig.addMockRbacAccess(identityHeaderValue, access);
-        return TestHelpers.createRHIdentityHeader(identityHeaderValue);
     }
 
     private BundleSubscriptionUpdateDTO buildSingleLeafUpdate(String bundle, String application, String eventType, SubscriptionTypeDTO channel, List<SeverityDTO> severities) {

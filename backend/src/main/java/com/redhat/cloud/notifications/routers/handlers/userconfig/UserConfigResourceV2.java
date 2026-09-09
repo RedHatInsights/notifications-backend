@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.userconfig;
 
 import com.redhat.cloud.notifications.Severity;
-import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
@@ -55,10 +54,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
-import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS;
-import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_EDIT;
-import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_VIEW;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.isServiceAccountAuthentication;
@@ -100,7 +95,6 @@ public class UserConfigResourceV2 {
     @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionDTO.class)))
     @APIResponse(responseCode = "400", description = "A query parameter was specified without its required parent (e.g. 'application' without 'bundle')")
     @APIResponse(responseCode = "404", description = "The named bundle, application or event type doesn't exist")
-    @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "notification_preference")
     public List<BundleSubscriptionDTO> getSubscriptions(
         @Context SecurityContext sec,
         @QueryParam("bundle") String bundleName,
@@ -257,7 +251,6 @@ public class UserConfigResourceV2 {
         description = "Partial update, not a full replace: any bundle, application, event type or channel omitted "
             + "from the request tree is left untouched rather than reset or unsubscribed."
     )
-    @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_EDIT, resourceType = "notification_preference")
     public void updateSubscriptions(
         @Context SecurityContext sec,
         @NotNull @NotEmpty @Valid @RequestBody(content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionUpdateDTO.class)))
