@@ -23,11 +23,17 @@ public enum PagerDutySeverity {
      * @return a {@link PagerDutySeverity} constant
      */
     public static PagerDutySeverity fromJson(String value) {
+        if (value == null) {
+            return WARNING;
+        }
         return valueOf(value.toUpperCase(Locale.ENGLISH));
     }
 
     /** Maps from {@link Severity} levels to PagerDuty-native levels. */
     public static PagerDutySeverity fromSecuritySeverity(String severity) {
+        if (severity == null) {
+            return WARNING;
+        }
         return switch (severity) {
             case "CRITICAL" -> CRITICAL;
             case "IMPORTANT" -> ERROR;
