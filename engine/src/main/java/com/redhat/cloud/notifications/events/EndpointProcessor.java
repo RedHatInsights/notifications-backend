@@ -106,9 +106,15 @@ public class EndpointProcessor {
         } else if (isAggregatorEvent(event)) {
             Log.debugf("[org_id: %s] Processing aggregation event: %s", event.getOrgId(), event);
 
-            endpoints.add(endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION));
+            List<Endpoint> emailEndpoint = endpointRepository.getDefaultSystemSubscription(event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
+            if (emailEndpoint.isEmpty()) {
+                // Aggregator module checks existing email integration to build it
+                Log.warnf("Unable to find email endpoint for aggregation on org: %s");
+            } else {
+                endpoints.addAll(emailEndpoint);
 
-            Log.debugf("[org_id: %s] Found %s endpoints for the aggregation event: %s", event.getOrgId(), endpoints.size(), event);
+                Log.debugf("[org_id: %s] Found %s endpoints for the aggregation event: %s", event.getOrgId(), endpoints.size(), event);
+            }
         } else {
             endpoints.addAll(endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType()));
         }

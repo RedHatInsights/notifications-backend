@@ -142,7 +142,7 @@ public class LifecycleITest {
         addEventTypeBehavior(eventType.getId(), behaviorGroup1.getId());
 
         // Get the account canonical email endpoint
-        Endpoint emailEndpoint = getAccountCanonicalEmailEndpoint(accountId, DEFAULT_ORG_ID);
+        Endpoint emailEndpoint = getAccountCanonicalEmailEndpoint(DEFAULT_ORG_ID);
 
         // Pushing a new message should trigger two webhook calls.
         pushMessage(2, 0, 0, 0);
@@ -245,8 +245,8 @@ public class LifecycleITest {
         }
     }
 
-    Endpoint getAccountCanonicalEmailEndpoint(String accountId, String orgId) {
-        return endpointRepository.getOrCreateDefaultSystemSubscription(accountId, orgId, EMAIL_SUBSCRIPTION);
+    Endpoint getAccountCanonicalEmailEndpoint(String orgId) {
+        return endpointRepository.getDefaultSystemSubscription(orgId, EMAIL_SUBSCRIPTION).stream().findFirst().get();
     }
 
     private Endpoint createWebhookEndpoint(String accountId, String secretToken) {

@@ -155,11 +155,11 @@ public class EmailProcessorTest {
      */
     @Test
     void testExtractAndTransformRecipientSettings() {
-        final Event event = this.setUpStubEvent();
-        final List<Endpoint> endpoints = this.setUpStubEndpoints();
+        final Event event = setUpStubEvent();
+        final List<Endpoint> endpoints = setUpStubEndpoints();
 
         // Call the function under test.
-        final Set<RecipientSettings> resultSet = this.emailProcessor.extractAndTransformRecipientSettings(event, endpoints);
+        final Set<RecipientSettings> resultSet = emailProcessor.extractAndTransformRecipientSettings(event, endpoints);
 
         // Assert that the generated recipient settings contain the right
         // values.
@@ -205,16 +205,16 @@ public class EmailProcessorTest {
     @Test
     void testMissingEmailTemplate() {
         // Prepare the required stubs.
-        final Event event = this.setUpStubEvent();
-        final List<Endpoint> endpoints = this.setUpStubEndpoints();
+        final Event event = setUpStubEvent();
+        final List<Endpoint> endpoints = setUpStubEndpoints();
 
         // Call the processor under test.
-        this.emailProcessor.process(event, endpoints);
+        emailProcessor.process(event, endpoints);
 
         // Verify that the processor returned without calling any further
         // dependencies in the code.
-        Mockito.verify(this.endpointRepository, Mockito.times(0)).getOrCreateDefaultSystemSubscription(Mockito.anyString(), Mockito.anyString(), eq(EndpointType.EMAIL_SUBSCRIPTION));
-        Mockito.verify(this.connectorSender, Mockito.times(0)).send(any(Event.class), any(Endpoint.class), any(JsonObject.class));
+        Mockito.verify(endpointRepository, Mockito.times(0)).getDefaultSystemSubscription(Mockito.anyString(), eq(EndpointType.EMAIL_SUBSCRIPTION));
+        Mockito.verify(connectorSender, Mockito.times(0)).send(any(Event.class), any(Endpoint.class), any(JsonObject.class));
     }
 
     /**
@@ -226,7 +226,7 @@ public class EmailProcessorTest {
     @Test
     void testIgnoreUserPreferencesEmptySubscribers() {
         // Prepare the required stubs.
-        final Event event = this.setUpStubEvent();
+        final Event event = setUpStubEvent();
 
         // Set the "ignore user preferences" to false, so that one of the
         // conditions to remove the resulting recipient settings from the set
@@ -239,7 +239,7 @@ public class EmailProcessorTest {
         final Recipient recipients = recipientsMaybe.get(0);
         recipients.setIgnoreUserPreferences(false);
 
-        final List<Endpoint> endpoints = this.setUpStubEndpoints();
+        final List<Endpoint> endpoints = setUpStubEndpoints();
 
         // Set all the user preferences' "ignore user preferences" flag to
         // false, so that one of the conditions to remove the resulting
@@ -252,15 +252,15 @@ public class EmailProcessorTest {
                 // Do not return any subscribers for this test, so that the other
         // condition to remove the resulting recipient settings from the set
         // in the email processor is met.
-        Mockito.when(this.subscriptionRepository.getSubscribers(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT, Optional.empty())).thenReturn(List.of());
+        Mockito.when(subscriptionRepository.getSubscribers(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT, Optional.empty())).thenReturn(List.of());
 
         // Call the processor under test.
-        this.emailProcessor.process(event, endpoints);
+        emailProcessor.process(event, endpoints);
 
         // Verify that the processor returned without calling any further
         // dependencies in the code.
-        Mockito.verify(this.endpointRepository, Mockito.times(0)).getOrCreateDefaultSystemSubscription(Mockito.anyString(), Mockito.anyString(), eq(EndpointType.EMAIL_SUBSCRIPTION));
-        Mockito.verify(this.connectorSender, Mockito.times(0)).send(any(Event.class), any(Endpoint.class), any(JsonObject.class));
+        Mockito.verify(endpointRepository, Mockito.times(0)).getDefaultSystemSubscription(Mockito.anyString(), eq(EndpointType.EMAIL_SUBSCRIPTION));
+        Mockito.verify(connectorSender, Mockito.times(0)).send(any(Event.class), any(Endpoint.class), any(JsonObject.class));
     }
 
     /**
@@ -269,44 +269,34 @@ public class EmailProcessorTest {
      */
     @Test
     void testSuccess() {
-        Mockito.when(this.engineConfig.isDefaultTemplateEnabled()).thenReturn(true);
-        Mockito.when(this.quteTemplateService.isDefaultEmailTemplateEnabled()).thenReturn(true);
+        Mockito.when(engineConfig.isDefaultTemplateEnabled()).thenReturn(true);
+        Mockito.when(quteTemplateService.isDefaultEmailTemplateEnabled()).thenReturn(true);
         quteTemplateService.init();
 
         // Prepare the required stubs.
-        final Event event = this.setUpStubEvent();
-        final List<Endpoint> endpoints = this.setUpStubEndpoints();
+        final Event event = setUpStubEvent();
+        final List<Endpoint> endpoints = setUpStubEndpoints();
 
         // Mock a list of subscribers that simulate the ones that should be
         // notified for the event.
         final List<String> subscribers = List.of("subscriber-a", "subscriber-b", "subscriber-c");
-        Mockito.when(this.subscriptionRepository.getSubscribers(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT, Optional.empty())).thenReturn(subscribers);
-
-        // Mock the endpoint that should get pulled from the database using
-        // the endpoint repository.
-        final Endpoint endpoint = new Endpoint();
-        endpoint.setId(UUID.randomUUID());
-        Mockito.when(this.endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION)).thenReturn(endpoint);
+        Mockito.when(subscriptionRepository.getSubscribers(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT, Optional.empty())).thenReturn(subscribers);
 
         // Mock the sender and the default recipients of the email
         final String stubbedSender = "Red Hat Insights noreply@redhat.com";
-        Mockito.when(this.emailActorsResolver.getEmailSender(any())).thenReturn(stubbedSender);
+        Mockito.when(emailActorsResolver.getEmailSender(any())).thenReturn(stubbedSender);
 
         // Call the processor under test.
-        this.emailProcessor.process(event, endpoints);
-
-        // Verify that the endpoint repository was called to fetch the result
-        // endpoint.
-        Mockito.verify(this.endpointRepository, Mockito.times(1)).getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
+        emailProcessor.process(event, endpoints);
 
         // Verify that the connector was called with the right parameters.
         final ArgumentCaptor<Event> capturedEvent = ArgumentCaptor.forClass(Event.class);
         final ArgumentCaptor<Endpoint> capturedEndpoint = ArgumentCaptor.forClass(Endpoint.class);
         final ArgumentCaptor<JsonObject> capturedPayload = ArgumentCaptor.forClass(JsonObject.class);
-        Mockito.verify(this.connectorSender, Mockito.times(1)).send(capturedEvent.capture(), capturedEndpoint.capture(), capturedPayload.capture());
+        Mockito.verify(connectorSender, Mockito.times(1)).send(capturedEvent.capture(), capturedEndpoint.capture(), capturedPayload.capture());
 
         Assertions.assertEquals(event, capturedEvent.getValue(), "the captured event does not match with the stubbed one");
-        Assertions.assertEquals(endpoint, capturedEndpoint.getValue(), "the captured endpoint does not match with the stubbed one");
+        Assertions.assertEquals(endpoints.getFirst(), capturedEndpoint.getValue(), "the captured endpoint does not match with the stubbed one");
 
         final JsonObject payload = capturedPayload.getValue();
         final String resultOrgId = payload.getString("org_id");
@@ -333,7 +323,7 @@ public class EmailProcessorTest {
         Assertions.assertEquals(event.getOrgId(), resultOrgId, "the organization ID from the email notification does not match the one set in the stubbed event");
         Assertions.assertEquals(Set.copyOf(subscribers), resultSubscribers, "the subscribers set in the email notification do not match the stubbed ones");
 
-        final Set<RecipientSettings> recipientSettings = this.emailProcessor.extractAndTransformRecipientSettings(event, endpoints);
+        final Set<RecipientSettings> recipientSettings = emailProcessor.extractAndTransformRecipientSettings(event, endpoints);
         Assertions.assertIterableEquals(recipientSettings, resultRecipientSettings, "the recipient settings set in the email notification do not match the stubbed ones");
     }
 }
