@@ -543,11 +543,9 @@ public class InternalResource {
             SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
             properties.setOnlyAdmins(p.isOnlyAdmins());
             properties.setIgnorePreferences(p.isIgnorePreferences());
-            EndpointType endpointType = EMAIL_SUBSCRIPTION;
-            if (p.getEndpointType() != null && p.getEndpointType() == DRAWER) {
-                endpointType = DRAWER;
-            }
-            return endpointRepository.getOrCreateSystemSubscriptionEndpoint(null, null, properties, endpointType);
+            final EndpointType endpointType = p.getEndpointType() != null && p.getEndpointType() == DRAWER ? DRAWER : EMAIL_SUBSCRIPTION;
+            return endpointRepository.getSystemSubscriptionEndpoint(null, properties, endpointType)
+                .orElseGet(() -> endpointRepository.createSystemSubscriptionEndpoint(null, null, properties, endpointType));
         }).collect(Collectors.toList());
         behaviorGroupRepository.updateDefaultBehaviorGroupActions(
                 behaviorGroupId,

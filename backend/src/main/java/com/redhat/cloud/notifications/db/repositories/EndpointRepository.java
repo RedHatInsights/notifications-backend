@@ -194,39 +194,55 @@ public class EndpointRepository {
         }
     }
 
-    @Transactional
-    public Endpoint getOrCreateSystemSubscriptionEndpoint(String accountId, String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
-        String label = "Email";
-        if (EndpointType.DRAWER == endpointType) {
-            label = "Drawer";
-        }
+    public Optional<Endpoint> getSystemSubscriptionEndpoint(String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
         List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null, false);
         loadProperties(endpoints);
-        Optional<Endpoint> endpointOptional = endpoints
+        return endpoints
             .stream()
             .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(SystemSubscriptionProperties.class)))
             .findFirst();
-        if (endpointOptional.isPresent()) {
-            return endpointOptional.get();
+    }
+
+    public String resolveNextSystemSubscriptionEndpointName(String orgId, EndpointType endpointType) {
+        String baseName = EndpointType.DRAWER == endpointType ? "Drawer integration" : "Email integration";
+        List<Endpoint> endpoints = getEndpointsPerCompositeType(orgId, null, Set.of(new CompositeEndpointType(endpointType)), null, null, false);
+
+        Set<String> existingNames = endpoints.stream().map(Endpoint::getName).collect(Collectors.toSet());
+
+        if (!existingNames.contains(baseName)) {
+            return baseName;
         }
 
-        // In order to avoid having duplicated names which could end up in the
-        // "unique endpoint name" constraint being triggered, we generate and
-        // assign the endpoint's UUID ourselves.
-        final UUID endpointId = UUID.randomUUID();
+        int suffix = 1;
+        while (existingNames.contains(baseName + " " + suffix)) {
+            suffix++;
+        }
+        return baseName + " " + suffix;
+    }
+
+    @Transactional
+    public Endpoint createSystemSubscriptionEndpoint(String accountId, String orgId, SystemSubscriptionProperties properties, EndpointType endpointType, String name) {
+        String label = EndpointType.DRAWER == endpointType ? "Drawer" : "Email";
 
         final Endpoint endpoint = new Endpoint();
-        endpoint.setId(endpointId);
         endpoint.setProperties(properties);
         endpoint.setAccountId(accountId);
         endpoint.setOrgId(orgId);
         endpoint.setEnabled(true);
         endpoint.setDescription(String.format("System %s endpoint", label.toLowerCase()));
-        endpoint.setName(String.format("%s endpoint %s", label, endpointId));
+        endpoint.setName(name);
         endpoint.setType(endpointType);
         endpoint.setStatus(READY);
 
         return createEndpoint(endpoint);
+    }
+
+    @Transactional
+    public Endpoint createSystemSubscriptionEndpoint(String accountId, String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
+        String label = EndpointType.DRAWER == endpointType ? "Drawer" : "Email";
+        UUID endpointId = UUID.randomUUID();
+        String name = String.format("%s endpoint %s", label, endpointId);
+        return createSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType, name);
     }
 
     public Long getEndpointsCountPerCompositeType(String orgId, @Nullable String name, Set<CompositeEndpointType> type, Boolean activeOnly, boolean includeSystemIntegrations) {
