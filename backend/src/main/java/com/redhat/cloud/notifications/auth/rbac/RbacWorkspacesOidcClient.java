@@ -3,12 +3,16 @@ package com.redhat.cloud.notifications.auth.rbac;
 import com.redhat.cloud.notifications.auth.rbac.workspace.RbacWorkspace;
 import com.redhat.cloud.notifications.routers.models.Page;
 import io.quarkus.oidc.client.filter.OidcClientFilter;
+import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.ServerErrorException;
 import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
@@ -26,6 +30,7 @@ public interface RbacWorkspacesOidcClient {
     @GET
     @Path("/api/rbac/v2/workspaces/")
     @Produces(MediaType.APPLICATION_JSON)
+    @Retry(maxRetries = 3, retryOn = {ProcessingException.class, ServerErrorException.class}, abortOn = ClientErrorException.class)
     Page<RbacWorkspace> getWorkspaces(
         @HeaderParam("x-rh-rbac-org-id") String orgId,
         @QueryParam("type") String workspaceType,
