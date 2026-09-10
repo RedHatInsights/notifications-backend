@@ -11,9 +11,9 @@
         The scheduled report {action.context.job_name} has generated successfully.  Click the link below to access and download the report.
     </p>
     <p style="{body-section-p-style}">
-        The next upcoming scheduled report: {action.context.next_run_at}
+        The next upcoming scheduled report: {action.context.next_run_at.toStringFormat}
     </p>
 {/content-body}
 {#content-button-href}{environment.url}/scheduler/download/{action.context.job_id}/{action.context.run_id}{/content-button-href}
-{#content-button-service-name}Download the report{/content-button-service-name}
+{#content-button-service-name}the report download page{/content-button-service-name}
 {/include}

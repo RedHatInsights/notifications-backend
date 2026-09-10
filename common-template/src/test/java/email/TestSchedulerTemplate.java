@@ -44,7 +44,8 @@ public class TestSchedulerTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("has generated successfully"));
         assertTrue(result.contains("Test Export Job has generated successfully"));
         assertTrue(result.contains("/scheduler/download/"));
-        assertTrue(result.contains("Download the report"));
+        assertTrue(result.contains("the report download page"));
+        assertTrue(result.contains("The next upcoming scheduled report:"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
