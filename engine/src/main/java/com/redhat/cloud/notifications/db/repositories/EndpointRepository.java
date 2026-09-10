@@ -54,14 +54,11 @@ public class EndpointRepository {
     EngineConfig engineConfig;
 
     /**
-     * The purpose of this method is to find or create an EMAIL_SUBSCRIPTION or DRAWER endpoint with empty properties. This
-     * endpoint is used to aggregate and store in the DB the email or drawer actions outcome, which will be used later by the
-     * event log. The recipients of the current email or drawer action have already been resolved before this step, possibly from
-     * multiple endpoints and recipients settings. The properties created below have no impact on the resolution of the
-     * action recipients.
+     * Finds an existing EMAIL_SUBSCRIPTION or DRAWER endpoint with default (empty) properties for the given org.
+     * This endpoint is used to aggregate and store in the DB the email or drawer actions outcome, which will be
+     * used later by the event log.
      */
-    @Transactional
-    public Endpoint getOrCreateDefaultSystemSubscription(String accountId, String orgId, EndpointType endpointType) {
+    public List<Endpoint> getDefaultSystemSubscription(String orgId, EndpointType endpointType) {
         String query = "FROM Endpoint WHERE orgId = :orgId AND compositeType.type = :endpointType";
         List<Endpoint> systemEndpoints = entityManager.createQuery(query, Endpoint.class)
             .setParameter("orgId", orgId)
@@ -69,39 +66,7 @@ public class EndpointRepository {
             .getResultList();
         loadProperties(systemEndpoints);
 
-        SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
-        Optional<Endpoint> endpointOptional = systemEndpoints
-            .stream()
-            .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(SystemSubscriptionProperties.class)))
-            .findFirst();
-        if (endpointOptional.isPresent()) {
-            return endpointOptional.get();
-        }
-
-        String label = "Email";
-        if (DRAWER == endpointType) {
-            label = "Drawer";
-        }
-
-        // In order to avoid having duplicated names which could end up in the
-        // "unique endpoint name" constraint being triggered, we generate and
-        // assign the endpoint's UUID ourselves.
-        final UUID endpointId = UUID.randomUUID();
-
-        Endpoint endpoint = new Endpoint();
-        endpoint.setProperties(properties);
-        endpoint.setAccountId(accountId);
-        endpoint.setOrgId(orgId);
-        endpoint.setEnabled(true);
-        endpoint.setDescription(String.format("System %s endpoint", label.toLowerCase()));
-        endpoint.setName(String.format("%s endpoint %s", label, endpointId));
-        endpoint.setType(endpointType);
-        endpoint.setStatus(READY);
-        properties.setEndpoint(endpoint);
-
-        entityManager.persist(endpoint);
-        entityManager.persist(endpoint.getProperties());
-        return endpoint;
+        return systemEndpoints;
     }
 
     public List<Endpoint> getTargetEndpointsWithoutUsingBgs(String orgId, EventType eventType) {

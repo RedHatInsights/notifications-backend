@@ -380,7 +380,11 @@ public class EndpointResource extends EndpointResourceCommon {
         if (null != requestProps.getGroupId()) {
             properties.setGroupIds(Set.of(requestProps.getGroupId()));
         }
-        return endpointRepository.getOrCreateSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType);
+        return endpointRepository.getSystemSubscriptionEndpoint(orgId, properties, endpointType)
+            .orElseGet(() -> {
+                String name = endpointRepository.resolveNextSystemSubscriptionEndpointName(orgId, endpointType);
+                return endpointRepository.createSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType, name);
+            });
     }
 
     private void getOrCreateInternalEndpointCommonChecks(RequestSystemSubscriptionProperties requestProps, RhIdPrincipal principal) {
