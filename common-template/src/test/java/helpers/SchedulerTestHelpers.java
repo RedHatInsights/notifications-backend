@@ -24,6 +24,8 @@ public class SchedulerTestHelpers {
                 .withAdditionalProperty("job_id", "job-12345")
                 .withAdditionalProperty("job_name", "Test Export Job")
                 .withAdditionalProperty("export_id", "export-67890")
+                .withAdditionalProperty("run_id", "run-11111")
+                .withAdditionalProperty("next_run_at", "2026-04-16T10:30:00-04:00")
                 .build()
         );
 

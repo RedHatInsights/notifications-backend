@@ -1,5 +1,6 @@
 {#include drawer/Common/commonDrawerNotification.md}
 {#body}
-A scheduled export **[{data.context.job_name}]({environment.url}/insights/jobs/{data.context.job_id}?{query_params})** has failed and been automatically paused.
+The scheduled report **[{data.context.job_name}]** has failed to generate successfully.
+The scheduled report has been paused to prevent further failures. Please review and resolve the issue before resuming the scheduled report.
 {/body}
 {/include}
