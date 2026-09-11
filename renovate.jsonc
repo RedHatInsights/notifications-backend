@@ -1,0 +1,115 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  // This file only holds this repository's overrides.
+  // MintMaker runs Renovate with its own global config and merges this file
+  // on top of it, so every setting missing here is inherited from MintMaker:
+  // the enabled managers, the minimumReleaseAge that holds back fresh releases,
+  // the vulnerability alerts whose fix PRs skip that delay, the tekton and gomod
+  // manager blocks, branch naming, PR limits, the Saturday schedule of the
+  // tekton manager...
+  // How the merge works:
+  // - A setting written here replaces the inherited value.
+  // - packageRules are added to the inherited rules, not replaced.
+  // - A manager block such as "tekton": {...} merges key by key with the
+  //   inherited block, so "tekton.automerge" below keeps MintMaker's own
+  //   tekton packageRules.
+  // - enabledManagers is the exception: setting it here replaces the whole
+  //   inherited list, so this file never sets it.
+  // The packageRules below are limited to patch and minor updates by default:
+  // a major bump stays on manual review unless a rule names its package. None sets
+  // minimumReleaseAge: the inherited delay already holds back fresh releases,
+  // the usual shape of a compromised one.
+  // Do not copy the global config here or add it to "extends": MintMaker's
+  // deployment can pin a specific commit of it, and a copy silently drifts.
+  // All automerge rules live in this file rather than in a shared preset:
+  // the file is small, it rarely changes, and what merges unattended is
+  // this repository's decision.
+  // Global config: https://github.com/konflux-ci/mintmaker/blob/main/config/renovate/renovate.json
+  // MintMaker docs: https://konflux-ci.dev/docs/mintmaker/user/
+  "extends": [
+    // Pins every GitHub Action to a commit SHA, so the github-actions rule below
+    // can tell a version bump from a moved tag.
+    "helpers:pinGitHubActionDigests"
+  ],
+  "tekton": {
+    // Konflux pipeline updates in .tekton/, the only folder this manager reads:
+    // task bumps from the Konflux catalog, task replacements, and the pipeline
+    // migrations MintMaker runs with them. The PR's own Konflux build is the test
+    // of the change, so its check must be required on the base branch.
+    "automerge": true,
+    // Overrides MintMaker's Saturday schedule for pipeline updates: they merge
+    // within hours of a catalog bump instead of waiting for the weekly batch.
+    "schedule": ["at any time"]
+  },
+  "packageRules": [
+    // ---------------------------------------------------------------- maven
+    {
+      "matchManagers": ["maven"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    },
+    {
+      // Manual review for Quarkus: its upgrades follow an LTS track, so a reviewer
+      // picks the target version instead of Renovate jumping to the newest minor.
+      // See https://quarkus.io/releases/.
+      "matchManagers": ["maven"],
+      "matchPackageNames": ["io.quarkus*"],
+      "automerge": false
+    },
+    {
+      // Maven wrapper bumps (.mvn/wrapper/maven-wrapper.properties, mvnw) change the
+      // build tool for every developer, not just CI, so they stay on manual review.
+      "matchManagers": ["maven-wrapper"],
+      "automerge": false
+    },
+
+    // ---------------------------------------------------------------- dockerfile (base images)
+    {
+      // Base image bumps: the Konflux PR build builds the image and the tests run on
+      // it, so its check must be required. Digest updates are rebuilds of the same
+      // tag, the security-patch stream; patch and minor follow the registry's
+      // versioning. A new RHEL or JDK line is a major and stays on manual review.
+      "matchManagers": ["dockerfile"],
+      "matchUpdateTypes": ["digest", "patch", "minor"],
+      "automerge": true
+    },
+    {
+      // Pins every FROM line to tag@sha256 so rebuilds of the same latest tag show
+      // up as digest PRs instead of going unnoticed.
+      "matchManagers": ["dockerfile"],
+      "pinDigests": true
+    },
+
+    // ---------------------------------------------------------------- npm
+    {
+      // Every patch and minor bump, grouped into one PR: it merges only once every
+      // bump in it passes CI. Relies on MintMaker's release-age delay as the
+      // defense against a compromised release.
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "npm automerge",
+      "automerge": true
+    },
+
+    // ---------------------------------------------------------------- github-actions
+    {
+      // Actions run arbitrary code in CI, so each one is vetted by name.
+      // Excludes digest-only updates, so a hijacked tag re-pointed to a malicious
+      // commit with no version delta never gets automerged.
+      // Actions maintained by GitHub, vetted for automerge. Add new ones deliberately.
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "matchDepNames": [
+        "actions/cache",
+        "actions/checkout",
+        "actions/setup-java",
+        "actions/setup-node",
+        "actions/upload-artifact",
+        "github/codeql-action/analyze",
+        "github/codeql-action/autobuild",
+        "github/codeql-action/init"
+      ],
+      "automerge": true
+    }
+  ]
+}
