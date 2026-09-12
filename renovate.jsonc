@@ -1,0 +1,83 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  // Renovate overrides for this repository. MintMaker merges them on top of its
+  // global config, which sets the managers, the release-age delay, the
+  // vulnerability alerts, branch naming and PR limits:
+  // https://github.com/konflux-ci/mintmaker/blob/main/config/renovate/renovate.json
+  // A key set here replaces the inherited value; packageRules are added to the
+  // inherited ones; enabledManagers would replace the whole list, so it is never set.
+  // Policy: patch and minor updates of the ecosystems below merge on their own once
+  // the required checks pass. Majors stay on manual review unless a rule names them.
+  // MintMaker docs: https://konflux-ci.dev/docs/mintmaker/user/
+  "extends": [
+    // Pins actions to commit SHAs, so a version bump can be told from a moved tag.
+    "helpers:pinGitHubActionDigests"
+  ],
+  "tekton": {
+    // Konflux pipeline updates in .tekton/: the PR's own Konflux build tests them.
+    "automerge": true,
+    // Any day, instead of MintMaker's Saturday batch.
+    "schedule": ["at any time"]
+  },
+  "packageRules": [
+    // --- github-actions: patch and minor of the GitHub-maintained actions named below; majors and every other action stay manual
+    {
+      // Vetted by name: an action runs arbitrary code in CI. Patch and minor only, so a
+      // moved tag with no version change, the shape of a hijacked action, never merges alone.
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "matchDepNames": [
+        "actions/cache",
+        "actions/checkout",
+        "actions/setup-java",
+        "actions/setup-node",
+        "actions/upload-artifact",
+        "github/codeql-action/analyze",
+        "github/codeql-action/autobuild",
+        "github/codeql-action/init"
+      ],
+      "automerge": true
+    },
+
+    // --- maven: patch and minor; majors, io.quarkus* and the wrapper stay manual
+    {
+      "matchManagers": ["maven"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    },
+    {
+      // Quarkus follows an LTS track: a reviewer picks the target version. https://quarkus.io/releases/
+      "matchManagers": ["maven"],
+      "matchPackageNames": ["io.quarkus*"],
+      "automerge": false
+    },
+    {
+      // The wrapper is every developer's build tool, not just CI's.
+      "matchManagers": ["maven-wrapper"],
+      "automerge": false
+    },
+
+    // --- npm: patch and minor, grouped in one PR; majors stay manual
+    {
+      // One PR for every npm bump; it merges only when all of them pass.
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "npm automerge",
+      "automerge": true
+    },
+
+    // --- dockerfile: digest updates of the base images (all on latest); majors stay manual
+    {
+      // The Konflux PR build builds and tests the image. A digest update is a rebuild of
+      // the same tag; a new RHEL or JDK line is a major and stays on manual review.
+      "matchManagers": ["dockerfile"],
+      "matchUpdateTypes": ["digest", "patch", "minor"],
+      "automerge": true
+    },
+    {
+      // Pins FROM lines to tag@sha256, so rebuilds of a tag arrive as digest PRs.
+      "matchManagers": ["dockerfile"],
+      "pinDigests": true
+    }
+  ]
+}

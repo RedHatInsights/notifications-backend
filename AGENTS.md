@@ -93,8 +93,7 @@ For domain-specific conventions, refer to these guideline documents:
 
 - **GitHub Actions**: `build.yml` runs `./mvnw clean verify` on every push/PR. It also builds the admin-console when `admin-console/` files change and uploads OpenAPI spec artifacts.
 - **Tekton/Konflux**: `.tekton/` contains per-module PipelineRun definitions for pull-request and push events against `master`. These build container images using the Dockerfiles in `docker/`.
-- **Dependabot**: Configured for Maven, GitHub Actions, and npm (admin-console) dependency updates.
-- **Renovate**: Configured via `renovate.json` for Tekton pipeline reference updates with auto-merge.
+- **Renovate (MintMaker)**: Configured via `renovate.jsonc`. Automerges patch/minor Maven, npm, GitHub Actions and base image updates, plus Tekton pipeline bumps; majors stay on manual review. Dependabot version updates were removed in favor of this.
 - **CodeQL**: Security scanning runs via `.github/workflows/codeql-analysis.yml`.
 
 ## Key Gotchas
