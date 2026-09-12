@@ -52,7 +52,7 @@
 - Use `build-pipeline-<service>` for regular builds, `build-pipeline-<service>-sc` for SC builds.
 
 ### Renovate / MintMaker
-- Tekton pipeline version bumps are auto-merged via Renovate (`renovate.json` has `tekton.automerge: true`).
+- Tekton pipeline version bumps are auto-merged via Renovate (`renovate.jsonc` has `tekton.automerge: true`).
 - The `.baseimage` file tracks the digest of `ubi9/openjdk-21-runtime:latest`. A daily GitHub Action (`base-image-auto-update.yml`) creates PRs when the digest changes.
 
 ## Clowder / ClowdApp Deployment
