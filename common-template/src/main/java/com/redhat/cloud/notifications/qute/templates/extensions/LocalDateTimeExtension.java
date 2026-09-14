@@ -21,7 +21,14 @@ public class LocalDateTimeExtension {
     }
 
     public static String toUtcFormat(String date) {
+        if (date.contains("Z") || date.matches(".*[+-]\\d{2}:\\d{2}$") || date.contains("[")) {
+            return toUtcFormat(ZonedDateTime.parse(date, DateTimeFormatter.ISO_DATE_TIME));
+        }
         return toUtcFormat(fromIsoLocalDateTime(date));
+    }
+
+    public static String toUtcFormat(ZonedDateTime date) {
+        return date.withZoneSameInstant(ZoneOffset.UTC).format(utcDateTimeFormatter);
     }
 
     public static String toStringFormat(LocalDateTime date) {
