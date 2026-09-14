@@ -4,7 +4,6 @@ import io.quarkus.qute.TemplateExtension;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
@@ -13,7 +12,6 @@ public class LocalDateTimeExtension {
 
     private static final DateTimeFormatter utcDateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm 'UTC'").withLocale(Locale.US);
     private static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy").withLocale(Locale.US);
-    private static final DateTimeFormatter zonedDateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a z").withLocale(Locale.US);
     private static final TimeAgoFormatter timeAgoFormatter = new TimeAgoFormatter();
 
     public static String toUtcFormat(LocalDateTime date) {
@@ -21,14 +19,7 @@ public class LocalDateTimeExtension {
     }
 
     public static String toUtcFormat(String date) {
-        if (date.contains("Z") || date.matches(".*[+-]\\d{2}:\\d{2}$") || date.contains("[")) {
-            return toUtcFormat(ZonedDateTime.parse(date, DateTimeFormatter.ISO_DATE_TIME));
-        }
         return toUtcFormat(fromIsoLocalDateTime(date));
-    }
-
-    public static String toUtcFormat(ZonedDateTime date) {
-        return date.withZoneSameInstant(ZoneOffset.UTC).format(utcDateTimeFormatter);
     }
 
     public static String toStringFormat(LocalDateTime date) {
@@ -36,9 +27,6 @@ public class LocalDateTimeExtension {
     }
 
     public static String toStringFormat(String date) {
-        if (date.contains("Z") || date.matches(".*[+-]\\d{2}:\\d{2}$") || date.contains("[")) {
-            return toStringFormat(ZonedDateTime.parse(date, DateTimeFormatter.ISO_DATE_TIME));
-        }
         return toStringFormat(fromIsoLocalDateTime(date));
     }
 
@@ -48,10 +36,6 @@ public class LocalDateTimeExtension {
 
     public static String toTimeAgo(String date) {
         return toTimeAgo(fromIsoLocalDateTime(date));
-    }
-
-    public static String toStringFormat(ZonedDateTime date) {
-        return date.format(zonedDateTimeFormatter);
     }
 
     public static LocalDateTime fromIsoLocalDateTime(String date) {

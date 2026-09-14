@@ -8,7 +8,7 @@
 {/content-title}
 {#content-body}
     <p style="{body-section-p-style}">
-        The scheduled report {action.context.job_name} generation has failed.
+        The scheduled report <strong>{action.context.job_name}</strong> generation has failed.
         The scheduled report has been paused to prevent further failures. Please review and resolve the issue before resuming the scheduled report.
     </p>
     {#if action.context.error_message}

@@ -7,8 +7,7 @@
 {/content-title}
 {#content-body}
     <p style="{body-section-p-style}">
-
-        The scheduled report {action.context.job_name} has generated successfully.  Click the link below to access and download the report.
+        The scheduled report <strong>{action.context.job_name}</strong> has generated successfully. Click the link below to access and download the report.
     </p>
     <p style="{body-section-p-style}">
         The next upcoming scheduled report: {action.context.next_run_at.toUtcFormat}
