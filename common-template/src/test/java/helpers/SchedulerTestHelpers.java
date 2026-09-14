@@ -11,6 +11,15 @@ import static helpers.TestHelpers.DEFAULT_ORG_ID;
 
 public class SchedulerTestHelpers {
 
+    /**
+     * Creates a scheduler export complete action with test data.
+     * <p>
+     * IMPORTANT: The scheduler producer contract requires that next_run_at be sent as a UTC-local
+     * ISO-8601 string WITHOUT timezone offset (e.g., "2026-04-16T14:30:00").
+     * LocalDateTimeExtension.toUtcFormat(String) appends " UTC" to the parsed local fields;
+     * it does NOT convert timezone offsets. Sending an offset-bearing string (e.g., "2026-04-16T10:30:00-04:00")
+     * will result in incorrect displayed times.
+     */
     public static Action createSchedulerExportCompleteAction() {
         Action action = new Action();
         action.setBundle(StringUtils.EMPTY);
@@ -25,6 +34,7 @@ public class SchedulerTestHelpers {
                 .withAdditionalProperty("job_name", "Test Export Job")
                 .withAdditionalProperty("export_id", "export-67890")
                 .withAdditionalProperty("run_id", "run-11111")
+                // next_run_at MUST be UTC-local without timezone offset
                 .withAdditionalProperty("next_run_at", "2026-04-16T14:30:00")
                 .build()
         );

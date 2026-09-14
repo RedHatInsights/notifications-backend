@@ -46,6 +46,9 @@ public class TestSchedulerTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("/scheduler/download/"));
         assertTrue(result.contains("the report download page"));
         assertTrue(result.contains("The next upcoming scheduled report:"));
+        // Verify the next_run_at timestamp is rendered in UTC format.
+        // The scheduler producer MUST send next_run_at as a UTC-local ISO-8601 string without timezone offset.
+        // LocalDateTimeExtension.toUtcFormat(String) appends " UTC" to the parsed local fields; it does not convert offsets.
         assertTrue(result.contains("16 Apr 2026 14:30 UTC"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
