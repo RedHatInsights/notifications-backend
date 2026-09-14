@@ -68,6 +68,8 @@ public class TestSchedulerTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("Test Failed Job"));
         assertTrue(result.contains("<strong>Error:</strong>"));
         assertTrue(result.contains("Connection timeout"));
+        // Verify the "Go to" button is not rendered (renderAppLinkButton=false)
+        assertTrue(!result.contains("Go to"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -87,6 +89,8 @@ public class TestSchedulerTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("<strong>Error:</strong>"));
         assertTrue(result.contains("Database connection failed"));
         assertTrue(result.contains("The scheduled report has been paused to prevent further failures"));
+        // Verify the "Go to" button is not rendered (renderAppLinkButton=false)
+        assertTrue(!result.contains("Go to"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
