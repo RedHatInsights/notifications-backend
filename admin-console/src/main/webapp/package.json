@@ -13,7 +13,7 @@
     "monaco-editor": "0.56.0",
     "openapi2typescript": "0.2.1",
     "react": "19.3.0",
-    "react-dom": "19.2.7",
+    "react-dom": "19.3.0",
     "react-fetching-library": "1.7.6",
     "react-router-dom": "7.18.3",
     "react-use": "17.6.1",
