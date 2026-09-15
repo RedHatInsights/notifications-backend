@@ -72,10 +72,12 @@
       "pinDigests": true
     },
 
-    // --- npm: patch and minor; majors, packageManager and engines stay manual
+    // --- npm: patch and minor, grouped into a single PR; majors, packageManager and engines stay manual
     {
+      // One PR for all patch/minor npm bumps instead of one per package.
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "npm dependencies",
       "automerge": true
     },
     {
