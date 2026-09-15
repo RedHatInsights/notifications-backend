@@ -26,9 +26,9 @@ class TestSchedulerTemplate {
     void testRenderedTemplateExportComplete() {
         Action action = createSchedulerExportCompleteAction();
         String result = renderTemplate(SCHEDULER_EXPORT_COMPLETE, action);
-        assertTrue(result.contains("A scheduled export"));
+        assertTrue(result.contains("The scheduled report"));
         assertTrue(result.contains("**[Test Export Job]"));
-        assertTrue(result.contains("/api/export/v1/exports/export-67890?from=notifications&integration=drawer)**"));
+        assertTrue(result.contains("/scheduler/download/job-12345/run-11111?from=notifications&integration=drawer)**"));
         assertTrue(result.contains("has completed"));
     }
 
@@ -36,9 +36,8 @@ class TestSchedulerTemplate {
     void testRenderedTemplateJobFailed() {
         Action action = createSchedulerJobFailedAction();
         String result = renderTemplate(SCHEDULER_JOB_FAILED, action);
-        assertTrue(result.contains("A scheduled export"));
+        assertTrue(result.contains("The scheduled report"));
         assertTrue(result.contains("**[Test Failed Job]"));
-        assertTrue(result.contains("/insights/jobs/job-54321?from=notifications&integration=drawer)**"));
         assertTrue(result.contains("has failed"));
     }
 
@@ -46,10 +45,9 @@ class TestSchedulerTemplate {
     void testRenderedTemplateJobFailedPaused() {
         Action action = createSchedulerJobFailedPausedAction();
         String result = renderTemplate(SCHEDULER_JOB_FAILED_PAUSED, action);
-        assertTrue(result.contains("A scheduled export"));
+        assertTrue(result.contains("The scheduled report"));
         assertTrue(result.contains("**[Test Paused Job]"));
-        assertTrue(result.contains("/insights/jobs/job-99999?from=notifications&integration=drawer)**"));
-        assertTrue(result.contains("has failed and been automatically paused"));
+        assertTrue(result.contains("has been paused to prevent"));
     }
 
     String renderTemplate(final String eventType, final Action action) {

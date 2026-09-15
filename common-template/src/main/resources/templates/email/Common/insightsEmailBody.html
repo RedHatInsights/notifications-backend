@@ -114,49 +114,51 @@
                                     </td>
                                 </tr>
 
-                                <!-- Blue external link button -->
-                                <tr>
-                                    <td style="padding: 24px 0px;">
-                                        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" align="center">
-                                            <tr>
-                                                <td>
-                                                    <!--[if mso]>
-                                                    <a href="{#insert content-button-href}{/}" target="_blank" style="font-size: 14px; font-weight: 400; color: #ffffff; text-decoration: none; ">
-                                                        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" height="37">
-                                                            <tr>
-                                                                <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_left.png" alt="" height="37" style="display: block; border: none;" /></td>
-                                                                <td style="padding-right: 8px; font-size: 14px; font-weight: 400; color: #ffffff; vertical-align: middle; background-color: #0066cc;">
-                                                                    Go to {#insert content-button-service-name}{/}
-                                                                </td>
-                                                                <td style="vertical-align: middle; background-color: #0066cc;">
-                                                                    <img src="https://console.redhat.com/apps/frontend-assets/email-assets/external-link.png" alt="" width="14" height="14" style="display: block; border: none;" />
-                                                                </td>
-                                                                <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_right.png" alt="" height="37" style="display: block; border: none;" /></td>
-                                                            </tr>
-                                                        </table>
-                                                    </a>
-                                                    <![endif]-->
+                                {#if renderAppLinkButton.or(true)}
+                                    <!-- Blue external link button -->
+                                    <tr>
+                                        <td style="padding: 24px 0px;">
+                                            <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" align="center">
+                                                <tr>
+                                                    <td>
+                                                        <!--[if mso]>
+                                                        <a href="{#insert content-button-href}{/}" target="_blank" style="font-size: 14px; font-weight: 400; color: #ffffff; text-decoration: none; ">
+                                                            <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" height="37">
+                                                                <tr>
+                                                                    <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_left.png" alt="" height="37" style="display: block; border: none;" /></td>
+                                                                    <td style="padding-right: 8px; font-size: 14px; font-weight: 400; color: #ffffff; vertical-align: middle; background-color: #0066cc;">
+                                                                        Go to {#insert content-button-service-name}{/}
+                                                                    </td>
+                                                                    <td style="vertical-align: middle; background-color: #0066cc;">
+                                                                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/external-link.png" alt="" width="14" height="14" style="display: block; border: none;" />
+                                                                    </td>
+                                                                    <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_right.png" alt="" height="37" style="display: block; border: none;" /></td>
+                                                                </tr>
+                                                            </table>
+                                                        </a>
+                                                        <![endif]-->
 
-                                                    <!--[if !mso]><!-->
-                                                    <a href="{#insert content-button-href}{/}" target="_blank" style="display: inline-block; padding: 8px 14px; font-size: 14px; font-weight: 400; color: #ffffff; text-decoration: none; background-color: #0066cc; border-radius: 24px;">
-                                                        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; background-color: #0066cc; ">
-                                                            <tr>
-                                                                <td style="padding-right: 8px; font-size: 14px; font-weight: 400; line-height: 21px; color: #ffffff; vertical-align: middle;">
-                                                                    Go to {#insert content-button-service-name}{/}
-                                                                </td>
-                                                                <td style="line-height: 21px; vertical-align: middle;">
-                                                                    <img src="https://console.redhat.com/apps/frontend-assets/email-assets/external-link.png" alt="" width="14" height="14" style="display: block; border: none;" />
-                                                                </td>
-                                                            </tr>
-                                                        </table>
-                                                    </a>
-                                                    <!--<![endif]-->
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <!-- End lue external link button -->
+                                                        <!--[if !mso]><!-->
+                                                        <a href="{#insert content-button-href}{/}" target="_blank" style="display: inline-block; padding: 8px 14px; font-size: 14px; font-weight: 400; color: #ffffff; text-decoration: none; background-color: #0066cc; border-radius: 24px;">
+                                                            <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; background-color: #0066cc; ">
+                                                                <tr>
+                                                                    <td style="padding-right: 8px; font-size: 14px; font-weight: 400; line-height: 21px; color: #ffffff; vertical-align: middle;">
+                                                                        Go to {#insert content-button-service-name}{/}
+                                                                    </td>
+                                                                    <td style="line-height: 21px; vertical-align: middle;">
+                                                                        <img src="https://console.redhat.com/apps/frontend-assets/email-assets/external-link.png" alt="" width="14" height="14" style="display: block; border: none;" />
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                        </a>
+                                                        <!--<![endif]-->
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    <!-- End lue external link button -->
+                                {/if}
                             </table>
                         </td>
                     </tr>
