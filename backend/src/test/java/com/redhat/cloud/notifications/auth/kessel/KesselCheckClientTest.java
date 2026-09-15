@@ -85,9 +85,8 @@ public class KesselCheckClientTest {
         // Unwrap the CDI proxy to get the actual bean instance
         KesselCheckClient actualBean = ClientProxy.unwrap(kesselCheckClient);
 
-        // Inject mocks via reflection into the actual bean
-        injectField(actualBean, "grpcClient", mockStub);
-        injectField(actualBean, "grpcChannel", mockChannel);
+        // Inject mocks via reflection into the actual bean, as a single (stub, channel) holder
+        injectField(actualBean, "channelHolder", new KesselCheckClient.ChannelHolder(mockStub, mockChannel));
 
         // Save current counter values before each test
         saveCounterValues();
