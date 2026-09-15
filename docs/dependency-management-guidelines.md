@@ -31,11 +31,9 @@
 
 ## Automated Dependency Updates
 
-- **Renovate (Mintmaker)**: Configured in `renovate.json`, extends `github>konflux-ci/mintmaker//config/renovate/renovate.json`. Targets the `master` branch. Tekton updates are set to automerge.
-- **Dependabot**: Configured in `.github/dependabot.yml` for Maven (root `/`, daily), GitHub Actions (weekly), and npm (`/backend/src/main/webapp`, daily).
-- **Renovate config validation**: A GitHub Actions workflow (`.github/workflows/renovate-config-validator.yaml`) validates `renovate.json` on PRs and pushes to `master`.
+- **Renovate (MintMaker)**: Configured in `renovate.jsonc`. MintMaker's global config (`github>konflux-ci/mintmaker//config/renovate/renovate.json`) is applied automatically to every onboarded repo and is merged with the repo-specific overrides in `renovate.jsonc`. Targets the `master` branch. Patch and minor updates for Maven, npm, GitHub Actions and Dockerfile digests automerge once required checks pass; majors and select packages (e.g. `io.quarkus*`, build toolchains) stay on manual review. Tekton pipeline updates automerge.
+- **Renovate config validation**: A GitHub Actions workflow (`.github/workflows/renovate-config-validator.yaml`) validates `renovate.jsonc` on PRs and pushes to `master`.
 - Renovate PRs use conventional commit prefixes: `fix(deps):` for runtime dependency updates, `chore(deps):` for dev/build dependency updates.
-- Quarkus platform version bumps arrive as Dependabot PRs titled `Bump quarkus.platform.version from X to Y`.
 
 ## Admin Console (Frontend)
 
