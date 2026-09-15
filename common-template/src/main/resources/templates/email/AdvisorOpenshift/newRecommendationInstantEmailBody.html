@@ -30,13 +30,13 @@
             <td style="{body-section-table-td-style}">
                 {#switch it.payload.total_risk}
                 {#case '1'}
-                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_low_v3.png" alt="Low severity" width="55" border="0">
+                <table cellspacing="0" cellpadding="0"><tr><td style="background-color: #707070; padding: 1px 8px; font-size: 12px; font-weight: 400; color: #ffffff; border-radius: 999px;">Low</td></tr></table>
                 {#case '2'}
-                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_moderate_v3.png" alt="Moderate severity" width="85" border="0">
+                <table cellspacing="0" cellpadding="0"><tr><td style="background-color: #DCA614; padding: 1px 8px; font-size: 12px; font-weight: 400; border-radius: 999px;">Moderate</td></tr></table>
                 {#case '3'}
-                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v3.png" alt="Important severity" width="86" border="0">
+                <table cellspacing="0" cellpadding="0"><tr><td style="background-color: #CA6C0F; padding: 1px 8px; font-size: 12px; font-weight: 400; border-radius: 999px;">Important</td></tr></table>
                 {#case '4'}
-                <img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v3.png" alt="Critical severity" width="70" border="0">
+                <table cellspacing="0" cellpadding="0"><tr><td style="background-color: #B1380B; padding: 1px 8px; font-size: 12px; font-weight: 400; color: #ffffff; border-radius: 999px;">Critical</td></tr></table>
                 {/switch}
             </td>
             <td style="{body-section-table-td-style}">{it.payload.publish_date.toTimeAgo()}</td>

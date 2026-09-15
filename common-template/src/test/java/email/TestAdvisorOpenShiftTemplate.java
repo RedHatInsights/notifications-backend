@@ -72,10 +72,10 @@ public class TestAdvisorOpenShiftTemplate extends EmailTemplatesRendererHelper {
             );
         });
 
-        assertTrue(result.contains("alt=\"Low severity\""), "Body should contain low severity rule image");
-        assertTrue(result.contains("alt=\"Moderate severity\""), "Body should contain moderate severity rule image");
-        assertTrue(result.contains("alt=\"Important severity\""), "Body should contain important severity rule image");
-        assertTrue(result.contains("alt=\"Critical severity\""), "Body should contain critical severity rule image");
+        assertTrue(result.contains(">Low</td>"), "Body should contain low severity badge");
+        assertTrue(result.contains(">Moderate</td>"), "Body should contain moderate severity badge");
+        assertTrue(result.contains(">Important</td>"), "Body should contain important severity badge");
+        assertTrue(result.contains(">Critical</td>"), "Body should contain critical severity badge");
 
         // Display name
         assertTrue(result.contains("My Host"), "Body should contain the display_name");
