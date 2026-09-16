@@ -274,7 +274,6 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         EmailNotification emailNotification = new EmailNotification(
             "Not used",
             "123456",
-            "123456",
             List.of(recipientSettings),
             new ArrayList<>(),
             new ArrayList<>(),

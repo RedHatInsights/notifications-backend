@@ -150,6 +150,16 @@ public class EmailMessageHandler extends MessageHandler {
             } catch (io.vertx.core.json.DecodeException e) {
                 throw new IllegalStateException("Engine returned invalid JSON payload for ID: " + payloadId, e);
             }
+            // Restore org_id and endpoint_id into the incoming cloud event data so
+            // OutgoingCloudEventBuilder can log them correctly (it re-parses this object).
+            String restoredOrgId = dataToProcess.getString("org_id");
+            if (restoredOrgId != null) {
+                cloudEventData.put("org_id", restoredOrgId);
+            }
+            Object restoredEndpointId = dataToProcess.getValue("endpoint_id");
+            if (restoredEndpointId != null) {
+                cloudEventData.put("endpoint_id", String.valueOf(restoredEndpointId));
+            }
         }
 
         try {

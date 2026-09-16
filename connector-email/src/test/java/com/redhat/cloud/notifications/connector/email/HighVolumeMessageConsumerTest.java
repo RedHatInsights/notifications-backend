@@ -13,12 +13,14 @@ import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.Test;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import static com.redhat.cloud.notifications.connector.v2.MessageConsumer.X_RH_NOTIFICATIONS_CONNECTOR_HEADER;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -41,13 +43,21 @@ class HighVolumeMessageConsumerTest {
     ConnectorConfig connectorConfig;
 
     @Test
-    void testMessageAckedWhenHighVolumeTopicDisabled() {
+    void testMessageNackedWhenHighVolumeTopicDisabled() {
         doReturn(false).when(emailConnectorConfig).isIncomingKafkaHighVolumeTopicEnabled();
 
-        Message<JsonObject> message = buildMessage();
+        boolean[] nacked = {false};
+        Message<JsonObject> message = buildMessage()
+            .withNack(reason -> {
+                nacked[0] = true;
+                assertTrue(reason instanceof IllegalStateException);
+                return CompletableFuture.completedFuture(null);
+            });
+
         CompletionStage<Void> result = highVolumeMessageConsumer.processMessage(message);
 
         assertDoesNotThrow(() -> result.toCompletableFuture().get(5, SECONDS));
+        assertTrue(nacked[0], "Message should have been nacked when high-volume topic is disabled");
         verify(messageConsumer, never()).processMessage(any());
     }
 

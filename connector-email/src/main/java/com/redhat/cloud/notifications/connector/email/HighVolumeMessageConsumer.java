@@ -28,7 +28,7 @@ public class HighVolumeMessageConsumer {
     public CompletionStage<Void> processMessage(Message<JsonObject> message) {
         if (!emailConnectorConfig.isIncomingKafkaHighVolumeTopicEnabled()) {
             Log.warnf("Kafka message rejected because high-volume topic is disabled on this connector");
-            return message.ack();
+            return message.nack(new IllegalStateException("High-volume topic is disabled on this connector"));
         }
         // Delegates to processMessage() which includes connector header filtering (defense-in-depth)
         return messageConsumer.processMessage(message);

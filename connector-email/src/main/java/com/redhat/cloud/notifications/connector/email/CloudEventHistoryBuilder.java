@@ -17,7 +17,6 @@ import jakarta.enterprise.inject.Alternative;
 public class CloudEventHistoryBuilder extends HttpOutgoingCloudEventBuilder {
 
     public static final String TOTAL_RECIPIENTS_KEY = "total_recipients";
-    public static final String ADDITIONAL_ERROR_DETAILS = "additionalErrorDetails";
 
     @Override
     public JsonObject buildSuccess(HandledMessageDetails processedMessageDetails) {
