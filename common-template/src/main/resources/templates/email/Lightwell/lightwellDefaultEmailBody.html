@@ -29,8 +29,10 @@
     <thead>
     <tr>
         <th scope="col" style="{body-section-table-th-style}">Package{#if eventsCount > 1}s{/if}</th>
+        <!-- commenting out the release & CVE information as it poses a potential security risk
         <th scope="col" style="{body-section-table-th-style} min-width: 90px;">Release</th>
         <th scope="col" style="{body-section-table-th-style}; min-width: 210px" colspan="2">Related CVE(s)</th>
+        -->
     </tr>
     </thead>
     <tbody style="{body-section-table-tbody-style}">
@@ -43,6 +45,7 @@
                         <a style="{body-section-table-td-a-style}" href="{event.payload.package_link}" target="_blank">{event.payload.package_name}</a>
                     {/if}
                 </td>
+                <!-- commenting out the release & CVE information as it poses a potential security risk
                 <td style="{body-section-table-td-style}{#if !release_isLast}; border-bottom-width: 0 !important;{/if}">
                 {#for releaseName in release.release_names}
                     {releaseName.name}{#if releaseName_hasNext}<br>{/if}
@@ -60,7 +63,7 @@
                         {#case 'important'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_important_v3.png" alt="Important" width="86" border="0" style="vertical-align: -2px;"><![endif]--><!--[if !mso]><!-->{renderImportantTag}<!--<![endif]-->
                         {#case 'critical'}<!--[if mso]><img src="https://console.redhat.com/apps/frontend-assets/email-assets/img_critical_v3.png" alt="Critical" width="70" border="0"><![endif]--><!--[if !mso]><!-->{renderCriticalTag}<!--<![endif]-->
                     {/switch}
-                    </td>
+                    </td> -->
                     </tr>
                 {/for}
                 </table>
