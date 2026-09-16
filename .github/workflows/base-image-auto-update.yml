@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Set up skopeo
         run: sudo apt-get install -y skopeo
       - name: Check change
@@ -22,6 +22,6 @@ jobs:
           git add -A
           git commit -m "Update ubi9/openjdk-21-runtime:latest image digest" || echo "No changes to commit"
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
           title: 'Update ubi9/openjdk-21-runtime:latest image digest'

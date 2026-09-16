@@ -11,7 +11,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 2
       - name: Prepare cache key
@@ -19,25 +19,25 @@ jobs:
         shell: bash
         run: echo "::set-output name=date::$(/bin/date -u "+%Y-%m")"
       - name: Cache Maven dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: ~/.m2/repository
           # The cache key is changed every month to prevent unlimited growth.
           key: maven-cache-${{ steps.cache-key.outputs.date }}
       - name: Cache Yarn dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: ~/.cache/yarn
           # The cache key is changed every month to prevent unlimited growth.
           key: yarn-cache-${{ steps.cache-key.outputs.date }}
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: adopt
           java-version: 21
       - name: Verify if admin-console changed
         id: admin-console-changed
-        uses: tj-actions/changed-files@v47.0.1
+        uses: tj-actions/changed-files@e0021407031f5be11a464abee9a0776171c79891 # v47.0.1
         with:
           files: admin-console/**
       - name: Build admin-console
@@ -52,7 +52,7 @@ jobs:
         run: ./mvnw clean verify --no-transfer-progress
       - name: Pushes coverage
         run: bash <(curl -s https://codecov.io/bash)
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         name: Upload openapi.json
         with:
           name: openapi
