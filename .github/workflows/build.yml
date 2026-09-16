@@ -11,7 +11,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 2
       - name: Prepare cache key
@@ -19,19 +19,19 @@ jobs:
         shell: bash
         run: echo "::set-output name=date::$(/bin/date -u "+%Y-%m")"
       - name: Cache Maven dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.m2/repository
           # The cache key is changed every month to prevent unlimited growth.
           key: maven-cache-${{ steps.cache-key.outputs.date }}
       - name: Cache Yarn dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: admin-console/src/main/webapp/.yarn/cache
           # The cache key is changed every month to prevent unlimited growth.
           key: yarn-cache-${{ steps.cache-key.outputs.date }}
       - name: Set up JDK 21
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6
         with:
           distribution: temurin
           java-version: 21
@@ -106,7 +106,7 @@ jobs:
       - name: Set up Node for Mintmaker lockfile refresh
         # Keep this version in sync with <nodeVersion> in admin-console/pom.xml.
         if: steps.yarn-files-changed.outputs.any_changed == 'true' && ((github.event_name == 'push' && startsWith(github.ref_name, 'konflux/mintmaker/')) || (github.event_name == 'pull_request' && startsWith(github.head_ref, 'konflux/mintmaker/') && github.event.pull_request.head.repo.fork == false))
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 24.21.0
       - name: Regenerate yarn.lock for Mintmaker branches
@@ -166,7 +166,7 @@ jobs:
         run: ./mvnw clean verify --no-transfer-progress
       - name: Pushes coverage
         run: bash <(curl -s https://codecov.io/bash)
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         name: Upload openapi.json
         with:
           name: openapi
