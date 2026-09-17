@@ -55,6 +55,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
+import static com.redhat.cloud.notifications.routers.handlers.endpoint.EndpointResourceCommon.SPLUNK_HEC_TOKEN_REQUIRED;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -1302,6 +1303,85 @@ public class EndpointResourceV3Test extends DbIsolatedTest {
         assertNotNull(bundles);
         assertEquals(1, bundles.size());
         assertEquals(bundle.getId().toString(), bundles.getJsonObject(0).getString("id"));
+    }
+
+    @Test
+    void testUpdateSplunkEndpointWithoutSecretTokenSucceeds() {
+        mockSecretCreation();
+
+        final JsonObject createBody = new JsonObject()
+                .put("type", "camel")
+                .put("sub_type", "splunk")
+                .put("name", "v3 splunk endpoint")
+                .put("description", "Splunk integration for V3 update test")
+                .put("enabled", true)
+                .put("properties", new JsonObject().put("url", "https://redhat.com"))
+                .put("secrets", new JsonObject().put("secret_token", "my-splunk-hec-token"));
+
+        final JsonObject created = new JsonObject(
+                given()
+                        .header(identityHeader)
+                        .when()
+                        .contentType(JSON)
+                        .body(createBody.encode())
+                        .post("/endpoints")
+                        .then()
+                        .statusCode(HttpStatus.SC_OK)
+                        .contentType(JSON)
+                        .extract().body().asString()
+        );
+
+        final String endpointId = created.getString("id");
+
+        // Update the Splunk endpoint (rename only, no secrets in payload).
+        // V3 never carries secrets in the main payload — they are managed
+        // through the dedicated /secrets endpoint. This must not 400.
+        final EndpointDTO updateDTO = new EndpointDTO();
+        updateDTO.setType(EndpointTypeDTO.CAMEL);
+        updateDTO.setSubType("splunk");
+        updateDTO.setName("v3 splunk endpoint renamed");
+        updateDTO.setDescription("Splunk integration for V3 update test");
+        updateDTO.setEnabled(true);
+
+        final CamelPropertiesDTO updateProperties = new CamelPropertiesDTO();
+        updateProperties.setUrl("https://redhat.com");
+        updateDTO.setProperties(updateProperties);
+
+        given()
+                .header(identityHeader)
+                .contentType(JSON)
+                .pathParam("id", endpointId)
+                .body(Json.encode(updateDTO))
+                .when()
+                .put("/endpoints/{id}")
+                .then()
+                .statusCode(HttpStatus.SC_OK);
+
+        final Endpoint dbEndpoint = endpointRepository.getEndpoint(orgId, UUID.fromString(endpointId));
+        assertEquals("v3 splunk endpoint renamed", dbEndpoint.getName());
+    }
+
+    @Test
+    void testCreateSplunkEndpointWithoutSecretTokenFails() {
+        final JsonObject createBody = new JsonObject()
+                .put("type", "camel")
+                .put("sub_type", "splunk")
+                .put("name", "v3 splunk no token")
+                .put("description", "Splunk integration without HEC token")
+                .put("enabled", true)
+                .put("properties", new JsonObject().put("url", "https://redhat.com"));
+
+        final String responseBody = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(createBody.encode())
+                .post("/endpoints")
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST)
+                .extract().asString();
+
+        assertEquals(SPLUNK_HEC_TOKEN_REQUIRED, responseBody);
     }
 
     void overridePagerDutySeverity(UUID endpointId, PagerDutySeverity severity) {
