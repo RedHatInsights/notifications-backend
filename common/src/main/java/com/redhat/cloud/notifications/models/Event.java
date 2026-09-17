@@ -34,14 +34,8 @@ import static java.time.ZoneOffset.UTC;
 @Table(name = "event")
 public class Event {
 
-    public static final String SEVERITY_SORT_EXPRESSION = "CASE e.severity"
-        + " WHEN 'CRITICAL' THEN 0"
-        + " WHEN 'IMPORTANT' THEN 1"
-        + " WHEN 'MODERATE' THEN 2"
-        + " WHEN 'LOW' THEN 3"
-        + " WHEN 'NONE' THEN 4"
-        + " WHEN 'UNDEFINED' THEN 5"
-        + " ELSE 6 END";
+    // The COALESCE() function accepts a list of arguments and returns the first non-null argument.
+    public static final String SEVERITY_SORT_EXPRESSION = "COALESCE(e.severityOrder, " + Severity.UNKNOWN_SEVERITY_ORDER + ")";
 
     private static final Map<String, String> SORT_FIELDS_NORMALIZED = Map.of(
             "bundle", "bundle.displayName",

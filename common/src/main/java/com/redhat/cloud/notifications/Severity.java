@@ -13,16 +13,29 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(enumeration = { "CRITICAL", "IMPORTANT", "MODERATE", "LOW", "NONE", "UNDEFINED"})
 public enum Severity {
     @JsonProperty("CRITICAL")
-    CRITICAL,
+    CRITICAL(10),
     @JsonProperty("IMPORTANT")
-    IMPORTANT,
+    IMPORTANT(20),
     @JsonProperty("MODERATE")
-    MODERATE,
+    MODERATE(30),
     @JsonProperty("LOW")
-    LOW,
+    LOW(40),
     @JsonProperty("NONE")
-    NONE,
+    NONE(50),
     /** A severity level was not provided, or could not be parsed. Do not display this value in outgoing notifications. */
     @JsonProperty("UNDEFINED")
-    UNDEFINED
+    UNDEFINED(60);
+
+    // Assigned to rows with NULL or unrecognized severity (e.g. legacy pre-severity events).
+    public static final short UNKNOWN_SEVERITY_ORDER = 70;
+
+    private final short order;
+
+    Severity(int order) {
+        this.order = (short) order;
+    }
+
+    public short getOrder() {
+        return order;
+    }
 }

@@ -919,6 +919,12 @@ public class EventResourceTest extends DbIsolatedTest {
         return entityManager.merge(event);
     }
 
+    Event createEventWithSeverity(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created, Severity severity) {
+        Action action = EventPayloadTestHelper.buildValidAction(orgId, bundle.getName(), app.getName(), eventType.getName());
+        action.setSeverity(severity.name());
+        return createEvent(accountId, orgId, bundle, app, eventType, created, Parser.encode(action), false, null);
+    }
+
     private String buildPayloadWithAuthorizationCriterion(String orgId, String bundleName, String appName, String eventTypeName) {
         Action action = EventPayloadTestHelper.buildValidAction(orgId, bundleName, appName, eventTypeName);
 
@@ -1343,15 +1349,8 @@ public class EventResourceTest extends DbIsolatedTest {
         EventType eventType = resourceHelpers.createEventType(app.getId(), "test-event-type", "Test Event Type", "Test Event Type");
 
         // Create event with severity
-        Action action = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
-        action.setSeverity(Severity.CRITICAL.name());
-        String payload = Parser.encode(action);
-        Event event = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, payload, false, null);
-
-        Action action2 = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
-        action2.setSeverity(Severity.IMPORTANT.name());
-        String payload2 = Parser.encode(action2);
-        Event event2 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, payload2, false, null);
+        Event event = createEventWithSeverity(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, Severity.CRITICAL);
+        Event event2 = createEventWithSeverity(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, Severity.IMPORTANT);
 
         // Verify severity is included in the response
         Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false);
@@ -1385,17 +1384,9 @@ public class EventResourceTest extends DbIsolatedTest {
         assertEquals(0, page.getMeta().getCount());
 
         // Create events with remaining severity levels for sort testing
-        Action action3 = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
-        action3.setSeverity(Severity.MODERATE.name());
-        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, Parser.encode(action3), false, null);
-
-        Action action4 = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
-        action4.setSeverity(Severity.LOW.name());
-        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, Parser.encode(action4), false, null);
-
-        Action action5 = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
-        action5.setSeverity(Severity.NONE.name());
-        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, Parser.encode(action5), false, null);
+        createEventWithSeverity(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, Severity.MODERATE);
+        createEventWithSeverity(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, Severity.LOW);
+        createEventWithSeverity(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, Severity.NONE);
 
         // Event with no severity set defaults to UNDEFINED
         createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW);
