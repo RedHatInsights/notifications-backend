@@ -86,7 +86,7 @@ public class ReplayEventConsumerTest {
         // Wait for the message to be acknowledged (with timeout)
         ackFuture.get(200, TimeUnit.MILLISECONDS);
 
-        verify(replayEventConsumer, times(1)).consume(any());
+        verify(replayEventConsumer, times(1)).consumeIngressReplay(any());
         verifyNoInteractions(eventConsumer);
         micrometerAssertionHelper.assertCounterIncrement(REPLAYED_MESSAGE_COUNTER_NAME, 0);
     }
@@ -97,7 +97,7 @@ public class ReplayEventConsumerTest {
         inMemoryConnector.source(INGRESS_REPLAY_CHANNEL).send(message);
 
         micrometerAssertionHelper.awaitAndAssertCounterIncrement(REPLAYED_MESSAGE_COUNTER_NAME, 1);
-        verify(replayEventConsumer, times(1)).consume(any());
+        verify(replayEventConsumer, times(1)).consumeIngressReplay(any());
         verify(eventConsumer, times(1)).process(any());
     }
 
@@ -114,7 +114,7 @@ public class ReplayEventConsumerTest {
         // Wait for the message to be acknowledged (with timeout)
         ackFuture.get(200, TimeUnit.MILLISECONDS);
 
-        verify(replayEventConsumer, times(1)).consume(any());
+        verify(replayEventConsumer, times(1)).consumeIngressReplay(any());
         verifyNoInteractions(eventConsumer);
         micrometerAssertionHelper.assertCounterIncrement(REPLAYED_MESSAGE_COUNTER_NAME, 0);
     }
