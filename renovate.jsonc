@@ -14,6 +14,12 @@
     // Pins actions to commit SHAs, so a version bump can be told from a moved tag.
     "helpers:pinGitHubActionDigests"
   ],
+  // Renovate merges the PR itself: GitHub's native auto-merge never completes when
+  // the approval rule is met by a bypass actor alone, the Konflux app here.
+  "platformAutomerge": false,
+  // The required checks of the base branch are the whole gate: Renovate asks to
+  // merge without reading any check, and GitHub refuses until they pass.
+  "ignoreTests": true,
   "tekton": {
     // Konflux pipeline updates in .tekton/: the PR's own Konflux build tests them.
     "automerge": true,
