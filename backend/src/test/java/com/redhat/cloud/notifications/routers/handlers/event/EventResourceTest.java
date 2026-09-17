@@ -919,6 +919,12 @@ public class EventResourceTest extends DbIsolatedTest {
         return entityManager.merge(event);
     }
 
+    Event createEventWithSeverity(String accountId, String orgId, Bundle bundle, Application app, EventType eventType, LocalDateTime created, Severity severity) {
+        Action action = EventPayloadTestHelper.buildValidAction(orgId, bundle.getName(), app.getName(), eventType.getName());
+        action.setSeverity(severity.name());
+        return createEvent(accountId, orgId, bundle, app, eventType, created, Parser.encode(action), false, null);
+    }
+
     private String buildPayloadWithAuthorizationCriterion(String orgId, String bundleName, String appName, String eventTypeName) {
         Action action = EventPayloadTestHelper.buildValidAction(orgId, bundleName, appName, eventTypeName);
 
@@ -1343,15 +1349,8 @@ public class EventResourceTest extends DbIsolatedTest {
         EventType eventType = resourceHelpers.createEventType(app.getId(), "test-event-type", "Test Event Type", "Test Event Type");
 
         // Create event with severity
-        Action action = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
-        action.setSeverity(Severity.CRITICAL.name());
-        String payload = Parser.encode(action);
-        Event event = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, payload, false, null);
-
-        Action action2 = EventPayloadTestHelper.buildValidAction(DEFAULT_ORG_ID, bundle.getName(), app.getName(), eventType.getName());
-        action2.setSeverity(Severity.IMPORTANT.name());
-        String payload2 = Parser.encode(action2);
-        Event event2 = createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, payload2, false, null);
+        Event event = createEventWithSeverity(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, Severity.CRITICAL);
+        Event event2 = createEventWithSeverity(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, Severity.IMPORTANT);
 
         // Verify severity is included in the response
         Page<EventLogEntry> page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false);
@@ -1383,6 +1382,34 @@ public class EventResourceTest extends DbIsolatedTest {
         // search with no matching severities
         page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, null, false, false, PATH, Set.of(Severity.MODERATE));
         assertEquals(0, page.getMeta().getCount());
+
+        // Create events with remaining severity levels for sort testing
+        createEventWithSeverity(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, Severity.MODERATE);
+        createEventWithSeverity(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, Severity.LOW);
+        createEventWithSeverity(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW, Severity.NONE);
+
+        // Event with no severity set defaults to UNDEFINED
+        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, NOW);
+
+        // sort by severity ascending (CRITICAL < IMPORTANT < MODERATE < LOW < NONE < UNDEFINED)
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, "severity:asc", false, false);
+        assertEquals(6, page.getMeta().getCount());
+        assertEquals(Severity.CRITICAL, page.getData().get(0).getSeverity());
+        assertEquals(Severity.IMPORTANT, page.getData().get(1).getSeverity());
+        assertEquals(Severity.MODERATE, page.getData().get(2).getSeverity());
+        assertEquals(Severity.LOW, page.getData().get(3).getSeverity());
+        assertEquals(Severity.NONE, page.getData().get(4).getSeverity());
+        assertEquals(Severity.UNDEFINED, page.getData().get(5).getSeverity());
+
+        // sort by severity descending
+        page = getEventLogPage(defaultIdentityHeader, null, null, null, null, null, null, null, null, null, null, "severity:desc", false, false);
+        assertEquals(6, page.getMeta().getCount());
+        assertEquals(Severity.UNDEFINED, page.getData().get(0).getSeverity());
+        assertEquals(Severity.NONE, page.getData().get(1).getSeverity());
+        assertEquals(Severity.LOW, page.getData().get(2).getSeverity());
+        assertEquals(Severity.MODERATE, page.getData().get(3).getSeverity());
+        assertEquals(Severity.IMPORTANT, page.getData().get(4).getSeverity());
+        assertEquals(Severity.CRITICAL, page.getData().get(5).getSeverity());
     }
 
     @ParameterizedTest

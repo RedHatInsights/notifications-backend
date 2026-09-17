@@ -34,18 +34,23 @@ import static java.time.ZoneOffset.UTC;
 @Table(name = "event")
 public class Event {
 
+    // The COALESCE() function accepts a list of arguments and returns the first non-null argument.
+    public static final String SEVERITY_SORT_EXPRESSION = "COALESCE(e.severityOrder, " + Severity.UNKNOWN_SEVERITY_ORDER + ")";
+
     private static final Map<String, String> SORT_FIELDS_NORMALIZED = Map.of(
             "bundle", "bundle.displayName",
             "application", "app.displayName",
             "event", "et.displayName",
-            "created", "e.created"
+            "created", "e.created",
+            "severity", SEVERITY_SORT_EXPRESSION
     );
 
     private static final Map<String, String> SORT_FIELDS_DENORMALIZED = Map.of(
             "bundle", "e.bundleDisplayName",
             "application", "e.applicationDisplayName",
             "event", "e.eventTypeDisplayName",
-            "created", "e.created"
+            "created", "e.created",
+            "severity", SEVERITY_SORT_EXPRESSION
     );
 
     public static Map<String, String> getSortFields(boolean useNormalized) {
@@ -100,6 +105,9 @@ public class Event {
     @Enumerated(STRING)
     @Column(length = 20)
     private Severity severity;
+
+    @Column(name = "severity_order", insertable = false, updatable = false)
+    private Short severityOrder;
 
     @Transient
     private EventWrapper<?, ?> eventWrapper;

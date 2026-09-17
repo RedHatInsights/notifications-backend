@@ -432,4 +432,18 @@ public class EventRepository {
             .setParameter("limit", limit)
             .executeUpdate();
     }
+
+    @Transactional
+    public int backfillSeverityOrder(int limit) {
+        StringBuilder caseExpr = new StringBuilder("UPDATE event SET severity_order = CASE severity");
+        for (Severity s : Severity.values()) {
+            caseExpr.append(" WHEN '").append(s.name()).append("' THEN ").append(s.getOrder());
+        }
+        caseExpr.append(" ELSE ").append(Severity.UNKNOWN_SEVERITY_ORDER).append(" END");
+        caseExpr.append(" WHERE id IN (SELECT id FROM event WHERE severity_order IS NULL LIMIT :limit)");
+
+        return entityManager.createNativeQuery(caseExpr.toString())
+            .setParameter("limit", limit)
+            .executeUpdate();
+    }
 }

@@ -72,7 +72,7 @@ public class DrawerResource {
     @Operation(summary = "Retrieve drawer notifications entries.", description =
             "Retrieve paginated drawer notifications with optional filtering and sorting. " +
             "Available filters: `bundleIds`, `appIds`, `eventTypeIds`, `startDate`, `endDate`, `readStatus`. " +
-            "Allowed `sort_by` fields: `bundle`, `application`, `event`, `created`. " +
+            "Allowed `sort_by` fields: `bundle`, `application`, `event`, `created`, `severity`. " +
             "Sorting can be specified by appending `:asc` or `:desc` to the field, e.g. `bundle:desc`. " +
             "Defaults to `created:desc`."
     )
