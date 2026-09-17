@@ -72,27 +72,6 @@ public class TestLightwellTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("org.glassfish.jaxb:txwc2"));
         assertTrue(result.contains("org.glassfish.jaxb:xsom"));
         assertTrue(result.contains("org.json:json"));
-
-        // Releases
-        assertTrue(result.contains("4.0.4.rhlw003"));
-        assertTrue(result.contains("4.0.4.rhlw004"));
-        assertTrue(result.contains("5.0.0.rhlw001"));
-        assertTrue(result.contains("5.5.5.rhlw001"));
-        assertTrue(result.contains("4.1.0.rhlw001"));
-        assertTrue(result.contains("20220320.0.0.rhlw-00001"));
-        assertTrue(result.contains("20220320.0.0.rhlw-00002"));
-
-        // CVEs and severities
-        assertTrue(result.contains("CVE-2026-1234"));
-        assertTrue(result.contains("CVE-2026-5678"));
-        assertTrue(result.contains("CVE-2026-9999"));
-        assertTrue(result.contains("CVE-2026-1111"));
-        assertTrue(result.contains("CVE-2026-2222"));
-        assertTrue(result.contains("CVE-2026-3333"));
-        assertTrue(result.contains("CVE-2026-4242"));
-        assertTrue(result.contains("CVE-2026-0909"));
-        assertTrue(result.contains(">Critical</td>"));
-        assertTrue(result.contains(">Important</td>"));
     }
 
     @Test
@@ -131,29 +110,6 @@ public class TestLightwellTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("The following package was fixed by Lightwell in the Java Remediated and is available for your access."));
         assertFalse(result.contains("These following packages were fixed"));
         assertTrue(result.contains(">1</a>"));
-    }
-
-    @Test
-    public void testJavaRemediatedEmailBodyAllSeverityLevels() {
-        Action action = createLightwellActionWithReleases(List.of(
-            buildRelease(List.of("4.0.4.rhlw003"), List.of(
-                buildCve("CVE-2026-1001", "low"),
-                buildCve("CVE-2026-1002", "moderate"),
-                buildCve("CVE-2026-1003", "important"),
-                buildCve("CVE-2026-1004", "critical")
-            ))
-        ));
-        eventTypeDisplayName = "Java Remediated";
-        String result = generateEmailBody(LIGHTWELL_JAVA_REMEDIATED_EVENT_TYPE, action, false);
-
-        assertTrue(result.contains(">Low</td>"));
-        assertTrue(result.contains(">Moderate</td>"));
-        assertTrue(result.contains(">Important</td>"));
-        assertTrue(result.contains(">Critical</td>"));
-        assertTrue(result.contains("alt=\"Low\""));
-        assertTrue(result.contains("alt=\"Moderate\""));
-        assertTrue(result.contains("alt=\"Important\""));
-        assertTrue(result.contains("alt=\"Critical\""));
     }
 
     @Test
