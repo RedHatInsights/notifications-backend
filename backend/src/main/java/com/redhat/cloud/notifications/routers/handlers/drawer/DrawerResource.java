@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
+import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_3_0;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
@@ -48,6 +49,10 @@ public class DrawerResource {
 
     @Path(API_NOTIFICATIONS_V_1_0 + "/notifications/drawer")
     public static class V1 extends DrawerResource {
+    }
+
+    @Path(API_NOTIFICATIONS_V_3_0 + "/notifications/drawer")
+    public static class V3 extends DrawerResource {
     }
 
     @Inject

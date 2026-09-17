@@ -6,9 +6,11 @@ package com.redhat.cloud.notifications;
 public interface Constants {
     String API_INTEGRATIONS_V_1_0 = "/api/integrations/v1.0";
     String API_INTEGRATIONS_V_2_0 = "/api/integrations/v2.0";
+    String API_INTEGRATIONS_V_3_0 = "/api/integrations/v3.0";
 
     String API_NOTIFICATIONS_V_1_0 = "/api/notifications/v1.0";
     String API_NOTIFICATIONS_V_2_0 = "/api/notifications/v2.0";
+    String API_NOTIFICATIONS_V_3_0 = "/api/notifications/v3.0";
 
     String API_INTERNAL = "/internal";
     String X_RH_EXPORT_SERVICE_PSK = "x-rh-exports-psk";
