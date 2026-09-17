@@ -233,6 +233,48 @@ public class DrawerResourceTest extends DbIsolatedTest {
             "Org 3 should see their own event with Severity.IMPORTANT, not Org 1's data");
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testSeveritySorting(boolean useNormalizedQueries) {
+        when(backendConfig.isDrawerEnabled(anyString())).thenReturn(true);
+        when(backendConfig.isNormalizedQueriesEnabled(anyString())).thenReturn(useNormalizedQueries);
+        final String USERNAME = "user-severity";
+        Header identityHeader = mockRbac(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, USERNAME, FULL_ACCESS);
+
+        Bundle bundle = resourceHelpers.createBundle("bundle-severity-sort");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "app-severity-sort");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "event-type-severity-sort");
+        markEventTypeAsDrawer(eventType);
+
+        LocalDateTime now = LocalDateTime.now(UTC);
+        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, now, Severity.LOW);
+        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, now, Severity.CRITICAL);
+        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, now, Severity.MODERATE);
+        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, now, Severity.IMPORTANT);
+        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, now, Severity.NONE);
+        createEvent(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, bundle, app, eventType, now, Severity.UNDEFINED);
+
+        // Sort by severity ascending: CRITICAL < IMPORTANT < MODERATE < LOW < NONE < UNDEFINED
+        Page<DrawerEntryPayload> page = getDrawerEntries(identityHeader, null, null, null, null, null, null, null, null, "severity:asc");
+        assertEquals(6, page.getMeta().getCount());
+        assertEquals("CRITICAL", page.getData().get(0).getSeverity());
+        assertEquals("IMPORTANT", page.getData().get(1).getSeverity());
+        assertEquals("MODERATE", page.getData().get(2).getSeverity());
+        assertEquals("LOW", page.getData().get(3).getSeverity());
+        assertEquals("NONE", page.getData().get(4).getSeverity());
+        assertEquals("UNDEFINED", page.getData().get(5).getSeverity());
+
+        // Sort by severity descending
+        page = getDrawerEntries(identityHeader, null, null, null, null, null, null, null, null, "severity:desc");
+        assertEquals(6, page.getMeta().getCount());
+        assertEquals("UNDEFINED", page.getData().get(0).getSeverity());
+        assertEquals("NONE", page.getData().get(1).getSeverity());
+        assertEquals("LOW", page.getData().get(2).getSeverity());
+        assertEquals("MODERATE", page.getData().get(3).getSeverity());
+        assertEquals("IMPORTANT", page.getData().get(4).getSeverity());
+        assertEquals("CRITICAL", page.getData().get(5).getSeverity());
+    }
+
     /**
      * Marks an EventType as drawer-enabled (includedInDrawer = true).
      */
