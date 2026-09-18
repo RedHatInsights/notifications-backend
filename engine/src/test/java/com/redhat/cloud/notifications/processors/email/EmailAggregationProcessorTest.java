@@ -5,6 +5,7 @@ import com.redhat.cloud.notifications.PatchTestHelpers;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -15,8 +16,10 @@ import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
+import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
@@ -45,6 +48,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
@@ -92,6 +96,9 @@ class EmailAggregationProcessorTest {
     @Inject
     ResourceHelpers resourceHelpers;
 
+    @InjectMock
+    EndpointRepository endpointRepository;
+
     static User user1 = new User();
     static User user2 = new User();
     static User user3 = new User();
@@ -120,6 +127,11 @@ class EmailAggregationProcessorTest {
         resourceHelpers.createBundle("rhel", "Red Hat Enterprise Linux");
         initData("patch", "new-advisory");
         initData("advisor", "new-recommendation");
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setId(UUID.randomUUID());
+        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        endpoint.setProperties(new SystemSubscriptionProperties());
+        when(endpointRepository.getDefaultSystemSubscription(anyString(), eq(EndpointType.EMAIL_SUBSCRIPTION))).thenReturn(List.of(endpoint));
     }
 
     @AfterEach
@@ -302,6 +314,39 @@ class EmailAggregationProcessorTest {
         eventToAggregate.add(errorOnAdvisorPayload);
 
         createAggregationsAndSendAggregationKeysToIngress(eventToAggregate, aggregationKey1);
+
+        verifyNoInteractions(connectorSender);
+    }
+
+    @Test
+    void shouldNotSendAggregatedEmailWhenNoEndpointFound() {
+        String orgId = RandomStringUtils.secure().nextAlphanumeric(6);
+
+        Endpoint endpoint = new Endpoint();
+        endpoint.setId(UUID.randomUUID());
+        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        endpoint.setProperties(new SystemSubscriptionProperties());
+
+        when(endpointRepository.getDefaultSystemSubscription(eq(orgId), eq(EndpointType.EMAIL_SUBSCRIPTION)))
+            .thenReturn(List.of(endpoint))
+            .thenReturn(List.of());
+
+        EventAggregationCriterion aggregationKey = buildEmailAggregationKey(orgId, "rhel", "advisor");
+
+        List<EmailAggregation> eventToAggregate = List.of(
+            createAdvisorEmailAggregation(orgId, null)
+        );
+
+        for (EmailAggregation aggregation : eventToAggregate) {
+            aggregation.getPayload().remove(BaseTransformer.SOURCE);
+            resourceHelpers.addEventEmailAggregation(aggregation.getOrgId(), aggregation.getBundleName(),
+                aggregation.getApplicationName(), aggregation.getPayload());
+        }
+
+        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(Arrays.asList(aggregationKey)));
+
+        micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
+        micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 1);
 
         verifyNoInteractions(connectorSender);
     }

@@ -214,7 +214,8 @@ public class EndpointResource extends EndpointResourceCommon {
         if (null != requestProps.getGroupId()) {
             properties.setGroupIds(Set.of(requestProps.getGroupId()));
         }
-        return endpointRepository.getOrCreateSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType);
+        return endpointRepository.getSystemSubscriptionEndpoint(orgId, properties, endpointType)
+            .orElseGet(() -> endpointRepository.resolveNameAndCreateSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType));
     }
 
     @GET
