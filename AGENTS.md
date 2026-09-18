@@ -60,10 +60,10 @@ Public resources use inner static subclasses for versioning. The parent class ho
 
 ### Multi-Module Dependency Rules
 
-- Shared libraries (`common`, `common-template`, `common-unleash`, `connector-common*`) produce JARs and must not depend on deployable modules.
+- Shared libraries (`common`, `common-template`, `common-unleash`, `connector-common-v2`, `connector-common-authentication-v2`, `connector-common-http-v2`) produce JARs and must not depend on deployable modules.
 - The `database` module contains only Flyway SQL migration files -- no Java code.
 - Only `backend` runs Flyway migrations in production (`quarkus.flyway.migrate-at-start=true`). The `engine` enables Flyway only for dev/test profiles.
-- Connector modules follow a layered inheritance: `connector-common` -> `connector-common-http` -> specific connector. The v2 equivalents (`connector-common-v2`, `connector-common-http-v2`) are the newer framework.
+- Connector modules follow a layered inheritance: `connector-common-v2` -> `connector-common-http-v2` -> specific connector. Authentication-requiring connectors also depend on `connector-common-authentication-v2`.
 
 ### Feature Toggles
 
