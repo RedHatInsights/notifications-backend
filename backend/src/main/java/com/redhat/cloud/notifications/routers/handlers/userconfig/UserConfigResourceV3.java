@@ -24,20 +24,21 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 import java.util.List;
 
-import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
+import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_3_0;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
-public class UserConfigResourceV2 extends UserConfigResourceCommon {
+public class UserConfigResourceV3 extends UserConfigResourceCommon {
 
-    @Path(API_NOTIFICATIONS_V_2_0 + "/user-config")
-    public static class V2 extends UserConfigResourceV2 {
+
+    @Path(API_NOTIFICATIONS_V_3_0 + "/user-config")
+    public static class V3 extends UserConfigResourceV3 {
     }
 
     @GET
     @Path("/subscriptions")
     @Produces(APPLICATION_JSON)
     @Operation(
-        operationId = "UserConfigResource$V2_getSubscriptions",
+        operationId = "UserConfigResource$V3_getSubscriptions",
         summary = "Retrieve the authenticated user's notification subscriptions",
         description = "Returns the authenticated user's subscriptions as a bundle/application/event type/channel tree. "
             + "Query params progressively narrow the returned tree; each requires its parent to also be specified."
@@ -66,7 +67,7 @@ public class UserConfigResourceV2 extends UserConfigResourceCommon {
         + "outside the event type's available_severities. Unlike the read-only GET (which reports an unknown bundle/application/event type as "
         + "404), this bulk write endpoint reports it as 400: it's a client error to fix and retry in full, not a missing resource to look up.")
     @Operation(
-        operationId = "UserConfigResource$V2_updateSubscriptions",
+        operationId = "UserConfigResource$V3_updateSubscriptions",
         summary = "Bulk-update the authenticated user's notification subscriptions",
         description = "Partial update, not a full replace: any bundle, application, event type or channel omitted "
             + "from the request tree is left untouched rather than reset or unsubscribed."

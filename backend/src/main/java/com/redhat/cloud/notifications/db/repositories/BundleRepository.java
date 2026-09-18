@@ -32,6 +32,12 @@ public class BundleRepository {
                 .getResultList();
     }
 
+    public List<Bundle> getBundlesWithApplications() {
+        String query = "SELECT DISTINCT b FROM Bundle b LEFT JOIN FETCH b.applications ORDER BY b.displayName ASC";
+        return entityManager.createQuery(query, Bundle.class)
+                .getResultList();
+    }
+
     public Bundle getBundle(UUID id) {
         return entityManager.find(Bundle.class, id);
     }
