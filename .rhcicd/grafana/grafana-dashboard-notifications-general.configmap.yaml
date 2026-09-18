@@ -6499,9 +6499,9 @@ data:
         },
         "editorMode": "code",
         "expr": "sum(increase(camel_exchanges_succeeded_total{service=\"notifications-connector-email-service\", routeId=\"success\"}[5m]))",
-        "legendFormat": "Success",
+        "legendFormat": "Success Camel",
         "range": true,
-        "refId": "Success"
+        "refId": "Success Camel"
        },
        {
         "datasource": {
@@ -6511,9 +6511,9 @@ data:
         "editorMode": "code",
         "expr": "sum(increase(camel_exchanges_failures_handled_total{service=\"notifications-connector-email-service\", routeId=\"email_subscription\"}[5m]))",
         "hide": false,
-        "legendFormat": "Failure",
+        "legendFormat": "Failure Camel",
         "range": true,
-        "refId": "Failure"
+        "refId": "Failure Camel"
        },
        {
         "datasource": {
@@ -6526,6 +6526,30 @@ data:
         "legendFormat": "Retry",
         "range": true,
         "refId": "Retry"
+       },
+       {
+        "datasource": {
+         "type": "prometheus",
+         "uid": "$datasource"
+        },
+        "editorMode": "code",
+        "expr": "sum(increase(notifications_connector_messages_succeeded_total{connector=\"email_subscription\"}[5m]))",
+        "hide": false,
+        "legendFormat": "Success",
+        "range": true,
+        "refId": "Success"
+       },
+       {
+        "datasource": {
+         "type": "prometheus",
+         "uid": "$datasource"
+        },
+        "editorMode": "code",
+        "expr": "sum(increase(notifications_connector_messages_failed_total{connector=\"email_subscription\"}[5m]))",
+        "hide": false,
+        "legendFormat": "Failure",
+        "range": true,
+        "refId": "Failure"
        }
       ],
       "title": "Email connector",
@@ -10414,7 +10438,7 @@ data:
     "timezone": "",
     "title": "Notifications Dashboard",
     "uid": "KQIVyFuMk",
-    "version": 7
+    "version": 8
    }
 kind: ConfigMap
 metadata:
