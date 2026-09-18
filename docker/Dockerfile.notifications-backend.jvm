@@ -10,7 +10,7 @@ WORKDIR /home/jboss
 RUN ./mvnw -s .mvn/settings.xml clean package -DskipTests -pl :notifications-backend -am --no-transfer-progress
 
 # Build the container
-FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest@sha256:ff0a095f96c1823453008aef23b98868f3bf723fa0497d68c2fb9b1a27884064
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest@sha256:f10cc334bd39f39ad35bcefc5ac0ce1ad25bda499f6abf73ccb8afdd1ea6d3c1
 
 # Update the base image packages
 USER root
