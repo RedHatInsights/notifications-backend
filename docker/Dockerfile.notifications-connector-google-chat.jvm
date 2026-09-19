@@ -3,7 +3,7 @@
 ###
 
 # Build the project
-FROM registry.access.redhat.com/ubi9/openjdk-21:latest@sha256:cc8a30e9181b0135e6657ca3b824d7b32e4c7f6a664769ef641d4f7031339564 AS build
+FROM registry.access.redhat.com/ubi9/openjdk-21:latest@sha256:40929d99200a97ae859994d3a41080befb871c26ae116f7d24bc9aeaa7d31d46 AS build
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
