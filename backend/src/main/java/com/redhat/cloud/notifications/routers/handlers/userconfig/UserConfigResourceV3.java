@@ -1,7 +1,9 @@
 package com.redhat.cloud.notifications.routers.handlers.userconfig;
 
-import com.redhat.cloud.notifications.models.dto.v2.subscriptions.BundleSubscriptionDTO;
-import com.redhat.cloud.notifications.models.dto.v2.subscriptions.BundleSubscriptionUpdateDTO;
+import com.redhat.cloud.notifications.models.dto.v3.subscriptions.BundleSubscriptionDTO;
+import com.redhat.cloud.notifications.models.dto.v3.subscriptions.BundleSubscriptionUpdateDTO;
+import com.redhat.cloud.notifications.models.dto.v3.subscriptions.SubscriptionMapper;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -28,6 +30,8 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class UserConfigResourceV3 extends UserConfigResourceCommon {
 
+    @Inject
+    SubscriptionMapper v3SubscriptionMapper;
 
     @Path(API_NOTIFICATIONS_V_3_0 + "/user-config")
     public static class V3 extends UserConfigResourceV3 {
@@ -48,13 +52,13 @@ public class UserConfigResourceV3 extends UserConfigResourceCommon {
     @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionDTO.class)))
     @APIResponse(responseCode = "400", description = "A query parameter was specified without its required parent (e.g. 'application' without 'bundle')")
     @APIResponse(responseCode = "404", description = "The named bundle, application or event type doesn't exist")
-    public List<BundleSubscriptionDTO> getSubscriptions(
+    public List<BundleSubscriptionDTO> getV3Subscriptions(
         @Context SecurityContext sec,
         @QueryParam("bundle") String bundleName,
         @QueryParam("application") String applicationName,
         @QueryParam("event_type") String eventTypeName
     ) {
-        return super.getSubscriptions(sec, bundleName, applicationName, eventTypeName);
+        return v3SubscriptionMapper.v2ToV3Bundles(getSubscriptions(sec, bundleName, applicationName, eventTypeName));
     }
 
     @PUT
@@ -71,11 +75,11 @@ public class UserConfigResourceV3 extends UserConfigResourceCommon {
         description = "Partial update, not a full replace: any bundle, application, event type or channel omitted "
             + "from the request tree is left untouched rather than reset or unsubscribed."
     )
-    public void updateSubscriptions(
+    public void updateV3Subscriptions(
         @Context SecurityContext sec,
         @NotNull @Valid @RequestBody(content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionUpdateDTO.class)))
             List<@NotNull BundleSubscriptionUpdateDTO> body
     ) {
-        doUpdateSubscriptions(sec, body);
+        doUpdateSubscriptions(sec, v3SubscriptionMapper.v3ToV2BundleUpdates(body));
     }
 }
