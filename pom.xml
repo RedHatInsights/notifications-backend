@@ -45,7 +45,7 @@
 
     <properties>
         <mapstruct.version>1.6.3</mapstruct.version>
-        <kessel-sdk.version>1.9.0</kessel-sdk.version>
+        <kessel-sdk.version>1.9.1</kessel-sdk.version>
         <oauth2-oidc-sdk.version>11.38.2</oauth2-oidc-sdk.version>
 
         <enforcer-plugin.version>3.6.3</enforcer-plugin.version>
