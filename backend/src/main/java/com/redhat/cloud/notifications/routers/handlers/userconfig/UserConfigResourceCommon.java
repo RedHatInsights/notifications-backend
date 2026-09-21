@@ -30,7 +30,6 @@ import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
@@ -39,6 +38,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -59,6 +59,10 @@ public class UserConfigResourceCommon {
 
     @Inject
     ObjectMapper mapper;
+
+    protected ObjectMapper getMapper() {
+        return mapper;
+    }
 
     @Inject
     SubscriptionRepository subscriptionRepository;
@@ -84,7 +88,6 @@ public class UserConfigResourceCommon {
     @Inject
     SubscriptionMapper subscriptionMapper;
 
-    @Transactional
     protected Response doSaveSettingsByEventType(SecurityContext sec, SettingsValuesByEventType userSettings) {
         forbidAccessInCaseOfServiceAccountAuthentication(sec);
 
@@ -161,15 +164,19 @@ public class UserConfigResourceCommon {
 
             // Check it the user subscribed to available severities regarding the event type config
             Set<Severity> subscribedSeverities = subscriptionTypeDetails.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey).collect(Collectors.toSet());
+            Set<Severity> availableSeverities = eventType.get().getAvailableSeverities();
+            if (availableSeverities == null) {
+                availableSeverities = Set.of();
+            }
             for (Severity severity : subscribedSeverities) {
-                if (!eventType.get().getAvailableSeverities().contains(severity)) {
+                if (!availableSeverities.contains(severity)) {
                     throw new NotFoundException(String.format("Event type '%s' doesn't support '%s' severity", eventType.get().getDisplayName(), severity.name()));
                 }
             }
 
             boolean subscribed;
             // if the event type don't support severities, then read the subscription status from the legacy structure
-            if (!eventType.get().getAvailableSeverities().isEmpty()) {
+            if (!availableSeverities.isEmpty()) {
                 subscribed = !subscribedSeverities.isEmpty();
             } else if (eventTypeValue.emailSubscriptionTypes != null && eventTypeValue.emailSubscriptionTypes.containsKey(subscriptionType)) {
                 subscribed = eventTypeValue.emailSubscriptionTypes.get(subscriptionType);
@@ -215,7 +222,7 @@ public class UserConfigResourceCommon {
     private String settingsValuesToJsonForm(SettingsValuesByEventType settingsValues, String bundleName, String applicationName) {
         final SettingsValueByEventTypeJsonForm.Application settingsValueJsonForm = SettingsValueByEventTypeJsonForm.fromSettingsValueEventTypes(settingsValues, bundleName, applicationName);
         try {
-            return mapper.writeValueAsString(settingsValueJsonForm);
+            return getMapper().writeValueAsString(settingsValueJsonForm);
         } catch (JsonProcessingException jpe) {
             throw new IllegalArgumentException(
                 String.format("Unable to convert '%s' to String", settingsValueJsonForm),
@@ -227,7 +234,7 @@ public class UserConfigResourceCommon {
     private String settingsValuesToJsonForm(SettingsValuesByEventType settingsValues) {
         SettingsValueByEventTypeJsonForm settingsValueJsonForm = SettingsValueByEventTypeJsonForm.fromSettingsValue(settingsValues);
         try {
-            return mapper.writeValueAsString(settingsValueJsonForm);
+            return getMapper().writeValueAsString(settingsValueJsonForm);
         } catch (JsonProcessingException jpe) {
             throw new IllegalArgumentException(
                 String.format("Unable to convert '%s' to String", settingsValueJsonForm),
@@ -248,6 +255,9 @@ public class UserConfigResourceCommon {
 
         SettingsValuesByEventType settingsValues = new SettingsValuesByEventType();
         Application application = applicationRepository.getApplication(bundleName, applicationName);
+        if (application == null) {
+            throw new NotFoundException(String.format("No application named '%s' found in bundle '%s'", applicationName, bundleName));
+        }
         List<String> mapApplicationsWithForcedEmail = applicationsWithForcedEmails.stream().map(app -> app.getName()).collect(Collectors.toList());
         addApplicationStructureDetails(settingsValues, application, mapApplicationsWithForcedEmail.contains(applicationName), orgId);
 
@@ -260,7 +270,7 @@ public class UserConfigResourceCommon {
         SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = new SettingsValuesByEventType.ApplicationSettingsValue();
         applicationSettingsValue.displayName = application.getDisplayName();
         boolean showHiddenEventTypes = backendConfig.isShowHiddenEventTypes(orgId);
-        for (EventType eventType : application.getEventTypes()) {
+        for (EventType eventType : (application.getEventTypes() == null ? Collections.<EventType>emptySet() : application.getEventTypes())) {
             if (eventType.isVisible() || showHiddenEventTypes) {
                 SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
                 eventTypeSettingsValue.displayName = eventType.getDisplayName();
@@ -354,10 +364,10 @@ public class UserConfigResourceCommon {
     private SettingsValuesByEventType getSettingsValueForUserByEventType(List<EventTypeEmailSubscription> emailSubscriptions, String orgId) {
         SettingsValuesByEventType settingsValues = new SettingsValuesByEventType();
 
-        for (Bundle bundle : bundleRepository.getBundles()) {
+        for (Bundle bundle : bundleRepository.getBundlesWithApplicationsAndEventTypes()) {
             List<String> applicationsWithForcedEmails = applicationRepository.getApplicationsWithForcedEmail(bundle.getId(), orgId)
                     .stream().map(Application::getName).collect(Collectors.toList());
-            for (Application application : bundle.getApplications()) {
+            for (Application application : (bundle.getApplications() == null ? Collections.<Application>emptySet() : bundle.getApplications())) {
                 addApplicationStructureDetails(settingsValues, application, applicationsWithForcedEmails.contains(application.getName()), orgId);
             }
         }
@@ -440,7 +450,7 @@ public class UserConfigResourceCommon {
 
     private List<Application> resolveApplications(Bundle bundle, String applicationName) {
         if (applicationName == null) {
-            return bundle.getApplications().stream()
+            return applicationRepository.getApplications(bundle.getName()).stream()
                     .sorted(Comparator.comparing(Application::getDisplayName))
                     .collect(Collectors.toList());
         }
@@ -453,7 +463,7 @@ public class UserConfigResourceCommon {
 
     private List<EventType> resolveEventTypes(Bundle bundle, Application application, String eventTypeName) {
         if (eventTypeName == null) {
-            return application.getEventTypes().stream()
+            return applicationRepository.getEventTypes(application.getId()).stream()
                     .sorted(Comparator.comparing(EventType::getDisplayName))
                     .collect(Collectors.toList());
         }
@@ -514,6 +524,10 @@ public class UserConfigResourceCommon {
     ) {
         forbidAccessInCaseOfServiceAccountAuthentication(sec);
 
+        if (body == null || body.isEmpty()) {
+            throw new BadRequestException("The request body must contain at least one subscription update");
+        }
+
         String orgId = getOrgId(sec);
         String username = getUsername(sec);
 
@@ -550,7 +564,8 @@ public class UserConfigResourceCommon {
                 continue;
             }
 
-            Set<Severity> subscribedSeverities = channel.getSubscribedSeverities().stream()
+            List<SeverityDTO> severityDTOs = channel.getSubscribedSeverities();
+            Set<Severity> subscribedSeverities = (severityDTOs == null ? List.<SeverityDTO>of() : severityDTOs).stream()
                     .map(subscriptionMapper::severityDTOToSeverity)
                     .collect(Collectors.toSet());
 

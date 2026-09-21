@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.models.dto.v2.subscriptions.BundleSubscrip
 import com.redhat.cloud.notifications.models.dto.v2.subscriptions.BundleSubscriptionUpdateDTO;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -74,7 +73,7 @@ public class UserConfigResourceV3 extends UserConfigResourceCommon {
     )
     public void updateSubscriptions(
         @Context SecurityContext sec,
-        @NotNull @NotEmpty @Valid @RequestBody(content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionUpdateDTO.class)))
+        @NotNull @Valid @RequestBody(content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionUpdateDTO.class)))
             List<@NotNull BundleSubscriptionUpdateDTO> body
     ) {
         doUpdateSubscriptions(sec, body);

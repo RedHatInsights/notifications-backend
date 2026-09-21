@@ -38,6 +38,19 @@ public class BundleRepository {
                 .getResultList();
     }
 
+    public List<Bundle> getBundlesWithApplicationsAndEventTypes() {
+        String bundleQuery = "SELECT DISTINCT b FROM Bundle b LEFT JOIN FETCH b.applications ORDER BY b.displayName ASC";
+        List<Bundle> bundles = entityManager.createQuery(bundleQuery, Bundle.class).getResultList();
+
+        if (!bundles.isEmpty()) {
+            entityManager.createQuery(
+                "SELECT DISTINCT a FROM Application a LEFT JOIN FETCH a.eventTypes WHERE a.bundle IN :bundles",
+                Application.class
+            ).setParameter("bundles", bundles).getResultList();
+        }
+        return bundles;
+    }
+
     public Bundle getBundle(UUID id) {
         return entityManager.find(Bundle.class, id);
     }

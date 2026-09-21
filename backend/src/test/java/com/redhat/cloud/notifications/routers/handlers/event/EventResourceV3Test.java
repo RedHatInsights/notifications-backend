@@ -188,6 +188,58 @@ public class EventResourceV3Test extends DbIsolatedTest {
     }
 
     @Test
+    void testGetEventsWithAppIdFilter() {
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        Bundle bundle = resourceHelpers.createBundle("v3-appfilter-bundle", "V3 AppFilter Bundle");
+        Application app1 = resourceHelpers.createApplication(bundle.getId(), "v3-appfilter-a1", "V3 AppFilter A1");
+        Application app2 = resourceHelpers.createApplication(bundle.getId(), "v3-appfilter-a2", "V3 AppFilter A2");
+        EventType et1 = resourceHelpers.createEventType(app1.getId(), "v3-appfilter-et1", "V3 AppFilter ET1", "V3 AppFilter ET1");
+        EventType et2 = resourceHelpers.createEventType(app2.getId(), "v3-appfilter-et2", "V3 AppFilter ET2", "V3 AppFilter ET2");
+
+        createEvent(bundle, app1, et1, NOW.minusDays(1L));
+        createEvent(bundle, app2, et2, NOW);
+
+        Page<EventLogEntry> page = given()
+            .header(identityHeader)
+            .param("appIds", app1.getId())
+            .when().get(PATH)
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().body().as(new TypeRef<>() { });
+
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(app1.getDisplayName(), page.getData().get(0).getApplication());
+    }
+
+    @Test
+    void testGetEventsWithIncludeDetails() {
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        Bundle bundle = resourceHelpers.createBundle("v3-details-bundle", "V3 Details Bundle");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "v3-details-app", "V3 Details App");
+        EventType et = resourceHelpers.createEventType(app.getId(), "v3-details-et", "V3 Details ET", "V3 Details ET");
+
+        Event event = createEvent(bundle, app, et, NOW);
+        Endpoint endpoint = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
+        resourceHelpers.createNotificationHistory(event, endpoint, NotificationStatus.SUCCESS);
+
+        Page<EventLogEntry> page = given()
+            .header(identityHeader)
+            .param("includeActions", true)
+            .param("includeDetails", true)
+            .when().get(PATH)
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().body().as(new TypeRef<>() { });
+
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(1, page.getData().get(0).getActions().size());
+    }
+
+    @Test
     void testGetEventsInsufficientPrivileges() {
         Header noAccessHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER + "no-access", NO_ACCESS);
 
@@ -294,6 +346,120 @@ public class EventResourceV3Test extends DbIsolatedTest {
 
         assertEquals(1, page1.getMeta().getCount());
         assertEquals(1, page2.getMeta().getCount());
+    }
+
+    @Test
+    void testGetEventsEmptyResults() {
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        Page<EventLogEntry> page = given()
+            .header(identityHeader)
+            .param("bundleIds", java.util.UUID.randomUUID())
+            .when().get(PATH)
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().body().as(new TypeRef<>() { });
+
+        assertEquals(0, page.getMeta().getCount());
+        assertTrue(page.getData().isEmpty());
+    }
+
+    @Test
+    void testGetEventsWithEndDate() {
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        Bundle bundle = resourceHelpers.createBundle("v3-enddate-bundle", "V3 EndDate Bundle");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "v3-enddate-app", "V3 EndDate App");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "v3-enddate-et", "V3 EndDate ET", "V3 EndDate ET");
+
+        Event oldEvent = createEvent(bundle, app, eventType, NOW.minusDays(5L));
+        createEvent(bundle, app, eventType, NOW);
+
+        Page<EventLogEntry> page = given()
+            .header(identityHeader)
+            .param("endDateTime", NOW.minusDays(3L).toString())
+            .when().get(PATH)
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().body().as(new TypeRef<>() { });
+
+        assertEquals(1, page.getMeta().getCount());
+        assertEquals(oldEvent.getId(), page.getData().get(0).getId());
+    }
+
+    @Test
+    void testGetEventsIncludesPayloadWhenRequested() {
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        Bundle bundle = resourceHelpers.createBundle("v3-incpayload-bundle", "V3 IncPayload Bundle");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "v3-incpayload-app", "V3 IncPayload App");
+        EventType et = resourceHelpers.createEventType(app.getId(), "v3-incpayload-et", "V3 IncPayload ET", "V3 IncPayload ET");
+
+        createEvent(bundle, app, et, NOW);
+
+        Page<EventLogEntry> page = given()
+            .header(identityHeader)
+            .param("includePayload", true)
+            .when().get(PATH)
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().body().as(new TypeRef<>() { });
+
+        assertEquals(1, page.getMeta().getCount());
+        assertNotNull(page.getData().get(0).getPayload());
+        assertEquals("test-payload", page.getData().get(0).getPayload());
+    }
+
+    @Test
+    void testGetEventsExcludesActionsWhenNotRequested() {
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        Bundle bundle = resourceHelpers.createBundle("v3-noactions-bundle", "V3 NoActions Bundle");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "v3-noactions-app", "V3 NoActions App");
+        EventType et = resourceHelpers.createEventType(app.getId(), "v3-noactions-et", "V3 NoActions ET", "V3 NoActions ET");
+
+        Event event = createEvent(bundle, app, et, NOW);
+        Endpoint endpoint = resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, WEBHOOK);
+        resourceHelpers.createNotificationHistory(event, endpoint, NotificationStatus.SUCCESS);
+
+        Page<EventLogEntry> page = given()
+            .header(identityHeader)
+            .param("includeActions", false)
+            .when().get(PATH)
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().body().as(new TypeRef<>() { });
+
+        assertEquals(1, page.getMeta().getCount());
+        assertTrue(page.getData().get(0).getActions().isEmpty());
+    }
+
+    @Test
+    void testGetEventsWithNullHistoryEntries() {
+        Header identityHeader = initRbacMock(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER, FULL_ACCESS);
+
+        Bundle bundle = resourceHelpers.createBundle("v3-nullhist-bundle", "V3 NullHist Bundle");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "v3-nullhist-app", "V3 NullHist App");
+        EventType et = resourceHelpers.createEventType(app.getId(), "v3-nullhist-et", "V3 NullHist ET", "V3 NullHist ET");
+
+        createEvent(bundle, app, et, NOW);
+
+        Page<EventLogEntry> page = given()
+            .header(identityHeader)
+            .param("includeActions", true)
+            .when().get(PATH)
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .extract().body().as(new TypeRef<>() { });
+
+        assertEquals(1, page.getMeta().getCount());
+        assertNotNull(page.getData().get(0).getActions());
+        assertTrue(page.getData().get(0).getActions().isEmpty());
     }
 
     @Transactional

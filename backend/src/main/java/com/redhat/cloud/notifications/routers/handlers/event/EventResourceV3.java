@@ -44,7 +44,8 @@ public class EventResourceV3 extends EventResourceCommon {
 
     @GET
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the event log entries", description = "Retrieves the event log entries. Use this endpoint to review a full history of the events related to the tenant. You can sort by the bundle, application, event, and created fields. You can specify the sort order by appending :asc or :desc to the field, for example bundle:desc. Sorting defaults to desc for the created field and to asc for all other fields."
+    @Operation(summary = "Retrieve the event log entries", description = "Retrieves the event log entries. Use this endpoint to review a full history of the events related to the tenant. You can sort by the bundle, application, event, and created fields. You can specify the sort order by appending :asc or :desc to the field, for example bundle:desc. Sorting defaults to desc for the created field and to asc for all other fields.",
+        operationId = "EventResourceV3_GetEvents"
     )
     @Parameters({
         @Parameter(
@@ -54,13 +55,13 @@ public class EventResourceV3 extends EventResourceCommon {
             schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
         ),
         @Parameter(
-            name = "startDate",
+            name = "startDateTime",
             in = ParameterIn.QUERY,
             description = "Start of the date range filter. Accepts date-time (yyyy-MM-dd'T'HH:mm:ss).",
             schema = @Schema(type = SchemaType.STRING, format = "date-time")
         ),
         @Parameter(
-            name = "endDate",
+            name = "endDateTime",
             in = ParameterIn.QUERY,
             description = "End of the date range filter. Accepts date-time (yyyy-MM-dd'T'HH:mm:ss).",
             schema = @Schema(type = SchemaType.STRING, format = "date-time")
@@ -73,12 +74,18 @@ public class EventResourceV3 extends EventResourceCommon {
     })
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS, workspacePermissions = EVENTS_VIEW, resourceType = "event")
     public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @Context UriInfo uriInfo,
-                                         @RestQuery Set<UUID> bundleIds, @RestQuery Set<UUID> appIds,
-                                         @RestQuery String eventTypeDisplayName, @RestQuery LocalDateTime startDateTime, @RestQuery LocalDateTime endDateTime,
-                                         @RestQuery Set<String> endpointTypes, @RestQuery Set<Boolean> invocationResults,
-                                         @RestQuery Set<EventLogEntryActionStatus> status, @RestQuery Set<Severity> severities,
+                                         @Parameter(description = "Set of bundle IDs to filter by") @RestQuery Set<UUID> bundleIds,
+                                         @Parameter(description = "Set of application IDs to filter by") @RestQuery Set<UUID> appIds,
+                                         @Parameter(description = "Filter by event type display name (partial match)") @RestQuery String eventTypeDisplayName,
+                                         @RestQuery LocalDateTime startDateTime, @RestQuery LocalDateTime endDateTime,
+                                         @Parameter(description = "Set of endpoint types to filter by") @RestQuery Set<String> endpointTypes,
+                                         @Parameter(description = "Filter by invocation results") @RestQuery Set<Boolean> invocationResults,
+                                         @Parameter(description = "Filter by action status") @RestQuery Set<EventLogEntryActionStatus> status,
+                                         @Parameter(description = "Filter by event severities") @RestQuery Set<Severity> severities,
                                          @BeanParam @Valid Query query,
-                                         @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
+                                         @Parameter(description = "Include action details in the response") @RestQuery boolean includeDetails,
+                                         @Parameter(description = "Include the event payload in the response") @RestQuery boolean includePayload,
+                                         @Parameter(description = "Include actions in the response") @RestQuery boolean includeActions) {
         return doGetEvents(securityContext, uriInfo, bundleIds, appIds, eventTypeDisplayName, startDateTime, endDateTime,
             endpointTypes, invocationResults, status, severities, query, includeDetails, includePayload, includeActions);
     }

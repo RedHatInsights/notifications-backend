@@ -3,11 +3,6 @@ package com.redhat.cloud.notifications.routers.handlers.notification;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.db.Query;
-import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
-import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
-import com.redhat.cloud.notifications.db.repositories.BundleRepository;
-import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
-import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
@@ -82,21 +77,6 @@ import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 public class NotificationResource extends NotificationResourceCommon {
 
     @Inject
-    BundleRepository bundleRepository;
-
-    @Inject
-    ApplicationRepository applicationRepository;
-
-    @Inject
-    BehaviorGroupRepository behaviorGroupRepository;
-
-    @Inject
-    EndpointEventTypeRepository endpointEventTypeRepository;
-
-    @Inject
-    EndpointRepository endpointRepository;
-
-    @Inject
     EndpointMapper endpointMapper;
 
     @Path(API_NOTIFICATIONS_V_1_0 + "/notifications")
@@ -148,7 +128,11 @@ public class NotificationResource extends NotificationResourceCommon {
     @Operation(summary = "Retrieve a bundle by name", description = "Retrieves the details of a bundle by searching by its name.")
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "notification")
     public Bundle getBundleByName(@Context final SecurityContext securityContext, @PathParam("bundleName") String bundleName) {
-        return super.getBundleByName(bundleName);
+        Bundle bundle = bundleRepository.getBundle(bundleName);
+        if (bundle == null) {
+            throw new NotFoundException();
+        }
+        return bundle;
     }
 
     @GET
@@ -161,7 +145,11 @@ public class NotificationResource extends NotificationResourceCommon {
         @PathParam("bundleName") String bundleName,
         @PathParam("applicationName") String applicationName
     ) {
-        return super.getApplicationByNameAndBundleName(bundleName, applicationName);
+        Application application = applicationRepository.getApplication(bundleName, applicationName);
+        if (application == null) {
+            throw new NotFoundException();
+        }
+        return application;
     }
 
     @GET

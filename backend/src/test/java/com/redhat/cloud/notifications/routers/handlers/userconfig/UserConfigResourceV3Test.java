@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
@@ -187,5 +188,196 @@ public class UserConfigResourceV3Test extends DbIsolatedTest {
             .filter(c -> c.getSubscriptionType() == SubscriptionTypeDTO.INSTANT)
             .findFirst().orElseThrow();
         assertEquals(List.of(SeverityDTO.CRITICAL), instantChannel.getSubscribedSeverities());
+    }
+
+    @Test
+    void testServiceAccountForbidden() {
+        String identityHeaderValue = TestHelpers.encodeRHServiceAccountIdentityInfo(DEFAULT_ORG_ID, "service-account", UUID.randomUUID().toString());
+        Header serviceAccountHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        given()
+            .header(serviceAccountHeader)
+            .when().get(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(serviceAccountHeader)
+            .contentType(JSON)
+            .body(List.of())
+            .when().put(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+    }
+
+    @Test
+    void testGetSubscriptionsUnknownBundle() {
+        given()
+            .header(identityHeader)
+            .queryParam("bundle", "does-not-exist")
+            .when().get(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    void testGetSubscriptionsUnknownApplication() {
+        resourceHelpers.createBundle("bundle-a", "Bundle A");
+
+        given()
+            .header(identityHeader)
+            .queryParam("bundle", "bundle-a")
+            .queryParam("application", "does-not-exist")
+            .when().get(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    void testGetSubscriptionsUnknownEventType() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+
+        given()
+            .header(identityHeader)
+            .queryParam("bundle", "bundle-a")
+            .queryParam("application", "app-a")
+            .queryParam("event_type", "does-not-exist")
+            .when().get(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
+    }
+
+    @Test
+    void testGetSubscriptionsAppWithNoEventTypesReturnsEmptyTree() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+
+        List<BundleSubscriptionDTO> tree = getSubscriptions("bundle-a", "app-a", null);
+        assertEquals(List.of(), tree);
+    }
+
+    @Test
+    void testGetSubscriptionsWithApplicationFilter() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        Application appA = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+        Application appB = resourceHelpers.createApplication(bundle.getId(), "app-b", "App B");
+        createEventType(appA, "event-a", Set.of(Severity.CRITICAL), false);
+        createEventType(appB, "event-b", Set.of(Severity.CRITICAL), false);
+
+        List<BundleSubscriptionDTO> filtered = getSubscriptions("bundle-a", "app-a", null);
+        assertEquals(1, filtered.size());
+        assertEquals(1, filtered.get(0).getApplications().size());
+        assertEquals("app-a", filtered.get(0).getApplications().get(0).getApplication());
+    }
+
+    @Test
+    void testGetSubscriptionsWithEventTypeFilter() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+        createEventType(application, "event-a", Set.of(Severity.CRITICAL), false);
+        createEventType(application, "event-b", Set.of(Severity.IMPORTANT), false);
+
+        List<BundleSubscriptionDTO> filtered = getSubscriptions("bundle-a", "app-a", "event-a");
+        assertEquals(1, filtered.size());
+        assertEquals(1, filtered.get(0).getApplications().get(0).getEventTypes().size());
+        assertEquals("event-a", filtered.get(0).getApplications().get(0).getEventTypes().get(0).getEventType());
+    }
+
+    @Test
+    void testUpdateAndVerifyMultipleSeverities() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+        createEventType(application, "event-a", Set.of(Severity.CRITICAL, Severity.IMPORTANT, Severity.MODERATE), false);
+
+        BundleSubscriptionUpdateDTO update = buildSingleLeafUpdate("bundle-a", "app-a", "event-a",
+                SubscriptionTypeDTO.INSTANT, List.of(SeverityDTO.CRITICAL, SeverityDTO.IMPORTANT));
+
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body(List.of(update))
+            .when().put(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        List<BundleSubscriptionDTO> tree = getSubscriptions("bundle-a", "app-a", "event-a");
+        var eventTypeDTO = tree.get(0).getApplications().get(0).getEventTypes().get(0);
+        SubscriptionChannelDTO instantChannel = eventTypeDTO.getSubscriptions().stream()
+            .filter(c -> c.getSubscriptionType() == SubscriptionTypeDTO.INSTANT)
+            .findFirst().orElseThrow();
+        assertEquals(2, instantChannel.getSubscribedSeverities().size());
+    }
+
+    @Test
+    void testUpdateSubscriptionsInvalidSeverity() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+        createEventType(application, "event-a", Set.of(Severity.CRITICAL), false);
+
+        BundleSubscriptionUpdateDTO update = buildSingleLeafUpdate("bundle-a", "app-a", "event-a",
+                SubscriptionTypeDTO.INSTANT, List.of(SeverityDTO.MODERATE));
+
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body(List.of(update))
+            .when().put(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testUpdateSubscriptionsUnknownEventType() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+
+        BundleSubscriptionUpdateDTO update = buildSingleLeafUpdate("bundle-a", "app-a", "does-not-exist",
+                SubscriptionTypeDTO.INSTANT, List.of());
+
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body(List.of(update))
+            .when().put(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testUpdateSubscriptionsRejectsEmptyBody() {
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("[]")
+            .when().put(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testUpdateSubscriptionsRejectsNullTopLevelItem() {
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("[null]")
+            .when().put(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    private BundleSubscriptionUpdateDTO buildSingleLeafUpdate(String bundleName, String applicationName, String eventTypeName,
+                                                               SubscriptionTypeDTO subscriptionType, List<SeverityDTO> severities) {
+        BundleSubscriptionUpdateDTO update = new BundleSubscriptionUpdateDTO();
+        update.setBundle(bundleName);
+        ApplicationSubscriptionUpdateDTO appUpdate = new ApplicationSubscriptionUpdateDTO();
+        appUpdate.setApplication(applicationName);
+        EventTypeSubscriptionUpdateDTO etUpdate = new EventTypeSubscriptionUpdateDTO();
+        etUpdate.setEventType(eventTypeName);
+        etUpdate.setSubscriptions(List.of(new SubscriptionChannelDTO(subscriptionType, severities)));
+        appUpdate.setEventTypes(List.of(etUpdate));
+        update.setApplications(List.of(appUpdate));
+        return update;
     }
 }

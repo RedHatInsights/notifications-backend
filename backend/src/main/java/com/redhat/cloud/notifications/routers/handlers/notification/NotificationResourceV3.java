@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.routers.handlers.notification;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.db.Query;
+import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.dto.v3.endpoint.EndpointDTO;
@@ -36,11 +37,15 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.RestPath;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -71,7 +76,7 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @GET
     @Path("/eventTypes")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "List all event types", description = "Lists all event types. You can filter the returned list by bundle, application name, or unmuted types.")
+    @Operation(summary = "List all event types", description = "Lists all event types. You can filter the returned list by bundle, application name, or unmuted types.", operationId = "NotificationResourceV3_GetEventTypes")
     @Parameter(
             name = "limit",
             in = ParameterIn.QUERY,
@@ -80,8 +85,11 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     )
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "notification")
     public Page<EventTypeDTO> getEventTypesV3(
-            @Context SecurityContext securityContext, @Context UriInfo uriInfo, @BeanParam @Valid Query query, @QueryParam("applicationIds") Set<UUID> applicationIds,
-            @QueryParam("bundleId") UUID bundleId, @QueryParam("eventTypeName") String eventTypeName, @QueryParam("excludeMutedTypes") boolean excludeMutedTypes
+            @Context SecurityContext securityContext, @Context UriInfo uriInfo, @BeanParam @Valid Query query,
+            @Parameter(description = "Set of application IDs to filter by") @QueryParam("applicationIds") Set<UUID> applicationIds,
+            @Parameter(description = "UUID of the bundle to filter by") @QueryParam("bundleId") UUID bundleId,
+            @Parameter(description = "Filter by event type name (case-insensitive, partial match)") @QueryParam("eventTypeName") String eventTypeName,
+            @Parameter(description = "Whether to exclude muted event types") @QueryParam("excludeMutedTypes") boolean excludeMutedTypes
     ) {
         Page<EventType> entityPage = super.getEventTypes(securityContext, uriInfo, query, applicationIds, bundleId, eventTypeName, excludeMutedTypes);
         List<EventTypeDTO> eventTypeDTO = entityPage.getData().stream().map(notificationMapper::eventTypeToDTO).toList();
@@ -91,7 +99,7 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @GET
     @Path("/bundles/{bundleName}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve a bundle by name", description = "Retrieves the details of a bundle by searching by its name.")
+    @Operation(summary = "Retrieve a bundle by name", description = "Retrieves the details of a bundle by searching by its name.", operationId = "NotificationResourceV3_GetBundleByName")
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "notification")
     public BundleDTO getBundleDTOByName(@Context final SecurityContext securityContext, @PathParam("bundleName") String bundleName) {
         return notificationMapper.bundleToDTO(super.getBundleByName(bundleName));
@@ -100,7 +108,7 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @GET
     @Path("/bundles/{bundleName}/applications/{applicationName}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve an application by bundle and application names", description = "Retrieves an application by bundle and application names. Use this endpoint to  find an application by searching for the bundle that the application is part of. This is useful if you do not know the UUID of the bundle or application.")
+    @Operation(summary = "Retrieve an application by bundle and application names", description = "Retrieves an application by bundle and application names. Use this endpoint to  find an application by searching for the bundle that the application is part of. This is useful if you do not know the UUID of the bundle or application.", operationId = "NotificationResourceV3_GetApplicationByNameAndBundleName")
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "notification")
     public ApplicationDTO getApplicationByNameAndBundleName(
             @Context SecurityContext securityContext,
@@ -113,7 +121,7 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @GET
     @Path("/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve an event type by bundle, application and event type names", description = "Retrieves the details of an event type by specifying the bundle name, the application name, and the event type name.")
+    @Operation(summary = "Retrieve an event type by bundle, application and event type names", description = "Retrieves the details of an event type by specifying the bundle name, the application name, and the event type name.", operationId = "NotificationResourceV3_GetEventTypeByNameAndBundleAndApplicationName")
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "notification")
     public EventTypeDTO getEventTypesByNameAndBundleAndApplicationName(
             @Context SecurityContext securityContext,
@@ -127,8 +135,9 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @GET
     @Path("/applications")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "List configured applications", description = "Returns a list of configured applications that includes the application name, the display name, and the ID. You can use this list to configure a filter in the UI.")
-    public List<ApplicationDTO> getApplications(@Context SecurityContext sec, @QueryParam("bundleName") String bundleName) {
+    @Operation(summary = "List configured applications", description = "Returns a list of configured applications that includes the application name, the display name, and the ID. You can use this list to configure a filter in the UI. Optionally filter by bundle name.", operationId = "NotificationResourceV3_GetApplications")
+    @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = ApplicationDTO.class)))
+    public List<ApplicationDTO> getApplications(@Context SecurityContext sec, @Parameter(description = "Filter applications by bundle name") @QueryParam("bundleName") String bundleName) {
         return applicationRepository.getApplications(bundleName)
                 .stream()
                 .map(notificationMapper::applicationToDTO)
@@ -138,15 +147,19 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @GET
     @Path("/bundles")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "List configured bundles", description = "Returns a list of configured bundles that includes the bundle name, the display name, and the ID. You can use this list to configure a filter in the UI.")
+    @Operation(summary = "List configured bundles", description = "Returns a list of configured bundles that includes the bundle name, the display name, and the ID. You can use this list to configure a filter in the UI.", operationId = "NotificationResourceV3_GetBundles")
+    @Parameter(name = "includeApplications", in = ParameterIn.QUERY, description = "Whether to include applications in each bundle.", schema = @Schema(type = SchemaType.BOOLEAN, defaultValue = "false"))
+    @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON))
     public List<BundleDTO> getBundles(@Context SecurityContext sec, @QueryParam("includeApplications") boolean includeApplications) {
         if (includeApplications) {
             return bundleRepository.getBundlesWithApplications()
                     .stream()
                     .map(b -> {
                         BundleDTO bundleDTO = notificationMapper.bundleToDTO(b);
+                        Collection<Application> apps = b.getApplications();
                         bundleDTO.setApplications(
-                                b.getApplications().stream()
+                                (apps == null ? Collections.<Application>emptySet() : apps).stream()
+                                        .sorted(Comparator.comparing(app -> app.getDisplayName(), String.CASE_INSENSITIVE_ORDER))
                                         .map(notificationMapper::applicationToDTO)
                                         .toList()
                         );
@@ -163,7 +176,8 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @GET
     @Path("/severities")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "List configured severities", description = "Returns the list of available notification severities")
+    @Operation(summary = "List configured severities", description = "Returns the list of available notification severities", operationId = "NotificationResourceV3_GetSeverities")
+    @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON))
     public Set<Severity> getSeverities(@Context final SecurityContext sec) {
         return EnumSet.allOf(Severity.class);
     }
@@ -171,9 +185,9 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @GET
     @Path("/eventTypes/{eventTypeId}/endpoints")
     @Produces(APPLICATION_JSON)
-    @Operation(summary = "Retrieve the endpoints linked to an event type.")
+    @Operation(summary = "Retrieve the endpoints linked to an event type.", operationId = "NotificationResourceV3_GetLinkedEndpoints")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.STRING))),
+        @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = EndpointDTO.class))),
         @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
                 description = "No event type found with the passed id.")
     })
@@ -197,7 +211,7 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @Path("/eventTypes/{eventTypeId}/endpoints")
     @Consumes(APPLICATION_JSON)
     @Produces(TEXT_PLAIN)
-    @Operation(summary = "Update the list of endpoints for an event type", description = "Updates the list of endpoints associated with an event type.")
+    @Operation(summary = "Update the list of endpoints for an event type", description = "Updates the list of endpoints associated with an event type.", operationId = "NotificationResourceV3_UpdateEventTypeEndpoints")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING))),
         @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN, schema = @Schema(type = SchemaType.STRING)),
@@ -209,7 +223,7 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_EDIT, resourceType = "behavior_group")
     public Response updateEventTypeEndpoints(@Context SecurityContext securityContext,
                                              @Parameter(description = "UUID of the eventType to associate with the endpoint(s)") @PathParam("eventTypeId") UUID eventTypeId,
-                                             @Parameter(description = "Set of endpoint ids to associate") Set<UUID> endpointsIds) {
+                                             @RequestBody(description = "Set of endpoint ids to associate", required = true) Set<UUID> endpointsIds) {
         return super.updateEventTypeEndpoints(securityContext, eventTypeId, endpointsIds);
     }
 }

@@ -346,7 +346,7 @@ public class ApplicationRepository {
 
     public List<EventType> getEventTypes(Query limiter, Set<UUID> appIds, UUID bundleId, String eventTypeName, boolean excludeMutedTypes, List<UUID> unmutedEventTypeIds, boolean showHiddenEventTypes) {
         return getEventTypesQueryBuilder(appIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds, showHiddenEventTypes)
-                .join(JoinBuilder.builder().leftJoinFetch("e.application"))
+                .join(JoinBuilder.builder().leftJoinFetch("e.application").leftJoinFetch("e.application.bundle"))
                 .limit(limiter != null ? limiter.getLimit() : null)
                 .sort(limiter != null ? Sort.getSort(limiter, null, EventType.SORT_FIELDS) : null)
                 .build(entityManager::createQuery)

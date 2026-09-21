@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.userconfig;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.oapi.OApiFilter;
 import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
@@ -22,6 +23,13 @@ import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
 @Path(Constants.API_NOTIFICATIONS_V_1_0 + "/user-config")
 public class UserConfigResource extends UserConfigResourceCommon {
+
+    private static final ObjectMapper PLAIN_MAPPER = new ObjectMapper();
+
+    @Override
+    protected ObjectMapper getMapper() {
+        return PLAIN_MAPPER;
+    }
 
     @POST
     @Path("/notification-event-type-preference")

@@ -146,7 +146,7 @@ public abstract class EventResourceCommon {
                 if (!includeActions) {
                     actions = Collections.emptyList();
                 } else {
-                    actions = event.getHistoryEntries().stream()
+                    actions = (event.getHistoryEntries() == null ? Collections.<NotificationHistory>emptyList() : event.getHistoryEntries()).stream()
                         .filter(notificationHistory -> EndpointType.DRAWER != notificationHistory.getEndpointType() || backendConfig.isDrawerEnabled(orgId))
                         .map(historyEntry -> {
                             EventLogEntryAction action = new EventLogEntryAction();
