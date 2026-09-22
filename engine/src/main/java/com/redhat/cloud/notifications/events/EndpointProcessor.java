@@ -168,7 +168,7 @@ public class EndpointProcessor {
                         case EMAIL_SUBSCRIPTION:
                             if (isAggregatorEvent(event)) {
                                 Log.debugf("[org_id: %s] Sending event through the aggregator processor: %s", event.getOrgId(), event);
-                                emailAggregationProcessor.processAggregation(event);
+                                emailAggregationProcessor.processAggregation(event, endpointsByTypeEntry.getValue());
                             } else {
                                 Log.debugf("[org_id: %s] Sending event through the email connector: %s", event.getOrgId(), event);
                                 emailConnectorProcessor.process(event, endpointsByTypeEntry.getValue());

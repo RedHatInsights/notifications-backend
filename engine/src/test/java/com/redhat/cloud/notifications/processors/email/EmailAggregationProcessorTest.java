@@ -322,13 +322,7 @@ class EmailAggregationProcessorTest {
     void shouldNotSendAggregatedEmailWhenNoEndpointFound() {
         String orgId = RandomStringUtils.secure().nextAlphanumeric(6);
 
-        Endpoint endpoint = new Endpoint();
-        endpoint.setId(UUID.randomUUID());
-        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
-        endpoint.setProperties(new SystemSubscriptionProperties());
-
         when(endpointRepository.getDefaultSystemSubscription(eq(orgId), eq(EndpointType.EMAIL_SUBSCRIPTION)))
-            .thenReturn(List.of(endpoint))
             .thenReturn(List.of());
 
         EventAggregationCriterion aggregationKey = buildEmailAggregationKey(orgId, "rhel", "advisor");
@@ -345,9 +339,7 @@ class EmailAggregationProcessorTest {
 
         inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(Arrays.asList(aggregationKey)));
 
-        micrometerAssertionHelper.awaitAndAssertTimerIncrement(AGGREGATION_CONSUMED_TIMER_NAME, 1);
-        micrometerAssertionHelper.awaitAndAssertCounterIncrement(AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME, 1);
-
+        verify(endpointRepository, timeout(5000L)).getDefaultSystemSubscription(eq(orgId), eq(EndpointType.EMAIL_SUBSCRIPTION));
         verifyNoInteractions(connectorSender);
     }
 

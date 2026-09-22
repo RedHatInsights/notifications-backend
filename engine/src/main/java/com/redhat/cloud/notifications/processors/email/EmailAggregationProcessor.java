@@ -5,14 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
-import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
@@ -83,9 +81,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
     ActionParser actionParser;
 
     @Inject
-    EndpointRepository endpointRepository;
-
-    @Inject
     ApplicationRepository applicationRepository;
 
     @Inject
@@ -124,7 +119,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         throw new UnsupportedOperationException("No longer used");
     }
 
-    public void processAggregation(Event event) {
+    public void processAggregation(Event event, List<Endpoint> endpoints) {
         if (engineConfig.isAsyncAggregationEnabled()) {
             /*
              * The aggregation process is long-running task. To avoid blocking the thread used to consume
@@ -132,6 +127,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
              */
             AsyncAggregation asyncAggregation = asyncAggregations.get();
             asyncAggregation.setEvent(event);
+            asyncAggregation.setEndpoints(endpoints);
             managedExecutor.runAsync(asyncAggregation)
                     .thenRun(() -> {
                         /*
@@ -142,16 +138,16 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                         asyncAggregations.destroy(asyncAggregation);
                     });
         } else {
-            processAggregationSync(event);
+            processAggregationSync(event, endpoints);
         }
     }
 
     @Transactional(REQUIRES_NEW)
-    public void processAggregationAsync(Event event) {
-        processAggregationSync(event);
+    public void processAggregationAsync(Event event, List<Endpoint> endpoints) {
+        processAggregationSync(event, endpoints);
     }
 
-    public void processAggregationSync(Event event) {
+    public void processAggregationSync(Event event, List<Endpoint> endpoints) {
 
         List<AggregationCommand> aggregationCommands = new ArrayList<>();
         Timer.Sample consumedTimer = Timer.start(registry);
@@ -201,7 +197,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
             processedAggregationCommandCount.increment(aggregationCommands.size());
             try {
-                processBundleAggregation(aggregationCommands, event);
+                processBundleAggregation(aggregationCommands, event, endpoints);
             } catch (Exception e) {
                 Log.warn("Error while processing aggregation", e);
                 failedAggregationCommandCount.increment();
@@ -215,7 +211,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         }
     }
 
-    private void processBundleAggregation(List<AggregationCommand> aggregationCommands, Event aggregatorEvent) {
+    private void processBundleAggregation(List<AggregationCommand> aggregationCommands, Event aggregatorEvent, List<Endpoint> endpoints) {
         final String bundleName = aggregationCommands.get(0).getAggregationKey().getBundle();
         // Patch event display name for event log rendering
         Bundle bundle = bundleRepository.getBundle(bundleName)
@@ -225,12 +221,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
             aggregatorEvent.getEventTypeDisplayName(),
             bundle.getDisplayName());
         eventRepository.updateEventDisplayName(aggregatorEvent.getId(), eventTypeDisplayName);
-
-        List<Endpoint> endpoints = endpointRepository.getDefaultSystemSubscription(aggregatorEvent.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
-        if (endpoints.isEmpty()) {
-            Log.warnf("No email endpoint found for aggregation on org: %s", aggregatorEvent.getOrgId());
-            return;
-        }
 
         Map<User, List<ApplicationAggregatedData>> userData = aggregateByApplication(aggregationCommands);
 

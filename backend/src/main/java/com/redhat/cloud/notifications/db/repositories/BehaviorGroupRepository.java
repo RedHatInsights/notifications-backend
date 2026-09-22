@@ -152,6 +152,14 @@ public class BehaviorGroupRepository {
         }
     }
 
+    public BehaviorGroup findById(final UUID bgId) {
+        final BehaviorGroup behaviorGroup = this.entityManager.find(BehaviorGroup.class, bgId);
+        if (behaviorGroup == null) {
+            throw new NotFoundException("Event type not found");
+        }
+        return behaviorGroup;
+    }
+
     public List<BehaviorGroup> findDefaults() {
         String query = "SELECT DISTINCT b FROM BehaviorGroup b LEFT JOIN FETCH b.actions a " +
                 "WHERE b.orgId IS NULL " +

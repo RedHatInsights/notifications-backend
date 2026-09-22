@@ -214,8 +214,14 @@ public class EndpointResource extends EndpointResourceCommon {
         if (null != requestProps.getGroupId()) {
             properties.setGroupIds(Set.of(requestProps.getGroupId()));
         }
-        return endpointRepository.getSystemSubscriptionEndpoint(orgId, properties, endpointType)
-            .orElseGet(() -> endpointRepository.resolveNameAndCreateSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType));
+        List<Endpoint> existingEndpoints = endpointRepository.getSystemSubscriptionEndpoints(orgId, endpointType);
+        return existingEndpoints.stream()
+            .filter(endpoint -> properties.hasSameProperties(endpoint.getProperties(SystemSubscriptionProperties.class)))
+            .findFirst()
+            .orElseGet(() -> {
+                String name = endpointRepository.resolveNextSystemSubscriptionEndpointName(existingEndpoints, endpointType);
+                return endpointRepository.createSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType, name);
+            });
     }
 
     @GET

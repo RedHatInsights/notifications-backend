@@ -163,6 +163,6 @@ public class PatchUserPreferencesMigrationResource {
         properties.setOnlyAdmins(false);
 
         return endpointRepository.getSystemSubscriptionEndpoint(orgId, properties, EndpointType.EMAIL_SUBSCRIPTION)
-            .orElseGet(() -> endpointRepository.createSystemSubscriptionEndpoint(accountId, orgId, properties, EndpointType.EMAIL_SUBSCRIPTION));
+            .orElseGet(() -> endpointRepository.createSystemSubscriptionEndpoint(accountId, orgId, properties, EndpointType.EMAIL_SUBSCRIPTION, "Patch"));
     }
 }

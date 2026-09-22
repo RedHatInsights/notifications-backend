@@ -54,12 +54,11 @@ public class EndpointRepository {
     EngineConfig engineConfig;
 
     /**
-     * Finds all EMAIL_SUBSCRIPTION or DRAWER endpoints for the given org.
-     * These endpoints are used to aggregate and store in the DB the email or drawer actions outcome, which will be
-     * used later by the event log.
+     * Finds all EMAIL_SUBSCRIPTION or DRAWER endpoints for the given org, including
+     * default system endpoints where orgId is null.
      */
     public List<Endpoint> getDefaultSystemSubscription(String orgId, EndpointType endpointType) {
-        String query = "FROM Endpoint WHERE orgId = :orgId AND compositeType.type = :endpointType";
+        String query = "FROM Endpoint WHERE (orgId = :orgId OR orgId IS NULL) AND compositeType.type = :endpointType";
         List<Endpoint> systemEndpoints = entityManager.createQuery(query, Endpoint.class)
             .setParameter("orgId", orgId)
             .setParameter("endpointType", endpointType)
