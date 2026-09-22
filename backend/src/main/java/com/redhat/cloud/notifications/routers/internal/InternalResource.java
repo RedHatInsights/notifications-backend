@@ -549,7 +549,14 @@ public class InternalResource {
             String label = EndpointType.DRAWER == endpointType ? "Drawer" : "Email";
             String endpointName = String.format("%s endpoint %s", label, bgName);
             return endpointRepository.getSystemSubscriptionEndpoint(null, properties, endpointType)
-                .orElseGet(() -> endpointRepository.createSystemSubscriptionEndpoint(null, null, properties, endpointType, endpointName));
+                .orElseGet(() -> {
+                    try {
+                        return endpointRepository.createSystemSubscriptionEndpoint(null, null, properties, endpointType, endpointName);
+                    } catch (BadRequestException e) {
+                        return endpointRepository.getSystemSubscriptionEndpoint(null, properties, endpointType)
+                            .orElseThrow(() -> e);
+                    }
+                });
         }).collect(Collectors.toList());
         behaviorGroupRepository.updateDefaultBehaviorGroupActions(
                 behaviorGroupId,

@@ -23,6 +23,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -220,7 +221,12 @@ public class EndpointResource extends EndpointResourceCommon {
             .findFirst()
             .orElseGet(() -> {
                 String name = endpointRepository.resolveNextSystemSubscriptionEndpointName(existingEndpoints, endpointType);
-                return endpointRepository.createSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType, name);
+                try {
+                    return endpointRepository.createSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType, name);
+                } catch (BadRequestException e) {
+                    return endpointRepository.getSystemSubscriptionEndpoint(orgId, properties, endpointType)
+                        .orElseThrow(() -> e);
+                }
             });
     }
 
