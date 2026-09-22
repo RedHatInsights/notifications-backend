@@ -10,7 +10,7 @@ WORKDIR /home/jboss
 RUN ./mvnw -s .mvn/settings.xml clean package -Dmaven.test.skip -Dcheckstyle.skip -pl :notifications-connector-slack -am --no-transfer-progress
 
 # Build the container
-FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest@sha256:f10cc334bd39f39ad35bcefc5ac0ce1ad25bda499f6abf73ccb8afdd1ea6d3c1
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest@sha256:eaaca7aa7c1f6773f20c7b98df1c250e4cd89c08fdc1b5ac077bdcf479c8504a
 
 # Update the base image packages
 USER root
