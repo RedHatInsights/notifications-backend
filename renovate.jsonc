@@ -12,6 +12,8 @@
   // Automerge set up with the MintMaker Automerge plugin: https://github.com/gwenneg/mintmaker-automerge
   "extends": [
     // Pins actions to commit SHAs, so a version bump can be told from a moved tag.
+    // Kept even though every current action is already pinned: this is what pins a
+    // newly added action automatically, without waiting for a manual pin PR.
     "helpers:pinGitHubActionDigests"
   ],
   // Renovate merges the PR itself: GitHub's native auto-merge never completes when
@@ -27,7 +29,7 @@
     "schedule": ["at any time"]
   },
   "packageRules": [
-    // --- github-actions: patch and minor of the actions named below; majors, digest-only and every other action stay manual
+    // --- github-actions: patch and minor of the actions named below; majors, digest-only, third-party actions and the reusable workflow stay manual
     {
       // Vetted by name: an action runs arbitrary code in CI. Patch and minor only, so a
       // moved tag with no version change, the shape of a hijacked action, never merges alone.
@@ -44,6 +46,14 @@
         "github/codeql-action/init"
       ],
       "automerge": true
+    },
+    {
+      // A floating tag such as v4 never changes, so its releases arrive as digest PRs that
+      // never automerge. Pinning writes the full version once, in a manual PR, and later
+      // releases are patch or minor.
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["action"],
+      "rangeStrategy": "pin"
     },
 
     // --- maven: patch and minor; majors, io.quarkus* and the wrapper stay manual
@@ -64,16 +74,18 @@
       "automerge": false
     },
 
-    // --- dockerfile: digest of the base images; majors and other update types stay manual
+    // --- dockerfile: digest, patch and minor of the base images; majors stay manual
     {
       // The Konflux PR build builds and tests the image. A digest update is a rebuild of
       // the same tag; a new RHEL or JDK line is a major and stays on manual review.
       "matchManagers": ["dockerfile"],
-      "matchUpdateTypes": ["digest"],
+      "matchUpdateTypes": ["digest", "patch", "minor"],
       "automerge": true
     },
     {
       // Pins FROM lines to tag@sha256, so rebuilds of a tag arrive as digest PRs.
+      // Kept even though every current FROM line is already pinned: this is what pins
+      // a newly added or changed FROM line automatically.
       "matchManagers": ["dockerfile"],
       "pinDigests": true
     },
