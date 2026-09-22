@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepositor
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.db.repositories.NotificationRepository;
+import com.redhat.cloud.notifications.db.repositories.WorkspaceRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.Bundle;
@@ -25,6 +26,7 @@ import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SourcesSecretable;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.WebhookProperties;
+import com.redhat.cloud.notifications.models.Workspace;
 import com.redhat.cloud.notifications.models.dto.CommonMapper;
 import com.redhat.cloud.notifications.models.dto.v1.ApplicationDTO;
 import com.redhat.cloud.notifications.models.dto.v1.BundleDTO;
@@ -117,6 +119,9 @@ public class EndpointResourceCommon {
 
     @Inject
     NotificationRepository notificationRepository;
+
+    @Inject
+    WorkspaceRepository workspaceRepository;
 
     @Inject
     @RestClient
@@ -354,6 +359,22 @@ public class EndpointResourceCommon {
 
         endpoint.setAccountId(accountId);
         endpoint.setOrgId(orgId);
+
+        // Auto-populate workspace for new endpoints
+        if (orgId != null) {
+            // Fetch workspace UUID from RBAC
+            UUID workspaceId = workspaceUtils.getDefaultWorkspaceId(orgId);
+
+            // Ensure workspace record exists in our database
+            Workspace workspace = workspaceRepository.createOrGetWorkspace(workspaceId, orgId);
+
+            // Assign to endpoint
+            endpoint.setWorkspace(workspace);
+        } else {
+            // System integrations (orgId = null) keep workspace = null
+            // They will be assigned during bootstrap or separately
+            Log.debugf("System integration created without workspace assignment");
+        }
 
         if (endpoint.getProperties() == null) {
             throw new BadRequestException("Properties is required");
