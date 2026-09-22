@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -13,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -27,6 +29,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import static jakarta.persistence.FetchType.LAZY;
 
 @Entity
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class) // TODO remove them once the transition to DTOs have been completed.
@@ -64,6 +69,15 @@ public class Endpoint extends CreationUpdateTimestamped {
     @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @Size(max = 50)
     private String orgId;
+
+    @Transient
+    @JsonProperty("workspace_id")
+    private UUID workspaceId;
+
+    @ManyToOne(fetch = LAZY, optional = true)  // optional=true since workspace_id currently nullable
+    @JoinColumn(name = "workspace_id")
+    @JsonInclude(NON_NULL)
+    private Workspace workspace;
 
     @NotNull
     @Size(max = 255)
@@ -156,6 +170,25 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     public void setOrgId(String orgId) {
         this.orgId = orgId;
+    }
+
+    public UUID getWorkspaceId() {
+        if (workspaceId == null && workspace != null) {
+            workspaceId = workspace.getId();
+        }
+        return workspaceId;
+    }
+
+    public void setWorkspaceId(UUID workspaceId) {
+        this.workspaceId = workspaceId;
+    }
+
+    public Workspace getWorkspace() {
+        return workspace;
+    }
+
+    public void setWorkspace(Workspace workspace) {
+        this.workspace = workspace;
     }
 
     public String getName() {
