@@ -140,7 +140,7 @@ objects:
 parameters:
 - name: CPU_LIMIT
   description: CPU limit
-  value: 200m
+  value: 400m
 - name: CPU_REQUEST
   description: CPU request
   value: 100m
@@ -166,7 +166,7 @@ parameters:
   value: RECONNECT
 - name: MEMORY_LIMIT
   description: Memory limit
-  value: 500Mi
+  value: 900Mi
 - name: MEMORY_REQUEST
   description: Memory request
   value: 250Mi
