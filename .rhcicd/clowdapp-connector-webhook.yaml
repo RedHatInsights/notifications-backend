@@ -12,9 +12,8 @@ objects:
     envName: ${ENV_NAME}
     testing:
       iqePlugin: notifications
-    dependencies:
-    - sources-api
     optionalDependencies:
+    - sources-api
     - notifications-backend
     featureFlags: true
     kafkaTopics:
