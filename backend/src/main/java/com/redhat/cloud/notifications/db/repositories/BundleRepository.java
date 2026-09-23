@@ -39,8 +39,7 @@ public class BundleRepository {
     }
 
     public List<Bundle> getBundlesWithApplicationsAndEventTypes() {
-        String bundleQuery = "SELECT DISTINCT b FROM Bundle b LEFT JOIN FETCH b.applications ORDER BY b.displayName ASC";
-        List<Bundle> bundles = entityManager.createQuery(bundleQuery, Bundle.class).getResultList();
+        List<Bundle> bundles = getBundlesWithApplications();
 
         if (!bundles.isEmpty()) {
             entityManager.createQuery(
