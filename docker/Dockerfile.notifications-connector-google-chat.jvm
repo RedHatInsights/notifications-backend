@@ -10,7 +10,7 @@ WORKDIR /home/jboss
 RUN ./mvnw -s .mvn/settings.xml clean package -Dmaven.test.skip -Dcheckstyle.skip -pl :notifications-connector-google-chat -am --no-transfer-progress
 
 # Build the container
-FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest@sha256:eaaca7aa7c1f6773f20c7b98df1c250e4cd89c08fdc1b5ac077bdcf479c8504a
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest@sha256:908540a90db3dea9dcc8b80de84c9d44ced2dd328d3ed36930b0b04ad8a0f4e8
 
 # Update the base image packages
 USER root
