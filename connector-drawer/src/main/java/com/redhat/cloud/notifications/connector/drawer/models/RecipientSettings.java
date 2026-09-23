@@ -23,7 +23,7 @@ public class RecipientSettings {
 
     /**
      * Constructor used in the tests, mainly.
-     * @param adminsOnly is the email just for administrators?
+     * @param adminsOnly is the drawer notification just for administrators?
      * @param ignoreUserPreferences should we ignore user preferences?
      * @param groupUUID should we notify the entire group?
      * @param usernames the set of usernames we need to notify.

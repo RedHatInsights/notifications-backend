@@ -28,7 +28,7 @@ import static java.util.stream.Collectors.toSet;
 @ApplicationScoped
 public class DrawerMessageHandler extends MessageHandler {
 
-    static final String RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC = "email.recipients_resolver.response.time";
+    static final String RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC = "drawer.recipients_resolver.response.time";
 
     public static final String DRAWER_CHANNEL = "drawer";
 
@@ -56,7 +56,7 @@ public class DrawerMessageHandler extends MessageHandler {
         Set<String> recipientsList = fetchRecipients(notification);
 
         if (recipientsList.isEmpty()) {
-            Log.infof("Skipped Email notification because the recipients list was empty [orgId=$%s, historyId=%s]",
+            Log.infof("Skipped Drawer notification because the recipients list was empty [orgId=$%s, historyId=%s]",
                 notification.getOrgId(),
                 incomingCloudEvent.getId());
         } else {
