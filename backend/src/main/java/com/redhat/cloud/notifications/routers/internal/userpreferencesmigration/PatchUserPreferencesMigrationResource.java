@@ -21,6 +21,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.POST;
@@ -162,6 +163,14 @@ public class PatchUserPreferencesMigrationResource {
         SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
         properties.setOnlyAdmins(false);
 
-        return endpointRepository.getOrCreateSystemSubscriptionEndpoint(accountId, orgId, properties, EndpointType.EMAIL_SUBSCRIPTION);
+        return endpointRepository.getSystemSubscriptionEndpoint(orgId, properties, EndpointType.EMAIL_SUBSCRIPTION)
+            .orElseGet(() -> {
+                try {
+                    return endpointRepository.createSystemSubscriptionEndpoint(accountId, orgId, properties, EndpointType.EMAIL_SUBSCRIPTION, "Patch");
+                } catch (BadRequestException e) {
+                    return endpointRepository.getSystemSubscriptionEndpoint(orgId, properties, EndpointType.EMAIL_SUBSCRIPTION)
+                        .orElseThrow(() -> e);
+                }
+            });
     }
 }

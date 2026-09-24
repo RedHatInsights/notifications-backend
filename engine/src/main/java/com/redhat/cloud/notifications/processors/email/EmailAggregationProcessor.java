@@ -5,14 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
-import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
@@ -20,8 +18,6 @@ import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
 import com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings;
-import com.redhat.cloud.notifications.qute.templates.IntegrationType;
-import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.utils.ActionParser;
 import io.micrometer.core.instrument.Counter;
@@ -79,16 +75,10 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
     MeterRegistry registry;
 
     @Inject
-    com.redhat.cloud.notifications.qute.templates.TemplateService commonQuteTemplateService;
-
-    @Inject
     EngineConfig engineConfig;
 
     @Inject
     ActionParser actionParser;
-
-    @Inject
-    EndpointRepository endpointRepository;
 
     @Inject
     ApplicationRepository applicationRepository;
@@ -129,7 +119,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         throw new UnsupportedOperationException("No longer used");
     }
 
-    public void processAggregation(Event event) {
+    public void processAggregation(Event event, List<Endpoint> endpoints) {
         if (engineConfig.isAsyncAggregationEnabled()) {
             /*
              * The aggregation process is long-running task. To avoid blocking the thread used to consume
@@ -137,6 +127,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
              */
             AsyncAggregation asyncAggregation = asyncAggregations.get();
             asyncAggregation.setEvent(event);
+            asyncAggregation.setEndpoints(endpoints);
             managedExecutor.runAsync(asyncAggregation)
                     .thenRun(() -> {
                         /*
@@ -147,16 +138,16 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                         asyncAggregations.destroy(asyncAggregation);
                     });
         } else {
-            processAggregationSync(event);
+            processAggregationSync(event, endpoints);
         }
     }
 
     @Transactional(REQUIRES_NEW)
-    public void processAggregationAsync(Event event) {
-        processAggregationSync(event);
+    public void processAggregationAsync(Event event, List<Endpoint> endpoints) {
+        processAggregationSync(event, endpoints);
     }
 
-    public void processAggregationSync(Event event) {
+    public void processAggregationSync(Event event, List<Endpoint> endpoints) {
 
         List<AggregationCommand> aggregationCommands = new ArrayList<>();
         Timer.Sample consumedTimer = Timer.start(registry);
@@ -206,7 +197,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
             processedAggregationCommandCount.increment(aggregationCommands.size());
             try {
-                processBundleAggregation(aggregationCommands, event);
+                processBundleAggregation(aggregationCommands, event, endpoints);
             } catch (Exception e) {
                 Log.warn("Error while processing aggregation", e);
                 failedAggregationCommandCount.increment();
@@ -220,7 +211,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         }
     }
 
-    private void processBundleAggregation(List<AggregationCommand> aggregationCommands, Event aggregatorEvent) {
+    private void processBundleAggregation(List<AggregationCommand> aggregationCommands, Event aggregatorEvent, List<Endpoint> endpoints) {
         final String bundleName = aggregationCommands.get(0).getAggregationKey().getBundle();
         // Patch event display name for event log rendering
         Bundle bundle = bundleRepository.getBundle(bundleName)
@@ -231,13 +222,11 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
             bundle.getDisplayName());
         eventRepository.updateEventDisplayName(aggregatorEvent.getId(), eventTypeDisplayName);
 
-        Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(null, aggregatorEvent.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
-
         Map<User, List<ApplicationAggregatedData>> userData = aggregateByApplication(aggregationCommands);
 
         Map<List<ApplicationAggregatedData>, Set<User>> usersWithSameData = groupUsersByAggregatedData(userData);
 
-        sendAggregatedEmails(usersWithSameData, bundle, aggregatorEvent, endpoint);
+        sendAggregatedEmails(usersWithSameData, bundle, aggregatorEvent, endpoints);
     }
 
     /*
@@ -291,13 +280,11 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
      * recipients-resolver app and the subscription records from the database.
      */
     private void sendAggregatedEmails(Map<List<ApplicationAggregatedData>, Set<User>> usersWithSameData,
-                                      Bundle bundle, Event aggregatorEvent, Endpoint endpoint) {
-        Map<String, Object> mapDataTitle = Map.of("source", Map.of("bundle", Map.of("display_name", bundle.getDisplayName())));
-        TemplateDefinition templateTitleDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE, null, null, null);
+                                      Bundle bundle, Event aggregatorEvent, List<Endpoint> endpoints) {
 
         usersWithSameData.forEach((appDataList, users) -> {
             Set<String> recipientsUsernames = users.stream().map(User::getUsername).collect(Collectors.toSet());
-            Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(aggregatorEvent, List.of(endpoint));
+            Set<RecipientSettings> recipientSettings = extractAndTransformRecipientSettings(aggregatorEvent, endpoints);
 
             Map<String, Object> templateContext = buildFullConnectorTemplateContext(appDataList, bundle);
 
@@ -310,7 +297,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
              * need to pass them again for the aggregated email.
              */
             final EmailNotification emailNotification = new EmailNotification(
-                this.emailActorsResolver.getEmailSender(aggregatorEvent),
+                emailActorsResolver.getEmailSender(aggregatorEvent),
                 aggregatorEvent.getOrgId(),
                 recipientSettings,
                 recipientsUsernames,
@@ -321,7 +308,10 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                 true
             );
 
-            connectorSender.send(aggregatorEvent, endpoint, JsonObject.mapFrom(emailNotification));
+            // We need to send an endpoint to connectorSender only to find the right connector
+            // and create a notifications history entry.
+            // Endpoint restrictions will be evaluated from payload content (recipientSettings)
+            connectorSender.send(aggregatorEvent, endpoints.getFirst(), JsonObject.mapFrom(emailNotification));
             Log.debugf("Sent aggregation email notification to connector: %s", emailNotification);
         });
     }

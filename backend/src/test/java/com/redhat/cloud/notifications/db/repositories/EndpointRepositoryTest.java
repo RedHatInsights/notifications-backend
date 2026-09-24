@@ -316,4 +316,70 @@ public class EndpointRepositoryTest {
         final List<Endpoint> newestEndpoint = this.endpointRepository.getNonSystemEndpointsByOrgIdWithLimitAndOffset(Optional.of(DEFAULT_ORG_ID), 1, regularEndpointsToCreate - 1);
         Assertions.assertEquals(0, ChronoUnit.DAYS.between(reversedEndpoints.getLast().getCreated(), newestEndpoint.getFirst().getCreated()), "when the offset is the highest one, the newest endpoint should have been fetched from the database");
     }
+
+    @Test
+    void resolveNextSystemSubscriptionEndpointNameNoExistingEndpoints() {
+        String orgId = "resolve-name-" + UUID.randomUUID();
+
+        assertEquals("Email integration",
+            endpointRepository.resolveNextSystemSubscriptionEndpointName(orgId, EndpointType.EMAIL_SUBSCRIPTION));
+        assertEquals("Drawer integration",
+            endpointRepository.resolveNextSystemSubscriptionEndpointName(orgId, EndpointType.DRAWER));
+    }
+
+    @Test
+    void resolveNextSystemSubscriptionEndpointNameSequentialSuffix() {
+        String orgId = "resolve-name-" + UUID.randomUUID();
+
+        resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.EMAIL_SUBSCRIPTION,
+            null, "Email integration", "desc", new SystemSubscriptionProperties(), true);
+        assertEquals("Email integration 1",
+            endpointRepository.resolveNextSystemSubscriptionEndpointName(orgId, EndpointType.EMAIL_SUBSCRIPTION));
+
+        resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.EMAIL_SUBSCRIPTION,
+            null, "Email integration 1", "desc", new SystemSubscriptionProperties(), true);
+        assertEquals("Email integration 2",
+            endpointRepository.resolveNextSystemSubscriptionEndpointName(orgId, EndpointType.EMAIL_SUBSCRIPTION));
+    }
+
+    @Test
+    void resolveNextSystemSubscriptionEndpointNameFillsGap() {
+        String orgId = "resolve-name-" + UUID.randomUUID();
+
+        resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.EMAIL_SUBSCRIPTION,
+            null, "Email integration", "desc", new SystemSubscriptionProperties(), true);
+        resourceHelpers.createEndpoint(DEFAULT_ACCOUNT_ID, orgId, EndpointType.EMAIL_SUBSCRIPTION,
+            null, "Email integration 2", "desc", new SystemSubscriptionProperties(), true);
+        assertEquals("Email integration 1",
+            endpointRepository.resolveNextSystemSubscriptionEndpointName(orgId, EndpointType.EMAIL_SUBSCRIPTION));
+    }
+
+    @Test
+    void resolveNextSystemSubscriptionEndpointNameFromList() {
+        Endpoint ep1 = new Endpoint();
+        ep1.setName("Email integration");
+        Endpoint ep2 = new Endpoint();
+        ep2.setName("Email integration 1");
+
+        assertEquals("Email integration 2",
+            endpointRepository.resolveNextSystemSubscriptionEndpointName(List.of(ep1, ep2), EndpointType.EMAIL_SUBSCRIPTION));
+        assertEquals("Email integration",
+            endpointRepository.resolveNextSystemSubscriptionEndpointName(List.of(), EndpointType.EMAIL_SUBSCRIPTION));
+        assertEquals("Drawer integration",
+            endpointRepository.resolveNextSystemSubscriptionEndpointName(List.of(), EndpointType.DRAWER));
+    }
+
+    @Test
+    void getSystemSubscriptionEndpointsReturnsPropertiesLoaded() {
+        String orgId = "get-sys-ep-" + UUID.randomUUID().toString().substring(0, 8);
+        SystemSubscriptionProperties props = new SystemSubscriptionProperties();
+        props.setOnlyAdmins(true);
+
+        endpointRepository.createSystemSubscriptionEndpoint(DEFAULT_ACCOUNT_ID, orgId, props, EndpointType.EMAIL_SUBSCRIPTION, "Email integration");
+
+        List<Endpoint> endpoints = endpointRepository.getSystemSubscriptionEndpoints(orgId, EndpointType.EMAIL_SUBSCRIPTION);
+        assertEquals(1, endpoints.size());
+        Assertions.assertNotNull(endpoints.getFirst().getProperties(SystemSubscriptionProperties.class));
+        Assertions.assertTrue(endpoints.getFirst().getProperties(SystemSubscriptionProperties.class).isOnlyAdmins());
+    }
 }

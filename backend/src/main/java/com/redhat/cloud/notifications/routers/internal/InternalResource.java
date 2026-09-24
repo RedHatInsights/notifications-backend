@@ -539,15 +539,24 @@ public class InternalResource {
 
         List<UUID> endpointsBeforeUpdates = endpointEventTypeRepository.findEndpointsByBehaviorGroupId(null, Set.of(behaviorGroupId));
 
+        final String bgName = behaviorGroupRepository.findById(behaviorGroupId).getDisplayName();
+
         List<Endpoint> endpoints = propertiesList.stream().map(p -> {
             SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
             properties.setOnlyAdmins(p.isOnlyAdmins());
             properties.setIgnorePreferences(p.isIgnorePreferences());
-            EndpointType endpointType = EMAIL_SUBSCRIPTION;
-            if (p.getEndpointType() != null && p.getEndpointType() == DRAWER) {
-                endpointType = DRAWER;
-            }
-            return endpointRepository.getOrCreateSystemSubscriptionEndpoint(null, null, properties, endpointType);
+            final EndpointType endpointType = p.getEndpointType() != null && p.getEndpointType() == DRAWER ? DRAWER : EMAIL_SUBSCRIPTION;
+            String label = EndpointType.DRAWER == endpointType ? "Drawer" : "Email";
+            String endpointName = String.format("%s endpoint %s", label, bgName);
+            return endpointRepository.getSystemSubscriptionEndpoint(null, properties, endpointType)
+                .orElseGet(() -> {
+                    try {
+                        return endpointRepository.createSystemSubscriptionEndpoint(null, null, properties, endpointType, endpointName);
+                    } catch (BadRequestException e) {
+                        return endpointRepository.getSystemSubscriptionEndpoint(null, properties, endpointType)
+                            .orElseThrow(() -> e);
+                    }
+                });
         }).collect(Collectors.toList());
         behaviorGroupRepository.updateDefaultBehaviorGroupActions(
                 behaviorGroupId,

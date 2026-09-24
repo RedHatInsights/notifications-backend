@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.config.EngineConfig;
-import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.db.repositories.SubscriptionRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Environment;
@@ -29,16 +28,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 
 @ApplicationScoped
 public class EmailProcessor extends SystemEndpointTypeProcessor {
     @Inject
     ConnectorSender connectorSender;
-
-    @Inject
-    EndpointRepository endpointRepository;
 
     @Inject
     EmailActorsResolver emailActorsResolver;
@@ -104,6 +99,12 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
             unsubscribers = Collections.emptySet();
         }
 
+        if (endpoints.isEmpty()) {
+            Log.warnf("Unable to send email for event %s org %s: no email endpoint provided",
+                event.getId(), event.getOrgId());
+            return;
+        }
+
         final Set<RecipientSettings> recipientSettings = this.extractAndTransformRecipientSettings(event, endpoints);
 
         /*
@@ -145,7 +146,10 @@ public class EmailProcessor extends SystemEndpointTypeProcessor {
 
         final JsonObject payload = JsonObject.mapFrom(emailNotification);
 
-        final Endpoint endpoint = endpointRepository.getOrCreateDefaultSystemSubscription(event.getAccountId(), event.getOrgId(), EMAIL_SUBSCRIPTION);
+        // We need to send an endpoint to connectorSender only to find the right connector
+        // and create a notifications history entry.
+        // Endpoint restrictions will be evaluated from payload content (recipientSettings)
+        final Endpoint endpoint = endpoints.getFirst();
 
         connectorSender.send(event, endpoint, payload);
     }

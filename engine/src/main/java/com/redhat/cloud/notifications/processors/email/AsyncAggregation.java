@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
@@ -8,6 +9,8 @@ import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 
+import java.util.List;
+
 @Dependent
 public class AsyncAggregation implements Runnable {
 
@@ -15,6 +18,8 @@ public class AsyncAggregation implements Runnable {
     EmailAggregationProcessor emailAggregationProcessor;
 
     private Event event;
+
+    private List<Endpoint> endpoints;
 
     @PostConstruct
     void postConstruct() {
@@ -26,10 +31,14 @@ public class AsyncAggregation implements Runnable {
         this.event = event;
     }
 
+    public void setEndpoints(List<Endpoint> endpoints) {
+        this.endpoints = endpoints;
+    }
+
     @Override
     @ActivateRequestContext
     public void run() {
-        emailAggregationProcessor.processAggregationAsync(event);
+        emailAggregationProcessor.processAggregationAsync(event, endpoints);
     }
 
     @PreDestroy
