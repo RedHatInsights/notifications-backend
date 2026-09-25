@@ -54,7 +54,6 @@ public class EngineConfig {
     /*
      * Unleash configuration
      */
-    private String asyncAggregationToggle;
     private String asyncEventProcessingToggle;
     private String drawerToggle;
     private String exportServiceHccClusterToggle;
@@ -161,7 +160,6 @@ public class EngineConfig {
 
     @PostConstruct
     void postConstruct() {
-        asyncAggregationToggle = toggleRegistry.register("async-aggregation", true);
         asyncEventProcessingToggle = toggleRegistry.register("async-event-processing", true);
         drawerToggle = toggleRegistry.register("drawer", true);
         exportServiceHccClusterToggle = toggleRegistry.register("export-service-hcc-cluster", true);
@@ -179,7 +177,6 @@ public class EngineConfig {
     void logConfigAtStartup(@Observes Startup event) {
 
         Map<String, Object> config = new TreeMap<>();
-        config.put(asyncAggregationToggle, isAsyncAggregationEnabled());
         config.put(DEFAULT_TEMPLATE, isDefaultTemplateEnabled());
         config.put(drawerToggle, isDrawerEnabled(null));
         config.put(exportServiceHccClusterToggle, isExportServiceHccClusterEnabled(null));
@@ -211,10 +208,6 @@ public class EngineConfig {
         config.forEach((key, value) -> {
             Log.infof("%s=%s", key, value);
         });
-    }
-
-    public boolean isAsyncAggregationEnabled() {
-        return unleash.isEnabled(asyncAggregationToggle, false);
     }
 
     public boolean isAsyncEventProcessing() {

@@ -2,7 +2,6 @@ package com.redhat.cloud.notifications.processors.email;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.db.repositories.BundleRepository;
 import com.redhat.cloud.notifications.db.repositories.EventRepository;
@@ -28,13 +27,10 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import org.eclipse.microprofile.context.ManagedExecutor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,8 +40,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static jakarta.transaction.Transactional.TxType.REQUIRES_NEW;
 
 /*
  * This class needs more cleanup but this will be done later to make the reviews easier.
@@ -75,9 +69,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
     MeterRegistry registry;
 
     @Inject
-    EngineConfig engineConfig;
-
-    @Inject
     ActionParser actionParser;
 
     @Inject
@@ -88,14 +79,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
     @Inject
     BundleRepository bundleRepository;
-
-    // This executor is used to run a task asynchronously using a worker thread from a threads pool managed by Quarkus.
-    @Inject
-    @AggregationManagedExecutor
-    ManagedExecutor managedExecutor;
-
-    @Inject
-    Instance<AsyncAggregation> asyncAggregations;
 
     @Inject
     Environment environment;
@@ -120,34 +103,6 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
     }
 
     public void processAggregation(Event event, List<Endpoint> endpoints) {
-        if (engineConfig.isAsyncAggregationEnabled()) {
-            /*
-             * The aggregation process is long-running task. To avoid blocking the thread used to consume
-             * Kafka messages from the ingress topic, we're performing the aggregation from a worker thread.
-             */
-            AsyncAggregation asyncAggregation = asyncAggregations.get();
-            asyncAggregation.setEvent(event);
-            asyncAggregation.setEndpoints(endpoints);
-            managedExecutor.runAsync(asyncAggregation)
-                    .thenRun(() -> {
-                        /*
-                         * When a @Dependent bean is injected into an @ApplicationScoped bean using Instance<T>,
-                         * the dependent bean has to be destroyed manually when it's no longer needed. Otherwise,
-                         * instances of the dependent bean accumulate in memory, causing a memory leak.
-                         */
-                        asyncAggregations.destroy(asyncAggregation);
-                    });
-        } else {
-            processAggregationSync(event, endpoints);
-        }
-    }
-
-    @Transactional(REQUIRES_NEW)
-    public void processAggregationAsync(Event event, List<Endpoint> endpoints) {
-        processAggregationSync(event, endpoints);
-    }
-
-    public void processAggregationSync(Event event, List<Endpoint> endpoints) {
 
         List<AggregationCommand> aggregationCommands = new ArrayList<>();
         Timer.Sample consumedTimer = Timer.start(registry);
