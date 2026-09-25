@@ -18,6 +18,10 @@ RUN dnf install -y postgresql16-contrib
 # install redis
 RUN dnf install -y redis
 
+# Install Redpanda (Kafka-compatible streaming platform)
+RUN curl -1sLf 'https://dl.redpanda.com/nzc4ZYQK3WRGd9sy/redpanda/cfg/setup/bash.rpm.sh' | bash \
+    && dnf install -y redpanda
+
 # Add RedHat CAs on OS truststore (check https://certs.corp.redhat.com/ for more details)
 RUN curl --output rh_it_root_ca_file.crt --insecure "${rh_it_root_ca_cert_url}" \
     && curl --output rh_it_root_ca_secondary_file.crt --insecure "${rh_it_root_ca_cert_secondary_url}" \
