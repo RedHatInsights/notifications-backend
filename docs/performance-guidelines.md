@@ -89,7 +89,7 @@ Use `DelayedThrower.throwEventually()` when processing multiple endpoints for a 
 
 ## `@ActivateRequestContext`
 
-Annotate methods that run on non-CDI-managed threads (e.g., `ThreadPoolExecutor` submissions, `Runnable` implementations) with `@ActivateRequestContext`. Without it, CDI request-scoped beans and JPA `EntityManager` are unavailable. See `EventConsumer.process()` and `AsyncAggregation.run()`.
+Annotate methods that run on non-CDI-managed threads (e.g., `ThreadPoolExecutor` submissions, `Runnable` implementations) with `@ActivateRequestContext`. Without it, CDI request-scoped beans and JPA `EntityManager` are unavailable. See `EventConsumer.process()`.
 
 ## Verification
 
