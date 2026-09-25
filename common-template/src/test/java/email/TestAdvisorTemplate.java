@@ -83,16 +83,16 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_1"));
         assertTrue(result.contains("Active rule 1</a>"));
         assertTrue(result.contains("https://console.redhat.com/apps/frontend-assets/email-assets/img_incident.png"));
-        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_important_v3.png"));
+        assertTrue(result.contains(">Important</td>"));
 
         assertTrue(result.contains("Resolved Recommendation"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
         assertTrue(result.contains("Active rule 2</a>"));
-        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low_v3.png"));
+        assertTrue(result.contains(">Low</td>"));
         assertTrue(result.contains("Deactivated Recommendations"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_3"));
         assertTrue(result.contains("Active rule 3</a>"));
-        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_critical_v3.png"));
+        assertTrue(result.contains(">Critical</td>"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -168,10 +168,10 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("Resolved Recommendation"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
         assertTrue(result.contains("Active rule 2</a>"));
-        assertTrue(result.contains("/apps/frontend-assets/email-assets/img_low_v3.png"));
+        assertTrue(result.contains(">Low</td>"));
         assertFalse(result.contains("New Recommendation"));
         assertFalse(result.contains("Deactivated Recommendation"));
-        assertFalse(result.contains("/apps/frontend-assets/email-assets/img_critical_v3.png"));
+        assertFalse(result.contains(">Critical</td>"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -219,10 +219,10 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
             );
         });
 
-        assertTrue(result.contains("alt=\"Low\""), "Body should contain low severity rule image");
-        assertTrue(result.contains("alt=\"Moderate\""), "Body should contain moderate severity rule image");
-        assertTrue(result.contains("alt=\"Important\""), "Body should contain important severity rule image");
-        assertTrue(result.contains("alt=\"Critical\""), "Body should contain critical severity rule image");
+        assertTrue(result.contains(">Low</td>"), "Body should contain low severity badge");
+        assertTrue(result.contains(">Moderate</td>"), "Body should contain moderate severity badge");
+        assertTrue(result.contains(">Important</td>"), "Body should contain important severity badge");
+        assertTrue(result.contains(">Critical</td>"), "Body should contain critical severity badge");
 
         // Display name
         assertTrue(result.contains("My Host"), "Body should contain the display_name");
@@ -266,7 +266,7 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
                 "Body should contain deactivation reason" + event.getPayload().getAdditionalProperties().get("deactivation_reason"));
         });
 
-        assertTrue(result.contains("alt=\"Low\""), "Body should contain low severity rule image");
-        assertTrue(result.contains("alt=\"Moderate\""), "Body should contain moderate severity rule image");
+        assertTrue(result.contains(">Low</td>"), "Body should contain low severity badge");
+        assertTrue(result.contains(">Moderate</td>"), "Body should contain moderate severity badge");
     }
 }
