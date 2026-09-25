@@ -1,3 +1,4 @@
+// Set up with the MintMaker Automerge plugin v0.9.0: https://github.com/gwenneg/mintmaker-automerge
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   // Renovate overrides for this repository. MintMaker merges them on top of its
@@ -9,7 +10,6 @@
   // Policy: patch and minor updates of the ecosystems below merge on their own once
   // the required checks pass. Majors stay on manual review unless a rule names them.
   // MintMaker docs: https://konflux-ci.dev/docs/mintmaker/user/
-  // Automerge set up with the MintMaker Automerge plugin: https://github.com/gwenneg/mintmaker-automerge
   "extends": [
     // Pins actions to commit SHAs, so a version bump can be told from a moved tag.
     // Kept even though every current action is already pinned: this is what pins a
@@ -22,6 +22,12 @@
   // The required checks of the base branch are the whole gate: Renovate asks to
   // merge without reading any check, and GitHub refuses until they pass.
   "ignoreTests": true,
+  // PRs are rebased only when they conflict, so a PR merges as tested against the
+  // base it was opened on, like a human merge without "Update branch". Two bumps
+  // merged in a row are never tested together: a broken combination shows on the
+  // base branch's build. The label below puts one PR back on rebase-when-behind.
+  "rebaseWhen": "conflicted",
+  "keepUpdatedLabel": "keep-updated",
   "tekton": {
     // Konflux pipeline updates in .tekton/: the PR's own Konflux build tests them.
     "automerge": true,
@@ -45,7 +51,8 @@
         "github/codeql-action/autobuild",
         "github/codeql-action/init"
       ],
-      "automerge": true
+      "automerge": true,
+      "groupName": "GitHub Actions"
     },
     {
       // A floating tag such as v4 never changes, so its releases arrive as digest PRs that
@@ -60,13 +67,16 @@
     {
       "matchManagers": ["maven"],
       "matchUpdateTypes": ["patch", "minor"],
-      "automerge": true
+      "automerge": true,
+      "groupName": "Maven dependencies"
     },
     {
       // Quarkus follows an LTS track, so a reviewer picks the target version. https://quarkus.io/releases/
+      // Its own PR: a member that never automerges would hold the group.
       "matchManagers": ["maven"],
       "matchPackageNames": ["io.quarkus*"],
-      "automerge": false
+      "automerge": false,
+      "groupName": null
     },
     {
       // The wrapper is every developer's build tool, not just CI's.
@@ -80,7 +90,8 @@
       // the same tag; a new RHEL or JDK line is a major and stays on manual review.
       "matchManagers": ["dockerfile"],
       "matchUpdateTypes": ["digest", "patch", "minor"],
-      "automerge": true
+      "automerge": true,
+      "groupName": "base images"
     },
     {
       // Pins FROM lines to tag@sha256, so rebuilds of a tag arrive as digest PRs.
@@ -100,9 +111,11 @@
     },
     {
       // packageManager and engines pin every developer's tools, not just CI's.
+      // Its own PR: a member that never automerges would hold the group.
       "matchManagers": ["npm"],
       "matchDepTypes": ["packageManager", "engines"],
-      "automerge": false
+      "automerge": false,
+      "groupName": null
     }
   ]
 }
