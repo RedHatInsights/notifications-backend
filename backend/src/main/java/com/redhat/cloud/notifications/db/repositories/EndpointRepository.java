@@ -312,6 +312,18 @@ public class EndpointRepository {
         return query.getSingleResult();
     }
 
+    public Set<UUID> getExistingEndpointIds(String orgId, Set<UUID> endpointIds) {
+        if (endpointIds == null || endpointIds.isEmpty()) {
+            return Set.of();
+        }
+        String query = "SELECT e.id FROM Endpoint e WHERE e.orgId = :orgId AND e.id IN :ids";
+        List<UUID> found = entityManager.createQuery(query, UUID.class)
+                .setParameter("orgId", orgId)
+                .setParameter("ids", endpointIds)
+                .getResultList();
+        return new HashSet<>(found);
+    }
+
     public Endpoint getEndpoint(String orgId, UUID id) {
         String query = "SELECT e FROM Endpoint e WHERE e.orgId = :orgId AND e.id = :id";
         try {

@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
+import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_3_0;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_EDIT;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_VIEW;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
@@ -39,6 +40,10 @@ public class OrgConfigResource {
 
     @Path(API_NOTIFICATIONS_V_1_0 + "/org-config")
     public static class V1 extends OrgConfigResource {
+    }
+
+    @Path(API_NOTIFICATIONS_V_3_0 + "/org-config")
+    public static class V3 extends OrgConfigResource {
     }
 
     static final List<Integer> ALLOWED_MINUTES = Arrays.asList(0, 15, 30, 45);

@@ -57,6 +57,15 @@ public class EndpointEventTypeRepository {
         return typedQuery.getResultList();
     }
 
+    public Long countEndpointsByEventTypeId(String orgId, UUID eventTypeId) {
+        String query = "SELECT COUNT(e) FROM Endpoint e JOIN e.eventTypes ev WHERE (e.orgId = :orgId OR e.orgId IS NULL) AND ev.id = :eventTypeId";
+
+        return entityManager.createQuery(query, Long.class)
+            .setParameter("orgId", orgId)
+            .setParameter("eventTypeId", eventTypeId)
+            .getSingleResult();
+    }
+
     @Transactional
     public void deleteEndpointFromEventType(UUID eventTypeId, UUID endpointId, String orgId) {
         Endpoint endpoint = getEndpoint(endpointId, orgId);

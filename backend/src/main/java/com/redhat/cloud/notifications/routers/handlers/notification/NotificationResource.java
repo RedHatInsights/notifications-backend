@@ -2,14 +2,7 @@ package com.redhat.cloud.notifications.routers.handlers.notification;
 
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
-import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
-import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
-import com.redhat.cloud.notifications.db.repositories.BehaviorGroupRepository;
-import com.redhat.cloud.notifications.db.repositories.BundleRepository;
-import com.redhat.cloud.notifications.db.repositories.EndpointEventTypeRepository;
-import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
-import com.redhat.cloud.notifications.db.repositories.EventTypeRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
@@ -81,31 +74,10 @@ import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgI
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 
-public class NotificationResource {
-
-    @Inject
-    BundleRepository bundleRepository;
-
-    @Inject
-    ApplicationRepository applicationRepository;
-
-    @Inject
-    BehaviorGroupRepository behaviorGroupRepository;
-
-    @Inject
-    EndpointEventTypeRepository endpointEventTypeRepository;
-
-    @Inject
-    EndpointRepository endpointRepository;
+public class NotificationResource extends NotificationResourceCommon {
 
     @Inject
     EndpointMapper endpointMapper;
-
-    @Inject
-    EventTypeRepository eventTypeRepository;
-
-    @Inject
-    BackendConfig backendConfig;
 
     @Path(API_NOTIFICATIONS_V_1_0 + "/notifications")
     public static class V1 extends NotificationResource {
@@ -147,19 +119,7 @@ public class NotificationResource {
         @Context SecurityContext securityContext, @Context UriInfo uriInfo, @BeanParam @Valid Query query, @QueryParam("applicationIds") Set<UUID> applicationIds,
         @QueryParam("bundleId") UUID bundleId, @QueryParam("eventTypeName") String eventTypeName, @QueryParam("excludeMutedTypes") boolean excludeMutedTypes
     ) {
-        List<UUID> unmutedEventTypeIds = excludeMutedTypes
-            ? behaviorGroupRepository.findUnmutedEventTypes(getOrgId(securityContext), bundleId)
-            : null;
-
-        final String orgId = getOrgId(securityContext);
-        final boolean showHiddenEventTypes = backendConfig.isShowHiddenEventTypes(orgId);
-        List<EventType> eventTypes = applicationRepository.getEventTypes(query, applicationIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds, showHiddenEventTypes);
-        Long count = applicationRepository.getEventTypesCount(applicationIds, bundleId, eventTypeName, excludeMutedTypes, unmutedEventTypeIds, showHiddenEventTypes);
-        return new Page<>(
-            eventTypes,
-            PageLinksBuilder.build(uriInfo, count, query.getLimit().getLimit(), query.getLimit().getOffset()),
-            new Meta(count)
-        );
+        return super.getEventTypes(securityContext, uriInfo, query, applicationIds, bundleId, eventTypeName, excludeMutedTypes);
     }
 
     @GET
@@ -172,7 +132,6 @@ public class NotificationResource {
         if (bundle == null) {
             throw new NotFoundException();
         }
-
         return bundle;
     }
 
@@ -190,7 +149,6 @@ public class NotificationResource {
         if (application == null) {
             throw new NotFoundException();
         }
-
         return application;
     }
 
@@ -205,12 +163,7 @@ public class NotificationResource {
         @PathParam("applicationName") String applicationName,
         @PathParam("eventTypeName") String eventTypeName
     ) {
-        EventType eventType = applicationRepository.getEventType(bundleName, applicationName, eventTypeName);
-        if (eventType == null) {
-            throw new NotFoundException();
-        }
-
-        return eventType;
+        return super.getEventTypesByNameAndBundleAndApplicationName(bundleName, applicationName, eventTypeName);
     }
 
 
@@ -571,75 +524,6 @@ public class NotificationResource {
     public Response updateEventTypeEndpoints(@Context SecurityContext securityContext,
                                              @Parameter(description = "UUID of the eventType to associate with the endpoint(s)") @PathParam("eventTypeId") UUID eventTypeId,
                                              @Parameter(description = "Set of endpoint ids to associate") Set<UUID> endpointsIds) {
-        if (endpointsIds == null) {
-            throw new BadRequestException("The request body must contain a list (possibly empty) of endpoints identifiers");
-        }
-        // RESTEasy does not reject an invalid List<UUID> body (even when @Valid is used) so we have to do an additional check here.
-        if (endpointsIds.contains(null)) {
-            throw new BadRequestException("The endpoints identifiers list should not contain empty values");
-        }
-
-        String orgId = getOrgId(securityContext);
-        String accountId = getAccountId(securityContext);
-
-        endpointEventTypeRepository.updateEventTypeEndpoints(orgId, eventTypeId, endpointsIds);
-
-        // Sync behavior group model
-
-        // delete endpoint from existing behavior group
-        List<BehaviorGroup> behaviorGroupsLinkedToThisEndpoint = behaviorGroupRepository.findBehaviorGroupsByEventTypeId(orgId, eventTypeId, null);
-        for (BehaviorGroup behaviorGroup : behaviorGroupsLinkedToThisEndpoint) {
-            Set<UUID> associatedEventTypes = behaviorGroup.getBehaviors().stream().map(b -> b.getEventType().getId()).collect(Collectors.toSet());
-            associatedEventTypes.remove(eventTypeId);
-            if (associatedEventTypes.isEmpty()) {
-                behaviorGroupRepository.delete(orgId, behaviorGroup.getId());
-            } else {
-                behaviorGroupRepository.updateBehaviorEventTypes(orgId, behaviorGroup.getId(), associatedEventTypes);
-            }
-        }
-
-        createOrUpdateLinkedBehaviorGroup(eventTypeId, endpointsIds, orgId, accountId);
-
-        return Response.ok().build();
-    }
-
-
-    private void createOrUpdateLinkedBehaviorGroup(UUID eventTypeId, Set<UUID> endpointIds, String orgId, String accountId) {
-
-        for (UUID endpointId : endpointIds) {
-            EventType eventType = eventTypeRepository.findByIds(Set.of(eventTypeId)).getFirst();
-            String behaviorGroupName = String.format("Event type \"%s\" behavior group", eventType.getName());
-
-            Optional<Bundle> bundle = eventTypeRepository.findBundleByEventTypeId(eventTypeId);
-
-            Optional<BehaviorGroup> existingBg = behaviorGroupRepository.findBehaviorGroupsByName(orgId, bundle.get().getId(), behaviorGroupName);
-            if (existingBg.isPresent()) {
-                Boolean alreadyAssociatedAction = existingBg.get().getActions().stream().anyMatch(bga -> bga.getId().endpointId.equals(endpointId));
-
-                if (!alreadyAssociatedAction) {
-                    int position = existingBg.get().getActions().stream().mapToInt(ba -> ba.getPosition()).max().orElse(-1) + 1;
-                    behaviorGroupRepository.appendActionToBehaviorGroup(existingBg.get().getId(), endpointId, position, orgId);
-                }
-
-                Boolean alreadyAssociatedEventType = existingBg.get().getBehaviors().stream().anyMatch(bh -> bh.getId().eventTypeId.equals(eventTypeId));
-                if (!alreadyAssociatedEventType) {
-                    behaviorGroupRepository.appendBehaviorGroupToEventType(orgId, existingBg.get().getId(), eventTypeId);
-                }
-            } else {
-                // Create or update legacy behavior group structure
-                BehaviorGroup behaviorGroup = new BehaviorGroup();
-                behaviorGroup.setBundleId(bundle.get().getId());
-                behaviorGroup.setDisplayName(behaviorGroupName);
-
-                behaviorGroupRepository.createFull(
-                    accountId,
-                    orgId,
-                    behaviorGroup,
-                    List.of(endpointId),
-                    Set.of(eventTypeId)
-                );
-            }
-
-        }
+        return super.updateEventTypeEndpoints(securityContext, eventTypeId, endpointsIds);
     }
 }

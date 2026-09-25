@@ -3,26 +3,10 @@ package com.redhat.cloud.notifications.routers.handlers.event;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
-import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
-import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.Query;
-import com.redhat.cloud.notifications.db.repositories.EventRepository;
-import com.redhat.cloud.notifications.models.CompositeEndpointType;
-import com.redhat.cloud.notifications.models.EndpointType;
-import com.redhat.cloud.notifications.models.Event;
-import com.redhat.cloud.notifications.models.NotificationHistory;
-import com.redhat.cloud.notifications.models.NotificationStatus;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
-import com.redhat.cloud.notifications.routers.models.EventLogEntryAction;
 import com.redhat.cloud.notifications.routers.models.EventLogEntryActionStatus;
-import com.redhat.cloud.notifications.routers.models.Meta;
 import com.redhat.cloud.notifications.routers.models.Page;
-import com.redhat.cloud.notifications.routers.models.PageLinksBuilder;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
-import io.quarkus.logging.Log;
-import jakarta.annotation.PostConstruct;
-import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.BeanParam;
@@ -44,54 +28,19 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.EVENTS_VIEW;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
-import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
-public class EventResource {
+public class EventResource extends EventResourceCommon {
 
     @Path(API_NOTIFICATIONS_V_1_0 + "/notifications/events")
     public static class V1 extends EventResource {
-    }
-
-    public static final String TOTAL_RECIPIENTS = "total_recipients";
-    static final String GET_EVENTS_TIMER_NAME = "notifications.event-log.get-events";
-    static final String NORMALIZED_QUERIES_TAG = "normalized_queries";
-
-    @Inject
-    BackendConfig backendConfig;
-
-    @Inject
-    EventRepository eventRepository;
-
-    @Inject
-    KesselInventoryAuthorization kesselInventoryAuthorization;
-
-    @Inject
-    MeterRegistry meterRegistry;
-
-    private Timer normalizedTimer;
-    private Timer denormalizedTimer;
-
-    @PostConstruct
-    void initMetrics() {
-        normalizedTimer = meterRegistry.timer(GET_EVENTS_TIMER_NAME, NORMALIZED_QUERIES_TAG, "true");
-        denormalizedTimer = meterRegistry.timer(GET_EVENTS_TIMER_NAME, NORMALIZED_QUERIES_TAG, "false");
     }
 
     @GET
@@ -110,14 +59,14 @@ public class EventResource {
             in = ParameterIn.QUERY,
             description = "Start of the date range filter. Accepts either a date (yyyy-MM-dd), expanded to the beginning of that day, "
                 + "or a date-time (yyyy-MM-dd'T'HH:mm:ss).",
-            schema = @Schema(type = SchemaType.STRING)
+            schema = @Schema(type = SchemaType.STRING, format = "date-time")
         ),
         @Parameter(
             name = "endDate",
             in = ParameterIn.QUERY,
             description = "End of the date range filter. Accepts either a date (yyyy-MM-dd), expanded to the end of that day, "
                 + "or a date-time (yyyy-MM-dd'T'HH:mm:ss).",
-            schema = @Schema(type = SchemaType.STRING)
+            schema = @Schema(type = SchemaType.STRING, format = "date-time")
         )
     })
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS, workspacePermissions = EVENTS_VIEW, resourceType = "event")
@@ -131,127 +80,10 @@ public class EventResource {
         LocalDateTime startDateTime = parseDate(startDate, "startDate", LocalDate::atStartOfDay);
         LocalDateTime endDateTime = parseDate(endDate, "endDate", date -> date.atTime(LocalTime.MAX));
 
-        Set<EndpointType> basicTypes = Collections.emptySet();
-        Set<CompositeEndpointType> compositeTypes = Collections.emptySet();
-        Set<NotificationStatus> notificationStatusSet = status == null ? Set.of() : toNotificationStatus(status);
-
-        if (endpointTypes != null && !endpointTypes.isEmpty()) {
-            basicTypes = new HashSet<>();
-            compositeTypes = new HashSet<>();
-
-            for (String stringEndpointType : endpointTypes) {
-                try {
-                    CompositeEndpointType compositeType = CompositeEndpointType.fromString(stringEndpointType);
-                    if (compositeType.getSubType() == null) {
-                        basicTypes.add(compositeType.getType());
-                    } else {
-                        compositeTypes.add(compositeType);
-                    }
-                } catch (IllegalArgumentException e) {
-                    throw new BadRequestException("Unknown endpoint type: [" + stringEndpointType + "]", e);
-                }
-            }
-        }
-
-        String orgId = getOrgId(securityContext);
-        boolean useNormalizedQueries = backendConfig.isNormalizedQueriesEnabled(orgId);
-        Timer.Sample timerSample = Timer.start(meterRegistry);
-
-        try {
-            List<Event> events;
-            Long count;
-            if (backendConfig.isKesselChecksOnEventLogEnabled(orgId)) {
-                Log.info("Check for events with authorization criterion");
-                List<EventAuthorizationCriterion> listEventsAuthCriterion = eventRepository.getEventsWithCriterion(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDateTime, endDateTime, basicTypes, compositeTypes, invocationResults, notificationStatusSet);
-                List<UUID> uuidToExclude = new ArrayList<>();
-                Map<Integer, Boolean> criterionResultCache = new HashMap<>();
-                for (EventAuthorizationCriterion eventAuthorizationCriterion : listEventsAuthCriterion) {
-                    int criterionHashCode = eventAuthorizationCriterion.authorizationCriterion().hashCode();
-                    if (!criterionResultCache.containsKey(criterionHashCode)) {
-                        criterionResultCache.put(criterionHashCode, kesselInventoryAuthorization.hasPermissionOnResource(securityContext, eventAuthorizationCriterion.authorizationCriterion()));
-                    }
-                    if (!criterionResultCache.get(criterionHashCode)) {
-                        Log.infof("%s is not visible for current user", eventAuthorizationCriterion.id());
-                        uuidToExclude.add(eventAuthorizationCriterion.id());
-                    }
-                }
-                if (uuidToExclude.isEmpty()) {
-                    uuidToExclude = null;
-                }
-                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDateTime, endDateTime, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.ofNullable(uuidToExclude), true);
-                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDateTime, endDateTime, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.ofNullable(uuidToExclude), true);
-            } else {
-                events = eventRepository.getEvents(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDateTime, endDateTime, basicTypes, compositeTypes, invocationResults, includeActions, notificationStatusSet, severities, query, Optional.empty(), false);
-                count = eventRepository.count(orgId, useNormalizedQueries, bundleIds, appIds, eventTypeDisplayName, startDateTime, endDateTime, basicTypes, compositeTypes, invocationResults, notificationStatusSet, severities, Optional.empty(), false);
-            }
-
-            if (events.isEmpty()) {
-                Meta meta = new Meta();
-                meta.setCount(0L);
-
-                Map<String, String> links = PageLinksBuilder.build(uriInfo, 0, query);
-
-                Page<EventLogEntry> page = new Page<>();
-                page.setData(new ArrayList<>());
-                page.setMeta(meta);
-                page.setLinks(links);
-                return page;
-            }
-
-            List<EventLogEntry> eventLogEntries = events.stream().map(event -> {
-                List<EventLogEntryAction> actions;
-                if (!includeActions) {
-                    actions = Collections.emptyList();
-                } else {
-                    actions = event.getHistoryEntries().stream()
-                        .filter(notificationHistory -> EndpointType.DRAWER != notificationHistory.getEndpointType() || backendConfig.isDrawerEnabled(orgId))
-                        .map(historyEntry -> {
-                            EventLogEntryAction action = new EventLogEntryAction();
-                            action.setId(historyEntry.getId());
-                            action.setEndpointId(historyEntry.getEndpointId());
-                            action.setEndpointType(historyEntry.getEndpointType());
-                            action.setEndpointSubType(historyEntry.getEndpointSubType());
-                            action.setInvocationResult(historyEntry.isInvocationResult());
-                            action.setStatus(fromNotificationStatus(historyEntry.getStatus()));
-                            if (includeDetails) {
-                                action.setDetails(historyEntry.getDetails());
-                            }
-                            getRecipientsCount(historyEntry).ifPresent(action::setRecipientsCount);
-                            return action;
-                        }).collect(Collectors.toList());
-                }
-
-                EventLogEntry entry = new EventLogEntry();
-                entry.setId(event.getId());
-                entry.setExternalId(event.getExternalId());
-                entry.setCreated(event.getCreated());
-                entry.setBundle(event.getBundleDisplayName());
-                entry.setApplication(event.getApplicationDisplayName());
-                entry.setEventType(event.getEventTypeDisplayName());
-                entry.setActions(actions);
-                entry.setSeverity(event.getSeverity());
-                if (includePayload) {
-                    entry.setPayload(event.getPayload());
-                }
-                return entry;
-            }).collect(Collectors.toList());
-
-            Meta meta = new Meta();
-            meta.setCount(count);
-
-            Map<String, String> links = PageLinksBuilder.build(uriInfo, count, query);
-
-            Page<EventLogEntry> page = new Page<>();
-            page.setData(eventLogEntries);
-            page.setMeta(meta);
-            page.setLinks(links);
-            return page;
-        } finally {
-            timerSample.stop(useNormalizedQueries ? normalizedTimer : denormalizedTimer);
-        }
+        return doGetEvents(securityContext, uriInfo, bundleIds, appIds, eventTypeDisplayName, startDateTime, endDateTime,
+            endpointTypes, invocationResults, status, severities, query, includeDetails, includePayload, includeActions);
     }
 
-    // dateOnlyMapper expands a date-only value to start/end of day, preserving the pre-existing whole-day filtering behavior
     private static LocalDateTime parseDate(String value, String paramName, Function<LocalDate, LocalDateTime> dateOnlyMapper) {
         if (value == null) {
             return null;
@@ -261,66 +93,5 @@ public class EventResource {
         } catch (DateTimeParseException e) {
             throw new BadRequestException("Invalid '" + paramName + "' value: [" + value + "]. Expected format is yyyy-MM-dd or yyyy-MM-dd'T'HH:mm:ss", e);
         }
-    }
-
-    static EventLogEntryActionStatus fromNotificationStatus(NotificationStatus status) {
-        switch (status) {
-            case SENT:
-                return EventLogEntryActionStatus.SENT;
-            case SUCCESS:
-                return EventLogEntryActionStatus.SUCCESS;
-            case PROCESSING:
-                return EventLogEntryActionStatus.PROCESSING;
-            case FAILED_EXTERNAL:
-            case FAILED_INTERNAL:
-                return EventLogEntryActionStatus.FAILED;
-            default:
-                Log.warnf("Uncovered status found:[%s]. This is a bug", status);
-                return EventLogEntryActionStatus.UNKNOWN;
-        }
-    }
-
-    static Set<NotificationStatus> toNotificationStatus(Set<EventLogEntryActionStatus> statusSet) {
-        if (statusSet.stream().anyMatch(Objects::isNull)) {
-            throw new BadRequestException("Unable to filter by 'null' status");
-        }
-
-        Set<NotificationStatus> notificationStatusSet = new HashSet<>();
-        statusSet.forEach(status -> {
-            switch (status) {
-                case SUCCESS:
-                    notificationStatusSet.add(NotificationStatus.SUCCESS);
-                    break;
-                case SENT:
-                    notificationStatusSet.add(NotificationStatus.SENT);
-                    break;
-                case FAILED:
-                    notificationStatusSet.add(NotificationStatus.FAILED_EXTERNAL);
-                    notificationStatusSet.add(NotificationStatus.FAILED_INTERNAL);
-                    break;
-                case PROCESSING:
-                    notificationStatusSet.add(NotificationStatus.PROCESSING);
-                    break;
-                case UNKNOWN:
-                    throw new BadRequestException("Unable to filter by 'Unknown' status");
-                default:
-                    throw new BadRequestException(String.format("Unsupported filter value: [%s]", status));
-            }
-        });
-
-        return notificationStatusSet;
-    }
-
-    private static Optional<Integer> getRecipientsCount(NotificationHistory notificationHistory) {
-        if (notificationHistory.getDetails() != null) {
-            Object totalRecipients = notificationHistory.getDetails().get(TOTAL_RECIPIENTS);
-            if (totalRecipients != null) {
-                if (totalRecipients instanceof Integer recipientsAsInteger) {
-                    return Optional.of(recipientsAsInteger);
-                }
-                Log.warnf("total_recipients field must be an Integer [history_id=%s, total_recipients=%s]", notificationHistory.getId(), totalRecipients);
-            }
-        }
-        return Optional.empty();
     }
 }
