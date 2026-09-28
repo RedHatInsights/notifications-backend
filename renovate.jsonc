@@ -1,44 +1,37 @@
-// Set up with the MintMaker Automerge plugin v0.9.0: https://github.com/gwenneg/mintmaker-automerge
+// Set up with the MintMaker Automerge plugin v0.12.0: https://github.com/gwenneg/mintmaker-automerge
+// Overrides MintMaker's global config: https://github.com/konflux-ci/mintmaker/blob/main/config/renovate/renovate.json
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  // Renovate overrides for this repository. MintMaker merges them on top of its
-  // global config, which sets the managers, the release-age delay, the
-  // vulnerability alerts, branch naming and PR limits:
-  // https://github.com/konflux-ci/mintmaker/blob/main/config/renovate/renovate.json
-  // A key set here replaces the inherited value; packageRules are added to the
-  // inherited ones; enabledManagers would replace the whole list, so it is never set.
-  // Policy: patch and minor updates of the ecosystems below merge on their own once
-  // the required checks pass. Majors stay on manual review unless a rule names them.
-  // MintMaker docs: https://konflux-ci.dev/docs/mintmaker/user/
-  "extends": [
-    // Pins actions to commit SHAs, so a version bump can be told from a moved tag.
-    // Kept even though every current action is already pinned: this is what pins a
-    // newly added action automatically, without waiting for a manual pin PR.
-    "helpers:pinGitHubActionDigests"
-  ],
-  // Renovate merges the PR itself: GitHub's native auto-merge never completes when
-  // the approval rule is met by a bypass actor alone, the Konflux app here.
+  // GitHub auto-merge never completes when a bypass actor meets the approval rule.
+  // Renovate merges instead, on the first run where GitHub allows it.
   "platformAutomerge": false,
-  // The required checks of the base branch are the whole gate: Renovate asks to
-  // merge without reading any check, and GitHub refuses until they pass.
+  // Only the required checks gate the merge: a red optional check does not block it.
   "ignoreTests": true,
-  // PRs are rebased only when they conflict, so a PR merges as tested against the
-  // base it was opened on, like a human merge without "Update branch". Two bumps
-  // merged in a row are never tested together: a broken combination shows on the
-  // base branch's build. The label below puts one PR back on rebase-when-behind.
+  // Throughput: no rebase or CI rerun after a merge, so each run merges two PRs, not one.
+  // Risk: those two are never tested together. Label a PR keep-updated to rebase it.
   "rebaseWhen": "conflicted",
   "keepUpdatedLabel": "keep-updated",
+  "extends": [
+    // Keep even when every action is pinned: it pins the next one added.
+    "helpers:pinGitHubActionDigests"
+  ],
   "tekton": {
-    // Konflux pipeline updates in .tekton/: the PR's own Konflux build tests them.
+    // The PR's own Konflux build runs the updated pipeline.
     "automerge": true,
     // Any day, instead of MintMaker's Saturday batch.
     "schedule": ["at any time"]
   },
   "packageRules": [
-    // --- github-actions: patch and minor of the actions named below; majors, digest-only, third-party actions and the reusable workflow stay manual
     {
-      // Vetted by name: an action runs arbitrary code in CI. Patch and minor only, so a
-      // moved tag with no version change, the shape of a hijacked action, never merges alone.
+      // Needed even when SHA-pinned: without it, a v4-style tag gets only digest PRs, which
+      // never automerge. Expect one manual PR that writes the full version.
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["action"],
+      "rangeStrategy": "pin"
+    },
+    {
+      // Named actions only: an action runs code in CI. Digest-only updates stay manual:
+      // a moved tag with no version change is what a hijacked action looks like.
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["patch", "minor"],
       "matchDepNames": [
@@ -52,16 +45,7 @@
       "automerge": true,
       "groupName": "GitHub Actions"
     },
-    {
-      // A floating tag such as v4 never changes, so its releases arrive as digest PRs that
-      // never automerge. Pinning writes the full version once, in a manual PR, and later
-      // releases are patch or minor.
-      "matchManagers": ["github-actions"],
-      "matchDepTypes": ["action"],
-      "rangeStrategy": "pin"
-    },
 
-    // --- maven: patch and minor; majors, io.quarkus* and the wrapper stay manual
     {
       "matchManagers": ["maven"],
       "matchUpdateTypes": ["patch", "minor"],
@@ -69,47 +53,42 @@
       "groupName": "Maven dependencies"
     },
     {
-      // Quarkus follows an LTS track, so a reviewer picks the target version. https://quarkus.io/releases/
-      // Its own PR: a member that never automerges would hold the group.
+      // The wrapper is every developer's build tool, not just CI's.
+      "matchManagers": ["maven-wrapper"],
+      "automerge": false
+    },
+    {
+      // Quarkus follows an LTS track, so a reviewer picks the target version: https://quarkus.io/releases/
+      // No group: a member that never automerges would hold the whole group.
       "matchManagers": ["maven"],
       "matchPackageNames": ["io.quarkus*"],
       "automerge": false,
       "groupName": null
     },
-    {
-      // The wrapper is every developer's build tool, not just CI's.
-      "matchManagers": ["maven-wrapper"],
-      "automerge": false
-    },
 
-    // --- dockerfile: digest, patch and minor of the base images; majors stay manual
     {
-      // The Konflux PR build builds and tests the image. A digest update is a rebuild of
-      // the same tag; a new RHEL or JDK line is a major and stays on manual review.
+      // The Konflux PR build builds and tests the image. A digest update rebuilds the same
+      // tag; a new RHEL or JDK line is a major and stays manual.
       "matchManagers": ["dockerfile"],
       "matchUpdateTypes": ["digest", "patch", "minor"],
       "automerge": true,
       "groupName": "base images"
     },
     {
-      // Pins FROM lines to tag@sha256, so rebuilds of a tag arrive as digest PRs.
-      // Kept even though every current FROM line is already pinned: this is what pins
-      // a newly added or changed FROM line automatically.
+      // Keep even when every FROM line is pinned: it pins the next image added.
       "matchManagers": ["dockerfile"],
       "pinDigests": true
     },
 
-    // --- npm: patch and minor, grouped into a single PR; majors, packageManager and engines stay manual
     {
-      // One PR for all patch/minor npm bumps instead of one per package.
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["patch", "minor"],
-      "groupName": "npm dependencies",
-      "automerge": true
+      "automerge": true,
+      "groupName": "npm dependencies"
     },
     {
-      // packageManager and engines pin every developer's tools, not just CI's.
-      // Its own PR: a member that never automerges would hold the group.
+      // These pin every developer's tools, not just CI's.
+      // No group: a member that never automerges would hold the whole group.
       "matchManagers": ["npm"],
       "matchDepTypes": ["packageManager", "engines"],
       "automerge": false,
