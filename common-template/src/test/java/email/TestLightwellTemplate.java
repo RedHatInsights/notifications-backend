@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.qute.templates.mapping.Lightwell.LIGHTWELL_JAVA_REMEDIATED_EVENT_TYPE;
+import static com.redhat.cloud.notifications.qute.templates.mapping.Lightwell.LIGHTWELL_PYTHON_REMEDIATED_EVENT_TYPE;
 import static helpers.TestHelpers.DEFAULT_ORG_ID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -131,6 +132,99 @@ public class TestLightwellTemplate extends EmailTemplatesRendererHelper {
 
         assertTrue(result.contains("This email was sent by Lightwell, it is critical or requires action."));
         assertFalse(result.contains("Manage email preferences"));
+    }
+
+    // "python-remediated" has no dedicated template registered in Lightwell.java
+    // (only the app-level fallback with eventType=null exists). These tests lock
+    // in that the shared lightwellDefaultEmailBody.html/lightwellDefaultEmailTitle.txt
+    // templates render correctly for this event type too, including for PyPI-style
+    // package names that (unlike Maven's "group:artifact") contain no colon.
+    @Test
+    public void testPythonRemediatedEmailBody() {
+        Action action = createLightwellPythonRemediatedAction();
+        eventTypeDisplayName = "Python Remediated";
+        String result = generateEmailBody(LIGHTWELL_PYTHON_REMEDIATED_EVENT_TYPE, action, false);
+
+        assertTrue(result.contains(LIGHTWELL_LOGO));
+
+        // Plural title, intro text and events counter badge
+        assertTrue(result.contains("New Packages Available for Python Remediated"));
+        assertTrue(result.contains("These following packages were fixed by Lightwell in the Python Remediated and are available for your access."));
+        assertTrue(result.contains(">3</a>"));
+
+        // CTA button
+        assertTrue(result.contains("href=\"https://console.redhat.com/lightwell\" target=\"_blank\""));
+        assertTrue(result.contains("Go to Lightwell"));
+
+        // Packages (colon-less PyPI package names)
+        assertTrue(result.contains("requests"));
+        assertTrue(result.contains("https://console.redhat.com/lightwell/packages/requests"));
+        assertTrue(result.contains("urllib3"));
+        assertTrue(result.contains("certifi"));
+    }
+
+    @Test
+    public void testPythonRemediatedEmailTitle() {
+        Action action = createLightwellPythonRemediatedAction();
+        eventTypeDisplayName = "Python Remediated";
+
+        String result = generateEmailSubject(LIGHTWELL_PYTHON_REMEDIATED_EVENT_TYPE, action);
+        assertEquals("Instant notification - Python Remediated - Lightwell", result);
+
+        action.setSeverity(Severity.CRITICAL.name());
+        String criticalResult = generateEmailSubject(LIGHTWELL_PYTHON_REMEDIATED_EVENT_TYPE, action);
+        assertEquals("[CRITICAL] Instant notification - Python Remediated - Lightwell", criticalResult);
+    }
+
+    @Test
+    public void testPythonRemediatedEmailBodySingleEvent() {
+        Action action = new Action();
+        action.setBundle("lightwell");
+        action.setApplication("lightwell");
+        action.setTimestamp(LocalDateTime.now());
+        action.setEventType(LIGHTWELL_PYTHON_REMEDIATED_EVENT_TYPE);
+        action.setOrgId(DEFAULT_ORG_ID);
+        action.setContext(new Context.ContextBuilder().build());
+        action.setEvents(List.of(buildPackageEvent("requests", List.of(
+            buildRelease(List.of("2.32.0.rhlw001"), List.of(
+                buildCve("CVE-2026-4321", "critical")
+            ))
+        ))));
+        eventTypeDisplayName = "Python Remediated";
+        String result = generateEmailBody(LIGHTWELL_PYTHON_REMEDIATED_EVENT_TYPE, action, false);
+
+        assertTrue(result.contains("New Package Available for Python Remediated"));
+        assertFalse(result.contains("New Packages Available"));
+        assertTrue(result.contains("The following package was fixed by Lightwell in the Python Remediated and is available for your access."));
+        assertTrue(result.contains(">1</a>"));
+    }
+
+    private static Action createLightwellPythonRemediatedAction() {
+        Action action = new Action();
+        action.setBundle("lightwell");
+        action.setApplication("lightwell");
+        action.setTimestamp(LocalDateTime.now());
+        action.setEventType(LIGHTWELL_PYTHON_REMEDIATED_EVENT_TYPE);
+        action.setOrgId(DEFAULT_ORG_ID);
+        action.setContext(new Context.ContextBuilder().build());
+        action.setEvents(List.of(
+            buildPackageEvent("requests", List.of(
+                buildRelease(List.of("2.32.0.rhlw001"), List.of(
+                    buildCve("CVE-2026-4321", "critical")
+                ))
+            )),
+            buildPackageEvent("urllib3", List.of(
+                buildRelease(List.of("2.2.2.rhlw001"), List.of(
+                    buildCve("CVE-2026-4322", "important")
+                ))
+            )),
+            buildPackageEvent("certifi", List.of(
+                buildRelease(List.of("2024.7.4.rhlw001"), List.of(
+                    buildCve("CVE-2026-4323", "moderate")
+                ))
+            ))
+        ));
+        return action;
     }
 
     private static Action createLightwellActionWithReleases(List<Map<String, Object>> releases) {

@@ -15,6 +15,7 @@ public class Lightwell {
     static final String LIGHTWELL_FOLDER_NAME = "Lightwell/";
 
     public static final String LIGHTWELL_JAVA_REMEDIATED_EVENT_TYPE = "java-remediated";
+    public static final String LIGHTWELL_PYTHON_REMEDIATED_EVENT_TYPE = "python-remediated";
 
     public static final Map<TemplateDefinition, String> templatesMap = Map.ofEntries(
 

@@ -192,6 +192,13 @@
               "description": "Java Remediated",
               "default_severity": "NONE",
               "available_severities": ["LOW", "CRITICAL", "NONE", "MODERATE", "IMPORTANT"]
+            },
+            {
+              "name": "python-remediated",
+              "display_name": "Python Remediated",
+              "description": "Python Remediated",
+              "default_severity": "NONE",
+              "available_severities": ["LOW", "CRITICAL", "NONE", "MODERATE", "IMPORTANT"]
             }
           ]
         }
