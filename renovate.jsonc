@@ -47,9 +47,7 @@
         "actions/setup-java",
         "actions/setup-node",
         "actions/upload-artifact",
-        "github/codeql-action/analyze",
-        "github/codeql-action/autobuild",
-        "github/codeql-action/init"
+        "github/codeql-action"
       ],
       "automerge": true,
       "groupName": "GitHub Actions"
