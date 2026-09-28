@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.routers.internal;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.auth.OidcServerMockResource;
+import com.redhat.cloud.notifications.auth.rbac.workspace.RbacServerMockResource;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.repositories.WorkspaceRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -26,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
+@QuarkusTestResource(OidcServerMockResource.class)
+@QuarkusTestResource(RbacServerMockResource.class)
 public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
 
     @ConfigProperty(name = "internal.admin-role")
