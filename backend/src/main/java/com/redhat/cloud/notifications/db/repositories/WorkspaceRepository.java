@@ -64,10 +64,13 @@ public class WorkspaceRepository {
      */
     @Transactional
     public int assignWorkspaceToEndpoints(UUID workspaceId, String orgId) {
-        String hql = "UPDATE Endpoint e SET e.workspaceId = :workspaceId " +
+        // Get the workspace entity to set the relationship
+        Workspace workspace = entityManager.getReference(Workspace.class, workspaceId);
+
+        String hql = "UPDATE Endpoint e SET e.workspace = :workspace " +
                      "WHERE e.orgId = :orgId AND e.workspace IS NULL";
         return entityManager.createQuery(hql)
-            .setParameter("workspaceId", workspaceId)
+            .setParameter("workspace", workspace)
             .setParameter("orgId", orgId)
             .executeUpdate();
     }
@@ -77,10 +80,13 @@ public class WorkspaceRepository {
      */
     @Transactional
     public int assignSystemWorkspace(UUID systemWorkspaceId) {
-        String hql = "UPDATE Endpoint e SET e.workspaceId = :workspaceId " +
+        // Get the workspace entity to set the relationship
+        Workspace workspace = entityManager.getReference(Workspace.class, systemWorkspaceId);
+
+        String hql = "UPDATE Endpoint e SET e.workspace = :workspace " +
                      "WHERE e.orgId IS NULL AND e.workspace IS NULL";
         return entityManager.createQuery(hql)
-            .setParameter("workspaceId", systemWorkspaceId)
+            .setParameter("workspace", workspace)
             .executeUpdate();
     }
 }
