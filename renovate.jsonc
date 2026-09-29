@@ -65,6 +65,20 @@
       "automerge": false,
       "groupName": null
     },
+    {
+      // Temporary rule: 3.6.0 broke the build and was reverted in
+      // https://github.com/RedHatInsights/notifications-backend/pull/4903.
+      // Both plugins share the surefire-plugin.version property, so a reviewer picks
+      // the target version instead of it automerging again. Remove this rule once a
+      // fixed release is confirmed safe.
+      "matchManagers": ["maven"],
+      "matchPackageNames": [
+        "org.apache.maven.plugins:maven-surefire-plugin",
+        "org.apache.maven.plugins:maven-failsafe-plugin"
+      ],
+      "automerge": false,
+      "groupName": null
+    },
 
     {
       // The Konflux PR build builds and tests the image. A digest update rebuilds the same
