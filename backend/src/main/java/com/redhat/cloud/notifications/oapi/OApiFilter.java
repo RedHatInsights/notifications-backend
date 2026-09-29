@@ -231,6 +231,11 @@ public class OApiFilter {
                         saveFoundDependency(returnedSet, schemasAsMap, ((HashMap) entryMap).get("$ref"));
                     });
                 }
+                if (null != propertyValue.get("anyOf")) {
+                    ((List) propertyValue.get("anyOf")).stream().forEach(entryMap -> {
+                        saveFoundDependency(returnedSet, schemasAsMap, ((HashMap) entryMap).get("$ref"));
+                    });
+                }
                 if (null != propertyValue.get("additionalProperties") && null != ((HashMap) propertyValue.get("additionalProperties")).get("$ref")) {
                     saveFoundDependency(returnedSet, schemasAsMap, ((HashMap) propertyValue.get("additionalProperties")).get("$ref"));
                 }
