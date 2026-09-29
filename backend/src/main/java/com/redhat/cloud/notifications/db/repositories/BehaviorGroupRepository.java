@@ -456,7 +456,7 @@ public class BehaviorGroupRepository {
     @Transactional
     public void updateBehaviorEventTypes(String orgId, UUID behaviorGroupId, Set<UUID> eventTypeIds) {
         BehaviorGroup behaviorGroup = entityManager.find(BehaviorGroup.class, behaviorGroupId);
-        if (behaviorGroup == null || !behaviorGroup.getOrgId().equals(orgId)) {
+        if (behaviorGroup == null || !orgId.equals(behaviorGroup.getOrgId())) {
             throw new NotFoundException("Behavior group not found in the org");
         }
 

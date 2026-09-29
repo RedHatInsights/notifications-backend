@@ -685,6 +685,17 @@ public class BehaviorGroupRepositoryTest extends DbIsolatedTest {
         }
     }
 
+    @Test
+    void testUpdateBehaviorEventTypesWithDefaultBehaviorGroupDoesNotThrowNpe() {
+        Bundle bundle = resourceHelpers.createBundle();
+        BehaviorGroup defaultBehaviorGroup = resourceHelpers.createDefaultBehaviorGroup("Default BG", bundle.getId());
+
+        NotFoundException e = assertThrows(NotFoundException.class, () -> {
+            behaviorGroupRepository.updateBehaviorEventTypes(DEFAULT_ORG_ID, defaultBehaviorGroup.getId(), Set.of());
+        });
+        assertEquals("Behavior group not found in the org", e.getMessage());
+    }
+
     /**
      * <p>Tests that the "count" function works as expected. For that, a specific bundle an application are created, and
      * then:
