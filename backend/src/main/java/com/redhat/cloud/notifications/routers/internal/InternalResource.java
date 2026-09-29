@@ -658,7 +658,7 @@ public class InternalResource {
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_USER)
     public Response getDailyDigestTimePreference(@PathParam("orgId") String orgId) {
         Log.infof("Get daily digest time preference form internal API, for orgId %s", orgId);
-        AggregationOrgConfig storedParameters = aggregationOrgConfigRepository.findJobAggregationOrgConfig(orgId);
+        AggregationOrgConfig storedParameters = aggregationOrgConfigRepository.findDailyDigestPreference(orgId);
         if (null != storedParameters) {
             return Response.ok(storedParameters.getScheduledExecutionTime()).build();
         } else {

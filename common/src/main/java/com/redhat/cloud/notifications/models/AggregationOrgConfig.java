@@ -1,48 +1,67 @@
 package com.redhat.cloud.notifications.models;
 
+import com.redhat.cloud.notifications.db.converters.DayOfWeekConverter;
+import jakarta.persistence.Convert;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Objects;
+
+import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 
 
 @Entity
 @Table(name = "aggregation_org_config")
 public class AggregationOrgConfig {
 
-    @Id
-    @NotNull
-    @Size(max = 50)
-    public String orgId;
+    @EmbeddedId
+    private AggregationOrgConfigId id;
 
     private LocalTime scheduledExecutionTime;
 
     private LocalDateTime lastRun;
 
+    @Convert(converter = DayOfWeekConverter.class)
+    private DayOfWeek preferredDay;
+
     public AggregationOrgConfig() {
     }
 
     public AggregationOrgConfig(String orgId, LocalTime scheduledExecutionTime) {
-        this.orgId = orgId;
+        this.id = new AggregationOrgConfigId(orgId, DAILY);
         this.scheduledExecutionTime = scheduledExecutionTime;
     }
 
     public AggregationOrgConfig(String orgId, LocalTime scheduledExecutionTime, LocalDateTime lastRun) {
-        this.orgId = orgId;
+        this.id = new AggregationOrgConfigId(orgId, DAILY);
         this.scheduledExecutionTime = scheduledExecutionTime;
         this.lastRun = lastRun;
     }
 
-    public String getOrgId() {
-        return orgId;
+    public AggregationOrgConfig(String orgId, SubscriptionType subscriptionType, LocalTime scheduledExecutionTime, DayOfWeek preferredDay) {
+        this.id = new AggregationOrgConfigId(orgId, subscriptionType);
+        this.scheduledExecutionTime = scheduledExecutionTime;
+        this.preferredDay = preferredDay;
     }
 
-    public void setOrgId(String orgId) {
-        this.orgId = orgId;
+    public AggregationOrgConfigId getId() {
+        return id;
+    }
+
+    public void setId(AggregationOrgConfigId id) {
+        this.id = id;
+    }
+
+    public String getOrgId() {
+        return id.orgId;
+    }
+
+    public SubscriptionType getSubscriptionType() {
+        return id.subscriptionType;
     }
 
     public LocalTime getScheduledExecutionTime() {
@@ -61,6 +80,14 @@ public class AggregationOrgConfig {
         this.lastRun = lastRun;
     }
 
+    public DayOfWeek getPreferredDay() {
+        return preferredDay;
+    }
+
+    public void setPreferredDay(DayOfWeek preferredDay) {
+        this.preferredDay = preferredDay;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -70,11 +97,11 @@ public class AggregationOrgConfig {
             return false;
         }
         AggregationOrgConfig that = (AggregationOrgConfig) o;
-        return Objects.equals(orgId, that.orgId);
+        return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(orgId);
+        return Objects.hash(id);
     }
 }

@@ -20,17 +20,12 @@ public class AggregationOrgConfigRepository {
     @Inject
     EntityManager entityManager;
 
-    /**
-     * Creates an aggregation_org_config with a last run date of yesterday at defaultRunningTime time,
-     * for orgs with at least one subscriber to daily digest
-     * @param defaultRunningTime the default aggegation time.
-     */
     @Transactional
     public void createMissingDefaultConfigurationBasedOnEvent(LocalTime defaultRunningTime) {
-        String query = "INSERT INTO aggregation_org_config (org_id, scheduled_execution_time, last_run) " +
-            "SELECT DISTINCT(es.org_id), CAST(:expectedRunningTime as time without time zone), CAST(:lastRun as timestamp without time zone) " +
+        String query = "INSERT INTO aggregation_org_config (org_id, subscription_type, scheduled_execution_time, last_run) " +
+            "SELECT DISTINCT(es.org_id), 'DAILY', CAST(:expectedRunningTime as time without time zone), CAST(:lastRun as timestamp without time zone) " +
             "FROM email_subscriptions es where es.subscription_type='DAILY' and es.subscribed = true AND " +
-            "NOT EXISTS (SELECT 1 FROM aggregation_org_config agcjp WHERE es.org_id = agcjp.org_id)";
+            "NOT EXISTS (SELECT 1 FROM aggregation_org_config agcjp WHERE es.org_id = agcjp.org_id AND agcjp.subscription_type = 'DAILY')";
 
         int createdEntries = entityManager.createNativeQuery(query)
             .setParameter("expectedRunningTime", defaultRunningTime)
@@ -48,7 +43,7 @@ public class AggregationOrgConfigRepository {
     @Transactional
     public void updateLastCronJobRunAccordingOrgPref(List<String> orgIdsToUpdate, LocalDateTime end) {
 
-        String hqlQuery = "UPDATE AggregationOrgConfig ac SET ac.lastRun=:end WHERE ac.orgId IN :orgIdsToUpdate";
+        String hqlQuery = "UPDATE AggregationOrgConfig ac SET ac.lastRun=:end WHERE ac.id.orgId IN :orgIdsToUpdate AND ac.id.subscriptionType = 'DAILY'";
         Query nativeQuery = entityManager.createQuery(hqlQuery)
             .setParameter("orgIdsToUpdate", orgIdsToUpdate)
             .setParameter("end", end);
