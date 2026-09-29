@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications API V3 Migration Guide</title>
+    <style>
+        :root {
+            --rh-red: #EE0000;
+            --rh-red-dark: #A30000;
+            --rh-black: #151515;
+            --rh-gray-900: #212427;
+            --rh-gray-600: #4D5258;
+            --rh-gray-400: #8A8D90;
+            --rh-gray-200: #D2D2D2;
+            --rh-gray-100: #F0F0F0;
+            --rh-white: #FFFFFF;
+            --rh-blue: #0066CC;
+            --rh-blue-dark: #004080;
+            --rh-green: #3E8635;
+            --rh-orange: #F0AB00;
+            --code-bg: #F5F5F5;
+            --border-color: #D2D2D2;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Red Hat Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            color: var(--rh-gray-900);
+            line-height: 1.6;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            background: var(--rh-white);
+        }
+
+        h1 {
+            font-family: "Red Hat Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--rh-black);
+            border-bottom: 3px solid var(--rh-red);
+            padding-bottom: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        h1 + p { color: var(--rh-gray-600); margin-bottom: 2rem; }
+
+        h2 {
+            font-family: "Red Hat Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--rh-black);
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--rh-gray-200);
+        }
+
+        h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--rh-gray-900);
+            margin-top: 1.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--rh-gray-600);
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        a { color: var(--rh-blue); text-decoration: none; }
+        a:hover { color: var(--rh-blue-dark); text-decoration: underline; }
+
+        code {
+            font-family: "Red Hat Mono", "Courier New", Courier, monospace;
+            font-size: 0.875em;
+            background: var(--code-bg);
+            padding: 0.15em 0.4em;
+            border-radius: 3px;
+        }
+
+        pre {
+            background: var(--rh-gray-900);
+            color: #E0E0E0;
+            padding: 1.25rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            font-size: 0.85em;
+            color: inherit;
+        }
+
+        .comment { color: #6A9955; }
+        .string { color: #CE9178; }
+        .key { color: #9CDCFE; }
+        .bool { color: #569CD6; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.25rem;
+            font-size: 0.9rem;
+        }
+
+        thead th {
+            background: var(--rh-gray-100);
+            font-weight: 600;
+            text-align: left;
+            padding: 0.6rem 0.75rem;
+            border-bottom: 2px solid var(--rh-gray-200);
+        }
+
+        tbody td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--rh-gray-200);
+            vertical-align: top;
+        }
+
+        tbody tr:hover { background: #F8F8F8; }
+
+        .removed { color: var(--rh-red-dark); font-weight: 600; }
+        .replaced { color: var(--rh-orange); font-weight: 600; }
+        .new { color: var(--rh-green); font-weight: 600; }
+
+        ul, ol { margin-bottom: 1rem; padding-left: 1.5rem; }
+        li { margin-bottom: 0.35rem; }
+
+        .badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.15em 0.5em;
+            border-radius: 3px;
+            vertical-align: middle;
+        }
+
+        .badge-breaking { background: #FAEAEA; color: var(--rh-red-dark); border: 1px solid var(--rh-red-dark); }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--rh-gray-200);
+            margin: 2rem 0;
+        }
+
+        .checklist { list-style: none; padding-left: 0; }
+        .checklist li {
+            position: relative;
+            padding-left: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+        .checklist li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.3em;
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--rh-gray-400);
+            border-radius: 2px;
+        }
+
+        .spec-list { list-style: none; padding-left: 0; }
+        .spec-list li { margin-bottom: 0.25rem; }
+
+        .method {
+            display: inline-block;
+            font-family: "Red Hat Mono", monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.1em 0.4em;
+            border-radius: 3px;
+            min-width: 3.5em;
+            text-align: center;
+        }
+
+        .method-get { background: #E7F5E7; color: #1B5E20; }
+        .method-post { background: #FFF3E0; color: #E65100; }
+        .method-put { background: #E3F2FD; color: #0D47A1; }
+        .method-delete { background: #FFEBEE; color: #B71C1C; }
+
+        @media (max-width: 600px) {
+            body { padding: 1rem; }
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.25rem; }
+            table { font-size: 0.8rem; }
+            pre { padding: 0.75rem; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<h1>Notifications API V3 Migration Guide</h1>
+<p>This guide covers all breaking changes and new features when migrating from the V1/V2 APIs to V3, for services consuming the Notifications and Integrations APIs.</p>
+
+<!-- ────────────────────────── OpenAPI Specs ────────────────────────── -->
+
+<h2>OpenAPI Specifications</h2>
+
+<p>The full OpenAPI specs for each version are available on stage:</p>
+
+<h4>Notifications API</h4>
+<ul class="spec-list">
+    <li>V1: <a href="https://console.stage.redhat.com/api/notifications/v1.0/openapi.json">https://console.stage.redhat.com/api/notifications/v1.0/openapi.json</a></li>
+    <li>V2: <a href="https://console.stage.redhat.com/api/notifications/v2.0/openapi.json">https://console.stage.redhat.com/api/notifications/v2.0/openapi.json</a></li>
+    <li>V3: <a href="https://console.stage.redhat.com/api/notifications/v3.0/openapi.json">https://console.stage.redhat.com/api/notifications/v3.0/openapi.json</a></li>
+</ul>
+
+<h4>Integrations API</h4>
+<ul class="spec-list">
+    <li>V1: <a href="https://console.stage.redhat.com/api/integrations/v1.0/openapi.json">https://console.stage.redhat.com/api/integrations/v1.0/openapi.json</a></li>
+    <li>V2: <a href="https://console.stage.redhat.com/api/integrations/v2.0/openapi.json">https://console.stage.redhat.com/api/integrations/v2.0/openapi.json</a></li>
+    <li>V3: <a href="https://console.stage.redhat.com/api/integrations/v3.0/openapi.json">https://console.stage.redhat.com/api/integrations/v3.0/openapi.json</a></li>
+</ul>
+
+<!-- ────────────────────────── Base Path Changes ────────────────────────── -->
+
+<h2>Base Path Changes</h2>
+
+<table>
+    <thead><tr><th>API</th><th>V1</th><th>V2</th><th>V3</th></tr></thead>
+    <tbody>
+        <tr><td>Integrations</td><td><code>/api/integrations/v1.0</code></td><td><code>/api/integrations/v2.0</code></td><td><code>/api/integrations/v3.0</code></td></tr>
+        <tr><td>Notifications</td><td><code>/api/notifications/v1.0</code></td><td><code>/api/notifications/v2.0</code></td><td><code>/api/notifications/v3.0</code></td></tr>
+    </tbody>
+</table>
+
+<hr>
+
+<!-- ────────────────────────── Integrations API ────────────────────────── -->
+
+<h2>Integrations API (<code>/api/integrations/v3.0/endpoints</code>)</h2>
+
+<h3>Secrets Management <span class="badge badge-breaking">Breaking Change</span></h3>
+
+<p>The most significant change in V3 is how secrets (secret tokens and bearer authentication) are handled. In V1/V2, secrets were embedded in the endpoint properties and returned (redacted) in responses. <strong>V3 never returns secrets in any response.</strong></p>
+
+<h4>Creating an Endpoint with Secrets</h4>
+
+<p>In V1, secrets were set directly in the <code>properties</code> object:</p>
+
+<pre><code><span class="comment">// V1 — POST /api/integrations/v1.0/endpoints</span>
+{
+  <span class="key">"name"</span>: <span class="string">"My Webhook"</span>,
+  <span class="key">"type"</span>: <span class="string">"webhook"</span>,
+  <span class="key">"properties"</span>: {
+    <span class="key">"url"</span>: <span class="string">"https://example.com/hook"</span>,
+    <span class="key">"method"</span>: <span class="string">"POST"</span>,
+    <span class="key">"secret_token"</span>: <span class="string">"my-secret"</span>,
+    <span class="key">"bearer_authentication"</span>: <span class="string">"my-bearer-token"</span>,
+    <span class="key">"disable_ssl_verification"</span>: <span class="bool">false</span>
+  }
+}</code></pre>
+
+<p>In V3, secrets are provided via an optional top-level <code>secrets</code> field at creation time. The <code>secrets</code> field is write-only and never included in responses:</p>
+
+<pre><code><span class="comment">// V3 — POST /api/integrations/v3.0/endpoints</span>
+{
+  <span class="key">"name"</span>: <span class="string">"My Webhook"</span>,
+  <span class="key">"type"</span>: <span class="string">"webhook"</span>,
+  <span class="key">"properties"</span>: {
+    <span class="key">"url"</span>: <span class="string">"https://example.com/hook"</span>
+  },
+  <span class="key">"secrets"</span>: {
+    <span class="key">"secret_token"</span>: <span class="string">"my-secret"</span>,
+    <span class="key">"bearer_authentication"</span>: <span class="string">"my-bearer-token"</span>
+  }
+}</code></pre>
+
+<h4>Updating Secrets on an Existing Endpoint</h4>
+
+<p>In V1, secrets were updated inline when updating the endpoint via <code>PUT /endpoints/{id}</code>.</p>
+<p>In V3, the <code>PUT /endpoints/{id}</code> endpoint <strong>ignores any secrets in the payload</strong>. Use the dedicated secrets endpoints instead:</p>
+
+<table>
+    <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+    <tbody>
+        <tr><td><span class="method method-put">PUT</span></td><td><code>/endpoints/{id}/secrets</code></td><td>Create or replace secrets</td></tr>
+        <tr><td><span class="method method-delete">DELETE</span></td><td><code>/endpoints/{id}/secrets</code></td><td>Delete all secrets</td></tr>
+    </tbody>
+</table>
+
+<p><strong><code>PUT /endpoints/{id}/secrets</code></strong> request body:</p>
+
+<pre><code>{
+  <span class="key">"secret_token"</span>: <span class="string">"new-secret"</span>,
+  <span class="key">"bearer_authentication"</span>: <span class="string">"new-bearer-token"</span>
+}</code></pre>
+
+<p>Omitting a field clears that particular secret. To clear all secrets at once, use <code>DELETE /endpoints/{id}/secrets</code>.</p>
+
+<!-- Webhook Properties -->
+
+<h3>Webhook Properties Changes</h3>
+
+<table>
+    <thead><tr><th>Field</th><th>V1</th><th>V3</th></tr></thead>
+    <tbody>
+        <tr><td><code>url</code></td><td>Present</td><td>Present (unchanged)</td></tr>
+        <tr><td><code>method</code></td><td>Required</td><td><span class="removed">Removed</span> (hardcoded to POST)</td></tr>
+        <tr><td><code>disable_ssl_verification</code></td><td>Required</td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>secret_token</code></td><td>Optional</td><td><span class="removed">Removed</span> (use <code>secrets</code>)</td></tr>
+        <tr><td><code>bearer_authentication</code></td><td>Optional</td><td><span class="removed">Removed</span> (use <code>secrets</code>)</td></tr>
+    </tbody>
+</table>
+
+<p><strong>Migration:</strong> Remove <code>method</code>, <code>disable_ssl_verification</code>, <code>secret_token</code>, and <code>bearer_authentication</code> from the <code>properties</code> object. Only <code>url</code> remains. Pass secrets via the top-level <code>secrets</code> field on create, or <code>PUT /endpoints/{id}/secrets</code> for updates.</p>
+
+<!-- Camel Properties -->
+
+<h3>Camel Properties Changes (Slack, Google Chat, Teams, ServiceNow, Splunk)</h3>
+
+<table>
+    <thead><tr><th>Field</th><th>V1</th><th>V3</th></tr></thead>
+    <tbody>
+        <tr><td><code>url</code></td><td>Present</td><td>Present (unchanged)</td></tr>
+        <tr><td><code>extras</code></td><td>Optional</td><td>Optional (unchanged)</td></tr>
+        <tr><td><code>disable_ssl_verification</code></td><td>Required</td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>secret_token</code></td><td>Optional</td><td><span class="removed">Removed</span> (use <code>secrets</code>)</td></tr>
+    </tbody>
+</table>
+
+<!-- PagerDuty Properties -->
+
+<h3>PagerDuty Properties Changes</h3>
+
+<table>
+    <thead><tr><th>Field</th><th>V1</th><th>V3</th></tr></thead>
+    <tbody>
+        <tr><td><code>severity</code></td><td>Required</td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>secret_token</code></td><td>Required</td><td><span class="removed">Removed</span> (use <code>secrets</code>)</td></tr>
+    </tbody>
+</table>
+
+<p><strong>Migration:</strong> The PagerDuty properties object is now empty. The integration key (previously <code>secret_token</code>) must be provided via the <code>secrets</code> field on create, or <code>PUT /endpoints/{id}/secrets</code> for updates.</p>
+
+<!-- System Subscription Properties -->
+
+<h3>System Subscription Properties Changes</h3>
+
+<table>
+    <thead><tr><th>Field</th><th>V1</th><th>V3</th></tr></thead>
+    <tbody>
+        <tr><td><code>only_admins</code></td><td>Present</td><td>Present (unchanged)</td></tr>
+        <tr><td><code>group_ids</code></td><td>Present</td><td>Present (unchanged)</td></tr>
+        <tr><td><code>group_id</code></td><td>Present</td><td><span class="removed">Removed</span> (use <code>group_ids</code>)</td></tr>
+        <tr><td><code>ignore_preferences</code></td><td>Present</td><td><span class="removed">Removed</span></td></tr>
+    </tbody>
+</table>
+
+<!-- Endpoint Object Changes -->
+
+<h3>Endpoint Object Field-Level Changes</h3>
+
+<table>
+    <thead><tr><th>Field</th><th>V1</th><th>V3</th></tr></thead>
+    <tbody>
+        <tr><td><code>status</code></td><td>Read-write</td><td>Read-only</td></tr>
+        <tr><td><code>event_types</code></td><td>Read-write</td><td>Write-only</td></tr>
+        <tr><td><code>event_types_group_by_bundles_and_applications</code></td><td>Read-write</td><td>Read-only</td></tr>
+        <tr><td><code>secrets</code></td><td>Not present</td><td><span class="new">New</span>, write-only (create only)</td></tr>
+    </tbody>
+</table>
+
+<!-- Endpoint Listing Response -->
+
+<h3>Endpoint Listing Response Format</h3>
+
+<p>V1 returns a page object without pagination links. V3 returns a page with full pagination links:</p>
+
+<pre><code><span class="comment">// V3 response — GET /api/integrations/v3.0/endpoints</span>
+{
+  <span class="key">"data"</span>: [ <span class="comment">/* endpoint objects */</span> ],
+  <span class="key">"links"</span>: {
+    <span class="key">"first"</span>: <span class="string">"/api/integrations/v3.0/endpoints?limit=20&amp;offset=0"</span>,
+    <span class="key">"last"</span>:  <span class="string">"/api/integrations/v3.0/endpoints?limit=20&amp;offset=80"</span>,
+    <span class="key">"prev"</span>:  <span class="bool">null</span>,
+    <span class="key">"next"</span>:  <span class="string">"/api/integrations/v3.0/endpoints?limit=20&amp;offset=20"</span>
+  },
+  <span class="key">"meta"</span>: {
+    <span class="key">"count"</span>: 95
+  }
+}</code></pre>
+
+<!-- Endpoint History Response -->
+
+<h3>Endpoint History Response</h3>
+
+<p>V1 returns a bare array of notification history entries. V3 (and V2) return a paginated response:</p>
+
+<pre><code><span class="comment">// V3 response — GET /api/integrations/v3.0/endpoints/{id}/history</span>
+{
+  <span class="key">"data"</span>: [ <span class="comment">/* notification history entries */</span> ],
+  <span class="key">"links"</span>: { <span class="key">"first"</span>: <span class="string">"..."</span>, <span class="key">"last"</span>: <span class="string">"..."</span>, <span class="key">"prev"</span>: <span class="bool">null</span>, <span class="key">"next"</span>: <span class="string">"..."</span> },
+  <span class="key">"meta"</span>: { <span class="key">"count"</span>: 42 }
+}</code></pre>
+
+<!-- Removed Integrations Endpoints -->
+
+<h3>Removed Endpoints (Integrations API)</h3>
+
+<p>The following V1 endpoints are not available in V3:</p>
+
+<table>
+    <thead><tr><th>V1 Endpoint</th><th>V3 Alternative</th></tr></thead>
+    <tbody>
+        <tr><td><code>POST /endpoints/system/email_subscription</code></td><td>None (system endpoints are managed differently)</td></tr>
+        <tr><td><code>POST /endpoints/system/drawer_subscription</code></td><td>None (system endpoints are managed differently)</td></tr>
+        <tr><td><code>PUT /endpoints/{id}/eventType/{eventTypeId}</code></td><td>Use the <code>event_types</code> field on <code>POST /endpoints</code> or <code>PUT /endpoints/{id}</code></td></tr>
+        <tr><td><code>DELETE /endpoints/{id}/eventType/{eventTypeId}</code></td><td>Use the <code>event_types</code> field on <code>PUT /endpoints/{id}</code></td></tr>
+        <tr><td><code>PUT /endpoints/{id}/eventTypes</code></td><td>Use the <code>event_types</code> field on <code>PUT /endpoints/{id}</code></td></tr>
+    </tbody>
+</table>
+
+<!-- New Integrations Endpoints -->
+
+<h3>New Endpoints (Integrations API)</h3>
+
+<table>
+    <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+    <tbody>
+        <tr><td><span class="method method-put">PUT</span></td><td><code>/endpoints/{id}/secrets</code></td><td>Create or update an endpoint's secrets</td></tr>
+        <tr><td><span class="method method-delete">DELETE</span></td><td><code>/endpoints/{id}/secrets</code></td><td>Delete all secrets associated with an endpoint</td></tr>
+    </tbody>
+</table>
+
+<hr>
+
+<!-- ────────────────────────── Notifications API ────────────────────────── -->
+
+<h2>Notifications API (<code>/api/notifications/v3.0/notifications</code>)</h2>
+
+<h3>Response Schema Changes</h3>
+
+<p>V1 returns raw internal entities in several endpoints. V3 returns cleaner, purpose-built response schemas with a more stable contract.</p>
+
+<table>
+    <thead><tr><th>Endpoint</th><th>Change Summary</th></tr></thead>
+    <tbody>
+        <tr><td><code>GET /eventTypes</code></td><td>New response schema with <code>fully_qualified_name</code></td></tr>
+        <tr><td><code>GET /bundles/{bundleName}</code></td><td>New dedicated response schema</td></tr>
+        <tr><td><code>GET /bundles/{bundleName}/applications/{appName}</code></td><td>New dedicated response schema</td></tr>
+        <tr><td><code>GET /bundles/{bundleName}/applications/{appName}/eventTypes/{etName}</code></td><td>New response schema with <code>fully_qualified_name</code></td></tr>
+        <tr><td><code>GET /eventTypes/{id}/endpoints</code></td><td>Uses V3 endpoint schema (no secrets)</td></tr>
+    </tbody>
+</table>
+
+<h3>New Fields in V3 Response Schemas</h3>
+
+<p><strong>EventType</strong> adds:</p>
+<ul>
+    <li><code>fully_qualified_name</code> — the fully qualified name of the event type (e.g. <code>rhel.advisor.new-recommendation</code>)</li>
+</ul>
+
+<p><strong>Application</strong> changes:</p>
+<ul>
+    <li><code>id</code> is read-only</li>
+    <li><code>bundle_id</code> field is present (V1 returned a nested <code>bundle</code> object or omitted the relationship)</li>
+</ul>
+
+<p><strong>Bundle</strong> changes:</p>
+<ul>
+    <li><code>id</code> is read-only</li>
+    <li><code>applications</code> is an ordered list (V1 returned a set with no guaranteed order)</li>
+</ul>
+
+<!-- New Notifications Endpoints -->
+
+<h3>New Endpoints (Notifications API)</h3>
+
+<table>
+    <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>V1 Equivalent</th></tr></thead>
+    <tbody>
+        <tr><td><span class="method method-get">GET</span></td><td><code>/applications</code></td><td>List applications (full schema)</td><td><code>GET /facets/applications</code> (Facet only)</td></tr>
+        <tr><td><span class="method method-get">GET</span></td><td><code>/bundles</code></td><td>List bundles (full schema, optional apps)</td><td><code>GET /facets/bundles</code> (Facet only)</td></tr>
+    </tbody>
+</table>
+
+<p>The new <code>/applications</code> and <code>/bundles</code> endpoints return full objects with all fields instead of the simplified <code>Facet</code> format (<code>{ id, name, display_name }</code>) used in V1.</p>
+
+<p><code>GET /bundles</code> supports an <code>includeApplications</code> query parameter (boolean, default <code>false</code>) to include each bundle's applications in the response.</p>
+
+<!-- Removed Notifications Endpoints -->
+
+<h3>Removed Endpoints (Notifications API)</h3>
+
+<p>All behavior group management endpoints have been removed from V3. Event type-to-endpoint linking is managed directly:</p>
+
+<table>
+    <thead><tr><th>V1 Endpoint</th><th>V3 Status</th></tr></thead>
+    <tbody>
+        <tr><td><code>GET /eventTypes/{eventTypeId}/behaviorGroups</code></td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>GET /eventTypes/affectedByRemovalOfBehaviorGroup/{id}</code></td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>GET /behaviorGroups/affectedByRemovalOfEndpoint/{id}</code></td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>POST /behaviorGroups</code></td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>PUT /behaviorGroups/{id}</code></td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>DELETE /behaviorGroups/{id}</code></td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>PUT /behaviorGroups/{id}/actions</code></td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>PUT /eventTypes/{id}/behaviorGroups</code></td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>PUT /eventTypes/{id}/behaviorGroups/{bgId}</code></td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>DELETE /eventTypes/{id}/behaviorGroups/{bgId}</code></td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>GET /bundles/{bundleId}/behaviorGroups</code></td><td><span class="removed">Removed</span></td></tr>
+        <tr><td><code>GET /facets/applications</code></td><td><span class="replaced">Replaced</span> by <code>GET /applications</code></td></tr>
+        <tr><td><code>GET /facets/bundles</code></td><td><span class="replaced">Replaced</span> by <code>GET /bundles</code></td></tr>
+    </tbody>
+</table>
+
+<hr>
+
+<!-- ────────────────────────── Events API ────────────────────────── -->
+
+<h2>Events API (<code>/api/notifications/v3.0/notifications/events</code>)</h2>
+
+<h3>Date Parameter Changes <span class="badge badge-breaking">Breaking Change</span></h3>
+
+<table>
+    <thead><tr><th>Parameter</th><th>V1 Name</th><th>V1 Format</th><th>V3 Name</th><th>V3 Format</th></tr></thead>
+    <tbody>
+        <tr>
+            <td>Start date</td>
+            <td><code>startDate</code></td>
+            <td><code>yyyy-MM-dd</code> or <code>yyyy-MM-dd'T'HH:mm:ss</code> (auto-expanded)</td>
+            <td><code>startDateTime</code></td>
+            <td><code>yyyy-MM-dd'T'HH:mm:ss</code> only</td>
+        </tr>
+        <tr>
+            <td>End date</td>
+            <td><code>endDate</code></td>
+            <td><code>yyyy-MM-dd</code> or <code>yyyy-MM-dd'T'HH:mm:ss</code> (auto-expanded)</td>
+            <td><code>endDateTime</code></td>
+            <td><code>yyyy-MM-dd'T'HH:mm:ss</code> only</td>
+        </tr>
+    </tbody>
+</table>
+
+<p><strong>Migration:</strong> Rename <code>startDate</code> to <code>startDateTime</code> and <code>endDate</code> to <code>endDateTime</code>. If you were passing date-only values (<code>2024-01-15</code>), you must now pass full date-time values (<code>2024-01-15T00:00:00</code> for start, <code>2024-01-15T23:59:59</code> for end).</p>
+
+<hr>
+
+<!-- ────────────────────────── User Config ────────────────────────── -->
+
+<h2>User Config / Subscriptions API (<code>/api/notifications/v3.0/user-config</code>)</h2>
+
+<h3>Get Subscriptions</h3>
+
+<p>The V3 subscriptions endpoint returns a hierarchical tree of bundles, applications, and event types with their subscription channels:</p>
+
+<pre><code>GET /api/notifications/v3.0/user-config/subscriptions</code></pre>
+
+<p>Optional query parameters for narrowing the response:</p>
+<ul>
+    <li><code>bundle</code> — restrict to a specific bundle</li>
+    <li><code>application</code> — restrict to a specific application (requires <code>bundle</code>)</li>
+    <li><code>event_type</code> — restrict to a specific event type (requires <code>bundle</code> and <code>application</code>)</li>
+</ul>
+
+<h3>Update Subscriptions</h3>
+
+<pre><code>PUT /api/notifications/v3.0/user-config/subscriptions</code></pre>
+
+<p>V3 performs a <strong>partial update</strong> (not a full replace): any bundle, application, event type, or channel omitted from the request is left untouched. An empty array is accepted (unlike V2 which required a non-empty body).</p>
+
+<hr>
+
+<!-- ────────────────────────── Unchanged ────────────────────────── -->
+
+<h2>Unchanged APIs</h2>
+
+<p>The following APIs are identical between V1 and V3 (same behavior, just exposed at the V3 path prefix):</p>
+
+<ul>
+    <li><strong>Status</strong> (<code>/api/notifications/v3.0/notifications/status</code>)</li>
+    <li><strong>Org Config</strong> (<code>/api/notifications/v3.0/notifications/org-config</code>)</li>
+    <li><strong>Drawer</strong> (<code>/api/notifications/v3.0/notifications/drawer</code>)</li>
+</ul>
+
+<hr>
+
+<!-- ────────────────────────── Checklist ────────────────────────── -->
+
+<h2>Quick Migration Checklist</h2>
+
+<ul class="checklist">
+    <li>Update all base paths from <code>v1.0</code> or <code>v2.0</code> to <code>v3.0</code></li>
+    <li>Remove <code>method</code>, <code>disable_ssl_verification</code> from webhook properties</li>
+    <li>Remove <code>severity</code>, <code>secret_token</code> from PagerDuty properties</li>
+    <li>Remove <code>disable_ssl_verification</code>, <code>secret_token</code> from Camel properties</li>
+    <li>Move <code>secret_token</code> and <code>bearer_authentication</code> out of <code>properties</code> and into the top-level <code>secrets</code> field (create) or <code>PUT /endpoints/{id}/secrets</code> (update)</li>
+    <li>Stop reading secrets from endpoint responses (they are no longer returned)</li>
+    <li>Update secret management to use <code>PUT /endpoints/{id}/secrets</code> and <code>DELETE /endpoints/{id}/secrets</code></li>
+    <li>Stop writing to <code>status</code> on endpoints (now read-only)</li>
+    <li>Treat <code>event_types</code> as write-only; use <code>event_types_group_by_bundles_and_applications</code> for reading linked event types</li>
+    <li>Replace <code>GET /facets/applications</code> with <code>GET /applications</code></li>
+    <li>Replace <code>GET /facets/bundles</code> with <code>GET /bundles</code></li>
+    <li>Remove all behavior group API calls (create, update, delete, link/unlink) — manage event type-to-endpoint links directly</li>
+    <li>Rename <code>startDate</code>/<code>endDate</code> to <code>startDateTime</code>/<code>endDateTime</code> in event log queries, and use <code>yyyy-MM-dd'T'HH:mm:ss</code> format</li>
+    <li>Adapt to paginated response format for endpoint history (no longer a bare array)</li>
+    <li>Adapt to paginated response with pagination links for endpoint listings</li>
+    <li>Update response parsing for notification resources (EventType, Bundle, Application now use dedicated schemas)</li>
+    <li>Use <code>group_ids</code> instead of <code>group_id</code> for system subscription properties</li>
+</ul>
+
+</body>
+</html>
