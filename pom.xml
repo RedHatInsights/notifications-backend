@@ -94,6 +94,8 @@
 
         <jandex-maven-plugin.version>3.6.0</jandex-maven-plugin.version>
 
+        <netty-bom.version>4.1.138.Final</netty-bom.version>
+
     </properties>
 
     <dependencyManagement>
@@ -103,6 +105,14 @@
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
                 <version>${jackson-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Override Netty BOM before Quarkus BOM to fix CVE-2026-100655 and CVE-2026-100656 -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty-bom.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
