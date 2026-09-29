@@ -278,6 +278,9 @@ public class UserConfigResourceCommon {
                 eventTypeSettingsValue.subscriptionLocked = eventType.isSubscriptionLocked();
                 eventTypeSettingsValue.availableSeverities = eventType.getAvailableSeverities();
                 for (SubscriptionType subscriptionType : SubscriptionType.values()) {
+                    if (!subscriptionType.isUserSubscription()) {
+                        continue;
+                    }
                     if (backendConfig.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
                         boolean supported = isTemplateSupported(bundle.getName(), application.getName(), eventType, subscriptionType, orgId);
 
@@ -480,6 +483,9 @@ public class UserConfigResourceCommon {
 
         List<SubscriptionChannelDTO> channels = new ArrayList<>();
         for (SubscriptionType subscriptionType : SubscriptionType.values()) {
+            if (!subscriptionType.isUserSubscription()) {
+                continue;
+            }
             boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
             List<SeverityDTO> subscribedSeverities = subscribedByDefault ? new ArrayList<>(dto.getAvailableSeverities()) : new ArrayList<>();
             channels.add(new SubscriptionChannelDTO(subscriptionMapper.subscriptionTypeToSubscriptionTypeDTO(subscriptionType), subscribedSeverities));
