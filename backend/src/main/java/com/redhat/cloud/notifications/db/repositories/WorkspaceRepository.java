@@ -43,23 +43,28 @@ public class WorkspaceRepository {
     /**
      * Get or create the system workspace (org_id IS NULL).
      * Returns the existing system workspace if one exists, otherwise creates one.
+     * If multiple system workspaces exist (shouldn't happen in production),
+     * returns the oldest one by creation date.
      */
     @Transactional
     public Workspace getOrCreateSystemWorkspace() {
-        try {
-            // Try to find existing system workspace
-            return entityManager.createQuery(
-                "SELECT w FROM Workspace w WHERE w.orgId IS NULL", Workspace.class)
-                .getSingleResult();
-        } catch (NoResultException e) {
-            // Create new system workspace with a random UUID
-            Workspace workspace = new Workspace();
-            workspace.setId(UUID.randomUUID());
-            workspace.setOrgId(null);
-            entityManager.persist(workspace);
-            Log.infof("Created system workspace: id=%s", workspace.getId());
-            return workspace;
+        // Try to find existing system workspace (order by created to get the oldest if multiple exist)
+        List<Workspace> systemWorkspaces = entityManager.createQuery(
+            "SELECT w FROM Workspace w WHERE w.orgId IS NULL ORDER BY w.created ASC", Workspace.class)
+            .setMaxResults(1)
+            .getResultList();
+
+        if (!systemWorkspaces.isEmpty()) {
+            return systemWorkspaces.get(0);
         }
+
+        // Create new system workspace with a random UUID
+        Workspace workspace = new Workspace();
+        workspace.setId(UUID.randomUUID());
+        workspace.setOrgId(null);
+        entityManager.persist(workspace);
+        Log.infof("Created system workspace: id=%s", workspace.getId());
+        return workspace;
     }
 
     /**
