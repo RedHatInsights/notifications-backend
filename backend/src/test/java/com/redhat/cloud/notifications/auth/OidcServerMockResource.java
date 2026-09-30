@@ -32,6 +32,11 @@ public class OidcServerMockResource implements QuarkusTestResourceLifecycleManag
         Map<String, String> config = new HashMap<>();
         config.put("quarkus.oidc-client.auth-server-url", serverUrl);
 
+        // Configure for Kessel SDK OAuth2 (used by WorkspaceUtils)
+        config.put("notifications.oidc.issuer", serverUrl);
+        config.put("notifications.oidc.client-id", "test-client-id");
+        config.put("notifications.oidc.secret", "test-client-secret");
+
         System.out.println("OIDC server mock started on port: " + wireMockServer.port());
 
         return config;
