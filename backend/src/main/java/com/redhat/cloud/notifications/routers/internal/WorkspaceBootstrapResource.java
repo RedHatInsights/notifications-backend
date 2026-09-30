@@ -49,11 +49,9 @@ public class WorkspaceBootstrapResource {
 
         BootstrapSummary summary = new BootstrapSummary();
 
-        // Step 1: Create system workspace (org_id = null)
-        UUID systemWorkspaceId = UUID.randomUUID();
-        Workspace systemWorkspace = workspaceRepository.createOrGetWorkspace(
-            systemWorkspaceId, null
-        );
+        // Step 1: Get or create system workspace (org_id = null)
+        // This finds the existing system workspace or creates one if none exists
+        Workspace systemWorkspace = workspaceRepository.getOrCreateSystemWorkspace();
 
         int systemEndpointsUpdated = workspaceRepository.assignSystemWorkspace(
             systemWorkspace.getId()

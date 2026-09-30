@@ -41,6 +41,28 @@ public class WorkspaceRepository {
     }
 
     /**
+     * Get or create the system workspace (org_id IS NULL).
+     * Returns the existing system workspace if one exists, otherwise creates one.
+     */
+    @Transactional
+    public Workspace getOrCreateSystemWorkspace() {
+        try {
+            // Try to find existing system workspace
+            return entityManager.createQuery(
+                "SELECT w FROM Workspace w WHERE w.orgId IS NULL", Workspace.class)
+                .getSingleResult();
+        } catch (NoResultException e) {
+            // Create new system workspace with a random UUID
+            Workspace workspace = new Workspace();
+            workspace.setId(UUID.randomUUID());
+            workspace.setOrgId(null);
+            entityManager.persist(workspace);
+            Log.infof("Created system workspace: id=%s", workspace.getId());
+            return workspace;
+        }
+    }
+
+    /**
      * Get distinct org IDs from endpoints table.
      * Used by bootstrap to identify which orgs need workspace records.
      */
