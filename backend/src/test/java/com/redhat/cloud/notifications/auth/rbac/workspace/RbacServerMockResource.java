@@ -34,6 +34,7 @@ public class RbacServerMockResource implements QuarkusTestResourceLifecycleManag
 
         Map<String, String> config = new HashMap<>();
         config.put("quarkus.rest-client.rbac-authentication-oidc.url", serverUrl);
+        config.put("notifications.rbac.url", serverUrl); // For WorkspaceUtils / Kessel SDK
 
         System.out.println("RBAC server mock started on port: " + wireMockServer.port());
 

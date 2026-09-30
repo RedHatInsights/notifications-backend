@@ -299,7 +299,7 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
     @Transactional
     Endpoint getEndpointByName(String name) {
         return em.createQuery(
-            "SELECT e FROM Endpoint e WHERE e.name = :name", Endpoint.class)
+            "SELECT e FROM Endpoint e LEFT JOIN FETCH e.workspace WHERE e.name = :name", Endpoint.class)
             .setParameter("name", name)
             .getSingleResult();
     }
