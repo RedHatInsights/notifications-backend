@@ -522,4 +522,47 @@ public class EndpointRepositoryTest {
         Assertions.assertTrue(result.containsKey(DEFAULT_ORG_ID), "the organization ID should be present in the result");
         Assertions.assertEquals(List.of(pagerDutyEndpoint.getName()), result.get(DEFAULT_ORG_ID), "the PagerDuty endpoint should have been found");
     }
+
+    /**
+     * Tests that {@link EndpointRepository#getDefaultSystemSubscription(String, EndpointType)}
+     * only returns the org's plain default endpoint (no restrictions), and excludes endpoints
+     * that ignore user preferences, are scoped to a group, belong to a different org, or are
+     * org-less (orgId IS NULL) template endpoints.
+     */
+    @Test
+    @Transactional
+    void testGetDefaultSystemSubscriptionOnlyReturnsPlainOrgDefaultEndpoint() {
+        final String orgId = "get-default-system-subscription-org";
+        final String otherOrgId = "get-default-system-subscription-other-org";
+
+        final Endpoint defaultEndpoint = createSystemSubscriptionEndpoint(orgId, new SystemSubscriptionProperties());
+
+        final SystemSubscriptionProperties ignorePreferencesProperties = new SystemSubscriptionProperties();
+        ignorePreferencesProperties.setIgnorePreferences(true);
+        createSystemSubscriptionEndpoint(orgId, ignorePreferencesProperties);
+
+        final SystemSubscriptionProperties groupScopedProperties = new SystemSubscriptionProperties();
+        groupScopedProperties.setGroupId(UUID.randomUUID());
+        createSystemSubscriptionEndpoint(orgId, groupScopedProperties);
+
+        createSystemSubscriptionEndpoint(otherOrgId, new SystemSubscriptionProperties());
+        createSystemSubscriptionEndpoint(null, new SystemSubscriptionProperties());
+
+        final List<Endpoint> result = this.endpointRepository.getDefaultSystemSubscription(orgId, EMAIL_SUBSCRIPTION);
+
+        Assertions.assertEquals(1, result.size(), "only the org's plain default endpoint should have been returned");
+        Assertions.assertEquals(defaultEndpoint.getId(), result.get(0).getId(), "unexpected endpoint returned as the org's default");
+    }
+
+    private Endpoint createSystemSubscriptionEndpoint(String orgId, SystemSubscriptionProperties properties) {
+        final Endpoint endpoint = new Endpoint();
+        endpoint.setOrgId(orgId);
+        endpoint.setName("endpoint-" + new SecureRandom().nextInt());
+        endpoint.setDescription("System email endpoint");
+        endpoint.setEnabled(true);
+        endpoint.setType(EMAIL_SUBSCRIPTION);
+        properties.setEndpoint(endpoint);
+        persist(endpoint, properties);
+        return endpoint;
+    }
 }
