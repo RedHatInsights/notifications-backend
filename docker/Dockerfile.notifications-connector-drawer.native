@@ -32,8 +32,10 @@ RUN microdnf install -y \
   && microdnf clean all
 
 # Download and install Mandrel
+ARG MANDREL_SHA256=b9bda99eb95b10412ab2550631d852688c797c931346ddf48477b1c6fab985a7
 RUN curl -L -o /tmp/mandrel.tar.gz \
   https://github.com/graalvm/mandrel/releases/download/mandrel-${MANDREL_VERSION}/mandrel-java${JAVA_VERSION}-${ARCH}-${MANDREL_VERSION}.tar.gz \
+  && echo "${MANDREL_SHA256} /tmp/mandrel.tar.gz" | sha256sum -c - \
   && tar -xzf /tmp/mandrel.tar.gz -C /usr/local \
   && rm /tmp/mandrel.tar.gz
 
