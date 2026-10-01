@@ -1,5 +1,5 @@
 # Image available at https://catalog.redhat.com/software/containers/ubi9/openjdk-21-runtime.
-FROM registry.access.redhat.com/ubi9/openjdk-21:latest@sha256:645710be17ff582b0f2eb5d52f572556a2b73f4367290548bbc89431213e3ece
+FROM registry.access.redhat.com/ubi9/openjdk-21:latest@sha256:c1ace6c4a54563bc2912d753b898fcacb9b1c30010cd153419ddd3aa5bbf3b56
 
 # Switch to the root user to be able to install the required packages.
 USER root
