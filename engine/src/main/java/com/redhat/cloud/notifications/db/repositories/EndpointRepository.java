@@ -54,18 +54,26 @@ public class EndpointRepository {
     EngineConfig engineConfig;
 
     /**
-     * Finds all EMAIL_SUBSCRIPTION or DRAWER endpoints for the given org, including
-     * default system endpoints where orgId is null.
+     * Finds the org's default EMAIL_SUBSCRIPTION or DRAWER endpoint, i.e. the one with no
+     * restriction (not admin-only, not ignoring user preferences, no groupId/groupIds scoping).
+     * Endpoints with other properties (used for mandatory or group-scoped notifications) and
+     * org-less (orgId IS NULL) template endpoints must not be included here, as they would
+     * bypass user subscription preferences or leak into every org's aggregation.
      */
     public List<Endpoint> getDefaultSystemSubscription(String orgId, EndpointType endpointType) {
-        String query = "FROM Endpoint WHERE (orgId = :orgId OR orgId IS NULL) AND compositeType.type = :endpointType";
+        String query = "FROM Endpoint WHERE orgId = :orgId AND compositeType.type = :endpointType";
         List<Endpoint> systemEndpoints = entityManager.createQuery(query, Endpoint.class)
             .setParameter("orgId", orgId)
             .setParameter("endpointType", endpointType)
             .getResultList();
         loadProperties(systemEndpoints);
 
-        return systemEndpoints;
+        SystemSubscriptionProperties defaultProperties = new SystemSubscriptionProperties();
+        return systemEndpoints.stream()
+            .filter(endpoint -> defaultProperties.hasSameProperties(endpoint.getProperties(SystemSubscriptionProperties.class)))
+            .findFirst()
+            .map(List::of)
+            .orElse(List.of());
     }
 
     public List<Endpoint> getTargetEndpointsWithoutUsingBgs(String orgId, EventType eventType) {
