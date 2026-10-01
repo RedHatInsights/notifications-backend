@@ -28,7 +28,7 @@ spec:
   - name: image-expires-after
     value: 5d
   - name: dockerfile
-    value: ./docker/Dockerfile.notifications-connector-drawer.jvm
+    value: ./docker/Dockerfile.notifications-connector-drawer.native
   - name: path-context
     value: .
   pipelineRef:

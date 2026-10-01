@@ -4,8 +4,7 @@
 
 ### Naming and Location
 - Place all Dockerfiles in `docker/` with the naming pattern `Dockerfile.<service-name>.<mode>` where mode is `jvm` or `native`.
-- Every service except `notifications-mcp` uses JVM mode. The MCP service uses native mode (`Dockerfile.notifications-mcp.native`).
-- Exception: `Dockerfile.notifications-connector-drawer.jvm` is named `.jvm` but actually builds a Mandrel native image. Do not rename it -- the Tekton pipeline references this exact filename.
+- Every service except `notifications-mcp` and `notifications-connector-drawer` uses JVM mode. MCP and Drawer services uses native mode (`Dockerfile.notifications-mcp.native` and `Dockerfile.notifications-connector-drawer.native`).
 
 ### JVM Dockerfile Structure
 - Use multi-stage builds: `ubi9/openjdk-21:latest` for building, `ubi9/openjdk-21-runtime:latest` for runtime.
