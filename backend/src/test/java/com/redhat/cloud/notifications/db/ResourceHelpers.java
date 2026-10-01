@@ -220,8 +220,7 @@ public class ResourceHelpers {
     }
 
     public Endpoint getOrCreateSystemEndpoint(String accountId, String orgId, SystemSubscriptionProperties properties, EndpointType endpointType) {
-        return endpointRepository.getSystemSubscriptionEndpoint(orgId, properties, endpointType)
-            .orElseGet(() -> endpointRepository.createSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType, UUID.randomUUID().toString()));
+        return endpointRepository.getOrCreateSystemSubscriptionEndpoint(accountId, orgId, properties, endpointType);
     }
 
     public Stats createTestEndpoints(String accountId, String orgId, int count) {

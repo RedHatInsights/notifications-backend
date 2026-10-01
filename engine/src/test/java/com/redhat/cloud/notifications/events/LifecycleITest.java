@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.MicrometerAssertionHelper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.EngineConfig;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
+import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -94,6 +95,9 @@ public class LifecycleITest {
     EntityManager entityManager;
 
     @Inject
+    EndpointRepository endpointRepository;
+
+    @Inject
     ResourceHelpers resourceHelpers;
 
     @InjectSpy
@@ -129,13 +133,16 @@ public class LifecycleITest {
         addBehaviorGroupAction(behaviorGroup2.getId(), endpoint3.getId());
 
         // Adding an email endpoint to the default behavior group
-        Endpoint emailEndpoint = addDefaultBehaviorGroupAction(defaultBehaviorGroup);
+        addDefaultBehaviorGroupAction(defaultBehaviorGroup);
 
         // Let's push a first message! It should not trigger any webhook call since we didn't link the event type with any behavior group.
         pushMessage(0, 0, 0, 0);
 
         // Now we'll link the event type with one behavior group.
         addEventTypeBehavior(eventType.getId(), behaviorGroup1.getId());
+
+        // Get the account canonical email endpoint
+        Endpoint emailEndpoint = getAccountCanonicalEmailEndpoint(accountId, DEFAULT_ORG_ID);
 
         // Pushing a new message should trigger two webhook calls.
         pushMessage(2, 0, 0, 0);
@@ -238,6 +245,10 @@ public class LifecycleITest {
         }
     }
 
+    Endpoint getAccountCanonicalEmailEndpoint(String accountId, String orgId) {
+        return endpointRepository.getOrCreateDefaultSystemSubscription(accountId, orgId, EMAIL_SUBSCRIPTION);
+    }
+
     private Endpoint createWebhookEndpoint(String accountId, String secretToken) {
         WebhookProperties properties = new WebhookProperties();
         properties.setMethod(HttpType.POST);
@@ -247,12 +258,11 @@ public class LifecycleITest {
         return createEndpoint(accountId, WEBHOOK, UUID.randomUUID().toString(), "Endpoint", properties);
     }
 
-    private Endpoint addDefaultBehaviorGroupAction(BehaviorGroup behaviorGroup) {
+    private void addDefaultBehaviorGroupAction(BehaviorGroup behaviorGroup) {
         SystemSubscriptionProperties properties = new SystemSubscriptionProperties();
         properties.setOnlyAdmins(true);
         Endpoint endpoint = createEndpoint(null, EMAIL_SUBSCRIPTION, "Email endpoint " + RandomStringUtils.randomAlphabetic(10), "System email endpoint", properties);
         addBehaviorGroupAction(behaviorGroup.getId(), endpoint.getId());
-        return endpoint;
     }
 
     @Transactional
