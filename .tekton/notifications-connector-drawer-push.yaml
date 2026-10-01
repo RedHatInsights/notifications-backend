@@ -26,7 +26,7 @@ spec:
   - name: output-image
     value: quay.io/redhat-user-workloads/hcc-integrations-tenant/notifications/notifications-connector-drawer:{{revision}}
   - name: dockerfile
-    value: ./docker/Dockerfile.notifications-connector-drawer.jvm
+    value: ./docker/Dockerfile.notifications-connector-drawer.native
   - name: path-context
     value: .
   pipelineRef:

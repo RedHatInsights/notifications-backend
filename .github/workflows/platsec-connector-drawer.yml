@@ -41,7 +41,7 @@ jobs:
 
     with:
       dockerfile_path: './docker'
-      dockerfile_name: 'Dockerfile.notifications-connector-drawer.jvm'
+      dockerfile_name: 'Dockerfile.notifications-connector-drawer.native'
     #   base_image_build: true
     #   base_dockerfile_path: './test'
     #   base_dockerfile_name: 'Dockerfile.base'

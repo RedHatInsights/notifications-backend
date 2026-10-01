@@ -11,11 +11,11 @@ USER root
 
 # Set Mandrel version and architecture
 # Using latest Mandrel release for Java 21 (as of May 2026)
-ENV MANDREL_VERSION=23.1.11.0-Final
+ENV MANDREL_VERSION=23.1.12.1-Final
 ENV JAVA_VERSION=21
 ENV ARCH=linux-amd64
 
-# Install Mandrel 23.1.11.0-Final requested dependencies (list available at https://github.com/graalvm/mandrel/releases/tag/mandrel-23.1.11.0-Final)
+# Install Mandrel 23.1.12.1-Final requested dependencies (list available at https://github.com/graalvm/mandrel/releases/tag/mandrel-23.1.12.1-Final)
 RUN microdnf install -y \
   glibc-devel \
   zlib-devel \
@@ -32,7 +32,7 @@ RUN microdnf install -y \
   && microdnf clean all
 
 # Download and install Mandrel
-ARG MANDREL_SHA256=11c27dd5b16b5154336418d63c0bc90781ccf1c7e0ad454126ada2325bd320ca
+ARG MANDREL_SHA256=f5c62e29dc779a6dc574bb0bc4b40e4b0ec799d842fc979353b4c07e69057fb3
 RUN curl -L -o /tmp/mandrel.tar.gz \
   https://github.com/graalvm/mandrel/releases/download/mandrel-${MANDREL_VERSION}/mandrel-java${JAVA_VERSION}-${ARCH}-${MANDREL_VERSION}.tar.gz \
   && echo "${MANDREL_SHA256} /tmp/mandrel.tar.gz" | sha256sum -c - \
