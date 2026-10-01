@@ -6,14 +6,17 @@ import java.util.Map;
 
 /**
  * Test profile for workspace tests.
- * Uses fake-rbac to avoid complex OIDC/RBAC mocking.
+ * Uses fake-rbac profile to activate FakeWorkspaceUtils but re-enables
+ * dev services so Testcontainers can provide PostgreSQL for tests.
  */
 public class WorkspaceTestProfile implements QuarkusTestProfile {
 
     @Override
     public Map<String, String> getConfigOverrides() {
+        // Re-enable dev services for tests (fake-rbac profile disables them for local dev)
         return Map.of(
-            "quarkus.test.profile", "fake-rbac"
+            "quarkus.devservices.enabled", "true",
+            "quarkus.unleash.devservices.enabled", "true"
         );
     }
 
