@@ -10,12 +10,12 @@ USER root
 # Note: curl-minimal is already installed in ubi9-minimal
 
 # Set Mandrel version and architecture
-# Using latest Mandrel release for Java 21 (as of Feb 2026)
-ENV MANDREL_VERSION=23.1.10.0-Final
+# Using latest Mandrel release for Java 21 (as of Aug 2026)
+ENV MANDREL_VERSION=23.1.12.1-Final
 ENV JAVA_VERSION=21
 ENV ARCH=linux-amd64
 
-# Install Mandrel 23.1.10.0-Final requested dependencies (list available at https://github.com/graalvm/mandrel/releases/tag/mandrel-23.1.10.0-Final)
+# Install Mandrel 23.1.12.1-Final requested dependencies (list available at https://github.com/graalvm/mandrel/releases/tag/mandrel-23.1.12.1-Final)
 RUN microdnf install -y \
   glibc-devel \
   zlib-devel \
