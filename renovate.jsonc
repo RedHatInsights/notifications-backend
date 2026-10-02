@@ -49,6 +49,8 @@
     {
       "matchManagers": ["maven"],
       "matchUpdateTypes": ["patch", "minor"],
+      // Low confidence means other repos hit problems with this update; it needs human review.
+      "matchConfidence": ["neutral", "high", "very high"],
       "automerge": true,
       "groupName": "Maven dependencies"
     },
@@ -97,6 +99,8 @@
     {
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["patch", "minor"],
+      // Low confidence means other repos hit problems with this update; it needs human review.
+      "matchConfidence": ["neutral", "high", "very high"],
       "automerge": true,
       "groupName": "npm dependencies"
     },
