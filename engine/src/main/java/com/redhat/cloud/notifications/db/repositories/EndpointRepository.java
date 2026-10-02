@@ -53,27 +53,25 @@ public class EndpointRepository {
     @Inject
     EngineConfig engineConfig;
 
-    /**
-     * Finds the org's default EMAIL_SUBSCRIPTION or DRAWER endpoint, i.e. the one with no
-     * restriction (not admin-only, not ignoring user preferences, no groupId/groupIds scoping).
-     * Endpoints with other properties (used for mandatory or group-scoped notifications) and
-     * org-less (orgId IS NULL) template endpoints must not be included here, as they would
-     * bypass user subscription preferences or leak into every org's aggregation.
-     */
-    public List<Endpoint> getDefaultSystemSubscription(String orgId, EndpointType endpointType) {
-        String query = "FROM Endpoint WHERE orgId = :orgId AND compositeType.type = :endpointType";
-        List<Endpoint> systemEndpoints = entityManager.createQuery(query, Endpoint.class)
-            .setParameter("orgId", orgId)
-            .setParameter("endpointType", endpointType)
-            .getResultList();
-        loadProperties(systemEndpoints);
+    public List<Endpoint> getTargetEmailEndpointsForAggregation(String orgId, Set<UUID> applicationIds) {
+        final String query = "SELECT DISTINCT e FROM Endpoint e, EndpointEventType eet " +
+            "WHERE e = eet.endpoint AND eet.eventType.application.id IN (:applicationIds) " +
+            "AND (e.orgId = :orgId OR e.orgId IS NULL) AND e.enabled IS TRUE AND e.status = :status " +
+            "AND e.compositeType.type = :endpointType";
 
-        SystemSubscriptionProperties defaultProperties = new SystemSubscriptionProperties();
-        return systemEndpoints.stream()
-            .filter(endpoint -> defaultProperties.hasSameProperties(endpoint.getProperties(SystemSubscriptionProperties.class)))
-            .findFirst()
-            .map(List::of)
-            .orElse(List.of());
+        List<Endpoint> endpoints = entityManager.createQuery(query, Endpoint.class)
+            .setParameter("applicationIds", applicationIds)
+            .setParameter("orgId", orgId)
+            .setParameter("status", READY)
+            .setParameter("endpointType", EMAIL_SUBSCRIPTION)
+            .getResultList();
+        loadProperties(endpoints);
+        for (Endpoint endpoint : endpoints) {
+            if (endpoint.getOrgId() == null) {
+                endpoint.setOrgId(orgId);
+            }
+        }
+        return endpoints;
     }
 
     public List<Endpoint> getTargetEndpointsWithoutUsingBgs(String orgId, EventType eventType) {

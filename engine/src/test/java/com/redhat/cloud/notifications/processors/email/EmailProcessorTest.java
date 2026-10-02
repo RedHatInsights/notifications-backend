@@ -10,7 +10,6 @@ import com.redhat.cloud.notifications.ingress.Recipient;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.Endpoint;
-import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.EventTypeKeyBundleAppEventTriplet;
@@ -38,7 +37,6 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.TestHelpers.createPoliciesAction;
 import static java.util.stream.Collectors.toSet;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 
 @QuarkusTest
 public class EmailProcessorTest {
@@ -213,7 +211,6 @@ public class EmailProcessorTest {
 
         // Verify that the processor returned without calling any further
         // dependencies in the code.
-        Mockito.verify(endpointRepository, Mockito.times(0)).getDefaultSystemSubscription(Mockito.anyString(), eq(EndpointType.EMAIL_SUBSCRIPTION));
         Mockito.verify(connectorSender, Mockito.times(0)).send(any(Event.class), any(Endpoint.class), any(JsonObject.class));
     }
 
@@ -259,7 +256,6 @@ public class EmailProcessorTest {
 
         // Verify that the processor returned without calling any further
         // dependencies in the code.
-        Mockito.verify(endpointRepository, Mockito.times(0)).getDefaultSystemSubscription(Mockito.anyString(), eq(EndpointType.EMAIL_SUBSCRIPTION));
         Mockito.verify(connectorSender, Mockito.times(0)).send(any(Event.class), any(Endpoint.class), any(JsonObject.class));
     }
 

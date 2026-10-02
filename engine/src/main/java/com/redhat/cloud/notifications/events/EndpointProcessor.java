@@ -25,8 +25,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -106,14 +108,20 @@ public class EndpointProcessor {
         } else if (isAggregatorEvent(event)) {
             Log.debugf("[org_id: %s] Processing aggregation event: %s", event.getOrgId(), event);
 
-            List<Endpoint> emailEndpoint = endpointRepository.getDefaultSystemSubscription(event.getOrgId(), EndpointType.EMAIL_SUBSCRIPTION);
-            if (emailEndpoint.isEmpty()) {
-                // Aggregator module checks existing email integration to build it
-                Log.warnf("Unable to find email endpoint for aggregation on org: %s", event.getOrgId());
+            Set<UUID> applicationIds = extractApplicationIdsFromAggregationEvent(event);
+            if (applicationIds.isEmpty()) {
+                Log.warnf("[org_id: %s] No application IDs found in aggregation event: %s", event.getOrgId(), event.getId());
             } else {
-                endpoints.addAll(emailEndpoint);
-
-                Log.debugf("[org_id: %s] Found %s endpoints for the aggregation event: %s", event.getOrgId(), endpoints.size(), event);
+                List<Endpoint> emailEndpoints = endpointRepository.getTargetEmailEndpointsForAggregation(
+                    event.getOrgId(), applicationIds);
+                if (emailEndpoints.isEmpty()) {
+                    Log.warnf("[org_id: %s] No email endpoints linked to aggregated applications for event: %s",
+                        event.getOrgId(), event.getId());
+                } else {
+                    endpoints.addAll(emailEndpoints);
+                    Log.debugf("[org_id: %s] Found %d endpoints for the aggregation event: %s",
+                        event.getOrgId(), endpoints.size(), event);
+                }
             }
         } else {
             endpoints.addAll(endpointRepository.getTargetEndpointsWithoutUsingBgs(event.getOrgId(), event.getEventType()));
@@ -207,5 +215,26 @@ public class EndpointProcessor {
                 AGGREGATION_EVENT_TYPE_NAME.equals(action.getEventType());
         }
         return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<UUID> extractApplicationIdsFromAggregationEvent(Event event) {
+        Set<UUID> applicationIds = new HashSet<>();
+        Action action = ((EventWrapperAction) event.getEventWrapper()).getEvent();
+        for (com.redhat.cloud.notifications.ingress.Event actionEvent : action.getEvents()) {
+            try {
+                Map<String, Object> aggregationKey = (Map<String, Object>) actionEvent.getPayload()
+                    .getAdditionalProperties().get("aggregationKey");
+                if (aggregationKey != null) {
+                    Object appId = aggregationKey.get("applicationId");
+                    if (appId != null) {
+                        applicationIds.add(UUID.fromString(appId.toString()));
+                    }
+                }
+            } catch (Exception e) {
+                Log.warnf("Failed to extract applicationId from aggregation payload: %s", e.getMessage());
+            }
+        }
+        return applicationIds;
     }
 }
