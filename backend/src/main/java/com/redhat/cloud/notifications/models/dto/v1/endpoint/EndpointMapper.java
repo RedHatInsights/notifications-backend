@@ -67,6 +67,7 @@ public interface EndpointMapper {
      * @param systemSubscriptionProperties the internal entity to map.
      * @return the mapped DTO.
      */
+    @Mapping(target = "ignorePreferences", constant = "false")
     SystemSubscriptionPropertiesDTO systemToDTO(SystemSubscriptionProperties systemSubscriptionProperties);
 
     /**
@@ -76,6 +77,7 @@ public interface EndpointMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "endpoint", ignore = true)
+    @Mapping(target = "ignorePreferences", constant = "false")
     SystemSubscriptionProperties systemToEntity(SystemSubscriptionPropertiesDTO systemSubscriptionPropertiesDTO);
 
     /**
