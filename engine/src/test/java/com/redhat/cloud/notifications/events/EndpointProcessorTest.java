@@ -16,6 +16,7 @@ import com.redhat.cloud.notifications.processors.camel.google.chat.GoogleChatPro
 import com.redhat.cloud.notifications.processors.camel.slack.SlackProcessor;
 import com.redhat.cloud.notifications.processors.camel.teams.TeamsProcessor;
 import com.redhat.cloud.notifications.processors.drawer.DrawerProcessor;
+import com.redhat.cloud.notifications.processors.email.EmailAggregationProcessor;
 import com.redhat.cloud.notifications.processors.email.EmailProcessor;
 import com.redhat.cloud.notifications.processors.eventing.EventingProcessor;
 import com.redhat.cloud.notifications.processors.pagerduty.PagerDutyProcessor;
@@ -31,6 +32,8 @@ import org.mockito.Mockito;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.models.Endpoint.GOOGLE_CHAT_ENDPOINT_SUBTYPE;
@@ -64,6 +67,9 @@ public class EndpointProcessorTest {
 
     @InjectMock
     EventingProcessor camelProcessor;
+
+    @InjectMock
+    EmailAggregationProcessor emailAggregationProcessor;
 
     @InjectMock
     EmailProcessor emailConnectorProcessor;
@@ -329,6 +335,123 @@ public class EndpointProcessorTest {
         Mockito.verify(this.webhookProcessor, Mockito.times(0)).process(eq(event), Mockito.anyList());
         Mockito.verify(this.emailConnectorProcessor, Mockito.times(0)).process(eq(event), Mockito.anyList());
         Mockito.verify(this.engineConfig, Mockito.times(2)).isBlacklistedEndpoint(any(UUID.class));
+    }
+
+    @Test
+    void testAggregationEventFetchesEndpointsByApplication() {
+        String orgId = "test-org-id";
+        UUID applicationId = UUID.randomUUID();
+
+        Endpoint emailEndpoint = new Endpoint();
+        emailEndpoint.setId(UUID.randomUUID());
+        emailEndpoint.setOrgId(orgId);
+        emailEndpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+
+        Action action = buildAggregationAction(orgId, applicationId);
+        String jsonAction = Parser.encode(action);
+        Action rawAction = Parser.decode(jsonAction);
+
+        Event event = new Event();
+        event.setEventWrapper(new EventWrapperAction(rawAction));
+        event.setOrgId(orgId);
+        event.setEventType(new EventType());
+
+        Mockito.when(endpointRepository.getTargetEmailEndpointsForAggregation(
+            eq(orgId), eq(Set.of(applicationId))
+        )).thenReturn(List.of(emailEndpoint));
+
+        endpointProcessor.process(event);
+
+        Mockito.verify(endpointRepository).getTargetEmailEndpointsForAggregation(
+            eq(orgId), eq(Set.of(applicationId)));
+        Mockito.verify(endpointRepository, Mockito.never())
+            .getTargetEndpointsWithoutUsingBgs(Mockito.anyString(), Mockito.any());
+        Mockito.verify(emailAggregationProcessor).processAggregation(eq(event), Mockito.anyList());
+    }
+
+    @Test
+    void testAggregationEventNoEndpointsSkipsProcessing() {
+        String orgId = "test-org-id";
+        UUID applicationId = UUID.randomUUID();
+
+        Action action = buildAggregationAction(orgId, applicationId);
+        String jsonAction = Parser.encode(action);
+        Action rawAction = Parser.decode(jsonAction);
+
+        Event event = new Event();
+        event.setEventWrapper(new EventWrapperAction(rawAction));
+        event.setOrgId(orgId);
+        event.setEventType(new EventType());
+
+        Mockito.when(endpointRepository.getTargetEmailEndpointsForAggregation(
+            Mockito.anyString(), Mockito.anySet()
+        )).thenReturn(List.of());
+
+        endpointProcessor.process(event);
+
+        Mockito.verify(endpointRepository).getTargetEmailEndpointsForAggregation(
+            eq(orgId), eq(Set.of(applicationId)));
+        Mockito.verifyNoInteractions(emailAggregationProcessor);
+    }
+
+    @Test
+    void testAggregationEventMultipleApplications() {
+        String orgId = "test-org-id";
+        UUID appId1 = UUID.randomUUID();
+        UUID appId2 = UUID.randomUUID();
+
+        Endpoint emailEndpoint = new Endpoint();
+        emailEndpoint.setId(UUID.randomUUID());
+        emailEndpoint.setOrgId(orgId);
+        emailEndpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+
+        Action action = buildAggregationAction(orgId, appId1, appId2);
+        String jsonAction = Parser.encode(action);
+        Action rawAction = Parser.decode(jsonAction);
+
+        Event event = new Event();
+        event.setEventWrapper(new EventWrapperAction(rawAction));
+        event.setOrgId(orgId);
+        event.setEventType(new EventType());
+
+        Mockito.when(endpointRepository.getTargetEmailEndpointsForAggregation(
+            eq(orgId), eq(Set.of(appId1, appId2))
+        )).thenReturn(List.of(emailEndpoint));
+
+        endpointProcessor.process(event);
+
+        Mockito.verify(endpointRepository).getTargetEmailEndpointsForAggregation(
+            eq(orgId), eq(Set.of(appId1, appId2)));
+    }
+
+    private static Action buildAggregationAction(String orgId, UUID... applicationIds) {
+        List<com.redhat.cloud.notifications.ingress.Event> events = new java.util.ArrayList<>();
+        for (UUID appId : applicationIds) {
+            events.add(new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+                .withMetadata(new Metadata.MetadataBuilder().build())
+                .withPayload(new Payload.PayloadBuilder()
+                    .withAdditionalProperty("aggregationKey", Map.of(
+                        "orgId", orgId,
+                        "bundleId", UUID.randomUUID().toString(),
+                        "applicationId", appId.toString(),
+                        "bundle", "rhel",
+                        "application", "advisor"
+                    ))
+                    .withAdditionalProperty("start", "2024-01-01T00:00:00")
+                    .withAdditionalProperty("end", "2024-01-02T00:00:00")
+                    .withAdditionalProperty("subscriptionType", "DAILY")
+                    .build()
+                ).build());
+        }
+        return new Action.ActionBuilder()
+            .withBundle("console")
+            .withApplication("notifications")
+            .withEventType("aggregation")
+            .withOrgId(orgId)
+            .withTimestamp(LocalDateTime.now(UTC))
+            .withContext(new Context.ContextBuilder().build())
+            .withEvents(events)
+            .build();
     }
 
     private static Action buildAction(String orgId) {
