@@ -40,8 +40,11 @@ class SubscriptionMapperTest {
     }
 
     @Test
-    void shouldRoundTripEverySubscriptionTypeThroughSubscriptionTypeDTO() {
+    void shouldRoundTripEveryUserSubscriptionTypeThroughSubscriptionTypeDTO() {
         for (SubscriptionType subscriptionType : SubscriptionType.values()) {
+            if (!subscriptionType.isUserSubscription()) {
+                continue;
+            }
             SubscriptionTypeDTO subscriptionTypeDTO = subscriptionMapper.subscriptionTypeToSubscriptionTypeDTO(subscriptionType);
             assertEquals(subscriptionType, subscriptionMapper.subscriptionTypeDTOToSubscriptionType(subscriptionTypeDTO));
         }

@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -64,11 +65,7 @@ public class OrgConfigResource {
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_EDIT, resourceType = "daily_digest")
     public void saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull LocalTime expectedTime) {
         String orgId = getOrgId(sec);
-        if (!ALLOWED_MINUTES.contains(expectedTime.getMinute())) {
-            String errorMessage = "Accepted minute values are: " + ALLOWED_MINUTES.stream().map(min -> String.format("%02d", min)).collect(Collectors.joining(", ")) + ".";
-
-            throw new BadRequestException(errorMessage);
-        }
+        validateMinuteValue(expectedTime);
         Log.infof("Update daily digest time preference for orgId %s at %s", orgId, expectedTime);
         aggregationOrgConfigRepository.createOrUpdateDailyDigestPreference(orgId, expectedTime);
     }
@@ -82,11 +79,51 @@ public class OrgConfigResource {
     public Response getDailyDigestTimePreference(@Context SecurityContext sec) {
         String orgId = getOrgId(sec);
         Log.infof("Get daily digest time preference for orgId %s", orgId);
-        AggregationOrgConfig storedParameters = aggregationOrgConfigRepository.findJobAggregationOrgConfig(orgId);
+        AggregationOrgConfig storedParameters = aggregationOrgConfigRepository.findDailyDigestPreference(orgId);
         if (null != storedParameters) {
             return Response.ok(storedParameters.getScheduledExecutionTime()).build();
         } else {
             return Response.ok(defaultDailyDigestTime).build();
+        }
+    }
+
+    @APIResponse(responseCode = "204")
+    @APIResponse(responseCode = "400", description = "Invalid minute value specified")
+    @PUT
+    @Path("/weekly-digest/preference")
+    @Consumes(APPLICATION_JSON)
+    @Transactional
+    @Operation(summary = "Set the weekly digest preference", description = "Sets the weekly digest UTC time and preferred day of the week. The accepted minute values are 00, 15, 30, and 45.")
+    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_EDIT, resourceType = "weekly_digest")
+    public void saveWeeklyDigestPreference(@Context SecurityContext sec, @NotNull @Valid WeeklyDigestPreference preference) {
+        String orgId = getOrgId(sec);
+        validateMinuteValue(preference.getScheduledExecutionTime());
+        Log.infof("Update weekly digest preference for orgId %s at %s on %s", orgId, preference.getScheduledExecutionTime(), preference.getPreferredDay());
+        aggregationOrgConfigRepository.createOrUpdateWeeklyDigestPreference(orgId, preference.getScheduledExecutionTime(), preference.getPreferredDay());
+    }
+
+    @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = WeeklyDigestPreference.class)))
+    @APIResponse(responseCode = "404", description = "No weekly digest preference found")
+    @GET
+    @Path("/weekly-digest/preference")
+    @Produces(APPLICATION_JSON)
+    @Operation(summary = "Retrieve the weekly digest preference", description = "Retrieves the weekly digest time and day preference for the organization.")
+    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "weekly_digest")
+    public Response getWeeklyDigestPreference(@Context SecurityContext sec) {
+        String orgId = getOrgId(sec);
+        Log.infof("Get weekly digest preference for orgId %s", orgId);
+        AggregationOrgConfig storedParameters = aggregationOrgConfigRepository.findWeeklyDigestPreference(orgId);
+        if (null != storedParameters) {
+            return Response.ok(new WeeklyDigestPreference(storedParameters.getScheduledExecutionTime(), storedParameters.getPreferredDay())).build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+    }
+
+    private void validateMinuteValue(LocalTime time) {
+        if (!ALLOWED_MINUTES.contains(time.getMinute())) {
+            String errorMessage = "Accepted minute values are: " + ALLOWED_MINUTES.stream().map(min -> String.format("%02d", min)).collect(Collectors.joining(", ")) + ".";
+            throw new BadRequestException(errorMessage);
         }
     }
 }

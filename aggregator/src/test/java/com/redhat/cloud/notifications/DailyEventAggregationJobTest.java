@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
@@ -229,7 +231,7 @@ class DailyEventAggregationJobTest {
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
         LocalDateTime lastRun = someOrgIdToProceed.getLastRun();
         dailyEmailAggregationJob.processDailyEmail();
-        AggregationOrgConfig parameters = helpers.findAggregationOrgConfigByOrgId(someOrgIdToProceed.getOrgId());
+        AggregationOrgConfig parameters = helpers.findDailyAggregationOrgConfigByOrgId(someOrgIdToProceed.getOrgId());
         assertNotNull(parameters);
         assertTrue(lastRun.isBefore(parameters.getLastRun()));
 
@@ -546,6 +548,32 @@ class DailyEventAggregationJobTest {
         }
     }
 
+
+    @Test
+    void shouldIgnoreWeeklyConfigRowsDuringDailyAggregation() {
+        addEventEmailAggregation("weeklyTestOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+
+        // add a DAILY config at the right time
+        AggregationOrgConfig dailyConfig = new AggregationOrgConfig("weeklyTestOrgId",
+            dailyEmailAggregationJob.computeScheduleExecutionTime().toLocalTime(),
+            dailyEmailAggregationJob.computeScheduleExecutionTime().minusDays(1));
+        helpers.addAggregationOrgConfig(dailyConfig);
+
+        // add a WEEKLY config for the same org (should be ignored by the daily job)
+        AggregationOrgConfig weeklyConfig = new AggregationOrgConfig("weeklyTestOrgId",
+            SubscriptionType.WEEKLY,
+            dailyEmailAggregationJob.computeScheduleExecutionTime().toLocalTime(),
+            DayOfWeek.MONDAY);
+        weeklyConfig.setLastRun(dailyEmailAggregationJob.computeScheduleExecutionTime().minusDays(7));
+        helpers.addAggregationOrgConfig(weeklyConfig);
+
+        List<AggregationCommand> commands = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(
+            dailyEmailAggregationJob.computeScheduleExecutionTime(), new CollectorRegistry());
+
+        // should produce exactly 1 aggregation (from the DAILY row only, not duplicated by the WEEKLY row)
+        assertEquals(1, commands.size());
+        assertEquals(DAILY, commands.get(0).getSubscriptionType());
+    }
 
     private com.redhat.cloud.notifications.models.Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, String policyId, String inventoryId) {
         return addEventEmailAggregation(orgId, bundleName, applicationName, policyId, inventoryId, LocalDateTime.now(UTC).minusHours(5));
