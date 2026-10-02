@@ -576,6 +576,7 @@ public class EndpointRepositoryTest {
         Endpoint systemEndpoint = createReadyEmailEndpoint(null);
         entityManager.persist(new EndpointEventType(eventType, systemEndpoint));
         entityManager.flush();
+        entityManager.clear();
 
         List<Endpoint> result = endpointRepository.getTargetEmailEndpointsForAggregation(orgId, Set.of(app.getId()));
         assertEquals(1, result.size());

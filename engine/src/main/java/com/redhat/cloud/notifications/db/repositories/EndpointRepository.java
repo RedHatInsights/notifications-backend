@@ -68,6 +68,7 @@ public class EndpointRepository {
         loadProperties(endpoints);
         for (Endpoint endpoint : endpoints) {
             if (endpoint.getOrgId() == null) {
+                entityManager.detach(endpoint);
                 endpoint.setOrgId(orgId);
             }
         }
