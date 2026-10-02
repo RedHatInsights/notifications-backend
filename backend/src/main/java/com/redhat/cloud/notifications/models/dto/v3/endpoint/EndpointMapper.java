@@ -79,6 +79,7 @@ public interface EndpointMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "endpoint", ignore = true)
+    @Mapping(target = "ignorePreferences", constant = "false")
     SystemSubscriptionProperties systemToEntity(SystemSubscriptionPropertiesDTO systemSubscriptionPropertiesDTO);
 
     /**
