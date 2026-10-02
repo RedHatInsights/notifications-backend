@@ -37,6 +37,8 @@ import java.util.UUID;
 import static com.redhat.cloud.notifications.TestHelpers.createPoliciesAction;
 import static java.util.stream.Collectors.toSet;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @QuarkusTest
 public class EmailProcessorTest {
@@ -211,6 +213,7 @@ public class EmailProcessorTest {
 
         // Verify that the processor returned without calling any further
         // dependencies in the code.
+        Mockito.verify(endpointRepository, Mockito.times(0)).getTargetEmailEndpointsForAggregation(anyString(), anySet());
         Mockito.verify(connectorSender, Mockito.times(0)).send(any(Event.class), any(Endpoint.class), any(JsonObject.class));
     }
 
@@ -256,6 +259,7 @@ public class EmailProcessorTest {
 
         // Verify that the processor returned without calling any further
         // dependencies in the code.
+        Mockito.verify(endpointRepository, Mockito.times(0)).getTargetEmailEndpointsForAggregation(anyString(), anySet());
         Mockito.verify(connectorSender, Mockito.times(0)).send(any(Event.class), any(Endpoint.class), any(JsonObject.class));
     }
 
