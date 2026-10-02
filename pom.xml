@@ -79,11 +79,9 @@
         <quarkus-mcp-server.version>2.0.1</quarkus-mcp-server.version>
         <quarkus-unleash.version>1.15.0</quarkus-unleash.version>
 
-        <jackson-bom.version>2.22.3</jackson-bom.version>
-
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.33.3.3</quarkus.platform.version>
+        <quarkus.platform.version>3.33.4</quarkus.platform.version>
         <redhat.event-schemas.version>1.5.0</redhat.event-schemas.version>
         <com.networknt.json-schema-validator.version>2.0.7</com.networknt.json-schema-validator.version>
 
@@ -98,14 +96,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Override jackson-bom ahead of Quarkus BOM to pick up CVE-2026-89425 fix -->
-            <dependency>
-                <groupId>com.fasterxml.jackson</groupId>
-                <artifactId>jackson-bom</artifactId>
-                <version>${jackson-bom.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
             <dependency>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>${quarkus.platform.artifact-id}</artifactId>
