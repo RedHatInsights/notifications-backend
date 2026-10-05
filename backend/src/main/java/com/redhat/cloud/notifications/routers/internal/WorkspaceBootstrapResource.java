@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.models.Workspace;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -40,11 +39,18 @@ public class WorkspaceBootstrapResource {
      *    creates workspace record, assigns to org's endpoints
      *
      * Safe to run multiple times (idempotent).
+     *
+     * Transaction strategy: This method is NOT @Transactional. Each repository
+     * method manages its own transaction. This ensures:
+     * - System workspace creation commits independently
+     * - Each org's workspace assignment commits independently
+     * - One org failing doesn't roll back other orgs
+     * - RBAC calls happen outside of database transactions (no long-running txns)
+     * - No transaction timeout with many orgs
      */
     @POST
     @Path("/bootstrap")
     @Produces(APPLICATION_JSON)
-    @Transactional
     public BootstrapSummary bootstrapWorkspaces() {
 
         BootstrapSummary summary = new BootstrapSummary();
