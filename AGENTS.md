@@ -69,6 +69,41 @@ Public resources use inner static subclasses for versioning. The parent class ho
 
 Unleash is used for feature flags. It is disabled by default locally (`quarkus.unleash.active=false`) and activated in deployed environments. Feature toggle utilities are in the `common-unleash` module.
 
+### Workspace Management
+
+All endpoints (integrations) are associated with a workspace for RBAC tenant isolation. The workspace UUID is fetched from the RBAC service based on org_id.
+
+**Workspace Entity**: Located in `common/src/main/java/com/redhat/cloud/notifications/models/Workspace.java`. Each workspace has a UUID (from RBAC) and an org_id. System workspaces (for platform integrations) have `org_id = NULL`.
+
+**Endpoint-Workspace Relationship**: The `Endpoint` entity has a `@ManyToOne workspace` relationship. New endpoints are assigned a workspace during creation. The `workspace_id` column in the `endpoints` table is indexed for query performance.
+
+**Bootstrap Process**: For existing endpoints without workspace assignments, use the internal admin endpoint:
+```bash
+POST /internal/workspace/bootstrap
+```
+
+This one-time operation:
+1. Creates or finds the system workspace (org_id = NULL) and assigns it to system endpoints
+2. For each org with endpoints: fetches workspace UUID from RBAC, creates workspace record, assigns to org's endpoints
+3. Is idempotent - safe to run multiple times
+
+**Fake RBAC Profile** (local testing only):
+```bash
+./mvnw quarkus:dev -Dquarkus.profile=fake-rbac
+```
+
+Activates `FakeWorkspaceUtils`, which returns deterministic workspace UUIDs without calling RBAC. This profile:
+- Disables OIDC authentication
+- Provides predefined org-to-workspace mappings
+- Has runtime safety checks preventing non-local deployment
+- **WARNING**: Must NEVER be used outside local development
+
+**WorkspaceRepository**: Located in `backend/src/main/java/com/redhat/cloud/notifications/db/repositories/WorkspaceRepository.java`. Provides methods for:
+- `createOrGetWorkspace(UUID, String)` - Idempotent workspace creation
+- `getOrCreateSystemWorkspace()` - System workspace management
+- `assignWorkspaceToEndpoints(UUID, String)` - Bulk endpoint assignment
+- `countEndpointsWithoutWorkspace()` - Migration/bootstrap status
+
 ## Detailed Guidelines
 
 For domain-specific conventions, refer to these guideline documents:

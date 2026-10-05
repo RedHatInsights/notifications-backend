@@ -172,15 +172,16 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.orgId = orgId;
     }
 
+    /**
+     * Returns the workspace UUID for JSON serialization.
+     * Computed from the workspace relationship when available.
+     * Note: To modify workspace assignment, use setWorkspace(), not this getter.
+     */
     public UUID getWorkspaceId() {
         if (workspaceId == null && workspace != null) {
             workspaceId = workspace.getId();
         }
         return workspaceId;
-    }
-
-    public void setWorkspaceId(UUID workspaceId) {
-        this.workspaceId = workspaceId;
     }
 
     public Workspace getWorkspace() {
@@ -189,6 +190,8 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     public void setWorkspace(Workspace workspace) {
         this.workspace = workspace;
+        // Clear cached transient value so next getWorkspaceId() recomputes
+        this.workspaceId = null;
     }
 
     public String getName() {

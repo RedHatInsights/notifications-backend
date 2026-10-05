@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.auth.rbac.workspace;
 
 import io.quarkus.arc.profile.IfBuildProfile;
 import io.quarkus.logging.Log;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
@@ -20,9 +21,10 @@ import java.util.UUID;
  *
  * Note: This extends WorkspaceUtils so CDI can use it as a replacement at injection
  * points. The parent class's @Inject fields will be injected but are not used by
- * this fake implementation.
+ * this fake implementation. Inheritance is required for CDI @Alternative to properly
+ * replace the parent bean at all injection points without requiring @Typed annotations.
  *
- * WARNING: This is a test utility and must be removed before production deployment.
+ * WARNING: This is a test utility and must NEVER be used outside local development.
  */
 @ApplicationScoped
 @Alternative
@@ -31,6 +33,36 @@ import java.util.UUID;
 public class FakeWorkspaceUtils extends WorkspaceUtils {
 
     private static final Map<String, UUID> ORG_TO_WORKSPACE_MAP = new HashMap<>();
+
+    /**
+     * Runtime safety check to prevent accidental deployment to non-local environments.
+     * This provides defense-in-depth beyond @IfBuildProfile.
+     */
+    @PostConstruct
+    void validateLocalEnvironmentOnly() {
+        String env = System.getenv("ENV");
+        String clowderEnv = System.getenv("CLOWDER_ENABLED");
+
+        // Fail fast if we detect non-local environment indicators
+        if (env != null && !env.equalsIgnoreCase("local") && !env.equalsIgnoreCase("dev")) {
+            throw new IllegalStateException(
+                "SECURITY: fake-rbac profile detected in non-local environment (ENV=" + env + "). "
+                + "This profile disables authentication and must NEVER run in production."
+            );
+        }
+
+        if ("true".equalsIgnoreCase(clowderEnv)) {
+            throw new IllegalStateException(
+                "SECURITY: fake-rbac profile detected with Clowder enabled. "
+                + "This profile is for local development only and must not run in deployed environments."
+            );
+        }
+
+        Log.warnf("**********************************************************");
+        Log.warnf("*** FAKE RBAC MODE ACTIVE - FOR LOCAL TESTING ONLY ***");
+        Log.warnf("*** Authentication is DISABLED - NOT FOR PRODUCTION  ***");
+        Log.warnf("**********************************************************");
+    }
 
     static {
         // Predefined org-id to workspace-id mappings for testing
