@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.db.repositories.EndpointRepository.INTERNAL_ENDPOINT_TYPES;
@@ -585,6 +586,49 @@ public class EndpointRepositoryTest {
 
     @Test
     @Transactional
+    void testGetTargetEmailEndpointsForAggregationReturnsMultipleEndpoints() {
+        String orgId = "aggregation-multi-ep-test-org";
+
+        Bundle bundle = resourceHelpers.createBundle("agg-multi-bundle-" + UUID.randomUUID().toString().substring(0, 8));
+        Application app = resourceHelpers.createApp(bundle.getId(), "agg-multi-app");
+        EventType eventType = resourceHelpers.createEventType(app.getId(), "agg-multi-event");
+
+        Endpoint defaultEndpoint = createReadyEmailEndpoint(orgId);
+        entityManager.persist(new EndpointEventType(eventType, defaultEndpoint));
+
+        Endpoint adminOnlyEndpoint = createReadyEmailEndpointWithProperties(orgId, true, false, null);
+        entityManager.persist(new EndpointEventType(eventType, adminOnlyEndpoint));
+
+        UUID groupId = UUID.randomUUID();
+        Endpoint groupScopedEndpoint = createReadyEmailEndpointWithProperties(orgId, false, false, groupId);
+        entityManager.persist(new EndpointEventType(eventType, groupScopedEndpoint));
+
+        entityManager.flush();
+        entityManager.clear();
+
+        List<Endpoint> result = endpointRepository.getTargetEmailEndpointsForAggregation(orgId, Set.of(app.getId()));
+        assertEquals(3, result.size());
+
+        Set<UUID> returnedIds = result.stream().map(Endpoint::getId).collect(Collectors.toSet());
+        assertTrue(returnedIds.contains(defaultEndpoint.getId()));
+        assertTrue(returnedIds.contains(adminOnlyEndpoint.getId()));
+        assertTrue(returnedIds.contains(groupScopedEndpoint.getId()));
+
+        for (Endpoint ep : result) {
+            SystemSubscriptionProperties props = ep.getProperties(SystemSubscriptionProperties.class);
+            Assertions.assertNotNull(props, "properties should be loaded for endpoint " + ep.getId());
+            if (ep.getId().equals(adminOnlyEndpoint.getId())) {
+                assertTrue(props.isOnlyAdmins());
+                assertFalse(props.isIgnorePreferences());
+            } else if (ep.getId().equals(groupScopedEndpoint.getId())) {
+                assertFalse(props.isOnlyAdmins());
+                assertEquals(groupId, props.getGroupId());
+            }
+        }
+    }
+
+    @Test
+    @Transactional
     void testGetTargetEmailEndpointsForAggregationExcludesDisabledEndpoints() {
         String orgId = "aggregation-disabled-test-org";
 
@@ -603,6 +647,10 @@ public class EndpointRepositoryTest {
     }
 
     private Endpoint createReadyEmailEndpoint(String orgId) {
+        return createReadyEmailEndpointWithProperties(orgId, false, false, null);
+    }
+
+    private Endpoint createReadyEmailEndpointWithProperties(String orgId, boolean onlyAdmins, boolean ignorePreferences, UUID groupId) {
         Endpoint endpoint = new Endpoint();
         endpoint.setOrgId(orgId);
         endpoint.setType(EMAIL_SUBSCRIPTION);
@@ -611,6 +659,9 @@ public class EndpointRepositoryTest {
         endpoint.setEnabled(true);
         endpoint.setStatus(EndpointStatus.READY);
         SystemSubscriptionProperties props = new SystemSubscriptionProperties();
+        props.setOnlyAdmins(onlyAdmins);
+        props.setIgnorePreferences(ignorePreferences);
+        props.setGroupId(groupId);
         props.setEndpoint(endpoint);
         entityManager.persist(endpoint);
         entityManager.persist(props);
