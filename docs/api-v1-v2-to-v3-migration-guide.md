@@ -177,8 +177,8 @@ The following V1 endpoints are not available in V3:
 
 | V1 Endpoint                                          | V3 Alternative                                                                |
 |------------------------------------------------------|-------------------------------------------------------------------------------|
-| `POST /endpoints/system/email_subscription`          | None (system endpoints are managed differently)                               |
-| `POST /endpoints/system/drawer_subscription`         | None (system endpoints are managed differently)                               |
+| `POST /endpoints/system/email_subscription`          | None (system endpoints are managed as regular endpoints)                      |
+| `POST /endpoints/system/drawer_subscription`         | None (system endpoints are managed as regular endpoints)                      |
 | `PUT /endpoints/{id}/eventType/{eventTypeId}`        | Use the `event_types` field on `POST /endpoints` or `PUT /endpoints/{id}`     |
 | `DELETE /endpoints/{id}/eventType/{eventTypeId}`     | Use the `event_types` field on `PUT /endpoints/{id}`                          |
 | `PUT /endpoints/{id}/eventTypes`                     | Use the `event_types` field on `PUT /endpoints/{id}`                          |
