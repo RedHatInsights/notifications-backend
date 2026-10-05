@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
 
@@ -13,6 +14,14 @@ import java.util.UUID;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 import static com.fasterxml.jackson.databind.PropertyNamingStrategies.SnakeCaseStrategy;
 
+/**
+ * Workspace entity representing RBAC workspaces for tenant isolation.
+ * Each workspace has a UUID fetched from RBAC and an associated org_id.
+ * System workspaces (for platform integrations) have org_id = NULL.
+ *
+ * The workspace ID is NOT auto-generated - it must be explicitly set
+ * from RBAC's workspace UUID before persisting.
+ */
 @Entity
 @Table(name = "workspace")
 @JsonNaming(SnakeCaseStrategy.class)
@@ -27,6 +36,20 @@ public class Workspace extends CreationUpdateTimestamped {
     private String orgId;  // Nullable for system workspace
 
     public Workspace() {
+    }
+
+    /**
+     * Validates that the ID is set before persisting.
+     * Since we don't use @GeneratedValue, the ID must be explicitly assigned.
+     */
+    @PrePersist
+    void validateIdBeforePersist() {
+        if (id == null) {
+            throw new IllegalStateException(
+                "Workspace ID must be set before persist. "
+                + "Workspace IDs come from RBAC and cannot be auto-generated."
+            );
+        }
     }
 
     public UUID getId() {

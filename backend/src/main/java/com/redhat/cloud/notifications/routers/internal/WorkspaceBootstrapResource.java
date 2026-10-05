@@ -83,7 +83,9 @@ public class WorkspaceBootstrapResource {
 
             } catch (Exception e) {
                 Log.errorf(e, "Failed to bootstrap workspace for org_id: %s", orgId);
-                summary.addError(orgId, e.getMessage());
+                String errorMessage = e.getClass().getSimpleName() + ": " +
+                    (e.getMessage() != null ? e.getMessage() : "No error message");
+                summary.addError(orgId, errorMessage);
             }
         }
 
