@@ -75,9 +75,9 @@ All endpoints (integrations) are associated with a workspace for RBAC tenant iso
 
 **Workspace Entity**: Located in `common/src/main/java/com/redhat/cloud/notifications/models/Workspace.java`. Each workspace has a UUID (from RBAC) and an org_id. System workspaces (for platform integrations) have `org_id = NULL`.
 
-**Endpoint-Workspace Relationship**: The `Endpoint` entity has a `@ManyToOne workspace` relationship. New endpoints are assigned a workspace during creation. The `workspace_id` column in the `endpoints` table is indexed for query performance.
+**Endpoint-Workspace Relationship**: The `Endpoint` entity has a `@ManyToOne workspace` relationship. New endpoints are created with `workspace_id = NULL`. Workspace assignment happens via the bootstrap process or future automated assignment logic. The `workspace_id` column in the `endpoints` table is indexed for query performance.
 
-**Bootstrap Process**: For existing endpoints without workspace assignments, use the internal admin endpoint:
+**Bootstrap Process**: For endpoints without workspace assignments, use the internal admin endpoint:
 ```bash
 POST /internal/workspace/bootstrap
 ```
