@@ -131,7 +131,7 @@ class EmailAggregationProcessorTest {
         endpoint.setId(UUID.randomUUID());
         endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
         endpoint.setProperties(new SystemSubscriptionProperties());
-        when(endpointRepository.getDefaultSystemSubscription(anyString(), eq(EndpointType.EMAIL_SUBSCRIPTION))).thenReturn(List.of(endpoint));
+        when(endpointRepository.getTargetEmailEndpointsForAggregation(anyString(), anySet())).thenReturn(List.of(endpoint));
     }
 
     @AfterEach
@@ -322,7 +322,7 @@ class EmailAggregationProcessorTest {
     void shouldNotSendAggregatedEmailWhenNoEndpointFound() {
         String orgId = RandomStringUtils.secure().nextAlphanumeric(6);
 
-        when(endpointRepository.getDefaultSystemSubscription(eq(orgId), eq(EndpointType.EMAIL_SUBSCRIPTION)))
+        when(endpointRepository.getTargetEmailEndpointsForAggregation(eq(orgId), anySet()))
             .thenReturn(List.of());
 
         EventAggregationCriterion aggregationKey = buildEmailAggregationKey(orgId, "rhel", "advisor");
@@ -339,7 +339,7 @@ class EmailAggregationProcessorTest {
 
         inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(Arrays.asList(aggregationKey)));
 
-        verify(endpointRepository, timeout(5000L)).getDefaultSystemSubscription(eq(orgId), eq(EndpointType.EMAIL_SUBSCRIPTION));
+        verify(endpointRepository, timeout(5000L)).getTargetEmailEndpointsForAggregation(eq(orgId), anySet());
         verifyNoInteractions(connectorSender);
     }
 
@@ -363,6 +363,66 @@ class EmailAggregationProcessorTest {
 
         } finally {
             resourceHelpers.deleteApp("rhel", "patch");
+        }
+    }
+
+    @Test
+    void shouldIncludeAllEndpointRecipientSettingsInOutgoingPayload() {
+        String orgId = RandomStringUtils.secure().nextAlphanumeric(6);
+
+        UUID groupId = UUID.randomUUID();
+
+        Endpoint defaultEndpoint = new Endpoint();
+        defaultEndpoint.setId(UUID.randomUUID());
+        defaultEndpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        SystemSubscriptionProperties defaultProps = new SystemSubscriptionProperties();
+        defaultEndpoint.setProperties(defaultProps);
+
+        Endpoint adminOnlyEndpoint = new Endpoint();
+        adminOnlyEndpoint.setId(UUID.randomUUID());
+        adminOnlyEndpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        SystemSubscriptionProperties adminProps = new SystemSubscriptionProperties();
+        adminProps.setOnlyAdmins(true);
+        adminOnlyEndpoint.setProperties(adminProps);
+
+        Endpoint groupScopedEndpoint = new Endpoint();
+        groupScopedEndpoint.setId(UUID.randomUUID());
+        groupScopedEndpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        SystemSubscriptionProperties groupProps = new SystemSubscriptionProperties();
+        groupProps.setGroupId(groupId);
+        groupScopedEndpoint.setProperties(groupProps);
+
+        when(endpointRepository.getTargetEmailEndpointsForAggregation(eq(orgId), anySet()))
+            .thenReturn(List.of(defaultEndpoint, adminOnlyEndpoint, groupScopedEndpoint));
+
+        EventAggregationCriterion aggregationKey = buildEmailAggregationKey(orgId, "rhel", "advisor");
+
+        List<EmailAggregation> eventToAggregate = List.of(
+            createAdvisorEmailAggregation(orgId, null)
+        );
+
+        createAggregationsAndSendAggregationKeysToIngress(eventToAggregate, aggregationKey);
+
+        ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
+        verify(connectorSender, timeout(5000L).atLeastOnce()).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
+
+        List<JsonObject> capturedPayloads = argumentCaptor.getAllValues();
+        for (JsonObject payload : capturedPayloads) {
+            EmailNotification notification = payload.mapTo(EmailNotification.class);
+            Collection<com.redhat.cloud.notifications.processors.email.connector.dto.RecipientSettings> settings = notification.recipientSettings();
+            assertEquals(3, settings.size(), "all 3 endpoint recipient settings should be present");
+
+            assertTrue(settings.stream().anyMatch(rs ->
+                !rs.isAdminsOnly() && !rs.isIgnoreUserPreferences() && rs.getGroupUUID() == null
+            ), "default recipient settings should be present");
+
+            assertTrue(settings.stream().anyMatch(rs ->
+                rs.isAdminsOnly() && !rs.isIgnoreUserPreferences() && rs.getGroupUUID() == null
+            ), "admin-only recipient settings should be present");
+
+            assertTrue(settings.stream().anyMatch(rs ->
+                !rs.isAdminsOnly() && !rs.isIgnoreUserPreferences() && groupId.equals(rs.getGroupUUID())
+            ), "group-scoped recipient settings should be present");
         }
     }
 
