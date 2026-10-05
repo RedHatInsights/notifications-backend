@@ -85,7 +85,7 @@ public class WorkspaceBootstrapResource {
                 );
 
                 summary.orgEndpointsAssigned += endpointsUpdated;
-                summary.workspacesCreated++;
+                summary.orgsProcessedSuccessfully++;
 
             } catch (Exception e) {
                 Log.errorf(e, "Failed to bootstrap workspace for org_id: %s", orgId);
@@ -119,7 +119,7 @@ public class WorkspaceBootstrapResource {
         public UUID systemWorkspaceId;
         public int systemEndpointsAssigned;
         public int totalOrgsProcessed;
-        public int workspacesCreated;
+        public int orgsProcessedSuccessfully;
         public int orgEndpointsAssigned;
         public long endpointsWithoutWorkspace;
         public Map<String, String> errors = new HashMap<>();
