@@ -93,7 +93,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
 
         // Verify - Workspace records created for each org
         assertTrue(summary.totalOrgsProcessed >= 2, "Should process at least 2 orgs");
-        assertTrue(summary.workspacesCreated >= 2, "Should create at least 2 workspaces");
+        assertTrue(summary.orgsProcessedSuccessfully >= 2, "Should successfully process at least 2 orgs");
 
         // Verify - Endpoints assigned to correct workspaces
         assertTrue(summary.orgEndpointsAssigned >= 3, "Should assign at least 3 org endpoints");
@@ -191,7 +191,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         assertNotNull(summary.systemWorkspaceId, "System workspace should still be created");
         assertEquals(0, summary.systemEndpointsAssigned);
         assertEquals(0, summary.totalOrgsProcessed);
-        assertEquals(0, summary.workspacesCreated);
+        assertEquals(0, summary.orgsProcessedSuccessfully);
         assertEquals(0, summary.orgEndpointsAssigned);
     }
 
@@ -265,8 +265,8 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Verify - All orgs processed
         assertTrue(summary.totalOrgsProcessed >= 5,
             "Should process at least 5 orgs");
-        assertTrue(summary.workspacesCreated >= 5,
-            "Should create at least 5 workspaces");
+        assertTrue(summary.orgsProcessedSuccessfully >= 5,
+            "Should successfully process at least 5 orgs");
 
         // Verify - All endpoints assigned
         assertEquals(11, summary.orgEndpointsAssigned,
