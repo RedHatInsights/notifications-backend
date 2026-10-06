@@ -108,19 +108,4 @@ public class FakeWorkspaceUtils extends WorkspaceUtils {
         // Use UUID v3 (name-based MD5) for deterministic UUID generation
         return UUID.nameUUIDFromBytes(input.getBytes(StandardCharsets.UTF_8));
     }
-
-    /**
-     * Add a custom org-id to workspace-id mapping at runtime (for tests).
-     */
-    public static void addMapping(String orgId, UUID workspaceId) {
-        ORG_TO_WORKSPACE_MAP.put(orgId, workspaceId);
-        Log.infof("[FAKE RBAC] Added mapping: org_id=%s -> workspace_id=%s", orgId, workspaceId);
-    }
-
-    /**
-     * Get all configured mappings (for debugging).
-     */
-    public static Map<String, UUID> getAllMappings() {
-        return new HashMap<>(ORG_TO_WORKSPACE_MAP);
-    }
 }
