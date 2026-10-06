@@ -147,8 +147,8 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
 
     @Test
     void testAssignSystemWorkspace_OnlySystemEndpoints() {
-        UUID systemWorkspaceId = UUID.randomUUID();
-        Workspace systemWorkspace = workspaceRepository.createOrGetWorkspace(systemWorkspaceId, null);
+        Workspace systemWorkspace = workspaceRepository.getOrCreateSystemWorkspace();
+        UUID systemWorkspaceId = systemWorkspace.getId();
 
         // Create mix of system (org_id=NULL) and org endpoints
         createEndpoint(null, "system-endpoint-1", null);
@@ -207,14 +207,13 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
-    void testWorkspaceOrgIdCanBeNull() {
-        // Test that database schema allows org_id = NULL (for system workspace)
-        UUID workspaceId = UUID.randomUUID();
+    void testSystemWorkspaceHasNullOrgId() {
+        // Test that the system workspace (created via getOrCreateSystemWorkspace) has org_id = NULL
+        // The unique constraint ensures only ONE workspace can have org_id IS NULL
+        Workspace systemWorkspace = workspaceRepository.getOrCreateSystemWorkspace();
 
-        Workspace workspace = workspaceRepository.createOrGetWorkspace(workspaceId, null);
-
-        assertNotNull(workspace.getId());
-        assertNull(workspace.getOrgId(), "Database should allow NULL org_id");
+        assertNotNull(systemWorkspace.getId());
+        assertNull(systemWorkspace.getOrgId(), "System workspace should have NULL org_id");
     }
 
     @Test

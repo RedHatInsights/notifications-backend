@@ -29,8 +29,11 @@ public class WorkspaceRepository {
     EntityManager entityManager;
 
     /**
-     * Create or get existing workspace by UUID.
+     * Create or get existing workspace by UUID for a specific org.
      * Used during bootstrap to ensure idempotency.
+     *
+     * IMPORTANT: This method is for org-specific workspaces only (orgId must NOT be null).
+     * For the system workspace (orgId IS NULL), use getOrCreateSystemWorkspace() instead.
      *
      * Concurrency-safe: Uses INSERT ... ON CONFLICT DO NOTHING to handle
      * concurrent bootstrap requests attempting to create the same workspace.
@@ -38,6 +41,12 @@ public class WorkspaceRepository {
      */
     @Transactional
     public Workspace createOrGetWorkspace(UUID workspaceId, String orgId) {
+        if (orgId == null) {
+            throw new IllegalArgumentException(
+                "orgId must not be null. Use getOrCreateSystemWorkspace() for the system workspace."
+            );
+        }
+
         // Use native SQL with ON CONFLICT to handle concurrent inserts
         // If workspace already exists (concurrent request won), this is a no-op
         entityManager.createNativeQuery(
