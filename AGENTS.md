@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Notifications Backend is a multi-module Quarkus (3.35.x) application that powers the Red Hat Hybrid Cloud Console notification system. It processes events from the platform, resolves recipients, renders templates, and delivers notifications through various channels (email, webhook, Slack, Microsoft Teams, PagerDuty, ServiceNow, Splunk, Google Chat, drawer). The codebase is Java 21, uses PostgreSQL with Flyway migrations, communicates over Kafka with CloudEvents, and deploys to OpenShift via Konflux/Tekton pipelines.
+Notifications Backend is a multi-module Quarkus (3.35.x) application that powers the Red Hat Hybrid Cloud Console notification system. It processes events from the platform, resolves recipients, renders templates, and delivers notifications through various channels (email, webhook, Slack, Microsoft Teams, PagerDuty, ServiceNow, Splunk, Google Chat, drawer). The codebase is Java 25, uses PostgreSQL with Flyway migrations, communicates over Kafka with CloudEvents, and deploys to OpenShift via Konflux/Tekton pipelines.
 
 ## Build and Test Commands
 
@@ -29,7 +29,7 @@ Checkstyle runs during the `validate` phase and will fail the build on violation
 
 ### Java and Jakarta EE
 
-- Java 21 is required (enforced by maven-enforcer-plugin).
+- Java 25 is required (enforced by maven-enforcer-plugin).
 - Use `jakarta.*` packages, not `javax.*` (the project has fully migrated). The only `javax.*` imports still present are for `javax.annotation.Nullable` and JMX, which are not part of Jakarta EE.
 - No Lombok. All classes use standard Java code.
 - Use `io.quarkus.logging.Log` (static import) for logging, not `org.jboss.logging.Logger`. The entire backend uses the Quarkus static Log pattern.
