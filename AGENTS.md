@@ -89,13 +89,13 @@ This one-time operation:
 
 **Testing Without RBAC** (local development/testing):
 
-When `rbac.enabled=false` (default for tests), `WorkspaceUtils.getDefaultWorkspaceId()` returns deterministic UUIDs without calling the RBAC service:
+When `rbac.workspace_lookup.enabled=false` (default for tests), `WorkspaceUtils.getDefaultWorkspaceId()` returns deterministic UUIDs without calling the RBAC service:
 ```bash
 # In application.properties or test configuration
-rbac.enabled=false
+rbac.workspace_lookup.enabled=false
 ```
 
-This generates workspace UUIDs using `UUID.nameUUIDFromBytes("workspace-for-" + orgId)`, providing consistent test data without external dependencies.
+This generates workspace UUIDs using `UUID.nameUUIDFromBytes("workspace-for-" + orgId)`, providing consistent test data without external dependencies. This setting only affects workspace lookups and does not impact other RBAC functionality.
 
 **WorkspaceRepository**: Located in `backend/src/main/java/com/redhat/cloud/notifications/db/repositories/WorkspaceRepository.java`. Provides methods for:
 - `createOrGetWorkspace(UUID, String)` - Idempotent workspace creation

@@ -21,8 +21,8 @@ import java.util.UUID;
 @ApplicationScoped
 public class WorkspaceUtils {
 
-    @ConfigProperty(name = "rbac.enabled", defaultValue = "true")
-    boolean rbacEnabled;
+    @ConfigProperty(name = "rbac.workspace_lookup.enabled", defaultValue = "true")
+    boolean workspaceLookupEnabled;
 
     @Inject
     OAuth2ClientCredentialsCache oauth2ClientCredentialsCache;
@@ -35,8 +35,9 @@ public class WorkspaceUtils {
      * organization. The result is cached because the identifier is not going
      * to change as long as we are fetching this data from RBAC.
      *
-     * When RBAC is disabled (rbac.enabled=false), returns a deterministic UUID
-     * generated from the org_id. This is useful for local development and testing.
+     * When workspace lookup is disabled (rbac.workspace_lookup.enabled=false),
+     * returns a deterministic UUID generated from the org_id. This is useful
+     * for local development and testing without requiring RBAC service access.
      *
      * @param orgId the organization to get the default workspace from.
      * @return the identifier of the workspace.
@@ -45,12 +46,12 @@ public class WorkspaceUtils {
     @Retry(maxRetries = 3, delay = 100, retryOn = OAuth2Exception.class)
     public UUID getDefaultWorkspaceId(final String orgId) {
 
-        if (!rbacEnabled) {
-            // When RBAC is disabled, generate a deterministic UUID for testing/development
+        if (!workspaceLookupEnabled) {
+            // When workspace lookup is disabled, generate a deterministic UUID for testing/development
             UUID workspaceId = UUID.nameUUIDFromBytes(
                 ("workspace-for-" + orgId).getBytes(StandardCharsets.UTF_8)
             );
-            Log.debugf("[RBAC DISABLED][org_id: %s][workspace_id: %s] Using deterministic workspace ID", orgId, workspaceId);
+            Log.debugf("[WORKSPACE LOOKUP DISABLED][org_id: %s][workspace_id: %s] Using deterministic workspace ID", orgId, workspaceId);
             return workspaceId;
         }
 
