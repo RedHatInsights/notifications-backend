@@ -10,12 +10,12 @@ USER root
 # Note: curl-minimal is already installed in ubi9-minimal
 
 # Set Mandrel version and architecture
-# Using latest Mandrel release for Java 21 (as of Aug 2026)
-ENV MANDREL_VERSION=23.1.12.1-Final
-ENV JAVA_VERSION=21
+# Using latest Mandrel release for Java 25
+ENV MANDREL_VERSION=25.0.4.1-Final
+ENV JAVA_VERSION=25
 ENV ARCH=linux-amd64
 
-# Install Mandrel 23.1.12.1-Final requested dependencies (list available at https://github.com/graalvm/mandrel/releases/tag/mandrel-23.1.12.1-Final)
+# Install Mandrel 25.0.4.1-Final requested dependencies (list available at https://github.com/graalvm/mandrel/releases/tag/mandrel-25.0.4.1-Final)
 RUN microdnf install -y \
   glibc-devel \
   zlib-devel \
@@ -32,7 +32,7 @@ RUN microdnf install -y \
   && microdnf clean all
 
 # Download and install Mandrel
-ARG MANDREL_SHA256=f5c62e29dc779a6dc574bb0bc4b40e4b0ec799d842fc979353b4c07e69057fb3
+ARG MANDREL_SHA256=e47ff6bfe6a8dbb482fdc65c9a49fc6f3ba2fa61ef3cc8fb6229a88989054c31
 RUN curl -L -o /tmp/mandrel.tar.gz \
   https://github.com/graalvm/mandrel/releases/download/mandrel-${MANDREL_VERSION}/mandrel-java${JAVA_VERSION}-${ARCH}-${MANDREL_VERSION}.tar.gz \
   && echo "${MANDREL_SHA256} /tmp/mandrel.tar.gz" | sha256sum -c - \
