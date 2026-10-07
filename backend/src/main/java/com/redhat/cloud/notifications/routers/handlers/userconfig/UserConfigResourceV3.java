@@ -25,7 +25,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 import java.util.List;
-import java.util.Set;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_3_0;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
@@ -36,10 +35,10 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class UserConfigResourceV3 extends UserConfigResourceCommon {
 
-    static final Set<SubscriptionType> V3_PER_EVENT_TYPE_SUBSCRIPTIONS = Set.of(INSTANT, DAILY, WEEKLY, DRAWER);
+    static final List<SubscriptionType> V3_PER_EVENT_TYPE_SUBSCRIPTIONS = List.of(INSTANT, DAILY, WEEKLY, DRAWER);
 
     @Override
-    protected Set<SubscriptionType> getPerEventTypeSubscriptions() {
+    protected List<SubscriptionType> getPerEventTypeSubscriptions() {
         return V3_PER_EVENT_TYPE_SUBSCRIPTIONS;
     }
 

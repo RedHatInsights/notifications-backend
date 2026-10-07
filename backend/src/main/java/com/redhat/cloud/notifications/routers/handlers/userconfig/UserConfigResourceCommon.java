@@ -59,7 +59,7 @@ public class UserConfigResourceCommon {
 
     static final List<SubscriptionType> PER_EVENT_TYPE_SUBSCRIPTIONS = List.of(INSTANT, DAILY, DRAWER);
 
-    protected Set<SubscriptionType> getPerEventTypeSubscriptions() {
+    protected List<SubscriptionType> getPerEventTypeSubscriptions() {
         return PER_EVENT_TYPE_SUBSCRIPTIONS;
     }
 
