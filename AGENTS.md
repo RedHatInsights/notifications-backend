@@ -87,16 +87,15 @@ This one-time operation:
 2. For each org with endpoints: fetches workspace UUID from RBAC, creates workspace record, assigns to org's endpoints
 3. Is idempotent - safe to run multiple times
 
-**Fake RBAC Profile** (local testing only):
+**Testing Without RBAC** (local development/testing):
+
+When `rbac.enabled=false` (default for tests), `WorkspaceUtils.getDefaultWorkspaceId()` returns deterministic UUIDs without calling the RBAC service:
 ```bash
-./mvnw quarkus:dev -Dquarkus.profile=fake-rbac
+# In application.properties or test configuration
+rbac.enabled=false
 ```
 
-Activates `FakeWorkspaceUtils`, which returns deterministic workspace UUIDs without calling RBAC. This profile:
-- Disables OIDC authentication
-- Provides predefined org-to-workspace mappings
-- Has runtime safety checks preventing non-local deployment
-- **WARNING**: Must NEVER be used outside local development
+This generates workspace UUIDs using `UUID.nameUUIDFromBytes("workspace-for-" + orgId)`, providing consistent test data without external dependencies.
 
 **WorkspaceRepository**: Located in `backend/src/main/java/com/redhat/cloud/notifications/db/repositories/WorkspaceRepository.java`. Provides methods for:
 - `createOrGetWorkspace(UUID, String)` - Idempotent workspace creation
