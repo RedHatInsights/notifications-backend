@@ -34,9 +34,9 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
         entityManager.persist(aggregationOrgConfig);
     }
 
-    public AggregationOrgConfig findAggregationOrgConfigByOrgId(String orgId) {
+    public AggregationOrgConfig findDailyAggregationOrgConfigByOrgId(String orgId) {
         entityManager.clear();
-        return entityManager.createQuery("SELECT acp FROM AggregationOrgConfig acp WHERE acp.orgId =:orgId", AggregationOrgConfig.class)
+        return entityManager.createQuery("SELECT acp FROM AggregationOrgConfig acp WHERE acp.id.orgId =:orgId AND acp.id.subscriptionType = 'DAILY'", AggregationOrgConfig.class)
                 .setParameter("orgId", orgId)
                 .getSingleResult();
     }

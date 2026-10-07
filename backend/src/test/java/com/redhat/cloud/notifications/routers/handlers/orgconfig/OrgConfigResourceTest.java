@@ -29,6 +29,7 @@ import org.project_kessel.api.inventory.v1beta2.Allowed;
 import org.project_kessel.api.inventory.v1beta2.CheckForUpdateRequest;
 import org.project_kessel.api.inventory.v1beta2.CheckRequest;
 
+import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.NO_ACCESS;
@@ -81,6 +82,7 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     static final LocalTime TIME = LocalTime.of(10, 00);
 
     public static final String ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL = "/org-config/daily-digest/time-preference";
+    public static final String ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL = "/org-config/weekly-digest/preference";
     String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
     Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
@@ -200,6 +202,205 @@ class OrgConfigResourceTest extends DbIsolatedTest {
                  .statusCode(expectedReturnCode).extract().asString();
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testSaveWeeklyDigestPreference(boolean kesselEnabled) {
+
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
+        if (kesselEnabled) {
+            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+        }
+
+        WeeklyDigestPreference preference = new WeeklyDigestPreference(LocalTime.of(10, 0), DayOfWeek.MONDAY);
+
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(preference)
+                .put(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+                .then()
+                .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        // check request without body
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .put(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testGetWeeklyDigestPreference(boolean kesselEnabled) {
+
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
+        if (kesselEnabled) {
+            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+        }
+
+        // no preference yet, should return 404
+        given()
+                .header(identityHeader)
+                .when()
+                .get(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+                .then()
+                .statusCode(HttpStatus.SC_NOT_FOUND);
+
+        // save a preference
+        WeeklyDigestPreference preference = new WeeklyDigestPreference(LocalTime.of(14, 30), DayOfWeek.WEDNESDAY);
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(preference)
+                .put(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+                .then()
+                .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        // retrieve the preference
+        WeeklyDigestPreference result = given()
+                .header(identityHeader)
+                .when()
+                .get(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(JSON)
+                .extract().as(WeeklyDigestPreference.class);
+        assertEquals(LocalTime.of(14, 30), result.getScheduledExecutionTime());
+        assertEquals(DayOfWeek.WEDNESDAY, result.getPreferredDay());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testWeeklyDigestMinuteFilter(boolean kesselEnabled) {
+
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
+        if (kesselEnabled) {
+            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+        }
+
+        // valid minutes
+        for (int minute : new int[]{0, 15, 30, 45}) {
+            WeeklyDigestPreference pref = new WeeklyDigestPreference(LocalTime.of(5, minute), DayOfWeek.FRIDAY);
+            given()
+                    .header(identityHeader)
+                    .when()
+                    .contentType(JSON)
+                    .body(pref)
+                    .put(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+                    .then()
+                    .statusCode(HttpStatus.SC_NO_CONTENT);
+        }
+
+        // invalid minute
+        WeeklyDigestPreference badPref = new WeeklyDigestPreference(LocalTime.of(5, 10), DayOfWeek.FRIDAY);
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(badPref)
+                .put(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+                .then()
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testUpdateWeeklyDigestPreference(boolean kesselEnabled) {
+
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
+        if (kesselEnabled) {
+            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+        }
+
+        // save initial preference
+        WeeklyDigestPreference initial = new WeeklyDigestPreference(LocalTime.of(8, 0), DayOfWeek.MONDAY);
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(initial)
+                .put(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+                .then()
+                .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        // update with different time and day
+        WeeklyDigestPreference updated = new WeeklyDigestPreference(LocalTime.of(16, 30), DayOfWeek.THURSDAY);
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(updated)
+                .put(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+                .then()
+                .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        // verify the update took effect
+        WeeklyDigestPreference result = given()
+                .header(identityHeader)
+                .when()
+                .get(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(JSON)
+                .extract().as(WeeklyDigestPreference.class);
+        assertEquals(LocalTime.of(16, 30), result.getScheduledExecutionTime());
+        assertEquals(DayOfWeek.THURSDAY, result.getPreferredDay());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testDailyAndWeeklyCoexistence(boolean kesselEnabled) {
+
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
+        if (kesselEnabled) {
+            mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+        }
+
+        // save a daily preference
+        recordDailyDigestTimePreference(identityHeader, LocalTime.of(9, 0), Response.Status.NO_CONTENT.getStatusCode());
+
+        // save a weekly preference for the same org
+        WeeklyDigestPreference weeklyPref = new WeeklyDigestPreference(LocalTime.of(18, 15), DayOfWeek.FRIDAY);
+        given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(weeklyPref)
+                .put(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+                .then()
+                .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        // retrieve daily -- should be independent
+        LocalTime dailyResult = given()
+                .header(identityHeader)
+                .when()
+                .contentType(TEXT)
+                .get(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .extract().as(LocalTime.class);
+        assertEquals(LocalTime.of(9, 0), dailyResult);
+
+        // retrieve weekly -- should be independent
+        WeeklyDigestPreference weeklyResult = given()
+                .header(identityHeader)
+                .when()
+                .get(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(JSON)
+                .extract().as(WeeklyDigestPreference.class);
+        assertEquals(LocalTime.of(18, 15), weeklyResult.getScheduledExecutionTime());
+        assertEquals(DayOfWeek.FRIDAY, weeklyResult.getPreferredDay());
+    }
+
     @Test
     void testInsufficientPrivileges() {
         Header noAccessIdentityHeader = initRbacMock(DEFAULT_USER + "-no-access", NO_ACCESS);
@@ -232,6 +433,35 @@ class OrgConfigResourceTest extends DbIsolatedTest {
             .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
             .then()
             .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // weekly endpoints
+        given()
+            .header(noAccessIdentityHeader)
+            .when()
+            .get(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(noAccessIdentityHeader)
+            .when()
+            .put(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(readAccessIdentityHeader)
+            .when()
+            .get(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
+
+        given()
+            .header(readAccessIdentityHeader)
+            .when()
+            .put(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
     }
 
     /**
@@ -253,10 +483,23 @@ class OrgConfigResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(HttpStatus.SC_FORBIDDEN);
 
-        // Attempt saving the itme preferences.
+        // Attempt saving the time preferences.
         given()
             .header(this.identityHeader)
             .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // Weekly digest endpoints.
+        given()
+            .header(this.identityHeader)
+            .get(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .header(this.identityHeader)
+            .put(ORG_CONFIG_NOTIFICATION_WEEKLY_DIGEST_PREFERENCE_URL)
             .then()
             .statusCode(HttpStatus.SC_FORBIDDEN);
     }

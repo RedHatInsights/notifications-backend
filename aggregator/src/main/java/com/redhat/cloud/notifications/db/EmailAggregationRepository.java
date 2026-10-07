@@ -33,7 +33,7 @@ public class EmailAggregationRepository {
         final LocalDateTime startTime = LocalDateTime.now();
         String query = "SELECT DISTINCT ev.orgId, ev.bundleId, ev.applicationId, acp.lastRun, bu.name, ap.name FROM Event ev " +
             "join Application ap on ev.applicationId = ap.id join Bundle bu on ev.bundleId = bu.id " +
-            "join AggregationOrgConfig acp on ev.orgId = acp.orgId WHERE " +
+            "join AggregationOrgConfig acp on ev.orgId = acp.id.orgId WHERE acp.id.subscriptionType = 'DAILY' AND " +
             // check than at least one user of the org subscribed for daily digest with this event type
             "EXISTS (SELECT 1 FROM EventTypeEmailSubscription es where ev.orgId = es.id.orgId and es.id.subscriptionType='DAILY' and es.eventType = ev.eventType and es.subscribed is true) " +
             // check for linked email integration linked to this event type (to honor legacy mechanism)
