@@ -57,7 +57,7 @@ import static com.redhat.cloud.notifications.routers.SecurityContextUtil.isServi
 
 public class UserConfigResourceCommon {
 
-    static final Set<SubscriptionType> PER_EVENT_TYPE_SUBSCRIPTIONS = Set.of(INSTANT, DAILY, DRAWER);
+    static final List<SubscriptionType> PER_EVENT_TYPE_SUBSCRIPTIONS = List.of(INSTANT, DAILY, DRAWER);
 
     @Inject
     ObjectMapper mapper;
