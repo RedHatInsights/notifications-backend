@@ -57,6 +57,12 @@ import static com.redhat.cloud.notifications.routers.SecurityContextUtil.isServi
 
 public class UserConfigResourceCommon {
 
+    static final List<SubscriptionType> PER_EVENT_TYPE_SUBSCRIPTIONS = List.of(INSTANT, DAILY, DRAWER);
+
+    protected List<SubscriptionType> getPerEventTypeSubscriptions() {
+        return PER_EVENT_TYPE_SUBSCRIPTIONS;
+    }
+
     @Inject
     ObjectMapper mapper;
 
@@ -277,7 +283,7 @@ public class UserConfigResourceCommon {
                 eventTypeSettingsValue.hasForcedEmail = withForcedEmails;
                 eventTypeSettingsValue.subscriptionLocked = eventType.isSubscriptionLocked();
                 eventTypeSettingsValue.availableSeverities = eventType.getAvailableSeverities();
-                for (SubscriptionType subscriptionType : SubscriptionType.values()) {
+                for (SubscriptionType subscriptionType : getPerEventTypeSubscriptions()) {
                     if (backendConfig.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
                         boolean supported = isTemplateSupported(bundle.getName(), application.getName(), eventType, subscriptionType, orgId);
 
@@ -304,6 +310,9 @@ public class UserConfigResourceCommon {
     }
 
     private boolean isTemplateSupported(String bundleName, String applicationName, EventType eventType, SubscriptionType subscriptionType, final String orgId) {
+        if (!getPerEventTypeSubscriptions().contains(subscriptionType)) {
+            return false;
+        }
         boolean supported;
         if (backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()) {
             if (!backendConfig.isDrawerEnabled(orgId) && subscriptionType == DRAWER) {
@@ -322,13 +331,15 @@ public class UserConfigResourceCommon {
     }
 
     private static TemplateDefinition getTemplateDefinition(final String bundleName, final String applicationName, final String eventTypeName, final SubscriptionType subscriptionType, final boolean canUseBetaVersion) {
-        IntegrationType integrationType = null;
+        IntegrationType integrationType;
         if (subscriptionType == INSTANT) {
             integrationType = IntegrationType.EMAIL_BODY;
-        } else if (subscriptionType == DAILY) {
+        } else if (subscriptionType == DAILY || subscriptionType == SubscriptionType.WEEKLY) {
             integrationType = IntegrationType.EMAIL_DAILY_DIGEST_BODY;
         } else if (subscriptionType == DRAWER) {
             integrationType = IntegrationType.DRAWER;
+        } else {
+            throw new IllegalArgumentException("Unsupported subscription type: " + subscriptionType);
         }
         return new TemplateDefinition(
             integrationType,
@@ -479,7 +490,7 @@ public class UserConfigResourceCommon {
         EventTypeSubscriptionDTO dto = subscriptionMapper.eventTypeToEventTypeSubscriptionDTO(eventType);
 
         List<SubscriptionChannelDTO> channels = new ArrayList<>();
-        for (SubscriptionType subscriptionType : SubscriptionType.values()) {
+        for (SubscriptionType subscriptionType : getPerEventTypeSubscriptions()) {
             boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
             List<SeverityDTO> subscribedSeverities = subscribedByDefault ? new ArrayList<>(dto.getAvailableSeverities()) : new ArrayList<>();
             channels.add(new SubscriptionChannelDTO(subscriptionMapper.subscriptionTypeToSubscriptionTypeDTO(subscriptionType), subscribedSeverities));
@@ -556,6 +567,9 @@ public class UserConfigResourceCommon {
         }
         for (SubscriptionChannelDTO channel : eventTypeUpdate.getSubscriptions()) {
             SubscriptionType subscriptionType = subscriptionMapper.subscriptionTypeDTOToSubscriptionType(channel.getSubscriptionType());
+            if (subscriptionType == null || !getPerEventTypeSubscriptions().contains(subscriptionType)) {
+                continue;
+            }
             if (subscriptionType == SubscriptionType.DRAWER && !backendConfig.isDrawerEnabled(orgId)) {
                 // Mirrors the GET side (SubscriptionRepository#getAvailableTypes), which hides DRAWER
                 // from an org until its Unleash flag is on. Without this, a write here would silently

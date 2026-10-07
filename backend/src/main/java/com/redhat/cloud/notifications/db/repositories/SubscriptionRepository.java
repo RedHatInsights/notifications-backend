@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.models.SubscriptionType.WEEKLY;
 
 @ApplicationScoped
 public class SubscriptionRepository {
@@ -92,6 +93,7 @@ public class SubscriptionRepository {
     private void checkIfSubscriptionTypeIsSupportedForCurrentEventType(UUID eventTypeId, SubscriptionType subscriptionType) {
         switch (subscriptionType) {
             case DAILY:
+            case WEEKLY:
                 templateRepository.checkIfExistAggregationEmailTemplatesByEventType(eventTypeId);
                 break;
             case INSTANT:
@@ -168,9 +170,9 @@ public class SubscriptionRepository {
 
     private List<SubscriptionType> getAvailableTypes(String orgId) {
         if (backendConfig.isDrawerEnabled(orgId)) {
-            return List.of(INSTANT, DAILY, DRAWER);
+            return List.of(INSTANT, DAILY, WEEKLY, DRAWER);
         } else {
-            return List.of(INSTANT, DAILY);
+            return List.of(INSTANT, DAILY, WEEKLY);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.userconfig;
 
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.BundleSubscriptionDTO;
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.BundleSubscriptionUpdateDTO;
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.SubscriptionMapper;
@@ -26,9 +27,20 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_3_0;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
+import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.models.SubscriptionType.WEEKLY;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class UserConfigResourceV3 extends UserConfigResourceCommon {
+
+    static final List<SubscriptionType> V3_PER_EVENT_TYPE_SUBSCRIPTIONS = List.of(INSTANT, DAILY, WEEKLY, DRAWER);
+
+    @Override
+    protected List<SubscriptionType> getPerEventTypeSubscriptions() {
+        return V3_PER_EVENT_TYPE_SUBSCRIPTIONS;
+    }
 
     @Inject
     SubscriptionMapper v3SubscriptionMapper;
