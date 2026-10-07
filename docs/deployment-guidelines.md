@@ -78,7 +78,7 @@
 ## GitHub Actions
 
 ### Build & Test (`build.yml`)
-- Runs on push, PR, and manual dispatch. Uses JDK 21 (Adoptium).
+- Runs on push, PR, and manual dispatch. Uses JDK 25 (Adoptium).
 - Executes `./mvnw clean verify` (with tests). Uploads OpenAPI spec artifacts.
 - Admin-console builds only trigger when `admin-console/**` files change (`-Padmin-console` profile).
 
