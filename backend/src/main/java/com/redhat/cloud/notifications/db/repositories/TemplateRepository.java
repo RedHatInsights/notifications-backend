@@ -370,6 +370,7 @@ public class TemplateRepository {
         try {
             switch (subscriptionType) {
                 case DAILY:
+                case WEEKLY:
                     checkIfExistAggregationEmailTemplatesByEventType(eventTypeId);
                     break;
                 case INSTANT:
