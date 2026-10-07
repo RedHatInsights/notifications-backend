@@ -3,7 +3,6 @@ package com.redhat.cloud.notifications.routers.internal;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.repositories.WorkspaceRepository;
-import com.redhat.cloud.notifications.db.repositories.WorkspaceTestProfile;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
@@ -11,7 +10,6 @@ import com.redhat.cloud.notifications.routers.internal.WorkspaceBootstrapResourc
 import com.redhat.cloud.notifications.routers.internal.WorkspaceBootstrapResource.BootstrapSummary;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -28,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
-@TestProfile(WorkspaceTestProfile.class)
 @QuarkusTestResource(TestLifecycleManager.class)
 public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
 
