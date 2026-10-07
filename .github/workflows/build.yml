@@ -30,7 +30,7 @@ jobs:
           path: admin-console/src/main/webapp/.yarn/cache
           # The cache key is changed every month to prevent unlimited growth.
           key: yarn-cache-${{ steps.cache-key.outputs.date }}
-      - name: Set up JDK 21
+      - name: Set up JDK
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
