@@ -5,6 +5,7 @@ import java.time.Duration;
 public enum SubscriptionType {
     INSTANT(null, false),
     DAILY(Duration.ofDays(1), false),
+    WEEKLY(Duration.ofDays(7), false),
     DRAWER(null, true);
 
     private final Duration duration;

@@ -9,6 +9,8 @@ public enum SubscriptionTypeDTO {
     INSTANT,
     @JsonProperty("daily_email")
     DAILY,
+    @JsonProperty("weekly_email")
+    WEEKLY,
     @JsonProperty("drawer")
     DRAWER
 }

@@ -57,6 +57,8 @@ import static com.redhat.cloud.notifications.routers.SecurityContextUtil.isServi
 
 public class UserConfigResourceCommon {
 
+    static final List<SubscriptionType> PER_EVENT_TYPE_SUBSCRIPTIONS = List.of(INSTANT, DAILY, DRAWER);
+
     @Inject
     ObjectMapper mapper;
 
@@ -277,7 +279,7 @@ public class UserConfigResourceCommon {
                 eventTypeSettingsValue.hasForcedEmail = withForcedEmails;
                 eventTypeSettingsValue.subscriptionLocked = eventType.isSubscriptionLocked();
                 eventTypeSettingsValue.availableSeverities = eventType.getAvailableSeverities();
-                for (SubscriptionType subscriptionType : SubscriptionType.values()) {
+                for (SubscriptionType subscriptionType : PER_EVENT_TYPE_SUBSCRIPTIONS) {
                     if (backendConfig.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
                         boolean supported = isTemplateSupported(bundle.getName(), application.getName(), eventType, subscriptionType, orgId);
 
@@ -479,7 +481,7 @@ public class UserConfigResourceCommon {
         EventTypeSubscriptionDTO dto = subscriptionMapper.eventTypeToEventTypeSubscriptionDTO(eventType);
 
         List<SubscriptionChannelDTO> channels = new ArrayList<>();
-        for (SubscriptionType subscriptionType : SubscriptionType.values()) {
+        for (SubscriptionType subscriptionType : PER_EVENT_TYPE_SUBSCRIPTIONS) {
             boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
             List<SeverityDTO> subscribedSeverities = subscribedByDefault ? new ArrayList<>(dto.getAvailableSeverities()) : new ArrayList<>();
             channels.add(new SubscriptionChannelDTO(subscriptionMapper.subscriptionTypeToSubscriptionTypeDTO(subscriptionType), subscribedSeverities));
