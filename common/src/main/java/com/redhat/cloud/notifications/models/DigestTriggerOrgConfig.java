@@ -10,11 +10,11 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
-@Table(name = "digest_subscription_org_config")
-public class DigestSubscriptionOrgConfig {
+@Table(name = "digest_trigger_org_config")
+public class DigestTriggerOrgConfig {
 
     @EmbeddedId
-    private DigestSubscriptionOrgConfigId id;
+    private DigestTriggerOrgConfigId id;
 
     @NotNull
     @Size(max = 100)
@@ -24,19 +24,19 @@ public class DigestSubscriptionOrgConfig {
 
     private LocalDateTime nextRun;
 
-    public DigestSubscriptionOrgConfig() {
+    public DigestTriggerOrgConfig() {
     }
 
-    public DigestSubscriptionOrgConfig(DigestSubscriptionOrgConfigId id, String cronExpression) {
+    public DigestTriggerOrgConfig(DigestTriggerOrgConfigId id, String cronExpression) {
         this.id = id;
         this.cronExpression = cronExpression;
     }
 
-    public DigestSubscriptionOrgConfigId getId() {
+    public DigestTriggerOrgConfigId getId() {
         return id;
     }
 
-    public void setId(DigestSubscriptionOrgConfigId id) {
+    public void setId(DigestTriggerOrgConfigId id) {
         this.id = id;
     }
 
@@ -72,7 +72,7 @@ public class DigestSubscriptionOrgConfig {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        DigestSubscriptionOrgConfig that = (DigestSubscriptionOrgConfig) o;
+        DigestTriggerOrgConfig that = (DigestTriggerOrgConfig) o;
         return Objects.equals(id, that.id);
     }
 
