@@ -89,11 +89,11 @@ public class OrgConfigResource {
                                                      @PathParam("subscriptionType") SubscriptionTypeDTO subscriptionType,
                                                      @NotNull @Valid @RequestBody(required = true) DigestTriggerRequest request) {
             String orgId = getOrgId(sec);
+            request.setScheduledExecutionTime(request.getScheduledExecutionTime().truncatedTo(ChronoUnit.MINUTES));
             validateSubscriptionType(subscriptionType);
             validateDigestRequest(subscriptionType, request);
-            LocalTime truncatedTime = request.getScheduledExecutionTime().truncatedTo(ChronoUnit.MINUTES);
-            Log.infof("Update digest trigger preference for orgId %s, type %s, time %s, day %s", orgId, subscriptionType, truncatedTime, request.getScheduledExecutionDay());
-            String cronExpression = DigestCronUtils.buildCronExpression(subscriptionType.toEntity(), truncatedTime, request.getScheduledExecutionDay());
+            Log.infof("Update digest trigger preference for orgId %s, type %s, time %s, day %s", orgId, subscriptionType, request.getScheduledExecutionTime(), request.getScheduledExecutionDay());
+            String cronExpression = DigestCronUtils.buildCronExpression(subscriptionType.toEntity(), request.getScheduledExecutionTime(), request.getScheduledExecutionDay());
             digestTriggerOrgConfigRepository.createOrUpdateDigestPreference(orgId, subscriptionType.toEntity(), cronExpression, DigestCronUtils.computeNextRun(cronExpression));
         }
 
