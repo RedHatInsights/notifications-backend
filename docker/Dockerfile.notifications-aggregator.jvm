@@ -3,14 +3,14 @@
 ###
 
 # Build the project
-FROM registry.access.redhat.com/ubi9/openjdk-21:latest@sha256:c1ace6c4a54563bc2912d753b898fcacb9b1c30010cd153419ddd3aa5bbf3b56 AS build
+FROM registry.access.redhat.com/ubi9/openjdk-21:latest@sha256:3e281b9da807321a35231b3ba543eeff9b7c736ece3f27a914303d3b8f9da0e1 AS build
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
 RUN ./mvnw -s .mvn/settings.xml clean package -DskipTests -pl :notifications-aggregator -am --no-transfer-progress
 
 # Build the container
-FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest@sha256:45af2087488812260f0cb6c744fadfe0b4e16c6f46232a05a57d7d0ddf1aa55d
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:latest@sha256:e11f680f46044d1679caad669702624ac327a7169952f2d69ba6e6276ab98c81
 
 # Update the base image packages
 USER root
