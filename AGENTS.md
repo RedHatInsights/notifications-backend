@@ -69,6 +69,40 @@ Public resources use inner static subclasses for versioning. The parent class ho
 
 Unleash is used for feature flags. It is disabled by default locally (`quarkus.unleash.active=false`) and activated in deployed environments. Feature toggle utilities are in the `common-unleash` module.
 
+### Workspace Management
+
+All endpoints (integrations) are associated with a workspace for RBAC tenant isolation. The workspace UUID is fetched from the RBAC service based on org_id.
+
+**Workspace Entity**: Located in `common/src/main/java/com/redhat/cloud/notifications/models/Workspace.java`. Each workspace has a UUID (from RBAC) and an org_id. System workspaces (for platform integrations) have `org_id = NULL`.
+
+**Endpoint-Workspace Relationship**: The `Endpoint` entity has a `@ManyToOne workspace` relationship. New endpoints are created with `workspace_id = NULL`. Workspace assignment happens via the bootstrap process or future automated assignment logic. The `workspace_id` column in the `endpoints` table is indexed for query performance.
+
+**Bootstrap Process**: For endpoints without workspace assignments, use the internal admin endpoint:
+```bash
+POST /internal/workspace/bootstrap
+```
+
+This one-time operation:
+1. Creates or finds the system workspace (org_id = NULL) and assigns it to system endpoints
+2. For each org with endpoints: fetches workspace UUID from RBAC, creates workspace record, assigns to org's endpoints
+3. Is idempotent - safe to run multiple times
+
+**Testing Without RBAC** (local development/testing):
+
+When `rbac.workspace_lookup.enabled=false` (default for tests), `WorkspaceUtils.getDefaultWorkspaceId()` returns deterministic UUIDs without calling the RBAC service:
+```bash
+# In application.properties or test configuration
+rbac.workspace_lookup.enabled=false
+```
+
+This generates workspace UUIDs using `UUID.nameUUIDFromBytes("workspace-for-" + orgId)`, providing consistent test data without external dependencies. This setting only affects workspace lookups and does not impact other RBAC functionality.
+
+**WorkspaceRepository**: Located in `backend/src/main/java/com/redhat/cloud/notifications/db/repositories/WorkspaceRepository.java`. Provides methods for:
+- `createOrGetWorkspace(UUID, String)` - Idempotent workspace creation
+- `getOrCreateSystemWorkspace()` - System workspace management
+- `assignWorkspaceToEndpoints(UUID, String)` - Bulk endpoint assignment
+- `countEndpointsWithoutWorkspace()` - Migration/bootstrap status
+
 ## Detailed Guidelines
 
 For domain-specific conventions, refer to these guideline documents:
