@@ -1,4 +1,4 @@
-# Image available at https://catalog.redhat.com/software/containers/ubi9/openjdk-25-runtime.
+# Image available at https://catalog.redhat.com/software/containers/ubi9/openjdk-25.
 FROM registry.access.redhat.com/ubi9/openjdk-25:latest@sha256:68f712c440bccc81af8a1935dda4beff4fbed6466f4037f6d1437c0f455328bc
 
 # Switch to the root user to be able to install the required packages.
