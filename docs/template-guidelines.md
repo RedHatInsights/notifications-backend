@@ -57,6 +57,7 @@ The map value is the path **relative to the channel root folder** (e.g., `"Advis
 2. Create the template file(s) in the correct channel/application folder.
 3. Add `entry(new TemplateDefinition(...), "FolderName/fileName")` to the mapping class's `templatesMap`.
 4. At startup, `TemplateService.init()` calls `checkTemplatesConsistency()`, which verifies every registered path exists on the classpath and is parseable by Qute. Missing files cause startup failure.
+5. Update `test-event-types.sh` at the repo root: add a curl-ready payload entry for the new event type so it can be tested on stage. This script must also be updated when an event type is removed, renamed, or its expected payload structure changes (new/renamed fields).
 
 ## Template Composition Patterns
 
