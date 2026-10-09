@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @Embeddable
-public class DigestSubscriptionOrgConfigId implements Serializable {
+public class DigestTriggerOrgConfigId implements Serializable {
 
     @NotNull
     @Size(max = 50)
@@ -20,10 +20,10 @@ public class DigestSubscriptionOrgConfigId implements Serializable {
     @Convert(converter = SubscriptionTypeConverter.class)
     public SubscriptionType subscriptionType;
 
-    public DigestSubscriptionOrgConfigId() {
+    public DigestTriggerOrgConfigId() {
     }
 
-    public DigestSubscriptionOrgConfigId(String orgId, SubscriptionType subscriptionType) {
+    public DigestTriggerOrgConfigId(String orgId, SubscriptionType subscriptionType) {
         this.orgId = orgId;
         this.subscriptionType = subscriptionType;
     }
@@ -33,7 +33,7 @@ public class DigestSubscriptionOrgConfigId implements Serializable {
         if (this == o) {
             return true;
         }
-        if (o instanceof DigestSubscriptionOrgConfigId other) {
+        if (o instanceof DigestTriggerOrgConfigId other) {
             return Objects.equals(orgId, other.orgId)
                 && Objects.equals(subscriptionType, other.subscriptionType);
         }

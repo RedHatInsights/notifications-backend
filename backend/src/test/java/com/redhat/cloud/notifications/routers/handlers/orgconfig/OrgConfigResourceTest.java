@@ -41,6 +41,8 @@ import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePer
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.http.ContentType.TEXT;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -81,6 +83,7 @@ class OrgConfigResourceTest extends DbIsolatedTest {
     static final LocalTime TIME = LocalTime.of(10, 00);
 
     public static final String ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL = "/org-config/daily-digest/time-preference";
+    public static final String DIGEST_TRIGGER_URL = "/org-config/digest/trigger-preference/";
     String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
     Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
 
@@ -93,8 +96,6 @@ class OrgConfigResourceTest extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
         MockServerConfig.addMockRbacAccess(testMinIdentityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
 
-        // Clean up the aggregations since we are using the "DEFAULT_*"
-        // organizations.
         this.entityManager
             .createQuery("DELETE FROM AggregationOrgConfig")
             .executeUpdate();
@@ -259,6 +260,355 @@ class OrgConfigResourceTest extends DbIsolatedTest {
             .put(ORG_CONFIG_NOTIFICATION_DAILY_DIGEST_TIME_PREFERENCE_URL)
             .then()
             .statusCode(HttpStatus.SC_FORBIDDEN);
+    }
+
+    @Test
+    void testDigestTriggerInsufficientPrivileges() {
+        Header noAccessIdentityHeader = initRbacMock(DEFAULT_USER + "-digest-no-access", NO_ACCESS);
+        Header readAccessIdentityHeader = initRbacMock(DEFAULT_USER + "-digest-read-access", READ_ACCESS);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(noAccessIdentityHeader)
+            .get(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(noAccessIdentityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"10:00\"}")
+            .put(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(readAccessIdentityHeader)
+            .get(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(readAccessIdentityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"10:00\"}")
+            .put(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+    }
+
+    @Test
+    void testDigestTriggerKesselUnauthorized() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
+        mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_FALSE);
+        mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_FALSE);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .get(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"10:00\"}")
+            .put(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .get(DIGEST_TRIGGER_URL + "weekly_email")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"10:00\", \"scheduled_execution_day\": \"MONDAY\"}")
+            .put(DIGEST_TRIGGER_URL + "weekly_email")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+    }
+
+    @Test
+    void testDigestTriggerKesselAuthorized() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
+        mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+        mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_TRUE);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .get(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"10:00\"}")
+            .put(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+    }
+
+    @Test
+    void testDigestTriggerKesselReadOnlyCannotWrite() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
+        mockDefaultKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+        mockDefaultKesselUpdatePermission(NOTIFICATIONS_EDIT, ALLOWED_FALSE);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .get(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"10:00\"}")
+            .put(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+    }
+
+    @Test
+    void testSaveAndGetDailyDigestTrigger() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(false);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"14:30\"}")
+            .put(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .get(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .body("scheduled_execution_time", equalTo("14:30:00"))
+            .body("subscription_type", equalTo("daily_email"))
+            .body("next_run", notNullValue());
+    }
+
+    @Test
+    void testSaveAndGetWeeklyDigestTrigger() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(false);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"10:00\", \"scheduled_execution_day\": \"MONDAY\"}")
+            .put(DIGEST_TRIGGER_URL + "weekly_email")
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .get(DIGEST_TRIGGER_URL + "weekly_email")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .body("scheduled_execution_time", equalTo("10:00:00"))
+            .body("scheduled_execution_day", equalTo("MONDAY"))
+            .body("subscription_type", equalTo("weekly_email"))
+            .body("next_run", notNullValue());
+    }
+
+    @Test
+    void testWeeklyRequiresPreferredDay() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(false);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"10:00\"}")
+            .put(DIGEST_TRIGGER_URL + "weekly_email")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testDailyRejectsPreferredDay() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(false);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"10:00\", \"scheduled_execution_day\": \"MONDAY\"}")
+            .put(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testInvalidMinuteForDigestTrigger() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(false);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"10:07\"}")
+            .put(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testInvalidSubscriptionType() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(false);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"10:00\"}")
+            .put(DIGEST_TRIGGER_URL + "instant_email")
+            .then()
+            .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"MONDAY", "monday", "Monday", "moNdAy"})
+    void testDayOfWeekCaseInsensitive(String dayValue) {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(false);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"10:00\", \"scheduled_execution_day\": \"" + dayValue + "\"}")
+            .put(DIGEST_TRIGGER_URL + "weekly_email")
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .get(DIGEST_TRIGGER_URL + "weekly_email")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .body("scheduled_execution_day", equalTo("MONDAY"));
+    }
+
+    @Test
+    void testGetNonExistentDigestTriggerReturnsDefaults() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(false);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .get(DIGEST_TRIGGER_URL + "weekly_email")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .body("scheduled_execution_time", equalTo("00:30:00"))
+            .body("scheduled_execution_day", equalTo("MONDAY"))
+            .body("subscription_type", equalTo("weekly_email"));
+    }
+
+    @Test
+    void testGetNonExistentDailyDigestTriggerReturnsDefaults() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(false);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .get(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .body("scheduled_execution_time", equalTo("00:00:00"))
+            .body("subscription_type", equalTo("daily_email"));
+    }
+
+    @Test
+    void testWireNameSubscriptionTypesInUrl() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(false);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"14:30\"}")
+            .put(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .get(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .body("subscription_type", equalTo("daily_email"));
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"10:00\", \"scheduled_execution_day\": \"MONDAY\"}")
+            .put(DIGEST_TRIGGER_URL + "weekly_email")
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .get(DIGEST_TRIGGER_URL + "weekly_email")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .body("subscription_type", equalTo("weekly_email"));
+    }
+
+    @Test
+    void testNonZeroSecondsTruncated() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(false);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .contentType(JSON)
+            .body("{\"scheduled_execution_time\": \"14:30:45\"}")
+            .put(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        given()
+            .basePath(TestConstants.API_NOTIFICATIONS_V_3_0)
+            .header(identityHeader)
+            .get(DIGEST_TRIGGER_URL + "daily_email")
+            .then()
+            .statusCode(HttpStatus.SC_OK)
+            .contentType(JSON)
+            .body("scheduled_execution_time", equalTo("14:30:00"));
     }
 
     private Header initRbacMock(final String username, final MockServerConfig.RbacAccess access) {
