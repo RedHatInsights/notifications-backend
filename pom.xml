@@ -45,7 +45,7 @@
 
     <properties>
         <mapstruct.version>1.6.3</mapstruct.version>
-        <kessel-sdk.version>1.10.0</kessel-sdk.version>
+        <kessel-sdk.version>1.11.0</kessel-sdk.version>
         <oauth2-oidc-sdk.version>11.38.2</oauth2-oidc-sdk.version>
 
         <enforcer-plugin.version>3.6.3</enforcer-plugin.version>
@@ -72,7 +72,7 @@
         <wiremock.version>3.13.2</wiremock.version>
 
         <insights-notification-schemas-java.version>1.1.0</insights-notification-schemas-java.version>
-        <clowder-quarkus-config-source.version>2.12.0</clowder-quarkus-config-source.version>
+        <clowder-quarkus-config-source.version>2.13.0</clowder-quarkus-config-source.version>
 
         <quarkus-logging-cloudwatch.version>6.16.0</quarkus-logging-cloudwatch.version>
         <quarkus-logging-sentry.version>2.3.5</quarkus-logging-sentry.version>
