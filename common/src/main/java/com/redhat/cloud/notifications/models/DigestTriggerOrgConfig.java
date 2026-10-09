@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
-@Table(name = "digest_subscription_org_config")
+@Table(name = "digest_trigger_org_config")
 public class DigestTriggerOrgConfig {
 
     @EmbeddedId

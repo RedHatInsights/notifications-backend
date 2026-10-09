@@ -8,6 +8,8 @@ import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfig;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.SubscriptionTypeDTO;
+import com.redhat.cloud.notifications.routers.models.DigestTriggerRequest;
+import com.redhat.cloud.notifications.routers.models.DigestTriggerResponse;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -29,6 +31,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
 import java.time.DayOfWeek;
@@ -42,7 +45,6 @@ import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_3_0;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_EDIT;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_VIEW;
-import static com.redhat.cloud.notifications.db.repositories.DigestTriggerOrgConfigRepository.computeNextRun;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -85,16 +87,18 @@ public class OrgConfigResource {
         @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_EDIT, resourceType = "daily_digest")
         public void saveDigestTriggerPreference(@Context SecurityContext sec,
                                                      @PathParam("subscriptionType") SubscriptionTypeDTO subscriptionType,
-                                                     @NotNull @Valid DigestTriggerRequest request) {
+                                                     @NotNull @Valid @RequestBody(required = true) DigestTriggerRequest request) {
             String orgId = getOrgId(sec);
             validateSubscriptionType(subscriptionType);
             validateDigestRequest(subscriptionType, request);
             LocalTime truncatedTime = request.getScheduledExecutionTime().truncatedTo(ChronoUnit.MINUTES);
             Log.infof("Update digest trigger preference for orgId %s, type %s, time %s, day %s", orgId, subscriptionType, truncatedTime, request.getScheduledExecutionDay());
-            digestTriggerOrgConfigRepository.createOrUpdateDigestPreference(orgId, subscriptionType.toEntity(), truncatedTime, request.getScheduledExecutionDay());
+            String cronExpression = DigestCronUtils.buildCronExpression(subscriptionType.toEntity(), truncatedTime, request.getScheduledExecutionDay());
+            digestTriggerOrgConfigRepository.createOrUpdateDigestPreference(orgId, subscriptionType.toEntity(), cronExpression, DigestCronUtils.computeNextRun(cronExpression));
         }
 
         @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DigestTriggerResponse.class)))
+        @APIResponse(responseCode = "400", description = "Invalid subscription type")
         @APIResponse(responseCode = "404", description = "Unrecognized subscription type")
         @GET
         @Path("/digest/trigger-preference/{subscriptionType}")
@@ -114,12 +118,12 @@ public class OrgConfigResource {
             }
             final LocalTime defaultTime = subscriptionType == SubscriptionTypeDTO.WEEKLY ? defaultWeeklyDigestTime : defaultDailyDigestTime;
             final DayOfWeek defaultDay = subscriptionType == SubscriptionTypeDTO.WEEKLY ? defaultWeeklyDigestDay : null;
-            final String cron = DigestTriggerOrgConfigRepository.buildCronExpression(entityType, defaultTime, defaultDay);
+            final String cron = DigestCronUtils.buildCronExpression(entityType, defaultTime, defaultDay);
             DigestTriggerResponse response = new DigestTriggerResponse();
             response.setSubscriptionType(subscriptionType);
             response.setScheduledExecutionTime(defaultTime);
             response.setScheduledExecutionDay(defaultDay);
-            response.setNextRun(computeNextRun(cron));
+            response.setNextRun(DigestCronUtils.computeNextRun(cron));
             return response;
         }
 
@@ -146,8 +150,8 @@ public class OrgConfigResource {
         static DigestTriggerResponse toResponse(DigestTriggerOrgConfig config) {
             DigestTriggerResponse response = new DigestTriggerResponse();
             response.setSubscriptionType(SubscriptionTypeDTO.fromEntity(config.getId().subscriptionType));
-            response.setScheduledExecutionTime(DigestTriggerOrgConfigRepository.parseTimeFromCron(config.getCronExpression()));
-            response.setScheduledExecutionDay(DigestTriggerOrgConfigRepository.parseDayFromCron(config.getCronExpression()));
+            response.setScheduledExecutionTime(DigestCronUtils.parseTimeFromCron(config.getCronExpression()));
+            response.setScheduledExecutionDay(DigestCronUtils.parseDayFromCron(config.getCronExpression()));
             response.setNextRun(config.getNextRun());
             return response;
         }
