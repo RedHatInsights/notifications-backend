@@ -1,16 +1,10 @@
-// Set up with the MintMaker Automerge plugin v0.12.0: https://github.com/gwenneg/mintmaker-automerge
+// Set up with the MintMaker Automerge plugin v1.0.0: https://github.com/gwenneg/mintmaker-automerge
 // Overrides MintMaker's global config: https://github.com/konflux-ci/mintmaker/blob/main/config/renovate/renovate.json
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  // GitHub auto-merge never completes when a bypass actor meets the approval rule.
-  // Renovate merges instead, on the first run where GitHub allows it.
-  "platformAutomerge": false,
-  // Only the required checks gate the merge: a red optional check does not block it.
-  "ignoreTests": true,
-  // Throughput: no rebase or CI rerun after a merge, so each run merges two PRs, not one.
-  // Risk: those two are never tested together. Label a PR keep-updated to rebase it.
-  "rebaseWhen": "conflicted",
-  "keepUpdatedLabel": "keep-updated",
+  // GitHub merges each PR as soon as its required checks pass, once the Konflux app is
+  // exempt from the approval rule.
+  "platformAutomerge": true,
   "extends": [
     // Keep even when every action is pinned: it pins the next one added.
     "helpers:pinGitHubActionDigests"
@@ -66,6 +60,7 @@
       "groupName": null
     },
     {
+      // Repository rule, not written by the plugin:
       // Temporary rule: 3.6.0 broke the build and was reverted in
       // https://github.com/RedHatInsights/notifications-backend/pull/4903.
       // Both plugins share the surefire-plugin.version property, so a reviewer picks
