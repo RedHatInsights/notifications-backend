@@ -54,7 +54,7 @@ public class UserConfigResourceV2 extends UserConfigResourceCommon {
         @QueryParam("application") String applicationName,
         @QueryParam("event_type") String eventTypeName
     ) {
-        return super.getSubscriptions(sec, bundleName, applicationName, eventTypeName);
+        return super.getSubscriptions(sec, bundleName, applicationName, eventTypeName, false);
     }
 
     @PUT
@@ -76,6 +76,6 @@ public class UserConfigResourceV2 extends UserConfigResourceCommon {
         @NotNull @NotEmpty @Valid @RequestBody(content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionUpdateDTO.class)))
             List<@NotNull BundleSubscriptionUpdateDTO> body
     ) {
-        doUpdateSubscriptions(sec, body);
+        doUpdateSubscriptions(sec, body, false);
     }
 }

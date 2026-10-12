@@ -19,9 +19,12 @@ import com.redhat.cloud.notifications.models.dto.v3.subscriptions.EventTypeSubsc
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.SeverityDTO;
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.SubscriptionChannelDTO;
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.SubscriptionTypeDTO;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
+import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.RestAssured;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.Header;
@@ -43,6 +46,11 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -60,6 +68,9 @@ public class UserConfigResourceV3Test extends DbIsolatedTest {
     @InjectMock
     BackendConfig backendConfig;
 
+    @InjectSpy
+    TemplateService templateService;
+
     Header identityHeader;
 
     @BeforeEach
@@ -69,6 +80,8 @@ public class UserConfigResourceV3Test extends DbIsolatedTest {
         identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
         when(backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()).thenReturn(true);
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
+        doReturn(true).when(templateService).isValidTemplateDefinition(any());
     }
 
     private EventType createEventType(Application application, String name, Set<Severity> availableSeverities, boolean subscribedByDefault) {
@@ -365,6 +378,62 @@ public class UserConfigResourceV3Test extends DbIsolatedTest {
             .when().put(SUBSCRIPTIONS_PATH)
             .then()
             .statusCode(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Test
+    void testGetSubscriptionsIncludesWeeklyChannel() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+        createEventType(application, "event-a", Set.of(Severity.CRITICAL), false);
+
+        List<BundleSubscriptionDTO> tree = getSubscriptions("bundle-a", "app-a", "event-a");
+        var eventTypeDTO = tree.get(0).getApplications().get(0).getEventTypes().get(0);
+        SubscriptionChannelDTO weeklyChannel = eventTypeDTO.getSubscriptions().stream()
+            .filter(c -> c.getSubscriptionType() == SubscriptionTypeDTO.WEEKLY)
+            .findFirst().orElse(null);
+        assertTrue(weeklyChannel != null, "V3 GET must include WEEKLY channel when weekly template is supported");
+        assertEquals(List.of(), weeklyChannel.getSubscribedSeverities(), "WEEKLY defaults to unsubscribed (empty severities)");
+    }
+
+    @Test
+    void testGetSubscriptionsExcludesWeeklyWhenTemplateNotSupported() {
+        doReturn(false).when(templateService).isValidTemplateDefinition(
+            argThat(td -> td != null && td.integrationType() == IntegrationType.EMAIL_WEEKLY_DIGEST_BODY));
+
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+        createEventType(application, "event-a", Set.of(Severity.CRITICAL), false);
+
+        List<BundleSubscriptionDTO> tree = getSubscriptions("bundle-a", "app-a", "event-a");
+        var eventTypeDTO = tree.get(0).getApplications().get(0).getEventTypes().get(0);
+        boolean hasWeekly = eventTypeDTO.getSubscriptions().stream()
+            .anyMatch(c -> c.getSubscriptionType() == SubscriptionTypeDTO.WEEKLY);
+        assertFalse(hasWeekly, "V3 GET must exclude WEEKLY channel when weekly template is not supported");
+    }
+
+    @Test
+    void testUpdateWeeklySubscription() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+        createEventType(application, "event-a", Set.of(Severity.CRITICAL, Severity.IMPORTANT), false);
+
+        BundleSubscriptionUpdateDTO update = buildSingleLeafUpdate("bundle-a", "app-a", "event-a",
+            SubscriptionTypeDTO.WEEKLY, List.of(SeverityDTO.CRITICAL));
+
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body(List.of(update))
+            .when().put(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_NO_CONTENT);
+
+        List<BundleSubscriptionDTO> tree = getSubscriptions("bundle-a", "app-a", "event-a");
+        var eventTypeDTO = tree.get(0).getApplications().get(0).getEventTypes().get(0);
+        SubscriptionChannelDTO weeklyChannel = eventTypeDTO.getSubscriptions().stream()
+            .filter(c -> c.getSubscriptionType() == SubscriptionTypeDTO.WEEKLY)
+            .findFirst().orElseThrow();
+        assertEquals(List.of(SeverityDTO.CRITICAL), weeklyChannel.getSubscribedSeverities());
     }
 
     private BundleSubscriptionUpdateDTO buildSingleLeafUpdate(String bundleName, String applicationName, String eventTypeName,
