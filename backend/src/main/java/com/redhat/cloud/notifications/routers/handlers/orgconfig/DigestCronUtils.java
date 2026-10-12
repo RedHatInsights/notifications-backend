@@ -25,15 +25,17 @@ public final class DigestCronUtils {
     public static String buildCronExpression(SubscriptionType subscriptionType, LocalTime time, DayOfWeek day) {
         int minute = time.getMinute();
         int hour = time.getHour();
-        if (subscriptionType == SubscriptionType.WEEKLY) {
-            if (day == null) {
-                throw new IllegalArgumentException("day is required for WEEKLY subscriptions");
+
+        return switch (subscriptionType) {
+            case WEEKLY -> {
+                if (day == null) {
+                    throw new IllegalArgumentException("day is required for WEEKLY subscriptions");
+                }
+                yield minute + " " + hour + " * * " + toCronDay(day);
             }
-            return minute + " " + hour + " * * " + toCronDay(day);
-        } else if (subscriptionType != SubscriptionType.DAILY) {
-            throw new IllegalArgumentException("Unsupported subscription type for digest scheduling: " + subscriptionType);
-        }
-        return minute + " " + hour + " * * *";
+            case DAILY -> minute + " " + hour + " * * *";
+            default -> throw new IllegalArgumentException("Unsupported subscription type for digest scheduling: " + subscriptionType);
+        };
     }
 
     public static LocalTime parseTimeFromCron(String cronExpression) {
