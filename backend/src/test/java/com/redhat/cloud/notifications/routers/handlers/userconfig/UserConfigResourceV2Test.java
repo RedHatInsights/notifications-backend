@@ -49,7 +49,7 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -84,7 +84,11 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
         when(backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()).thenReturn(true);
         when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
-        doReturn(true).when(templateService).isValidTemplateDefinition(any());
+        // Mock template validation to return true ONLY when TemplateDefinition has non-null bundle/application/eventType.
+        // This catches bugs where null query parameters leak through to template resolution.
+        doReturn(true).when(templateService).isValidTemplateDefinition(argThat(td ->
+            td != null && td.bundle() != null && td.application() != null && td.eventType() != null
+        ));
     }
 
     private EventType createEventType(UUID applicationId, String name, Set<Severity> availableSeverities, boolean subscribedByDefault) {

@@ -411,7 +411,7 @@ public class UserConfigResourceCommon {
             List<ApplicationSubscriptionDTO> applicationDTOs = new ArrayList<>();
             for (Application application : resolveApplications(bundle, applicationName)) {
                 List<EventTypeSubscriptionDTO> eventTypeDTOs = resolveEventTypes(bundle, application, eventTypeName).stream()
-                        .map(eventType -> buildDefaultEventTypeSubscription(bundleName, applicationName, eventType, orgId, weeklySubscriptionSupported))
+                        .map(eventType -> buildDefaultEventTypeSubscription(bundle.getName(), application.getName(), eventType, orgId, weeklySubscriptionSupported))
                         .collect(Collectors.toList());
                 if (eventTypeDTOs.isEmpty()) {
                     continue;
