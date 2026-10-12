@@ -43,7 +43,7 @@
 
 ## Maven Enforcer Rules
 
-- The root POM enforces minimum Maven version `3.9` and Java version `21` via the `maven-enforcer-plugin`. Builds fail if these are not met.
+- The root POM enforces minimum Maven version `3.9` and Java version `25` via the `maven-enforcer-plugin`. Builds fail if these are not met.
 - Use the Maven wrapper (`./mvnw`) to ensure consistent Maven versions across environments.
 
 ## Adding a New Dependency
