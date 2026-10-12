@@ -71,12 +71,12 @@ public class Endpoint extends CreationUpdateTimestamped {
     private String orgId;
 
     @Transient
-    @JsonProperty("workspace_id")
+    @JsonIgnore
     private UUID workspaceId;
 
     @ManyToOne(fetch = LAZY, optional = true)  // optional=true since workspace_id currently nullable
     @JoinColumn(name = "workspace_id")
-    @JsonInclude(NON_NULL)
+    @JsonIgnore
     private Workspace workspace;
 
     @NotNull
