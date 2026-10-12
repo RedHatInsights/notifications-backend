@@ -31,9 +31,6 @@ public class EventTypeDTO {
     private String description;
 
     @JsonInclude(NON_NULL)
-    private String fullyQualifiedName;
-
-    @JsonInclude(NON_NULL)
     private ApplicationDTO application;
 
     public UUID getId() {
@@ -66,14 +63,6 @@ public class EventTypeDTO {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getFullyQualifiedName() {
-        return fullyQualifiedName;
-    }
-
-    public void setFullyQualifiedName(String fullyQualifiedName) {
-        this.fullyQualifiedName = fullyQualifiedName;
     }
 
     public ApplicationDTO getApplication() {

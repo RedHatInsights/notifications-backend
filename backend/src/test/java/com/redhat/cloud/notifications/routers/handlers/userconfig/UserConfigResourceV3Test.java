@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.userconfig;
 
+import com.redhat.cloud.notifications.Json;
 import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestConstants;
@@ -12,6 +13,7 @@ import com.redhat.cloud.notifications.db.repositories.ApplicationRepository;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Bundle;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.ApplicationSubscriptionUpdateDTO;
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.BundleSubscriptionDTO;
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.BundleSubscriptionUpdateDTO;
@@ -19,6 +21,8 @@ import com.redhat.cloud.notifications.models.dto.v3.subscriptions.EventTypeSubsc
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.SeverityDTO;
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.SubscriptionChannelDTO;
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.SubscriptionTypeDTO;
+import com.redhat.cloud.notifications.routers.models.SettingsValueByEventTypeJsonForm;
+import com.redhat.cloud.notifications.routers.models.SettingsValuesByEventType;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -26,6 +30,8 @@ import io.restassured.RestAssured;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.Header;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,9 +46,16 @@ import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_AC
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ACCOUNT_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
+import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -50,12 +63,16 @@ import static org.mockito.Mockito.when;
 public class UserConfigResourceV3Test extends DbIsolatedTest {
 
     private static final String SUBSCRIPTIONS_PATH = "/user-config/subscriptions";
+    private static final String NOTIFICATION_PREFERENCE_PATH = "/user-config/notification-event-type-preference";
 
     @Inject
     ResourceHelpers resourceHelpers;
 
     @Inject
     ApplicationRepository applicationRepository;
+
+    @Inject
+    EntityManager entityManager;
 
     @InjectMock
     BackendConfig backendConfig;
@@ -68,6 +85,7 @@ public class UserConfigResourceV3Test extends DbIsolatedTest {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
         when(backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()).thenReturn(true);
     }
 
@@ -379,5 +397,190 @@ public class UserConfigResourceV3Test extends DbIsolatedTest {
         appUpdate.setEventTypes(List.of(etUpdate));
         update.setApplications(List.of(appUpdate));
         return update;
+    }
+
+    // --- notification-event-type-preference (private legacy API) tests ---
+
+    private SettingsValuesByEventType createSettingsValue(String bundle, String application, String eventType, boolean daily, boolean instant, boolean drawer) {
+        SettingsValuesByEventType.EventTypeSettingsValue eventTypeSettingsValue = new SettingsValuesByEventType.EventTypeSettingsValue();
+        eventTypeSettingsValue.emailSubscriptionTypes.put(DAILY, daily);
+        eventTypeSettingsValue.emailSubscriptionTypes.put(INSTANT, instant);
+        eventTypeSettingsValue.emailSubscriptionTypes.put(DRAWER, drawer);
+
+        SettingsValuesByEventType.ApplicationSettingsValue applicationSettingsValue = new SettingsValuesByEventType.ApplicationSettingsValue();
+        applicationSettingsValue.eventTypes.put(eventType, eventTypeSettingsValue);
+
+        SettingsValuesByEventType.BundleSettingsValue bundleSettingsValue = new SettingsValuesByEventType.BundleSettingsValue();
+        bundleSettingsValue.applications.put(application, applicationSettingsValue);
+
+        SettingsValuesByEventType settingsValues = new SettingsValuesByEventType();
+        settingsValues.bundles.put(bundle, bundleSettingsValue);
+
+        return settingsValues;
+    }
+
+    private Map<SubscriptionType, Boolean> extractNotificationValues(List<SettingsValueByEventTypeJsonForm.EventType> eventTypes, String bundle, String application, String eventName) {
+        Map<SubscriptionType, Boolean> result = new HashMap<>();
+        for (SettingsValueByEventTypeJsonForm.EventType eventType : eventTypes) {
+            for (SettingsValueByEventTypeJsonForm.Field field : eventType.fields) {
+                for (SubscriptionType type : SubscriptionType.values()) {
+                    if (field.name != null && field.name.equals(String.format("bundles[%s].applications[%s].eventTypes[%s].emailSubscriptionTypes[%s]", bundle, application, eventName, type))) {
+                        result.put(type, (Boolean) field.initialValue);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    @Transactional
+    void updateEventTypeAvailableSeverities(String eventTypeName, Set<Severity> availableSeverities) {
+        entityManager.createQuery("UPDATE EventType SET availableSeverities = :availableSeverities where name = :name")
+            .setParameter("availableSeverities", availableSeverities)
+            .setParameter("name", eventTypeName)
+            .executeUpdate();
+    }
+
+    @Transactional
+    void updateEventTypeIncludedInDrawer(String eventTypeName, boolean includedInDrawer) {
+        entityManager.createQuery("UPDATE EventType SET includedInDrawer = :includedInDrawer where name = :name")
+            .setParameter("includedInDrawer", includedInDrawer)
+            .setParameter("name", eventTypeName)
+            .executeUpdate();
+    }
+
+    @Test
+    void testGetSettingsSchemaByEventType() {
+        SettingsValueByEventTypeJsonForm settingsValuesByEventType = given()
+            .header(identityHeader)
+            .when().get(NOTIFICATION_PREFERENCE_PATH)
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+
+        assertNotNull(settingsValuesByEventType);
+        assertNotNull(settingsValuesByEventType.bundles);
+    }
+
+    @Test
+    void testSaveAndGetSettingsByEventType() {
+        when(backendConfig.isDrawerEnabled(anyString())).thenReturn(true);
+
+        String bundle = "rhel";
+        String application = "advisor";
+        String eventType = "new-recommendation";
+
+        updateEventTypeAvailableSeverities(eventType, Set.of());
+        updateEventTypeIncludedInDrawer(eventType, true);
+
+        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, true, true, true);
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(settingsValues))
+            .post(NOTIFICATION_PREFERENCE_PATH)
+            .then()
+            .statusCode(200);
+
+        SettingsValueByEventTypeJsonForm settingsValuesByEventType = given()
+            .header(identityHeader)
+            .when().get(NOTIFICATION_PREFERENCE_PATH)
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.class);
+
+        assertNotNull(settingsValuesByEventType.bundles.get(bundle));
+        SettingsValueByEventTypeJsonForm.Application rhelAdvisor = settingsValuesByEventType.bundles.get(bundle).applications.get(application);
+        assertNotNull(rhelAdvisor, "RHEL advisor not found");
+        Map<SubscriptionType, Boolean> notificationValues = extractNotificationValues(rhelAdvisor.eventTypes, bundle, application, eventType);
+        assertTrue(notificationValues.get(INSTANT));
+        assertTrue(notificationValues.get(DAILY));
+        assertTrue(notificationValues.get(DRAWER));
+    }
+
+    @Test
+    void testGetPreferencesByEventTypeForBundleAndApplication() {
+        when(backendConfig.isDrawerEnabled(anyString())).thenReturn(true);
+
+        String bundle = "rhel";
+        String application = "advisor";
+        String eventType = "new-recommendation";
+
+        updateEventTypeAvailableSeverities(eventType, Set.of());
+        updateEventTypeIncludedInDrawer(eventType, true);
+
+        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, false, true, false);
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(settingsValues))
+            .post(NOTIFICATION_PREFERENCE_PATH)
+            .then()
+            .statusCode(200);
+
+        SettingsValueByEventTypeJsonForm.Application preferences = given()
+            .header(identityHeader)
+            .when().get(NOTIFICATION_PREFERENCE_PATH + "/" + bundle + "/" + application)
+            .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .extract().body().as(SettingsValueByEventTypeJsonForm.Application.class);
+
+        assertNotNull(preferences);
+        Map<SubscriptionType, Boolean> notificationValues = extractNotificationValues(preferences.eventTypes, bundle, application, eventType);
+        assertTrue(notificationValues.get(INSTANT));
+        assertFalse(notificationValues.get(DAILY));
+    }
+
+    @Test
+    void testSaveSettingsRejectsInstantWhenDisabled() {
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(false);
+
+        String bundle = "rhel";
+        String application = "advisor";
+        String eventType = "new-recommendation";
+
+        SettingsValuesByEventType settingsValues = createSettingsValue(bundle, application, eventType, true, true, false);
+        given()
+            .header(identityHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(settingsValues))
+            .post(NOTIFICATION_PREFERENCE_PATH)
+            .then()
+            .statusCode(400);
+    }
+
+    @Test
+    void testNotificationPreferenceServiceAccountForbidden() {
+        String identityHeaderValue = TestHelpers.encodeRHServiceAccountIdentityInfo(DEFAULT_ORG_ID, "service-account", UUID.randomUUID().toString());
+        Header serviceAccountHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        SettingsValuesByEventType settingsValues = createSettingsValue("rhel", "advisor", "new-recommendation", true, true, true);
+        given()
+            .header(serviceAccountHeader)
+            .when()
+            .contentType(JSON)
+            .body(Json.encode(settingsValues))
+            .post(NOTIFICATION_PREFERENCE_PATH)
+            .then()
+            .statusCode(403);
+
+        given()
+            .header(serviceAccountHeader)
+            .when().get(NOTIFICATION_PREFERENCE_PATH)
+            .then()
+            .statusCode(403);
+
+        given()
+            .header(serviceAccountHeader)
+            .when().get(NOTIFICATION_PREFERENCE_PATH + "/rhel/advisor")
+            .then()
+            .statusCode(403);
     }
 }
