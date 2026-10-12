@@ -7,6 +7,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.BehaviorGroup;
 import com.redhat.cloud.notifications.models.BehaviorGroupAction;
 import com.redhat.cloud.notifications.models.Bundle;
+import com.redhat.cloud.notifications.models.DigestTriggerOrgConfig;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
@@ -39,7 +40,8 @@ public class DbCleaner {
             Application.class,
             Bundle.class,
             InstantEmailTemplate.class,
-            AggregationEmailTemplate.class
+            AggregationEmailTemplate.class,
+            DigestTriggerOrgConfig.class
     );
     private static final String DEFAULT_BUNDLE_NAME = "rhel";
     private static final String DEFAULT_BUNDLE_DISPLAY_NAME = "Red Hat Enterprise Linux";

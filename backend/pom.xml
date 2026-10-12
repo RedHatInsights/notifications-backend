@@ -173,6 +173,11 @@
             <version>${oauth2-oidc-sdk.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.cronutils</groupId>
+            <artifactId>cron-utils</artifactId>
+        </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>com.redhat.cloud.notifications</groupId>
