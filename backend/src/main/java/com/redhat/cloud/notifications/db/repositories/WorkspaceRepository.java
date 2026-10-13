@@ -33,7 +33,7 @@ public class WorkspaceRepository {
      * Used during bootstrap to ensure idempotency.
      *
      * IMPORTANT: This method is for org-specific workspaces only (orgId must NOT be null).
-     * For the system workspace (orgId IS NULL), use getOrCreateSystemWorkspace() instead.
+     * For the system workspace (orgId IS NULL), use getSystemWorkspace() instead.
      *
      * Concurrency-safe: Uses INSERT ... ON CONFLICT DO NOTHING to handle
      * concurrent bootstrap requests attempting to create the same workspace.
@@ -43,7 +43,7 @@ public class WorkspaceRepository {
     public Workspace createOrGetWorkspace(UUID workspaceId, String orgId) {
         if (orgId == null) {
             throw new IllegalArgumentException(
-                "orgId must not be null. Use getOrCreateSystemWorkspace() for the system workspace."
+                "orgId must not be null. Use getSystemWorkspace() for the system workspace."
             );
         }
 
@@ -70,34 +70,22 @@ public class WorkspaceRepository {
     }
 
     /**
-     * Get or create the system workspace (org_id IS NULL).
-     * Returns the existing system workspace if one exists, otherwise creates one.
+     * Get the system workspace (org_id IS NULL).
+     * The system workspace is created by the database migration V1.140.0.
      *
-     * Concurrency-safe: Uses a well-known constant UUID and INSERT ... ON CONFLICT
-     * to handle concurrent bootstrap requests. The partial unique index on
-     * workspace((1)) WHERE org_id IS NULL ensures only one system workspace can exist.
-     * All concurrent requests converge on the same system workspace ID.
+     * @return the system workspace
+     * @throws IllegalStateException if system workspace does not exist
      */
     @Transactional
-    public Workspace getOrCreateSystemWorkspace() {
-        // Use native SQL with ON CONFLICT to handle concurrent inserts
-        // All requests use the same well-known SYSTEM_WORKSPACE_ID
-        entityManager.createNativeQuery(
-            "INSERT INTO workspace (id, org_id, created) " +
-            "VALUES (:id, NULL, NOW()) " +
-            "ON CONFLICT (id) DO NOTHING")
-            .setParameter("id", SYSTEM_WORKSPACE_ID)
-            .executeUpdate();
-
-        // Always read back to get the system workspace
+    public Workspace getSystemWorkspace() {
         Workspace workspace = entityManager.find(Workspace.class, SYSTEM_WORKSPACE_ID);
         if (workspace == null) {
             throw new IllegalStateException(
-                "System workspace not found after insert: id=" + SYSTEM_WORKSPACE_ID
+                "System workspace not found. Migration V1.140.0 should have created it: id=" + SYSTEM_WORKSPACE_ID
             );
         }
 
-        Log.debugf("System workspace ready: id=%s", workspace.getId());
+        Log.debugf("System workspace: id=%s", workspace.getId());
         return workspace;
     }
 
@@ -143,6 +131,9 @@ public class WorkspaceRepository {
     /**
      * Assign system workspace to system integrations (orgId IS NULL).
      * Updates ALL system endpoints to guarantee consistency.
+     *
+     * Note: Migration V1.140.0 assigns existing system endpoints. This method
+     * handles system endpoints created after the migration runs.
      */
     @Transactional
     public int assignSystemWorkspace(UUID systemWorkspaceId) {
