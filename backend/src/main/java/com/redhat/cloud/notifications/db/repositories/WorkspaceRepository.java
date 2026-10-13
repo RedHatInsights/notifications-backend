@@ -102,12 +102,15 @@ public class WorkspaceRepository {
     }
 
     /**
-     * Get distinct org IDs from endpoints table.
-     * Used by bootstrap to identify which orgs need workspace records.
+     * Get distinct org IDs that have at least one endpoint without a workspace assignment.
+     * Used by bootstrap to identify which orgs need workspace processing.
+     *
+     * @return list of org IDs that have endpoints where workspace_id IS NULL
      */
-    public List<String> getDistinctOrgIdsFromEndpoints() {
+    public List<String> getOrgIdsNeedingWorkspaceAssignment() {
         String hql = "SELECT DISTINCT e.orgId FROM Endpoint e " +
-                     "WHERE e.orgId IS NOT NULL ORDER BY e.orgId";
+                     "WHERE e.orgId IS NOT NULL AND e.workspace IS NULL " +
+                     "ORDER BY e.orgId";
         return entityManager.createQuery(hql, String.class).getResultList();
     }
 

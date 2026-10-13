@@ -187,8 +187,8 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
-    void testGetDistinctOrgIdsFromEndpoints() {
-        // Create endpoints for multiple orgs
+    void testGetOrgIdsNeedingWorkspaceAssignment() {
+        // Create endpoints without workspace assignments for multiple orgs
         createEndpoint("org-alpha", "endpoint-1", null);
         createEndpoint("org-alpha", "endpoint-2", null);
         createEndpoint("org-beta", "endpoint-3", null);
@@ -196,12 +196,41 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
         createEndpoint("org-beta", "endpoint-5", null);
         createEndpoint(null, "system-endpoint", null); // System endpoint should be excluded
 
-        List<String> orgIds = workspaceRepository.getDistinctOrgIdsFromEndpoints();
+        List<String> orgIds = workspaceRepository.getOrgIdsNeedingWorkspaceAssignment();
 
-        assertEquals(3, orgIds.size(), "Should return 3 unique org IDs");
+        assertEquals(3, orgIds.size(), "Should return 3 unique org IDs that need workspace assignment");
         assertTrue(orgIds.contains("org-alpha"));
         assertTrue(orgIds.contains("org-beta"));
         assertTrue(orgIds.contains("org-gamma"));
+    }
+
+    @Test
+    void testGetOrgIdsNeedingWorkspaceAssignment_ExcludesFullyAssignedOrgs() {
+        // Create workspace for org-delta
+        UUID workspaceDelta = UUID.randomUUID();
+        Workspace wsDelta = workspaceRepository.createOrGetWorkspace(workspaceDelta, "org-delta");
+
+        // Create endpoints:
+        // - org-epsilon: all endpoints WITHOUT workspace (should be included)
+        // - org-delta: all endpoints WITH workspace (should be excluded)
+        // - org-zeta: SOME endpoints with workspace, SOME without (should be included)
+        createEndpoint("org-epsilon", "endpoint-unassigned-1", null);
+        createEndpoint("org-epsilon", "endpoint-unassigned-2", null);
+
+        createEndpoint("org-delta", "endpoint-assigned-1", wsDelta);
+        createEndpoint("org-delta", "endpoint-assigned-2", wsDelta);
+
+        UUID workspaceZeta = UUID.randomUUID();
+        Workspace wsZeta = workspaceRepository.createOrGetWorkspace(workspaceZeta, "org-zeta");
+        createEndpoint("org-zeta", "endpoint-mixed-1", wsZeta);
+        createEndpoint("org-zeta", "endpoint-mixed-2", null); // One unassigned
+
+        List<String> orgIds = workspaceRepository.getOrgIdsNeedingWorkspaceAssignment();
+
+        assertEquals(2, orgIds.size(), "Should only return orgs with at least one unassigned endpoint");
+        assertTrue(orgIds.contains("org-epsilon"), "Org with all unassigned endpoints should be included");
+        assertTrue(orgIds.contains("org-zeta"), "Org with partially assigned endpoints should be included");
+        assertTrue(!orgIds.contains("org-delta"), "Org with all assigned endpoints should be excluded");
     }
 
     @Test
