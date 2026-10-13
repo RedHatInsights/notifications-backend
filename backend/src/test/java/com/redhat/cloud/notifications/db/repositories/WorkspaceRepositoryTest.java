@@ -64,8 +64,9 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
-    void testGetOrCreateSystemWorkspace_CreatesNew() {
-        Workspace workspace = workspaceRepository.getOrCreateSystemWorkspace();
+    void testGetSystemWorkspace_ReturnsMigrationCreatedWorkspace() {
+        // System workspace is created by migration V1.140.0
+        Workspace workspace = workspaceRepository.getSystemWorkspace();
 
         assertNotNull(workspace);
         assertNotNull(workspace.getId());
@@ -74,13 +75,13 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
-    void testGetOrCreateSystemWorkspace_GetsExisting() {
-        // Create system workspace first time
-        Workspace workspace1 = workspaceRepository.getOrCreateSystemWorkspace();
+    void testGetSystemWorkspace_Idempotent() {
+        // Get system workspace multiple times - should always return the same one
+        Workspace workspace1 = workspaceRepository.getSystemWorkspace();
         UUID systemWorkspaceId = workspace1.getId();
 
         // Call again - should return same workspace
-        Workspace workspace2 = workspaceRepository.getOrCreateSystemWorkspace();
+        Workspace workspace2 = workspaceRepository.getSystemWorkspace();
 
         assertEquals(systemWorkspaceId, workspace2.getId(),
             "Should return same system workspace UUID");
@@ -115,8 +116,8 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
-    void testAssignWorkspaceToEndpoints_OnlyUpdatesUnassigned() {
-        String orgId = "test-org-partial";
+    void testAssignWorkspaceToEndpoints_UpdatesAllEndpointsForConsistency() {
+        String orgId = "test-org-consistency";
         UUID workspaceId1 = UUID.randomUUID();
         UUID workspaceId2 = UUID.randomUUID();
 
@@ -124,28 +125,31 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
         Workspace workspace1 = workspaceRepository.createOrGetWorkspace(workspaceId1, orgId);
         Workspace workspace2 = workspaceRepository.createOrGetWorkspace(workspaceId2, orgId);
 
-        // Create endpoints - some already assigned
+        // Create endpoints - some already assigned to workspace1
         createEndpoint(orgId, "endpoint-already-assigned", workspace1);
         createEndpoint(orgId, "endpoint-unassigned-1", null);
         createEndpoint(orgId, "endpoint-unassigned-2", null);
 
-        // Assign workspace2 to endpoints (should only affect unassigned ones)
+        // Assign workspace2 to ALL endpoints for this org (guarantees consistency)
         int updated = workspaceRepository.assignWorkspaceToEndpoints(workspaceId2, orgId);
 
-        assertEquals(2, updated, "Should only update 2 unassigned endpoints");
+        assertEquals(3, updated, "Should update ALL 3 endpoints for consistency");
 
-        // Verify first endpoint still has workspace1
-        Endpoint alreadyAssigned = getEndpointByName("endpoint-already-assigned");
-        assertEquals(workspaceId1, alreadyAssigned.getWorkspace().getId());
+        // Verify ALL endpoints now have workspace2 (consistency guarantee)
+        Endpoint endpoint1 = getEndpointByName("endpoint-already-assigned");
+        assertEquals(workspaceId2, endpoint1.getWorkspace().getId(),
+            "Previously assigned endpoint should be updated to new workspace");
 
-        // Verify other endpoints have workspace2
-        Endpoint newlyAssigned1 = getEndpointByName("endpoint-unassigned-1");
-        assertEquals(workspaceId2, newlyAssigned1.getWorkspace().getId());
+        Endpoint endpoint2 = getEndpointByName("endpoint-unassigned-1");
+        assertEquals(workspaceId2, endpoint2.getWorkspace().getId());
+
+        Endpoint endpoint3 = getEndpointByName("endpoint-unassigned-2");
+        assertEquals(workspaceId2, endpoint3.getWorkspace().getId());
     }
 
     @Test
     void testAssignSystemWorkspace_OnlySystemEndpoints() {
-        Workspace systemWorkspace = workspaceRepository.getOrCreateSystemWorkspace();
+        Workspace systemWorkspace = workspaceRepository.getSystemWorkspace();
         UUID systemWorkspaceId = systemWorkspace.getId();
 
         // Create mix of system (org_id=NULL) and org endpoints
@@ -235,9 +239,9 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
 
     @Test
     void testSystemWorkspaceHasNullOrgId() {
-        // Test that the system workspace (created via getOrCreateSystemWorkspace) has org_id = NULL
+        // Test that the system workspace (created by migration V1.140.0) has org_id = NULL
         // The unique constraint ensures only ONE workspace can have org_id IS NULL
-        Workspace systemWorkspace = workspaceRepository.getOrCreateSystemWorkspace();
+        Workspace systemWorkspace = workspaceRepository.getSystemWorkspace();
 
         assertNotNull(systemWorkspace.getId());
         assertNull(systemWorkspace.getOrgId(), "System workspace should have NULL org_id");
