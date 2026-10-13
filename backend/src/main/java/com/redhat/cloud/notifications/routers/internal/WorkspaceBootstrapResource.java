@@ -74,6 +74,13 @@ public class WorkspaceBootstrapResource {
                 // Fetch workspace UUID from RBAC
                 UUID workspaceId = workspaceUtils.getDefaultWorkspaceId(orgId);
 
+                // Handle null workspace ID (can happen for very old orgs in production)
+                if (workspaceId == null) {
+                    Log.warnf("RBAC returned null workspace ID for org_id: %s - skipping", orgId);
+                    summary.addError(orgId, "RBAC returned null workspace ID (legacy org)");
+                    continue;
+                }
+
                 // Create or get workspace record
                 Workspace workspace = workspaceRepository.createOrGetWorkspace(
                     workspaceId, orgId
