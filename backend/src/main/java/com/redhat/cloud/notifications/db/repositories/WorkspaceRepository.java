@@ -15,11 +15,15 @@ public class WorkspaceRepository {
 
     /**
      * Well-known UUID for the system workspace (org_id IS NULL).
-     * This constant ensures all bootstrap requests attempt to create the same
-     * system workspace ID, making ON CONFLICT idempotent across concurrent calls.
      *
      * Generated deterministically from "notifications-system-workspace" using
      * UUID v3 (name-based MD5). Same input always produces the same UUID.
+     *
+     * CRITICAL: This value is also hardcoded in migration V1.140.0. If this constant
+     * changes, the migration SQL MUST be updated to match. See test
+     * testSystemWorkspaceConstantMatchesMigration() for verification.
+     *
+     * Expected value: 5d3d4d41-a502-36a6-b724-3b1fcfe41a1a
      */
     private static final UUID SYSTEM_WORKSPACE_ID = UUID.nameUUIDFromBytes(
         "notifications-system-workspace".getBytes(java.nio.charset.StandardCharsets.UTF_8)
