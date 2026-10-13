@@ -28,6 +28,6 @@ INSERT INTO workspace (id, org_id, created)
 VALUES ('5d3d4d41-a502-36a6-b724-3b1fcfe41a1a', NULL, NOW());
 
 -- Assign all existing system endpoints (org_id IS NULL) to the system workspace
-UPDATE endpoint
+UPDATE endpoints
 SET workspace_id = '5d3d4d41-a502-36a6-b724-3b1fcfe41a1a'
 WHERE org_id IS NULL;
