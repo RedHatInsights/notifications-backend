@@ -51,13 +51,14 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DRAWER;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
+import static com.redhat.cloud.notifications.models.SubscriptionType.WEEKLY;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getUsername;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.isServiceAccountAuthentication;
 
 public class UserConfigResourceCommon {
 
-    static final List<SubscriptionType> PER_EVENT_TYPE_SUBSCRIPTIONS = List.of(INSTANT, DAILY, DRAWER);
+    static final List<SubscriptionType> PER_EVENT_TYPE_SUBSCRIPTIONS = List.of(INSTANT, DAILY, WEEKLY, DRAWER);
 
     @Inject
     ObjectMapper mapper;
@@ -158,7 +159,7 @@ public class UserConfigResourceCommon {
         }
 
         eventTypeValue.subscriptionTypes.forEach((subscriptionType, subscriptionTypeDetails) -> {
-            boolean supported = isTemplateSupported(bundleName, applicationName, eventType.get(), subscriptionType, orgId);
+            boolean supported = isTemplateSupported(bundleName, applicationName, eventType.get(), subscriptionType, orgId, false);
 
             if (!supported) {
                 throw new NotFoundException(String.format("Event type '%s' doesn't support '%s' subscription", eventType.get().getDisplayName(), subscriptionType.name()));
@@ -281,7 +282,7 @@ public class UserConfigResourceCommon {
                 eventTypeSettingsValue.availableSeverities = eventType.getAvailableSeverities();
                 for (SubscriptionType subscriptionType : PER_EVENT_TYPE_SUBSCRIPTIONS) {
                     if (backendConfig.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
-                        boolean supported = isTemplateSupported(bundle.getName(), application.getName(), eventType, subscriptionType, orgId);
+                        boolean supported = isTemplateSupported(bundle.getName(), application.getName(), eventType, subscriptionType, orgId, false);
 
                         if (supported) {
                             boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
@@ -305,7 +306,11 @@ public class UserConfigResourceCommon {
         }
     }
 
-    private boolean isTemplateSupported(String bundleName, String applicationName, EventType eventType, SubscriptionType subscriptionType, final String orgId) {
+    private boolean isTemplateSupported(String bundleName, String applicationName, EventType eventType, SubscriptionType subscriptionType, final String orgId, boolean weeklySubscriptionSupported) {
+        if (!weeklySubscriptionSupported && subscriptionType == WEEKLY) {
+            return false;
+        }
+
         boolean supported;
         if (backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()) {
             if (!backendConfig.isDrawerEnabled(orgId) && subscriptionType == DRAWER) {
@@ -329,6 +334,8 @@ public class UserConfigResourceCommon {
             integrationType = IntegrationType.EMAIL_BODY;
         } else if (subscriptionType == DAILY) {
             integrationType = IntegrationType.EMAIL_DAILY_DIGEST_BODY;
+        } else if (subscriptionType == WEEKLY) {
+            integrationType = IntegrationType.EMAIL_WEEKLY_DIGEST_BODY;
         } else if (subscriptionType == DRAWER) {
             integrationType = IntegrationType.DRAWER;
         }
@@ -382,7 +389,8 @@ public class UserConfigResourceCommon {
             SecurityContext sec,
             String bundleName,
             String applicationName,
-            String eventTypeName
+            String eventTypeName,
+            boolean weeklySubscriptionSupported
     ) {
         forbidAccessInCaseOfServiceAccountAuthentication(sec);
 
@@ -403,7 +411,7 @@ public class UserConfigResourceCommon {
             List<ApplicationSubscriptionDTO> applicationDTOs = new ArrayList<>();
             for (Application application : resolveApplications(bundle, applicationName)) {
                 List<EventTypeSubscriptionDTO> eventTypeDTOs = resolveEventTypes(bundle, application, eventTypeName).stream()
-                        .map(this::buildDefaultEventTypeSubscription)
+                        .map(eventType -> buildDefaultEventTypeSubscription(bundle.getName(), application.getName(), eventType, orgId, weeklySubscriptionSupported))
                         .collect(Collectors.toList());
                 if (eventTypeDTOs.isEmpty()) {
                     continue;
@@ -477,14 +485,18 @@ public class UserConfigResourceCommon {
         return List.of(eventType);
     }
 
-    private EventTypeSubscriptionDTO buildDefaultEventTypeSubscription(EventType eventType) {
+    private EventTypeSubscriptionDTO buildDefaultEventTypeSubscription(String bundleName, String applicationName, EventType eventType, String orgId, boolean weeklySubscriptionSupported) {
         EventTypeSubscriptionDTO dto = subscriptionMapper.eventTypeToEventTypeSubscriptionDTO(eventType);
 
         List<SubscriptionChannelDTO> channels = new ArrayList<>();
         for (SubscriptionType subscriptionType : PER_EVENT_TYPE_SUBSCRIPTIONS) {
-            boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
-            List<SeverityDTO> subscribedSeverities = subscribedByDefault ? new ArrayList<>(dto.getAvailableSeverities()) : new ArrayList<>();
-            channels.add(new SubscriptionChannelDTO(subscriptionMapper.subscriptionTypeToSubscriptionTypeDTO(subscriptionType), subscribedSeverities));
+            if (backendConfig.isInstantEmailsEnabled() || subscriptionType != INSTANT) {
+                if (isTemplateSupported(bundleName, applicationName, eventType, subscriptionType, orgId, weeklySubscriptionSupported)) {
+                    boolean subscribedByDefault = subscriptionType.isSubscribedByDefault() || eventType.isSubscribedByDefault();
+                    List<SeverityDTO> subscribedSeverities = subscribedByDefault ? new ArrayList<>(dto.getAvailableSeverities()) : new ArrayList<>();
+                    channels.add(new SubscriptionChannelDTO(subscriptionMapper.subscriptionTypeToSubscriptionTypeDTO(subscriptionType), subscribedSeverities));
+                }
+            }
         }
         dto.setSubscriptions(channels);
         return dto;
@@ -522,7 +534,8 @@ public class UserConfigResourceCommon {
 
     protected void doUpdateSubscriptions(
             SecurityContext sec,
-            List<BundleSubscriptionUpdateDTO> body
+            List<BundleSubscriptionUpdateDTO> body,
+            boolean weeklySubscriptionSupported
     ) {
         forbidAccessInCaseOfServiceAccountAuthentication(sec);
 
@@ -536,13 +549,13 @@ public class UserConfigResourceCommon {
         for (BundleSubscriptionUpdateDTO bundleUpdate : body) {
             for (ApplicationSubscriptionUpdateDTO applicationUpdate : bundleUpdate.getApplications()) {
                 for (EventTypeSubscriptionUpdateDTO eventTypeUpdate : applicationUpdate.getEventTypes()) {
-                    updateEventTypeSubscriptions(orgId, username, bundleUpdate.getBundle(), applicationUpdate.getApplication(), eventTypeUpdate);
+                    updateEventTypeSubscriptions(orgId, username, bundleUpdate.getBundle(), applicationUpdate.getApplication(), eventTypeUpdate, weeklySubscriptionSupported);
                 }
             }
         }
     }
 
-    private void updateEventTypeSubscriptions(String orgId, String username, String bundleName, String applicationName, EventTypeSubscriptionUpdateDTO eventTypeUpdate) {
+    private void updateEventTypeSubscriptions(String orgId, String username, String bundleName, String applicationName, EventTypeSubscriptionUpdateDTO eventTypeUpdate, boolean weeklySubscriptionSupported) {
         EventType eventType = applicationRepository.getEventType(bundleName, applicationName, eventTypeUpdate.getEventType());
         if (eventType == null) {
             // BadRequestException (400), not NotFoundException (404) as the GET side of this resource
@@ -564,6 +577,12 @@ public class UserConfigResourceCommon {
                 // not "take" from the caller's point of view: the GET would keep reporting the
                 // hardcoded subscribed-by-default state instead of what was just written.
                 continue;
+            }
+
+            boolean supported = isTemplateSupported(bundleName, applicationName, eventType, subscriptionType, orgId, weeklySubscriptionSupported);
+
+            if (!supported) {
+                throw new NotFoundException(String.format("Event type '%s' doesn't support '%s' subscription", eventType.getDisplayName(), subscriptionType.name()));
             }
 
             List<SeverityDTO> severityDTOs = channel.getSubscribedSeverities();
@@ -591,5 +610,4 @@ public class UserConfigResourceCommon {
             throw new ForbiddenException("This api can't be used with a service account authentication");
         }
     }
-
 }

@@ -21,9 +21,11 @@ import com.redhat.cloud.notifications.models.dto.v2.subscriptions.EventTypeSubsc
 import com.redhat.cloud.notifications.models.dto.v2.subscriptions.SeverityDTO;
 import com.redhat.cloud.notifications.models.dto.v2.subscriptions.SubscriptionChannelDTO;
 import com.redhat.cloud.notifications.models.dto.v2.subscriptions.SubscriptionTypeDTO;
+import com.redhat.cloud.notifications.qute.templates.TemplateService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.RestAssured;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.Header;
@@ -46,6 +48,9 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -66,6 +71,9 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
     @InjectMock
     BackendConfig backendConfig;
 
+    @InjectSpy
+    TemplateService templateService;
+
     Header identityHeader;
 
     @BeforeEach
@@ -74,18 +82,27 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
         identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
-        // Bypass the legacy per-event-type template existence check in SubscriptionRepository.updateSubscription:
-        // this test suite is about the subscription tree shape, not about template wiring.
         when(backendConfig.isUseCommonTemplateModuleForUserPrefApisToggle()).thenReturn(true);
+        when(backendConfig.isInstantEmailsEnabled()).thenReturn(true);
+        // Mock template validation to return true ONLY when TemplateDefinition has non-null bundle/application/eventType.
+        // This catches bugs where null query parameters leak through to template resolution.
+        doReturn(true).when(templateService).isValidTemplateDefinition(argThat(td ->
+            td != null && td.bundle() != null && td.application() != null && td.eventType() != null
+        ));
     }
 
     private EventType createEventType(UUID applicationId, String name, Set<Severity> availableSeverities, boolean subscribedByDefault) {
+        return createEventType(applicationId, name, availableSeverities, subscribedByDefault, false);
+    }
+
+    private EventType createEventType(UUID applicationId, String name, Set<Severity> availableSeverities, boolean subscribedByDefault, boolean includedInDrawer) {
         EventType eventType = new EventType();
         eventType.setName(name);
         eventType.setDisplayName(name + "-display-name");
         eventType.setApplicationId(applicationId);
         eventType.setAvailableSeverities(availableSeverities);
         eventType.setSubscribedByDefault(subscribedByDefault);
+        eventType.setIncludedInDrawer(includedInDrawer);
         return applicationRepository.createEventType(eventType);
     }
 
@@ -120,10 +137,12 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
 
     @Test
     void testGetSubscriptionsDefaultTree() {
+        when(backendConfig.isDrawerEnabled(DEFAULT_ORG_ID)).thenReturn(true);
+
         Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
         Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
-        createEventType(application.getId(), "not-subscribed-by-default", Set.of(Severity.CRITICAL, Severity.IMPORTANT), false);
-        createEventType(application.getId(), "subscribed-by-default", Set.of(Severity.CRITICAL, Severity.IMPORTANT, Severity.LOW), true);
+        createEventType(application.getId(), "not-subscribed-by-default", Set.of(Severity.CRITICAL, Severity.IMPORTANT), false, true);
+        createEventType(application.getId(), "subscribed-by-default", Set.of(Severity.CRITICAL, Severity.IMPORTANT, Severity.LOW), true, true);
 
         List<BundleSubscriptionDTO> tree = getSubscriptions(null, null, null);
 
@@ -238,9 +257,11 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
 
     @Test
     void testPutSubscriptionsPartialUpdate() {
+        when(backendConfig.isDrawerEnabled(DEFAULT_ORG_ID)).thenReturn(true);
+
         Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
         Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
-        createEventType(application.getId(), "event-a", Set.of(Severity.CRITICAL, Severity.IMPORTANT), false);
+        createEventType(application.getId(), "event-a", Set.of(Severity.CRITICAL, Severity.IMPORTANT), false, true);
 
         BundleSubscriptionUpdateDTO update = new BundleSubscriptionUpdateDTO();
         update.setBundle("bundle-a");
@@ -273,7 +294,7 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
     void testPutSubscriptionsIgnoresDrawerWhenDisabledForOrg() {
         Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
         Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
-        createEventType(application.getId(), "event-a", Set.of(Severity.CRITICAL, Severity.IMPORTANT), false);
+        createEventType(application.getId(), "event-a", Set.of(Severity.CRITICAL, Severity.IMPORTANT), false, true);
 
         // drawer.enabled is off for this org (the default from beforeEach), so a write to the DRAWER
         // channel must be silently ignored rather than persisted: otherwise a later GET (once the org's
@@ -407,6 +428,37 @@ public class UserConfigResourceV2Test extends DbIsolatedTest {
             .when().put(SUBSCRIPTIONS_PATH)
             .then()
             .statusCode(HttpStatus.SC_FORBIDDEN);
+    }
+
+    @Test
+    void testGetSubscriptionsExcludesWeeklyChannel() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+        createEventType(application.getId(), "event-a", Set.of(Severity.CRITICAL), false);
+
+        List<BundleSubscriptionDTO> tree = getSubscriptions("bundle-a", "app-a", "event-a");
+        var eventTypeDTO = tree.get(0).getApplications().get(0).getEventTypes().get(0);
+        boolean hasWeekly = eventTypeDTO.getSubscriptions().stream()
+            .anyMatch(c -> c.getSubscriptionType() == SubscriptionTypeDTO.WEEKLY);
+        assertFalse(hasWeekly, "V2 GET must not include WEEKLY channel");
+    }
+
+    @Test
+    void testPutSubscriptionsRejectsWeeklyChannel() {
+        Bundle bundle = resourceHelpers.createBundle("bundle-a", "Bundle A");
+        Application application = resourceHelpers.createApplication(bundle.getId(), "app-a", "App A");
+        createEventType(application.getId(), "event-a", Set.of(Severity.CRITICAL), false);
+
+        BundleSubscriptionUpdateDTO update = buildSingleLeafUpdate("bundle-a", "app-a", "event-a",
+            SubscriptionTypeDTO.WEEKLY, List.of(SeverityDTO.CRITICAL));
+
+        given()
+            .header(identityHeader)
+            .contentType(JSON)
+            .body(List.of(update))
+            .when().put(SUBSCRIPTIONS_PATH)
+            .then()
+            .statusCode(HttpStatus.SC_NOT_FOUND);
     }
 
     private BundleSubscriptionUpdateDTO buildSingleLeafUpdate(String bundle, String application, String eventType, SubscriptionTypeDTO channel, List<SeverityDTO> severities) {

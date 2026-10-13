@@ -58,7 +58,7 @@ public class UserConfigResourceV3 extends UserConfigResourceCommon {
         @QueryParam("application") String applicationName,
         @QueryParam("event_type") String eventTypeName
     ) {
-        return v3SubscriptionMapper.v2ToV3Bundles(getSubscriptions(sec, bundleName, applicationName, eventTypeName));
+        return v3SubscriptionMapper.v2ToV3Bundles(getSubscriptions(sec, bundleName, applicationName, eventTypeName, true));
     }
 
     @PUT
@@ -80,6 +80,6 @@ public class UserConfigResourceV3 extends UserConfigResourceCommon {
         @NotNull @Valid @RequestBody(content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(type = SchemaType.ARRAY, implementation = BundleSubscriptionUpdateDTO.class)))
             List<@NotNull BundleSubscriptionUpdateDTO> body
     ) {
-        doUpdateSubscriptions(sec, v3SubscriptionMapper.v3ToV2BundleUpdates(body));
+        doUpdateSubscriptions(sec, v3SubscriptionMapper.v3ToV2BundleUpdates(body), true);
     }
 }
