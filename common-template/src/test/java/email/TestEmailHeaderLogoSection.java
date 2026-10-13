@@ -14,20 +14,21 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Proves that the optional {@code content-header-logo} Qute section added to the 4 base email
- * layout templates falls back to the standard Red Hat logo when not overridden, and can be fully
- * replaced (image and link) when a caller defines the section - the mechanism a future Lightwell
- * template would rely on.
+ * Proves that the base email layout templates correctly display either the Red Hat logo or the
+ * Lightwell logo based on the {@code action.context.useLightwellBranding} flag.
  *
- * The daily digest templates are not {@code #include}d by any real template today (they are
- * registered and rendered directly), so their tests here only prove the section resolves
- * correctly in isolation, not an existing production code path.
+ * For instant email templates (insightsEmailBody, Secure/Common/insightsEmailBody), the
+ * {@code content-header-logo} section can still be overridden for custom branding.
+ *
+ * For daily digest templates (insightsDailyEmailBody, Secure/Common/insightsDailyEmailBody), the
+ * logo is controlled by the {@code useLightwellBranding} context flag and cannot be overridden
+ * via section insertion.
  */
 @QuarkusTest
 class TestEmailHeaderLogoSection {
 
     private static final String DEFAULT_LOGO_FILENAME = "Logo-Red_Hat-Hybrid_Cloud_Console-A-Reverse-RGB.png";
-    private static final String LIGHTWELL_LOGO_FILENAME = "lightwell-logo.png";
+    private static final String LIGHTWELL_LOGO_FILENAME = "Logo_lightwell_dark.png";
     private static final String LIGHTWELL_LOGO_OVERRIDE = "{#content-header-logo}"
         + "<a href=\"{environment.url}\" target=\"_blank\">"
         + "<img src=\"https://example.com/" + LIGHTWELL_LOGO_FILENAME + "\" alt=\"Lightwell logo\" width=\"340\" />"
@@ -62,12 +63,12 @@ class TestEmailHeaderLogoSection {
 
     @Test
     void testDailyEmailBodyDefaultLogo() {
-        assertDefaultLogo(render(dailyEmailSnippet("email/Common/insightsDailyEmailBody", "")));
+        assertDefaultLogo(renderDaily(dailyEmailSnippet("email/Common/insightsDailyEmailBody", ""), false));
     }
 
     @Test
-    void testDailyEmailBodyLogoOverride() {
-        assertOverriddenLogo(render(dailyEmailSnippet("email/Common/insightsDailyEmailBody", LIGHTWELL_LOGO_OVERRIDE)));
+    void testDailyEmailBodyLightwellBranding() {
+        assertLightwellLogo(renderDaily(dailyEmailSnippet("email/Common/insightsDailyEmailBody", ""), true));
     }
 
     @Test
@@ -90,6 +91,13 @@ class TestEmailHeaderLogoSection {
         assertFalse(result.contains(DEFAULT_LOGO_FILENAME));
         // the override keeps {environment.url} as the click-through link - confirm it still resolved
         assertTrue(result.contains("href=\"" + environment.url() + "\""));
+    }
+
+    private void assertLightwellLogo(String result) {
+        assertTrue(result.contains(LIGHTWELL_LOGO_FILENAME));
+        assertFalse(result.contains(DEFAULT_LOGO_FILENAME));
+        // Lightwell branding uses the /lightwell URL
+        assertTrue(result.contains("href=\"https://console.redhat.com/lightwell\""));
     }
 
     private String instantEmailSnippet(String templatePath, String logoOverride) {
@@ -116,6 +124,22 @@ class TestEmailHeaderLogoSection {
         context.put("action", Map.of(
             "orgId", "12345",
             "context", Map.of("title", "Daily digest", "orgId", "12345", "items", List.of())
+        ));
+        return templateService.renderTemplateWithCustomDataMap(templateContent, context);
+    }
+
+    private String renderDaily(String templateContent, boolean useLightwellBranding) {
+        Map<String, Object> context = new HashMap<>();
+        context.put("environment", environment);
+        context.put("pendo_message", null);
+        context.put("action", Map.of(
+            "orgId", "12345",
+            "context", Map.of(
+                "title", "Daily digest",
+                "orgId", "12345",
+                "items", List.of(),
+                "useLightwellBranding", useLightwellBranding
+            )
         ));
         return templateService.renderTemplateWithCustomDataMap(templateContent, context);
     }

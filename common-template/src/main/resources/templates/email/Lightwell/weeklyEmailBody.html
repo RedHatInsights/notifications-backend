@@ -85,7 +85,7 @@
                         {#for pkg in eventTypeEntry.value.packages}
                         <tr>
                             <td style="{body-section-table-td-style}">
-                                <a style="{body-section-table-td-a-style}" target="_blank" href="{pkg.package_link.raw}?{query_params}">{pkg.package_name}</a>
+                                <a style="{body-section-table-td-a-style}" target="_blank" href="{pkg.package_link}?{query_params}">{pkg.package_name}</a>
                             </td>
                         </tr>
                         {/for}
