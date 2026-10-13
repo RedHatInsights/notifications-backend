@@ -224,9 +224,11 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
             .statusCode(200)
             .extract().as(BootstrapSummary.class);
 
-        // Verify - Only new endpoints assigned
-        assertEquals(2, summary2.orgEndpointsAssigned,
-            "Should only assign 2 newly created endpoints");
+        // Verify - ALL endpoints updated for consistency (not just new ones)
+        // Bootstrap finds org has unassigned endpoints, so processes it
+        // When processing, updates ALL endpoints for the org to guarantee consistency
+        assertEquals(4, summary2.orgEndpointsAssigned,
+            "Should update ALL 4 endpoints to guarantee workspace consistency");
     }
 
     @Test
