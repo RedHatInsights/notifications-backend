@@ -3,7 +3,7 @@
 ###
 
 # Build the project with Mandrel (UBI9-based)
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:8fbe5ca09afa1990e9ff55fd8ee7cb073b823a7640c3c8381ece64f22401d2a2 AS build
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:a21d19f72557aa893a0f6ca1177bb1ffd91df6015e60470a116c50a6a05efcd9 AS build
 USER root
 
 # Install required dependencies for native-image compilation
@@ -57,7 +57,7 @@ RUN ./mvnw -s .mvn/settings.xml clean package \
     find /home/jboss/mcp/target -name "*-runner" -exec mv {} /home/jboss/application \;
 
 # Build the container with minimal runtime (UBI9-based)
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:8fbe5ca09afa1990e9ff55fd8ee7cb073b823a7640c3c8381ece64f22401d2a2
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:a21d19f72557aa893a0f6ca1177bb1ffd91df6015e60470a116c50a6a05efcd9
 
 WORKDIR /
 # Update the base image packages
