@@ -7,7 +7,7 @@
 - Every service except `notifications-mcp` and `notifications-connector-drawer` uses JVM mode. MCP and Drawer services uses native mode (`Dockerfile.notifications-mcp.native` and `Dockerfile.notifications-connector-drawer.native`).
 
 ### JVM Dockerfile Structure
-- Use multi-stage builds: `ubi9/openjdk-21:latest` for building, `ubi9/openjdk-21-runtime:latest` for runtime.
+- Use multi-stage builds: `ubi9/openjdk-25:latest` for building, `ubi9/openjdk-25-runtime:latest` for runtime.
 - Build stage runs Maven with `./mvnw -s .mvn/settings.xml clean package -DskipTests -pl :<module-name> -am --no-transfer-progress`. Some connectors use `-Dmaven.test.skip -Dcheckstyle.skip` instead of `-DskipTests`.
 - Runtime stage must run `microdnf upgrade --refresh --nodocs --setopt=install_weak_deps=0 -y` to patch base image CVEs.
 - Copy the Quarkus fast-jar output as four distinct layers (lib, jars, app, quarkus) for Docker layer caching.
@@ -78,7 +78,7 @@
 ## GitHub Actions
 
 ### Build & Test (`build.yml`)
-- Runs on push, PR, and manual dispatch. Uses JDK 21 (Adoptium).
+- Runs on push, PR, and manual dispatch. Uses JDK 25 (Adoptium).
 - Executes `./mvnw clean verify` (with tests). Uploads OpenAPI spec artifacts.
 - Admin-console builds only trigger when `admin-console/**` files change (`-Padmin-console` profile).
 
