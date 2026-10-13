@@ -60,7 +60,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Verify - Returns correct counts
         assertNotNull(status);
         assertTrue(status.endpointsWithoutWorkspace >= 2, "Should have at least 2 endpoints without workspace");
-        assertTrue(status.totalOrgsWithEndpoints >= 2, "Should have at least 2 orgs with endpoints");
+        assertTrue(status.orgsNeedingWorkspaceAssignment >= 2, "Should have at least 2 orgs needing workspace assignment");
     }
 
     @Test

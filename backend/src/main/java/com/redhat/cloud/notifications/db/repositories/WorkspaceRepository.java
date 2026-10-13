@@ -124,6 +124,7 @@ public class WorkspaceRepository {
 
     /**
      * Bulk update endpoints to assign workspace.
+     * Updates ALL endpoints for the org to guarantee consistency.
      * More efficient than loading/updating entities one by one.
      */
     @Transactional
@@ -132,7 +133,7 @@ public class WorkspaceRepository {
         Workspace workspace = entityManager.getReference(Workspace.class, workspaceId);
 
         String hql = "UPDATE Endpoint e SET e.workspace = :workspace " +
-                     "WHERE e.orgId = :orgId AND e.workspace IS NULL";
+                     "WHERE e.orgId = :orgId";
         return entityManager.createQuery(hql)
             .setParameter("workspace", workspace)
             .setParameter("orgId", orgId)
@@ -141,6 +142,7 @@ public class WorkspaceRepository {
 
     /**
      * Assign system workspace to system integrations (orgId IS NULL).
+     * Updates ALL system endpoints to guarantee consistency.
      */
     @Transactional
     public int assignSystemWorkspace(UUID systemWorkspaceId) {
@@ -148,7 +150,7 @@ public class WorkspaceRepository {
         Workspace workspace = entityManager.getReference(Workspace.class, systemWorkspaceId);
 
         String hql = "UPDATE Endpoint e SET e.workspace = :workspace " +
-                     "WHERE e.orgId IS NULL AND e.workspace IS NULL";
+                     "WHERE e.orgId IS NULL";
         return entityManager.createQuery(hql)
             .setParameter("workspace", workspace)
             .executeUpdate();
