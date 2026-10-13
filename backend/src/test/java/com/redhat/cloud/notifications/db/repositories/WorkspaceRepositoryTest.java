@@ -248,6 +248,34 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testSystemWorkspaceConstantMatchesMigration() {
+        // CRITICAL: Verify that WorkspaceRepository.SYSTEM_WORKSPACE_ID matches
+        // the UUID hardcoded in migration V1.140.0
+        //
+        // If this test fails, it means the Java constant and SQL migration are out of sync.
+        // Both must use the same UUID derived from:
+        // UUID.nameUUIDFromBytes("notifications-system-workspace".getBytes(UTF_8))
+        //
+        // Expected: 5d3d4d41-a502-36a6-b724-3b1fcfe41a1a
+
+        UUID expectedSystemWorkspaceId = UUID.fromString("5d3d4d41-a502-36a6-b724-3b1fcfe41a1a");
+
+        // Calculate what the Java code generates
+        UUID javaCalculatedId = UUID.nameUUIDFromBytes(
+            "notifications-system-workspace".getBytes(java.nio.charset.StandardCharsets.UTF_8)
+        );
+
+        // Verify Java calculation matches expected value
+        assertEquals(expectedSystemWorkspaceId, javaCalculatedId,
+            "Java-calculated UUID must match migration hardcoded value");
+
+        // Verify database has the expected UUID (migration inserted it)
+        Workspace systemWorkspace = workspaceRepository.getSystemWorkspace();
+        assertEquals(expectedSystemWorkspaceId, systemWorkspace.getId(),
+            "Migration V1.140.0 must have inserted workspace with expected UUID");
+    }
+
+    @Test
     void testBulkUpdateSetsWorkspaceRelationship() {
         String orgId = "test-org-relationship";
         UUID workspaceId = UUID.randomUUID();
