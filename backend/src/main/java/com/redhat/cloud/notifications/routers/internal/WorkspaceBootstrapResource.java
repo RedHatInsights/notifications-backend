@@ -65,8 +65,8 @@ public class WorkspaceBootstrapResource {
         summary.systemWorkspaceId = systemWorkspace.getId();
         summary.systemEndpointsAssigned = systemEndpointsUpdated;
 
-        // Step 2: Process each distinct org_id
-        List<String> orgIds = workspaceRepository.getDistinctOrgIdsFromEndpoints();
+        // Step 2: Process each org that has endpoints needing workspace assignment
+        List<String> orgIds = workspaceRepository.getOrgIdsNeedingWorkspaceAssignment();
         summary.totalOrgsProcessed = orgIds.size();
 
         for (String orgId : orgIds) {
@@ -110,7 +110,7 @@ public class WorkspaceBootstrapResource {
     public BootstrapStatus getBootstrapStatus() {
         BootstrapStatus status = new BootstrapStatus();
         status.endpointsWithoutWorkspace = workspaceRepository.countEndpointsWithoutWorkspace();
-        status.totalOrgsWithEndpoints = workspaceRepository.getDistinctOrgIdsFromEndpoints().size();
+        status.orgsNeedingWorkspaceAssignment = workspaceRepository.getOrgIdsNeedingWorkspaceAssignment().size();
         return status;
     }
 
@@ -131,6 +131,6 @@ public class WorkspaceBootstrapResource {
 
     public static class BootstrapStatus {
         public long endpointsWithoutWorkspace;
-        public int totalOrgsWithEndpoints;
+        public int orgsNeedingWorkspaceAssignment;
     }
 }
