@@ -19,6 +19,11 @@
         <a style="{body-section-table-td-a-style}" href="#{action.context.application}-section2">{#insert content-title-section2}{/} {#insert content-title-right-part-section2}{/}</a>
     {/if}
 {/if}
+
+{#if renderBodyHandledByChild.or(false)}
+    {#insert content-body-handled-by-child}{/}
+{/if}
+
 <!-- Body section -->
 {#if renderSection1.or(false)}
     <tr>

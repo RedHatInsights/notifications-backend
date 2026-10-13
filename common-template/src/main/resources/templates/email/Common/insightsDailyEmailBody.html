@@ -24,13 +24,17 @@
                         <td align="center" style="padding-bottom: 24px;">
                             <table border="0" cellpadding="0" cellspacing="0" width="100%">
                                 <tr>
-                                    <!--Red Hat logo-->
+                                    <!--Bundle logo-->
                                     <td align="center" style="background-color: rgb(21, 21, 21); background-image: url('https://console.redhat.com/apps/frontend-assets/email-assets/bg_151515.jpg'); background-repeat: repeat; padding-bottom: 22px; padding-top: 22px; text-align: center;">
-                                        {#insert content-header-logo}
+                                        {#if action.context.useLightwellBranding.or(false)}
+                                        <a href="https://console.redhat.com/lightwell" target="_blank">
+                                            <img src="https://console.redhat.com/apps/frontend-assets/email-assets/Logo_lightwell_dark.png" alt="Lightwell logo" width="340" />
+                                        </a>
+                                        {#else}
                                         <a href="{environment.url}" target="_blank">
                                             <img src="https://console.redhat.com/apps/frontend-assets/console-logos/Logo-Red_Hat-Hybrid_Cloud_Console-A-Reverse-RGB.png" alt="Red Hat logo" width="340" />
                                         </a>
-                                        {/}
+                                        {/if}
                                     </td>
                                 </tr>
                                 <tr>

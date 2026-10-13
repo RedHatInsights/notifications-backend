@@ -100,14 +100,14 @@ public class TestPatchTemplate extends EmailTemplatesRendererHelper {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testDailyDigestEmailBody(boolean useBetaTemplate) throws JsonProcessingException {
-        String result = generateAggregatedEmailBody(JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT, useBetaTemplate);
+        String result = generateDailyAggregatedEmailBody(JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT, useBetaTemplate);
         assertTrue(result.contains("There are 4 new advisories affecting your systems"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
     @Test
     public void testDailyDigestEmailBodySingleAdvisory() throws JsonProcessingException {
-        String result = generateAggregatedEmailBody(JSON_PATCH_DEFAULT_SINGLE_AGGREGATION_CONTEXT, true);
+        String result = generateDailyAggregatedEmailBody(JSON_PATCH_DEFAULT_SINGLE_AGGREGATION_CONTEXT, true);
         assertTrue(result.contains("There is 1 new advisory affecting your systems"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }

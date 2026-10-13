@@ -38,7 +38,7 @@ public class TestApplicationServicesTemplate extends EmailTemplatesRendererHelpe
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testDailyDigestEmailBody(boolean useBetaTemplate) throws JsonProcessingException {
-        final String result = generateAggregatedEmailBody(JSON_APP_SERVICES_DEFAULT_AGGREGATION_CONTEXT, useBetaTemplate);
+        final String result = generateDailyAggregatedEmailBody(JSON_APP_SERVICES_DEFAULT_AGGREGATION_CONTEXT, useBetaTemplate);
 
         // Verify section links with descriptions and counts
         assertTrue(result.contains("Red Hat build of Keycloak (2)"));
@@ -83,7 +83,7 @@ public class TestApplicationServicesTemplate extends EmailTemplatesRendererHelpe
             "\"start_time\":null,\"end_time\":null" +
             "}";
 
-        final String result = generateAggregatedEmailBody(json, false);
+        final String result = generateDailyAggregatedEmailBody(json, false);
 
         assertTrue(result.contains("There is 1 Red Hat build of Keycloak release affecting your subscriptions."));
         assertFalse(result.contains("There are 1"));
@@ -103,7 +103,7 @@ public class TestApplicationServicesTemplate extends EmailTemplatesRendererHelpe
             "\"start_time\":null,\"end_time\":null" +
             "}";
 
-        final String result = generateAggregatedEmailBody(json, false);
+        final String result = generateDailyAggregatedEmailBody(json, false);
 
         int alphaPos = result.indexOf("Alpha Product");
         int zebraPos = result.indexOf("Zebra Product");
@@ -125,7 +125,7 @@ public class TestApplicationServicesTemplate extends EmailTemplatesRendererHelpe
             "\"start_time\":null,\"end_time\":null" +
             "}";
 
-        final String result = generateAggregatedEmailBody(json, false);
+        final String result = generateDailyAggregatedEmailBody(json, false);
 
         assertFalse(result.contains("Red Hat build of Keycloak (0)"), "Products with empty payloads should not appear in links");
         assertTrue(result.contains("Red Hat JBoss Enterprise Application Platform (1)"), "Products with payloads should appear");
@@ -144,7 +144,7 @@ public class TestApplicationServicesTemplate extends EmailTemplatesRendererHelpe
             "\"start_time\":null,\"end_time\":null" +
             "}";
 
-        final String result = generateAggregatedEmailBody(json, false);
+        final String result = generateDailyAggregatedEmailBody(json, false);
 
         assertFalse(result.contains("application-services-section1-1"), "No product sections should be rendered");
         assertTrue(result.contains("Application Services Releases"), "Title should still be present");

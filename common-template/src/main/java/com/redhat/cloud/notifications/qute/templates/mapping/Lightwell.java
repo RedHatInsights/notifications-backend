@@ -6,6 +6,7 @@ import java.util.Map;
 
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_BODY;
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_TITLE;
+import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_WEEKLY_DIGEST_BODY;
 import static java.util.Map.entry;
 
 public class Lightwell {
@@ -19,6 +20,7 @@ public class Lightwell {
     public static final Map<TemplateDefinition, String> templatesMap = Map.ofEntries(
 
         entry(new TemplateDefinition(EMAIL_BODY, BUNDLE_NAME, LIGHTWELL_APP_NAME, null), LIGHTWELL_FOLDER_NAME + "lightwellDefaultEmailBody.html"),
-        entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, LIGHTWELL_APP_NAME, null), LIGHTWELL_FOLDER_NAME + "lightwellDefaultEmailTitle.txt")
+        entry(new TemplateDefinition(EMAIL_TITLE, BUNDLE_NAME, LIGHTWELL_APP_NAME, null), LIGHTWELL_FOLDER_NAME + "lightwellDefaultEmailTitle.txt"),
+        entry(new TemplateDefinition(EMAIL_WEEKLY_DIGEST_BODY, BUNDLE_NAME, LIGHTWELL_APP_NAME, null), LIGHTWELL_FOLDER_NAME + "weeklyEmailBody.html")
     );
 }

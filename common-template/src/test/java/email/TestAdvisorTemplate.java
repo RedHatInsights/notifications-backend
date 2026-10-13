@@ -78,7 +78,7 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testDailyEmailBody(boolean useBetaTemplate) throws JsonProcessingException {
-        final String result = generateAggregatedEmailBody(JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT, useBetaTemplate);
+        final String result = generateDailyAggregatedEmailBody(JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT, useBetaTemplate);
         assertTrue(result.contains("New Recommendations"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_1"));
         assertTrue(result.contains("Active rule 1</a>"));
@@ -135,7 +135,7 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
             "   \"end_time\":\"2025-07-25T13:51:20.657602689\"" +
             "}";
 
-        final String result = generateAggregatedEmailBody(jsonContext, useBetaTemplate);
+        final String result = generateDailyAggregatedEmailBody(jsonContext, useBetaTemplate);
         // check that template is able to render sections, even if they are empty
         assertTrue(result.contains("New Recommendation"));
         assertTrue(result.contains("Resolved Recommendation"));
@@ -164,7 +164,7 @@ public class TestAdvisorTemplate extends EmailTemplatesRendererHelper {
             "   \"end_time\":\"2025-07-25T13:56:28.213081719\"" +
             "}";
 
-        final String result = generateAggregatedEmailBody(jsonContext, useBetaTemplate);
+        final String result = generateDailyAggregatedEmailBody(jsonContext, useBetaTemplate);
         assertTrue(result.contains("Resolved Recommendation"));
         assertTrue(result.contains("/insights/advisor/recommendations/test|Active_rule_2"));
         assertTrue(result.contains("Active rule 2</a>"));

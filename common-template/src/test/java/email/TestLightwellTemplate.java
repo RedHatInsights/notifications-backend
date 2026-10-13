@@ -1,20 +1,24 @@
 package email;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Payload;
+import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.Severity;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.qute.templates.mapping.Lightwell.LIGHTWELL_JAVA_REMEDIATED_EVENT_TYPE;
 import static helpers.TestHelpers.DEFAULT_ORG_ID;
+import static helpers.TestHelpers.HCC_LOGO_TARGET;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -42,7 +46,7 @@ public class TestLightwellTemplate extends EmailTemplatesRendererHelper {
         return "Lightwell";
     }
 
-    static final String LIGHTWELL_LOGO = "Logo_lightwell_dark.png";
+    public static final String LIGHTWELL_LOGO = "Logo_lightwell_dark.png";
 
     @Test
     public void testJavaRemediatedEmailBody() {
@@ -243,5 +247,119 @@ public class TestLightwellTemplate extends EmailTemplatesRendererHelper {
             "url", "https://console.redhat.com/api/lightwell/cves/" + cveId + ".json",
             "severity", severity
         );
+    }
+
+    @Test
+    public void testWeeklyEmailBodyMultipleEventTypes() throws JsonProcessingException {
+        Map<String, Object> context = createWeeklyDigestContext(
+            Map.of(
+                "java-remediated", createEventTypePackages("Java Remediated", List.of(
+                    createPackageInfo("org.glassfish.jaxb:codemodel", "https://console.redhat.com/lightwell/packages/org.glassfish.jaxb:codemodel", 3),
+                    createPackageInfo("org.glassfish.jaxb:jaxb-core", "https://console.redhat.com/lightwell/packages/org.glassfish.jaxb:jaxb-core", 1)
+                )),
+                "python-remediated", createEventTypePackages("Python Remediated", List.of(
+                    createPackageInfo("requests", "https://console.redhat.com/lightwell/packages/requests", 2)
+                ))
+            ),
+            5, 3
+        );
+
+        String result = generateAggregatedEmailBody(context, null, IntegrationType.EMAIL_WEEKLY_DIGEST_BODY, false);
+
+        // Bundle-level aggregation shows HCC logo
+        assertTrue(result.contains(HCC_LOGO_TARGET));
+
+        // Coverage Updates summary section
+        assertTrue(result.contains("Coverage Updates"));
+        assertTrue(result.contains("Repositories"));
+        assertTrue(result.contains("Packages"));
+
+        // Event type sections with titles
+        assertTrue(result.contains("New Packages Available for Java Remediated"));
+        assertTrue(result.contains("New Packages Available for Python Remediated"));
+
+        // Package links
+        assertTrue(result.contains("org.glassfish.jaxb:codemodel"));
+        assertTrue(result.contains("https://console.redhat.com/lightwell/packages/org.glassfish.jaxb:codemodel"));
+        assertTrue(result.contains("org.glassfish.jaxb:jaxb-core"));
+        assertTrue(result.contains("requests"));
+
+        // Intro text
+        assertTrue(result.contains("The following packages were fixed by Lightwell"));
+
+        // CTA button
+        assertTrue(result.contains("Go to Lightwell"));
+        assertTrue(result.contains("from=notifications&integration=weekly_digest"));
+    }
+
+    @Test
+    public void testWeeklyEmailBodySingleEventType() throws JsonProcessingException {
+        Map<String, Object> context = createWeeklyDigestContext(
+            Map.of(
+                "java-remediated", createEventTypePackages("Java Remediated", List.of(
+                    createPackageInfo("org.json:json", "https://console.redhat.com/lightwell/packages/org.json:json", 1)
+                ))
+            ),
+            1, 1
+        );
+
+        String result = generateAggregatedEmailBody(context, null, IntegrationType.EMAIL_WEEKLY_DIGEST_BODY, false);
+
+        // Singular forms in summary
+        assertTrue(result.contains("Repository"));
+        assertFalse(result.contains("Repositories"));
+        assertTrue(result.contains("Package"));
+
+        assertTrue(result.contains("New Packages Available for Java Remediated"));
+        assertTrue(result.contains("org.json:json"));
+    }
+
+    @Test
+    public void testWeeklyEmailBodyMultiplePackagesSingleEventType() throws JsonProcessingException {
+        Map<String, Object> context = createWeeklyDigestContext(
+            Map.of(
+                "java-remediated", createEventTypePackages("Java Remediated", List.of(
+                    createPackageInfo("org.glassfish.jaxb:codemodel", "https://console.redhat.com/lightwell/packages/org.glassfish.jaxb:codemodel", 3),
+                    createPackageInfo("org.glassfish.jaxb:jaxb-core", "https://console.redhat.com/lightwell/packages/org.glassfish.jaxb:jaxb-core", 1),
+                    createPackageInfo("org.glassfish.jaxb:txw2", "https://console.redhat.com/lightwell/packages/org.glassfish.jaxb:txw2", 2)
+                ))
+            ),
+            6, 3
+        );
+
+        String result = generateAggregatedEmailBody(context, null, IntegrationType.EMAIL_WEEKLY_DIGEST_BODY, false);
+
+        assertTrue(result.contains("Coverage Updates"));
+        assertTrue(result.contains("Repository"));
+        assertTrue(result.contains("Packages"));
+
+        assertTrue(result.contains("org.glassfish.jaxb:codemodel"));
+        assertTrue(result.contains("org.glassfish.jaxb:jaxb-core"));
+        assertTrue(result.contains("org.glassfish.jaxb:txw2"));
+    }
+
+    private Map<String, Object> createWeeklyDigestContext(Map<String, Map<String, Object>> packagesByEventType, int totalAdvisories, int totalPackages) {
+        Map<String, Object> context = new LinkedHashMap<>();
+        context.put("total_advisories", totalAdvisories);
+        context.put("total_packages", totalPackages);
+        context.put("total_repositories", packagesByEventType.size());
+        context.put("packages_by_event_type", packagesByEventType);
+        context.put("application", "lightwell");
+        return context;
+    }
+
+    private Map<String, Object> createEventTypePackages(String eventTypeDisplayName, List<Map<String, Object>> packages) {
+        Map<String, Object> eventTypeData = new LinkedHashMap<>();
+        eventTypeData.put("event_type_display_name", eventTypeDisplayName);
+        eventTypeData.put("packages", packages);
+        return eventTypeData;
+    }
+
+    private Map<String, Object> createPackageInfo(String packageName, String packageLink, int advisoryCount) {
+        Map<String, Object> packageInfo = new LinkedHashMap<>();
+        packageInfo.put("package_name", packageName);
+        packageInfo.put("package_link", packageLink);
+        packageInfo.put("advisory_count", advisoryCount);
+        return packageInfo;
     }
 }

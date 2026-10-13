@@ -61,17 +61,17 @@ public class TestRhelDailyTemplate extends EmailTemplatesRendererHelper {
 
         Map<String, DailyDigestSection> dataMap = new HashMap<>();
 
-        generateAggregatedEmailBody(JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT, "advisor", dataMap, useBetaTemplate);
+        generateDailyAggregatedEmailBody(JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT, "advisor", dataMap, useBetaTemplate);
 
-        generateAggregatedEmailBody(templateService.convertActionToContextMap(TestHelpers.createComplianceAction()), "compliance", dataMap, useBetaTemplate);
+        generateDailyAggregatedEmailBody(templateService.convertActionToContextMap(TestHelpers.createComplianceAction()), "compliance", dataMap, useBetaTemplate);
 
-        generateAggregatedEmailBody(JSON_INVENTORY_FULL_AGGREGATION_CONTEXT, "inventory", dataMap, useBetaTemplate);
+        generateDailyAggregatedEmailBody(JSON_INVENTORY_FULL_AGGREGATION_CONTEXT, "inventory", dataMap, useBetaTemplate);
 
-        generateAggregatedEmailBody(JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT, "patch", dataMap, useBetaTemplate);
+        generateDailyAggregatedEmailBody(JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT, "patch", dataMap, useBetaTemplate);
 
-        generateAggregatedEmailBody(JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT, "resource-optimization", dataMap, useBetaTemplate);
+        generateDailyAggregatedEmailBody(JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT, "resource-optimization", dataMap, useBetaTemplate);
 
-        generateAggregatedEmailBody(templateService.convertActionToContextMap(TestHelpers.createVulnerabilityAction()), "vulnerability", dataMap, useBetaTemplate);
+        generateDailyAggregatedEmailBody(templateService.convertActionToContextMap(TestHelpers.createVulnerabilityAction()), "vulnerability", dataMap, useBetaTemplate);
 
         // sort application by name
         List<DailyDigestSection> result = dataMap.entrySet().stream()
