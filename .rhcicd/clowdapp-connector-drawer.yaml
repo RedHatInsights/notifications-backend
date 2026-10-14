@@ -56,9 +56,9 @@ objects:
             scheme: HTTP
           initialDelaySeconds: ${{LIVENESS_INITIAL_DELAY}}
           periodSeconds: 10
-          timeoutSeconds: 1
+          timeoutSeconds: ${{LIVENESS_TIMEOUT}}
           successThreshold: 1
-          failureThreshold: 5
+          failureThreshold: ${{LIVENESS_FAILURE_THRESHOLD}}
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
@@ -181,3 +181,9 @@ parameters:
   value: "40"
 - name: LIVENESS_INITIAL_DELAY
   value: "40"
+- name: LIVENESS_TIMEOUT
+  description: Liveness probe timeout in seconds
+  value: "1"
+- name: LIVENESS_FAILURE_THRESHOLD
+  description: Number of consecutive liveness probe failures before pod is killed
+  value: "5"
