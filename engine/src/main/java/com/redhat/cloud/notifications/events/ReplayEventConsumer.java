@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.annotations.Blocking;
+import io.smallrye.reactive.messaging.kafka.api.IncomingKafkaRecordMetadata;
 import io.smallrye.reactive.messaging.kafka.api.KafkaMessageMetadata;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -21,6 +22,7 @@ import java.util.concurrent.CompletionStage;
 public class ReplayEventConsumer {
 
     public static final String INGRESS_REPLAY_CHANNEL = "ingressreplay";
+    public static final String INGRESS_DEAD_LETTER_QUEUE_CHANNEL = "ingress-dlq";
     public static final String REPLAYED_MESSAGE_COUNTER_NAME = "input.processing.replayed";
 
     @Inject
@@ -48,8 +50,7 @@ public class ReplayEventConsumer {
 
     @Incoming(INGRESS_REPLAY_CHANNEL)
     @Blocking
-    public CompletionStage<Void> consume(Message<String> message) {
-
+    public CompletionStage<Void> consumeIngressReplay(Message<String> message) {
         Log.trace("Consuming replay event from ingress");
         if (config.isSkipMessageProcessing()) {
             return message.ack();
@@ -68,5 +69,25 @@ public class ReplayEventConsumer {
             }
         }
         return message.ack();
+    }
+
+    @Incoming(INGRESS_DEAD_LETTER_QUEUE_CHANNEL)
+    @Blocking
+    public CompletionStage<Void> consumeDeadLetterQueue(Message<String> rejected) {
+        IncomingKafkaRecordMetadata<String, String> metadata = rejected.getMetadata(IncomingKafkaRecordMetadata.class)
+            .orElseThrow(() -> new IllegalArgumentException("Expected a message coming from Kafka"));
+        String reason = new String(metadata.getHeaders().lastHeader("dead-letter-reason").value());
+        Log.infof("The message '%s' has been rejected and sent to the DLQ. The reason is: '%s'.", rejected.getPayload(), reason);
+
+        Log.info("Trying to process it one last time");
+        try {
+            eventConsumer.process(rejected);
+        } catch (Exception e) {
+            Log.errorf(e, "Fail process DLQ message");
+        }
+        replayedMessageCounter.increment();
+        // we always ack messages to avoid pods to be kicked of.
+        // in case of failure, the topic will have to be reprocessed
+        return rejected.ack();
     }
 }
