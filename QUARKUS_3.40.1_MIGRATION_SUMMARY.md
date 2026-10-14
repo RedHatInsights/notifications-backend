@@ -40,14 +40,17 @@ device or resource busy
 3. `getSingleResult()` stricter enforcement - throws on multiple results
 
 **Our Usage:**
-- REST Assured: Used in `backend` and `connector-email` tests
+- REST Assured: Used in **5 modules**: `backend`, `engine`, `mcp`, `recipients-resolver`, and `connector-email` tests
 - `@Transactional + Uni`: No instances found (not using this pattern)
-- `getSingleResult()`: 3 safe usages found:
-  - `DrawerNotificationRepository.count()` - COUNT query (always single result)
-  - `InternalRoleAccessRepository.findOneByApplicationUUID()` - LIMIT 1 + NoResultException handler
-  - `X509CertificateRepository` - Unique constraint query + NoResultException handler
+- `getSingleResult()`: **48 calls found** across 19 production classes in backend and engine modules:
+  - **Backend (13 classes):** ApplicationRepository, BehaviorGroupRepository, BundleRepository, DrawerNotificationRepository, EndpointEventTypeRepository, EndpointRepository, EventRepository, EventTypeRepository, InternalRoleAccessRepository, NotificationRepository, TemplateRepository, X509CertificateRepository, EphemeralDataInitializer
+  - **Engine (6 classes):** ApplicationRepository, BundleRepository, EndpointRepository, EventTypeRepository, NotificationHistoryRepository, SubscriptionsDeduplicationConfig
+  
+**Risk Assessment:** Most repository methods use proper exception handling (NoResultException catch blocks) or LIMIT 1 queries. However, **all 48 usages should be validated** during testing to ensure they cannot return multiple results under the stricter Hibernate ORM 7.3 enforcement.
 
-**Action Required:** Run full test suite to validate REST Assured compatibility
+**Action Required:** 
+1. Run full test suite to validate REST Assured compatibility across all 5 modules
+2. Monitor for any `NonUniqueResultException` from `getSingleResult()` calls during testing
 
 ### 3.36 - TLS Registry ✅ NOT IMPACTED
 **Change:** Provider classes relocated `io.quarkus.tls.runtime.*` → `io.quarkus.tls.*`  
@@ -111,10 +114,14 @@ permissionCheckTimer.stop(
 ✅ Uses different tag VALUES for same tag KEYS - correct pattern, no duplicates
 
 ### Repository Query Methods
-All `getSingleResult()` usages are safe:
+**48 `getSingleResult()` calls** found across 19 production classes (backend + engine).
+
+Common safe patterns observed:
 1. COUNT queries guaranteed to return single result
 2. LIMIT 1 queries with proper exception handling
 3. Unique constraint queries with NoResultException catch blocks
+
+⚠️ **Testing Required:** While most follow safe patterns, all 48 usages must be validated during CI tests to ensure Hibernate ORM 7.3's stricter enforcement doesn't expose any edge cases where multiple results could be returned.
 
 ## Recommendations
 
@@ -125,8 +132,9 @@ All `getSingleResult()` usages are safe:
 3. **⏳ TODO:** Run full test suite (requires Docker environment)
 4. **⏳ TODO:** Verify PostgreSQL version >= 14 in all environments
 5. **⏳ TODO:** Review Flyway migration execution logs for DDL changes
-6. **⏳ TODO:** Test REST Assured compatibility in backend tests
-7. **⏳ TODO:** Run integration tests for all connectors
+6. **⏳ TODO:** Test REST Assured 6.0 compatibility in all 5 affected modules (backend, engine, mcp, recipients-resolver, connector-email)
+7. **⏳ TODO:** Monitor for `NonUniqueResultException` from 48 `getSingleResult()` calls during testing
+8. **⏳ TODO:** Run integration tests for all connectors
 
 ### Testing Checklist
 
@@ -134,13 +142,15 @@ All `getSingleResult()` usages are safe:
 # Full build with tests (once Docker is working)
 ./mvnw clean verify --no-transfer-progress
 
-# Specific modules to focus on
+# Test REST Assured 6.0 compatibility in all affected modules
 ./mvnw test -pl :notifications-backend --no-transfer-progress
-./mvnw test -pl :notifications-connector-email --no-transfer-progress
 ./mvnw test -pl :notifications-engine --no-transfer-progress
+./mvnw test -pl :notifications-mcp --no-transfer-progress
+./mvnw test -pl :notifications-recipients-resolver --no-transfer-progress
+./mvnw test -pl :notifications-connector-email --no-transfer-progress
 
-# Check Flyway migrations
-./mvnw clean verify -pl :notifications-backend -am --no-transfer-progress
+# Check Flyway migrations and getSingleResult() behavior
+./mvnw clean verify -pl :notifications-backend,:notifications-engine -am --no-transfer-progress
 ```
 
 ### Monitoring After Deployment
