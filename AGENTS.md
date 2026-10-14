@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Notifications Backend is a multi-module Quarkus (3.35.x) application that powers the Red Hat Hybrid Cloud Console notification system. It processes events from the platform, resolves recipients, renders templates, and delivers notifications through various channels (email, webhook, Slack, Microsoft Teams, PagerDuty, ServiceNow, Splunk, Google Chat, drawer). The codebase is Java 25, uses PostgreSQL with Flyway migrations, communicates over Kafka with CloudEvents, and deploys to OpenShift via Konflux/Tekton pipelines.
+Notifications Backend is a multi-module Quarkus (3.40.x) application that powers the Red Hat Hybrid Cloud Console notification system. It processes events from the platform, resolves recipients, renders templates, and delivers notifications through various channels (email, webhook, Slack, Microsoft Teams, PagerDuty, ServiceNow, Splunk, Google Chat, drawer). The codebase is Java 25, uses PostgreSQL with Flyway migrations, communicates over Kafka with CloudEvents, and deploys to OpenShift via Konflux/Tekton pipelines.
 
 ## Build and Test Commands
 
