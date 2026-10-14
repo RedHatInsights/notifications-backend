@@ -32,6 +32,7 @@ public class RecipientsResolverConfig {
     private static final String MBOP_ENV = "notifications.recipients-resolver.mbop.env";
     private static final String KESSEL_URL = "notifications.kessel.url";
     private static final String KESSEL_TIMEOUT_MS = "notifications.kessel.timeout-ms";
+    private static final String KESSEL_AUTHENTICATED = "notifications.kessel.authenticated";
     private static final String KESSEL_INSECURE_CLIENT_ENABLED = "notifications.kessel.insecure-client.enabled";
     private static final String KESSEL_CLIENT_ID = "notifications.kessel.authn.client-id";
     private static final String KESSEL_CLIENT_SECRET = "notifications.kessel.authn.client-secret";
@@ -86,6 +87,13 @@ public class RecipientsResolverConfig {
     Optional<String> kesselClientIssuer;
 
     /**
+     * The {@code authenticated} flag of Kessel's Clowder V2 dependency endpoint.
+     * When present, it takes precedence over {@link #kesselInsecureClientEnabled}.
+     */
+    @ConfigProperty(name = KESSEL_AUTHENTICATED)
+    Optional<Boolean> kesselAuthenticated;
+
+    /**
      * Is the gRPC client supposed to skip OAuth2 authentication and TLS verification?
      */
     @ConfigProperty(name = KESSEL_INSECURE_CLIENT_ENABLED, defaultValue = "false")
@@ -132,6 +140,7 @@ public class RecipientsResolverConfig {
         config.put(rbacOidcAuthToggle, isRbacOidcAuthEnabled(null));
         config.put(KESSEL_URL, getKesselUrl());
         config.put(KESSEL_TIMEOUT_MS, getKesselTimeoutMs());
+        config.put(KESSEL_AUTHENTICATED, kesselAuthenticated.map(String::valueOf).orElse("<not set>"));
         config.put(KESSEL_INSECURE_CLIENT_ENABLED, isKesselInsecureClientEnabled());
         config.put(KESSEL_DOMAIN, getKesselDomain());
 
@@ -186,7 +195,7 @@ public class RecipientsResolverConfig {
     }
 
     public boolean isKesselInsecureClientEnabled() {
-        return kesselInsecureClientEnabled;
+        return kesselAuthenticated.map(authenticated -> !authenticated).orElse(kesselInsecureClientEnabled);
     }
 
     public String getKesselUrl() {

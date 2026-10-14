@@ -12,6 +12,7 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 
 @ApplicationScoped
@@ -25,6 +26,7 @@ public class BackendConfig {
     private static final String SECURED_EMAIL_TEMPLATES = "notifications.use-secured-email-templates.enabled";
     private static final String ERRATA_MIGRATION_BATCH_SIZE = "notifications.errata.migration.batch.size";
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
+    private static final String KESSEL_AUTHENTICATED = "notifications.kessel.authenticated";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
     private static final String KESSEL_ENABLED = "notifications.kessel.enabled";
     private static final String KESSEL_INSECURE_CLIENT_ENABLED = "notifications.kessel.insecure-client.enabled";
@@ -69,6 +71,13 @@ public class BackendConfig {
 
     @ConfigProperty(name = KESSEL_ENABLED, defaultValue = "false")
     boolean kesselEnabled;
+
+    /**
+     * The {@code authenticated} flag of Kessel's Clowder V2 dependency endpoint.
+     * When present, it takes precedence over {@link #kesselInsecureClientEnabled}.
+     */
+    @ConfigProperty(name = KESSEL_AUTHENTICATED)
+    Optional<Boolean> kesselAuthenticated;
 
     @ConfigProperty(name = KESSEL_INSECURE_CLIENT_ENABLED, defaultValue = "false")
     boolean kesselInsecureClientEnabled;
@@ -131,7 +140,9 @@ public class BackendConfig {
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(ERRATA_MIGRATION_BATCH_SIZE, getErrataMigrationBatchSize());
         config.put(KESSEL_DOMAIN, kesselDomain);
+        config.put(KESSEL_AUTHENTICATED, kesselAuthenticated.map(String::valueOf).orElse("<not set>"));
         config.put(KESSEL_ENABLED, isKesselEnabled(null));
+        config.put(KESSEL_INSECURE_CLIENT_ENABLED, isKesselInsecureClientEnabled());
         config.put(KESSEL_TIMEOUT_MS, getKesselTimeoutMs());
         config.put(KESSEL_URL, kesselUrl);
         config.put(OIDC_ISSUER, oidcIssuer);
@@ -180,7 +191,7 @@ public class BackendConfig {
     }
 
     public boolean isKesselInsecureClientEnabled() {
-        return kesselInsecureClientEnabled;
+        return kesselAuthenticated.map(authenticated -> !authenticated).orElse(kesselInsecureClientEnabled);
     }
 
     public long getKesselTimeoutMs() {
