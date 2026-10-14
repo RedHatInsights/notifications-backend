@@ -22,7 +22,7 @@ CREATE UNIQUE INDEX workspace_unique_system_workspace ON workspace((1)) WHERE or
 
 -- Create the system workspace with well-known UUID
 -- This UUID is calculated as: UUID.nameUUIDFromBytes("notifications-system-workspace".getBytes(UTF_8))
--- CRITICAL: This UUID is also defined in WorkspaceRepository.SYSTEM_WORKSPACE_ID
+-- CRITICAL: This UUID is also defined in WorkspaceRepository.SYSTEM_WORKSPACE_ID (migration V1.142.0)
 -- The values MUST match. Test testSystemWorkspaceConstantMatchesMigration() verifies this.
 INSERT INTO workspace (id, org_id, created)
 VALUES ('5d3d4d41-a502-36a6-b724-3b1fcfe41a1a', NULL, NOW());

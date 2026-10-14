@@ -19,7 +19,7 @@ public class WorkspaceRepository {
      * Generated deterministically from "notifications-system-workspace" using
      * UUID v3 (name-based MD5). Same input always produces the same UUID.
      *
-     * CRITICAL: This value is also hardcoded in migration V1.140.0. If this constant
+     * CRITICAL: This value is also hardcoded in migration V1.142.0. If this constant
      * changes, the migration SQL MUST be updated to match. See test
      * testSystemWorkspaceConstantMatchesMigration() for verification.
      *
@@ -75,7 +75,7 @@ public class WorkspaceRepository {
 
     /**
      * Get the system workspace (org_id IS NULL).
-     * The system workspace is created by the database migration V1.140.0.
+     * The system workspace is created by the database migration V1.142.0.
      *
      * @return the system workspace
      * @throws IllegalStateException if system workspace does not exist
@@ -85,7 +85,7 @@ public class WorkspaceRepository {
         Workspace workspace = entityManager.find(Workspace.class, SYSTEM_WORKSPACE_ID);
         if (workspace == null) {
             throw new IllegalStateException(
-                "System workspace not found. Migration V1.140.0 should have created it: id=" + SYSTEM_WORKSPACE_ID
+                "System workspace not found. Migration V1.142.0 should have created it: id=" + SYSTEM_WORKSPACE_ID
             );
         }
 
@@ -136,7 +136,7 @@ public class WorkspaceRepository {
      * Assign system workspace to system integrations (orgId IS NULL).
      * Updates ALL system endpoints to guarantee consistency.
      *
-     * Note: Migration V1.140.0 assigns existing system endpoints. This method
+     * Note: Migration V1.142.0 assigns existing system endpoints. This method
      * handles system endpoints created after the migration runs.
      */
     @Transactional
