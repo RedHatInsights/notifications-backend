@@ -30,6 +30,7 @@ Under each channel directory, templates are organized by **application folder** 
 - Drawer body: `{eventNameCamelCase}Body.md` (e.g., `newRecommendationBody.md`)
 - Instant email body: `{eventNameCamelCase}InstantEmailBody.html`
 - Daily digest body: `dailyEmailBody.html`
+- Weekly digest body: `weeklyEmailBody.html`
 - Email title: `instantEmailTitle.txt`
 - Slack/Teams/Google Chat: `{eventNameCamelCase}.json` or `default.json`
 

@@ -135,7 +135,7 @@ public class TestErrataTemplate extends EmailTemplatesRendererHelper {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testDailyDigestEmailBody(boolean useBetaTemplate) throws JsonProcessingException {
-        final String result = generateAggregatedEmailBody(JSON_ERRATA_DEFAULT_AGGREGATION_CONTEXT, useBetaTemplate);
+        final String result = generateDailyAggregatedEmailBody(JSON_ERRATA_DEFAULT_AGGREGATION_CONTEXT, useBetaTemplate);
         assertTrue(result.contains("There are 9 bug fixes affecting your subscriptions."));
         assertTrue(result.contains("There are 18 enhancements affecting your subscriptions."));
         assertTrue(result.contains("There are 24 security updates affecting your subscriptions"));

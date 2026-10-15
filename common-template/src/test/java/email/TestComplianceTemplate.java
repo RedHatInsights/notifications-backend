@@ -62,7 +62,7 @@ public class TestComplianceTemplate extends EmailTemplatesRendererHelper {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testDailyReportEmailBody(boolean useBetaTemplate) throws JsonProcessingException {
-        String result = generateAggregatedEmailBody(Map.of(), useBetaTemplate);
+        String result = generateDailyAggregatedEmailBody(Map.of(), useBetaTemplate);
         assertTrue(result.contains("Red Hat Lightspeed has identified one or more systems"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }

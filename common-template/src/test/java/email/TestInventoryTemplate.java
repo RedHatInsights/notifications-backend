@@ -174,7 +174,7 @@ public class TestInventoryTemplate extends EmailTemplatesRendererHelper {
             addToAggregationContext("deleted_systems", deletedSystemsMap, aggregationContext);
         }
 
-        String result = generateAggregatedEmailBody(aggregationContext, useBetaTemplate);
+        String result = generateDailyAggregatedEmailBody(aggregationContext, useBetaTemplate);
         JsonObject context = new JsonObject(aggregationContext);
         assertTrue(context.getJsonObject("inventory").getJsonArray("errors").size() < 10);
         assertTrue(result.contains("Host Name"), "Body should contain 'Host Name' header");

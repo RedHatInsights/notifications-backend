@@ -43,7 +43,7 @@ public class TestResourceOptimizationTemplate extends EmailTemplatesRendererHelp
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     public void testDailyDigestEmailBody(boolean useBetaTemplate) throws JsonProcessingException {
-        String result = generateAggregatedEmailBody(JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT, useBetaTemplate);
+        String result = generateDailyAggregatedEmailBody(JSON_RESOURCE_OPTIMIZATION_DEFAULT_AGGREGATION_CONTEXT, useBetaTemplate);
         assertTrue(result.contains("Today, rules triggered on"));
         assertTrue(result.contains("IDLING"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));

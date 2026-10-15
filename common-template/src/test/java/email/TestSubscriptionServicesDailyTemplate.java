@@ -43,9 +43,9 @@ class TestSubscriptionServicesDailyTemplate extends EmailTemplatesRendererHelper
 
         Map<String, DailyDigestSection> dataMap = new HashMap<>();
 
-        generateAggregatedEmailBody(JSON_ERRATA_DEFAULT_AGGREGATION_CONTEXT, SubscriptionServices.ERRATA_APP_NAME, dataMap, useBetaVersion);
+        generateDailyAggregatedEmailBody(JSON_ERRATA_DEFAULT_AGGREGATION_CONTEXT, SubscriptionServices.ERRATA_APP_NAME, dataMap, useBetaVersion);
 
-        generateAggregatedEmailBody(JSON_APP_SERVICES_DEFAULT_AGGREGATION_CONTEXT, SubscriptionServices.APPLICATION_SERVICES_APP_NAME, dataMap, useBetaVersion);
+        generateDailyAggregatedEmailBody(JSON_APP_SERVICES_DEFAULT_AGGREGATION_CONTEXT, SubscriptionServices.APPLICATION_SERVICES_APP_NAME, dataMap, useBetaVersion);
 
         // sort application by name
         List<DailyDigestSection> result = dataMap.entrySet().stream()

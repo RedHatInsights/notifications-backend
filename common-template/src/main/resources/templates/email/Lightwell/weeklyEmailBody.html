@@ -1,0 +1,153 @@
+{@boolean renderBodyHandledByChild=true}
+{@boolean renderCustomLinks=true}
+{@String query_params = "from=notifications&integration=weekly_digest"}
+{#include email/Common/insightsEmailBodyLight}
+{#content-render-custom-links-section}
+    {#for eventTypeEntry in action.context.packages_by_event_type.entrySet()}
+        <a style="{body-section-table-td-a-style}" href="#{action.context.application}-{eventTypeEntry.key}">New Packages Available for {eventTypeEntry.value.event_type_display_name} ({eventTypeEntry.value.packages.size()})</a>
+        {#if eventTypeEntry_hasNext}
+             <!-- next section -->
+        {/if}
+    {/for}
+{/content-render-custom-links-section}
+{#content-body-handled-by-child}
+
+<!-- Body section -->
+
+<!-- Coverage Updates Summary Section -->
+<tr>
+    <td style="padding: 0 16px 24px 16px;">
+        <table cellspacing="0" cellpadding="0" border="0" width="100%" style="border-radius: 16px; overflow: hidden; background-color: rgb(255, 255, 255);">
+            <tr>
+                <td style="padding: 24px;">
+                    <h3 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 500; color: #151515;">Coverage Updates</h3>
+                    <p style="margin: 0; font-size: 16px; font-weight: 400; color: #151515;">
+                        <strong>{action.context.total_repositories}</strong> {#if action.context.total_repositories is 1}Repository{#else}Repositories{/if}
+                        &nbsp;|&nbsp;
+                        <strong>{action.context.total_packages}</strong> {#if action.context.total_packages is 1}Package{#else}Packages{/if}
+                    </p>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
+
+<!-- Event Type Sections -->
+{#for eventTypeEntry in action.context.packages_by_event_type.entrySet()}
+<tr>
+    <td style="padding: 0 16px 24px 16px;">
+        <a id="{action.context.application}-{eventTypeEntry.key}" name="{action.context.application}-{eventTypeEntry.key}"></a>
+        <table cellspacing="0" cellpadding="0" border="0" width="100%" style="border-radius: 16px; overflow: hidden; background-color: rgb(255, 255, 255);">
+            <tr>
+                <td>
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-bottom: 1pt solid #c7c7c7;">
+                        <tr>
+                            <td style="font-size: 24px; font-weight: 500; padding-top: 16px; padding-bottom: 16px; padding-left: 22px;">
+                                <span>New Packages Available for {eventTypeEntry.value.event_type_display_name}</span>
+                            </td>
+                            <td style="text-align: right; padding-top: 16px; padding-bottom: 16px; padding-left: 22px; padding-right: 22px;">
+                                <!--[if mso]>
+                                <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" height="25">
+                                    <tr>
+                                        <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_left.png" alt="" height="25" style="display: block; border: none;" /></td>
+                                        <td style="font-size: 14px; font-weight: 400; color: #ffffff; vertical-align: middle; background-color: #0066cc;">
+                                            {eventTypeEntry.value.packages.size()}
+                                        </td>
+                                        <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_right.png" alt="" height="25" style="display: block; border: none;" /></td>
+                                    </tr>
+                                </table>
+                                <![endif]-->
+
+                                <!--[if !mso]><!-->
+                                <span style="font-size: 16px; font-weight: 400; color: #ffffff; display: inline-block; padding-right: 8px; padding-left: 8px; text-align: center; background-color: #0066cc; border-radius: 16px;">
+                                    {eventTypeEntry.value.packages.size()}
+                                </span>
+                                <!--<![endif]-->
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td style="max-width: 100%; overflow: hidden; padding: 0px 0px 24px 0px; background-color: #fff;"></td>
+            </tr>
+            <tr>
+                <td style="max-width: 100%; overflow: hidden; padding: 0px 20px 24px 20px; background-color: #fff;">
+                    <p style="{body-section-p-style}">The following packages were fixed by Lightwell in the {eventTypeEntry.value.event_type_display_name} and are available for you to access.</p>
+
+                    <table style="{body-section-table-style}">
+                        <thead>
+                            <tr>
+                                <th style="{body-section-table-th-style}">Package</th>
+                            </tr>
+                        </thead>
+                        <tbody style="{body-section-table-tbody-style}">
+                        {#for pkg in eventTypeEntry.value.packages}
+                        <tr>
+                            <td style="{body-section-table-td-style}">
+                                <a style="{body-section-table-td-a-style}" target="_blank" href="{pkg.package_link}?{query_params}">{pkg.package_name}</a>
+                            </td>
+                        </tr>
+                        {/for}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
+{/for}
+
+<!-- CTA Button -->
+<tr>
+    <td style="padding: 0 16px 24px 16px;">
+        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" align="center">
+            <tr>
+                <td>
+                    <!--[if mso]>
+                    <a href="{environment.url}/lightwell?{query_params}" target="_blank" style="font-size: 14px; font-weight: 400; color: #ffffff; text-decoration: none; ">
+                        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse;" height="37">
+                            <tr>
+                                <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_left.png" alt="" height="37" style="display: block; border: none;" /></td>
+                                <td style="padding-right: 8px; font-size: 14px; font-weight: 400; color: #ffffff; vertical-align: middle; background-color: #0066cc;">
+                                    Go to Lightwell
+                                </td>
+                                <td style="vertical-align: middle; background-color: #0066cc;">
+                                    <img src="https://console.redhat.com/apps/frontend-assets/email-assets/external-link.png" alt="" width="14" height="14" style="display: block; border: none;" />
+                                </td>
+                                <td><img src="https://console.redhat.com/apps/frontend-assets/email-assets/circle_64_right.png" alt="" height="37" style="display: block; border: none;" /></td>
+                            </tr>
+                        </table>
+                    </a>
+                    <![endif]-->
+
+                    <!--[if !mso]><!-->
+                    <a href="{environment.url}/lightwell?{query_params}" target="_blank" style="display: inline-block; padding: 8px 14px; font-size: 14px; font-weight: 400; color: #ffffff; text-decoration: none; background-color: #0066cc; border-radius: 24px;">
+                        <table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; background-color: #0066cc; ">
+                            <tr>
+                                <td style="padding-right: 8px; font-size: 14px; font-weight: 400; line-height: 21px; color: #ffffff; vertical-align: middle;">
+                                    Go to Lightwell
+                                </td>
+                                <td style="line-height: 21px; vertical-align: middle;">
+                                    <img src="https://console.redhat.com/apps/frontend-assets/email-assets/external-link.png" alt="" width="14" height="14" style="display: block; border: none;" />
+                                </td>
+                            </tr>
+                        </table>
+                    </a>
+                    <!--<![endif]-->
+                </td>
+            </tr>
+        </table>
+    </td>
+</tr>
+
+{/content-body-handled-by-child}
+{#content-footer}
+    {#if ignore_user_preferences??}
+        This email was sent by Lightwell, it is critical or requires action.<br/>
+        Therefore, you are receiving this message regardless of your email preferences.
+    {#else}
+        This email was sent by Lightwell | <a href="https://console.redhat.com/lightwell" target="_blank" style="color: rgb(31, 167, 248); font-size: 14px; font-weight: 400; text-align: center; text-decoration-color: rgb(31, 167, 248); text-decoration-line: none; text-decoration-style: solid;">Manage email preferences</a>
+    {/if}
+{/content-footer}
+{/include}

@@ -92,20 +92,20 @@ public abstract class EmailTemplatesRendererHelper {
         return generateEmail(templateDefinition, event, pendo, ignoreUserPreferences);
     }
 
-    protected String generateAggregatedEmailBody(String jsonContext) throws JsonProcessingException {
-        return generateAggregatedEmailBody(objectMapper.readValue(jsonContext, new TypeReference<Map<String, Object>>() { }), false);
+    protected String generateDailyAggregatedEmailBody(String jsonContext) throws JsonProcessingException {
+        return generateDailyAggregatedEmailBody(objectMapper.readValue(jsonContext, new TypeReference<Map<String, Object>>() { }), false);
     }
 
-    protected String generateAggregatedEmailBody(String jsonContext, boolean useBetaTemplate) throws JsonProcessingException {
-        return generateAggregatedEmailBody(objectMapper.readValue(jsonContext, new TypeReference<Map<String, Object>>() { }), useBetaTemplate);
+    protected String generateDailyAggregatedEmailBody(String jsonContext, boolean useBetaTemplate) throws JsonProcessingException {
+        return generateDailyAggregatedEmailBody(objectMapper.readValue(jsonContext, new TypeReference<Map<String, Object>>() { }), useBetaTemplate);
     }
 
-    protected String generateAggregatedEmailBody(Map<String, Object> context, boolean useBetaTemplate) {
-        return generateAggregatedEmailBody(context, null, useBetaTemplate);
+    protected String generateDailyAggregatedEmailBody(Map<String, Object> context, boolean useBetaTemplate) {
+        return generateAggregatedEmailBody(context, null, IntegrationType.EMAIL_DAILY_DIGEST_BODY, useBetaTemplate);
     }
 
-    protected String generateAggregatedEmailBody(Map<String, Object> originalContext, EmailPendo emailPendo, boolean useBetaTemplate) {
-        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, getBundle(), getApp(), null, useBetaTemplate);
+    protected String generateAggregatedEmailBody(Map<String, Object> originalContext, EmailPendo emailPendo, IntegrationType integrationType, boolean useBetaTemplate) {
+        TemplateDefinition templateDefinition = new TemplateDefinition(integrationType, getBundle(), getApp(), null, useBetaTemplate);
         Map<String, Object> context = new HashMap<>(originalContext); // to patch immutable maps from individual test cases
         context.put("application", getApp());
 
@@ -124,8 +124,8 @@ public abstract class EmailTemplatesRendererHelper {
         return generateEmailFromContextMap(globalDailyTemplateDefinition, mapData, emailPendo);
     }
 
-    protected String generateAggregatedEmailBody(Action action, boolean useBetaTemplate) {
-        return generateAggregatedEmailBody(templateService.convertActionToContextMap(action), useBetaTemplate);
+    protected String generateDailyAggregatedEmailBody(Action action, boolean useBetaTemplate) {
+        return generateDailyAggregatedEmailBody(templateService.convertActionToContextMap(action), useBetaTemplate);
     }
 
     protected String generateEmail(TemplateDefinition templateDefinition, Action action, EmailPendo pendo) {
@@ -194,15 +194,22 @@ public abstract class EmailTemplatesRendererHelper {
                 .filter(e -> !e.isBlank()).toList()));
     }
 
-    protected void generateAggregatedEmailBody(String jsonContext, String app, Map<String, DailyDigestSection> dataMap,  boolean useBetaVersion) throws JsonProcessingException {
-        generateAggregatedEmailBody(
+    protected void generateDailyAggregatedEmailBody(String jsonContext, String app, Map<String, DailyDigestSection> dataMap, boolean useBetaVersion) throws JsonProcessingException {
+        generateDailyAggregatedEmailBody(
                 objectMapper.readValue(jsonContext, new TypeReference<Map<String, Object>>() { }),
                 app,
                 dataMap,
                 useBetaVersion);
     }
 
-    protected void generateAggregatedEmailBody(Map<String, Object> context, String app, Map<String, DailyDigestSection> dataMap, boolean useBetaVersion) {
+    protected void generateWeeklyAggregatedEmailBody(Map<String, Object> context, String app, Map<String, DailyDigestSection> dataMap, boolean useBetaVersion) {
+        context.put("application", app);
+        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_WEEKLY_DIGEST_BODY, getBundle(), app, null, useBetaVersion);
+
+        addItem(dataMap, app, generateEmailFromContextMap(templateDefinition, context, null));
+    }
+
+    protected void generateDailyAggregatedEmailBody(Map<String, Object> context, String app, Map<String, DailyDigestSection> dataMap, boolean useBetaVersion) {
         context.put("application", app);
         TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_DAILY_DIGEST_BODY, getBundle(), app, null, useBetaVersion);
 
