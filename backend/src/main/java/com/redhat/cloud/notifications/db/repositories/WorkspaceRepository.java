@@ -69,6 +69,17 @@ public class WorkspaceRepository {
             );
         }
 
+        // Validate that the workspace belongs to the expected org
+        // This catches the scenario where RBAC returns the same workspace UUID for different orgs
+        if (!orgId.equals(workspace.getOrgId())) {
+            throw new IllegalStateException(
+                "Workspace UUID collision detected: workspace " + workspaceId +
+                " already exists for org_id=" + workspace.getOrgId() +
+                " but was requested for org_id=" + orgId +
+                ". This indicates either a bug in RBAC workspace assignment or data corruption."
+            );
+        }
+
         Log.debugf("Workspace ready: id=%s, orgId=%s", workspaceId, orgId);
         return workspace;
     }
