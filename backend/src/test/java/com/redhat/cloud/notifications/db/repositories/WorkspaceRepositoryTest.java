@@ -20,6 +20,7 @@ import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -61,6 +62,30 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
         assertEquals(workspace1.getOrgId(), workspace2.getOrgId());
         // Note: Not comparing timestamps due to potential precision differences between
         // Java LocalDateTime and PostgreSQL timestamp. The ID match proves idempotency.
+    }
+
+    @Test
+    void testCreateOrGetWorkspace_DetectsWorkspaceUuidCollision() {
+        UUID workspaceId = UUID.randomUUID();
+        String orgId1 = "test-org-first";
+        String orgId2 = "test-org-second";
+
+        // Create workspace for first org
+        workspaceRepository.createOrGetWorkspace(workspaceId, orgId1);
+
+        // Try to create workspace with same UUID for different org
+        // This should fail with clear error message (detects RBAC bug or data corruption)
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class,
+            () -> workspaceRepository.createOrGetWorkspace(workspaceId, orgId2),
+            "Should detect workspace UUID collision across different orgs"
+        );
+
+        // Verify error message is helpful for debugging
+        assertTrue(exception.getMessage().contains("Workspace UUID collision detected"));
+        assertTrue(exception.getMessage().contains(workspaceId.toString()));
+        assertTrue(exception.getMessage().contains(orgId1));
+        assertTrue(exception.getMessage().contains(orgId2));
     }
 
     @Test
