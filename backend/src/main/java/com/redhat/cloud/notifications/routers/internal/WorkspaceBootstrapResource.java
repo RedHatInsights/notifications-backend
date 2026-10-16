@@ -117,5 +117,20 @@ public class WorkspaceBootstrapResource {
         public void addError(String orgId, String message) {
             errors.put(orgId, message);
         }
+
+        @Override
+        public String toString() {
+            return String.format(
+                "BootstrapSummary{systemWorkspaceId=%s, systemEndpointsAssigned=%d, " +
+                "totalOrgsProcessed=%d, orgsProcessedSuccessfully=%d, orgEndpointsAssigned=%d, " +
+                "errorCount=%d}",
+                systemWorkspaceId,
+                systemEndpointsAssigned,
+                totalOrgsProcessed,
+                orgsProcessedSuccessfully,
+                orgEndpointsAssigned,
+                errors.size()
+            );
+        }
     }
 }
