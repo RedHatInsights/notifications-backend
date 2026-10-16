@@ -4,6 +4,7 @@ import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.db.repositories.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.repositories.DigestTriggerOrgConfigRepository;
+import com.redhat.cloud.notifications.helpers.DigestCronUtils;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfig;
 import com.redhat.cloud.notifications.models.SubscriptionType;
