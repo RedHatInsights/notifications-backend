@@ -16,6 +16,9 @@ public class NotificationsApp implements QuarkusApplication {
     @Inject
     DailyEmailAggregationJob dailyEmailAggregationJob;
 
+    @Inject
+    WeeklyEmailAggregationJob weeklyEmailAggregationJob;
+
     @Override
     public int run(String... args) {
         // Startup - SEC-MON-REQ-1 compliance (EOI-5 process_status)
@@ -23,7 +26,27 @@ public class NotificationsApp implements QuarkusApplication {
 
         Log.info(readGitProperties());
 
-        dailyEmailAggregationJob.processDailyEmail();
+        boolean dailyFailed = false;
+        try {
+            dailyEmailAggregationJob.processDailyEmail();
+        } catch (Exception e) {
+            dailyFailed = true;
+            Log.error("Daily email aggregation job failed", e);
+        }
+
+        try {
+            weeklyEmailAggregationJob.processWeeklyEmail();
+        } catch (Exception e) {
+            Log.error("Weekly email aggregation job failed", e);
+            if (dailyFailed) {
+                throw new RuntimeException("Both daily and weekly email aggregation jobs failed", e);
+            }
+            throw e;
+        }
+
+        if (dailyFailed) {
+            throw new RuntimeException("Daily email aggregation job failed");
+        }
 
         // Graceful shutdown - SEC-MON-REQ-1 compliance (EOI-5 process_status)
         Log.infof("[action: SHUTDOWN][resource_type: email_aggregator][principal: system][outcome: success] Email aggregator shutting down gracefully");
