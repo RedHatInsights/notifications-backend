@@ -199,23 +199,6 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
-    void testCountEndpointsWithoutWorkspace() {
-        // Create mix of assigned and unassigned endpoints
-        UUID workspaceId = UUID.randomUUID();
-        Workspace workspace = workspaceRepository.createOrGetWorkspace(workspaceId, "org-1");
-
-        createEndpoint("org-1", "assigned-1", workspace);
-        createEndpoint("org-1", "assigned-2", workspace);
-        createEndpoint("org-2", "unassigned-1", null);
-        createEndpoint("org-2", "unassigned-2", null);
-        createEndpoint("org-2", "unassigned-3", null);
-
-        long count = workspaceRepository.countEndpointsWithoutWorkspace();
-
-        assertEquals(3, count, "Should count 3 endpoints without workspace");
-    }
-
-    @Test
     void testGetOrgIdsNeedingWorkspaceAssignment() {
         // Create endpoints without workspace assignments for multiple orgs
         createEndpoint("org-alpha", "endpoint-1", null);

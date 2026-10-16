@@ -8,7 +8,6 @@ import com.redhat.cloud.notifications.models.Workspace;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -102,23 +101,8 @@ public class WorkspaceBootstrapResource {
             }
         }
 
-        summary.endpointsWithoutWorkspace = workspaceRepository.countEndpointsWithoutWorkspace();
-
         Log.infof("Workspace bootstrap completed: %s", summary);
         return summary;
-    }
-
-    /**
-     * Get current bootstrap status without making changes.
-     */
-    @GET
-    @Path("/status")
-    @Produces(APPLICATION_JSON)
-    public BootstrapStatus getBootstrapStatus() {
-        BootstrapStatus status = new BootstrapStatus();
-        status.endpointsWithoutWorkspace = workspaceRepository.countEndpointsWithoutWorkspace();
-        status.orgsNeedingWorkspaceAssignment = workspaceRepository.getOrgIdsNeedingWorkspaceAssignment().size();
-        return status;
     }
 
     // Inner classes for response DTOs
@@ -128,16 +112,10 @@ public class WorkspaceBootstrapResource {
         public int totalOrgsProcessed;
         public int orgsProcessedSuccessfully;
         public int orgEndpointsAssigned;
-        public long endpointsWithoutWorkspace;
         public Map<String, String> errors = new HashMap<>();
 
         public void addError(String orgId, String message) {
             errors.put(orgId, message);
         }
-    }
-
-    public static class BootstrapStatus {
-        public long endpointsWithoutWorkspace;
-        public int orgsNeedingWorkspaceAssignment;
     }
 }
