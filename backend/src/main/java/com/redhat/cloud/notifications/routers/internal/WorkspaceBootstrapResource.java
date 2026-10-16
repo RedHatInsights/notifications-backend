@@ -1,0 +1,136 @@
+package com.redhat.cloud.notifications.routers.internal;
+
+import com.redhat.cloud.notifications.Constants;
+import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
+import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
+import com.redhat.cloud.notifications.db.repositories.WorkspaceRepository;
+import com.redhat.cloud.notifications.models.Workspace;
+import io.quarkus.logging.Log;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
+
+@Path(Constants.API_INTERNAL + "/workspace")
+@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
+public class WorkspaceBootstrapResource {
+
+    @Inject
+    WorkspaceRepository workspaceRepository;
+
+    @Inject
+    WorkspaceUtils workspaceUtils;
+
+    /**
+     * Bootstrap workspace assignments for all existing endpoints.
+     *
+     * This is a one-time operation that:
+     * 1. Creates system workspace and assigns to system integrations
+     * 2. For each org with endpoints: fetches workspace UUID from RBAC,
+     *    creates workspace record, assigns to org's endpoints
+     *
+     * Safe to run multiple times (idempotent).
+     *
+     * Transaction strategy: This method is NOT @Transactional. Each repository
+     * method manages its own transaction. This ensures:
+     * - System workspace creation commits independently
+     * - Each org's workspace assignment commits independently
+     * - One org failing doesn't roll back other orgs
+     * - RBAC calls happen outside of database transactions (no long-running txns)
+     * - No transaction timeout with many orgs
+     */
+    @POST
+    @Path("/bootstrap")
+    @Produces(APPLICATION_JSON)
+    public BootstrapSummary bootstrapWorkspaces() {
+
+        BootstrapSummary summary = new BootstrapSummary();
+
+        // Step 1: Get system workspace (org_id = null)
+        // The system workspace is created by migration V1.143.0
+        Workspace systemWorkspace = workspaceRepository.getSystemWorkspace();
+
+        int systemEndpointsUpdated = workspaceRepository.assignSystemWorkspace(
+            systemWorkspace.getId()
+        );
+        summary.systemWorkspaceId = systemWorkspace.getId();
+        summary.systemEndpointsAssigned = systemEndpointsUpdated;
+
+        // Step 2: Process each org that has endpoints needing workspace assignment
+        List<String> orgIds = workspaceRepository.getOrgIdsNeedingWorkspaceAssignment();
+        summary.totalOrgsProcessed = orgIds.size();
+
+        for (String orgId : orgIds) {
+            try {
+                // Fetch workspace UUID from RBAC
+                UUID workspaceId = workspaceUtils.getDefaultWorkspaceId(orgId);
+
+                // Handle null workspace ID (can happen for very old orgs in production)
+                if (workspaceId == null) {
+                    Log.warnf("RBAC returned null workspace ID for org_id: %s - skipping", orgId);
+                    summary.addError(orgId, "RBAC returned null workspace ID (legacy org)");
+                    continue;
+                }
+
+                // Create or get workspace record
+                Workspace workspace = workspaceRepository.createOrGetWorkspace(
+                    workspaceId, orgId
+                );
+
+                // Assign to all endpoints for this org
+                int endpointsUpdated = workspaceRepository.assignWorkspaceToEndpoints(
+                    workspace.getId(), orgId
+                );
+
+                summary.orgEndpointsAssigned += endpointsUpdated;
+                summary.orgsProcessedSuccessfully++;
+
+            } catch (Exception e) {
+                Log.errorf(e, "Failed to bootstrap workspace for org_id: %s", orgId);
+                String errorMessage = e.getClass().getSimpleName() + ": " +
+                    (e.getMessage() != null ? e.getMessage() : "No error message");
+                summary.addError(orgId, errorMessage);
+            }
+        }
+
+        Log.infof("Workspace bootstrap completed: %s", summary);
+        return summary;
+    }
+
+    // Inner classes for response DTOs
+    public static class BootstrapSummary {
+        public UUID systemWorkspaceId;
+        public int systemEndpointsAssigned;
+        public int totalOrgsProcessed;
+        public int orgsProcessedSuccessfully;
+        public int orgEndpointsAssigned;
+        public Map<String, String> errors = new HashMap<>();
+
+        public void addError(String orgId, String message) {
+            errors.put(orgId, message);
+        }
+
+        @Override
+        public String toString() {
+            return String.format(
+                "BootstrapSummary{systemWorkspaceId=%s, systemEndpointsAssigned=%d, " +
+                "totalOrgsProcessed=%d, orgsProcessedSuccessfully=%d, orgEndpointsAssigned=%d, " +
+                "errorCount=%d}",
+                systemWorkspaceId,
+                systemEndpointsAssigned,
+                totalOrgsProcessed,
+                orgsProcessedSuccessfully,
+                orgEndpointsAssigned,
+                errors.size()
+            );
+        }
+    }
+}

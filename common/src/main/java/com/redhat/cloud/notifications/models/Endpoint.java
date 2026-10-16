@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
@@ -27,6 +28,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+
+import static jakarta.persistence.FetchType.LAZY;
 
 @Entity
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class) // TODO remove them once the transition to DTOs have been completed.
@@ -64,6 +67,15 @@ public class Endpoint extends CreationUpdateTimestamped {
     @JsonIgnore // TODO remove them once the transition to DTOs have been completed.
     @Size(max = 50)
     private String orgId;
+
+    @Transient
+    @JsonIgnore
+    private UUID workspaceId;
+
+    @ManyToOne(fetch = LAZY, optional = true)  // optional=true since workspace_id currently nullable
+    @JoinColumn(name = "workspace_id")
+    @JsonIgnore
+    private Workspace workspace;
 
     @NotNull
     @Size(max = 255)
@@ -156,6 +168,28 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     public void setOrgId(String orgId) {
         this.orgId = orgId;
+    }
+
+    /**
+     * Returns the workspace UUID for JSON serialization.
+     * Computed from the workspace relationship when available.
+     * Note: To modify workspace assignment, use setWorkspace(), not this getter.
+     */
+    public UUID getWorkspaceId() {
+        if (workspaceId == null && workspace != null) {
+            workspaceId = workspace.getId();
+        }
+        return workspaceId;
+    }
+
+    public Workspace getWorkspace() {
+        return workspace;
+    }
+
+    public void setWorkspace(Workspace workspace) {
+        this.workspace = workspace;
+        // Clear cached transient value so next getWorkspaceId() recomputes
+        this.workspaceId = null;
     }
 
     public String getName() {
