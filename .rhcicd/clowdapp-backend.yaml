@@ -136,6 +136,8 @@ objects:
           value: ${KESSEL_ENABLED}
         - name: NOTIFICATIONS_KESSEL_INSECURE_CLIENT_ENABLED
           value: ${KESSEL_INSECURE_CLIENT_ENABLED}
+        - name: NOTIFICATIONS_KESSEL_AUTHENTICATED
+          value: ${KESSEL_AUTHENTICATED}
         - name: NOTIFICATIONS_KESSEL_TIMEOUT_MS
           value: ${KESSEL_TIMEOUT_MS}
         - name: QUARKUS_REST_CLIENT_RBAC_AUTHENTICATION_READ_TIMEOUT
@@ -292,6 +294,9 @@ parameters:
 - name: KESSEL_INSECURE_CLIENT_ENABLED
   description: Is the insecure client enabled for Kessel?
   value: "false"
+- name: KESSEL_AUTHENTICATED
+  description: Manual override of the Kessel client security mode (true = TLS and OAuth2, false = insecure). Empty means use the Clowder V2 dependency endpoint flag, then KESSEL_INSECURE_CLIENT_ENABLED.
+  value: ""
 - name: KESSEL_TIMEOUT_MS
   description: Timeout in milliseconds for Kessel gRPC calls
   value: "30000"
