@@ -6,7 +6,6 @@ import com.redhat.cloud.notifications.db.repositories.WorkspaceRepository;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.HttpType;
 import com.redhat.cloud.notifications.models.WebhookProperties;
-import com.redhat.cloud.notifications.routers.internal.WorkspaceBootstrapResource.BootstrapStatus;
 import com.redhat.cloud.notifications.routers.internal.WorkspaceBootstrapResource.BootstrapSummary;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -39,31 +38,6 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
     WorkspaceRepository workspaceRepository;
 
     @Test
-    void testBootstrapStatusEndpoint() {
-        // Setup - Create endpoints without workspaces
-        String orgId1 = "test-org-1";
-        String orgId2 = "test-org-2";
-        createEndpoint(orgId1, "endpoint-1");
-        createEndpoint(orgId2, "endpoint-2");
-
-        // Execute - Call GET /internal/workspace/status
-        BootstrapStatus status = given()
-                        .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .contentType(JSON)
-            .when()
-            .get("/internal/workspace/status")
-            .then()
-            .statusCode(200)
-            .contentType(JSON)
-            .extract().as(BootstrapStatus.class);
-
-        // Verify - Returns correct counts
-        assertNotNull(status);
-        assertTrue(status.endpointsWithoutWorkspace >= 2, "Should have at least 2 endpoints without workspace");
-        assertTrue(status.orgsNeedingWorkspaceAssignment >= 2, "Should have at least 2 orgs needing workspace assignment");
-    }
-
-    @Test
     void testBootstrapCreatesOrgWorkspaces() {
         // Setup - Create endpoints for multiple orgs
         String orgId1 = "test-org-bootstrap-1";
@@ -71,8 +45,6 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         createEndpoint(orgId1, "endpoint-1");
         createEndpoint(orgId1, "endpoint-2");
         createEndpoint(orgId2, "endpoint-3");
-
-        long endpointsBeforeBootstrap = workspaceRepository.countEndpointsWithoutWorkspace();
 
         // Execute - Call bootstrap endpoint
         BootstrapSummary summary = given()
@@ -94,11 +66,6 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
 
         // Verify - Endpoints assigned to correct workspaces
         assertTrue(summary.orgEndpointsAssigned >= 3, "Should assign at least 3 org endpoints");
-
-        // Verify - Fewer endpoints without workspace after bootstrap
-        long endpointsAfterBootstrap = workspaceRepository.countEndpointsWithoutWorkspace();
-        assertTrue(endpointsAfterBootstrap < endpointsBeforeBootstrap,
-            "Endpoints without workspace should decrease after bootstrap");
     }
 
     @Test
@@ -270,8 +237,6 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Verify - All endpoints assigned
         assertEquals(11, summary.orgEndpointsAssigned,
             "Should assign all 11 endpoints");
-        assertEquals(0, summary.endpointsWithoutWorkspace,
-            "No endpoints should be left without workspace");
     }
 
     @Test

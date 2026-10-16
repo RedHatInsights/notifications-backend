@@ -118,14 +118,6 @@ public class WorkspaceRepository {
     }
 
     /**
-     * Count endpoints without workspace assignment.
-     */
-    public long countEndpointsWithoutWorkspace() {
-        String hql = "SELECT COUNT(e) FROM Endpoint e WHERE e.workspace IS NULL";
-        return entityManager.createQuery(hql, Long.class).getSingleResult();
-    }
-
-    /**
      * Bulk update endpoints to assign workspace.
      * Updates ALL endpoints for the org to guarantee consistency.
      * More efficient than loading/updating entities one by one.
