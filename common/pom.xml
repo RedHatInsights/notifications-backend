@@ -66,6 +66,12 @@
             <version>${mapstruct.version}</version>
         </dependency>
 
+        <!-- Cron expression parsing -->
+        <dependency>
+            <groupId>com.cronutils</groupId>
+            <artifactId>cron-utils</artifactId>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>io.quarkus</groupId>
