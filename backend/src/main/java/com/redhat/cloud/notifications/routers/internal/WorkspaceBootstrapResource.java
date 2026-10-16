@@ -55,7 +55,7 @@ public class WorkspaceBootstrapResource {
         BootstrapSummary summary = new BootstrapSummary();
 
         // Step 1: Get system workspace (org_id = null)
-        // The system workspace is created by migration V1.142.0
+        // The system workspace is created by migration V1.143.0
         Workspace systemWorkspace = workspaceRepository.getSystemWorkspace();
 
         int systemEndpointsUpdated = workspaceRepository.assignSystemWorkspace(

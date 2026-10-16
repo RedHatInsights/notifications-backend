@@ -90,7 +90,7 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
 
     @Test
     void testGetSystemWorkspace_ReturnsMigrationCreatedWorkspace() {
-        // System workspace is created by migration V1.142.0
+        // System workspace is created by migration V1.143.0
         Workspace workspace = workspaceRepository.getSystemWorkspace();
 
         assertNotNull(workspace);
@@ -247,7 +247,7 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
 
     @Test
     void testSystemWorkspaceHasNullOrgId() {
-        // Test that the system workspace (created by migration V1.142.0) has org_id = NULL
+        // Test that the system workspace (created by migration V1.143.0) has org_id = NULL
         // The unique constraint ensures only ONE workspace can have org_id IS NULL
         Workspace systemWorkspace = workspaceRepository.getSystemWorkspace();
 
@@ -258,7 +258,7 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
     @Test
     void testSystemWorkspaceConstantMatchesMigration() {
         // CRITICAL: Verify that WorkspaceRepository.SYSTEM_WORKSPACE_ID matches
-        // the UUID hardcoded in migration V1.142.0
+        // the UUID hardcoded in migration V1.143.0
         //
         // If this test fails, it means the Java constant and SQL migration are out of sync.
         // Both must use the same UUID derived from:
@@ -280,7 +280,7 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
         // Verify database has the expected UUID (migration inserted it)
         Workspace systemWorkspace = workspaceRepository.getSystemWorkspace();
         assertEquals(expectedSystemWorkspaceId, systemWorkspace.getId(),
-            "Migration V1.142.0 must have inserted workspace with expected UUID");
+            "Migration V1.143.0 must have inserted workspace with expected UUID");
     }
 
     @Test
