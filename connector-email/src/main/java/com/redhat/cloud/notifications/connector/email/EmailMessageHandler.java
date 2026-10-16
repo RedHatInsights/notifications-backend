@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE;
+import static com.redhat.cloud.notifications.qute.templates.IntegrationType.EMAIL_WEEKLY_DIGEST_BUNDLE_AGGREGATION_TITLE;
 import static java.util.stream.Collectors.toSet;
 
 @ApplicationScoped
@@ -42,6 +43,8 @@ public class EmailMessageHandler extends MessageHandler {
 
     static final String BOP_RESPONSE_TIME_METRIC = "email.bop.response.time";
     static final String RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC = "email.recipients_resolver.response.time";
+    static final String SUBSCRIPTION_TYPE_DAILY = "DAILY";
+    static final String SUBSCRIPTION_TYPE_WEEKLY = "WEEKLY";
 
     @Inject
     EmailConnectorConfig emailConnectorConfig;
@@ -92,9 +95,17 @@ public class EmailMessageHandler extends MessageHandler {
         final String orgId = emailNotification.orgId();
         if (emailNotification.isDailyDigest()) {
             EmailAggregation emailAggregation = objectMapper.convertValue(emailNotification.eventData(), EmailAggregation.class);
-            renderedSubject = renderEmailAggregationTitle(emailAggregation.bundleDisplayName());
-            renderedBody = emailAggregationProcessor.aggregate(emailAggregation, orgId, renderedSubject);
+            // For backward compatibility: if subscriptionType is null (old messages in Kafka), default to "DAILY"
+            String subscriptionType = emailNotification.subscriptionType() != null ? emailNotification.subscriptionType() : SUBSCRIPTION_TYPE_DAILY;
+            if (emailNotification.subscriptionType() == null) {
+                Log.warnf("subscriptionType is null for aggregated email [orgId=%s, historyId=%s], defaulting to DAILY (backward compatibility)",
+                    orgId, incomingCloudEvent.getId());
+            }
+            renderedSubject = renderEmailAggregationTitle(emailAggregation.bundleDisplayName(), subscriptionType);
+            renderedBody = emailAggregationProcessor.aggregate(emailAggregation, orgId, renderedSubject, subscriptionType);
         } else {
+            // Instant notifications: subscriptionType is not applicable (remains null)
+            // Analytics/metrics should treat null subscriptionType as instant notification
             renderedBody = renderInstantEmail(emailNotification, IntegrationType.EMAIL_BODY);
             renderedSubject = renderInstantEmail(emailNotification, IntegrationType.EMAIL_TITLE);
         }
@@ -188,9 +199,12 @@ public class EmailMessageHandler extends MessageHandler {
         return templateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
     }
 
-    private String renderEmailAggregationTitle(String bundleDisplayName) {
-        TemplateDefinition templateDefinition = new TemplateDefinition(
-            EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE, null, null, null);
+    private String renderEmailAggregationTitle(String bundleDisplayName, String subscriptionType) {
+        IntegrationType integrationType = SUBSCRIPTION_TYPE_WEEKLY.equals(subscriptionType)
+            ? EMAIL_WEEKLY_DIGEST_BUNDLE_AGGREGATION_TITLE
+            : EMAIL_DAILY_DIGEST_BUNDLE_AGGREGATION_TITLE;
+
+        TemplateDefinition templateDefinition = new TemplateDefinition(integrationType, null, null, null);
         Map<String, Object> mapDataTitle = Map.of("source", Map.of("bundle", Map.of("display_name", bundleDisplayName)));
         return templateService.renderTemplateWithCustomDataMap(templateDefinition, mapDataTitle);
     }

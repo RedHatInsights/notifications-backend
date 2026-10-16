@@ -46,6 +46,7 @@ public class EndpointProcessor {
     public static final String NOTIFICATIONS_APP_BUNDLE_NAME = "console";
     public static final String NOTIFICATIONS_APP_NAME = "notifications";
     public static final String AGGREGATION_EVENT_TYPE_NAME = "aggregation";
+    public static final String WEEKLY_AGGREGATION_EVENT_TYPE_NAME = "weekly-aggregation";
 
     @Inject
     EndpointRepository endpointRepository;
@@ -212,7 +213,7 @@ public class EndpointProcessor {
 
             return NOTIFICATIONS_APP_BUNDLE_NAME.equals(action.getBundle()) &&
                 NOTIFICATIONS_APP_NAME.equals(action.getApplication()) &&
-                AGGREGATION_EVENT_TYPE_NAME.equals(action.getEventType());
+                    (AGGREGATION_EVENT_TYPE_NAME.equals(action.getEventType()) || WEEKLY_AGGREGATION_EVENT_TYPE_NAME.equals(action.getEventType()));
         }
         return false;
     }

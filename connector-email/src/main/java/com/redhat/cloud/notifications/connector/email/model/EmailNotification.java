@@ -23,6 +23,10 @@ import java.util.Map;
  *                              default.
  * @param recipientsAuthorizationCriterion   forward received authorization criterion.
  * @param eventData                         the event details.
+ * @param subscriptionType      the subscription type (INSTANT, DAILY, WEEKLY, DRAWER).
+ *                              Can be null for backward compatibility with messages
+ *                              in Kafka that were created before this field was added.
+ *                              Defaults to DAILY when null for aggregated emails.
  *
  */
 public record EmailNotification(
@@ -34,6 +38,7 @@ public record EmailNotification(
     @JsonProperty("subscribed_by_default")  boolean subscribedByDefault,
     @JsonProperty("recipients_authorization_criterion") JsonObject recipientsAuthorizationCriterion,
     @JsonProperty("event_data")             Map<String, Object> eventData,
-    @JsonProperty("id_daily_digest")        boolean isDailyDigest
+    @JsonProperty("id_daily_digest")        boolean isDailyDigest,
+    @JsonProperty("subscription_type")      String subscriptionType
 ) { }
 

@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.processors.email.connector.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import java.util.Collection;
 import java.util.Map;
 
@@ -23,6 +24,7 @@ import java.util.Map;
  *                                         default.
  * @param recipientsAuthorizationCriterion forward received authorization criterion.
  * @param eventData                         the event details.
+ * @param subscriptionType                  the subscription type (INSTANT, DAILY, WEEKLY, DRAWER).
  */
 public record EmailNotification(
     @JsonProperty("email_sender")           String emailSender,
@@ -33,5 +35,6 @@ public record EmailNotification(
     @JsonProperty("subscribed_by_default")  boolean subscribedByDefault,
     @JsonProperty("recipients_authorization_criterion") RecipientsAuthorizationCriterion recipientsAuthorizationCriterion,
     @JsonProperty("event_data") Map<String, Object> eventData,
-    @JsonProperty("id_daily_digest")        boolean isDailyDigest
+    @JsonProperty("id_daily_digest")        boolean isDailyDigest,
+    @JsonProperty("subscription_type")      SubscriptionType subscriptionType
 ) { }

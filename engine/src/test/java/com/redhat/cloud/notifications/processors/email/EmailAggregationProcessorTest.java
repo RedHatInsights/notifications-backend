@@ -52,6 +52,7 @@ import java.util.UUID;
 
 import static com.redhat.cloud.notifications.events.EventConsumer.INGRESS_CHANNEL;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
+import static com.redhat.cloud.notifications.models.SubscriptionType.WEEKLY;
 import static com.redhat.cloud.notifications.processors.email.EmailAggregationProcessor.AGGREGATION_COMMAND_ERROR_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.email.EmailAggregationProcessor.AGGREGATION_COMMAND_PROCESSED_COUNTER_NAME;
 import static com.redhat.cloud.notifications.processors.email.EmailAggregationProcessor.AGGREGATION_COMMAND_REJECTED_COUNTER_NAME;
@@ -559,6 +560,82 @@ class EmailAggregationProcessorTest {
                 anyInt()
             );
         }
+    }
+
+    @Test
+    void shouldIncludeSubscriptionTypeInDailyDigestPayload() {
+        final String ORG_ID = RandomStringUtils.secure().nextAlphanumeric(6);
+
+        EventAggregationCriterion aggregationKey = buildEmailAggregationKey(ORG_ID, "rhel", "advisor");
+
+        List<EmailAggregation> eventToAggregate = List.of(
+            createAdvisorEmailAggregation(ORG_ID, null)
+        );
+
+        for (EmailAggregation aggregation : eventToAggregate) {
+            aggregation.getPayload().remove(BaseTransformer.SOURCE);
+            resourceHelpers.addEventEmailAggregation(aggregation.getOrgId(), aggregation.getBundleName(), aggregation.getApplicationName(), aggregation.getPayload());
+        }
+
+        // Send aggregation with DAILY subscription type
+        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorActionFromKey(List.of(aggregationKey)));
+
+        ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
+        verify(connectorSender, timeout(5000L)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
+
+        EmailNotification capturedEmailNotification = argumentCaptor.getValue().mapTo(EmailNotification.class);
+        assertEquals(DAILY, capturedEmailNotification.subscriptionType());
+        assertTrue(capturedEmailNotification.isDailyDigest());
+    }
+
+    @Test
+    void shouldIncludeSubscriptionTypeInWeeklyDigestPayload() {
+        final String ORG_ID = RandomStringUtils.secure().nextAlphanumeric(6);
+
+        EventAggregationCriterion aggregationKey = buildEmailAggregationKey(ORG_ID, "rhel", "advisor");
+
+        List<EmailAggregation> eventToAggregate = List.of(
+            createAdvisorEmailAggregation(ORG_ID, null)
+        );
+
+        for (EmailAggregation aggregation : eventToAggregate) {
+            aggregation.getPayload().remove(BaseTransformer.SOURCE);
+            resourceHelpers.addEventEmailAggregation(aggregation.getOrgId(), aggregation.getBundleName(), aggregation.getApplicationName(), aggregation.getPayload());
+        }
+
+        // Build aggregation command with WEEKLY subscription type
+        AggregationCommand weeklyCommand = new AggregationCommand(
+            aggregationKey,
+            LocalDateTime.now(UTC).minusDays(7),
+            LocalDateTime.now(UTC),
+            WEEKLY
+        );
+
+        Payload.PayloadBuilder payloadBuilder = new Payload.PayloadBuilder();
+        Map<String, Object> payload = JsonObject.mapFrom(weeklyCommand).getMap();
+        payload.forEach(payloadBuilder::withAdditionalProperty);
+
+        com.redhat.cloud.notifications.ingress.Event event = new com.redhat.cloud.notifications.ingress.Event.EventBuilder()
+            .withMetadata(new Metadata.MetadataBuilder().build())
+            .withPayload(payloadBuilder.build())
+            .build();
+
+        Action.ActionBuilder actionBuilder = (Action.ActionBuilder) new Action.ActionBuilder()
+            .withBundle(BUNDLE_NAME)
+            .withApplication(APP_NAME)
+            .withEventType(EVENT_TYPE_NAME)
+            .withOrgId(ORG_ID)
+            .withTimestamp(LocalDateTime.now(UTC))
+            .withEvents(List.of(event));
+
+        inMemoryConnector.source(INGRESS_CHANNEL).send(Parser.encode(actionBuilder.build()));
+
+        ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
+        verify(connectorSender, timeout(5000L)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
+
+        EmailNotification capturedEmailNotification = argumentCaptor.getValue().mapTo(EmailNotification.class);
+        assertEquals(WEEKLY, capturedEmailNotification.subscriptionType());
+        assertTrue(capturedEmailNotification.isDailyDigest()); // isDailyDigest is true for both daily and weekly
     }
 
     private void createAggregationsAndSendAggregationKeysToIngress(List<EmailAggregation> eventToAggregate, EventAggregationCriterion... aggregationKeys) {
