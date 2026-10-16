@@ -14,12 +14,19 @@ objects:
     envName: ${ENV_NAME}
     dependencies:
     - notifications-backend
+    - notifications-recipients-resolver
     database:
       sharedDbAppName: notifications-backend
     featureFlags: true
     kafkaTopics:
     - topicName: platform.notifications.ingress
       partitions: 3
+      replicas: 3
+    - topicName: platform.notifications.tocamel
+      partitions: 3
+      replicas: 3
+    - topicName: platform.notifications.connector.email.high.volume
+      partitions: 6
       replicas: 3
     jobs:
     - name: cronjob

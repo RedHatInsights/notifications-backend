@@ -1,6 +1,10 @@
 package com.redhat.cloud.notifications;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.config.AggregatorConfig;
+import com.redhat.cloud.notifications.db.AggregationOrgConfigRepository;
+import com.redhat.cloud.notifications.db.EndpointRepository;
+import com.redhat.cloud.notifications.db.EventRepository;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.helpers.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -9,8 +13,12 @@ import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.processors.email.EmailAggregationProcessor;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -24,6 +32,7 @@ import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import java.time.LocalDateTime;
@@ -31,14 +40,22 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @QuarkusTest
@@ -51,9 +68,27 @@ class DailyEventAggregationJobTest {
     @InjectSpy
     DailyEmailAggregationJob dailyEmailAggregationJob;
 
+    @InjectSpy
+    AggregatorConfig aggregatorConfig;
+
+    @InjectSpy
+    EventRepository eventRepository;
+
+    @InjectSpy
+    EndpointRepository endpointRepository;
+
+    @InjectSpy
+    AggregationOrgConfigRepository aggregationOrgConfigRepository;
+
+    @InjectSpy
+    EmailAggregationProcessor emailAggregationProcessor;
+
     @Inject
     @Any
     InMemoryConnector connector;
+
+    @Inject
+    MeterRegistry meterRegistry;
 
     @Inject
     ObjectMapper objectMapper;
@@ -139,6 +174,118 @@ class DailyEventAggregationJobTest {
         checkAggCommand(listCommand, "anotherOrgId", "rhel", "unknown-application");
         checkAggCommand(listCommand, "someOrgId", "rhel", "policies");
         checkAggCommand(listCommand, "someOrgId", "rhel", "unknown-application");
+    }
+
+    /**
+     * Verifies the piece 5 per-org routing: flagged orgs skip the legacy Kafka
+     * publish entirely and go through the direct-dispatch pipeline instead (proven here
+     * by the trigger {@link com.redhat.cloud.notifications.models.Event} being
+     * persisted via {@link EventRepository#create}), while unflagged orgs keep
+     * using the legacy path unchanged.
+     */
+    @Test
+    void shouldRouteFlaggedOrgThroughDirectDispatchPipelineInsteadOfKafka() {
+        when(aggregatorConfig.isAggregatorDirectDispatchEnabled(eq("someOrgId"))).thenReturn(true);
+
+        double directDispatchCountBefore = meterRegistry.counter(
+            DailyEmailAggregationJob.AGGREGATION_PIPELINE_PATH_COUNTER_NAME, DailyEmailAggregationJob.TAG_KEY_PATH, DailyEmailAggregationJob.PATH_DIRECT_DISPATCH).count();
+        double legacyCountBefore = meterRegistry.counter(
+            DailyEmailAggregationJob.AGGREGATION_PIPELINE_PATH_COUNTER_NAME, DailyEmailAggregationJob.TAG_KEY_PATH, DailyEmailAggregationJob.PATH_LEGACY).count();
+
+        addEventEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        addEventEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        dailyEmailAggregationJob.setDefaultDailyDigestTime(baseReferenceTime.toLocalTime());
+
+        dailyEmailAggregationJob.processDailyEmail();
+
+        // The flagged org's group never gets encoded and published to the egress topic.
+        List<Action> actions = getActionRecordsFromKafka();
+        assertTrue(actions.stream().noneMatch(action -> "someOrgId".equals(action.getOrgId())),
+            "the flagged org should not use the legacy Kafka-publish path");
+        assertTrue(actions.stream().anyMatch(action -> "anotherOrgId".equals(action.getOrgId())),
+            "the unflagged org should still use the legacy Kafka-publish path");
+
+        // The flagged org's group persisted its own trigger Event via direct dispatch instead.
+        verify(eventRepository, timeout(5000L)).create(any());
+
+        // Rollout-progress metric: one increment per org per run, tagged by the path taken.
+        assertEquals(directDispatchCountBefore + 1, meterRegistry.counter(
+            DailyEmailAggregationJob.AGGREGATION_PIPELINE_PATH_COUNTER_NAME, DailyEmailAggregationJob.TAG_KEY_PATH, DailyEmailAggregationJob.PATH_DIRECT_DISPATCH).count());
+        assertEquals(legacyCountBefore + 1, meterRegistry.counter(
+            DailyEmailAggregationJob.AGGREGATION_PIPELINE_PATH_COUNTER_NAME, DailyEmailAggregationJob.TAG_KEY_PATH, DailyEmailAggregationJob.PATH_LEGACY).count());
+    }
+
+    /**
+     * Regression test for a code-review finding: before the fix, an uncaught exception
+     * while processing one org's bundle group (either path) propagated out of the
+     * per-org loop in processDailyEmail(), aborting the whole run -- which skipped
+     * updateLastCronJobRunAccordingOrgPref for every org, including ones already
+     * processed successfully earlier in the same run.
+     */
+    @Test
+    void shouldNotAbortWholeRunWhenOneOrgsBundleGroupFails() {
+        when(aggregatorConfig.isAggregatorDirectDispatchEnabled(eq("someOrgId"))).thenReturn(true);
+        when(aggregatorConfig.isAggregatorDirectDispatchEnabled(eq("anotherOrgId"))).thenReturn(true);
+
+        doThrow(new RuntimeException("simulated failure"))
+            .when(endpointRepository).getTargetEmailEndpointsForAggregation(eq("someOrgId"), anySet());
+
+        double errorCountBefore = meterRegistry.counter(
+            DailyEmailAggregationJob.AGGREGATION_BUNDLE_GROUP_ERROR_COUNTER_NAME, DailyEmailAggregationJob.TAG_KEY_PATH, DailyEmailAggregationJob.PATH_DIRECT_DISPATCH).count();
+
+        addEventEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        addEventEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        dailyEmailAggregationJob.setDefaultDailyDigestTime(baseReferenceTime.toLocalTime());
+
+        dailyEmailAggregationJob.processDailyEmail();
+
+        // Both orgs' trigger events got persisted even though "someOrgId"'s endpoint lookup failed.
+        verify(eventRepository, timeout(5000L).times(2)).create(any());
+
+        // The failure is contained and counted, not silently swallowed.
+        assertEquals(errorCountBefore + 1, meterRegistry.counter(
+            DailyEmailAggregationJob.AGGREGATION_BUNDLE_GROUP_ERROR_COUNTER_NAME, DailyEmailAggregationJob.TAG_KEY_PATH, DailyEmailAggregationJob.PATH_DIRECT_DISPATCH).count());
+
+        // The run completed and still updated bookkeeping for both orgs -- proving it wasn't aborted.
+        verify(aggregationOrgConfigRepository, timeout(5000L)).updateLastCronJobRunAccordingOrgPref(
+            argThat(orgIds -> orgIds.containsAll(List.of("someOrgId", "anotherOrgId"))), any());
+    }
+
+    /**
+     * Mirrors engine's {@code EndpointProcessor} behavior: a blacklisted endpoint
+     * (an ops kill-switch, Unleash-backed) must not receive aggregated emails on the
+     * direct-dispatch path, while a non-blacklisted endpoint for the same org still does.
+     */
+    @Test
+    void shouldFilterOutBlacklistedEndpointOnDirectDispatchPath() {
+        when(aggregatorConfig.isAggregatorDirectDispatchEnabled(eq("someOrgId"))).thenReturn(true);
+
+        Endpoint blacklistedEndpoint = new Endpoint();
+        blacklistedEndpoint.setId(UUID.randomUUID());
+        blacklistedEndpoint.setOrgId("someOrgId");
+        blacklistedEndpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+
+        Endpoint allowedEndpoint = new Endpoint();
+        allowedEndpoint.setId(UUID.randomUUID());
+        allowedEndpoint.setOrgId("someOrgId");
+        allowedEndpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+
+        when(endpointRepository.getTargetEmailEndpointsForAggregation(eq("someOrgId"), anySet()))
+            .thenReturn(new ArrayList<>(List.of(blacklistedEndpoint, allowedEndpoint)));
+        when(aggregatorConfig.isBlacklistedEndpoint(eq(blacklistedEndpoint.getId()))).thenReturn(true);
+        Mockito.doNothing().when(emailAggregationProcessor).processBundleAggregation(any(), any(), any());
+
+        addEventEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
+        dailyEmailAggregationJob.setDefaultDailyDigestTime(baseReferenceTime.toLocalTime());
+
+        dailyEmailAggregationJob.processDailyEmail();
+
+        ArgumentCaptor<List<Endpoint>> endpointsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(emailAggregationProcessor, timeout(5000L)).processBundleAggregation(any(), any(), endpointsCaptor.capture());
+
+        List<Endpoint> dispatchedEndpoints = endpointsCaptor.getValue();
+        assertTrue(dispatchedEndpoints.contains(allowedEndpoint), "the non-blacklisted endpoint should still receive the aggregated email");
+        assertFalse(dispatchedEndpoints.contains(blacklistedEndpoint), "the blacklisted endpoint must not receive the aggregated email");
     }
 
     @Test

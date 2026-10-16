@@ -3,6 +3,10 @@ package com.redhat.cloud.notifications;
 import com.redhat.cloud.notifications.config.AggregatorConfig;
 import com.redhat.cloud.notifications.db.AggregationOrgConfigRepository;
 import com.redhat.cloud.notifications.db.EmailAggregationRepository;
+import com.redhat.cloud.notifications.db.EndpointRepository;
+import com.redhat.cloud.notifications.db.EventRepository;
+import com.redhat.cloud.notifications.db.EventTypeRepository;
+import com.redhat.cloud.notifications.events.EventWrapperAction;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
@@ -10,6 +14,10 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.models.Endpoint;
+import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.processors.email.EmailAggregationProcessor;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.HTTPServer;
@@ -32,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -45,6 +54,26 @@ public class DailyEmailAggregationJob {
     public static final String APP_NAME = "notifications";
     public static final String EVENT_TYPE_NAME = "aggregation";
 
+    /**
+     * Counts, once per org per run, which pipeline an org's aggregation was routed
+     * through -- gives direct visibility into canary-rollout progress (how many orgs
+     * are on which path right now) without cross-referencing Unleash's admin UI
+     * against job logs.
+     */
+    public static final String AGGREGATION_PIPELINE_PATH_COUNTER_NAME = "aggregator.pipeline.path";
+    public static final String TAG_KEY_PATH = "path";
+    public static final String PATH_LEGACY = "legacy";
+    public static final String PATH_DIRECT_DISPATCH = "direct-dispatch";
+
+    /**
+     * Counts bundle-group dispatch attempts (either path) that failed with an
+     * uncaught exception. Kept from propagating out of the per-org/per-bundle loop
+     * so that one org's failure doesn't abort the whole cron run -- which would skip
+     * {@code updateLastCronJobRunAccordingOrgPref} for every org, including ones
+     * already processed successfully earlier in the same run.
+     */
+    public static final String AGGREGATION_BUNDLE_GROUP_ERROR_COUNTER_NAME = "aggregator.pipeline.bundle.group.error";
+
     @Inject
     AggregatorConfig aggregatorConfig;
 
@@ -53,6 +82,21 @@ public class DailyEmailAggregationJob {
 
     @Inject
     AggregationOrgConfigRepository aggregationOrgConfigRepository;
+
+    @Inject
+    EventTypeRepository eventTypeRepository;
+
+    @Inject
+    EventRepository eventRepository;
+
+    @Inject
+    EndpointRepository endpointRepository;
+
+    @Inject
+    EmailAggregationProcessor emailAggregationProcessor;
+
+    @Inject
+    MeterRegistry meterRegistry;
 
     @ConfigProperty(name = "prometheus.pushgateway.url", defaultValue = "http://localhost:8080")
     String prometheusPushGatewayUrl;
@@ -98,11 +142,30 @@ public class DailyEmailAggregationJob {
 
             aggregationCommands.stream()
                 .collect(Collectors.groupingBy(AggregationCommand::getOrgId))
-                .values()
-                .forEach(val -> val.stream()
-                    .collect(Collectors.groupingBy(AggregationCommand::getBundleId))
-                    .values()
-                    .forEach(this::sendIt));
+                .forEach((orgId, orgCommands) -> {
+                    boolean directDispatch = aggregatorConfig.isAggregatorDirectDispatchEnabled(orgId);
+                    String path = directDispatch ? PATH_DIRECT_DISPATCH : PATH_LEGACY;
+
+                    // Rollout-progress compliance log + metric - SEC-MON-REQ-1 (EOI-5 process_status)
+                    Log.infof("[action: SELECT_AGGREGATION_PATH][resource_type: daily_email_aggregation][principal: system][outcome: success] Org %s routed to %s path", orgId, path);
+                    meterRegistry.counter(AGGREGATION_PIPELINE_PATH_COUNTER_NAME, TAG_KEY_PATH, path).increment();
+
+                    orgCommands.stream()
+                        .collect(Collectors.groupingBy(AggregationCommand::getBundleId))
+                        .values()
+                        .forEach(bundleCommands -> {
+                            try {
+                                if (directDispatch) {
+                                    processDirectDispatch(bundleCommands);
+                                } else {
+                                    sendIt(bundleCommands);
+                                }
+                            } catch (Exception ex) {
+                                Log.errorf(ex, "[org_id: %s] Error processing aggregation on the %s path, skipping this bundle group", orgId, path);
+                                meterRegistry.counter(AGGREGATION_BUNDLE_GROUP_ERROR_COUNTER_NAME, TAG_KEY_PATH, path).increment();
+                            }
+                        });
+                });
 
             List<String> orgIdsToUpdate = aggregationCommands.stream().map(aggregationCommand -> aggregationCommand.getOrgId()).collect(Collectors.toList());
             Log.debugf("Found following org IDs to update: %s", orgIdsToUpdate);
@@ -213,7 +276,7 @@ public class DailyEmailAggregationJob {
         return pendingAggregationCommands;
     }
 
-    private void sendIt(List<AggregationCommand> aggregationCommands) {
+    private Action buildAction(List<AggregationCommand> aggregationCommands) {
         List<Event> eventList = new ArrayList<>();
         aggregationCommands.stream().forEach(aggregationCommand -> {
             Payload.PayloadBuilder payloadBuilder = new Payload.PayloadBuilder();
@@ -226,7 +289,7 @@ public class DailyEmailAggregationJob {
                 .build());
         });
 
-        Action action = new Action.ActionBuilder()
+        return new Action.ActionBuilder()
             .withId(UUID.randomUUID())
             .withBundle(BUNDLE_NAME)
             .withApplication(APP_NAME)
@@ -238,11 +301,55 @@ public class DailyEmailAggregationJob {
                 .withAdditionalProperty("single_daily_digest_enabled", true)
                 .build())
             .build();
+    }
+
+    private void sendIt(List<AggregationCommand> aggregationCommands) {
+        Action action = buildAction(aggregationCommands);
 
         String encodedAction = Parser.encode(action);
         Log.infof("Encoded Payload: %s", encodedAction);
         Message<String> message = Message.of(encodedAction);
         emitterIngress.send(message);
+    }
+
+    /**
+     * Per-org direct-dispatch counterpart to {@link #sendIt}: instead of publishing the
+     * {@code AggregationCommand} trigger to {@code ingress} for the engine to pick up,
+     * builds and persists the same trigger {@link Event} directly, then runs the ported
+     * data-aggregation/recipient-resolution/dispatch pipeline in this process.
+     */
+    private void processDirectDispatch(List<AggregationCommand> aggregationCommands) {
+        String orgId = aggregationCommands.get(0).getOrgId();
+        Action action = buildAction(aggregationCommands);
+
+        EventType eventType = eventTypeRepository.getEventType(BUNDLE_NAME, APP_NAME, EVENT_TYPE_NAME);
+        com.redhat.cloud.notifications.models.Event aggregatorEvent = new com.redhat.cloud.notifications.models.Event(
+            eventType, Parser.encode(action), new EventWrapperAction(action), Optional.empty(), null);
+        eventRepository.create(aggregatorEvent);
+
+        // Direct-dispatch trigger Event persisted - SEC-MON-REQ-1 compliance (EOI-3 admin_action, EOI-5 process_status)
+        Log.infof("[action: CREATE_EVENT][resource_type: aggregation_event][principal: system][outcome: success] Persisted direct-dispatch aggregation trigger event [org_id: %s, event_id: %s]",
+            orgId, aggregatorEvent.getId());
+
+        Set<UUID> applicationIds = aggregationCommands.stream()
+            .map(cmd -> cmd.getAggregationKey().getApplicationId())
+            .collect(Collectors.toSet());
+
+        List<Endpoint> endpoints = endpointRepository.getTargetEmailEndpointsForAggregation(orgId, applicationIds);
+        endpoints.removeIf(endpoint -> {
+            // Default endpoints (orgId is null) used as system integrations for all orgs can't be blacklisted.
+            if (null != endpoint.getOrgId() && aggregatorConfig.isBlacklistedEndpoint(endpoint.getId())) {
+                Log.infof("Org: %s, skipping endpoint: %s because it was blacklisted", endpoint.getOrgId(), endpoint.getId());
+                return true;
+            }
+            return false;
+        });
+        if (endpoints.isEmpty()) {
+            Log.warnf("[org_id: %s] No target email endpoints found for aggregation, skipping", orgId);
+            return;
+        }
+
+        emailAggregationProcessor.processBundleAggregation(aggregationCommands, aggregatorEvent, endpoints);
     }
 
     Gauge getPairsProcessed() {

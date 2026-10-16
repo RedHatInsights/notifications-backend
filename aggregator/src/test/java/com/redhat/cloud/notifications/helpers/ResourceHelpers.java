@@ -85,6 +85,19 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
         return entityManager.merge(emailEndpoint);
     }
 
+    @Transactional
+    public Endpoint createEndpoint(final EndpointType type, final String subType, final boolean enabled, final int serverErrors) {
+        Endpoint endpoint = new Endpoint();
+        endpoint.setType(type);
+        endpoint.setSubType(subType);
+        endpoint.setName("endpoint-" + RandomStringUtils.secure().nextAlphabetic(10));
+        endpoint.setDescription("Endpoint description");
+        endpoint.setEnabled(enabled);
+        endpoint.setServerErrors(serverErrors);
+        entityManager.persist(endpoint);
+        return endpoint;
+    }
+
     public Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, LocalDateTime created, String eventPayload, boolean useSystemEndpoint) {
         findOrCreateBundle(bundleName);
         Application application = findOrCreateApplication(bundleName, applicationName);

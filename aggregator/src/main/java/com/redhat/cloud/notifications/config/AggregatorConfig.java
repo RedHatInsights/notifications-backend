@@ -3,7 +3,9 @@ package com.redhat.cloud.notifications.config;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
+import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
+import io.getunleash.UnleashContext;
 import io.getunleash.variant.Payload;
 import io.getunleash.variant.Variant;
 import io.quarkus.logging.Log;
@@ -18,6 +20,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.UUID;
 
 @ApplicationScoped
 public class AggregatorConfig {
@@ -29,11 +32,39 @@ public class AggregatorConfig {
     private static final String METRICS_SCRAPE_MODE_ENABLED = "notifications.aggregator.metrics.scrape-mode-enabled";
     private static final String METRICS_SCRAPE_KEEP_ALIVE_SECONDS = "notifications.aggregator.metrics.scrape-keep-alive-seconds";
     private static final int DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS = 150;
+    private static final String KAFKA_TOCAMEL_MAXIMUM_REQUEST_SIZE = "mp.messaging.outgoing.tocamel.max.request.size";
+    private static final String NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE = "notifications.email.sender.hybrid.cloud.console";
+    private static final String NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE = "notifications.email.sender.openshift.stage";
+    private static final String NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD = "notifications.email.sender.openshift.prod";
+    private static final String NOTIFICATIONS_EMAIL_SENDER_LIGHTWELL = "notifications.email.sender.lightwell";
+    private static final String RH_HCC_SENDER = "\"Red Hat Hybrid Cloud Console\" noreply@redhat.com";
+    private static final String OPENSHIFT_SENDER_STAGE_NOREPLY_REDHAT = "\"Red Hat OpenShift (staging)\" noreply@redhat.com";
+    private static final String OPENSHIFT_SENDER_PROD_NOREPLY_REDHAT = "\"Red Hat OpenShift\" noreply@redhat.com";
+    private static final String LIGHTWELL_SENDER_NOREPLY_REDHAT = "\"Lightwell\" noreply@redhat.com";
 
     /*
      * Unleash configuration
      */
     private String activeClusterToggle;
+    private String toggleIncludeSeverityToFilterRecipients;
+    private String toggleKafkaOutgoingHighVolumeTopic;
+    private String toggleDirectDispatch;
+    private String toggleBlacklistedEndpoints;
+
+    @ConfigProperty(name = KAFKA_TOCAMEL_MAXIMUM_REQUEST_SIZE, defaultValue = "10485760")
+    int kafkaToCamelMaximumRequestSize;
+
+    @ConfigProperty(name = NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE, defaultValue = RH_HCC_SENDER)
+    String rhHccSender;
+
+    @ConfigProperty(name = NOTIFICATIONS_EMAIL_SENDER_LIGHTWELL, defaultValue = LIGHTWELL_SENDER_NOREPLY_REDHAT)
+    String rhLightwellSender;
+
+    @ConfigProperty(name = NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE, defaultValue = OPENSHIFT_SENDER_STAGE_NOREPLY_REDHAT)
+    String rhOpenshiftSenderStage;
+
+    @ConfigProperty(name = NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, defaultValue = OPENSHIFT_SENDER_PROD_NOREPLY_REDHAT)
+    String rhOpenshiftSenderProd;
 
     @ConfigProperty(name = CLUSTER_ID)
     Optional<String> clusterId;
@@ -54,6 +85,79 @@ public class AggregatorConfig {
     void registerToggles() {
         activeClusterToggle = toggleRegistry.register("notifications-aggregator-active-cluster", true);
         Log.infof("Registered Unleash toggle: %s", activeClusterToggle);
+        toggleIncludeSeverityToFilterRecipients = toggleRegistry.register("include-severity-to-filter-recipients", true);
+        Log.infof("Registered Unleash toggle: %s", toggleIncludeSeverityToFilterRecipients);
+        toggleKafkaOutgoingHighVolumeTopic = toggleRegistry.register("kafka-outgoing-high-volume-topic", true);
+        Log.infof("Registered Unleash toggle: %s", toggleKafkaOutgoingHighVolumeTopic);
+        toggleDirectDispatch = toggleRegistry.register("notifications-aggregator-direct-dispatch", true);
+        Log.infof("Registered Unleash toggle: %s", toggleDirectDispatch);
+        toggleBlacklistedEndpoints = toggleRegistry.register("blacklisted-endpoints", true);
+        Log.infof("Registered Unleash toggle: %s", toggleBlacklistedEndpoints);
+    }
+
+    /**
+     * Ops kill-switch to stop delivery to a specific misbehaving endpoint without a
+     * deploy. Default (system-wide, {@code orgId == null}) endpoints can't be
+     * blacklisted -- callers should skip this check for those, matching engine's
+     * {@code EndpointProcessor} behavior.
+     */
+    public boolean isBlacklistedEndpoint(final UUID endpointId) {
+        if (null != endpointId) {
+            UnleashContext unleashContext = UnleashContext.builder()
+                .addProperty("endpointId", endpointId.toString())
+                .build();
+            return unleash.isEnabled(toggleBlacklistedEndpoints, unleashContext, false);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Per-org kill-switch deciding whether an org's aggregation is dispatched
+     * directly by this module (owns data aggregation, recipient resolution,
+     * and dispatch end-to-end) or via the legacy path (publish an
+     * {@code AggregationCommand} trigger to {@code ingress} for the engine to
+     * process). Checked once per org at the start of that org's processing
+     * within a single cron run.
+     */
+    public boolean isAggregatorDirectDispatchEnabled(String orgId) {
+        return unleash.isEnabled(toggleDirectDispatch, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+    }
+
+    public String getRhHccSender() {
+        return rhHccSender;
+    }
+
+    public String getLightwellSender() {
+        return rhLightwellSender;
+    }
+
+    public String getRhOpenshiftSenderStage() {
+        return rhOpenshiftSenderStage;
+    }
+
+    public String getRhOpenshiftSenderProd() {
+        return rhOpenshiftSenderProd;
+    }
+
+    public boolean isIncludeSeverityToFilterRecipientsEnabled(String orgId, UUID applicationId) {
+        final UnleashContext.Builder builder = UnleashContext.builder();
+        if (orgId != null) {
+            builder.addProperty("orgId", orgId);
+        }
+        if (applicationId != null) {
+            builder.addProperty("applicationId", applicationId.toString());
+        }
+
+        return unleash.isEnabled(toggleIncludeSeverityToFilterRecipients, builder.build(), false);
+    }
+
+    public boolean isOutgoingKafkaHighVolumeTopicEnabled() {
+        return this.unleash.isEnabled(this.toggleKafkaOutgoingHighVolumeTopic, false);
+    }
+
+    public int getKafkaToCamelMaximumRequestSize() {
+        return kafkaToCamelMaximumRequestSize;
     }
 
     public Optional<String> getClusterId() {
@@ -153,6 +257,20 @@ public class AggregatorConfig {
         if (activeClusterToggle != null) {
             config.put(activeClusterToggle, getActiveCluster().orElse("unable-to-determine"));
         }
+        if (toggleIncludeSeverityToFilterRecipients != null) {
+            config.put(toggleIncludeSeverityToFilterRecipients, isIncludeSeverityToFilterRecipientsEnabled("", null));
+        }
+        if (toggleKafkaOutgoingHighVolumeTopic != null) {
+            config.put(toggleKafkaOutgoingHighVolumeTopic, isOutgoingKafkaHighVolumeTopicEnabled());
+        }
+        if (toggleDirectDispatch != null) {
+            config.put(toggleDirectDispatch, isAggregatorDirectDispatchEnabled(""));
+        }
+        config.put(KAFKA_TOCAMEL_MAXIMUM_REQUEST_SIZE, getKafkaToCamelMaximumRequestSize());
+        config.put(NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE, rhHccSender);
+        config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_STAGE, rhOpenshiftSenderStage);
+        config.put(NOTIFICATIONS_EMAIL_SENDER_OPENSHIFT_PROD, rhOpenshiftSenderProd);
+        config.put(NOTIFICATIONS_EMAIL_SENDER_LIGHTWELL, rhLightwellSender);
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> Log.infof("%s=%s", key, value));
     }
