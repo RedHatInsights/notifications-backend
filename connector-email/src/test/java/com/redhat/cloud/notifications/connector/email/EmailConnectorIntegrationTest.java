@@ -191,6 +191,49 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
     }
 
     @Test
+    void testBackwardCompatibilityDailyDigestWithoutSubscriptionType() throws Exception {
+        // This test simulates processing old aggregation messages in Kafka that were created
+        // before the subscription_type field was added. The connector should default to DAILY behavior.
+        Set<User> users = TestUtils.createUsers("user-1", "user-2", "user-3");
+        String strUsers = objectMapper.writeValueAsString(users);
+        setupMocks(200, strUsers, 200, null);
+
+        Set<String> additionalEmails = Set.of("test@redhat.com");
+        int usersAndRecipientsTotalNumber = users.size() + additionalEmails.size();
+
+        // Build payload without subscription_type field (simulating old messages in Kafka)
+        RecipientSettings recipientSettings = new RecipientSettings(false, false, null, null, additionalEmails);
+        EmailNotification emailNotification = new EmailNotification(
+            "Not used",
+            "123456",
+            List.of(recipientSettings),
+            new ArrayList<>(),
+            new ArrayList<>(),
+            false,
+            null,
+            buildRhelDailyDigestEmailContext(),
+            true,
+            null  // subscription_type is null (backward compatibility)
+        );
+        JsonObject payload = JsonObject.mapFrom(emailNotification);
+
+        String cloudEventId = sendCloudEventMessage(payload);
+
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertTrue(data.getBoolean("successful"), "Processing should succeed even without subscription_type field");
+
+        @SuppressWarnings("unchecked")
+        final ArgumentCaptor<List<String>> listCaptor = ArgumentCaptor.forClass((Class) List.class);
+        verify(bopManager, times(2))
+            .sendToBop(listCaptor.capture(), anyString(), anyString(), anyString());
+
+        checkRecipientsAndHistory(usersAndRecipientsTotalNumber, listCaptor.getAllValues(), data, false, "test@redhat.com");
+
+        assertMetricsIncrement(1, 0);
+        assertHandlerDurationTimerRecorded(1);
+    }
+
+    @Test
     void testFailureFetchingRecipientsInternalError() {
         setupMocks(500, "", null, null);
 
@@ -280,7 +323,8 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
             false,
             null,
             eventData,
-            isDailyDigest
+            isDailyDigest,
+            isDailyDigest ? "DAILY" : "INSTANT"
         );
 
         return JsonObject.mapFrom(emailNotification);

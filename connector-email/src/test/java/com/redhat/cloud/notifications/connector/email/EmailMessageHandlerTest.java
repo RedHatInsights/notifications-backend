@@ -243,4 +243,103 @@ class EmailMessageHandlerTest {
         Set<String> input = Set.of("a");
         assertThrows(ArithmeticException.class, () -> EmailMessageHandler.partition(input, 0));
     }
+
+    // --- Subscription type tests ---
+
+    @Test
+    void testEmailNotificationWithDailySubscriptionType() {
+        Map<String, Object> eventData = Map.of(
+            "bundle", "rhel",
+            "application", "patch",
+            "event_type", "new-advisory"
+        );
+        JsonObject cloudEventData = buildEmailNotificationJson(eventData)
+            .put("subscription_type", "DAILY");
+        HandledEmailMessageDetails details = new HandledEmailMessageDetails();
+
+        EmailNotification result = emailMessageHandler.extractPayload(cloudEventData, details);
+
+        assertNotNull(result);
+        assertEquals("DAILY", result.subscriptionType());
+    }
+
+    @Test
+    void testEmailNotificationWithWeeklySubscriptionType() {
+        Map<String, Object> eventData = Map.of(
+            "bundle", "rhel",
+            "application", "patch",
+            "event_type", "new-advisory"
+        );
+        JsonObject cloudEventData = buildEmailNotificationJson(eventData)
+            .put("subscription_type", "WEEKLY");
+        HandledEmailMessageDetails details = new HandledEmailMessageDetails();
+
+        EmailNotification result = emailMessageHandler.extractPayload(cloudEventData, details);
+
+        assertNotNull(result);
+        assertEquals("WEEKLY", result.subscriptionType());
+    }
+
+    @Test
+    void testEmailNotificationWithInstantSubscriptionType() {
+        Map<String, Object> eventData = Map.of(
+            "bundle", "rhel",
+            "application", "patch",
+            "event_type", "new-advisory"
+        );
+        JsonObject cloudEventData = buildEmailNotificationJson(eventData)
+            .put("subscription_type", "INSTANT");
+        HandledEmailMessageDetails details = new HandledEmailMessageDetails();
+
+        EmailNotification result = emailMessageHandler.extractPayload(cloudEventData, details);
+
+        assertNotNull(result);
+        assertEquals("INSTANT", result.subscriptionType());
+    }
+
+    // --- Backward compatibility tests ---
+
+    @Test
+    void testEmailNotificationWithNullSubscriptionTypeForBackwardCompatibility() {
+        Map<String, Object> eventData = Map.of(
+            "bundle", "rhel",
+            "application", "advisor",
+            "event_type", "new-recommendation"
+        );
+        // Old message in Kafka without subscription_type field
+        JsonObject cloudEventData = buildEmailNotificationJson(eventData);
+        // Explicitly set to null to simulate missing field
+        cloudEventData.putNull("subscription_type");
+        HandledEmailMessageDetails details = new HandledEmailMessageDetails();
+
+        EmailNotification result = emailMessageHandler.extractPayload(cloudEventData, details);
+
+        assertNotNull(result);
+        assertNull(result.subscriptionType(), "subscription type should be null for old messages");
+    }
+
+    @Test
+    void testEmailNotificationWithMissingSubscriptionTypeField() {
+        Map<String, Object> eventData = Map.of(
+            "bundle", "rhel",
+            "application", "advisor",
+            "event_type", "new-recommendation"
+        );
+        // Old message in Kafka without subscription_type field at all
+        JsonObject cloudEventData = new JsonObject()
+            .put("recipient_settings", List.of())
+            .put("subscribers", List.of())
+            .put("unsubscribers", List.of())
+            .put("subscribed_by_default", false)
+            .put("event_data", eventData)
+            .put("id_daily_digest", true);
+        // Note: subscription_type field is not present at all
+
+        HandledEmailMessageDetails details = new HandledEmailMessageDetails();
+
+        EmailNotification result = emailMessageHandler.extractPayload(cloudEventData, details);
+
+        assertNotNull(result);
+        assertNull(result.subscriptionType(), "subscription type should be null when field is missing");
+    }
 }

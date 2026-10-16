@@ -326,4 +326,29 @@ public class EmailProcessorTest {
         final Set<RecipientSettings> recipientSettings = emailProcessor.extractAndTransformRecipientSettings(event, endpoints);
         Assertions.assertIterableEquals(recipientSettings, resultRecipientSettings, "the recipient settings set in the email notification do not match the stubbed ones");
     }
+
+    @Test
+    void testInstantEmailIncludesSubscriptionType() {
+        Mockito.when(engineConfig.isDefaultTemplateEnabled()).thenReturn(true);
+        Mockito.when(quteTemplateService.isDefaultEmailTemplateEnabled()).thenReturn(true);
+        quteTemplateService.init();
+
+        final Event event = setUpStubEvent();
+        final List<Endpoint> endpoints = setUpStubEndpoints();
+
+        final List<String> subscribers = List.of("subscriber-a");
+        Mockito.when(subscriptionRepository.getSubscribers(event.getOrgId(), event.getEventType().getId(), SubscriptionType.INSTANT, Optional.empty())).thenReturn(subscribers);
+
+        final String stubbedSender = "Red Hat Insights noreply@redhat.com";
+        Mockito.when(emailActorsResolver.getEmailSender(any())).thenReturn(stubbedSender);
+
+        emailProcessor.process(event, endpoints);
+
+        final ArgumentCaptor<JsonObject> capturedPayload = ArgumentCaptor.forClass(JsonObject.class);
+        Mockito.verify(connectorSender, Mockito.times(1)).send(any(Event.class), any(Endpoint.class), capturedPayload.capture());
+
+        final JsonObject payload = capturedPayload.getValue();
+        Assertions.assertEquals("INSTANT", payload.getString("subscription_type"), "subscription type should be INSTANT for instant emails");
+        Assertions.assertFalse(payload.getBoolean("id_daily_digest"), "instant emails should not be marked as daily digest");
+    }
 }

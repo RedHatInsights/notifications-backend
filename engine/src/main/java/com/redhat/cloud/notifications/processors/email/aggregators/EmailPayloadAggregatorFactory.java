@@ -1,7 +1,9 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.processors.email.SubscribedEventTypeSeverities;
+
 import java.util.Set;
 
 public class EmailPayloadAggregatorFactory {
@@ -10,9 +12,9 @@ public class EmailPayloadAggregatorFactory {
     private static final String SUBSCRIPTION_SERVICES = "subscription-services";
     private static final String APPLICATION_SERVICES = "application-services";
     private static final String ADVISOR = "advisor";
+    private static final String LIGHTWELL = "lightwell";
 
     private static final String COMPLIANCE = "compliance";
-    private static final String ANSIBLE = "ansible";
     private static final String PATCH = "patch";
     private static final String VULNERABILITY = "vulnerability";
     private static final String INVENTORY = "inventory";
@@ -23,11 +25,11 @@ public class EmailPayloadAggregatorFactory {
 
     }
 
-    public static AbstractEmailPayloadAggregator by(EventAggregationCriterion aggregationKey, String username, Set<SubscribedEventTypeSeverities> userSeverities) {
+    public static AbstractEmailPayloadAggregator by(EventAggregationCriterion aggregationKey, String username, Set<SubscribedEventTypeSeverities> userSeverities, SubscriptionType subscriptionType) {
         String bundle = aggregationKey.getBundle();
         String application = aggregationKey.getApplication();
 
-        AbstractEmailPayloadAggregator aggregator = getAggregator(bundle, application);
+        AbstractEmailPayloadAggregator aggregator = getAggregator(bundle, application, subscriptionType);
         if (aggregator != null) {
             aggregator.setUserName(username);
             aggregator.setUserSeverities(userSeverities);
@@ -35,17 +37,8 @@ public class EmailPayloadAggregatorFactory {
         return aggregator;
     }
 
-    private static AbstractEmailPayloadAggregator getAggregator(String bundle, String application) {
+    private static AbstractEmailPayloadAggregator getAggregator(String bundle, String application, SubscriptionType subscriptionType) {
         switch (bundle) {
-            case APPLICATION_SERVICES:
-                switch (application.toLowerCase()) { // TODO Remove toLowerCase if possible
-                    case ANSIBLE:
-                        return new AnsibleEmailAggregator();
-                    default:
-                        // Do nothing.
-                        break;
-                }
-                break;
             case SUBSCRIPTION_SERVICES:
                 switch (application) {
                     case ERRATA:
@@ -67,11 +60,23 @@ public class EmailPayloadAggregatorFactory {
                         return new InventoryEmailAggregator();
                     case PATCH:
                         return new PatchEmailPayloadAggregator();
-
                     case RESOURCE_OPTIMIZATION:
                         return new ResourceOptimizationPayloadAggregator();
                     case VULNERABILITY:
                         return new VulnerabilityEmailPayloadAggregator();
+                    default:
+                        // Do nothing
+                        break;
+                }
+                break;
+            case LIGHTWELL:
+                switch (application) {
+                    case LIGHTWELL:
+                        if (SubscriptionType.WEEKLY == subscriptionType) {
+                            return new LightwellWeeklyEmailPayloadAggregator();
+                        } else {
+                            return null;
+                        }
                     default:
                         // Do nothing
                         break;
