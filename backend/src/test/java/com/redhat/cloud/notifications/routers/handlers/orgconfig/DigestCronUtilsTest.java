@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.orgconfig;
 
+import com.redhat.cloud.notifications.helpers.DigestCronUtils;
 import com.redhat.cloud.notifications.models.SubscriptionType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
