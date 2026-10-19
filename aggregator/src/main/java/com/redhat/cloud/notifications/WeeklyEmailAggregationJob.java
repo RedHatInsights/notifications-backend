@@ -9,8 +9,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static java.time.ZoneOffset.UTC;
-
 @ApplicationScoped
 public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
 
@@ -22,8 +20,8 @@ public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
     @ConfigProperty(name = "notifications.default.weekly.digest.cron", defaultValue = "0 0 * * MON")
     String defaultWeeklyDigestCron;
 
-    public void processWeeklyEmail() {
-        processEmail();
+    public void processWeeklyEmail(LocalDateTime executionTime) {
+        processEmail(executionTime);
     }
 
     @Override
@@ -34,12 +32,6 @@ public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
     @Override
     protected String getEventTypeName() {
         return EVENT_TYPE_NAME;
-    }
-
-    @Override
-    protected LocalDateTime computeExecutionTime() {
-        // Use current time (no rounding needed for cron-based scheduling)
-        return LocalDateTime.now(UTC);
     }
 
     @Override

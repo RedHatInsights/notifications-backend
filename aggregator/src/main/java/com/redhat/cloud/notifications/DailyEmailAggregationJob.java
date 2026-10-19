@@ -12,8 +12,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
-import static java.time.ZoneOffset.UTC;
-
 @ApplicationScoped
 public class DailyEmailAggregationJob extends AbstractEmailAggregationJob {
 
@@ -28,8 +26,8 @@ public class DailyEmailAggregationJob extends AbstractEmailAggregationJob {
     @ConfigProperty(name = "notifications.default.daily.digest.time", defaultValue = "00:00")
     LocalTime defaultDailyDigestTime;
 
-    public void processDailyEmail() {
-        processEmail();
+    public void processDailyEmail(LocalDateTime executionTime) {
+        processEmail(executionTime);
     }
 
     @Override
@@ -40,11 +38,6 @@ public class DailyEmailAggregationJob extends AbstractEmailAggregationJob {
     @Override
     protected String getEventTypeName() {
         return EVENT_TYPE_NAME;
-    }
-
-    @Override
-    protected LocalDateTime computeExecutionTime() {
-        return computeScheduleExecutionTime();
     }
 
     @Override
@@ -82,28 +75,6 @@ public class DailyEmailAggregationJob extends AbstractEmailAggregationJob {
         return new Context.ContextBuilder()
             .withAdditionalProperty("single_daily_digest_enabled", true)
             .build();
-    }
-
-    /**
-     * Compute targeted schedule execution time local date time.
-     * User can schedule execution time every 15 min.
-     * Even if this job is executed at 05:02, we are looking for schedule executions of 05:00
-     *
-     * @return the local date time
-     */
-    public LocalDateTime computeScheduleExecutionTime() {
-        final LocalDateTime currentTime = LocalDateTime.now(UTC).withSecond(0).withNano(0);
-
-        // correct Time
-        if (currentTime.getMinute() < 15) {
-            return currentTime.withMinute(0);
-        } else if (currentTime.getMinute() < 30) {
-            return currentTime.withMinute(15);
-        } else if (currentTime.getMinute() < 45) {
-            return currentTime.withMinute(30);
-        } else {
-            return currentTime.withMinute(45);
-        }
     }
 
     // For automatic tests purpose

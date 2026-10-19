@@ -2,6 +2,7 @@ package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.DailyEmailAggregationJob;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.helpers.AggregationTimeHelper;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
@@ -60,14 +61,14 @@ class EmailAggregationRepositoryTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testApplicationsWithPendingAggregationUsingDefaultSystemIntegration(boolean useSystemEndpoint) {
-        configureTimePref(dailyEmailAggregationJob.computeScheduleExecutionTime());
-        Event event1 = resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD1.toString(), useSystemEndpoint);
-        Event event2 = resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
-        resourceHelpers.addEventEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
-        resourceHelpers.addEventEmailAggregation(ORG_ID, "other-bundle", APP_NAME, dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
-        resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", dailyEmailAggregationJob.computeScheduleExecutionTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
+        configureTimePref(AggregationTimeHelper.computeReferenceTime());
+        Event event1 = resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, AggregationTimeHelper.computeReferenceTime().minusMinutes(5), PAYLOAD1.toString(), useSystemEndpoint);
+        Event event2 = resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, APP_NAME, AggregationTimeHelper.computeReferenceTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
+        resourceHelpers.addEventEmailAggregation("other-org-id", BUNDLE_NAME, APP_NAME, AggregationTimeHelper.computeReferenceTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
+        resourceHelpers.addEventEmailAggregation(ORG_ID, "other-bundle", APP_NAME, AggregationTimeHelper.computeReferenceTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
+        resourceHelpers.addEventEmailAggregation(ORG_ID, BUNDLE_NAME, "other-app", AggregationTimeHelper.computeReferenceTime().minusMinutes(5), PAYLOAD2.toString(), useSystemEndpoint);
 
-        List<AggregationCommand> keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime());
+        List<AggregationCommand> keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(AggregationTimeHelper.computeReferenceTime());
         assertEquals(4, keys.size());
         Application application = resourceHelpers.findApp(BUNDLE_NAME, APP_NAME);
 
@@ -79,7 +80,7 @@ class EmailAggregationRepositoryTest {
         resourceHelpers.deleteEvent(event1);
         resourceHelpers.deleteEvent(event2);
 
-        keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(dailyEmailAggregationJob.computeScheduleExecutionTime());
+        keys = emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(AggregationTimeHelper.computeReferenceTime());
         assertEquals(3, keys.size());
         matchedKeys = keys.stream().filter(k -> ORG_ID.equals(k.getOrgId())).filter(k -> (((EventAggregationCriterion) k.getAggregationKey()).getApplicationId().equals(application.getId()))).collect(Collectors.toList());
         assertEquals(0, matchedKeys.size());
