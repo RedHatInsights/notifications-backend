@@ -355,6 +355,68 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         }
     }
 
+    @Test
+    void testEmailSentMetricForInstantNotification() throws Exception {
+        Set<User> users = TestUtils.createUsers("user-1");
+        String strUsers = objectMapper.writeValueAsString(users);
+        setupMocks(200, strUsers, 200, 0);
+
+        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(
+            "notifications.connector.email.sent",
+            "bundle", "rhel",
+            "application", "patch",
+            "event_type", "new-advisory"
+        );
+
+        JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, null);
+        String cloudEventId = sendCloudEventMessage(payload);
+
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertTrue(data.getBoolean("successful"));
+
+        // Verify counter metric (recorded automatically by MessageConsumer)
+        micrometerAssertionHelper.assertCounterIncrementWithTags(
+            "notifications.connector.email.sent", 1.0,
+            "bundle", "rhel",
+            "application", "patch",
+            "event_type", "new-advisory"
+        );
+
+        // Note: Integration time metric is also recorded but not verified in tests
+        // as MicrometerAssertionHelper doesn't support multi-tag timer assertions yet
+    }
+
+    @Test
+    void testEmailSentMetricForDailyDigest() throws Exception {
+        Set<User> users = TestUtils.createUsers("user-1");
+        String strUsers = objectMapper.writeValueAsString(users);
+        setupMocks(200, strUsers, 200, 0);
+
+        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(
+            "notifications.connector.email.sent",
+            "bundle", "Red Hat Enterprise Linux",
+            "application", "aggregation",
+            "event_type", "aggregation"
+        );
+
+        JsonObject payload = buildEmailPayload(buildRhelDailyDigestEmailContext(), true, null);
+        String cloudEventId = sendCloudEventMessage(payload);
+
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertTrue(data.getBoolean("successful"));
+
+        // Verify counter metric (recorded automatically by MessageConsumer)
+        micrometerAssertionHelper.assertCounterIncrementWithTags(
+            "notifications.connector.email.sent", 1.0,
+            "bundle", "Red Hat Enterprise Linux",
+            "application", "aggregation",
+            "event_type", "aggregation"
+        );
+
+        // Note: Integration time metric is also recorded but not verified in tests
+        // as MicrometerAssertionHelper doesn't support multi-tag timer assertions yet
+    }
+
     private Map<String, Object> buildInstantEmailContext() {
         TypeReference<HashMap<String, Object>> typeRef = new TypeReference<>() { };
         try {

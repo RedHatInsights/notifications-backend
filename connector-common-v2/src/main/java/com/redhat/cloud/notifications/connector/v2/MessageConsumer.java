@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.connector.v2;
 
+import com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics;
 import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.micrometer.core.instrument.Counter;
@@ -44,6 +45,9 @@ public class MessageConsumer {
 
     @Inject
     MeterRegistry meterRegistry;
+
+    @Inject
+    ConnectorMetrics connectorMetrics;
 
     private Counter succeededCounter;
     private Counter failedCounter;
@@ -92,6 +96,7 @@ public class MessageConsumer {
         final IncomingCloudEventMetadata<JsonObject> cloudEventMetadata = cloudEventOpt.get();
 
         Timer.Sample sample = Timer.start(meterRegistry);
+        Timer.Sample integrationTimer = connectorMetrics.startIntegrationTimer();
         boolean success = false;
         try {
             Log.debugf("Processing %s", message.getPayload());
@@ -101,7 +106,17 @@ public class MessageConsumer {
 
             // Send success response back to engine
             outgoingMessageSender.sendSuccess(cloudEventMetadata, additionalConnectorDetails, startTime);
+
             success = true;
+
+            // Record connector metrics (notification sent and integration time) after confirming send succeeded
+            // Wrapped in try-catch to prevent metric failures from triggering sendFailure() after sendSuccess()
+            try {
+                connectorMetrics.recordNotificationSent(cloudEventMetadata.getData());
+                connectorMetrics.recordIntegrationTime(integrationTimer, cloudEventMetadata.getData());
+            } catch (Exception metricsException) {
+                Log.warnf(metricsException, "Failed to record connector metrics, but notification was sent successfully");
+            }
         } catch (Exception e) {
             Log.infof(e, "Error processing message: %s", e.getMessage());
             HandledExceptionDetails processedExceptionDetails = exceptionProcessor.processException(e, cloudEventMetadata);
@@ -110,6 +125,10 @@ public class MessageConsumer {
             outgoingMessageSender.sendFailure(cloudEventMetadata, processedExceptionDetails, startTime);
         } finally {
             sample.stop(handlerDurationTimer);
+            // Always stop integration timer to prevent resource leak
+            if (!success) {
+                integrationTimer.stop(Timer.builder("unused").register(meterRegistry));
+            }
             if (success) {
                 succeededCounter.increment();
             } else {

@@ -38,7 +38,6 @@ public class PagerDutyMessageHandler extends MessageHandler {
 
     @Override
     public HandledMessageDetails handle(final IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
-
         final PagerDutyNotification notification = getAndValidateNotification(incomingCloudEvent);
 
         final String routingKey = fetchRoutingKey(notification);

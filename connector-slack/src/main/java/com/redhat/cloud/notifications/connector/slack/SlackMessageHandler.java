@@ -43,7 +43,6 @@ public class SlackMessageHandler extends MessageHandler {
 
     @Override
     public HandledMessageDetails handle(final IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
-
         SlackNotification notification = incomingCloudEvent.getData().mapTo(SlackNotification.class);
 
         Set<ConstraintViolation<SlackNotification>> violations = validator.validate(notification);

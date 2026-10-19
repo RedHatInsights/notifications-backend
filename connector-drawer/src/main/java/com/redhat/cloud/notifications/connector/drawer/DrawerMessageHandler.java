@@ -83,6 +83,7 @@ public class DrawerMessageHandler extends MessageHandler {
             if (drawerConnectorConfig.pushNotificationsToKafka()) {
                 emitter.send(builtKafkaMessage);
             }
+
         }
 
         return new HandledDrawerMessageDetails(recipientsList);
