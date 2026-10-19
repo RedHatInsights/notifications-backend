@@ -117,6 +117,20 @@ public class WorkspaceRepository {
     }
 
     /**
+     * Check if any system endpoints (orgId IS NULL) need workspace assignment.
+     * Used by bootstrap to determine whether system endpoint processing is needed.
+     *
+     * @return true if at least one system endpoint has workspace_id IS NULL
+     */
+    public boolean hasSystemEndpointsNeedingAssignment() {
+        Long count = entityManager.createQuery(
+            "SELECT COUNT(e) FROM Endpoint e WHERE e.orgId IS NULL AND e.workspace IS NULL",
+            Long.class
+        ).getSingleResult();
+        return count > 0;
+    }
+
+    /**
      * Bulk update endpoints to assign workspace.
      * Updates ALL endpoints for the org to guarantee consistency.
      * More efficient than loading/updating entities one by one.

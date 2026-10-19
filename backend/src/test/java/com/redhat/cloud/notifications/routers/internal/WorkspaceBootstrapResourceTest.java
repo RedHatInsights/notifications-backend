@@ -70,7 +70,8 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
 
     @Test
     void testBootstrapIdempotency() {
-        // Setup - Create endpoints
+        // Setup - Create both system and org endpoints
+        createEndpoint(null, "system-endpoint-idempotent");
         String orgId = "test-org-idempotent";
         createEndpoint(orgId, "endpoint-1");
 
@@ -99,9 +100,17 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         assertEquals(summary1.systemWorkspaceId, summary2.systemWorkspaceId,
             "System workspace ID should be the same on second bootstrap");
 
-        // Verify - No additional endpoints assigned on second run
+        // Verify - First run actually assigned endpoints
+        assertEquals(1, summary1.systemEndpointsAssigned,
+            "First bootstrap should assign 1 system endpoint");
+        assertEquals(1, summary1.orgEndpointsAssigned,
+            "First bootstrap should assign 1 org endpoint");
+
+        // Verify - Second run skips already-assigned endpoints
+        assertEquals(0, summary2.systemEndpointsAssigned,
+            "Second bootstrap should not assign additional system endpoints");
         assertEquals(0, summary2.orgEndpointsAssigned,
-            "Second bootstrap should not assign additional endpoints");
+            "Second bootstrap should not assign additional org endpoints");
     }
 
     @Test

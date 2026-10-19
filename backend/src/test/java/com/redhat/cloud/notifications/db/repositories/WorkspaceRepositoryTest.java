@@ -246,6 +246,44 @@ public class WorkspaceRepositoryTest extends DbIsolatedTest {
     }
 
     @Test
+    void testHasSystemEndpointsNeedingAssignment_WithUnassignedSystemEndpoints() {
+        // Create system endpoints without workspace assignment
+        createEndpoint(null, "system-endpoint-1", null);
+        createEndpoint(null, "system-endpoint-2", null);
+        createEndpoint("org-regular", "regular-endpoint", null); // Regular endpoint should not affect result
+
+        boolean hasUnassigned = workspaceRepository.hasSystemEndpointsNeedingAssignment();
+
+        assertTrue(hasUnassigned, "Should return true when system endpoints have no workspace");
+    }
+
+    @Test
+    void testHasSystemEndpointsNeedingAssignment_AllSystemEndpointsAssigned() {
+        // Get system workspace
+        Workspace systemWorkspace = workspaceRepository.getSystemWorkspace();
+
+        // Create system endpoints WITH workspace assignment
+        createEndpoint(null, "system-endpoint-1", systemWorkspace);
+        createEndpoint(null, "system-endpoint-2", systemWorkspace);
+        createEndpoint("org-regular", "regular-endpoint", null); // Unassigned org endpoint should not affect result
+
+        boolean hasUnassigned = workspaceRepository.hasSystemEndpointsNeedingAssignment();
+
+        assertFalse(hasUnassigned, "Should return false when all system endpoints have workspace");
+    }
+
+    @Test
+    void testHasSystemEndpointsNeedingAssignment_NoSystemEndpoints() {
+        // Create only regular org endpoints
+        createEndpoint("org-alpha", "endpoint-1", null);
+        createEndpoint("org-beta", "endpoint-2", null);
+
+        boolean hasUnassigned = workspaceRepository.hasSystemEndpointsNeedingAssignment();
+
+        assertFalse(hasUnassigned, "Should return false when there are no system endpoints");
+    }
+
+    @Test
     void testSystemWorkspaceHasNullOrgId() {
         // Test that the system workspace (created by migration V1.143.0) has org_id = NULL
         // The unique constraint ensures only ONE workspace can have org_id IS NULL
