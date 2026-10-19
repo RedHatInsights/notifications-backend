@@ -1,8 +1,9 @@
 package com.redhat.cloud.notifications.db;
 
-import com.redhat.cloud.notifications.helpers.DigestCronUtils;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.models.DigestTriggerOrgConfig;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
+import com.redhat.cloud.notifications.utils.DigestCronUtils;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -13,6 +14,7 @@ import jakarta.transaction.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.WEEKLY;
@@ -89,13 +91,15 @@ public class DigestTriggerOrgConfigRepository {
         // Calculate initial last run (one week ago) and next run based on cron expression
         LocalDateTime now = LocalDateTime.now(UTC);
         LocalDateTime initialLastRun = now.minusWeeks(1);
-        LocalDateTime initialNextRun = DigestCronUtils.calculateNextRun(defaultCronExpression, now);
+        Optional<LocalDateTime> initialNextRunOpt = DigestCronUtils.calculateNextRun(defaultCronExpression, now);
 
-        if (initialNextRun == null) {
+        if (initialNextRunOpt.isEmpty()) {
             String errorMsg = String.format("Failed to calculate initial next run for cron expression: %s. Cannot create default weekly configs.", defaultCronExpression);
             Log.error(errorMsg);
             throw new IllegalArgumentException(errorMsg);
         }
+
+        LocalDateTime initialNextRun = initialNextRunOpt.get();
 
         String query = "INSERT INTO digest_trigger_org_config (org_id, subscription_type, cron_expression, last_run, next_run) " +
             "SELECT DISTINCT(es.org_id), 'WEEKLY', CAST(:cronExpression as varchar), CAST(:lastRun as timestamp without time zone), CAST(:nextRun as timestamp without time zone) " +
@@ -125,18 +129,18 @@ public class DigestTriggerOrgConfigRepository {
 
         // Retrieve cron expressions for the orgs that need updating
         String selectQuery = "SELECT dtc FROM DigestTriggerOrgConfig dtc WHERE dtc.id.orgId IN :orgIds AND dtc.id.subscriptionType = :subscriptionType";
-        List<com.redhat.cloud.notifications.models.DigestTriggerOrgConfig> configs = entityManager.createQuery(selectQuery, com.redhat.cloud.notifications.models.DigestTriggerOrgConfig.class)
+        List<DigestTriggerOrgConfig> configs = entityManager.createQuery(selectQuery, DigestTriggerOrgConfig.class)
             .setParameter("orgIds", orgIdsToUpdate)
             .setParameter("subscriptionType", WEEKLY)
             .getResultList();
 
         int updated = 0;
         int skipped = 0;
-        for (com.redhat.cloud.notifications.models.DigestTriggerOrgConfig config : configs) {
-            LocalDateTime nextRun = DigestCronUtils.calculateNextRun(config.getCronExpression(), lastRun);
-            if (nextRun != null) {
+        for (DigestTriggerOrgConfig config : configs) {
+            Optional<LocalDateTime> nextRunOpt = DigestCronUtils.calculateNextRun(config.getCronExpression(), lastRun);
+            if (nextRunOpt.isPresent()) {
                 config.setLastRun(lastRun);
-                config.setNextRun(nextRun);
+                config.setNextRun(nextRunOpt.get());
                 entityManager.merge(config);
                 updated++;
             } else {
@@ -155,8 +159,9 @@ public class DigestTriggerOrgConfigRepository {
 
     /**
      * Compute aggregation start date with outage recovery logic:
-     * - If last_run is null or older than 2 days: start from yesterday (outage recovery)
-     * - If last_run is recent (within 2 days): start from last_run (but cap at 1 week ago)
+     * - If last_run is null: start from yesterday (initial run)
+     * - If last_run is older than 2 days: start from yesterday (outage recovery)
+     * - If last_run is recent (within 2 days): start from last_run
      *
      * This prevents re-processing very old data while allowing recovery from short outages.
      */
@@ -174,11 +179,7 @@ public class DigestTriggerOrgConfigRepository {
             return yesterday;
         }
 
-        // Last run is recent - use it, but cap at one week ago
-        if (lastRunFromDb.isBefore(oneWeekAgo)) {
-            return oneWeekAgo;
-        }
-
+        // Last run is recent - use it
         return lastRunFromDb;
     }
 }

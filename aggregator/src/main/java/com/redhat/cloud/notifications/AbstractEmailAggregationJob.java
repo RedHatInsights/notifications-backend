@@ -99,6 +99,7 @@ public abstract class AbstractEmailAggregationJob {
 
             List<String> orgIdsToUpdate = aggregationCommands.stream()
                 .map(AggregationCommand::getOrgId)
+                .filter(orgId -> orgId != null)
                 .distinct()
                 .collect(Collectors.toList());
             Log.debugf("Found following org IDs to update for %s digest: %s", getJobType().toLowerCase(), orgIdsToUpdate);
