@@ -68,10 +68,6 @@ public class Endpoint extends CreationUpdateTimestamped {
     @Size(max = 50)
     private String orgId;
 
-    @Transient
-    @JsonIgnore
-    private UUID workspaceId;
-
     @ManyToOne(fetch = LAZY, optional = true)  // optional=true since workspace_id currently nullable
     @JoinColumn(name = "workspace_id")
     @JsonIgnore
@@ -173,13 +169,10 @@ public class Endpoint extends CreationUpdateTimestamped {
     /**
      * Returns the workspace UUID for JSON serialization.
      * Computed from the workspace relationship when available.
-     * Note: To modify workspace assignment, use setWorkspace(), not this getter.
+     * Note: Accessing getId() on a JPA proxy does not trigger lazy loading for @Id fields.
      */
     public UUID getWorkspaceId() {
-        if (workspaceId == null && workspace != null) {
-            workspaceId = workspace.getId();
-        }
-        return workspaceId;
+        return workspace != null ? workspace.getId() : null;
     }
 
     public Workspace getWorkspace() {
@@ -188,8 +181,6 @@ public class Endpoint extends CreationUpdateTimestamped {
 
     public void setWorkspace(Workspace workspace) {
         this.workspace = workspace;
-        // Clear cached transient value so next getWorkspaceId() recomputes
-        this.workspaceId = null;
     }
 
     public String getName() {
