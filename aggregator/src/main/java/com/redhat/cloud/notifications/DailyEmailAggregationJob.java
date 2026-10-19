@@ -18,17 +18,13 @@ public class DailyEmailAggregationJob extends AbstractEmailAggregationJob {
     public static final String EVENT_TYPE_NAME = "aggregation";
 
     @Inject
-    EmailAggregationRepository emailAggregationResources;
+    EmailAggregationRepository emailAggregationRepository;
 
     @Inject
     AggregationOrgConfigRepository aggregationOrgConfigRepository;
 
     @ConfigProperty(name = "notifications.default.daily.digest.time", defaultValue = "00:00")
     LocalTime defaultDailyDigestTime;
-
-    public void processDailyEmail(LocalDateTime executionTime) {
-        processEmail(executionTime);
-    }
 
     @Override
     protected String getJobType() {
@@ -41,13 +37,13 @@ public class DailyEmailAggregationJob extends AbstractEmailAggregationJob {
     }
 
     @Override
-    protected void createMissingDefaultConfigs() {
-        aggregationOrgConfigRepository.createMissingDefaultConfigurationBasedOnEvent(defaultDailyDigestTime);
+    protected void createMissingDefaultConfigs(LocalDateTime executionTime) {
+        aggregationOrgConfigRepository.createMissingDefaultConfigurationBasedOnEvent(defaultDailyDigestTime, executionTime);
     }
 
     @Override
     protected List<AggregationCommand> getPendingAggregations(LocalDateTime executionTime) {
-        return emailAggregationResources.getApplicationsWithPendingAggregationAccordingOrgPref(executionTime);
+        return emailAggregationRepository.getApplicationsWithPendingAggregationAccordingOrgPref(executionTime);
     }
 
     @Override

@@ -11,8 +11,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
-import static java.time.ZoneOffset.UTC;
-
 
 @ApplicationScoped
 public class AggregationOrgConfigRepository {
@@ -23,10 +21,11 @@ public class AggregationOrgConfigRepository {
     /**
      * Creates an aggregation_org_config with a last run date of yesterday at defaultRunningTime time,
      * for orgs with at least one subscriber to daily digest
-     * @param defaultRunningTime the default aggegation time.
+     * @param defaultRunningTime the default aggregation time.
+     * @param executionTime the current execution time (rounded to 15-minute intervals)
      */
     @Transactional
-    public void createMissingDefaultConfigurationBasedOnEvent(LocalTime defaultRunningTime) {
+    public void createMissingDefaultConfigurationBasedOnEvent(LocalTime defaultRunningTime, LocalDateTime executionTime) {
         String query = "INSERT INTO aggregation_org_config (org_id, scheduled_execution_time, last_run) " +
             "SELECT DISTINCT(es.org_id), CAST(:expectedRunningTime as time without time zone), CAST(:lastRun as timestamp without time zone) " +
             "FROM email_subscriptions es where es.subscription_type='DAILY' and es.subscribed = true AND " +
@@ -34,7 +33,7 @@ public class AggregationOrgConfigRepository {
 
         int createdEntries = entityManager.createNativeQuery(query)
             .setParameter("expectedRunningTime", defaultRunningTime)
-            .setParameter("lastRun", LocalDateTime.now(UTC)
+            .setParameter("lastRun", executionTime
                 .minusDays(1)
                 .withHour(defaultRunningTime.getHour())
                 .withMinute(defaultRunningTime.getMinute())

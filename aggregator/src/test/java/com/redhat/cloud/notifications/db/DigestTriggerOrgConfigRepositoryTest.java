@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.helpers.AggregationTimeHelper;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfig;
@@ -138,7 +139,7 @@ class DigestTriggerOrgConfigRepositoryTest {
             PAYLOAD1.toString(), true, SubscriptionType.WEEKLY);
 
         // Create missing configs
-        digestTriggerOrgConfigRepository.createMissingDefaultWeeklyConfig(DEFAULT_WEEKLY_CRON);
+        digestTriggerOrgConfigRepository.createMissingDefaultWeeklyConfig(DEFAULT_WEEKLY_CRON, AggregationTimeHelper.computeReferenceTime());
 
         // Verify config was created
         DigestTriggerOrgConfig config = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID, SubscriptionType.WEEKLY);

@@ -35,14 +35,14 @@ public class NotificationsApp implements QuarkusApplication {
 
         Exception dailyException = null;
         try {
-            dailyEmailAggregationJob.processDailyEmail(referenceTime);
+            dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(referenceTime);
         } catch (Exception e) {
             dailyException = e;
             Log.error("Daily email aggregation job failed", e);
         }
 
         try {
-            weeklyEmailAggregationJob.processWeeklyEmail(referenceTime);
+            weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(referenceTime);
         } catch (Exception e) {
             Log.error("Weekly email aggregation job failed", e);
             if (dailyException != null) {

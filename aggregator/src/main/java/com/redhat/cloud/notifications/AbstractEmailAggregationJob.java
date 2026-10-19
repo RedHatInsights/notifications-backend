@@ -61,7 +61,7 @@ public abstract class AbstractEmailAggregationJob {
      * @param executionTime the pre-computed execution time (rounded to 15-minute intervals)
      */
     @ActivateRequestContext
-    public void processEmail(LocalDateTime executionTime) {
+    public void searchBuildAndSendAggregationCommands(LocalDateTime executionTime) {
         // Cluster coordination check - fail-safe if Unleash unreachable
         if (!shouldRunOnThisCluster()) {
             Log.infof("%s aggregator run skipped on %s cluster due to Unleash flag",
@@ -82,7 +82,7 @@ public abstract class AbstractEmailAggregationJob {
         Gauge.Timer durationTimer = duration.startTimer();
 
         try {
-            createMissingDefaultConfigs();
+            createMissingDefaultConfigs(executionTime);
 
             List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(executionTime, registry);
             Log.infof("found %s %s commands", aggregationCommands.size(), getJobType().toLowerCase());
@@ -145,8 +145,10 @@ public abstract class AbstractEmailAggregationJob {
 
     /**
      * Template method: Create missing default configurations for organizations.
+     *
+     * @param executionTime the current execution time (rounded to 15-minute intervals)
      */
-    protected abstract void createMissingDefaultConfigs();
+    protected abstract void createMissingDefaultConfigs(LocalDateTime executionTime);
 
     /**
      * Template method: Get pending aggregation commands from the repository.

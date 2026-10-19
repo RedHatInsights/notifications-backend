@@ -72,7 +72,7 @@ public class DigestTriggerOrgConfigRepository {
                         (UUID) emailAggregationRecord[2],       // application id
                         (String) emailAggregationRecord[4],     // bundle name
                         (String) emailAggregationRecord[5]),    // application name
-                    computeStartDateTime(lastRun, now, oneWeekAgo, yesterday),
+                    computeStartDateTime(lastRun, now, yesterday),
                     now,
                     WEEKLY
                 );
@@ -85,13 +85,13 @@ public class DigestTriggerOrgConfigRepository {
      * for orgs with at least one subscriber to weekly digest.
      *
      * @param defaultCronExpression the default cron expression for weekly aggregation
+     * @param executionTime the current execution time (rounded to 15-minute intervals)
      */
     @Transactional
-    public void createMissingDefaultWeeklyConfig(String defaultCronExpression) {
+    public void createMissingDefaultWeeklyConfig(String defaultCronExpression, LocalDateTime executionTime) {
         // Calculate initial last run (one week ago) and next run based on cron expression
-        LocalDateTime now = LocalDateTime.now(UTC);
-        LocalDateTime initialLastRun = now.minusWeeks(1);
-        Optional<LocalDateTime> initialNextRunOpt = DigestCronUtils.calculateNextRun(defaultCronExpression, now);
+        LocalDateTime initialLastRun = executionTime.minusWeeks(1);
+        Optional<LocalDateTime> initialNextRunOpt = DigestCronUtils.calculateNextRun(defaultCronExpression, executionTime);
 
         if (initialNextRunOpt.isEmpty()) {
             String errorMsg = String.format("Failed to calculate initial next run for cron expression: %s. Cannot create default weekly configs.", defaultCronExpression);
@@ -165,8 +165,7 @@ public class DigestTriggerOrgConfigRepository {
      *
      * This prevents re-processing very old data while allowing recovery from short outages.
      */
-    private static LocalDateTime computeStartDateTime(final LocalDateTime lastRunFromDb, final LocalDateTime now,
-                                                      final LocalDateTime oneWeekAgo, final LocalDateTime yesterday) {
+    private static LocalDateTime computeStartDateTime(final LocalDateTime lastRunFromDb, final LocalDateTime now, final LocalDateTime yesterday) {
         if (lastRunFromDb == null) {
             // No previous run - start from yesterday for initial run
             return yesterday;
