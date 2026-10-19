@@ -110,12 +110,14 @@ public class MessageConsumer {
             success = true;
 
             // Record connector metrics (notification sent and integration time) after confirming send succeeded
-            // Wrapped in try-catch to prevent metric failures from triggering sendFailure() after sendSuccess()
+            // Must stop timer first to prevent resource leak, then record the metric
             try {
                 connectorMetrics.recordNotificationSent(cloudEventMetadata.getData());
                 connectorMetrics.recordIntegrationTime(integrationTimer, cloudEventMetadata.getData());
             } catch (Exception metricsException) {
                 Log.warnf(metricsException, "Failed to record connector metrics, but notification was sent successfully");
+                // Stop timer even if metric recording failed to prevent resource leak
+                integrationTimer.stop(Timer.builder("unused").register(meterRegistry));
             }
         } catch (Exception e) {
             Log.infof(e, "Error processing message: %s", e.getMessage());
@@ -123,12 +125,11 @@ public class MessageConsumer {
 
             // Send failure response back to engine
             outgoingMessageSender.sendFailure(cloudEventMetadata, processedExceptionDetails, startTime);
+
+            // Stop integration timer on failure to prevent resource leak
+            integrationTimer.stop(Timer.builder("unused").register(meterRegistry));
         } finally {
             sample.stop(handlerDurationTimer);
-            // Always stop integration timer to prevent resource leak
-            if (!success) {
-                integrationTimer.stop(Timer.builder("unused").register(meterRegistry));
-            }
             if (success) {
                 succeededCounter.increment();
             } else {
