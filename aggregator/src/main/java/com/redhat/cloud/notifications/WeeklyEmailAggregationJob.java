@@ -20,10 +20,6 @@ public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
     @ConfigProperty(name = "notifications.default.weekly.digest.cron", defaultValue = "0 0 * * MON")
     String defaultWeeklyDigestCron;
 
-    public void processWeeklyEmail(LocalDateTime executionTime) {
-        processEmail(executionTime);
-    }
-
     @Override
     protected String getJobType() {
         return "Weekly";
@@ -35,8 +31,8 @@ public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
     }
 
     @Override
-    protected void createMissingDefaultConfigs() {
-        digestTriggerOrgConfigRepository.createMissingDefaultWeeklyConfig(defaultWeeklyDigestCron);
+    protected void createMissingDefaultConfigs(LocalDateTime executionTime) {
+        digestTriggerOrgConfigRepository.createMissingDefaultWeeklyConfig(defaultWeeklyDigestCron, executionTime);
     }
 
     @Override
