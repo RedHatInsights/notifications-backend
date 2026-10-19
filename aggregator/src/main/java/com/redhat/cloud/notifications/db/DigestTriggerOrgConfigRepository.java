@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.db;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfig;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
+import com.redhat.cloud.notifications.utils.AggregationTimeHelper;
 import com.redhat.cloud.notifications.utils.DigestCronUtils;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -72,7 +73,7 @@ public class DigestTriggerOrgConfigRepository {
                         (UUID) emailAggregationRecord[2],       // application id
                         (String) emailAggregationRecord[4],     // bundle name
                         (String) emailAggregationRecord[5]),    // application name
-                    computeStartDateTime(lastRun, now, yesterday),
+                    AggregationTimeHelper.computeStartDateTime(lastRun, now, yesterday),
                     now,
                     WEEKLY
                 );
@@ -157,28 +158,4 @@ public class DigestTriggerOrgConfigRepository {
         }
     }
 
-    /**
-     * Compute aggregation start date with outage recovery logic:
-     * - If last_run is null: start from yesterday (initial run)
-     * - If last_run is older than 2 days: start from yesterday (outage recovery)
-     * - If last_run is recent (within 2 days): start from last_run
-     *
-     * This prevents re-processing very old data while allowing recovery from short outages.
-     */
-    private static LocalDateTime computeStartDateTime(final LocalDateTime lastRunFromDb, final LocalDateTime now, final LocalDateTime yesterday) {
-        if (lastRunFromDb == null) {
-            // No previous run - start from yesterday for initial run
-            return yesterday;
-        }
-
-        LocalDateTime twoDaysAgo = now.minusDays(2);
-
-        if (lastRunFromDb.isBefore(twoDaysAgo)) {
-            // Last run is old (outage scenario) - start from yesterday to catch up
-            return yesterday;
-        }
-
-        // Last run is recent - use it
-        return lastRunFromDb;
-    }
 }

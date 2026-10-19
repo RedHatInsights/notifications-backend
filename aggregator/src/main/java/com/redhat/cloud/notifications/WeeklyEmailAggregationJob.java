@@ -17,7 +17,7 @@ public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
     @Inject
     DigestTriggerOrgConfigRepository digestTriggerOrgConfigRepository;
 
-    @ConfigProperty(name = "notifications.default.weekly.digest.cron", defaultValue = "0 0 * * MON")
+    @ConfigProperty(name = "notifications.default.weekly.digest.cron", defaultValue = "30 0 * * 1")
     String defaultWeeklyDigestCron;
 
     @Override
@@ -58,10 +58,5 @@ public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
     @Override
     protected String getPushGatewayJobName() {
         return "aggregator_job_weekly";
-    }
-
-    // For automatic tests purpose
-    protected void setDefaultWeeklyDigestCron(String defaultWeeklyDigestCron) {
-        this.defaultWeeklyDigestCron = defaultWeeklyDigestCron;
     }
 }
