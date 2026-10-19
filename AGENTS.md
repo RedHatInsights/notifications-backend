@@ -89,10 +89,10 @@ This one-time operation:
 
 **Testing Without RBAC** (local development/testing):
 
-When `rbac.workspace_lookup.enabled=false` (default for tests), `WorkspaceUtils.getDefaultWorkspaceId()` returns deterministic UUIDs without calling the RBAC service:
+When `rbac.workspace-lookup.enabled=false` (default for tests), `WorkspaceUtils.getDefaultWorkspaceId()` returns deterministic UUIDs without calling the RBAC service:
 ```bash
 # In application.properties or test configuration
-rbac.workspace_lookup.enabled=false
+rbac.workspace-lookup.enabled=false
 ```
 
 This generates workspace UUIDs using `UUID.nameUUIDFromBytes("workspace-for-" + orgId)`, providing consistent test data without external dependencies. This setting only affects workspace lookups and does not impact other RBAC functionality.
