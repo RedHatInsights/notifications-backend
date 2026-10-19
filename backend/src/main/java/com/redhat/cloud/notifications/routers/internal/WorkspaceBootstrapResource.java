@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.routers.internal;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
@@ -106,6 +108,7 @@ public class WorkspaceBootstrapResource {
     }
 
     // Inner classes for response DTOs
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public static class BootstrapSummary {
         public UUID systemWorkspaceId;
         public int systemEndpointsAssigned;
