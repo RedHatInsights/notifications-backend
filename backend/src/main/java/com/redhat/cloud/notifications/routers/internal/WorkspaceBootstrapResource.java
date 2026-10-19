@@ -56,15 +56,19 @@ public class WorkspaceBootstrapResource {
 
         BootstrapSummary summary = new BootstrapSummary();
 
-        // Step 1: Get system workspace (org_id = null)
+        // Step 1: Process system endpoints (orgId IS NULL) if any need assignment
         // The system workspace is created by migration V1.143.0
         Workspace systemWorkspace = workspaceRepository.getSystemWorkspace();
-
-        int systemEndpointsUpdated = workspaceRepository.assignSystemWorkspace(
-            systemWorkspace.getId()
-        );
         summary.systemWorkspaceId = systemWorkspace.getId();
-        summary.systemEndpointsAssigned = systemEndpointsUpdated;
+
+        if (workspaceRepository.hasSystemEndpointsNeedingAssignment()) {
+            int systemEndpointsUpdated = workspaceRepository.assignSystemWorkspace(
+                systemWorkspace.getId()
+            );
+            summary.systemEndpointsAssigned = systemEndpointsUpdated;
+        } else {
+            summary.systemEndpointsAssigned = 0;
+        }
 
         // Step 2: Process each org that has endpoints needing workspace assignment
         List<String> orgIds = workspaceRepository.getOrgIdsNeedingWorkspaceAssignment();
