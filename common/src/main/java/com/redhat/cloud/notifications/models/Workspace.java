@@ -31,7 +31,6 @@ public class Workspace extends CreationUpdateTimestamped {
     private UUID id;  // NOT @GeneratedValue - comes from RBAC or explicit assignment
 
     @Size(max = 50)
-    @JsonProperty("org_id")
     private String orgId;  // Nullable for system workspace
 
     public Workspace() {
