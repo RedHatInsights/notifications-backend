@@ -75,7 +75,7 @@
         <clowder-quarkus-config-source.version>2.13.0</clowder-quarkus-config-source.version>
 
         <quarkus-logging-cloudwatch.version>6.16.0</quarkus-logging-cloudwatch.version>
-        <quarkus-logging-sentry.version>2.3.5</quarkus-logging-sentry.version>
+        <quarkus-logging-sentry.version>2.3.6</quarkus-logging-sentry.version>
         <quarkus-mcp-server.version>2.0.3</quarkus-mcp-server.version>
         <quarkus-unleash.version>1.15.0</quarkus-unleash.version>
 
