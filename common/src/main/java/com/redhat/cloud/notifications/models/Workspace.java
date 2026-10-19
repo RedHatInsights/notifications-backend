@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
 
@@ -42,8 +41,8 @@ public class Workspace extends CreationUpdateTimestamped {
      * Validates that the ID is set before persisting.
      * Since we don't use @GeneratedValue, the ID must be explicitly assigned.
      */
-    @PrePersist
-    void validateIdBeforePersist() {
+    @Override
+    protected void additionalPrePersist() {
         if (id == null) {
             throw new IllegalStateException(
                 "Workspace ID must be set before persist. "
