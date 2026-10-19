@@ -91,7 +91,6 @@ public class WorkspaceRepository {
      * @return the system workspace
      * @throws IllegalStateException if system workspace does not exist
      */
-    @Transactional
     public Workspace getSystemWorkspace() {
         Workspace workspace = entityManager.find(Workspace.class, SYSTEM_WORKSPACE_ID);
         if (workspace == null) {
