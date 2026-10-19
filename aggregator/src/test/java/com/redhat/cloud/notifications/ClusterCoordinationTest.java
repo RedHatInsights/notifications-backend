@@ -54,7 +54,7 @@ class ClusterCoordinationTest {
             AggregationTimeHelper.computeReferenceTime().toLocalTime()
         );
 
-        dailyEmailAggregationJob.processDailyEmail(AggregationTimeHelper.computeReferenceTime());
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(AggregationTimeHelper.computeReferenceTime());
 
         assertEquals(1, connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).received().size());
     }
@@ -71,7 +71,7 @@ class ClusterCoordinationTest {
             AggregationTimeHelper.computeReferenceTime().toLocalTime()
         );
 
-        dailyEmailAggregationJob.processDailyEmail(AggregationTimeHelper.computeReferenceTime());
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(AggregationTimeHelper.computeReferenceTime());
 
         assertEquals(1, connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).received().size());
     }
@@ -88,7 +88,7 @@ class ClusterCoordinationTest {
             AggregationTimeHelper.computeReferenceTime().toLocalTime()
         );
 
-        dailyEmailAggregationJob.processDailyEmail(AggregationTimeHelper.computeReferenceTime());
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(AggregationTimeHelper.computeReferenceTime());
 
         assertEquals(0, connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).received().size());
     }
@@ -105,7 +105,7 @@ class ClusterCoordinationTest {
             AggregationTimeHelper.computeReferenceTime().toLocalTime()
         );
 
-        dailyEmailAggregationJob.processDailyEmail(AggregationTimeHelper.computeReferenceTime());
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(AggregationTimeHelper.computeReferenceTime());
 
         assertEquals(0, connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).received().size());
     }
