@@ -57,9 +57,11 @@ public abstract class AbstractEmailAggregationJob {
 
     /**
      * Main entry point for the aggregation job.
+     *
+     * @param executionTime the pre-computed execution time (rounded to 15-minute intervals)
      */
     @ActivateRequestContext
-    public void processEmail() {
+    public void processEmail(LocalDateTime executionTime) {
         // Cluster coordination check - fail-safe if Unleash unreachable
         if (!shouldRunOnThisCluster()) {
             Log.infof("%s aggregator run skipped on %s cluster due to Unleash flag",
@@ -80,8 +82,6 @@ public abstract class AbstractEmailAggregationJob {
         Gauge.Timer durationTimer = duration.startTimer();
 
         try {
-            LocalDateTime executionTime = computeExecutionTime();
-
             createMissingDefaultConfigs();
 
             List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(executionTime, registry);
@@ -142,11 +142,6 @@ public abstract class AbstractEmailAggregationJob {
      * Template method: Return the event type name (e.g., "aggregation", "weekly-aggregation").
      */
     protected abstract String getEventTypeName();
-
-    /**
-     * Template method: Compute the execution time for this run.
-     */
-    protected abstract LocalDateTime computeExecutionTime();
 
     /**
      * Template method: Create missing default configurations for organizations.

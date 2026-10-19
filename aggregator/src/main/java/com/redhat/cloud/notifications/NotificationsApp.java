@@ -9,6 +9,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.time.LocalDateTime;
+
+import static java.time.ZoneOffset.UTC;
 
 @QuarkusMain
 public class NotificationsApp implements QuarkusApplication {
@@ -26,16 +29,20 @@ public class NotificationsApp implements QuarkusApplication {
 
         Log.info(readGitProperties());
 
+        // Compute reference time once for both daily and weekly jobs (15-minute rounding)
+        LocalDateTime referenceTime = computeReferenceTime();
+        Log.infof("Using reference time: %s", referenceTime);
+
         Exception dailyException = null;
         try {
-            dailyEmailAggregationJob.processDailyEmail();
+            dailyEmailAggregationJob.processDailyEmail(referenceTime);
         } catch (Exception e) {
             dailyException = e;
             Log.error("Daily email aggregation job failed", e);
         }
 
         try {
-            weeklyEmailAggregationJob.processWeeklyEmail();
+            weeklyEmailAggregationJob.processWeeklyEmail(referenceTime);
         } catch (Exception e) {
             Log.error("Weekly email aggregation job failed", e);
             if (dailyException != null) {
@@ -54,6 +61,28 @@ public class NotificationsApp implements QuarkusApplication {
         Log.infof("[action: SHUTDOWN][resource_type: email_aggregator][principal: system][outcome: success] Email aggregator shutting down gracefully");
 
         return 0;
+    }
+
+    /**
+     * Compute the reference time for aggregation jobs with 15-minute rounding.
+     * Users can schedule execution time every 15 minutes.
+     * If the job executes at 10:26, we round to the scheduled time of 10:15.
+     *
+     * @return the rounded reference time
+     */
+    private LocalDateTime computeReferenceTime() {
+        final LocalDateTime currentTime = LocalDateTime.now(UTC).withSecond(0).withNano(0);
+
+        // Round to 15-minute boundaries
+        if (currentTime.getMinute() < 15) {
+            return currentTime.withMinute(0);
+        } else if (currentTime.getMinute() < 30) {
+            return currentTime.withMinute(15);
+        } else if (currentTime.getMinute() < 45) {
+            return currentTime.withMinute(30);
+        } else {
+            return currentTime.withMinute(45);
+        }
     }
 
     private String readGitProperties() {
