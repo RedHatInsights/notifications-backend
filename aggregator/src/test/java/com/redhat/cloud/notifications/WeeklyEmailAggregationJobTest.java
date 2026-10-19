@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redhat.cloud.notifications.helpers.AggregationTimeHelper;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.helpers.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -12,6 +11,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfig;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfigId;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
+import com.redhat.cloud.notifications.utils.AggregationTimeHelper;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTestResource(TestLifecycleManager.class)
 class WeeklyEmailAggregationJobTest {
 
-    private static final String DEFAULT_WEEKLY_CRON = "0 0 * * MON";
+    private static final String DEFAULT_WEEKLY_CRON = "30 0 * * 1";
     private static final String ORG_ID_1 = "weeklyOrgId1";
     private static final String ORG_ID_2 = "weeklyOrgId2";
 
@@ -67,7 +67,6 @@ class WeeklyEmailAggregationJobTest {
         executionTime = AggregationTimeHelper.computeReferenceTime(now);
         helpers.purgeEventAggregations();
         helpers.purgeDigestTriggerOrgConfig();
-        weeklyEmailAggregationJob.setDefaultWeeklyDigestCron(DEFAULT_WEEKLY_CRON);
     }
 
     @AfterEach
