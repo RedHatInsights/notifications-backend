@@ -26,11 +26,11 @@ public class NotificationsApp implements QuarkusApplication {
 
         Log.info(readGitProperties());
 
-        boolean dailyFailed = false;
+        Exception dailyException = null;
         try {
             dailyEmailAggregationJob.processDailyEmail();
         } catch (Exception e) {
-            dailyFailed = true;
+            dailyException = e;
             Log.error("Daily email aggregation job failed", e);
         }
 
@@ -38,14 +38,16 @@ public class NotificationsApp implements QuarkusApplication {
             weeklyEmailAggregationJob.processWeeklyEmail();
         } catch (Exception e) {
             Log.error("Weekly email aggregation job failed", e);
-            if (dailyFailed) {
-                throw new RuntimeException("Both daily and weekly email aggregation jobs failed", e);
+            if (dailyException != null) {
+                RuntimeException combinedException = new RuntimeException("Both daily and weekly email aggregation jobs failed", e);
+                combinedException.addSuppressed(dailyException);
+                throw combinedException;
             }
             throw e;
         }
 
-        if (dailyFailed) {
-            throw new RuntimeException("Daily email aggregation job failed");
+        if (dailyException != null) {
+            throw new RuntimeException("Daily email aggregation job failed", dailyException);
         }
 
         // Graceful shutdown - SEC-MON-REQ-1 compliance (EOI-5 process_status)

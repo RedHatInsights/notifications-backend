@@ -7,7 +7,7 @@ This is a multi-module Maven project under `com.redhat.cloud.notifications` (par
 ### Deployable Applications (have `quarkus-maven-plugin`)
 - **backend** -- Public-facing REST API (Integrations + Notifications APIs) with auth, RBAC, and Kessel
 - **engine** -- Event processing pipeline: consumes Kafka events, resolves recipients, dispatches to connectors
-- **aggregator** -- Scheduled daily digest email aggregation
+- **aggregator** -- Scheduled daily and weekly digest email aggregation
 - **recipients-resolver** -- Standalone service for resolving notification recipients via IT services, RBAC, MBOP, and Kessel
 - **mcp** -- MCP (Model Context Protocol) server
 - **connector-\*** (webhook, email, slack, google-chat, microsoft-teams, pagerduty, servicenow, splunk, drawer) -- Each is a standalone Quarkus app that receives CloudEvents from the engine via Kafka and delivers to external systems

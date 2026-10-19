@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.helpers;
+package com.redhat.cloud.notifications.utils;
 
 import com.cronutils.model.Cron;
 import com.cronutils.model.CronType;
@@ -62,12 +62,7 @@ public final class DigestCronUtils {
      * @throws IllegalStateException if next execution cannot be computed
      */
     public static LocalDateTime computeNextRun(String cronExpression) {
-        ExecutionTime executionTime = ExecutionTime.forCron(
-            CRON_PARSER.parse(cronExpression).validate()
-        );
-        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
-        return executionTime.nextExecution(now)
-            .map(ZonedDateTime::toLocalDateTime)
+        return calculateNextRun(cronExpression, LocalDateTime.now(ZoneOffset.UTC))
             .orElseThrow(() -> {
                 Log.errorf("Could not compute next execution for cron expression '%s'", cronExpression);
                 return new IllegalStateException("Failed to compute next execution for cron expression: " + cronExpression);
@@ -76,35 +71,30 @@ public final class DigestCronUtils {
 
     /**
      * Calculate the next execution time for a cron expression starting from the given time.
-     * This method returns null instead of throwing an exception if the calculation fails.
      *
      * @param cronExpression the cron expression (UNIX format: minute hour day-of-month month day-of-week)
      * @param from the starting time
-     * @return the next execution time, or null if the expression is invalid or no next execution exists
+     * @return Optional containing the next execution time, or empty if the expression is invalid or no next execution exists
      */
-    public static LocalDateTime calculateNextRun(String cronExpression, LocalDateTime from) {
+    public static Optional<LocalDateTime> calculateNextRun(String cronExpression, LocalDateTime from) {
         if (cronExpression == null || cronExpression.isBlank()) {
             Log.warnf("Invalid cron expression: null or blank");
-            return null;
+            return Optional.empty();
         }
 
         try {
-            Cron cron = CRON_PARSER.parse(cronExpression);
+            Cron cron = CRON_PARSER.parse(cronExpression).validate();
             ExecutionTime executionTime = ExecutionTime.forCron(cron);
 
             ZonedDateTime fromZoned = from.atZone(ZoneOffset.UTC);
             Optional<ZonedDateTime> nextExecution = executionTime.nextExecution(fromZoned);
 
-            if (nextExecution.isPresent()) {
-                return nextExecution.get().withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
-            } else {
-                Log.warnf("No next execution found for cron expression: %s from time: %s",
-                    cronExpression, from);
-                return null;
-            }
+            return nextExecution.map(zonedDateTime ->
+                zonedDateTime.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()
+            );
         } catch (Exception e) {
             Log.errorf(e, "Failed to parse or calculate next run for cron expression: %s", cronExpression);
-            return null;
+            return Optional.empty();
         }
     }
 
