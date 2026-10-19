@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.config.AggregatorConfig;
+import com.redhat.cloud.notifications.helpers.AggregationTimeHelper;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -50,10 +51,10 @@ class ClusterCoordinationTest {
         helpers.purgeAggregationOrgConfig();
         addTestAggregation();
         dailyEmailAggregationJob.setDefaultDailyDigestTime(
-            dailyEmailAggregationJob.computeScheduleExecutionTime().toLocalTime()
+            AggregationTimeHelper.computeReferenceTime().toLocalTime()
         );
 
-        dailyEmailAggregationJob.processDailyEmail();
+        dailyEmailAggregationJob.processDailyEmail(AggregationTimeHelper.computeReferenceTime());
 
         assertEquals(1, connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).received().size());
     }
@@ -67,10 +68,10 @@ class ClusterCoordinationTest {
         helpers.purgeAggregationOrgConfig();
         addTestAggregation();
         dailyEmailAggregationJob.setDefaultDailyDigestTime(
-            dailyEmailAggregationJob.computeScheduleExecutionTime().toLocalTime()
+            AggregationTimeHelper.computeReferenceTime().toLocalTime()
         );
 
-        dailyEmailAggregationJob.processDailyEmail();
+        dailyEmailAggregationJob.processDailyEmail(AggregationTimeHelper.computeReferenceTime());
 
         assertEquals(1, connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).received().size());
     }
@@ -84,10 +85,10 @@ class ClusterCoordinationTest {
         helpers.purgeAggregationOrgConfig();
         addTestAggregation();
         dailyEmailAggregationJob.setDefaultDailyDigestTime(
-            dailyEmailAggregationJob.computeScheduleExecutionTime().toLocalTime()
+            AggregationTimeHelper.computeReferenceTime().toLocalTime()
         );
 
-        dailyEmailAggregationJob.processDailyEmail();
+        dailyEmailAggregationJob.processDailyEmail(AggregationTimeHelper.computeReferenceTime());
 
         assertEquals(0, connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).received().size());
     }
@@ -101,10 +102,10 @@ class ClusterCoordinationTest {
         helpers.purgeAggregationOrgConfig();
         addTestAggregation();
         dailyEmailAggregationJob.setDefaultDailyDigestTime(
-            dailyEmailAggregationJob.computeScheduleExecutionTime().toLocalTime()
+            AggregationTimeHelper.computeReferenceTime().toLocalTime()
         );
 
-        dailyEmailAggregationJob.processDailyEmail();
+        dailyEmailAggregationJob.processDailyEmail(AggregationTimeHelper.computeReferenceTime());
 
         assertEquals(0, connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).received().size());
     }
@@ -115,7 +116,7 @@ class ClusterCoordinationTest {
             "testOrgId",
             "rhel",
             "policies",
-            dailyEmailAggregationJob.computeScheduleExecutionTime().minusHours(5),
+            AggregationTimeHelper.computeReferenceTime().minusHours(5),
             "{\"org_id\":\"testOrgId\",\"bundle\":\"rhel\",\"application\":\"policies\"}",
             false
         );
