@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.helpers.AggregationTimeHelper;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.helpers.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -57,10 +58,13 @@ class WeeklyEmailAggregationJobTest {
     ObjectMapper objectMapper;
 
     LocalDateTime now;
+    LocalDateTime executionTime;
 
     @BeforeEach
     void setUp() {
         now = LocalDateTime.now(UTC);
+        // Compute rounded execution time (same logic as NotificationsApp)
+        executionTime = AggregationTimeHelper.computeReferenceTime(now);
         helpers.purgeEventAggregations();
         helpers.purgeDigestTriggerOrgConfig();
         weeklyEmailAggregationJob.setDefaultWeeklyDigestCron(DEFAULT_WEEKLY_CRON);
@@ -84,7 +88,7 @@ class WeeklyEmailAggregationJobTest {
         addWeeklyEventEmailAggregation(ORG_ID_2, "rhel", "advisor", "rec1", "host2", now.minusDays(2));
 
         // Execute
-        weeklyEmailAggregationJob.processWeeklyEmail();
+        weeklyEmailAggregationJob.processWeeklyEmail(executionTime);
 
         // Verify
         List<AggregationCommand> commands = getRecordsFromKafka();
@@ -102,7 +106,7 @@ class WeeklyEmailAggregationJobTest {
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "advisor", "rec1", "host2", now.minusDays(2));
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "compliance", "rule1", "host3", now.minusDays(1));
 
-        weeklyEmailAggregationJob.processWeeklyEmail();
+        weeklyEmailAggregationJob.processWeeklyEmail(executionTime);
 
         List<Action> actions = getActionRecordsFromKafka();
         assertEquals(1, actions.size(), "Should have one action for orgId/bundle");
@@ -126,7 +130,7 @@ class WeeklyEmailAggregationJobTest {
 
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
 
-        weeklyEmailAggregationJob.processWeeklyEmail();
+        weeklyEmailAggregationJob.processWeeklyEmail(executionTime);
 
         List<AggregationCommand> commands = getRecordsFromKafka();
         assertEquals(0, commands.size(), "Should not process when next_run hasn't been reached");
@@ -140,7 +144,7 @@ class WeeklyEmailAggregationJobTest {
         // Events are older than last run
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(2));
 
-        weeklyEmailAggregationJob.processWeeklyEmail();
+        weeklyEmailAggregationJob.processWeeklyEmail(executionTime);
 
         List<AggregationCommand> commands = getRecordsFromKafka();
         assertEquals(0, commands.size(), "Should not process events older than last_run");
@@ -155,14 +159,14 @@ class WeeklyEmailAggregationJobTest {
         // Add recent event
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy2", "host2", now.minusDays(3));
 
-        weeklyEmailAggregationJob.processWeeklyEmail();
+        weeklyEmailAggregationJob.processWeeklyEmail(executionTime);
 
         List<AggregationCommand> commands = getRecordsFromKafka();
         assertEquals(1, commands.size());
 
         AggregationCommand command = commands.get(0);
-        // In outage scenario (last_run > 2 days), start should be yesterday
-        LocalDateTime yesterday = now.minusDays(1);
+        // In outage scenario (last_run > 2 days), start should be yesterday (based on executionTime)
+        LocalDateTime yesterday = executionTime.minusDays(1);
         assertTrue(command.getStart().isAfter(yesterday.minusMinutes(1)));
         assertTrue(command.getStart().isBefore(yesterday.plusMinutes(1)));
     }
@@ -175,14 +179,14 @@ class WeeklyEmailAggregationJobTest {
         // Add event from yesterday (within outage recovery window)
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusHours(25));
 
-        weeklyEmailAggregationJob.processWeeklyEmail();
+        weeklyEmailAggregationJob.processWeeklyEmail(executionTime);
 
         List<AggregationCommand> commands = getRecordsFromKafka();
         assertEquals(1, commands.size());
 
         AggregationCommand command = commands.get(0);
-        // Start should be yesterday (outage recovery)
-        LocalDateTime yesterday = now.minusDays(1);
+        // Start should be yesterday (outage recovery), calculated from executionTime
+        LocalDateTime yesterday = executionTime.minusDays(1);
         assertTrue(command.getStart().isAfter(yesterday.minusMinutes(1)));
         assertTrue(command.getStart().isBefore(yesterday.plusMinutes(1)));
     }
@@ -196,7 +200,7 @@ class WeeklyEmailAggregationJobTest {
         // Add event after last run
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusHours(20));
 
-        weeklyEmailAggregationJob.processWeeklyEmail();
+        weeklyEmailAggregationJob.processWeeklyEmail(executionTime);
 
         List<AggregationCommand> commands = getRecordsFromKafka();
         assertEquals(1, commands.size());
@@ -212,16 +216,15 @@ class WeeklyEmailAggregationJobTest {
 
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
 
-        LocalDateTime beforeProcessing = LocalDateTime.now(UTC);
-        weeklyEmailAggregationJob.processWeeklyEmail();
-        LocalDateTime afterProcessing = LocalDateTime.now(UTC);
+        weeklyEmailAggregationJob.processWeeklyEmail(executionTime);
 
         DigestTriggerOrgConfig config = helpers.findDigestTriggerOrgConfig(ORG_ID_1, WEEKLY);
         assertNotNull(config);
 
-        // Last run should be updated to now
-        assertTrue(config.getLastRun().isAfter(beforeProcessing.minusSeconds(1)));
-        assertTrue(config.getLastRun().isBefore(afterProcessing.plusSeconds(1)));
+        // Last run should be updated to the executionTime (which is already rounded)
+        assertNotNull(config.getLastRun());
+        assertEquals(executionTime.withNano(0), config.getLastRun().withNano(0),
+            "Last run should match the execution time");
 
         // Next run should be calculated and in the future
         assertNotNull(config.getNextRun());
@@ -233,7 +236,7 @@ class WeeklyEmailAggregationJobTest {
         // Create event with subscription but no config
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
 
-        weeklyEmailAggregationJob.processWeeklyEmail();
+        weeklyEmailAggregationJob.processWeeklyEmail(executionTime);
 
         // Verify config was created
         DigestTriggerOrgConfig config = helpers.findDigestTriggerOrgConfig(ORG_ID_1, WEEKLY);
@@ -267,7 +270,7 @@ class WeeklyEmailAggregationJobTest {
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "advisor", "rec1", "host2", now.minusDays(2));
         addWeeklyEventEmailAggregation(ORG_ID_2, "rhel", "policies", "policy2", "host3", now.minusDays(1));
 
-        weeklyEmailAggregationJob.processWeeklyEmail();
+        weeklyEmailAggregationJob.processWeeklyEmail(executionTime);
 
         List<AggregationCommand> commands = getRecordsFromKafka();
         assertEquals(3, commands.size());
@@ -287,7 +290,7 @@ class WeeklyEmailAggregationJobTest {
         createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), now.minusHours(1));
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
 
-        weeklyEmailAggregationJob.processWeeklyEmail();
+        weeklyEmailAggregationJob.processWeeklyEmail(executionTime);
 
         List<Action> actions = getActionRecordsFromKafka();
         assertEquals(1, actions.size());
@@ -300,7 +303,7 @@ class WeeklyEmailAggregationJobTest {
         createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), now.minusHours(1));
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
 
-        weeklyEmailAggregationJob.processWeeklyEmail();
+        weeklyEmailAggregationJob.processWeeklyEmail(executionTime);
 
         List<Action> actions = getActionRecordsFromKafka();
         assertEquals(1, actions.size());
