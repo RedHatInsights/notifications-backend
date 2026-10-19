@@ -130,6 +130,10 @@ public class ConnectorMetrics {
         // Check if this is an aggregation email by looking for bundle_display_name
         // and application_aggregated_data_list (unique to aggregation emails)
         JsonObject eventData = notificationData.getJsonObject("eventData");
+        if (eventData == null) {
+            // Try snake_case naming (used by email connector)
+            eventData = notificationData.getJsonObject("event_data");
+        }
         if (eventData != null) {
             boolean hasBundleDisplayName = eventData.getString("bundle_display_name") != null ||
                                           eventData.getString("bundleDisplayName") != null;
@@ -178,6 +182,17 @@ public class ConnectorMetrics {
             value = eventData.getString(fieldName);
             if (value != null && !value.isEmpty()) {
                 return value;
+            }
+            // For bundle field, also try bundle_display_name (used by email aggregation)
+            if ("bundle".equals(fieldName)) {
+                value = eventData.getString("bundle_display_name");
+                if (value != null && !value.isEmpty()) {
+                    return value;
+                }
+                value = eventData.getString("bundleDisplayName");
+                if (value != null && !value.isEmpty()) {
+                    return value;
+                }
             }
         }
 

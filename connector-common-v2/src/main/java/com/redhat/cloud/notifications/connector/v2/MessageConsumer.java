@@ -52,6 +52,7 @@ public class MessageConsumer {
     private Counter succeededCounter;
     private Counter failedCounter;
     private Timer handlerDurationTimer;
+    private Timer discardedIntegrationTimer;
 
     public static final String X_RH_NOTIFICATIONS_CONNECTOR_HEADER = "x-rh-notifications-connector";
 
@@ -67,6 +68,12 @@ public class MessageConsumer {
             .register(meterRegistry);
         handlerDurationTimer = Timer.builder(HANDLER_DURATION_TIMER_NAME)
             .description("Duration of the connector message handler processing")
+            .tag("connector", connectorConfig.getConnectorName())
+            .register(meterRegistry);
+        // Timer used when we need to stop a timer sample without recording it to a named metric
+        // (e.g., when metrics recording fails or message processing fails)
+        discardedIntegrationTimer = Timer.builder("notifications.connector.integration.time.discarded")
+            .description("Integration timer samples that were discarded due to errors")
             .tag("connector", connectorConfig.getConnectorName())
             .register(meterRegistry);
     }
@@ -117,7 +124,7 @@ public class MessageConsumer {
             } catch (Exception metricsException) {
                 Log.warnf(metricsException, "Failed to record connector metrics, but notification was sent successfully");
                 // Stop timer even if metric recording failed to prevent resource leak
-                integrationTimer.stop(Timer.builder("unused").register(meterRegistry));
+                integrationTimer.stop(discardedIntegrationTimer);
             }
         } catch (Exception e) {
             Log.infof(e, "Error processing message: %s", e.getMessage());
@@ -127,7 +134,7 @@ public class MessageConsumer {
             outgoingMessageSender.sendFailure(cloudEventMetadata, processedExceptionDetails, startTime);
 
             // Stop integration timer on failure to prevent resource leak
-            integrationTimer.stop(Timer.builder("unused").register(meterRegistry));
+            integrationTimer.stop(discardedIntegrationTimer);
         } finally {
             sample.stop(handlerDurationTimer);
             if (success) {
