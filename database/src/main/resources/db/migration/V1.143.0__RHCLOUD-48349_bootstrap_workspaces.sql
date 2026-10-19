@@ -18,7 +18,7 @@ ALTER TABLE workspace ALTER COLUMN org_id DROP NOT NULL;
 -- Ensure only one system workspace can exist (org_id IS NULL)
 -- The partial unique index on (1) WHERE org_id IS NULL means at most one row
 -- can satisfy the WHERE predicate, enforcing single system workspace constraint
-CREATE UNIQUE INDEX workspace_unique_system_workspace ON workspace((1)) WHERE org_id IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS ix_workspace_system_workspace ON workspace((1)) WHERE org_id IS NULL;
 
 -- Create the system workspace with well-known UUID
 -- This UUID is calculated as: UUID.nameUUIDFromBytes("notifications-system-workspace".getBytes(UTF_8))
