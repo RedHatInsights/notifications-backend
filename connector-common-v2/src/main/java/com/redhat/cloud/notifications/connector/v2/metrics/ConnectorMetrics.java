@@ -23,6 +23,9 @@ public class ConnectorMetrics {
     public static final String TAG_APPLICATION = "application";
     public static final String TAG_EVENT_TYPE = "event_type";
 
+    // Maximum length for tag values to prevent cardinality explosion
+    private static final int MAX_TAG_VALUE_LENGTH = 100;
+
     @Inject
     MeterRegistry meterRegistry;
 
@@ -39,9 +42,9 @@ public class ConnectorMetrics {
         String metricName = "notifications.connector." + connectorConfig.getConnectorName() + ".sent";
 
         meterRegistry.counter(metricName,
-            TAG_BUNDLE, tags.bundle,
-            TAG_APPLICATION, tags.application,
-            TAG_EVENT_TYPE, tags.eventType
+            TAG_BUNDLE, sanitizeTagValue(tags.bundle),
+            TAG_APPLICATION, sanitizeTagValue(tags.application),
+            TAG_EVENT_TYPE, sanitizeTagValue(tags.eventType)
         ).increment();
     }
 
@@ -79,9 +82,9 @@ public class ConnectorMetrics {
         String metricName = "notifications.connector." + connectorConfig.getConnectorName() + ".integration.time";
 
         Timer timer = Timer.builder(metricName)
-            .tag(TAG_BUNDLE, tags.bundle)
-            .tag(TAG_APPLICATION, tags.application)
-            .tag(TAG_EVENT_TYPE, tags.eventType)
+            .tag(TAG_BUNDLE, sanitizeTagValue(tags.bundle))
+            .tag(TAG_APPLICATION, sanitizeTagValue(tags.application))
+            .tag(TAG_EVENT_TYPE, sanitizeTagValue(tags.eventType))
             .register(meterRegistry);
 
         sample.stop(timer);
@@ -99,12 +102,12 @@ public class ConnectorMetrics {
         String metricName = "notifications.connector." + connectorConfig.getConnectorName() + ".integration.time";
 
         Timer.Builder timerBuilder = Timer.builder(metricName)
-            .tag(TAG_BUNDLE, tags.bundle)
-            .tag(TAG_APPLICATION, tags.application)
-            .tag(TAG_EVENT_TYPE, tags.eventType);
+            .tag(TAG_BUNDLE, sanitizeTagValue(tags.bundle))
+            .tag(TAG_APPLICATION, sanitizeTagValue(tags.application))
+            .tag(TAG_EVENT_TYPE, sanitizeTagValue(tags.eventType));
 
         if (additionalTags != null) {
-            additionalTags.forEach(timerBuilder::tag);
+            additionalTags.forEach((key, value) -> timerBuilder.tag(key, sanitizeTagValue(value)));
         }
 
         Timer timer = timerBuilder.register(meterRegistry);
@@ -205,11 +208,11 @@ public class ConnectorMetrics {
         String[] tagsArray = new String[baseSize + additionalSize];
 
         tagsArray[0] = TAG_BUNDLE;
-        tagsArray[1] = tags.bundle;
+        tagsArray[1] = sanitizeTagValue(tags.bundle);
         tagsArray[2] = TAG_APPLICATION;
-        tagsArray[3] = tags.application;
+        tagsArray[3] = sanitizeTagValue(tags.application);
         tagsArray[4] = TAG_EVENT_TYPE;
-        tagsArray[5] = tags.eventType;
+        tagsArray[5] = sanitizeTagValue(tags.eventType);
 
         if (additionalTags != null) {
             int index = baseSize;
@@ -220,11 +223,31 @@ public class ConnectorMetrics {
                     throw new IllegalArgumentException("Additional tags must not contain null keys or values");
                 }
                 tagsArray[index++] = key;
-                tagsArray[index++] = value;
+                tagsArray[index++] = sanitizeTagValue(value);
             }
         }
 
         return tagsArray;
+    }
+
+    /**
+     * Sanitizes tag values to prevent cardinality explosion in metrics.
+     * Truncates overly long values and ensures the value is safe for use as a metric tag.
+     *
+     * @param value the tag value to sanitize
+     * @return sanitized tag value
+     */
+    private String sanitizeTagValue(String value) {
+        if (value == null || value.isEmpty()) {
+            return "unknown";
+        }
+
+        // Truncate to prevent extremely long tag values
+        if (value.length() > MAX_TAG_VALUE_LENGTH) {
+            return value.substring(0, MAX_TAG_VALUE_LENGTH);
+        }
+
+        return value;
     }
 
     private record NotificationTags(String bundle, String application, String eventType) { }

@@ -48,6 +48,7 @@ public class ServiceNowMessageHandler extends MessageHandler {
 
     @Override
     public HandledMessageDetails handle(final IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
+
         final ServiceNowNotification notification = getAndValidateNotification(incomingCloudEvent);
 
         final Optional<String> authorizationHeader = fetchOptionalAuthorizationHeader(notification, incomingCloudEvent);

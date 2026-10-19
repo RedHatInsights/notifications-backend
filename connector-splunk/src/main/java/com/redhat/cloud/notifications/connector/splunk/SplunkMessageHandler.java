@@ -58,6 +58,7 @@ public class SplunkMessageHandler extends MessageHandler {
 
     @Override
     public HandledMessageDetails handle(final IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
+
         if (incomingCloudEvent.getData() == null) {
             throw new IllegalStateException("CloudEvent data is null");
         }

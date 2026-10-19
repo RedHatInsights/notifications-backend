@@ -362,7 +362,7 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         setupMocks(200, strUsers, 200, 0);
 
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(
-            "notifications.connector.email.sent",
+            "notifications.connector.email_subscription.sent",
             "bundle", "rhel",
             "application", "patch",
             "event_type", "new-advisory"
@@ -376,7 +376,7 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
 
         // Verify counter metric (recorded automatically by MessageConsumer)
         micrometerAssertionHelper.assertCounterIncrementWithTags(
-            "notifications.connector.email.sent", 1.0,
+            "notifications.connector.email_subscription.sent", 1.0,
             "bundle", "rhel",
             "application", "patch",
             "event_type", "new-advisory"
@@ -393,7 +393,7 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         setupMocks(200, strUsers, 200, 0);
 
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(
-            "notifications.connector.email.sent",
+            "notifications.connector.email_subscription.sent",
             "bundle", "Red Hat Enterprise Linux",
             "application", "aggregation",
             "event_type", "aggregation"
@@ -407,7 +407,7 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
 
         // Verify counter metric (recorded automatically by MessageConsumer)
         micrometerAssertionHelper.assertCounterIncrementWithTags(
-            "notifications.connector.email.sent", 1.0,
+            "notifications.connector.email_subscription.sent", 1.0,
             "bundle", "Red Hat Enterprise Linux",
             "application", "aggregation",
             "event_type", "aggregation"

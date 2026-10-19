@@ -122,9 +122,15 @@ public class MessageConsumer {
                 connectorMetrics.recordNotificationSent(cloudEventMetadata.getData());
                 connectorMetrics.recordIntegrationTime(integrationTimer, cloudEventMetadata.getData());
             } catch (Exception metricsException) {
-                Log.warnf(metricsException, "Failed to record connector metrics, but notification was sent successfully");
-                // Stop timer even if metric recording failed to prevent resource leak
-                integrationTimer.stop(discardedIntegrationTimer);
+                // Wrap in try-catch to prevent any exception from escaping to outer catch
+                // If this throws, we already sent success response and must not send failure
+                try {
+                    Log.warnf(metricsException, "Failed to record connector metrics, but notification was sent successfully");
+                    // Stop timer even if metric recording failed to prevent resource leak
+                    integrationTimer.stop(discardedIntegrationTimer);
+                } catch (Exception e2) {
+                    Log.errorf(e2, "Failed to stop integration timer after metrics recording failure");
+                }
             }
         } catch (Exception e) {
             Log.infof(e, "Error processing message: %s", e.getMessage());
