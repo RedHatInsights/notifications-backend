@@ -1,13 +1,13 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
-import com.redhat.cloud.notifications.helpers.AggregationTimeHelper;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfig;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfigId;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.SubscriptionType;
+import com.redhat.cloud.notifications.utils.AggregationTimeHelper;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;
@@ -34,7 +34,7 @@ class DigestTriggerOrgConfigRepositoryTest {
     private static final String APP_NAME = "weekly-app";
     private static final JsonObject PAYLOAD1 = new JsonObject("{\"weekly\":\"data1\"}");
     private static final JsonObject PAYLOAD2 = new JsonObject("{\"weekly\":\"data2\"}");
-    private static final String DEFAULT_WEEKLY_CRON = "0 0 * * MON"; // Every Monday at midnight
+    private static final String DEFAULT_WEEKLY_CRON = "30 0 * * 1"; // Every Monday at 00:30 UTC
 
     @Inject
     DigestTriggerOrgConfigRepository digestTriggerOrgConfigRepository;

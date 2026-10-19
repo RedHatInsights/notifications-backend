@@ -98,25 +98,6 @@ public final class DigestCronUtils {
         }
     }
 
-    /**
-     * Validate if a cron expression is valid.
-     *
-     * @param cronExpression the cron expression to validate
-     * @return true if valid, false otherwise
-     */
-    public static boolean isValidCronExpression(String cronExpression) {
-        if (cronExpression == null || cronExpression.isBlank()) {
-            return false;
-        }
-
-        try {
-            CRON_PARSER.parse(cronExpression);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     private static String[] validateCronParts(String cronExpression) {
         String[] parts = cronExpression.split(" ");
         if (parts.length < 5) {
