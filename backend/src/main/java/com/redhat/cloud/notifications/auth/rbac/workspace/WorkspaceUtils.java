@@ -21,7 +21,7 @@ import java.util.UUID;
 @ApplicationScoped
 public class WorkspaceUtils {
 
-    @ConfigProperty(name = "rbac.workspace_lookup.enabled", defaultValue = "true")
+    @ConfigProperty(name = "rbac.workspace-lookup.enabled", defaultValue = "true")
     boolean workspaceLookupEnabled;
 
     @Inject
@@ -35,7 +35,7 @@ public class WorkspaceUtils {
      * organization. The result is cached because the identifier is not going
      * to change as long as we are fetching this data from RBAC.
      *
-     * When workspace lookup is disabled (rbac.workspace_lookup.enabled=false),
+     * When workspace lookup is disabled (rbac.workspace-lookup.enabled=false),
      * returns a deterministic UUID generated from the org_id. This is useful
      * for local development and testing without requiring RBAC service access.
      *
