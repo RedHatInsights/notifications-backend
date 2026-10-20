@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.utils;
+package com.redhat.cloud.notifications.helpers;
 
 import java.time.LocalDateTime;
 
@@ -48,10 +48,10 @@ public final class AggregationTimeHelper {
      *
      * @param lastRunFromDb the last recorded run time, may be null
      * @param now the current time
-     * @param yesterday yesterday's date/time
      * @return the computed start time for aggregation
      */
-    public static LocalDateTime computeStartDateTime(LocalDateTime lastRunFromDb, LocalDateTime now, LocalDateTime yesterday) {
+    public static LocalDateTime computeStartDateTime(LocalDateTime lastRunFromDb, LocalDateTime now) {
+        LocalDateTime yesterday = now.minusDays(1);
         if (lastRunFromDb == null) {
             // No previous run - start from yesterday for initial run
             return yesterday;

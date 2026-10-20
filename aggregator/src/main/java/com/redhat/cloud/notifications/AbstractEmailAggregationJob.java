@@ -10,19 +10,14 @@ import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
-import io.prometheus.client.exporter.HTTPServer;
-import io.prometheus.client.exporter.PushGateway;
 import io.quarkus.logging.Log;
-import io.quarkus.runtime.LaunchMode;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,10 +39,7 @@ public abstract class AbstractEmailAggregationJob {
     public static final String APP_NAME = "notifications";
 
     @Inject
-    protected AggregatorConfig aggregatorConfig;
-
-    @ConfigProperty(name = "prometheus.pushgateway.url", defaultValue = "http://localhost:8080")
-    String prometheusPushGatewayUrl;
+    AggregatorConfig aggregatorConfig;
 
     @Inject
     @Channel(EGRESS_CHANNEL)
@@ -59,9 +51,10 @@ public abstract class AbstractEmailAggregationJob {
      * Main entry point for the aggregation job.
      *
      * @param executionTime the pre-computed execution time (rounded to 15-minute intervals)
+     * @param registry the shared metrics registry for both daily and weekly jobs
      */
     @ActivateRequestContext
-    public void searchBuildAndSendAggregationCommands(LocalDateTime executionTime) {
+    public void searchBuildAndSendAggregationCommands(LocalDateTime executionTime, CollectorRegistry registry) {
         // Cluster coordination check - fail-safe if Unleash unreachable
         if (!shouldRunOnThisCluster()) {
             Log.infof("%s aggregator run skipped on %s cluster due to Unleash flag",
@@ -73,7 +66,6 @@ public abstract class AbstractEmailAggregationJob {
         Log.infof("[action: RUN_JOB][resource_type: %s_email_aggregation][principal: system][outcome: started] %s email aggregation job started",
             getJobType().toLowerCase(), getJobType());
 
-        CollectorRegistry registry = new CollectorRegistry();
         Gauge duration = Gauge
                 .build()
                 .name("aggregator_job_duration_seconds")
@@ -123,13 +115,6 @@ public abstract class AbstractEmailAggregationJob {
             throw ex;
         } finally {
             durationTimer.setDuration();
-            if (!LaunchMode.current().isDevOrTest()) {
-                if (aggregatorConfig.isScrapeExportMode()) {
-                    exposeMetricsForScraping(registry);
-                } else {
-                    pushMetricsToGateway(registry);
-                }
-            }
         }
     }
 
@@ -170,11 +155,6 @@ public abstract class AbstractEmailAggregationJob {
      */
     protected abstract String getLastSuccessMetricName();
 
-    /**
-     * Template method: Return the push gateway job name.
-     */
-    protected abstract String getPushGatewayJobName();
-
     List<AggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
         List<AggregationCommand> pendingAggregationCommands = getPendingAggregations(endTime);
 
@@ -214,64 +194,13 @@ public abstract class AbstractEmailAggregationJob {
             .withOrgId(aggregationCommands.get(0).getOrgId())
             .withTimestamp(LocalDateTime.now(UTC))
             .withEvents(eventList)
-            .withContext(buildContext())
+            .withContext(Context.builder().build())
             .build();
 
         String encodedAction = Parser.encode(action);
         Log.infof("Encoded %s Payload: %s", getJobType(), encodedAction);
         Message<String> message = Message.of(encodedAction);
         emitterIngress.send(message);
-    }
-
-    /**
-     * Template method: Build the context for the Kafka action.
-     * Default is empty context. Override if needed.
-     */
-    protected Context buildContext() {
-        return new Context.ContextBuilder().build();
-    }
-
-    private void pushMetricsToGateway(CollectorRegistry registry) {
-        PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
-        try {
-            pg.pushAdd(registry, getPushGatewayJobName());
-        } catch (IOException e) {
-            Log.warnf("Could not push %s aggregator metrics to Prometheus Pushgateway.", getJobType().toLowerCase(), e);
-        }
-    }
-
-    /**
-     * Interim fix for RHCLOUD-50496: Pushgateway isn't deployed on HCC clusters yet
-     * (RHCLOUD-48965), so instead of pushing, expose the registry on an embedded HTTP
-     * server for long enough to be scraped, then let the job exit normally. To be
-     * removed once Pushgateway is available on HCC.
-     */
-    private void exposeMetricsForScraping(CollectorRegistry registry) {
-        Optional<Integer> metricsPort = aggregatorConfig.getMetricsPort();
-        if (metricsPort.isEmpty()) {
-            return;
-        }
-
-        try {
-            int keepAliveSeconds = aggregatorConfig.getMetricsScrapeKeepAliveSeconds();
-            HTTPServer server = new HTTPServer.Builder()
-                    .withPort(metricsPort.get())
-                    .withRegistry(registry)
-                    .withDaemonThreads(true)
-                    .build();
-            try {
-                Log.infof("Exposing %s aggregator metrics for scraping on port %d for %d seconds",
-                    getJobType().toLowerCase(), metricsPort.get(), keepAliveSeconds);
-                Thread.sleep(keepAliveSeconds * 1000L);
-            } finally {
-                server.close();
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            Log.warnf("Interrupted while exposing %s aggregator metrics for scraping.", getJobType().toLowerCase(), e);
-        } catch (Exception e) {
-            Log.warnf("Could not expose %s aggregator metrics for scraping.", getJobType().toLowerCase(), e);
-        }
     }
 
     Gauge getPairsProcessed() {
