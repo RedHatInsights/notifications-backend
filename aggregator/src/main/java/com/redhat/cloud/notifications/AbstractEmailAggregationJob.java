@@ -68,8 +68,8 @@ public abstract class AbstractEmailAggregationJob {
 
         Gauge duration = Gauge
                 .build()
-                .name("aggregator_job_duration_seconds")
-                .help("Duration of the aggregator job in seconds.")
+                .name(getDurationMetricName())
+                .help(String.format("Duration of the %s aggregator job in seconds.", getJobType().toLowerCase()))
                 .register(registry);
         Gauge.Timer durationTimer = duration.startTimer();
 
@@ -154,6 +154,11 @@ public abstract class AbstractEmailAggregationJob {
      * Template method: Return the metric name for last success.
      */
     protected abstract String getLastSuccessMetricName();
+
+    /**
+     * Template method: Return the metric name for job duration.
+     */
+    protected abstract String getDurationMetricName();
 
     List<AggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
         List<AggregationCommand> pendingAggregationCommands = getPendingAggregations(endTime);

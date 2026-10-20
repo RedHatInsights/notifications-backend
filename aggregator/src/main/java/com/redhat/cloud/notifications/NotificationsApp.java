@@ -10,7 +10,6 @@ import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,9 +29,6 @@ public class NotificationsApp implements QuarkusApplication {
 
     @Inject
     AggregatorConfig aggregatorConfig;
-
-    @ConfigProperty(name = "prometheus.pushgateway.url", defaultValue = "http://localhost:8080")
-    String prometheusPushGatewayUrl;
 
     @Override
     public int run(String... args) {
@@ -106,9 +102,9 @@ public class NotificationsApp implements QuarkusApplication {
     }
 
     protected void pushMetricsToGateway(CollectorRegistry registry) {
-        PushGateway pg = new PushGateway(prometheusPushGatewayUrl);
+        PushGateway pg = new PushGateway(aggregatorConfig.getPrometheusPushGatewayUrl());
         try {
-            pg.pushAdd(registry, "aggregator_job");
+            pg.pushAdd(registry, "aggregator_jobs");
         } catch (IOException e) {
             Log.warnf("Could not push aggregator metrics to Prometheus Pushgateway.", e);
         }

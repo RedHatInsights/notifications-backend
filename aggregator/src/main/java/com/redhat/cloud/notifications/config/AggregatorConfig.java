@@ -30,8 +30,9 @@ public class AggregatorConfig {
     private static final String METRICS_SCRAPE_MODE_ENABLED = "notifications.aggregator.metrics.scrape-mode-enabled";
     private static final String METRICS_SCRAPE_KEEP_ALIVE_SECONDS = "notifications.aggregator.metrics.scrape-keep-alive-seconds";
     private static final int DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS = 150;
-    public static final String NOTIFICATIONS_DEFAULT_DAILY_DIGEST_TIME = "notifications.default.daily.digest.time";
-    public static final String NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON = "notifications.default.weekly.digest.cron";
+    private static final String NOTIFICATIONS_DEFAULT_DAILY_DIGEST_TIME = "notifications.default.daily.digest.time";
+    private static final String NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON = "notifications.default.weekly.digest.cron";
+    private static final String PROMETHEUS_PUSHGATEWAY_URL = "prometheus.pushgateway.url";
 
     /*
      * Unleash configuration
@@ -52,6 +53,9 @@ public class AggregatorConfig {
 
     @ConfigProperty(name = NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON, defaultValue = "30 0 * * 1")
     String defaultWeeklyDigestCron;
+
+    @ConfigProperty(name = PROMETHEUS_PUSHGATEWAY_URL, defaultValue = "http://localhost:8080")
+    String prometheusPushGatewayUrl;
 
     @Inject
     Unleash unleash;
@@ -88,6 +92,10 @@ public class AggregatorConfig {
 
     public String getDefaultWeeklyDigestCron() {
         return defaultWeeklyDigestCron;
+    }
+
+    public String getPrometheusPushGatewayUrl() {
+        return prometheusPushGatewayUrl;
     }
 
     /**
@@ -167,6 +175,7 @@ public class AggregatorConfig {
         config.put(CLUSTER_ID, getClusterId().orElse("not-configured"));
         config.put(METRICS_SCRAPE_MODE_ENABLED, metricsScrapeModeEnabled);
         config.put(METRICS_SCRAPE_KEEP_ALIVE_SECONDS, metricsScrapeKeepAliveSeconds);
+        config.put(PROMETHEUS_PUSHGATEWAY_URL, prometheusPushGatewayUrl);
         config.put(NOTIFICATIONS_DEFAULT_DAILY_DIGEST_TIME, defaultDailyDigestTime);
         config.put(NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON, defaultWeeklyDigestCron);
         if (activeClusterToggle != null) {
