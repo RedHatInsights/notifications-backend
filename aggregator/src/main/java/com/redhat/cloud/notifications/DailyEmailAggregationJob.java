@@ -54,4 +54,9 @@ public class DailyEmailAggregationJob extends AbstractEmailAggregationJob {
     protected String getLastSuccessMetricName() {
         return "aggregator_job_last_success";
     }
+
+    @Override
+    protected String getDurationMetricName() {
+        return "aggregator_job_duration_seconds";
+    }
 }
