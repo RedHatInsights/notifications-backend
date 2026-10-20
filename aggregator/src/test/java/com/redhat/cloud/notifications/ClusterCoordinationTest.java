@@ -1,8 +1,9 @@
 package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.config.AggregatorConfig;
+import com.redhat.cloud.notifications.helpers.AggregationTimeHelper;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
-import com.redhat.cloud.notifications.utils.AggregationTimeHelper;
+import io.prometheus.client.CollectorRegistry;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -47,14 +48,14 @@ class ClusterCoordinationTest {
     void shouldRunWhenClusterIdNotConfigured() {
         // When cluster ID is not configured, aggregator runs normally (backward compatibility)
         when(aggregatorConfig.getClusterId()).thenReturn(Optional.empty());
-
-        helpers.purgeAggregationOrgConfig();
-        addTestAggregation();
-        dailyEmailAggregationJob.setDefaultDailyDigestTime(
+        when(aggregatorConfig.getDefaultDailyDigestTime()).thenReturn(
             AggregationTimeHelper.computeReferenceTime().toLocalTime()
         );
 
-        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(AggregationTimeHelper.computeReferenceTime());
+        helpers.purgeAggregationOrgConfig();
+        addTestAggregation();
+
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(AggregationTimeHelper.computeReferenceTime(), new CollectorRegistry());
 
         assertEquals(1, connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).received().size());
     }
@@ -64,14 +65,14 @@ class ClusterCoordinationTest {
         // When cluster ID matches Unleash active cluster, aggregator runs
         when(aggregatorConfig.getClusterId()).thenReturn(Optional.of("test"));
         when(aggregatorConfig.getActiveCluster()).thenReturn(Optional.of("test"));
-
-        helpers.purgeAggregationOrgConfig();
-        addTestAggregation();
-        dailyEmailAggregationJob.setDefaultDailyDigestTime(
+        when(aggregatorConfig.getDefaultDailyDigestTime()).thenReturn(
             AggregationTimeHelper.computeReferenceTime().toLocalTime()
         );
 
-        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(AggregationTimeHelper.computeReferenceTime());
+        helpers.purgeAggregationOrgConfig();
+        addTestAggregation();
+
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(AggregationTimeHelper.computeReferenceTime(), new CollectorRegistry());
 
         assertEquals(1, connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).received().size());
     }
@@ -81,14 +82,14 @@ class ClusterCoordinationTest {
         // When cluster ID does NOT match Unleash active cluster, aggregator skips
         when(aggregatorConfig.getClusterId()).thenReturn(Optional.of("test"));
         when(aggregatorConfig.getActiveCluster()).thenReturn(Optional.of("not-test"));
-
-        helpers.purgeAggregationOrgConfig();
-        addTestAggregation();
-        dailyEmailAggregationJob.setDefaultDailyDigestTime(
+        when(aggregatorConfig.getDefaultDailyDigestTime()).thenReturn(
             AggregationTimeHelper.computeReferenceTime().toLocalTime()
         );
 
-        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(AggregationTimeHelper.computeReferenceTime());
+        helpers.purgeAggregationOrgConfig();
+        addTestAggregation();
+
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(AggregationTimeHelper.computeReferenceTime(), new CollectorRegistry());
 
         assertEquals(0, connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).received().size());
     }
@@ -98,14 +99,14 @@ class ClusterCoordinationTest {
         // When Unleash is unreachable/disabled (returns empty), aggregator skips (fail-safe)
         when(aggregatorConfig.getClusterId()).thenReturn(Optional.of("test"));
         when(aggregatorConfig.getActiveCluster()).thenReturn(Optional.empty());
-
-        helpers.purgeAggregationOrgConfig();
-        addTestAggregation();
-        dailyEmailAggregationJob.setDefaultDailyDigestTime(
+        when(aggregatorConfig.getDefaultDailyDigestTime()).thenReturn(
             AggregationTimeHelper.computeReferenceTime().toLocalTime()
         );
 
-        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(AggregationTimeHelper.computeReferenceTime());
+        helpers.purgeAggregationOrgConfig();
+        addTestAggregation();
+
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(AggregationTimeHelper.computeReferenceTime(), new CollectorRegistry());
 
         assertEquals(0, connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).received().size());
     }
