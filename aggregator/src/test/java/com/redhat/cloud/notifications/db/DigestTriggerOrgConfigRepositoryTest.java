@@ -1,13 +1,13 @@
 package com.redhat.cloud.notifications.db;
 
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.helpers.AggregationTimeHelper;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfig;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfigId;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.SubscriptionType;
-import com.redhat.cloud.notifications.utils.AggregationTimeHelper;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.vertx.core.json.JsonObject;

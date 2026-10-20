@@ -1,9 +1,9 @@
 package com.redhat.cloud.notifications.db;
 
+import com.redhat.cloud.notifications.helpers.AggregationTimeHelper;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfig;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
-import com.redhat.cloud.notifications.utils.AggregationTimeHelper;
 import com.redhat.cloud.notifications.utils.DigestCronUtils;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -35,7 +35,6 @@ public class DigestTriggerOrgConfigRepository {
      */
     public List<AggregationCommand> getApplicationsWithPendingWeeklyAggregation(LocalDateTime now) {
         LocalDateTime oneWeekAgo = now.minusWeeks(1);
-        LocalDateTime yesterday = now.minusDays(1);
         List<Object[]> records;
         final LocalDateTime startTime = LocalDateTime.now(UTC);
 
@@ -73,7 +72,7 @@ public class DigestTriggerOrgConfigRepository {
                         (UUID) emailAggregationRecord[2],       // application id
                         (String) emailAggregationRecord[4],     // bundle name
                         (String) emailAggregationRecord[5]),    // application name
-                    AggregationTimeHelper.computeStartDateTime(lastRun, now, yesterday),
+                    AggregationTimeHelper.computeStartDateTime(lastRun, now),
                     now,
                     WEEKLY
                 );
