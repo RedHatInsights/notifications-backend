@@ -15,6 +15,7 @@ import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static io.restassured.RestAssured.given;
@@ -49,9 +50,10 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Call bootstrap endpoint
         BootstrapSummary summary = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
             .contentType(JSON)
             .when()
-            .post("/internal/workspace/bootstrap")
+            .post("/workspace/bootstrap")
             .then()
             .statusCode(200)
             .contentType(JSON)
@@ -78,9 +80,10 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Call bootstrap twice
         BootstrapSummary summary1 = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
             .contentType(JSON)
             .when()
-            .post("/internal/workspace/bootstrap")
+            .post("/workspace/bootstrap")
             .then()
             .statusCode(200)
             .contentType(JSON)
@@ -88,9 +91,10 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
 
         BootstrapSummary summary2 = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
             .contentType(JSON)
             .when()
-            .post("/internal/workspace/bootstrap")
+            .post("/workspace/bootstrap")
             .then()
             .statusCode(200)
             .contentType(JSON)
@@ -123,9 +127,10 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Call bootstrap
         BootstrapSummary summary = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
             .contentType(JSON)
             .when()
-            .post("/internal/workspace/bootstrap")
+            .post("/workspace/bootstrap")
             .then()
             .statusCode(200)
             .contentType(JSON)
@@ -152,9 +157,10 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Call bootstrap with empty endpoints table
         BootstrapSummary summary = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
             .contentType(JSON)
             .when()
-            .post("/internal/workspace/bootstrap")
+            .post("/workspace/bootstrap")
             .then()
             .statusCode(200)
             .contentType(JSON)
@@ -177,9 +183,10 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
 
         BootstrapSummary summary1 = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
             .contentType(JSON)
             .when()
-            .post("/internal/workspace/bootstrap")
+            .post("/workspace/bootstrap")
             .then()
             .statusCode(200)
             .extract().as(BootstrapSummary.class);
@@ -193,9 +200,10 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Run bootstrap again
         BootstrapSummary summary2 = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
             .contentType(JSON)
             .when()
-            .post("/internal/workspace/bootstrap")
+            .post("/workspace/bootstrap")
             .then()
             .statusCode(200)
             .extract().as(BootstrapSummary.class);
@@ -229,9 +237,10 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Call bootstrap
         BootstrapSummary summary = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
             .contentType(JSON)
             .when()
-            .post("/internal/workspace/bootstrap")
+            .post("/workspace/bootstrap")
             .then()
             .statusCode(200)
             .contentType(JSON)
@@ -259,9 +268,10 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Call bootstrap
         given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
             .contentType(JSON)
             .when()
-            .post("/internal/workspace/bootstrap")
+            .post("/workspace/bootstrap")
             .then()
             .statusCode(200);
 
@@ -287,9 +297,10 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Call bootstrap
         BootstrapSummary summary = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
             .contentType(JSON)
             .when()
-            .post("/internal/workspace/bootstrap")
+            .post("/workspace/bootstrap")
             .then()
             .statusCode(200)
             .extract().as(BootstrapSummary.class);
