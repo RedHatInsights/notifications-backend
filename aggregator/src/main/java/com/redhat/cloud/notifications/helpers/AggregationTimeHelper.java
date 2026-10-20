@@ -48,23 +48,35 @@ public final class AggregationTimeHelper {
      *
      * @param lastRunFromDb the last recorded run time, may be null
      * @param now the current time
+     * @param outageDaysThreshold number of days before considering it an outage (2 for daily, 8 for weekly)
      * @return the computed start time for aggregation
      */
-    public static LocalDateTime computeStartDateTime(LocalDateTime lastRunFromDb, LocalDateTime now) {
+    public static LocalDateTime computeStartDateTime(LocalDateTime lastRunFromDb, LocalDateTime now, int outageDaysThreshold) {
         LocalDateTime yesterday = now.minusDays(1);
         if (lastRunFromDb == null) {
             // No previous run - start from yesterday for initial run
             return yesterday;
         }
 
-        LocalDateTime twoDaysAgo = now.minusDays(2);
+        LocalDateTime outageThreshold = now.minusDays(outageDaysThreshold);
 
-        if (lastRunFromDb.isBefore(twoDaysAgo)) {
+        if (lastRunFromDb.isBefore(outageThreshold)) {
             // Last run is old (outage scenario) - start from yesterday to catch up
             return yesterday;
         }
 
         // Last run is recent - use it
         return lastRunFromDb;
+    }
+
+    /**
+     * Compute the aggregation start time for daily digests (2-day outage threshold).
+     *
+     * @param lastRunFromDb the last recorded run time, may be null
+     * @param now the current time
+     * @return the computed start time for aggregation
+     */
+    public static LocalDateTime computeStartDateTime(LocalDateTime lastRunFromDb, LocalDateTime now) {
+        return computeStartDateTime(lastRunFromDb, now, 2);
     }
 }
