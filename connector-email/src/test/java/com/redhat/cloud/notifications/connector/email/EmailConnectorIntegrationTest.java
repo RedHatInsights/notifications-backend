@@ -36,6 +36,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
+import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.SENT_COUNTER_NAME;
+import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.TAG_APPLICATION;
+import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.TAG_BUNDLE;
+import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.TAG_CONNECTOR;
+import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.TAG_EVENT_TYPE;
 import static email.TestAdvisorTemplate.JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestInventoryTemplate.JSON_INVENTORY_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestPatchTemplate.JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT;
@@ -362,11 +367,11 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         setupMocks(200, strUsers, 200, 0);
 
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(
-            "notifications.connector.sent",
-            "connector", "email_subscription",
-            "bundle", "rhel",
-            "application", "patch",
-            "event_type", "new-advisory"
+            SENT_COUNTER_NAME,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "rhel",
+            TAG_APPLICATION, "patch",
+            TAG_EVENT_TYPE, "new-advisory"
         );
 
         JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, null);
@@ -377,11 +382,11 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
 
         // Verify counter metric (recorded automatically by MessageConsumer)
         micrometerAssertionHelper.assertCounterIncrementWithTags(
-            "notifications.connector.sent", 1.0,
-            "connector", "email_subscription",
-            "bundle", "rhel",
-            "application", "patch",
-            "event_type", "new-advisory"
+            SENT_COUNTER_NAME, 1.0,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "rhel",
+            TAG_APPLICATION, "patch",
+            TAG_EVENT_TYPE, "new-advisory"
         );
 
         // Note: Integration time metric is also recorded but not verified in tests
@@ -395,11 +400,11 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         setupMocks(200, strUsers, 200, 0);
 
         micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(
-            "notifications.connector.sent",
-            "connector", "email_subscription",
-            "bundle", "unknown",
-            "application", "unknown",
-            "event_type", "unknown"
+            SENT_COUNTER_NAME,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "unknown",
+            TAG_APPLICATION, "unknown",
+            TAG_EVENT_TYPE, "unknown"
         );
 
         JsonObject payload = buildEmailPayload(buildRhelDailyDigestEmailContext(), true, null);
@@ -413,11 +418,11 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         // in the CloudEvent data structure, so they default to "unknown". This should be fixed upstream
         // by standardizing the CloudEvent structure for aggregation emails to include these fields.
         micrometerAssertionHelper.assertCounterIncrementWithTags(
-            "notifications.connector.sent", 1.0,
-            "connector", "email_subscription",
-            "bundle", "unknown",
-            "application", "unknown",
-            "event_type", "unknown"
+            SENT_COUNTER_NAME, 1.0,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "unknown",
+            TAG_APPLICATION, "unknown",
+            TAG_EVENT_TYPE, "unknown"
         );
 
         // Note: Integration time metric is also recorded but not verified in tests
