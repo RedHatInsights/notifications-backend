@@ -86,7 +86,7 @@ Events from `errata-notifications` (the `HIGH_VOLUME_APPLICATION`) are routed to
 
 ## Aggregator (Cron Job)
 
-`AbstractEmailAggregationJob` is the base class for scheduled batch jobs (not Kafka consumers). Concrete implementations include `DailyEmailAggregationJob` and `WeeklyEmailAggregationJob`. These jobs query the DB for pending aggregations, build `Action` messages, and emit them to the `egress` channel using `@Channel(EGRESS_CHANNEL) Emitter<String>`. `AbstractEmailAggregationJob` manages the channel emission and pushes metrics to Prometheus Pushgateway after each run.
+`AbstractEmailAggregationJob` is the base class for scheduled batch jobs (not Kafka consumers). Concrete implementations include `DailyEmailAggregationJob` and `WeeklyEmailAggregationJob`. These jobs query the DB for pending aggregations, build `Action` messages, and emit them to the `egress` channel using `@Channel(EGRESS_CHANNEL) Emitter<String>`. `AbstractEmailAggregationJob` manages the channel emission and records metrics to a shared `CollectorRegistry`. After both daily and weekly jobs complete, `NotificationsApp` exports the metrics to Prometheus Pushgateway or exposes them for scraping.
 
 ## Kafka Reinjection (V1 Only)
 

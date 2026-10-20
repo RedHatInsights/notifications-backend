@@ -252,10 +252,10 @@ class DigestTriggerOrgConfigRepositoryTest {
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         LocalDateTime nextRun = now.minusHours(1);
 
-        // Create digest trigger config with last_run older than 2 days (outage scenario)
+        // Create digest trigger config with last_run older than 8 days (outage scenario for weekly)
         DigestTriggerOrgConfigId configId = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
         DigestTriggerOrgConfig config = new DigestTriggerOrgConfig(configId, DEFAULT_WEEKLY_CRON);
-        config.setLastRun(now.minusDays(5)); // 5 days ago - outage
+        config.setLastRun(now.minusDays(9)); // 9 days ago - outage
         config.setNextRun(nextRun);
         resourceHelpers.addDigestTriggerOrgConfig(config);
 
@@ -271,7 +271,7 @@ class DigestTriggerOrgConfigRepositoryTest {
         assertEquals(1, commands.size());
         AggregationCommand command = commands.get(0);
 
-        // In outage recovery (last_run > 2 days old), start should be yesterday
+        // In outage recovery (last_run > 8 days old for weekly), start should be yesterday
         LocalDateTime yesterday = now.minusDays(1);
         assertTrue(command.getStart().isAfter(yesterday.minusMinutes(1)));
         assertTrue(command.getStart().isBefore(yesterday.plusMinutes(1)));

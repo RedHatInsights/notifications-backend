@@ -72,7 +72,7 @@ public class DigestTriggerOrgConfigRepository {
                         (UUID) emailAggregationRecord[2],       // application id
                         (String) emailAggregationRecord[4],     // bundle name
                         (String) emailAggregationRecord[5]),    // application name
-                    AggregationTimeHelper.computeStartDateTime(lastRun, now),
+                    AggregationTimeHelper.computeStartDateTime(lastRun, now, 8),
                     now,
                     WEEKLY
                 );

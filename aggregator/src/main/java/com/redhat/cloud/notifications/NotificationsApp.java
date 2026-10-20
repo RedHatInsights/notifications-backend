@@ -44,28 +44,30 @@ public class NotificationsApp implements QuarkusApplication {
         // Create a single shared registry for both jobs to avoid port binding conflicts
         CollectorRegistry registry = new CollectorRegistry();
 
-        DelayedThrower.throwEventually("Email aggregation job(s) failed", accumulator -> {
-            try {
-                dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(referenceTime, registry);
-            } catch (Exception e) {
-                Log.error("Daily email aggregation job failed", e);
-                accumulator.add(e);
-            }
+        try {
+            DelayedThrower.throwEventually("Email aggregation job(s) failed", accumulator -> {
+                try {
+                    dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(referenceTime, registry);
+                } catch (Exception e) {
+                    Log.error("Daily email aggregation job failed", e);
+                    accumulator.add(e);
+                }
 
-            try {
-                weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(referenceTime, registry);
-            } catch (Exception e) {
-                Log.error("Weekly email aggregation job failed", e);
-                accumulator.add(e);
-            }
-        });
-
-        // Expose or push metrics once after both jobs complete
-        if (!LaunchMode.current().isDevOrTest()) {
-            if (aggregatorConfig.isScrapeExportMode()) {
-                exposeMetricsForScraping(registry);
-            } else {
-                pushMetricsToGateway(registry);
+                try {
+                    weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(referenceTime, registry);
+                } catch (Exception e) {
+                    Log.error("Weekly email aggregation job failed", e);
+                    accumulator.add(e);
+                }
+            });
+        } finally {
+            // Expose or push metrics once after both jobs complete (even on failure)
+            if (!LaunchMode.current().isDevOrTest()) {
+                if (aggregatorConfig.isScrapeExportMode()) {
+                    exposeMetricsForScraping(registry);
+                } else {
+                    pushMetricsToGateway(registry);
+                }
             }
         }
 
@@ -104,9 +106,9 @@ public class NotificationsApp implements QuarkusApplication {
     protected void pushMetricsToGateway(CollectorRegistry registry) {
         PushGateway pg = new PushGateway(aggregatorConfig.getPrometheusPushGatewayUrl());
         try {
-            pg.pushAdd(registry, "aggregator_jobs");
+            pg.pushAdd(registry, "aggregator_job");
         } catch (IOException e) {
-            Log.warnf("Could not push aggregator metrics to Prometheus Pushgateway.", e);
+            Log.warn("Could not push aggregator metrics to Prometheus Pushgateway.", e);
         }
     }
 
@@ -138,9 +140,9 @@ public class NotificationsApp implements QuarkusApplication {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            Log.warnf("Interrupted while exposing aggregator metrics for scraping.", e);
+            Log.warn("Interrupted while exposing aggregator metrics for scraping.", e);
         } catch (Exception e) {
-            Log.warnf("Could not expose aggregator metrics for scraping.", e);
+            Log.warn("Could not expose aggregator metrics for scraping.", e);
         }
     }
 }
