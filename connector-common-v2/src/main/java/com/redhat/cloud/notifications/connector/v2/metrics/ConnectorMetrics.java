@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.v2.metrics;
 
 import com.redhat.cloud.notifications.connector.v2.ConnectorConfig;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.vertx.core.json.JsonObject;
@@ -11,14 +12,19 @@ import java.util.Map;
 
 /**
  * Common metrics utility for all connectors to track notifications sent and integration times.
- * The connector type is automatically determined from the ConnectorConfig.
+ * Uses static metric names with dimensional tags (including connector type) for unified
+ * cross-connector aggregation in Prometheus/Micrometer.
  * Each connector records:
- * - Counter: notifications.connector.{type}.sent with tags: bundle, application, event_type
- * - Timer: notifications.connector.{type}.integration.time with tags: bundle, application, event_type
+ * - Counter: notifications.connector.sent with tags: connector, bundle, application, event_type
+ * - Timer: notifications.connector.integration.time with tags: connector, bundle, application, event_type
  */
 @ApplicationScoped
 public class ConnectorMetrics {
 
+    public static final String SENT_COUNTER_NAME = "notifications.connector.sent";
+    public static final String INTEGRATION_TIME_TIMER_NAME = "notifications.connector.integration.time";
+
+    public static final String TAG_CONNECTOR = "connector";
     public static final String TAG_BUNDLE = "bundle";
     public static final String TAG_APPLICATION = "application";
     public static final String TAG_EVENT_TYPE = "event_type";
@@ -38,14 +44,7 @@ public class ConnectorMetrics {
      * @param notificationData the event data containing bundle, application, and event_type
      */
     public void recordNotificationSent(JsonObject notificationData) {
-        NotificationTags tags = extractTags(notificationData);
-        String metricName = "notifications.connector." + connectorConfig.getConnectorName() + ".sent";
-
-        meterRegistry.counter(metricName,
-            TAG_BUNDLE, sanitizeTagValue(tags.bundle),
-            TAG_APPLICATION, sanitizeTagValue(tags.application),
-            TAG_EVENT_TYPE, sanitizeTagValue(tags.eventType)
-        ).increment();
+        recordNotificationSent(notificationData, null);
     }
 
     /**
@@ -56,10 +55,18 @@ public class ConnectorMetrics {
      */
     public void recordNotificationSent(JsonObject notificationData, Map<String, String> additionalTags) {
         NotificationTags tags = extractTags(notificationData);
-        String metricName = "notifications.connector." + connectorConfig.getConnectorName() + ".sent";
 
-        String[] tagsArray = buildTagsArray(tags, additionalTags);
-        meterRegistry.counter(metricName, tagsArray).increment();
+        Counter.Builder builder = Counter.builder(SENT_COUNTER_NAME)
+            .tag(TAG_CONNECTOR, connectorConfig.getConnectorName())
+            .tag(TAG_BUNDLE, sanitizeTagValue(tags.bundle))
+            .tag(TAG_APPLICATION, sanitizeTagValue(tags.application))
+            .tag(TAG_EVENT_TYPE, sanitizeTagValue(tags.eventType));
+
+        if (additionalTags != null) {
+            additionalTags.forEach((key, value) -> builder.tag(key, sanitizeTagValue(value)));
+        }
+
+        builder.register(meterRegistry).increment();
     }
 
     /**
@@ -78,16 +85,7 @@ public class ConnectorMetrics {
      * @param notificationData the event data containing bundle, application, and event_type
      */
     public void recordIntegrationTime(Timer.Sample sample, JsonObject notificationData) {
-        NotificationTags tags = extractTags(notificationData);
-        String metricName = "notifications.connector." + connectorConfig.getConnectorName() + ".integration.time";
-
-        Timer timer = Timer.builder(metricName)
-            .tag(TAG_BUNDLE, sanitizeTagValue(tags.bundle))
-            .tag(TAG_APPLICATION, sanitizeTagValue(tags.application))
-            .tag(TAG_EVENT_TYPE, sanitizeTagValue(tags.eventType))
-            .register(meterRegistry);
-
-        sample.stop(timer);
+        recordIntegrationTime(sample, notificationData, null);
     }
 
     /**
@@ -99,9 +97,9 @@ public class ConnectorMetrics {
      */
     public void recordIntegrationTime(Timer.Sample sample, JsonObject notificationData, Map<String, String> additionalTags) {
         NotificationTags tags = extractTags(notificationData);
-        String metricName = "notifications.connector." + connectorConfig.getConnectorName() + ".integration.time";
 
-        Timer.Builder timerBuilder = Timer.builder(metricName)
+        Timer.Builder timerBuilder = Timer.builder(INTEGRATION_TIME_TIMER_NAME)
+            .tag(TAG_CONNECTOR, connectorConfig.getConnectorName())
             .tag(TAG_BUNDLE, sanitizeTagValue(tags.bundle))
             .tag(TAG_APPLICATION, sanitizeTagValue(tags.application))
             .tag(TAG_EVENT_TYPE, sanitizeTagValue(tags.eventType));
@@ -117,37 +115,12 @@ public class ConnectorMetrics {
     /**
      * Extracts bundle, application, and event_type from notification data.
      * Checks both top level and nested eventData/event_data fields.
-     * For email aggregation/daily digest, detects aggregation structure and uses "aggregation" defaults.
      * Returns "unknown" for any missing field to ensure metrics are always recorded.
      */
     private NotificationTags extractTags(JsonObject notificationData) {
         String bundle = extractField(notificationData, "bundle");
         String application = extractField(notificationData, "application");
         String eventType = extractField(notificationData, "event_type");
-
-        // TODO: This special-case aggregation detection patches a symptom instead of the root cause.
-        // Aggregation emails should populate bundle/application/event_type in the standard CloudEvent
-        // location like other notifications. This hardcoded pattern detection is fragile and will break
-        // if the aggregation email structure changes. Consider standardizing upstream data structure.
-        // Special handling for email aggregation/daily digest:
-        // Check if this is an aggregation email by looking for bundle_display_name
-        // and application_aggregated_data_list (unique to aggregation emails)
-        JsonObject eventData = notificationData.getJsonObject("eventData");
-        if (eventData == null) {
-            // Try snake_case naming (used by email connector)
-            eventData = notificationData.getJsonObject("event_data");
-        }
-        if (eventData != null) {
-            boolean hasBundleDisplayName = eventData.getString("bundle_display_name") != null ||
-                                          eventData.getString("bundleDisplayName") != null;
-            boolean hasAggregationList = eventData.getJsonArray("application_aggregated_data_list") != null;
-
-            if (hasBundleDisplayName && hasAggregationList && "unknown".equals(application) && "unknown".equals(eventType)) {
-                // This is an email aggregation/daily digest
-                application = "aggregation";
-                eventType = "aggregation";
-            }
-        }
 
         return new NotificationTags(bundle, application, eventType);
     }
@@ -159,75 +132,25 @@ public class ConnectorMetrics {
             return value;
         }
 
-        // Try nested eventData field (used by email connector)
+        // Try nested eventData field
         JsonObject eventData = notificationData.getJsonObject("eventData");
         if (eventData != null) {
             value = eventData.getString(fieldName);
             if (value != null && !value.isEmpty()) {
                 return value;
             }
-            // For bundle field, also try bundleDisplayName (used by email aggregation)
-            if ("bundle".equals(fieldName)) {
-                value = eventData.getString("bundle_display_name");
-                if (value != null && !value.isEmpty()) {
-                    return value;
-                }
-                value = eventData.getString("bundleDisplayName");
-                if (value != null && !value.isEmpty()) {
-                    return value;
-                }
-            }
         }
 
-        // Try nested event_data field (alternative naming)
+        // Try nested event_data field (alternative snake_case naming)
         eventData = notificationData.getJsonObject("event_data");
         if (eventData != null) {
             value = eventData.getString(fieldName);
             if (value != null && !value.isEmpty()) {
                 return value;
             }
-            // For bundle field, also try bundle_display_name (used by email aggregation)
-            if ("bundle".equals(fieldName)) {
-                value = eventData.getString("bundle_display_name");
-                if (value != null && !value.isEmpty()) {
-                    return value;
-                }
-                value = eventData.getString("bundleDisplayName");
-                if (value != null && !value.isEmpty()) {
-                    return value;
-                }
-            }
         }
 
         return "unknown";
-    }
-
-    private String[] buildTagsArray(NotificationTags tags, Map<String, String> additionalTags) {
-        int baseSize = 6; // 3 tags × 2 (key + value)
-        int additionalSize = additionalTags != null ? additionalTags.size() * 2 : 0;
-        String[] tagsArray = new String[baseSize + additionalSize];
-
-        tagsArray[0] = TAG_BUNDLE;
-        tagsArray[1] = sanitizeTagValue(tags.bundle);
-        tagsArray[2] = TAG_APPLICATION;
-        tagsArray[3] = sanitizeTagValue(tags.application);
-        tagsArray[4] = TAG_EVENT_TYPE;
-        tagsArray[5] = sanitizeTagValue(tags.eventType);
-
-        if (additionalTags != null) {
-            int index = baseSize;
-            for (Map.Entry<String, String> entry : additionalTags.entrySet()) {
-                String key = entry.getKey();
-                String value = entry.getValue();
-                if (key == null || value == null) {
-                    throw new IllegalArgumentException("Additional tags must not contain null keys or values");
-                }
-                tagsArray[index++] = key;
-                tagsArray[index++] = sanitizeTagValue(value);
-            }
-        }
-
-        return tagsArray;
     }
 
     /**
