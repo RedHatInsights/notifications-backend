@@ -172,8 +172,8 @@ class WeeklyEmailAggregationJobTest {
 
     @Test
     void shouldUseYesterdayForOutageRecovery() {
-        // Last run is 5 days ago - simulates outage
-        createDigestTriggerConfig(ORG_ID_1, now.minusDays(5), now.minusHours(1));
+        // Last run is 9 days ago - simulates outage (beyond 8-day weekly threshold)
+        createDigestTriggerConfig(ORG_ID_1, now.minusDays(9), now.minusHours(1));
 
         // Add event from yesterday (within outage recovery window)
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusHours(25));
