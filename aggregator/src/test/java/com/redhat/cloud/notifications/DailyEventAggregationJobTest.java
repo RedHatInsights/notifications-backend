@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.config.AggregatorConfig;
+import com.redhat.cloud.notifications.helpers.AggregationTimeHelper;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.helpers.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -11,9 +13,9 @@ import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import com.redhat.cloud.notifications.models.EventType;
-import com.redhat.cloud.notifications.utils.AggregationTimeHelper;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -40,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 @QuarkusTestResource(TestLifecycleManager.class)
@@ -50,6 +53,9 @@ class DailyEventAggregationJobTest {
 
     @InjectSpy
     DailyEmailAggregationJob dailyEmailAggregationJob;
+
+    @InjectMock
+    AggregatorConfig aggregatorConfig;
 
     @Inject
     @Any
@@ -88,7 +94,7 @@ class DailyEventAggregationJobTest {
 
     void initAggregationParameters() {
         helpers.purgeAggregationOrgConfig();
-        dailyEmailAggregationJob.defaultDailyDigestTime = LocalTime.now(ZoneOffset.UTC);
+        when(aggregatorConfig.getDefaultDailyDigestTime()).thenReturn(LocalTime.now(ZoneOffset.UTC));
     }
 
     List<AggregationCommand> getRecordsFromKafka() {
@@ -127,9 +133,9 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         addEventEmailAggregation("someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
         addEventEmailAggregation("anotherOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
-        dailyEmailAggregationJob.setDefaultDailyDigestTime(baseReferenceTime.toLocalTime());
+        when(aggregatorConfig.getDefaultDailyDigestTime()).thenReturn(baseReferenceTime.toLocalTime());
 
-        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(baseReferenceTime);
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(baseReferenceTime, new CollectorRegistry());
 
         List<AggregationCommand> listCommand = getRecordsFromKafka();
         assertEquals(4, listCommand.size());
@@ -149,9 +155,9 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("anotherOrgId", "rhel", "advisor", "somePolicyId", "someHostId");
         addEventEmailAggregation("anotherOrgId", "subscription-services", "errata", "somePolicyId", "someHostId");
         addEventEmailAggregation("anotherOrgId", "subscription-services", "errata", "somePolicyId", "someHostId");
-        dailyEmailAggregationJob.setDefaultDailyDigestTime(baseReferenceTime.toLocalTime());
+        when(aggregatorConfig.getDefaultDailyDigestTime()).thenReturn(baseReferenceTime.toLocalTime());
 
-        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(baseReferenceTime);
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(baseReferenceTime, new CollectorRegistry());
 
         List<Action> listActions = getActionRecordsFromKafka();
         assertEquals(4, listActions.size(), "Must have actions for [someOrgId/rhel], [anotherOrgId/rhel], [someOrgId/subscription-services] and [anotherOrgId/subscription-services].");
@@ -199,12 +205,12 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("anotherOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         addEventEmailAggregation("someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
         addEventEmailAggregation("anotherOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
-        dailyEmailAggregationJob.setDefaultDailyDigestTime(now);
+        when(aggregatorConfig.getDefaultDailyDigestTime()).thenReturn(now);
         someOrgIdToProceed.setScheduledExecutionTime(baseReferenceTime.minusHours(2).toLocalTime());
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
         // Because we added time preferences for orgId someOrgId two hours in the past, those messages must be ignored
-        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(baseReferenceTime);
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(baseReferenceTime, new CollectorRegistry());
 
         List<AggregationCommand> listCommand = getRecordsFromKafka();
         assertEquals(2, listCommand.size());
@@ -214,10 +220,10 @@ class DailyEventAggregationJobTest {
 
         // remove all preferences, and set default hour in the past, nothing should be processed
         helpers.purgeAggregationOrgConfig();
-        dailyEmailAggregationJob.setDefaultDailyDigestTime(now.minusHours(2));
+        when(aggregatorConfig.getDefaultDailyDigestTime()).thenReturn(now.minusHours(2));
         connector.sink(DailyEmailAggregationJob.EGRESS_CHANNEL).clear();
 
-        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(baseReferenceTime);
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(baseReferenceTime, new CollectorRegistry());
 
         assertEquals(0, getRecordsFromKafka().size());
 
@@ -226,7 +232,7 @@ class DailyEventAggregationJobTest {
         someOrgIdToProceed.setScheduledExecutionTime(AggregationTimeHelper.computeReferenceTime().toLocalTime());
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
         LocalDateTime lastRun = someOrgIdToProceed.getLastRun();
-        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(baseReferenceTime);
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(baseReferenceTime, new CollectorRegistry());
         AggregationOrgConfig parameters = helpers.findAggregationOrgConfigByOrgId(someOrgIdToProceed.getOrgId());
         assertNotNull(parameters);
         assertTrue(lastRun.isBefore(parameters.getLastRun()));
@@ -243,12 +249,12 @@ class DailyEventAggregationJobTest {
         LocalTime now = baseReferenceTime.toLocalTime();
         addEventEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         addEventEmailAggregation("someOrgId", "rhel", "unknown-application", "somePolicyId", "someHostId");
-        dailyEmailAggregationJob.setDefaultDailyDigestTime(now);
+        when(aggregatorConfig.getDefaultDailyDigestTime()).thenReturn(now);
         someOrgIdToProceed.setScheduledExecutionTime(baseReferenceTime.toLocalTime());
         someOrgIdToProceed.setLastRun(baseReferenceTime.minusDays(5));
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(baseReferenceTime);
+        dailyEmailAggregationJob.searchBuildAndSendAggregationCommands(baseReferenceTime, new CollectorRegistry());
 
         List<AggregationCommand> listCommand = getRecordsFromKafka();
         assertEquals(2, listCommand.size());
