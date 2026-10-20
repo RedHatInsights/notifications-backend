@@ -50,4 +50,9 @@ public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
     protected String getLastSuccessMetricName() {
         return "aggregator_job_last_success_weekly";
     }
+
+    @Override
+    protected String getDurationMetricName() {
+        return "aggregator_job_duration_seconds_weekly";
+    }
 }
