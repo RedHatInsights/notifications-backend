@@ -3561,6 +3561,100 @@ public class EndpointResourceTest extends DbIsolatedTest {
     }
 
     /**
+     * Tests that a PagerDuty endpoint can be created and updated without
+     * severity (severity = null). The severity field should be nullable.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void addAndUpdatePagerDutyEndpointWithoutSeverity(boolean kesselEnabled) {
+
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(kesselEnabled);
+        if (kesselEnabled) {
+            mockDefaultKesselPermission(INTEGRATIONS_VIEW, ALLOWED_TRUE);
+            mockDefaultKesselUpdatePermission(INTEGRATIONS_EDIT, ALLOWED_TRUE);
+        }
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // Create a PagerDuty endpoint without severity.
+        PagerDutyProperties pagerDutyProperties = new PagerDutyProperties();
+        pagerDutyProperties.setSecretToken("my-super-secret-token");
+
+        Endpoint ep = new Endpoint();
+        ep.setType(EndpointType.PAGERDUTY);
+        ep.setName("PagerDuty without severity");
+        ep.setDescription("Test that severity can be null");
+        ep.setEnabled(true);
+        ep.setProperties(pagerDutyProperties);
+
+        // Mock the Sources service calls.
+        final Secret secretTokenSecret = new Secret();
+        secretTokenSecret.id = new Random().nextLong(1, Long.MAX_VALUE);
+        secretTokenSecret.password = pagerDutyProperties.getSecretToken();
+
+        when(this.sourcesServiceMock.create(anyString(), anyString(), any()))
+                .thenReturn(secretTokenSecret);
+
+        when(this.sourcesServiceMock.getById(anyString(), anyString(), eq(secretTokenSecret.id))).thenReturn(secretTokenSecret);
+
+        Response response = given()
+                .header(identityHeader)
+                .when()
+                .contentType(JSON)
+                .body(Json.encode(this.endpointMapper.toDTO(ep)))
+                .post("/endpoints")
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .contentType(JSON)
+                .extract().response();
+
+        JsonObject responsePoint = new JsonObject(response.getBody().asString());
+        String id = responsePoint.getString("id");
+        assertNotNull(id);
+
+        try {
+            // Verify severity is null in the response.
+            JsonObject properties = responsePoint.getJsonObject("properties");
+            assertNotNull(properties);
+            assertFalse(properties.containsKey("severity") && properties.getValue("severity") != null,
+                    "Severity should be null or absent");
+
+            // Verify severity is null in the database.
+            Endpoint dbEndpoint = endpointRepository.getEndpoint(DEFAULT_ORG_ID, UUID.fromString(id));
+            assertNull(dbEndpoint.getProperties(PagerDutyProperties.class).getSeverity());
+
+            // Update the endpoint, keeping severity null.
+            ep.setName("PagerDuty without severity updated");
+            ep.setDescription("Updated description with null severity");
+            EndpointDTO updateDTO = this.endpointMapper.toDTO(ep);
+            updateDTO.setId(UUID.fromString(id));
+
+            given()
+                    .header(identityHeader)
+                    .contentType(JSON)
+                    .body(Json.encode(updateDTO))
+                    .when()
+                    .put("/endpoints/" + id)
+                    .then()
+                    .statusCode(HttpStatus.SC_OK);
+
+            // Verify severity remains null in the database after update.
+            dbEndpoint = endpointRepository.getEndpoint(DEFAULT_ORG_ID, UUID.fromString(id));
+            assertNull(dbEndpoint.getProperties(PagerDutyProperties.class).getSeverity());
+        } finally {
+            given()
+                    .header(identityHeader)
+                    .when().delete("/endpoints/" + id)
+                    .then()
+                    .statusCode(HttpStatus.SC_NO_CONTENT)
+                    .extract().body().asString();
+        }
+    }
+
+    /**
      * Test that when an endpoint creation fails, and therefore it doesn't get
      * stored in the database, its created secrets in Sources are cleaned up.
      */
