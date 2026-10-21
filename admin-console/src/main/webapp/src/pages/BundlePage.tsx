@@ -19,7 +19,7 @@ import { useCreateBundle } from '../services/Bundles/CreateBundle';
 import { useDeleteApplication } from '../services/Applications/DeleteApplication';
 import { useApplications } from '../services/Applications/GetApplicationById';
 import { useBundleTypes } from '../services/Applications/GetBundleById';
-import { Application, RoleOwnedApplication } from '../types/Notifications';
+import { Application } from '../types/Notifications';
 import { BehaviorGroupsTable } from './BundlePage/BehaviorGroupTable';
 
 type BundlePageParams = {
@@ -103,7 +103,7 @@ export const BundlePage: React.FunctionComponent = () => {
         setApplicationEditError(undefined);
     };
 
-    const handleSubmit = React.useCallback((application: Partial<RoleOwnedApplication>) => {
+    const handleSubmit = React.useCallback((application: Partial<Application>) => {
         setApplicationEditError(undefined);
         setApplicationEditLoading(true);
         const mutate = newApplication.mutate;
@@ -111,8 +111,7 @@ export const BundlePage: React.FunctionComponent = () => {
             id: application.id,
             displayName: application.displayName ?? '',
             name: application.name ?? '',
-            bundleId: bundleId!,
-            ownerRole: application.ownerRole
+            bundleId: bundleId!
         })
             .then(r => {
                 if (r.error) {
