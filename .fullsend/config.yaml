@@ -25,7 +25,6 @@ allowed_remote_resources:
 create_issues:
     allow_targets:
         repos:
-            - RedHatInsights/notifications-backend
             - fullsend-ai/fullsend
 inference:
     project: firefly-868139
