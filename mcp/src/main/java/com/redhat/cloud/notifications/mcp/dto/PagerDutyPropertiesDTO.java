@@ -15,7 +15,6 @@ import jakarta.validation.constraints.Size;
 @RegisterForReflection
 public class PagerDutyPropertiesDTO extends EndpointPropertiesDTO {
 
-    @NotNull
     private PagerDutySeverityDTO severity;
 
     @Size(max = 32)

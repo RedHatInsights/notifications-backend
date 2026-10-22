@@ -75,13 +75,13 @@
         <clowder-quarkus-config-source.version>2.13.0</clowder-quarkus-config-source.version>
 
         <quarkus-logging-cloudwatch.version>6.16.0</quarkus-logging-cloudwatch.version>
-        <quarkus-logging-sentry.version>2.3.5</quarkus-logging-sentry.version>
+        <quarkus-logging-sentry.version>2.3.6</quarkus-logging-sentry.version>
         <quarkus-mcp-server.version>2.0.3</quarkus-mcp-server.version>
         <quarkus-unleash.version>1.15.0</quarkus-unleash.version>
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.40.1</quarkus.platform.version>
+        <quarkus.platform.version>3.40.1.1</quarkus.platform.version>
         <redhat.event-schemas.version>1.5.0</redhat.event-schemas.version>
         <com.networknt.json-schema-validator.version>2.0.8</com.networknt.json-schema-validator.version>
 

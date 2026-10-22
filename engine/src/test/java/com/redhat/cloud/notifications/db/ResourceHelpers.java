@@ -339,4 +339,12 @@ public class ResourceHelpers {
             .setParameter("severity", eventType.getDefaultSeverity())
             .executeUpdate();
     }
+
+    @Transactional
+    public void updateEventCreatedTimestamp(UUID eventId, LocalDateTime created) {
+        entityManager.createQuery("UPDATE Event SET created = :created WHERE id = :eventId")
+            .setParameter("eventId", eventId)
+            .setParameter("created", created)
+            .executeUpdate();
+    }
 }

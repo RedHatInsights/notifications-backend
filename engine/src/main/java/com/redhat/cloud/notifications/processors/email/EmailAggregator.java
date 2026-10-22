@@ -84,7 +84,7 @@ public class EmailAggregator {
             subscribersWithSeverities = Optional.of(subscriptionRepository.getSubscriptionsByEventTypeWithSeverities(aggregationKey.getOrgId(), appId, subscriptionType));
         }
 
-        aggregationBasedOnEvent(aggregationKey, start, end, subscribersByEventType, unsubscribersByEventType, subscribersWithSeverities, aggregated);
+        aggregationBasedOnEvent(aggregationKey, start, end, subscribersByEventType, unsubscribersByEventType, subscribersWithSeverities, aggregated, subscriptionType);
 
         return aggregated.entrySet().stream()
                 .filter(entry -> !entry.getValue().isEmpty())
@@ -100,7 +100,8 @@ public class EmailAggregator {
                                          Map<String, Set<String>> subscribersByEventType,
                                          Map<String, Set<String>> unsubscribersByEventType,
                                          Optional<Map<String, Set<SubscribedEventTypeSeverities>>> subscribersWithSeverities,
-                                         Map<User, AbstractEmailPayloadAggregator> aggregated) {
+                                         Map<User, AbstractEmailPayloadAggregator> aggregated,
+                                         SubscriptionType subscriptionType) {
         int offset = 0;
         int totalAggregatedElements = 0;
 
@@ -112,7 +113,7 @@ public class EmailAggregator {
 
             for (Event aggregation : aggregations) {
                 Set<User> recipients = resolveRecipients(aggregation, subscribersByEventType, unsubscribersByEventType);
-                aggregateForRecipients(recipients, aggregation, eventAggregationCriteria, subscribersWithSeverities, aggregated);
+                aggregateForRecipients(recipients, aggregation, eventAggregationCriteria, subscribersWithSeverities, aggregated, subscriptionType);
             }
             totalAggregatedElements += aggregations.size();
         } while (maxPageSize == aggregations.size());
@@ -161,16 +162,18 @@ public class EmailAggregator {
                                         Event aggregation,
                                         EventAggregationCriterion eventAggregationCriteria,
                                         Optional<Map<String, Set<SubscribedEventTypeSeverities>>> subscribersWithSeverities,
-                                        Map<User, AbstractEmailPayloadAggregator> aggregated) {
+                                        Map<User, AbstractEmailPayloadAggregator> aggregated,
+                                        SubscriptionType subscriptionType) {
         recipients.forEach(recipient -> {
             Set<SubscribedEventTypeSeverities> userSubscribedSeverities = subscribersWithSeverities
                 .map(map -> map.get(recipient.getUsername()))
                 .orElse(null);
 
+            // aggregation according weekly or daily
             // We may or may not have already initialized an aggregator for the recipient.
             AbstractEmailPayloadAggregator aggregator = aggregated.computeIfAbsent(
                 recipient,
-                notUsed -> EmailPayloadAggregatorFactory.by(eventAggregationCriteria, recipient.getUsername(), userSubscribedSeverities));
+                notUsed -> EmailPayloadAggregatorFactory.by(eventAggregationCriteria, recipient.getUsername(), userSubscribedSeverities, subscriptionType));
 
             if (aggregator == null) {
                 Log.warnf("No aggregator found for %s/%s, skipping recipient %s",

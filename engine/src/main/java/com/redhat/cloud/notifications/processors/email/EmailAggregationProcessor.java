@@ -13,6 +13,7 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.Environment;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.SystemEndpointTypeProcessor;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
@@ -168,6 +169,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
     private void processBundleAggregation(List<AggregationCommand> aggregationCommands, Event aggregatorEvent, List<Endpoint> endpoints) {
         final String bundleName = aggregationCommands.get(0).getAggregationKey().getBundle();
+        final SubscriptionType subscriptionType = aggregationCommands.get(0).getSubscriptionType();
         // Patch event display name for event log rendering
         Bundle bundle = bundleRepository.getBundle(bundleName)
                 .orElseThrow(() -> new IllegalArgumentException("Bundle not found: " + bundleName));
@@ -181,7 +183,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
         Map<List<ApplicationAggregatedData>, Set<User>> usersWithSameData = groupUsersByAggregatedData(userData);
 
-        sendAggregatedEmails(usersWithSameData, bundle, aggregatorEvent, endpoints);
+        sendAggregatedEmails(usersWithSameData, bundle, aggregatorEvent, endpoints, subscriptionType);
     }
 
     /*
@@ -192,27 +194,27 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
     private Map<User, List<ApplicationAggregatedData>> aggregateByApplication(List<AggregationCommand> aggregationCommands) {
         Map<User, List<ApplicationAggregatedData>> userData = new HashMap<>();
 
-        for (AggregationCommand cmd : aggregationCommands) {
-            Log.debugf("Processing aggregation command: %s", cmd);
+        for (AggregationCommand aggregationCommand : aggregationCommands) {
+            Log.debugf("Processing aggregation command: %s", aggregationCommand);
 
             try {
                 Application app = applicationRepository.getApplication(
-                        cmd.getAggregationKey().getBundle(),
-                        cmd.getAggregationKey().getApplication())
+                        aggregationCommand.getAggregationKey().getBundle(),
+                        aggregationCommand.getAggregationKey().getApplication())
                     .orElseThrow(() -> new IllegalArgumentException(String.format(
                         "Application not found: %s/%s",
-                        cmd.getAggregationKey().getBundle(),
-                        cmd.getAggregationKey().getApplication())));
+                        aggregationCommand.getAggregationKey().getBundle(),
+                        aggregationCommand.getAggregationKey().getApplication())));
 
                 Map<User, Map<String, Object>> aggregatedByUser = emailAggregator.getAggregated(
-                    app.getId(), cmd.getAggregationKey(),
-                    cmd.getSubscriptionType(), cmd.getStart(), cmd.getEnd());
+                    app.getId(), aggregationCommand.getAggregationKey(),
+                    aggregationCommand.getSubscriptionType(), aggregationCommand.getStart(), aggregationCommand.getEnd());
 
                 aggregatedByUser.forEach((user, data) ->
                     userData.computeIfAbsent(user, unused -> new ArrayList<>())
-                        .add(new ApplicationAggregatedData(data, cmd.getAggregationKey().getApplication())));
+                        .add(new ApplicationAggregatedData(data, aggregationCommand.getAggregationKey().getApplication())));
             } catch (Exception ex) {
-                Log.error("Error processing " + cmd.getAggregationKey(), ex);
+                Log.error("Error processing " + aggregationCommand.getAggregationKey(), ex);
             }
         }
         return userData;
@@ -235,7 +237,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
      * recipients-resolver app and the subscription records from the database.
      */
     private void sendAggregatedEmails(Map<List<ApplicationAggregatedData>, Set<User>> usersWithSameData,
-                                      Bundle bundle, Event aggregatorEvent, List<Endpoint> endpoints) {
+                                      Bundle bundle, Event aggregatorEvent, List<Endpoint> endpoints, SubscriptionType subscriptionType) {
 
         usersWithSameData.forEach((appDataList, users) -> {
             Set<String> recipientsUsernames = users.stream().map(User::getUsername).collect(Collectors.toSet());
@@ -260,7 +262,8 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                 false,
                 null,
                 templateContext,
-                true
+                true,
+                subscriptionType
             );
 
             // We need to send an endpoint to connectorSender only to find the right connector
