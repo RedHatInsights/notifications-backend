@@ -262,7 +262,7 @@ public class DailyEmailAggregationJob {
             encodedAction = offloadOversizedPayload(orgId, aggregationCommands, aggregatedDataByApplication, actionId, timestamp);
         }
 
-        Log.infof("Encoded Payload: %s", encodedAction);
+        Log.infof("Encoded payload ready, length=%d chars", encodedAction.length());
         Message<String> message = Message.of(encodedAction);
         emitterIngress.send(message);
     }
