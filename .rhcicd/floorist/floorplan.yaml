@@ -277,7 +277,7 @@ parameters:
   value: 100m
 - name: FLOORIST_DB_SECRET_NAME
   description: The database's secret name specification for the Floorist operator.
-  value: notifications-backend-db
+  value: notifications-backend-read-only-db
 - name: FLOORIST_ENV_PREFIX
   description: Used to split data across environments on a single (HMS) bucket.
   value: stage
