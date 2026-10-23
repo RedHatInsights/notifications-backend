@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.models.dto.v3.subscriptions.SubscriptionTypeDTO;
 import com.redhat.cloud.notifications.routers.models.DigestTriggerRequest;
 import com.redhat.cloud.notifications.routers.models.DigestTriggerResponse;
+import com.redhat.cloud.notifications.utils.DigestCronUtils;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
