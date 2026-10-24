@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.helpers;
 
+import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.Endpoint;
@@ -7,6 +8,7 @@ import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SubscriptionType;
+import com.redhat.cloud.notifications.processors.payload.PayloadDetails;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -17,6 +19,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @ApplicationScoped
 public class ResourceHelpers extends com.redhat.cloud.notifications.models.ResourceHelpers {
@@ -86,6 +89,10 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
     }
 
     public Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, LocalDateTime created, String eventPayload, boolean useSystemEndpoint) {
+        return addEventEmailAggregation(orgId, bundleName, applicationName, created, eventPayload, null, useSystemEndpoint);
+    }
+
+    public Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, LocalDateTime created, String eventPayload, Severity severity, boolean useSystemEndpoint) {
         findOrCreateBundle(bundleName);
         Application application = findOrCreateApplication(bundleName, applicationName);
         EventType eventType = findOrCreateEventType(application.getId(), "event_type_test");
@@ -99,7 +106,12 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
         event.setEventType(eventType);
         event.setCreated(created);
         event.setPayload(eventPayload);
+        event.setSeverity(severity);
 
         return createEvent(event);
+    }
+
+    public PayloadDetails findPayloadDetailsById(UUID id) {
+        return entityManager.find(PayloadDetails.class, id);
     }
 }
