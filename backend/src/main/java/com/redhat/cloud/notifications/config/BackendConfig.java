@@ -9,9 +9,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 
 @ApplicationScoped
@@ -25,6 +28,8 @@ public class BackendConfig {
     private static final String SECURED_EMAIL_TEMPLATES = "notifications.use-secured-email-templates.enabled";
     private static final String ERRATA_MIGRATION_BATCH_SIZE = "notifications.errata.migration.batch.size";
     private static final String INSTANT_EMAILS = "notifications.instant-emails.enabled";
+    private static final String CLOWDER_KESSEL_AUTHENTICATED = "clowder.optional-dependency-endpoints.kessel-inventory.api.authenticated";
+    private static final String KESSEL_AUTHENTICATED = "notifications.kessel.authenticated";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
     private static final String KESSEL_ENABLED = "notifications.kessel.enabled";
     private static final String KESSEL_INSECURE_CLIENT_ENABLED = "notifications.kessel.insecure-client.enabled";
@@ -70,6 +75,21 @@ public class BackendConfig {
     @ConfigProperty(name = KESSEL_ENABLED, defaultValue = "false")
     boolean kesselEnabled;
 
+    /**
+     * Manual override of the Kessel client security mode. When set, it takes
+     * precedence over both the Clowder V2 dependency endpoint flag and
+     * {@link #kesselInsecureClientEnabled}.
+     */
+    @ConfigProperty(name = KESSEL_AUTHENTICATED)
+    Optional<Boolean> kesselAuthenticated;
+
+    /**
+     * The {@code authenticated} flag of Kessel's Clowder V2 dependency endpoint,
+     * when Clowder provides it. When set, it takes precedence over
+     * {@link #kesselInsecureClientEnabled}.
+     */
+    Optional<Boolean> clowderKesselAuthenticated = Optional.empty();
+
     @ConfigProperty(name = KESSEL_INSECURE_CLIENT_ENABLED, defaultValue = "false")
     boolean kesselInsecureClientEnabled;
 
@@ -109,6 +129,7 @@ public class BackendConfig {
 
     @PostConstruct
     void postConstruct() {
+        clowderKesselAuthenticated = readClowderKesselAuthenticated(ConfigProvider.getConfig());
         drawerToggle = toggleRegistry.register("drawer", true);
         kesselToggle = toggleRegistry.register("kessel", true);
         kesselChecksOnEventLogToggle = toggleRegistry.register("kessel-checks-on-event-log", true);
@@ -131,7 +152,10 @@ public class BackendConfig {
         config.put(EMAILS_ONLY_MODE, isEmailsOnlyModeEnabled());
         config.put(ERRATA_MIGRATION_BATCH_SIZE, getErrataMigrationBatchSize());
         config.put(KESSEL_DOMAIN, kesselDomain);
+        config.put(CLOWDER_KESSEL_AUTHENTICATED, clowderKesselAuthenticated.map(String::valueOf).orElse("<not set>"));
+        config.put(KESSEL_AUTHENTICATED, kesselAuthenticated.map(String::valueOf).orElse("<not set>"));
         config.put(KESSEL_ENABLED, isKesselEnabled(null));
+        config.put(KESSEL_INSECURE_CLIENT_ENABLED, isKesselInsecureClientEnabled());
         config.put(KESSEL_TIMEOUT_MS, getKesselTimeoutMs());
         config.put(KESSEL_URL, kesselUrl);
         config.put(OIDC_ISSUER, oidcIssuer);
@@ -180,7 +204,29 @@ public class BackendConfig {
     }
 
     public boolean isKesselInsecureClientEnabled() {
-        return kesselInsecureClientEnabled;
+        return kesselAuthenticated
+            .or(() -> clowderKesselAuthenticated)
+            .map(authenticated -> !authenticated)
+            .orElse(kesselInsecureClientEnabled);
+    }
+
+    /**
+     * Reads the {@code authenticated} flag of Kessel's Clowder V2 dependency
+     * endpoint. The lookup is done here instead of through a property
+     * expression because clowder-quarkus-config-source throws when the V2
+     * entry has a {@code uri} but no {@code authenticated} flag, which older
+     * Clowder versions emit. A property expression would then prevent the
+     * application from starting.
+     * @param config the configuration to read the flag from.
+     * @return the flag, or an empty optional when it is absent or unreadable.
+     */
+    static Optional<Boolean> readClowderKesselAuthenticated(final Config config) {
+        try {
+            return config.getOptionalValue(CLOWDER_KESSEL_AUTHENTICATED, Boolean.class);
+        } catch (final IllegalStateException e) {
+            Log.warnf("Ignoring the Clowder V2 dependency endpoint flag for Kessel: %s", e.getMessage());
+            return Optional.empty();
+        }
     }
 
     public long getKesselTimeoutMs() {
