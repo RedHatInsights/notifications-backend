@@ -4,7 +4,6 @@ import {
     Button,
     Form,
     FormGroup,
-    FormSelect, FormSelectOption,
     HelperText,
     HelperTextItem,
     Modal,
@@ -16,8 +15,7 @@ import {
 } from '@patternfly/react-core';
 import React from 'react';
 
-import { useUserPermissions } from '../../app/PermissionContext';
-import { Application, RoleOwnedApplication } from '../../types/Notifications';
+import { Application } from '../../types/Notifications';
 
 interface CreateEditApplicationModalProps {
     isEdit: boolean;
@@ -28,13 +26,12 @@ interface CreateEditApplicationModalProps {
     isLoading: boolean;
     error?: string;
     onClose: () => void;
-    onSubmit: (application: Partial<RoleOwnedApplication>) => void;
+    onSubmit: (application: Partial<Application>) => void;
 }
 
 export const CreateEditApplicationModal: React.FunctionComponent<CreateEditApplicationModalProps> = props => {
 
-    const permissions = useUserPermissions();
-    const [ application, setApplication ] = React.useState<Partial<RoleOwnedApplication>>({
+    const [ application, setApplication ] = React.useState<Partial<Application>>({
         ...props.initialApplication
     });
 
@@ -49,15 +46,6 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
     const onSubmitLocal = React.useCallback(() => {
         props.onSubmit(application);
     }, [ application, props ]);
-
-    React.useEffect(() => {
-        if (application.ownerRole === undefined && permissions.roles.length > 0) {
-            setApplication(prev => ({
-                ...prev,
-                ownerRole: permissions.roles[0]
-            }));
-        }
-    }, [ permissions.roles, application.ownerRole ]);
 
     return (
         <Modal
@@ -107,35 +95,6 @@ export const CreateEditApplicationModal: React.FunctionComponent<CreateEditAppli
                             </HelperTextItem>
                         </HelperText>
                     </FormGroup>
-                    { !props.isEdit && <FormGroup
-                        fieldId="role-name"
-                        label="Role admin"
-                    >
-                        { permissions.isAdmin ? (
-                            <TextInput
-                                type="text"
-                                onChange={ handleChange }
-                                value={ application.ownerRole }
-                                id="owner-role"
-                                name="ownerRole"
-                            />
-                        ) : (
-                            <FormSelect
-                                isRequired
-                                value={ application.ownerRole }
-                                onChange={ handleChange }
-                                id="owner-role"
-                                name="ownerRole"
-                            >
-                                { permissions.roles.map(r => <FormSelectOption key={ r } label={ r } value={ r } />) }
-                            </FormSelect>
-                        ) }
-                        <HelperText>
-                            <HelperTextItem>
-                                Rover group of users who will manage the application
-                            </HelperTextItem>
-                        </HelperText>
-                    </FormGroup> }
                 </Form>
             </ModalBody>
             <ModalFooter>
