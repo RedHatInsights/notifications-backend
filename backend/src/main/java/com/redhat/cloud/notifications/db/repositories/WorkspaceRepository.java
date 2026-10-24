@@ -1,0 +1,169 @@
+package com.redhat.cloud.notifications.db.repositories;
+
+import com.redhat.cloud.notifications.models.Workspace;
+import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
+
+import java.util.List;
+import java.util.UUID;
+
+@ApplicationScoped
+public class WorkspaceRepository {
+
+    /**
+     * Well-known UUID for the system workspace (org_id IS NULL).
+     *
+     * Generated deterministically from "notifications-system-workspace" using
+     * UUID v3 (name-based MD5). Same input always produces the same UUID.
+     *
+     * CRITICAL: This value is also hardcoded in migration V1.143.0. If this constant
+     * changes, the migration SQL MUST be updated to match. See test
+     * testSystemWorkspaceConstantMatchesMigration() for verification.
+     *
+     * Expected value: 5d3d4d41-a502-36a6-b724-3b1fcfe41a1a
+     */
+    private static final UUID SYSTEM_WORKSPACE_ID = UUID.nameUUIDFromBytes(
+        "notifications-system-workspace".getBytes(java.nio.charset.StandardCharsets.UTF_8)
+    );
+
+    @Inject
+    EntityManager entityManager;
+
+    /**
+     * Create or get existing workspace by UUID for a specific org.
+     * Used during bootstrap to ensure idempotency.
+     *
+     * IMPORTANT: This method is for org-specific workspaces only (orgId must NOT be null).
+     * For the system workspace (orgId IS NULL), use getSystemWorkspace() instead.
+     *
+     * Concurrency-safe: Uses INSERT ... ON CONFLICT DO NOTHING to handle
+     * concurrent bootstrap requests attempting to create the same workspace.
+     * The winning insert succeeds; losers see no-op, then all read back the row.
+     */
+    @Transactional
+    public Workspace createOrGetWorkspace(UUID workspaceId, String orgId) {
+        if (orgId == null) {
+            throw new IllegalArgumentException(
+                "orgId must not be null. Use getSystemWorkspace() for the system workspace."
+            );
+        }
+
+        // Use native SQL with ON CONFLICT to handle concurrent inserts
+        // If workspace already exists (concurrent request won), this is a no-op
+        entityManager.createNativeQuery(
+            "INSERT INTO workspace (id, org_id, created) " +
+            "VALUES (:id, :orgId, NOW()) " +
+            "ON CONFLICT (id) DO NOTHING")
+            .setParameter("id", workspaceId)
+            .setParameter("orgId", orgId)
+            .executeUpdate();
+
+        // Always read back to get the workspace (whether just inserted or pre-existing)
+        Workspace workspace = entityManager.find(Workspace.class, workspaceId);
+        if (workspace == null) {
+            throw new IllegalStateException(
+                "Workspace not found after insert: id=" + workspaceId + ", orgId=" + orgId
+            );
+        }
+
+        // Validate that the workspace belongs to the expected org
+        // This catches the scenario where RBAC returns the same workspace UUID for different orgs
+        if (!orgId.equals(workspace.getOrgId())) {
+            throw new IllegalStateException(
+                "Workspace UUID collision detected: workspace " + workspaceId +
+                " already exists for org_id=" + workspace.getOrgId() +
+                " but was requested for org_id=" + orgId +
+                ". This indicates either a bug in RBAC workspace assignment or data corruption."
+            );
+        }
+
+        Log.debugf("Workspace ready: id=%s, orgId=%s", workspaceId, orgId);
+        return workspace;
+    }
+
+    /**
+     * Get the system workspace (org_id IS NULL).
+     * The system workspace is created by the database migration V1.143.0.
+     *
+     * @return the system workspace
+     * @throws IllegalStateException if system workspace does not exist
+     */
+    public Workspace getSystemWorkspace() {
+        Workspace workspace = entityManager.find(Workspace.class, SYSTEM_WORKSPACE_ID);
+        if (workspace == null) {
+            throw new IllegalStateException(
+                "System workspace not found. Migration V1.143.0 should have created it: id=" + SYSTEM_WORKSPACE_ID
+            );
+        }
+
+        Log.debugf("System workspace: id=%s", workspace.getId());
+        return workspace;
+    }
+
+    /**
+     * Get distinct org IDs that have at least one endpoint without a workspace assignment.
+     * Used by bootstrap to identify which orgs need workspace processing.
+     *
+     * @return list of org IDs that have endpoints where workspace_id IS NULL
+     */
+    public List<String> getOrgIdsNeedingWorkspaceAssignment() {
+        String hql = "SELECT DISTINCT e.orgId FROM Endpoint e " +
+                     "WHERE e.orgId IS NOT NULL AND e.workspace IS NULL " +
+                     "ORDER BY e.orgId";
+        return entityManager.createQuery(hql, String.class).getResultList();
+    }
+
+    /**
+     * Check if any system endpoints (orgId IS NULL) need workspace assignment.
+     * Used by bootstrap to determine whether system endpoint processing is needed.
+     *
+     * @return true if at least one system endpoint has workspace_id IS NULL
+     */
+    public boolean hasSystemEndpointsNeedingAssignment() {
+        Long count = entityManager.createQuery(
+            "SELECT COUNT(e) FROM Endpoint e WHERE e.orgId IS NULL AND e.workspace IS NULL",
+            Long.class
+        ).getSingleResult();
+        return count > 0;
+    }
+
+    /**
+     * Bulk update endpoints to assign workspace.
+     * Updates ALL endpoints for the org to guarantee consistency.
+     * More efficient than loading/updating entities one by one.
+     */
+    @Transactional
+    public int assignWorkspaceToEndpoints(UUID workspaceId, String orgId) {
+        // Get the workspace entity to set the relationship
+        Workspace workspace = entityManager.getReference(Workspace.class, workspaceId);
+
+        String hql = "UPDATE Endpoint e SET e.workspace = :workspace " +
+                     "WHERE e.orgId = :orgId";
+        return entityManager.createQuery(hql)
+            .setParameter("workspace", workspace)
+            .setParameter("orgId", orgId)
+            .executeUpdate();
+    }
+
+    /**
+     * Assign system workspace to system integrations (orgId IS NULL).
+     * Updates ALL system endpoints to guarantee consistency.
+     *
+     * Note: Migration V1.143.0 assigns existing system endpoints. This method
+     * handles system endpoints created after the migration runs.
+     */
+    @Transactional
+    public int assignSystemWorkspace(UUID systemWorkspaceId) {
+        // Get the workspace entity to set the relationship
+        Workspace workspace = entityManager.getReference(Workspace.class, systemWorkspaceId);
+
+        String hql = "UPDATE Endpoint e SET e.workspace = :workspace " +
+                     "WHERE e.orgId IS NULL";
+        return entityManager.createQuery(hql)
+            .setParameter("workspace", workspace)
+            .executeUpdate();
+    }
+}
