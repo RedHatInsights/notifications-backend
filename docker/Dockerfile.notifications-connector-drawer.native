@@ -3,7 +3,7 @@
 ###
 
 # Build the project with Mandrel (UBI9-based)
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:c4c285d42941ebb2bd4da878479008e1e4536bb599aad1dbe568f89de9053661 AS build
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:2d4c4551af6831dcd26bbf86108c4385de5183ec8fe6b5868f6f9640fe47f4ed AS build
 USER root
 
 # Install required dependencies for native-image compilation
@@ -57,7 +57,7 @@ RUN ./mvnw -s .mvn/settings.xml clean package \
     find /home/jboss/connector-drawer/target -name "*-runner" -exec mv {} /home/jboss/application \;
 
 # Build the container with minimal runtime (UBI9-based)
-FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:c4c285d42941ebb2bd4da878479008e1e4536bb599aad1dbe568f89de9053661
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:2d4c4551af6831dcd26bbf86108c4385de5183ec8fe6b5868f6f9640fe47f4ed
 
 WORKDIR /
 # Update the base image packages
