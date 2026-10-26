@@ -17,4 +17,5 @@ public interface Constants {
     String X_RH_IDENTITY_HEADER = "x-rh-identity";
     String X_RH_SOURCES_ORG_ID = "x-rh-sources-org-id";
     String X_RH_SOURCES_PSK = "x-rh-sources-psk";
+    String X_RH_WORKSPACE_ID_HEADER = "x-rh-workspace-id";
 }
