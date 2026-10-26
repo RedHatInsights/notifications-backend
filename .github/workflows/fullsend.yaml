@@ -46,7 +46,7 @@ jobs:
       issues: write
       packages: read
       pull-requests: write
-    uses: fullsend-ai/fullsend/.github/workflows/reusable-dispatch.yml@547241d598e816e3ece2e6aa9c5858a9398cb222  # v0.49.0
+    uses: fullsend-ai/fullsend/.github/workflows/reusable-dispatch.yml@38e0c8d27361eacbd6eed25011fb9584187a4e78  # TEMP: main, testing fullsend-ai/agents#1675 (signed commits) — revert to v0.49.0 after
     with:
       event_action: ${{ github.event.action }}
       mint_url: ${{ vars.FULLSEND_MINT_URL }}
