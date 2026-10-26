@@ -6,7 +6,8 @@ import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
 import com.redhat.cloud.notifications.models.SubscriptionType;
-import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
@@ -15,16 +16,31 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
-public final class DigestCronUtils {
+@ApplicationScoped
+public class DigestCronUtils {
 
     private static final CronParser CRON_PARSER = new CronParser(
         CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX)
     );
 
-    private DigestCronUtils() {
+    public static final String NOTIFICATIONS_DEFAULT_DAILY_DIGEST_CRON = "notifications.default.daily.digest.cron";
+    public static final String NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON = "notifications.default.weekly.digest.cron";
+
+    @ConfigProperty(name = NOTIFICATIONS_DEFAULT_DAILY_DIGEST_CRON, defaultValue = "0 0 * * *")
+    String defaultDailyDigestCron;
+
+    @ConfigProperty(name = NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON, defaultValue = "30 0 * * 1")
+    String defaultWeeklyDigestCron;
+
+    public String getDefaultDailyDigestCron() {
+        return defaultDailyDigestCron;
     }
 
-    public static String buildCronExpression(SubscriptionType subscriptionType, LocalTime time, DayOfWeek day) {
+    public String getDefaultWeeklyDigestCron() {
+        return defaultWeeklyDigestCron;
+    }
+
+    public String buildCronExpression(SubscriptionType subscriptionType, LocalTime time, DayOfWeek day) {
         int minute = time.getMinute();
         int hour = time.getHour();
 
@@ -40,12 +56,12 @@ public final class DigestCronUtils {
         };
     }
 
-    public static LocalTime parseTimeFromCron(String cronExpression) {
+    public LocalTime parseTimeFromCron(String cronExpression) {
         String[] parts = validateCronParts(cronExpression);
         return LocalTime.of(Integer.parseInt(parts[1]), Integer.parseInt(parts[0]));
     }
 
-    public static DayOfWeek parseDayFromCron(String cronExpression) {
+    public DayOfWeek parseDayFromCron(String cronExpression) {
         String[] parts = validateCronParts(cronExpression);
         String dayField = parts[4];
         if ("*".equals(dayField)) {
@@ -59,14 +75,10 @@ public final class DigestCronUtils {
      *
      * @param cronExpression the cron expression (UNIX format)
      * @return the next execution time
-     * @throws IllegalStateException if next execution cannot be computed
+     * @throws IllegalArgumentException if next execution cannot be computed
      */
-    public static LocalDateTime computeNextRun(String cronExpression) {
-        return calculateNextRun(cronExpression, LocalDateTime.now(ZoneOffset.UTC))
-            .orElseThrow(() -> {
-                Log.errorf("Could not compute next execution for cron expression '%s'", cronExpression);
-                return new IllegalStateException("Failed to compute next execution for cron expression: " + cronExpression);
-            });
+    public LocalDateTime computeNextRun(String cronExpression) {
+        return calculateNextRun(cronExpression, LocalDateTime.now(ZoneOffset.UTC));
     }
 
     /**
@@ -74,31 +86,26 @@ public final class DigestCronUtils {
      *
      * @param cronExpression the cron expression (UNIX format: minute hour day-of-month month day-of-week)
      * @param from the starting time
-     * @return Optional containing the next execution time, or empty if the expression is invalid or no next execution exists
+     * @return the next execution time
+     * @throws IllegalArgumentException if the cron expression is invalid or no next execution exists
      */
-    public static Optional<LocalDateTime> calculateNextRun(String cronExpression, LocalDateTime from) {
+    public LocalDateTime calculateNextRun(String cronExpression, LocalDateTime from) {
         if (cronExpression == null || cronExpression.isBlank()) {
-            Log.warnf("Invalid cron expression: null or blank");
-            return Optional.empty();
+            throw new IllegalArgumentException("Cron expression cannot be null or blank");
         }
 
-        try {
-            Cron cron = CRON_PARSER.parse(cronExpression).validate();
-            ExecutionTime executionTime = ExecutionTime.forCron(cron);
+        Cron cron = CRON_PARSER.parse(cronExpression).validate();
+        ExecutionTime executionTime = ExecutionTime.forCron(cron);
 
-            ZonedDateTime fromZoned = from.atZone(ZoneOffset.UTC);
-            Optional<ZonedDateTime> nextExecution = executionTime.nextExecution(fromZoned);
+        ZonedDateTime fromZoned = from.atZone(ZoneOffset.UTC);
+        Optional<ZonedDateTime> nextExecution = executionTime.nextExecution(fromZoned);
 
-            return nextExecution.map(zonedDateTime ->
-                zonedDateTime.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()
-            );
-        } catch (Exception e) {
-            Log.errorf(e, "Failed to parse or calculate next run for cron expression: %s", cronExpression);
-            return Optional.empty();
-        }
+        return nextExecution
+            .map(zonedDateTime -> zonedDateTime.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime())
+            .orElseThrow(() -> new IllegalArgumentException("No next execution found for cron expression: " + cronExpression));
     }
 
-    private static String[] validateCronParts(String cronExpression) {
+    private String[] validateCronParts(String cronExpression) {
         String[] parts = cronExpression.split(" ");
         if (parts.length < 5) {
             throw new IllegalArgumentException("Malformed cron expression (expected 5 fields): " + cronExpression);
@@ -106,11 +113,11 @@ public final class DigestCronUtils {
         return parts;
     }
 
-    private static int toCronDay(DayOfWeek day) {
+    private int toCronDay(DayOfWeek day) {
         return day.getValue() % 7;
     }
 
-    private static DayOfWeek fromCronDay(int cronDay) {
+    private DayOfWeek fromCronDay(int cronDay) {
         if (cronDay == 0) {
             return DayOfWeek.SUNDAY;
         }

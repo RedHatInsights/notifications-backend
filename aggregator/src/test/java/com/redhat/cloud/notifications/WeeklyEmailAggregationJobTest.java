@@ -34,6 +34,7 @@ import static com.redhat.cloud.notifications.models.SubscriptionType.WEEKLY;
 import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -78,9 +79,9 @@ class WeeklyEmailAggregationJobTest {
 
     @Test
     void shouldSendWeeklyAggregationsToKafka() {
-        // Setup: create digest trigger configs for two orgs
-        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), now.minusHours(1));
-        createDigestTriggerConfig(ORG_ID_2, now.minusWeeks(1), now.minusHours(1));
+        // Setup: create digest trigger configs for two orgs with nextRun matching executionTime
+        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), executionTime);
+        createDigestTriggerConfig(ORG_ID_2, now.minusWeeks(1), executionTime);
 
         // Add events for both orgs
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
@@ -99,7 +100,7 @@ class WeeklyEmailAggregationJobTest {
 
     @Test
     void shouldSendWeeklyAggregationsForMultipleApplicationsInBundle() {
-        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), now.minusHours(1));
+        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), executionTime);
 
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "advisor", "rec1", "host2", now.minusDays(2));
@@ -125,7 +126,7 @@ class WeeklyEmailAggregationJobTest {
     @Test
     void shouldNotSendWhenNextRunNotReached() {
         // Next run is in the future
-        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), now.plusHours(1));
+        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), executionTime.plusHours(1));
 
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
 
@@ -138,7 +139,7 @@ class WeeklyEmailAggregationJobTest {
     @Test
     void shouldNotSendWhenNoEventsAfterLastRun() {
         // Last run was yesterday
-        createDigestTriggerConfig(ORG_ID_1, now.minusDays(1), now.minusHours(1));
+        createDigestTriggerConfig(ORG_ID_1, now.minusDays(1), executionTime);
 
         // Events are older than last run
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(2));
@@ -150,8 +151,9 @@ class WeeklyEmailAggregationJobTest {
     }
 
     @Test
-    void shouldFilterOutOldEvents() {
-        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(4), now.minusHours(1));
+    void shouldUseLastRunAsStartTimeRegardlessOfAge() {
+        LocalDateTime oldLastRun = now.minusWeeks(4);
+        createDigestTriggerConfig(ORG_ID_1, oldLastRun, executionTime);
 
         // Add very old event (more than 1 week)
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusWeeks(2));
@@ -164,18 +166,18 @@ class WeeklyEmailAggregationJobTest {
         assertEquals(1, commands.size());
 
         AggregationCommand command = commands.get(0);
-        // In outage scenario (last_run > 2 days), start should be yesterday (based on executionTime)
-        LocalDateTime yesterday = executionTime.minusDays(1);
-        assertTrue(command.getStart().isAfter(yesterday.minusMinutes(1)));
-        assertTrue(command.getStart().isBefore(yesterday.plusMinutes(1)));
+        // With new simple logic: start = lastRun (even if old)
+        assertEquals(oldLastRun.withNano(0), command.getStart().withNano(0),
+            "Start time should be lastRun, regardless of how old it is");
     }
 
     @Test
-    void shouldUseYesterdayForOutageRecovery() {
-        // Last run is 9 days ago - simulates outage (beyond 8-day weekly threshold)
-        createDigestTriggerConfig(ORG_ID_1, now.minusDays(9), now.minusHours(1));
+    void shouldUseLastRunEvenWhenVeryOld() {
+        // Last run is 9 days ago - old, but we still use it as start time
+        LocalDateTime veryOldLastRun = now.minusDays(9);
+        createDigestTriggerConfig(ORG_ID_1, veryOldLastRun, executionTime);
 
-        // Add event from yesterday (within outage recovery window)
+        // Add event from yesterday
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusHours(25));
 
         weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(executionTime, new CollectorRegistry());
@@ -184,17 +186,16 @@ class WeeklyEmailAggregationJobTest {
         assertEquals(1, commands.size());
 
         AggregationCommand command = commands.get(0);
-        // Start should be yesterday (outage recovery), calculated from executionTime
-        LocalDateTime yesterday = executionTime.minusDays(1);
-        assertTrue(command.getStart().isAfter(yesterday.minusMinutes(1)));
-        assertTrue(command.getStart().isBefore(yesterday.plusMinutes(1)));
+        // Start should be the actual lastRun (9 days ago), not "yesterday" for outage recovery
+        assertEquals(veryOldLastRun.withNano(0), command.getStart().withNano(0),
+            "Start time should be lastRun, even when very old");
     }
 
     @Test
     void shouldUseActualLastRunWhenRecent() {
         // Last run is 1 day ago - recent, no outage
         LocalDateTime recentLastRun = now.minusDays(1);
-        createDigestTriggerConfig(ORG_ID_1, recentLastRun, now.minusHours(1));
+        createDigestTriggerConfig(ORG_ID_1, recentLastRun, executionTime);
 
         // Add event after last run
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusHours(20));
@@ -211,7 +212,8 @@ class WeeklyEmailAggregationJobTest {
 
     @Test
     void shouldUpdateLastRunAndNextRun() {
-        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), now.minusHours(1));
+        LocalDateTime previousMonday = now.minusWeeks(1);
+        createDigestTriggerConfig(ORG_ID_1, previousMonday, executionTime);
 
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
 
@@ -220,14 +222,16 @@ class WeeklyEmailAggregationJobTest {
         DigestTriggerOrgConfig config = helpers.findDigestTriggerOrgConfig(ORG_ID_1, WEEKLY);
         assertNotNull(config);
 
-        // Last run should be updated to the executionTime (which is already rounded)
+        // Last run should be calculated as next scheduled time from previous Monday
+        // which should be approximately this Monday (executionTime)
         assertNotNull(config.getLastRun());
-        assertEquals(executionTime.withNano(0), config.getLastRun().withNano(0),
-            "Last run should match the execution time");
+        assertTrue(config.getLastRun().isAfter(previousMonday),
+            "Last run should be after previous Monday");
 
-        // Next run should be calculated and in the future
+        // Next run should be calculated from executionTime and in the future
         assertNotNull(config.getNextRun());
-        assertTrue(config.getNextRun().isAfter(config.getLastRun()));
+        assertTrue(config.getNextRun().isAfter(executionTime),
+            "Next run should be after execution time");
     }
 
     @Test
@@ -241,19 +245,19 @@ class WeeklyEmailAggregationJobTest {
         DigestTriggerOrgConfig config = helpers.findDigestTriggerOrgConfig(ORG_ID_1, WEEKLY);
         assertNotNull(config);
         assertEquals(DEFAULT_WEEKLY_CRON, config.getCronExpression());
-        assertNotNull(config.getLastRun());
+        assertNull(config.getLastRun());
         assertNotNull(config.getNextRun());
     }
 
     @Test
     void shouldProcessCorrectNumberOfPairs() {
-        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), now.minusHours(1));
+        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), executionTime);
 
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "advisor", "rec1", "host2", now.minusDays(2));
         addWeeklyEventEmailAggregation(ORG_ID_1, "openshift", "cluster", "cluster1", "node1", now.minusDays(1));
 
-        List<AggregationCommand> commands = weeklyEmailAggregationJob.processAggregateEmailsWithOrgPref(now, new CollectorRegistry());
+        List<AggregationCommand> commands = weeklyEmailAggregationJob.processAggregateEmailsWithOrgPref(executionTime, new CollectorRegistry());
 
         assertEquals(3, commands.size());
         Gauge pairsProcessed = weeklyEmailAggregationJob.getPairsProcessed();
@@ -262,8 +266,8 @@ class WeeklyEmailAggregationJobTest {
 
     @Test
     void shouldHandleMultipleOrgs() {
-        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), now.minusHours(1));
-        createDigestTriggerConfig(ORG_ID_2, now.minusWeeks(1), now.minusHours(1));
+        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), executionTime);
+        createDigestTriggerConfig(ORG_ID_2, now.minusWeeks(1), executionTime);
 
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "advisor", "rec1", "host2", now.minusDays(2));
@@ -286,7 +290,7 @@ class WeeklyEmailAggregationJobTest {
 
     @Test
     void shouldVerifyEventTypeNameIsWeeklyAggregation() {
-        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), now.minusHours(1));
+        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), executionTime);
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
 
         weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(executionTime, new CollectorRegistry());
@@ -299,7 +303,7 @@ class WeeklyEmailAggregationJobTest {
 
     @Test
     void shouldHaveEmptyContext() {
-        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), now.minusHours(1));
+        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), executionTime);
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
 
         weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(executionTime, new CollectorRegistry());

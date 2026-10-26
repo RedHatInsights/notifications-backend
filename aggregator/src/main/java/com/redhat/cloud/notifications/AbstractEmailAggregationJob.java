@@ -80,23 +80,48 @@ public abstract class AbstractEmailAggregationJob {
             Log.infof("found %s %s commands", aggregationCommands.size(), getJobType().toLowerCase());
             Log.debugf("%s aggregation commands: %s", getJobType(), aggregationCommands);
 
+            // Track successful and failed org IDs separately for different retry strategies
+            // Successful orgs: update last_run to scheduled time, next_run calculated from cron
+            // Failed orgs: keep last_run unchanged, set next_run to tomorrow (retry in 24h)
+            List<String> successfulOrgIds = new ArrayList<>();
+            List<String> failedOrgIds = new ArrayList<>();
+
+            // Process commands grouped by org ID - each org processed independently
             aggregationCommands.stream()
                 .filter(cmd -> cmd.getOrgId() != null && cmd.getBundleId() != null)
                 .collect(Collectors.groupingBy(AggregationCommand::getOrgId))
-                .values()
-                .forEach(val -> val.stream()
-                    .collect(Collectors.groupingBy(AggregationCommand::getBundleId))
-                    .values()
-                    .forEach(this::sendIt));
+                .forEach((orgId, orgCommands) -> {
+                    try {
+                        orgCommands.stream()
+                            .collect(Collectors.groupingBy(AggregationCommand::getBundleId))
+                            .values()
+                            .forEach(this::sendIt);
+                        successfulOrgIds.add(orgId);
+                    } catch (Exception e) {
+                        Log.errorf(e, "Failed to process %s aggregation for org %s", getJobType().toLowerCase(), orgId);
+                        failedOrgIds.add(orgId);
+                    }
+                });
 
-            List<String> orgIdsToUpdate = aggregationCommands.stream()
-                .map(AggregationCommand::getOrgId)
-                .filter(orgId -> orgId != null)
-                .distinct()
-                .collect(Collectors.toList());
-            Log.debugf("Found following org IDs to update for %s digest: %s", getJobType().toLowerCase(), orgIdsToUpdate);
+            Log.debugf("Successfully processed %s digest for %d orgs, failed for %d orgs",
+                getJobType().toLowerCase(), successfulOrgIds.size(), failedOrgIds.size());
 
-            updateOrgConfigs(orgIdsToUpdate, executionTime);
+            // Update successful orgs with normal schedule
+            // For weekly: last_run = next scheduled time from previous last_run (maintains event window after retries)
+            // For daily: last_run = current execution time
+            if (!successfulOrgIds.isEmpty()) {
+                updateOrgConfigs(successfulOrgIds, executionTime);
+                Log.infof("Updated %d successful orgs for %s digest", successfulOrgIds.size(), getJobType().toLowerCase());
+            }
+
+            // Update failed orgs to retry tomorrow at the same hour
+            // By setting next_run to tomorrow, they won't be picked up again today (query uses exact match)
+            // This prevents retry spam every 15 minutes and gives time for issues to be resolved
+            if (!failedOrgIds.isEmpty()) {
+                updateFailedOrgConfigs(failedOrgIds, executionTime);
+                Log.warnf("Scheduled retry for %d failed orgs for %s digest - will retry tomorrow at the same hour",
+                    failedOrgIds.size(), getJobType().toLowerCase());
+            }
 
             Gauge lastSuccess = Gauge
                     .build()
@@ -144,6 +169,12 @@ public abstract class AbstractEmailAggregationJob {
      * Template method: Update organization configurations after processing.
      */
     protected abstract void updateOrgConfigs(List<String> orgIds, LocalDateTime executionTime);
+
+    /**
+     * Template method: Update organization configurations for failed processing.
+     * Failed orgs should be scheduled to retry at a later time (e.g., next day at same hour).
+     */
+    protected abstract void updateFailedOrgConfigs(List<String> orgIds, LocalDateTime executionTime);
 
     /**
      * Template method: Return the metric name for pairs processed.
