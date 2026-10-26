@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.config;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
+import com.redhat.cloud.notifications.utils.DigestCronUtils;
 import io.getunleash.Unleash;
 import io.getunleash.variant.Payload;
 import io.getunleash.variant.Variant;
@@ -20,6 +21,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 
+import static com.redhat.cloud.notifications.utils.DigestCronUtils.NOTIFICATIONS_DEFAULT_DAILY_DIGEST_CRON;
+import static com.redhat.cloud.notifications.utils.DigestCronUtils.NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON;
+
 @ApplicationScoped
 public class AggregatorConfig {
 
@@ -31,7 +35,6 @@ public class AggregatorConfig {
     private static final String METRICS_SCRAPE_KEEP_ALIVE_SECONDS = "notifications.aggregator.metrics.scrape-keep-alive-seconds";
     private static final int DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS = 150;
     private static final String NOTIFICATIONS_DEFAULT_DAILY_DIGEST_TIME = "notifications.default.daily.digest.time";
-    private static final String NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON = "notifications.default.weekly.digest.cron";
     private static final String PROMETHEUS_PUSHGATEWAY_URL = "prometheus.pushgateway.url";
 
     /*
@@ -51,9 +54,6 @@ public class AggregatorConfig {
     @ConfigProperty(name = NOTIFICATIONS_DEFAULT_DAILY_DIGEST_TIME, defaultValue = "00:00")
     LocalTime defaultDailyDigestTime;
 
-    @ConfigProperty(name = NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON, defaultValue = "30 0 * * 1")
-    String defaultWeeklyDigestCron;
-
     @ConfigProperty(name = PROMETHEUS_PUSHGATEWAY_URL, defaultValue = "http://localhost:8080")
     String prometheusPushGatewayUrl;
 
@@ -62,6 +62,9 @@ public class AggregatorConfig {
 
     @Inject
     ToggleRegistry toggleRegistry;
+
+    @Inject
+    DigestCronUtils digestCronUtils;
 
     @PostConstruct
     void registerToggles() {
@@ -88,10 +91,6 @@ public class AggregatorConfig {
 
     public LocalTime getDefaultDailyDigestTime() {
         return defaultDailyDigestTime;
-    }
-
-    public String getDefaultWeeklyDigestCron() {
-        return defaultWeeklyDigestCron;
     }
 
     public String getPrometheusPushGatewayUrl() {
@@ -177,7 +176,8 @@ public class AggregatorConfig {
         config.put(METRICS_SCRAPE_KEEP_ALIVE_SECONDS, metricsScrapeKeepAliveSeconds);
         config.put(PROMETHEUS_PUSHGATEWAY_URL, prometheusPushGatewayUrl);
         config.put(NOTIFICATIONS_DEFAULT_DAILY_DIGEST_TIME, defaultDailyDigestTime);
-        config.put(NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON, defaultWeeklyDigestCron);
+        config.put(NOTIFICATIONS_DEFAULT_DAILY_DIGEST_CRON, digestCronUtils.getDefaultDailyDigestCron());
+        config.put(NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON, digestCronUtils.getDefaultWeeklyDigestCron());
         if (activeClusterToggle != null) {
             config.put(activeClusterToggle, getActiveCluster().orElse("unable-to-determine"));
         }

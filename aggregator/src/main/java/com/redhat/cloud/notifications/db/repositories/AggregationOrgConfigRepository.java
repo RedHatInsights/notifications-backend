@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -54,5 +54,23 @@ public class AggregationOrgConfigRepository {
 
         int nbUpdatedRecords = nativeQuery.executeUpdate();
         Log.infof("Last run date was updated for %s orgId", nbUpdatedRecords);
+    }
+
+    /**
+     * No-op for failed daily aggregations. By not updating last_run, failed orgs will naturally
+     * retry tomorrow at the same scheduledExecutionTime (since the query filters by exact time match).
+     * They won't be picked up again in the next 15-minute intervals today because those won't match
+     * their scheduledExecutionTime.
+     *
+     * @param orgIdsToUpdate list of org IDs that failed processing
+     * @param currentExecutionTime the current execution time
+     */
+    @Transactional
+    public void updateLastRunForFailedDaily(List<String> orgIdsToUpdate, LocalDateTime currentExecutionTime) {
+        if (!orgIdsToUpdate.isEmpty()) {
+            Log.infof("Keeping last_run unchanged for %d failed daily aggregations (will retry tomorrow at scheduled time)", orgIdsToUpdate.size());
+        }
+        // Intentionally do nothing - failed orgs keep their old last_run value
+        // and will be retried tomorrow when their scheduledExecutionTime matches again
     }
 }
