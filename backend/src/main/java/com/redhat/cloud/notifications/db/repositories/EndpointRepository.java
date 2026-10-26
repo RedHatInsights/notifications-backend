@@ -565,7 +565,7 @@ public class EndpointRepository {
     }
 
     /**
-     * Retrieves a list of endpoints ordered by their creadtion date in
+     * Retrieves a list of endpoints ordered by their creation date in
      * ascending order —oldest first—.
      * @param orgId the organization to filter the integrations by.
      * @param limit the size of the list to retrieve.
