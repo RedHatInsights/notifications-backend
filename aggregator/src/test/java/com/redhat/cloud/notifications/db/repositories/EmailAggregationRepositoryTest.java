@@ -1,4 +1,4 @@
-package com.redhat.cloud.notifications.db;
+package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.DailyEmailAggregationJob;
 import com.redhat.cloud.notifications.TestLifecycleManager;

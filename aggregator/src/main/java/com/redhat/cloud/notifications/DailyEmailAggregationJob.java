@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.db.AggregationOrgConfigRepository;
-import com.redhat.cloud.notifications.db.EmailAggregationRepository;
+import com.redhat.cloud.notifications.db.repositories.AggregationOrgConfigRepository;
+import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -43,6 +43,11 @@ public class DailyEmailAggregationJob extends AbstractEmailAggregationJob {
     @Override
     protected void updateOrgConfigs(List<String> orgIds, LocalDateTime executionTime) {
         aggregationOrgConfigRepository.updateLastCronJobRunAccordingOrgPref(orgIds, executionTime);
+    }
+
+    @Override
+    protected void updateFailedOrgConfigs(List<String> orgIds, LocalDateTime executionTime) {
+        aggregationOrgConfigRepository.updateLastRunForFailedDaily(orgIds, executionTime);
     }
 
     @Override

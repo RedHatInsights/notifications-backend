@@ -1,7 +1,8 @@
 package com.redhat.cloud.notifications;
 
-import com.redhat.cloud.notifications.db.DigestTriggerOrgConfigRepository;
+import com.redhat.cloud.notifications.db.repositories.DigestTriggerOrgConfigRepository;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.utils.DigestCronUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -16,6 +17,9 @@ public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
     @Inject
     DigestTriggerOrgConfigRepository digestTriggerOrgConfigRepository;
 
+    @Inject
+    DigestCronUtils digestCronUtils;
+
     @Override
     protected String getJobType() {
         return "Weekly";
@@ -28,7 +32,7 @@ public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
 
     @Override
     protected void createMissingDefaultConfigs(LocalDateTime executionTime) {
-        digestTriggerOrgConfigRepository.createMissingDefaultWeeklyConfig(aggregatorConfig.getDefaultWeeklyDigestCron(), executionTime);
+        digestTriggerOrgConfigRepository.createMissingDefaultWeeklyConfig(digestCronUtils.getDefaultWeeklyDigestCron());
     }
 
     @Override
@@ -39,6 +43,11 @@ public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
     @Override
     protected void updateOrgConfigs(List<String> orgIds, LocalDateTime executionTime) {
         digestTriggerOrgConfigRepository.updateLastAndNextRunForWeekly(orgIds, executionTime);
+    }
+
+    @Override
+    protected void updateFailedOrgConfigs(List<String> orgIds, LocalDateTime executionTime) {
+        digestTriggerOrgConfigRepository.updateNextRunForFailedWeekly(orgIds, executionTime);
     }
 
     @Override

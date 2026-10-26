@@ -71,11 +71,8 @@ public class OrgConfigResource {
         @Inject
         DigestTriggerOrgConfigRepository digestTriggerOrgConfigRepository;
 
-        @ConfigProperty(name = "notifications.default.weekly.digest.time", defaultValue = "00:30")
-        LocalTime defaultWeeklyDigestTime;
-
-        @ConfigProperty(name = "notifications.default.weekly.digest.day", defaultValue = "MONDAY")
-        DayOfWeek defaultWeeklyDigestDay;
+        @Inject
+        DigestCronUtils digestCronUtils;
 
         @APIResponse(responseCode = "204")
         @APIResponse(responseCode = "400", description = "Invalid time, day, or subscription type")
@@ -94,8 +91,8 @@ public class OrgConfigResource {
             validateSubscriptionType(subscriptionType);
             validateDigestRequest(subscriptionType, request);
             Log.infof("Update digest trigger preference for orgId %s, type %s, time %s, day %s", orgId, subscriptionType, request.getScheduledExecutionTime(), request.getScheduledExecutionDay());
-            String cronExpression = DigestCronUtils.buildCronExpression(subscriptionType.toEntity(), request.getScheduledExecutionTime(), request.getScheduledExecutionDay());
-            digestTriggerOrgConfigRepository.createOrUpdateDigestPreference(orgId, subscriptionType.toEntity(), cronExpression, DigestCronUtils.computeNextRun(cronExpression));
+            String cronExpression = digestCronUtils.buildCronExpression(subscriptionType.toEntity(), request.getScheduledExecutionTime(), request.getScheduledExecutionDay());
+            digestTriggerOrgConfigRepository.createOrUpdateDigestPreference(orgId, subscriptionType.toEntity(), cronExpression, digestCronUtils.computeNextRun(cronExpression));
         }
 
         @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = DigestTriggerResponse.class)))
@@ -115,16 +112,18 @@ public class OrgConfigResource {
             Log.infof("Get digest trigger preference for orgId %s, type %s", orgId, subscriptionType);
             DigestTriggerOrgConfig config = digestTriggerOrgConfigRepository.findDigestTriggerOrgConfig(orgId, entityType);
             if (config != null) {
-                return toResponse(config);
+                return toResponse(config, digestCronUtils);
             }
-            final LocalTime defaultTime = subscriptionType == SubscriptionTypeDTO.WEEKLY ? defaultWeeklyDigestTime : defaultDailyDigestTime;
-            final DayOfWeek defaultDay = subscriptionType == SubscriptionTypeDTO.WEEKLY ? defaultWeeklyDigestDay : null;
-            final String cron = DigestCronUtils.buildCronExpression(entityType, defaultTime, defaultDay);
+
+            final String cron = subscriptionType == SubscriptionTypeDTO.WEEKLY ? digestCronUtils.getDefaultWeeklyDigestCron() : digestCronUtils.getDefaultDailyDigestCron();
+            final DayOfWeek defaultDay = subscriptionType == SubscriptionTypeDTO.WEEKLY ? digestCronUtils.parseDayFromCron(digestCronUtils.getDefaultWeeklyDigestCron()) : null;
+            final LocalTime defaultTime = digestCronUtils.parseTimeFromCron(cron);
+
             DigestTriggerResponse response = new DigestTriggerResponse();
             response.setSubscriptionType(subscriptionType);
             response.setScheduledExecutionTime(defaultTime);
             response.setScheduledExecutionDay(defaultDay);
-            response.setNextRun(DigestCronUtils.computeNextRun(cron));
+            response.setNextRun(digestCronUtils.computeNextRun(cron));
             return response;
         }
 
@@ -148,11 +147,11 @@ public class OrgConfigResource {
             }
         }
 
-        static DigestTriggerResponse toResponse(DigestTriggerOrgConfig config) {
+        static DigestTriggerResponse toResponse(DigestTriggerOrgConfig config, DigestCronUtils digestCronUtils) {
             DigestTriggerResponse response = new DigestTriggerResponse();
             response.setSubscriptionType(SubscriptionTypeDTO.fromEntity(config.getId().subscriptionType));
-            response.setScheduledExecutionTime(DigestCronUtils.parseTimeFromCron(config.getCronExpression()));
-            response.setScheduledExecutionDay(DigestCronUtils.parseDayFromCron(config.getCronExpression()));
+            response.setScheduledExecutionTime(digestCronUtils.parseTimeFromCron(config.getCronExpression()));
+            response.setScheduledExecutionDay(digestCronUtils.parseDayFromCron(config.getCronExpression()));
             response.setNextRun(config.getNextRun());
             return response;
         }
