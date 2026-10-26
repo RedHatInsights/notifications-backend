@@ -15,10 +15,12 @@ agents:
       model: google-vertex/gemini-3.8-flash
     - name: code
       model: google-vertex/gemini-3.8-flash
+      source: code-signed-test.yaml
     - name: review
       model: google-vertex/gemini-3.8-flash
     - name: fix
       model: google-vertex/gemini-3.8-flash
+      source: fix-signed-test.yaml
 allowed_remote_resources:
     - https://raw.githubusercontent.com/fullsend-ai/fullsend/
     - https://raw.githubusercontent.com/fullsend-ai/agents/
