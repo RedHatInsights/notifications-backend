@@ -195,6 +195,11 @@ public class WorkspaceRepository {
     public void deleteAllWorkspaces() {
         int deleted = entityManager.createNativeQuery("DELETE FROM workspace")
             .executeUpdate();
+
+        // Clear entity manager cache so subsequent finds don't return cached entities
+        entityManager.flush();
+        entityManager.clear();
+
         Log.infof("Deleted %d workspace records", deleted);
     }
 
