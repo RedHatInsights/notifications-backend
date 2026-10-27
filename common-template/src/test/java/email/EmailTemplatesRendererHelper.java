@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -82,6 +83,11 @@ public abstract class EmailTemplatesRendererHelper {
         return generateEmailBody(eventTypeStr, action, null, false);
     }
 
+    protected String generateEmailBody(String eventTypeStr, Action action, Locale locale) {
+        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_BODY, getBundle(), getApp(), eventTypeStr);
+        return generateEmail(templateDefinition, action, null, false, locale);
+    }
+
     protected String generateEmailBody(String eventTypeStr, Action event, EmailPendo pendo, boolean ignoreUserPreferences, boolean useBetaTemplate) {
         TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_BODY, getBundle(), getApp(), eventTypeStr, useBetaTemplate);
         return generateEmail(templateDefinition, event, pendo, ignoreUserPreferences);
@@ -130,6 +136,19 @@ public abstract class EmailTemplatesRendererHelper {
 
     protected String generateEmail(TemplateDefinition templateDefinition, Action action, EmailPendo pendo) {
         return generateEmail(templateDefinition, action, pendo, false);
+    }
+
+    protected String generateEmail(TemplateDefinition templateDefinition, Object action, EmailPendo emailPendo, boolean ignoreUserPreferences, Locale locale) {
+        Map<String, Object> additionalContext = new HashMap<>();
+        additionalContext.put("environment", environment);
+        additionalContext.put("pendo_message", emailPendo);
+        additionalContext.put("ignore_user_preferences", ignoreUserPreferences);
+        additionalContext.put("action", action);
+        additionalContext.put("source", getSourceEntry());
+
+        String result = templateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext, locale);
+        writeOrSendEmailTemplate(result, templateService.getTemplateId(templateDefinition) + ".html");
+        return result;
     }
 
     protected String generateEmail(TemplateDefinition templateDefinition, Object action, EmailPendo emailPendo, boolean ignoreUserPreferences) {

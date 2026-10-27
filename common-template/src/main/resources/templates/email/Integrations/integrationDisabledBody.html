@@ -1,32 +1,38 @@
 {#include email/Common/insightsEmailBody}
 {#content-header-title}
-    Integrations - Console
+    {msg:integrationsConsoleTitle}
 {/content-header-title}
 {#content-title}
-    Integration disabled
+    {msg:integrationDisabledTitle}
 {/content-title}
 {#content-body}
+    {#let href=action.context.integrationSettingsUrl(environment.url)}
     {#if action.context.error_type == "HTTP_4XX"}
         <p style="{body-section-p-style}">
-            Integration <a style="{body-section-underline-link-style}" href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank"><b>{action.context.endpoint_name}</b></a> was disabled because the remote endpoint responded with an HTTP status code {action.context.status_code}.
+            {msg:integrationDisabledHttp4xx(body-section-underline-link-style, href, action.context.endpoint_name, action.context.status_code)}
         </p>
         <p style="{body-section-p-style}">
-            Please review the integration configuration from <a style="{body-section-underline-link-style}" href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank">Settings > Integrations</a> to troubleshoot and re-enable the integration.
+            {msg:integrationDisabledReviewPrompt(body-section-underline-link-style, href)}
         </p>
     {#else}
         <p style="{body-section-p-style}">
-            Integration <a style="{body-section-underline-link-style}" href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank"><b>{action.context.endpoint_name}</b></a> was disabled because the connection couldn't be established with the remote endpoint, or it responded too many times with a server error (HTTP status code 5xx) after {action.context.errors_count} attempts.
+            {msg:integrationDisabledOther(body-section-underline-link-style, href, action.context.endpoint_name, action.context.errors_count)}
         </p>
         <p style="{body-section-p-style}">
-            The latest error was: {action.context.error_details}{#if action.context.error_type == "HTTP_5XX"} {action.context.status_code}{/if}.
+            {#if action.context.error_type == "HTTP_5XX"}
+                {msg:integrationDisabledLatestErrorHttp5xx(action.context.error_details, action.context.status_code)}
+            {#else}
+                {msg:integrationDisabledLatestError(action.context.error_details)}
+            {/if}
         </p>
         <p style="{body-section-p-style}">
-            Please review the integration configuration from <a style="{body-section-underline-link-style}" href="{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}" target="_blank">Settings > Integrations</a> to troubleshoot and re-enable the integration.
+            {msg:integrationDisabledReviewPrompt(body-section-underline-link-style, href)}
         </p>
     {/if}
+    {/let}
 {/content-body}
 
 {#content-button-href}{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}&{query_params}{/content-button-href}
-{#content-button-service-name}Integrations{/content-button-service-name}
+{#content-button-service-name}{msg:integrationsButtonLabel}{/content-button-service-name}
 
 {/include}

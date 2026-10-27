@@ -25,6 +25,13 @@ public class ActionExtension {
         return context.getAdditionalProperties().get(key);
     }
 
+    @TemplateExtension
+    public static String integrationSettingsUrl(Context context, String baseUrl) {
+        Object category = context.getAdditionalProperties().get("endpoint_category");
+        Object name = context.getAdditionalProperties().get("endpoint_name");
+        return baseUrl + "/settings/integrations?category=" + category + "&name=" + name;
+    }
+
     @TemplateExtension(matchName = TemplateExtension.ANY)
     public static Object getFromPayload(Payload payload, String key) {
         return payload.getAdditionalProperties().get(key);
