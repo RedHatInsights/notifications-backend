@@ -15,10 +15,6 @@ export interface Application {
     name: string;
 }
 
-export interface RoleOwnedApplication extends Application {
-    ownerRole?: string;
-}
-
 export type UUID = Schemas.UUID;
 
 // Consider using the generated types instead of writing the same again.
