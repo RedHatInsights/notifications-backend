@@ -18,6 +18,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -27,10 +28,12 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
@@ -43,6 +46,7 @@ import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_3_0;
+import static com.redhat.cloud.notifications.Constants.X_RH_WORKSPACE_ID_HEADER;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_EDIT;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_VIEW;
 import static com.redhat.cloud.notifications.routers.SecurityContextUtil.getOrgId;
@@ -83,11 +87,22 @@ public class OrgConfigResource {
         @Path("/digest/trigger-preference/{subscriptionType}")
         @Consumes(APPLICATION_JSON)
         @Operation(summary = "Set digest trigger preference", description = "Creates or updates the UTC digest trigger schedule for the given type. Accepted values for subscriptionType are daily_email and weekly_email. Accepted minute values are 00, 15, 30, and 45. Seconds and nanoseconds are ignored (truncated to the minute). For weekly_email, scheduled_execution_day (MONDAY to SUNDAY) is required.")
-        @Parameter(name = "subscriptionType", schema = @Schema(enumeration = {"daily_email", "weekly_email"}))
+        @Parameters(
+            {
+                @Parameter(name = "subscriptionType", schema = @Schema(enumeration = {"daily_email", "weekly_email"})),
+                @Parameter(
+                    name = X_RH_WORKSPACE_ID_HEADER,
+                    in = ParameterIn.HEADER,
+                    description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                    schema = @Schema(type = SchemaType.STRING)
+                )
+            }
+        )
         @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_EDIT, resourceType = "daily_digest")
         public void saveDigestTriggerPreference(@Context SecurityContext sec,
                                                      @PathParam("subscriptionType") SubscriptionTypeDTO subscriptionType,
-                                                     @NotNull @Valid @RequestBody(required = true) DigestTriggerRequest request) {
+                                                     @NotNull @Valid @RequestBody(required = true) DigestTriggerRequest request,
+                                                     @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
             String orgId = getOrgId(sec);
             request.setScheduledExecutionTime(request.getScheduledExecutionTime().truncatedTo(ChronoUnit.MINUTES));
             validateSubscriptionType(subscriptionType);
@@ -104,10 +119,21 @@ public class OrgConfigResource {
         @Path("/digest/trigger-preference/{subscriptionType}")
         @Produces(APPLICATION_JSON)
         @Operation(summary = "Retrieve digest trigger preference", description = "Retrieves the UTC digest trigger schedule for the given type. Accepted values for subscriptionType are daily_email and weekly_email.")
-        @Parameter(name = "subscriptionType", schema = @Schema(enumeration = {"daily_email", "weekly_email"}))
+        @Parameters(
+            {
+                @Parameter(name = "subscriptionType", schema = @Schema(enumeration = {"daily_email", "weekly_email"})),
+                @Parameter(
+                    name = X_RH_WORKSPACE_ID_HEADER,
+                    in = ParameterIn.HEADER,
+                    description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                    schema = @Schema(type = SchemaType.STRING)
+                )
+            }
+        )
         @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "daily_digest")
         public DigestTriggerResponse getDigestTriggerPreference(@Context SecurityContext sec,
-                                                                         @PathParam("subscriptionType") SubscriptionTypeDTO subscriptionType) {
+                                                                         @PathParam("subscriptionType") SubscriptionTypeDTO subscriptionType,
+                                                                         @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
             String orgId = getOrgId(sec);
             validateSubscriptionType(subscriptionType);
             SubscriptionType entityType = subscriptionType.toEntity();
@@ -164,8 +190,14 @@ public class OrgConfigResource {
     @Consumes(APPLICATION_JSON)
     @Transactional
     @Operation(summary = "Set the daily digest time", description = "Sets the daily digest UTC time. The accepted minute values are 00, 15, 30, and 45. Seconds and nanoseconds are ignored (truncated to the minute). Use this endpoint to set the time when daily emails are sent.")
+    @Parameter(
+        name = X_RH_WORKSPACE_ID_HEADER,
+        in = ParameterIn.HEADER,
+        description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+        schema = @Schema(type = SchemaType.STRING)
+    )
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_EDIT, resourceType = "daily_digest")
-    public void saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull LocalTime expectedTime) {
+    public void saveDailyDigestTimePreference(@Context SecurityContext sec, @NotNull LocalTime expectedTime, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         String orgId = getOrgId(sec);
         expectedTime = expectedTime.truncatedTo(ChronoUnit.MINUTES);
         validateMinute(expectedTime);
@@ -178,8 +210,14 @@ public class OrgConfigResource {
     @Path("/daily-digest/time-preference")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve the daily digest time", description = "Retrieves the daily digest time setting. Use this endpoint to check the time that daily emails are sent.")
+    @Parameter(
+        name = X_RH_WORKSPACE_ID_HEADER,
+        in = ParameterIn.HEADER,
+        description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+        schema = @Schema(type = SchemaType.STRING)
+    )
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "daily_digest")
-    public Response getDailyDigestTimePreference(@Context SecurityContext sec) {
+    public Response getDailyDigestTimePreference(@Context SecurityContext sec, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         String orgId = getOrgId(sec);
         Log.infof("Get daily digest time preference for orgId %s", orgId);
         AggregationOrgConfig storedParameters = aggregationOrgConfigRepository.findJobAggregationOrgConfig(orgId);

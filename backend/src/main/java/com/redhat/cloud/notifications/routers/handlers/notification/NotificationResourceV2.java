@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -22,11 +23,13 @@ import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 
 import java.util.List;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_2_0;
+import static com.redhat.cloud.notifications.Constants.X_RH_WORKSPACE_ID_HEADER;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_VIEW;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
@@ -45,11 +48,21 @@ public class NotificationResourceV2 {
     @GET
     @Path("/eventTypes/{eventTypeId}/behaviorGroups")
     @Produces(APPLICATION_JSON)
-    @Parameter(
-        name = "limit",
-        in = ParameterIn.QUERY,
-        description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
-        schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
+    @Parameters(
+        {
+            @Parameter(
+                name = "limit",
+                in = ParameterIn.QUERY,
+                description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
+                schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
+            ),
+            @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+        }
     )
     @Operation(operationId = "NotificationResource$V2_getLinkedBehaviorGroups", summary = "Retrieve the behavior groups linked to an event type.")
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "behavior_group")
@@ -57,7 +70,8 @@ public class NotificationResourceV2 {
         @Context SecurityContext sec,
         @PathParam("eventTypeId") UUID eventTypeId,
         @BeanParam @Valid Query query,
-        @Context UriInfo uriInfo
+        @Context UriInfo uriInfo,
+        @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId
     ) {
         String orgId = getOrgId(sec);
 
