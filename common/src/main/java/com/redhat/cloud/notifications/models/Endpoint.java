@@ -166,15 +166,6 @@ public class Endpoint extends CreationUpdateTimestamped {
         this.orgId = orgId;
     }
 
-    /**
-     * Returns the workspace UUID for JSON serialization.
-     * Computed from the workspace relationship when available.
-     * Note: Accessing getId() on a JPA proxy does not trigger lazy loading for @Id fields.
-     */
-    public UUID getWorkspaceId() {
-        return workspace != null ? workspace.getId() : null;
-    }
-
     public Workspace getWorkspace() {
         return workspace;
     }
