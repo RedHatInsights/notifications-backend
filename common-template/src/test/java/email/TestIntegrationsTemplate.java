@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.qute.templates.mapping.Console.INTEGRATIONS_GENERAL_COMMUNICATION;
@@ -62,6 +63,40 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, useBetaTemplate);
         assertTrue(rendered.contains("disabled because the connection couldn't be established with the remote endpoint, or it responded too many times with a server error (HTTP status code 5xx) after 2048 attempts"));
         assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
+    }
+
+    @Test
+    void testIntegrationDisabledBodyWithClientErrorInFrench() {
+        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, Locale.FRENCH);
+        assertTrue(rendered.contains("Intégration désactivée"));
+        assertTrue(rendered.contains("a été désactivée"));
+        assertTrue(rendered.contains("code de statut HTTP 401"));
+        assertTrue(rendered.contains("Veuillez vérifier"));
+        assertTrue(rendered.contains("Paramètres > Intégrations"));
+        assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
+    }
+
+    @Test
+    void testIntegrationDisabledBodyWithServerErrorInFrench() {
+        Action action = buildIntegrationDisabledAction("HTTP_5XX", "connexion refusée", 2048, 503);
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, Locale.FRENCH);
+        assertTrue(rendered.contains("Intégration désactivée"));
+        assertTrue(rendered.contains("a été désactivée"));
+        assertTrue(rendered.contains("tentatives"));
+        assertTrue(rendered.contains("La dernière erreur était"));
+        assertTrue(rendered.contains("Veuillez vérifier"));
+        assertTrue(rendered.contains("Paramètres > Intégrations"));
+        assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
+    }
+
+    @Test
+    void testIntegrationDisabledTitleInFrench() {
+        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        eventTypeDisplayName = "Integration disabled";
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, Locale.FRENCH);
+        assertTrue(rendered.contains("Intégration désactivée"));
+        assertTrue(rendered.contains("Intégrations - Console"));
     }
 
     /**
@@ -124,6 +159,36 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
         assertTrue(rendered.contains("https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/configuring_notifications_on_the_red_hat_hybrid_cloud_console/index#con-notif-severity_notif-config-intro"));
         assertTrue(rendered.contains("Red Hat Hybrid Cloud Console"));
         assertTrue(rendered.contains("/settings/integrations?category=Reporting"));
+    }
+
+    @Test
+    void testGeneralCommunicationWithFrenchLocaleRendersEnglish() {
+        final String actionAsString = "{" +
+            "   \"version\":\"2.0.0\"," +
+            "   \"bundle\":\"console\"," +
+            "   \"application\":\"integrations\"," +
+            "   \"event_type\":\"general-communication\"," +
+            "   \"timestamp\":\"2025-07-11T09:01:36.220643799\"," +
+            "   \"org_id\":\"12345\"," +
+            "   \"context\":{" +
+            "      \"integration_category\":\"Reporting\"" +
+            "   }," +
+            "   \"events\":[" +
+            "      {" +
+            "         \"metadata\":{}," +
+            "         \"payload\":{" +
+            "            \"integration_names\":[\"My integration\"]" +
+            "         }" +
+            "      }" +
+            "   ]," +
+            "   \"recipients\":[{\"only_admins\":false,\"ignore_user_preferences\":true,\"users\":[],\"emails\":[],\"groups\":[]}]" +
+            "}";
+        Action action = Parser.decode(actionAsString);
+        String rendered = generateEmailBody(INTEGRATIONS_GENERAL_COMMUNICATION, action, Locale.FRENCH);
+        // Template has no {msg:...} calls, so locale is ignored and English is rendered as-is
+        assertTrue(rendered.contains("Your PagerDuty integrations will soon filter notifications by severity level"));
+        assertTrue(rendered.contains("Dear Red Hat customer"));
+        assertTrue(rendered.contains("My integration"));
     }
 
     private Action buildIntegrationDisabledAction(final String errorType, final String errorDetails, final int errorCount, final int errorStatusCode) {
