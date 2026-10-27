@@ -315,6 +315,165 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         assertNotNull(getEndpointWorkspaceId("camel-slack-endpoint"));
     }
 
+    @Test
+    void testResetClearsAllWorkspacesAndUnassignsEndpoints() {
+        // Setup - Create endpoints and bootstrap
+        createEndpoint("org-reset-1", "endpoint-1");
+        createEndpoint("org-reset-2", "endpoint-2");
+        createEndpoint(null, "system-endpoint");
+
+        // Bootstrap to assign workspaces
+        given()
+                        .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
+            .contentType(JSON)
+            .when()
+            .post("/workspace/bootstrap")
+            .then()
+            .statusCode(200);
+
+        // Capture workspace IDs and system workspace ID before reset
+        String workspace1Before = getEndpointWorkspaceId("endpoint-1");
+        String workspace2Before = getEndpointWorkspaceId("endpoint-2");
+        String systemEndpointWorkspaceBefore = getEndpointWorkspaceId("system-endpoint");
+        String systemWorkspaceIdBefore = workspaceRepository.getSystemWorkspace().getId().toString();
+
+        assertNotNull(workspace1Before);
+        assertNotNull(workspace2Before);
+        assertNotNull(systemEndpointWorkspaceBefore);
+
+        // Execute - Reset (returns 204 No Content)
+        given()
+                        .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
+            .contentType(JSON)
+            .when()
+            .post("/workspace/reset")
+            .then()
+            .statusCode(204);
+
+        // Verify - Endpoints no longer have workspace assigned
+        assertNull(getEndpointWorkspaceId("endpoint-1"),
+            "endpoint-1 should have null workspace after reset");
+        assertNull(getEndpointWorkspaceId("endpoint-2"),
+            "endpoint-2 should have null workspace after reset");
+        assertNull(getEndpointWorkspaceId("system-endpoint"),
+            "system-endpoint should have null workspace after reset");
+
+        // Verify - System workspace was deleted (reset is pure deletion)
+        try {
+            workspaceRepository.getSystemWorkspace();
+            assertTrue(false, "System workspace should not exist after reset");
+        } catch (IllegalStateException e) {
+            // Expected - system workspace was deleted
+            assertTrue(e.getMessage().contains("System workspace not found"));
+        }
+
+        // Run bootstrap again to restore system workspace
+        given()
+                        .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
+            .contentType(JSON)
+            .when()
+            .post("/workspace/bootstrap")
+            .then()
+            .statusCode(200);
+
+        // Verify - System workspace recreated with same ID (self-healing)
+        String systemWorkspaceIdAfter = workspaceRepository.getSystemWorkspace().getId().toString();
+        assertEquals(systemWorkspaceIdBefore, systemWorkspaceIdAfter,
+            "System workspace ID should be recreated with same well-known UUID");
+    }
+
+    @Test
+    void testResetThenBootstrapReassignsSameWorkspaceIds() {
+        // Setup - Create endpoints for multiple orgs and system endpoint
+        createEndpoint("org-cycle-1", "endpoint-cycle-1");
+        createEndpoint("org-cycle-2", "endpoint-cycle-2");
+        createEndpoint(null, "system-cycle");
+
+        // Bootstrap
+        given()
+                        .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
+            .contentType(JSON)
+            .when()
+            .post("/workspace/bootstrap")
+            .then()
+            .statusCode(200);
+
+        // Capture all workspace IDs before reset
+        String workspace1Before = getEndpointWorkspaceId("endpoint-cycle-1");
+        String workspace2Before = getEndpointWorkspaceId("endpoint-cycle-2");
+        String systemWorkspaceBefore = getEndpointWorkspaceId("system-cycle");
+        String systemWorkspaceIdBefore = workspaceRepository.getSystemWorkspace().getId().toString();
+
+        assertNotNull(workspace1Before);
+        assertNotNull(workspace2Before);
+        assertNotNull(systemWorkspaceBefore);
+
+        // Execute - Reset
+        given()
+                        .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
+            .contentType(JSON)
+            .when()
+            .post("/workspace/reset")
+            .then()
+            .statusCode(204);
+
+        // Verify - All endpoints unassigned
+        assertNull(getEndpointWorkspaceId("endpoint-cycle-1"));
+        assertNull(getEndpointWorkspaceId("endpoint-cycle-2"));
+        assertNull(getEndpointWorkspaceId("system-cycle"));
+
+        // Verify - System workspace deleted (reset is pure deletion)
+        try {
+            workspaceRepository.getSystemWorkspace();
+            assertTrue(false, "System workspace should not exist after reset");
+        } catch (IllegalStateException e) {
+            // Expected - system workspace was deleted
+        }
+
+        // Execute - Bootstrap again (should recreate system workspace)
+        BootstrapSummary summary = given()
+                        .header(createTurnpikeIdentityHeader("admin", adminRole))
+            .basePath(API_INTERNAL)
+            .contentType(JSON)
+            .when()
+            .post("/workspace/bootstrap")
+            .then()
+            .statusCode(200)
+            .extract().as(BootstrapSummary.class);
+
+        // Verify - Re-bootstrapped successfully
+        assertEquals(2, summary.totalOrgsProcessed,
+            "Should process both orgs again");
+        assertEquals(2, summary.orgsProcessedSuccessfully,
+            "Should successfully assign workspaces");
+        assertEquals(1, summary.systemEndpointsAssigned,
+            "Should assign system endpoint");
+
+        // Verify - System workspace recreated with same ID (self-healing)
+        String systemWorkspaceIdAfterBootstrap = workspaceRepository.getSystemWorkspace().getId().toString();
+        assertEquals(systemWorkspaceIdBefore, systemWorkspaceIdAfterBootstrap,
+            "Bootstrap should recreate system workspace with same well-known UUID");
+
+        // Verify - Same workspace IDs assigned (deterministic from fake RBAC)
+        String workspace1After = getEndpointWorkspaceId("endpoint-cycle-1");
+        String workspace2After = getEndpointWorkspaceId("endpoint-cycle-2");
+        String systemWorkspaceAfter = getEndpointWorkspaceId("system-cycle");
+
+        assertEquals(workspace1Before, workspace1After,
+            "org-cycle-1 should get same workspace ID (deterministic from fake RBAC)");
+        assertEquals(workspace2Before, workspace2After,
+            "org-cycle-2 should get same workspace ID (deterministic from fake RBAC)");
+        assertEquals(systemWorkspaceBefore, systemWorkspaceAfter,
+            "system endpoint should get same system workspace ID");
+        assertEquals(systemWorkspaceIdBefore, systemWorkspaceAfter,
+            "system workspace ID should be the well-known constant");
+    }
+
     // Helper methods
 
     @Transactional

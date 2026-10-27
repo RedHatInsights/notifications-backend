@@ -166,4 +166,53 @@ public class WorkspaceRepository {
             .setParameter("workspace", workspace)
             .executeUpdate();
     }
+
+    /**
+     * Count all workspace records.
+     * Used by reset endpoint to report how many workspaces will be deleted.
+     */
+    public long countAllWorkspaces() {
+        return entityManager.createQuery("SELECT COUNT(w) FROM Workspace w", Long.class)
+            .getSingleResult();
+    }
+
+    /**
+     * Count endpoints that have a workspace assigned.
+     * Used by reset endpoint to report how many endpoints will be reset.
+     */
+    public long countEndpointsWithWorkspace() {
+        return entityManager.createQuery(
+            "SELECT COUNT(e) FROM Endpoint e WHERE e.workspace IS NOT NULL",
+            Long.class
+        ).getSingleResult();
+    }
+
+    /**
+     * Delete all workspace records.
+     * FK constraint ON DELETE SET NULL automatically sets endpoint.workspace_id = NULL.
+     * Used by reset endpoint to clear all workspace assignments.
+     */
+    @Transactional
+    public void deleteAllWorkspaces() {
+        int deleted = entityManager.createQuery("DELETE FROM Workspace").executeUpdate();
+        Log.infof("Deleted %d workspace records", deleted);
+    }
+
+    /**
+     * Create the system workspace record.
+     * Mirrors the INSERT from migration V1.143.0.
+     * Used by reset endpoint to restore the system workspace after deletion.
+     */
+    @Transactional
+    public void createSystemWorkspace() {
+        // Use native SQL to insert with explicit UUID (same as migration)
+        entityManager.createNativeQuery(
+            "INSERT INTO workspace (id, org_id, created) " +
+            "VALUES (:id, NULL, NOW()) " +
+            "ON CONFLICT (id) DO NOTHING")
+            .setParameter("id", SYSTEM_WORKSPACE_ID)
+            .executeUpdate();
+
+        Log.infof("Created system workspace: id=%s", SYSTEM_WORKSPACE_ID);
+    }
 }

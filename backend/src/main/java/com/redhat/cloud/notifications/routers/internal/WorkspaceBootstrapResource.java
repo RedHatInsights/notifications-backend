@@ -34,12 +34,14 @@ public class WorkspaceBootstrapResource {
     /**
      * Bootstrap workspace assignments for all existing endpoints.
      *
-     * This is a one-time operation that:
-     * 1. Creates system workspace and assigns to system integrations
-     * 2. For each org with endpoints: fetches workspace UUID from RBAC,
+     * This is a self-healing operation that:
+     * 1. Ensures system workspace exists (creates if missing, e.g., after reset)
+     * 2. Assigns system workspace to system integrations (if any need assignment)
+     * 3. For each org with endpoints: fetches workspace UUID from RBAC,
      *    creates workspace record, assigns to org's endpoints
      *
      * Safe to run multiple times (idempotent).
+     * Self-healing: recreates system workspace if deleted (e.g., by /reset).
      *
      * Transaction strategy: This method is NOT @Transactional. Each repository
      * method manages its own transaction. This ensures:
@@ -56,9 +58,16 @@ public class WorkspaceBootstrapResource {
 
         BootstrapSummary summary = new BootstrapSummary();
 
-        // Step 1: Process system endpoints (orgId IS NULL) if any need assignment
-        // The system workspace is created by migration V1.143.0
-        Workspace systemWorkspace = workspaceRepository.getSystemWorkspace();
+        // Step 1: Get or create system workspace
+        // Normally created by migration V1.143.0, but we recreate if missing (e.g., after reset)
+        Workspace systemWorkspace;
+        try {
+            systemWorkspace = workspaceRepository.getSystemWorkspace();
+        } catch (IllegalStateException e) {
+            Log.warnf("System workspace not found, recreating: %s", e.getMessage());
+            workspaceRepository.createSystemWorkspace();
+            systemWorkspace = workspaceRepository.getSystemWorkspace();
+        }
         summary.systemWorkspaceId = systemWorkspace.getId();
 
         if (workspaceRepository.hasSystemEndpointsNeedingAssignment()) {
@@ -109,6 +118,41 @@ public class WorkspaceBootstrapResource {
 
         Log.infof("Workspace bootstrap completed: %s", summary);
         return summary;
+    }
+
+    /**
+     * Reset workspace assignments - clear all workspaces and unassign all endpoints.
+     *
+     * This is a pure cleanup/deletion operation that:
+     * 1. Deletes all workspace records (which cascades to set endpoint.workspace_id = NULL via FK constraint)
+     *
+     * Use cases:
+     * - Testing: reset to clean state between test runs
+     * - Rollback: undo workspace feature before making workspace_id NOT NULL
+     * - Re-bootstrap: clear bad data and start fresh
+     *
+     * After reset, endpoints are back to pre-bootstrap state.
+     * The next /bootstrap call will recreate the system workspace and reassign all endpoints.
+     *
+     * WARNING: This is a destructive operation. All workspace assignments are lost.
+     */
+    @POST
+    @Path("/reset")
+    public void resetWorkspaces() {
+
+        // Count what we're about to reset
+        long workspaceCount = workspaceRepository.countAllWorkspaces();
+        long endpointCount = workspaceRepository.countEndpointsWithWorkspace();
+
+        Log.infof("Starting workspace reset: %d workspaces, %d endpoints with workspace_id",
+            workspaceCount, endpointCount);
+
+        // Delete all workspaces
+        // FK constraint ON DELETE SET NULL automatically sets endpoint.workspace_id = NULL
+        workspaceRepository.deleteAllWorkspaces();
+
+        Log.infof("Workspace reset completed: deleted %d workspaces, reset %d endpoints",
+            workspaceCount, endpointCount);
     }
 
     // Inner classes for response DTOs
