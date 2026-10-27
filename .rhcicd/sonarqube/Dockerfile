@@ -1,5 +1,5 @@
 # Image available at https://catalog.redhat.com/software/containers/ubi9/openjdk-25.
-FROM registry.access.redhat.com/ubi9/openjdk-25:latest@sha256:59b7920169daa365dda564ff96f482d12acb426cb23eef7fd681825822c11554
+FROM registry.access.redhat.com/ubi9/openjdk-25:latest@sha256:c5a09bda59e1948a703b68f362e5d8b13632b8accbe5578f163ac6c8325da2af
 
 # Switch to the root user to be able to install the required packages.
 USER root
