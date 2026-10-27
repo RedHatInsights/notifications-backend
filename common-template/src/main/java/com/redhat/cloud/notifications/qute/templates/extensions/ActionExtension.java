@@ -25,6 +25,25 @@ public class ActionExtension {
         return context.getAdditionalProperties().get(key);
     }
 
+    @TemplateExtension
+    public static String integrationSettingsUrl(Context context, String baseUrl) {
+        Object category = context.getAdditionalProperties().get("endpoint_category");
+        Object name = context.getAdditionalProperties().get("endpoint_name");
+        return baseUrl + "/settings/integrations?category=" + category + "&name=" + name;
+    }
+
+    @TemplateExtension
+    public static String costModelUrl(Context context, String baseUrl) {
+        Object costModelId = context.getAdditionalProperties().get("cost_model_id");
+        return baseUrl + "/openshift/cost-management/cost-models/" + costModelId;
+    }
+
+    @TemplateExtension
+    public static String sourceDetailUrl(Context context, String baseUrl) {
+        Object sourceId = context.getAdditionalProperties().get("source_id");
+        return baseUrl + "/settings/sources/detail/" + sourceId;
+    }
+
     @TemplateExtension(matchName = TemplateExtension.ANY)
     public static Object getFromPayload(Payload payload, String key) {
         return payload.getAdditionalProperties().get(key);

@@ -52,6 +52,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
         Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, useBetaTemplate);
         assertTrue(rendered.contains("disabled because the remote endpoint responded with an HTTP status code 401"));
+        assertTrue(rendered.contains("https://localhost/settings/integrations?category=Communications&name=Unreliable integration"));
         assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -61,6 +62,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
         Action action = buildIntegrationDisabledAction("HTTP_5XX", "the HTTP server responded with an HTTP status", 2048, -1);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, useBetaTemplate);
         assertTrue(rendered.contains("disabled because the connection couldn't be established with the remote endpoint, or it responded too many times with a server error (HTTP status code 5xx) after 2048 attempts"));
+        assertTrue(rendered.contains("https://localhost/settings/integrations?category=Communications&name=Unreliable integration"));
         assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 

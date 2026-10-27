@@ -73,6 +73,7 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("Cost model"));
         assertTrue(result.contains("Sample model"));
         assertTrue(result.contains("has been created"));
+        assertTrue(result.contains("https://localhost/openshift/cost-management/cost-models/4540543DGE"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -120,6 +121,7 @@ public class TestCostManagementTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("OpenShift source"));
         assertTrue(result.contains("Dummy source name"));
         assertTrue(result.contains("has not received any payloads in the last 3 or more days"));
+        assertTrue(result.contains("https://localhost/settings/sources/detail/12345"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
