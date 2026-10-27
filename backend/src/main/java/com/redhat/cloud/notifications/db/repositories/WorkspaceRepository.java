@@ -172,8 +172,8 @@ public class WorkspaceRepository {
      * Used by reset endpoint to report how many workspaces will be deleted.
      */
     public long countAllWorkspaces() {
-        return entityManager.createQuery("SELECT COUNT(w) FROM Workspace w", Long.class)
-            .getSingleResult();
+        return ((Number) entityManager.createNativeQuery("SELECT COUNT(*) FROM workspace")
+            .getSingleResult()).longValue();
     }
 
     /**
@@ -181,10 +181,9 @@ public class WorkspaceRepository {
      * Used by reset endpoint to report how many endpoints will be reset.
      */
     public long countEndpointsWithWorkspace() {
-        return entityManager.createQuery(
-            "SELECT COUNT(e) FROM Endpoint e WHERE e.workspace IS NOT NULL",
-            Long.class
-        ).getSingleResult();
+        return ((Number) entityManager.createNativeQuery(
+            "SELECT COUNT(*) FROM endpoints WHERE workspace_id IS NOT NULL")
+            .getSingleResult()).longValue();
     }
 
     /**
@@ -194,7 +193,8 @@ public class WorkspaceRepository {
      */
     @Transactional
     public void deleteAllWorkspaces() {
-        int deleted = entityManager.createQuery("DELETE FROM Workspace").executeUpdate();
+        int deleted = entityManager.createNativeQuery("DELETE FROM workspace")
+            .executeUpdate();
         Log.infof("Deleted %d workspace records", deleted);
     }
 
