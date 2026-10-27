@@ -352,6 +352,9 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(204);
 
+        // Clear entity manager cache so test can verify deletion
+        em.clear();
+
         // Verify - Endpoints no longer have workspace assigned
         assertNull(getEndpointWorkspaceId("endpoint-1"),
             "endpoint-1 should have null workspace after reset");
@@ -421,6 +424,9 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
             .post("/workspace/reset")
             .then()
             .statusCode(204);
+
+        // Clear entity manager cache so test can verify deletion
+        em.clear();
 
         // Verify - All endpoints unassigned
         assertNull(getEndpointWorkspaceId("endpoint-cycle-1"));
