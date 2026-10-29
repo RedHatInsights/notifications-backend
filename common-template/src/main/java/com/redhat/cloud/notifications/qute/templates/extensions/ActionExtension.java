@@ -36,6 +36,13 @@ public class ActionExtension {
         return baseUrl + "/settings/integrations?category=" + encodedCategory + "&name=" + encodedName;
     }
 
+    @TemplateExtension
+    public static String integrationLink(Context context, String style, String href) {
+        Object name = context.getAdditionalProperties().get("endpoint_name");
+        return "<a style=\"" + style + "\" href=\"" + href + "\" target=\"_blank\"><b>"
+            + (name == null ? "" : name) + "</b></a>";
+    }
+
     @TemplateExtension(matchName = TemplateExtension.ANY)
     public static Object getFromPayload(Payload payload, String key) {
         return payload.getAdditionalProperties().get(key);

@@ -7,16 +7,17 @@
 {/content-title}
 {#content-body}
     {#let href=action.context.integrationSettingsUrl(environment.url)}
+    {#let integrationLink=action.context.integrationLink(body-section-underline-link-style, href)}
     {#if action.context.error_type == "HTTP_4XX"}
         <p style="{body-section-p-style}">
-            {msg:integrationDisabledHttp4xx(body-section-underline-link-style, href, action.context.endpoint_name, action.context.status_code)}
+            {msg:integrationDisabledHttp4xx(integrationLink, action.context.status_code)}
         </p>
         <p style="{body-section-p-style}">
             {msg:integrationDisabledReviewPrompt(body-section-underline-link-style, href)}
         </p>
     {#else}
         <p style="{body-section-p-style}">
-            {msg:integrationDisabledOther(body-section-underline-link-style, href, action.context.endpoint_name, action.context.errors_count)}
+            {msg:integrationDisabledOther(integrationLink, action.context.errors_count)}
         </p>
         <p style="{body-section-p-style}">
             {#if action.context.error_type == "HTTP_5XX"}
@@ -29,6 +30,7 @@
             {msg:integrationDisabledReviewPrompt(body-section-underline-link-style, href)}
         </p>
     {/if}
+    {/let}
     {/let}
 {/content-body}
 
