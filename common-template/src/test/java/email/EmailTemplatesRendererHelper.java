@@ -88,6 +88,11 @@ public abstract class EmailTemplatesRendererHelper {
         return generateEmail(templateDefinition, action, null, false, locale);
     }
 
+    protected String generateEmailBody(String eventTypeStr, Action action, boolean ignoreUserPreferences, Locale locale) {
+        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_BODY, getBundle(), getApp(), eventTypeStr);
+        return generateEmail(templateDefinition, action, null, ignoreUserPreferences, locale);
+    }
+
     protected String generateEmailBody(String eventTypeStr, Action event, EmailPendo pendo, boolean ignoreUserPreferences, boolean useBetaTemplate) {
         TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_BODY, getBundle(), getApp(), eventTypeStr, useBetaTemplate);
         return generateEmail(templateDefinition, event, pendo, ignoreUserPreferences);

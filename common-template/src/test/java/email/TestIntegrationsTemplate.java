@@ -73,7 +73,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
         assertTrue(rendered.contains("a été désactivée"));
         assertTrue(rendered.contains("code de statut HTTP 401"));
         assertTrue(rendered.contains("Veuillez vérifier"));
-        assertTrue(rendered.contains("Paramètres > Intégrations"));
+        assertTrue(rendered.contains("Paramètres > Integrations"));
         assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -86,7 +86,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
         assertTrue(rendered.contains("tentatives"));
         assertTrue(rendered.contains("La dernière erreur était"));
         assertTrue(rendered.contains("Veuillez vérifier"));
-        assertTrue(rendered.contains("Paramètres > Intégrations"));
+        assertTrue(rendered.contains("Paramètres > Integrations"));
         assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
@@ -96,7 +96,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
         eventTypeDisplayName = "Integration disabled";
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, Locale.FRENCH);
         assertTrue(rendered.contains("Intégration désactivée"));
-        assertTrue(rendered.contains("Intégrations - Console"));
+        assertTrue(rendered.contains("Integrations - Console"));
     }
 
     /**
@@ -189,6 +189,52 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
         assertTrue(rendered.contains("Your PagerDuty integrations will soon filter notifications by severity level"));
         assertTrue(rendered.contains("Dear Red Hat customer"));
         assertTrue(rendered.contains("My integration"));
+    }
+
+    @Test
+    void testLayoutButtonLabelInEnglish() {
+        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, false);
+        assertTrue(rendered.contains("Go to Integrations"));
+    }
+
+    @Test
+    void testLayoutButtonLabelInFrench() {
+        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, Locale.FRENCH);
+        assertTrue(rendered.contains("Accéder à Integrations"));
+    }
+
+    @Test
+    void testLayoutFooterInEnglish() {
+        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, false);
+        assertTrue(rendered.contains("This email was sent by Red Hat Hybrid Cloud Console"));
+        assertTrue(rendered.contains("Manage email preferences"));
+    }
+
+    @Test
+    void testLayoutFooterInFrench() {
+        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, Locale.FRENCH);
+        assertTrue(rendered.contains("Cet e-mail a été envoyé par Red Hat Hybrid Cloud Console"));
+        assertTrue(rendered.contains("Gérer les préférences d'e-mail"));
+    }
+
+    @Test
+    void testLayoutCriticalFooterInEnglish() {
+        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, true, Locale.ENGLISH);
+        assertTrue(rendered.contains("it is critical or requires action"));
+        assertTrue(rendered.contains("regardless of your email preferences"));
+    }
+
+    @Test
+    void testLayoutCriticalFooterInFrench() {
+        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, true, Locale.FRENCH);
+        assertTrue(rendered.contains("il est critique ou nécessite une action"));
+        assertTrue(rendered.contains("vos préférences en matière d"));
     }
 
     private Action buildIntegrationDisabledAction(final String errorType, final String errorDetails, final int errorCount, final int errorStatusCode) {
