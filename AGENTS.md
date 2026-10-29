@@ -101,6 +101,7 @@ For domain-specific conventions, refer to these guideline documents:
 - The `database` module has no Java code -- it exists solely to hold Flyway migration SQL files that are picked up by other modules at build time via classpath.
 - Connectors are independent deployable services, not libraries. Each has its own `application.properties`, Dockerfile, and Tekton pipeline.
 - The Clowder Config Source translates OpenShift Clowder environment configuration into Quarkus properties. Locally, fallback defaults in `application.properties` use `${clowder.endpoints...url:http://localhost:...}` syntax.
+- Clowder Config Source can throw exceptions (not return null) for incomplete V2 endpoint entries. Property expression defaults (`${...:fallback}`) do not apply to exceptions — use programmatic lookup with try/catch instead. See `docs/configuration-guidelines.md` for details.
 - OpenAPI specs are generated per API version during the build and uploaded as CI artifacts. They are filtered by the `OApiFilter` class.
 - The `admin-console` module is behind the `admin-console` Maven profile and is not built by default.
 - Backend runs on port 8085, engine on 8087 (tests use 9085/9087 respectively) to avoid conflicts when running locally.
