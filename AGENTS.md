@@ -96,6 +96,34 @@ For domain-specific conventions, refer to these guideline documents:
 - **Renovate (MintMaker)**: Configured via `renovate.jsonc` for Maven, npm, GitHub Actions, Dockerfile and Tekton pipeline reference updates, with automerge for low-risk updates.
 - **CodeQL**: Security scanning runs via `.github/workflows/codeql-analysis.yml`.
 
+## Template Internationalization (i18n)
+
+Email templates support locale-aware rendering via Quarkus Qute message bundles. Follow these rules whenever adding or modifying email templates:
+
+### Message Bundle Conventions
+
+- Each application that needs translated strings must have its own `@MessageBundle` interface in `common-template/src/main/java/.../qute/templates/i18n/`, named after the application (e.g., `IntegrationsMessages` with `@MessageBundle("integrations")`).
+- Shared email layout strings (button labels, footer text) belong to the `EmailLayoutMessages` interface (`@MessageBundle("layout")`), **not** to application-specific bundles.
+- Do not mix layout strings with event-type-specific strings in the same bundle.
+
+### Properties Files
+
+- **Always create the default English properties file** (`{bundleName}.properties`) alongside any new `@MessageBundle` interface. This is mandatory even if no translations are planned yet -- the file is the source of truth for all message keys.
+- Place properties files in `common-template/src/main/resources/messages/`.
+- File naming: `{bundleName}.properties` (English default), `{bundleName}_fr.properties` (French), etc.
+- The bundle name in the annotation must match the file prefix exactly.
+
+### Content Rules
+
+- Do **not** embed HTML markup (`<a>`, `<b>`, etc.) in message strings. Keep `<a>` tags in the `.html` template; only put text content in messages.
+- Product names with capital letters (e.g., "Integrations", "Console") must **not** be translated -- keep them in English in all locale files.
+- Common nouns (e.g., "integration" as a concept) may be translated.
+
+### Template Namespace
+
+- Reference messages in templates using the bundle name as namespace: `{integrations:messageKey}` or `{layout:messageKey}`.
+- If a `{#let}` block needs to resolve a variable before using it in a second `{#let}`, nest the two blocks rather than combining them on one line (Qute evaluates assignments left-to-right within a single `{#let}`).
+
 ## Key Gotchas
 
 - The `database` module has no Java code -- it exists solely to hold Flyway migration SQL files that are picked up by other modules at build time via classpath.
