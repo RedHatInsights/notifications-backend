@@ -3,8 +3,8 @@ package com.redhat.cloud.notifications.qute.templates.i18n;
 import io.quarkus.qute.i18n.Message;
 import io.quarkus.qute.i18n.MessageBundle;
 
-@MessageBundle
-public interface TemplateMessages {
+@MessageBundle("integrations")
+public interface IntegrationsMessages {
 
     @Message("Integrations - Console")
     String integrationsConsoleTitle();

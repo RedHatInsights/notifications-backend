@@ -1,33 +1,33 @@
 {#include email/Common/insightsEmailBody}
 {#content-header-title}
-    {msg:integrationsConsoleTitle}
+    {integrations:integrationsConsoleTitle}
 {/content-header-title}
 {#content-title}
-    {msg:integrationDisabledTitle}
+    {integrations:integrationDisabledTitle}
 {/content-title}
 {#content-body}
     {#let href=action.context.integrationSettingsUrl(environment.url)}
     {#let integrationLink=action.context.integrationLink(body-section-underline-link-style, href)}
     {#if action.context.error_type == "HTTP_4XX"}
         <p style="{body-section-p-style}">
-            {msg:integrationDisabledHttp4xx(integrationLink, action.context.status_code)}
+            {integrations:integrationDisabledHttp4xx(integrationLink, action.context.status_code)}
         </p>
         <p style="{body-section-p-style}">
-            {msg:integrationDisabledReviewPrompt(body-section-underline-link-style, href)}
+            {integrations:integrationDisabledReviewPrompt(body-section-underline-link-style, href)}
         </p>
     {#else}
         <p style="{body-section-p-style}">
-            {msg:integrationDisabledOther(integrationLink, action.context.errors_count)}
+            {integrations:integrationDisabledOther(integrationLink, action.context.errors_count)}
         </p>
         <p style="{body-section-p-style}">
             {#if action.context.error_type == "HTTP_5XX"}
-                {msg:integrationDisabledLatestErrorHttp5xx(action.context.error_details, action.context.status_code)}
+                {integrations:integrationDisabledLatestErrorHttp5xx(action.context.error_details, action.context.status_code)}
             {#else}
-                {msg:integrationDisabledLatestError(action.context.error_details)}
+                {integrations:integrationDisabledLatestError(action.context.error_details)}
             {/if}
         </p>
         <p style="{body-section-p-style}">
-            {msg:integrationDisabledReviewPrompt(body-section-underline-link-style, href)}
+            {integrations:integrationDisabledReviewPrompt(body-section-underline-link-style, href)}
         </p>
     {/if}
     {/let}
@@ -35,6 +35,6 @@
 {/content-body}
 
 {#content-button-href}{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}&{query_params}{/content-button-href}
-{#content-button-service-name}{msg:integrationsButtonLabel}{/content-button-service-name}
+{#content-button-service-name}{integrations:integrationsButtonLabel}{/content-button-service-name}
 
 {/include}
