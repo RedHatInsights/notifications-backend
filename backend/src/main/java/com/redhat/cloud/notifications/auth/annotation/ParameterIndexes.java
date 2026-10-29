@@ -8,6 +8,7 @@ import java.util.Optional;
  */
 class ParameterIndexes {
     private Integer securityContextIndex;
+    private Integer workspaceIdHeaderIndex;
 
     ParameterIndexes() { }
 
@@ -17,5 +18,13 @@ class ParameterIndexes {
 
     public void setSecurityContextIndex(final Integer securityContextIndex) {
         this.securityContextIndex = securityContextIndex;
+    }
+
+    public Optional<Integer> getWorkspaceIdHeaderIndex() {
+        return Optional.ofNullable(this.workspaceIdHeaderIndex);
+    }
+
+    public void setWorkspaceIdHeaderIndex(final Integer workspaceIdHeaderIndex) {
+        this.workspaceIdHeaderIndex = workspaceIdHeaderIndex;
     }
 }

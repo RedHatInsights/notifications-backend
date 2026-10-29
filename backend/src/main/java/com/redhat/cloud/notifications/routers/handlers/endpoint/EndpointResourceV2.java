@@ -14,6 +14,7 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTEGRATIONS_V_2_0;
+import static com.redhat.cloud.notifications.Constants.X_RH_WORKSPACE_ID_HEADER;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_VIEW;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
@@ -69,6 +71,12 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
                 name = "includeDetail",
                 description = "Include the detail in the reply",
                 schema = @Schema(type = SchemaType.BOOLEAN)
+            ),
+            @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
             )
         }
     )
@@ -79,7 +87,8 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
         @Context UriInfo uriInfo,
         @PathParam("id") UUID id,
         @QueryParam("includeDetail") Boolean includeDetail,
-        @Valid @BeanParam Query query
+        @Valid @BeanParam Query query,
+        @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId
     ) {
         if (!this.endpointRepository.existsByUuidAndOrgId(id, getOrgId(sec))) {
             throw new NotFoundException("Endpoint not found");
@@ -102,8 +111,16 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
     @Operation(operationId = "EndpointResource$V2_getEndpoint", summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
+    @Parameters({
+        @Parameter(
+            name = X_RH_WORKSPACE_ID_HEADER,
+            in = ParameterIn.HEADER,
+            description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+            schema = @Schema(type = SchemaType.STRING)
+        )
+    })
     @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
-    public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         return internalGetEndpoint(sec, id, true, true);
     }
 
@@ -123,6 +140,12 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
                 in = ParameterIn.QUERY,
                 description = "Page number. Starts at first page (0), if not specified starts at first page.",
                 schema = @Schema(type = SchemaType.INTEGER)
+            ),
+            @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
             )
         }
     )
@@ -132,7 +155,8 @@ public class EndpointResourceV2 extends EndpointResourceCommon {
         @BeanParam @Valid       Query query,
         @QueryParam("type")     List<String> targetType,
         @QueryParam("active")   Boolean activeOnly,
-        @QueryParam("name")     String name
+        @QueryParam("name")     String name,
+        @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId
     ) {
         return internalGetEndpoints(sec, query, targetType, activeOnly, name, true, true);
     }

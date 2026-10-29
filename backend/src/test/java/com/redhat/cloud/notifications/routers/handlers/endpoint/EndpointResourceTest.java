@@ -96,6 +96,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.redhat.cloud.notifications.Constants.X_RH_WORKSPACE_ID_HEADER;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerHttpsUrl;
 import static com.redhat.cloud.notifications.MockServerLifecycleManager.getMockServerUrl;
@@ -4963,6 +4964,55 @@ public class EndpointResourceTest extends DbIsolatedTest {
                 Arguments.of(false, EndpointType.DRAWER), // Should use RBAC
                 Arguments.of(true, EndpointType.DRAWER) // Should use Kessel
         );
+    }
+
+    /**
+     * Tests that the {@code x-rh-workspace-id} header, when present, is used
+     * for the Kessel permission check instead of the org's default
+     * workspace, and that a malformed value results in a 403 rather than a
+     * 400 -- consistent with the workspace ID being a permissions concern,
+     * not a request-validation one.
+     */
+    @Test
+    void testWorkspaceHeaderOverridesDefaultWorkspace() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
+
+        String identityHeaderValue = TestHelpers.encodeRHIdentityInfo(TestConstants.DEFAULT_ACCOUNT_ID, DEFAULT_ORG_ID, DEFAULT_USER);
+        Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
+        MockServerConfig.addMockRbacAccess(identityHeaderValue, FULL_ACCESS);
+
+        // The default workspace is denied (mockKesselDenyAll() in beforeEach), but this other,
+        // explicit workspace is granted.
+        UUID explicitWorkspaceId = UUID.randomUUID();
+        when(kesselCheckClient
+            .check(kesselTestHelper.buildCheckRequestForWorkspace(DEFAULT_USER, INTEGRATIONS_VIEW, explicitWorkspaceId)))
+            .thenReturn(kesselTestHelper.buildCheckResponse(ALLOWED_TRUE));
+
+        // Without the header, the denied default workspace is used.
+        given()
+            .header(identityHeader)
+            .when()
+            .get("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // With the header, the explicitly granted workspace is used instead.
+        given()
+            .header(identityHeader)
+            .header(X_RH_WORKSPACE_ID_HEADER, explicitWorkspaceId.toString())
+            .when()
+            .get("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        // A malformed workspace ID is a 403, not a 400.
+        given()
+            .header(identityHeader)
+            .header(X_RH_WORKSPACE_ID_HEADER, "not-a-uuid")
+            .when()
+            .get("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
     }
 
     private void mockKesselDenyAll() {

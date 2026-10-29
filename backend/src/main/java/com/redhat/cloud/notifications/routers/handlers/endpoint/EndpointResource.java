@@ -28,6 +28,7 @@ import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -56,6 +57,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTEGRATIONS_V_1_0;
+import static com.redhat.cloud.notifications.Constants.X_RH_WORKSPACE_ID_HEADER;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_INTEGRATIONS_ENDPOINTS;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_EDIT;
@@ -111,10 +113,16 @@ public class EndpointResource extends EndpointResourceCommon {
             name = "includeDetail",
             description = "Include the detail in the reply",
             schema = @Schema(type = SchemaType.BOOLEAN)
+            ),
+        @Parameter(
+            name = X_RH_WORKSPACE_ID_HEADER,
+            in = ParameterIn.HEADER,
+            description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+            schema = @Schema(type = SchemaType.STRING)
             )
     })
     @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
-    public List<NotificationHistoryDTO> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @Valid @BeanParam Query query) {
+    public List<NotificationHistoryDTO> getEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID id, @QueryParam("includeDetail") Boolean includeDetail, @Valid @BeanParam Query query, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         if (!this.endpointRepository.existsByUuidAndOrgId(id, getOrgId(sec))) {
             throw new NotFoundException("Endpoint not found");
         }
@@ -140,6 +148,12 @@ public class EndpointResource extends EndpointResourceCommon {
                 in = ParameterIn.QUERY,
                 description = "Page number. Starts at first page (0), if not specified starts at first page.",
                 schema = @Schema(type = SchemaType.INTEGER)
+            ),
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
             )
     })
     @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
@@ -148,7 +162,8 @@ public class EndpointResource extends EndpointResourceCommon {
         @BeanParam @Valid       Query query,
         @QueryParam("type")     List<String> targetType,
         @QueryParam("active")   Boolean activeOnly,
-        @QueryParam("name")     String name
+        @QueryParam("name")     String name,
+        @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId
     ) {
         return internalGetEndpoints(sec, query, targetType, activeOnly, name, false, false);
     }
@@ -161,10 +176,19 @@ public class EndpointResource extends EndpointResourceCommon {
         @APIResponse(responseCode = "200", content = @Content(mediaType = APPLICATION_JSON, schema = @Schema(implementation = EndpointDTO.class))),
         @APIResponse(responseCode = "400", description = "Bad data passed, that does not correspond to the definition or Endpoint.properties are empty")
     })
+    @Parameters({
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
     @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
     public EndpointDTO createEndpoint(
         @Context                        final SecurityContext sec,
-        @NotNull @Valid @RequestBody    final EndpointDTO endpointDTO
+        @NotNull @Valid @RequestBody    final EndpointDTO endpointDTO,
+        @HeaderParam(X_RH_WORKSPACE_ID_HEADER) final String workspaceId
     ) {
         final Endpoint endpoint = this.endpointMapper.toEntity(endpointDTO);
 
@@ -184,9 +208,17 @@ public class EndpointResource extends EndpointResourceCommon {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Create an email subscription endpoint", description = "Adds the email subscription endpoint into the system and specifies the role-based access control (RBAC) group that will receive email notifications. Use this endpoint in behavior groups to send emails when an action linked to the behavior group is triggered.")
+    @Parameters({
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
     @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
     @Transactional
-    public EndpointDTO getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid @RequestBody(required = true) RequestSystemSubscriptionProperties requestProps) {
+    public EndpointDTO getOrCreateEmailSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid @RequestBody(required = true) RequestSystemSubscriptionProperties requestProps, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         return this.endpointMapper.toDTO(getOrCreateSystemSubscriptionEndpoint(sec, requestProps, EMAIL_SUBSCRIPTION));
     }
 
@@ -195,9 +227,17 @@ public class EndpointResource extends EndpointResourceCommon {
     @Consumes(APPLICATION_JSON)
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Add a drawer endpoint", description = "Adds the drawer system endpoint into the system and specifies the role-based access control (RBAC) group that will receive notifications. Use this endpoint to add an animation as a notification in the UI.")
+    @Parameters({
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
     @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
     @Transactional
-    public EndpointDTO getOrCreateDrawerSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid @RequestBody(required = true) RequestSystemSubscriptionProperties requestProps) {
+    public EndpointDTO getOrCreateDrawerSubscriptionEndpoint(@Context SecurityContext sec, @NotNull @Valid @RequestBody(required = true) RequestSystemSubscriptionProperties requestProps, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         return this.endpointMapper.toDTO(this.getOrCreateSystemSubscriptionEndpoint(sec, requestProps, DRAWER));
     }
 
@@ -234,8 +274,16 @@ public class EndpointResource extends EndpointResourceCommon {
     @Path("/{id}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve an endpoint", description = "Retrieves the public information associated with an endpoint such as its description, name, and properties.")
+    @Parameters({
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
     @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
-    public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    public EndpointDTO getEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         return internalGetEndpoint(sec, id, false, false);
     }
 
@@ -243,9 +291,17 @@ public class EndpointResource extends EndpointResourceCommon {
     @Path("/{id}")
     @Operation(summary = "Delete an endpoint", description = "Deletes an endpoint. Use this endpoint to delete an endpoint that is no longer needed. Deleting an endpoint that is already linked to a behavior group will unlink it from the behavior group. You cannot delete system endpoints.")
     @APIResponse(responseCode = "204", description = "The integration has been deleted", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @Parameters({
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
     @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
     @Transactional
-    public Response deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    public Response deleteEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         return super.deleteEndpoint(sec, id);
     }
 
@@ -254,9 +310,17 @@ public class EndpointResource extends EndpointResourceCommon {
     @Produces(TEXT_PLAIN)
     @Operation(summary = "Enable an endpoint", description = "Enables an endpoint that is disabled so that the endpoint will be executed on the following operations that use the endpoint. An operation must be restarted to use the enabled endpoint.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @Parameters({
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
     @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
     @Transactional
-    public Response enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    public Response enableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         return super.enableEndpoint(sec, id);
     }
 
@@ -264,9 +328,17 @@ public class EndpointResource extends EndpointResourceCommon {
     @Path("/{id}/enable")
     @Operation(summary = "Disable an endpoint", description = "Disables an endpoint so that the endpoint will not be executed after an operation that uses the endpoint is started. An operation that is already running can still execute the endpoint. Disable an endpoint when you want to stop it from running and might want to re-enable it in the future.")
     @APIResponse(responseCode = "204", description = "The integration has been disabled", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @Parameters({
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
     @Transactional
     @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
-    public Response disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id) {
+    public Response disableEndpoint(@Context SecurityContext sec, @PathParam("id") UUID id, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         return super.disableEndpoint(sec, id);
     }
 
@@ -276,12 +348,21 @@ public class EndpointResource extends EndpointResourceCommon {
     @Path("/{id}")
     @Produces(TEXT_PLAIN)
     @PUT
+    @Parameters({
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
     @Transactional
     @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
     public Response updateEndpoint(
         @Context                                        SecurityContext securityContext,
         @PathParam("id")                                UUID id,
-        @RequestBody(required = true) @NotNull @Valid   EndpointDTO endpointDTO
+        @RequestBody(required = true) @NotNull @Valid   EndpointDTO endpointDTO,
+        @HeaderParam(X_RH_WORKSPACE_ID_HEADER)          String workspaceId
     ) {
         final Endpoint endpoint = endpointMapper.toEntity(endpointDTO);
         return super.commonUpdateEndpoint(securityContext, id, endpoint, endpointDTO.eventTypes, true);
@@ -292,8 +373,16 @@ public class EndpointResource extends EndpointResourceCommon {
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve event notification details", description = "Retrieves extended information about the outcome of an event notification related to the specified endpoint. Use this endpoint to learn why an event delivery failed.")
     @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.STRING)))
+    @Parameters({
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
     @Authorization(legacyRBACRole = RBAC_READ_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_VIEW)
-    public Response getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId) {
+    public Response getDetailedEndpointHistory(@Context SecurityContext sec, @PathParam("id") UUID endpointId, @PathParam("history_id") UUID historyId, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         return super.getDetailedEndpointHistory(sec, endpointId, historyId);
     }
 
@@ -313,10 +402,16 @@ public class EndpointResource extends EndpointResourceCommon {
                 in = ParameterIn.PATH,
                 description = "The UUID of the endpoint to test",
                 schema = @Schema(type = SchemaType.STRING)
+            ),
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
             )
     })
     @Authorization(legacyRBACRole = RBAC_WRITE_INTEGRATIONS_ENDPOINTS, workspacePermissions = INTEGRATIONS_EDIT)
-    public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid, @Valid @RequestBody final EndpointTestRequest requestBody) {
+    public void testEndpoint(@Context SecurityContext sec, @RestPath UUID uuid, @Valid @RequestBody final EndpointTestRequest requestBody, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         super.commonTestEndpoint(sec, uuid, requestBody);
     }
 
@@ -329,9 +424,17 @@ public class EndpointResource extends EndpointResourceCommon {
             description = "No event type or endpoint found with the passed id.")
     })
     @Tag(name = OApiFilter.PRIVATE)
+    @Parameters({
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
     @Transactional
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = INTEGRATIONS_EDIT)
-    public void deleteEventTypeFromEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
+    public void deleteEventTypeFromEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) final String workspaceId) {
         final String orgId = getOrgId(securityContext);
         endpointEventTypeRepository.deleteEndpointFromEventType(eventTypeId, endpointId, orgId);
 
@@ -357,9 +460,17 @@ public class EndpointResource extends EndpointResourceCommon {
             description = "No event type or endpoint found with the passed id.")
     })
     @Tag(name = OApiFilter.PRIVATE)
+    @Parameters({
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
     @Transactional
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = INTEGRATIONS_EDIT)
-    public void addEventTypeToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId) {
+    public void addEventTypeToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID eventTypeId, @RestPath final UUID endpointId, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) final String workspaceId) {
         final String orgId = getOrgId(securityContext);
         final String accountId = getAccountId(securityContext);
 
@@ -377,9 +488,17 @@ public class EndpointResource extends EndpointResourceCommon {
         @APIResponse(responseCode = "404", content = @Content(mediaType = TEXT_PLAIN,  schema = @Schema(type = SchemaType.STRING)),
             description = "No event type or endpoint found with passed ids.")
     })
+    @Parameters({
+        @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+    })
     @Transactional
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS, workspacePermissions = INTEGRATIONS_EDIT)
-    public void updateEventTypesLinkedToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID endpointId, @Parameter(description = "Set of event type ids to associate") Set<UUID> eventTypeIds) {
+    public void updateEventTypesLinkedToEndpoint(@Context final SecurityContext securityContext, @RestPath final UUID endpointId, @Parameter(description = "Set of event type ids to associate") Set<UUID> eventTypeIds, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) final String workspaceId) {
         internalUpdateEventTypesLinkedToEndpoint(securityContext, endpointId, eventTypeIds);
     }
 }

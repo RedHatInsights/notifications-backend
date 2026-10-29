@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
@@ -33,6 +34,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_1_0;
+import static com.redhat.cloud.notifications.Constants.X_RH_WORKSPACE_ID_HEADER;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.EVENTS_VIEW;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -67,6 +69,12 @@ public class EventResource extends EventResourceCommon {
             description = "End of the date range filter. Accepts either a date (yyyy-MM-dd), expanded to the end of that day, "
                 + "or a date-time (yyyy-MM-dd'T'HH:mm:ss).",
             schema = @Schema(type = SchemaType.STRING, format = "date-time")
+        ),
+        @Parameter(
+            name = X_RH_WORKSPACE_ID_HEADER,
+            in = ParameterIn.HEADER,
+            description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+            schema = @Schema(type = SchemaType.STRING)
         )
     })
     @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS, workspacePermissions = EVENTS_VIEW, resourceType = "event")
@@ -76,7 +84,8 @@ public class EventResource extends EventResourceCommon {
                                          @RestQuery Set<String> endpointTypes, @RestQuery Set<Boolean> invocationResults,
                                          @RestQuery Set<EventLogEntryActionStatus> status, @RestQuery Set<Severity> severities,
                                          @BeanParam @Valid Query query,
-                                         @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions) {
+                                         @RestQuery boolean includeDetails, @RestQuery boolean includePayload, @RestQuery boolean includeActions,
+                                         @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         LocalDateTime startDateTime = parseDate(startDate, "startDate", LocalDate::atStartOfDay);
         LocalDateTime endDateTime = parseDate(endDate, "endDate", date -> date.atTime(LocalTime.MAX));
 
