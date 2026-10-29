@@ -22,6 +22,7 @@ public class DigestTriggerOrgConfig {
 
     private LocalDateTime lastRun;
 
+    @NotNull
     private LocalDateTime nextRun;
 
     public DigestTriggerOrgConfig() {
