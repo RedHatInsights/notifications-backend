@@ -1,4 +1,4 @@
--- RHCLOUD-48349: Workspace bootstrap support
+-- RHCLOUD-48350: Workspace bootstrap support
 --
 -- This migration enables workspace bootstrap by:
 -- 1. Making workspace.org_id nullable to support the system workspace
