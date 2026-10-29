@@ -12,11 +12,11 @@ public interface TemplateMessages {
     @Message("Integration disabled")
     String integrationDisabledTitle();
 
-    @Message("Integration <a style=\"{style}\" href=\"{href}\" target=\"_blank\"><b>{name}</b></a> was disabled because the remote endpoint responded with an HTTP status code {statusCode}.")
-    String integrationDisabledHttp4xx(String style, String href, String name, Object statusCode);
+    @Message("Integration {integrationLink} was disabled because the remote endpoint responded with an HTTP status code {statusCode}.")
+    String integrationDisabledHttp4xx(String integrationLink, Object statusCode);
 
-    @Message("Integration <a style=\"{style}\" href=\"{href}\" target=\"_blank\"><b>{name}</b></a> was disabled because the connection couldn't be established with the remote endpoint, or it responded too many times with a server error (HTTP status code 5xx) after {errorsCount} attempts.")
-    String integrationDisabledOther(String style, String href, String name, Object errorsCount);
+    @Message("Integration {integrationLink} was disabled because the connection couldn't be established with the remote endpoint, or it responded too many times with a server error (HTTP status code 5xx) after {errorsCount} attempts.")
+    String integrationDisabledOther(String integrationLink, Object errorsCount);
 
     @Message("The latest error was: {errorDetails}.")
     String integrationDisabledLatestError(Object errorDetails);
