@@ -1,0 +1,9 @@
+# Enables the GitHub Git Data API signed-commit publish path (fullsend
+# v0.51.0+; off by default upstream). See "Signed commits" in the
+# fullsend-ai/agents repo's docs/code.md. This is the documented per-repo
+# override mechanism ("Override per repo via base: composition" in
+# harness/code.yaml) -- not a temporary test shim.
+base: https://raw.githubusercontent.com/fullsend-ai/agents/f9908adce062d7e0a37635aac4b6c889835476cc/harness/code.yaml#sha256=760dbb4632fad21c667653d7ddb518647dff545e10abffa4a24acf0520ca61fa
+env:
+  runner:
+    GITHUB_SIGNED_COMMITS: "true"

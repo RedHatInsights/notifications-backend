@@ -1,8 +1,0 @@
-# TEMPORARY test override: enables the GitHub Git Data API signed-commit
-# publish path added by fullsend-ai/agents#1675 (merged to main, off by
-# default). Revert this file and the config.yaml source override once
-# testing is done.
-base: https://raw.githubusercontent.com/fullsend-ai/agents/3e9f702c9cbee4567ad0facd38883a3b6c2090bf/harness/code.yaml#sha256=03262fb9180d4d4776db2e8b3705d8d8779ca6f37dd81353cbc0fcbaa253ef29
-env:
-  runner:
-    GITHUB_SIGNED_COMMITS: "true"
