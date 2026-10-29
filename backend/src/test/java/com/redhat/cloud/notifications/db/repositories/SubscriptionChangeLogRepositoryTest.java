@@ -72,8 +72,10 @@ public class SubscriptionChangeLogRepositoryTest extends DbIsolatedTest {
 
     @Test
     void testCountUnsubscribesByEventType() {
-        EventType eventType1 = createTestEventType("bundle-scl-4", "app-scl-4", "event-scl-4a");
-        EventType eventType2 = createTestEventType("bundle-scl-4", "app-scl-4", "event-scl-4b");
+        Bundle bundle = resourceHelpers.createBundle("bundle-scl-4");
+        Application app = resourceHelpers.createApplication(bundle.getId(), "app-scl-4");
+        EventType eventType1 = resourceHelpers.createEventType(app.getId(), "event-scl-4a");
+        EventType eventType2 = resourceHelpers.createEventType(app.getId(), "event-scl-4b");
 
         subscriptionChangeLogRepository.logChange("org-1", "user-1", eventType1.getId(), SubscriptionType.INSTANT, false);
         subscriptionChangeLogRepository.logChange("org-2", "user-2", eventType1.getId(), SubscriptionType.INSTANT, false);
