@@ -47,6 +47,9 @@ public class SubscriptionRepository {
     @Inject
     ObjectMapper mapper;
 
+    @Inject
+    SubscriptionChangeLogRepository subscriptionChangeLogRepository;
+
     public void subscribe(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
         updateSubscription(orgId, username, eventTypeId, subscriptionType, true, null);
     }
@@ -88,6 +91,8 @@ public class SubscriptionRepository {
             .setParameter("subscribed", subscribed)
             .setParameter("severities", jsonSeverities)
             .executeUpdate();
+
+        subscriptionChangeLogRepository.logChange(orgId, username, eventTypeId, subscriptionType, subscribed);
     }
 
     private void checkIfSubscriptionTypeIsSupportedForCurrentEventType(UUID eventTypeId, SubscriptionType subscriptionType) {
