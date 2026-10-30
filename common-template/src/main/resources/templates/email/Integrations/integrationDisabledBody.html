@@ -34,7 +34,7 @@
     {/let}
 {/content-body}
 
-{#content-button-href}{environment.url}/settings/integrations?category={action.context.endpoint_category}&name={action.context.endpoint_name}&{query_params}{/content-button-href}
+{#content-button-href}{action.context.integrationSettingsUrl(environment.url)}&{query_params}{/content-button-href}
 {#content-button-service-name}{integrations:integrationsButtonLabel}{/content-button-service-name}
 
 {/include}

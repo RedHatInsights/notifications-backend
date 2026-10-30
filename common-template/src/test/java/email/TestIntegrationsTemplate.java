@@ -192,6 +192,47 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Test
+    void testIntegrationDisabledBodyUrlEncodesSpecialChars() {
+        final String actionAsString = "{" +
+            "   \"version\":\"2.0.0\"," +
+            "   \"id\":\"9ee4a19b-297c-49f8-ad20-e777e6d71533\"," +
+            "   \"bundle\":\"console\"," +
+            "   \"application\":\"integrations\"," +
+            "   \"event_type\":\"integration-disabled\"," +
+            "   \"timestamp\":\"2025-07-25T08:25:09.119379869\"," +
+            "   \"org_id\":\"default-org-id\"," +
+            "   \"context\":{" +
+            "      \"error_type\":\"HTTP_4XX\"," +
+            "      \"error_details\":\"\"," +
+            "      \"endpoint_id\":\"c8a30166-526a-4e6c-b0c7-d24ec35279d3\"," +
+            "      \"endpoint_name\":\"My & Integration\"," +
+            "      \"endpoint_category\":\"Cat <test>\"," +
+            "      \"errors_count\":1," +
+            "      \"status_code\":401" +
+            "   }," +
+            "   \"events\":[{\"payload\":{},\"metadata\":{}}]," +
+            "   \"recipients\":[{\"only_admins\":true,\"ignore_user_preferences\":true,\"users\":[],\"emails\":[],\"groups\":[]}]" +
+            "}";
+        eventTypeDisplayName = "Integration disabled";
+        Action action = Parser.decode(actionAsString);
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, false);
+        // Special characters in category and name must be URL-encoded in href attributes
+        assertTrue(rendered.contains("category=Cat+%3Ctest%3E"), "endpoint_category should be URL-encoded");
+        assertTrue(rendered.contains("name=My+%26+Integration"), "endpoint_name should be URL-encoded");
+        // HTML-encoded in link label
+        assertTrue(rendered.contains("My &amp; Integration"), "endpoint_name should be HTML-escaped in link text");
+    }
+
+    @Test
+    void testIntegrationDisabledBodyWithUnsupportedLocaleRendersEnglish() {
+        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, Locale.GERMAN);
+        // German not supported, must fall back to English
+        assertTrue(rendered.contains("disabled because the remote endpoint responded with an HTTP status code 401"));
+        assertTrue(rendered.contains("Settings > Integrations"));
+    }
+
+    @Test
     void testLayoutButtonLabelInEnglish() {
         Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, false);
