@@ -1,0 +1,26 @@
+# Enables GitHub signed commits (see docs/code.md "Signed commits").
+#
+# Also adds the Jira dispatch trigger -- upstream code.yaml has none, and
+# the Jira poller only dispatches agents whose harness defines one.
+# fullsend's Jira integration is pre-alpha: dispatches currently fail right
+# after pickup since agent scripts expect a GitHub issue number, not a Jira
+# key (fullsend-ai/fullsend#2264). Wired up ahead of that fix.
+base: https://raw.githubusercontent.com/fullsend-ai/agents/f9908adce062d7e0a37635aac4b6c889835476cc/harness/code.yaml#sha256=760dbb4632fad21c667653d7ddb518647dff545e10abffa4a24acf0520ca61fa
+env:
+  runner:
+    GITHUB_SIGNED_COMMITS: "true"
+trigger: >
+    has(event.source) && event.source.system == "jira"
+    && event.entity.kind == "work_item"
+    && "repo:RedHatInsights/notifications-backend" in event.state.labels
+    && event.state.labels.filter(label, label.startsWith("repo:")).size() == 1
+    && event.actor.kind == "human"
+    && (
+         (event.transition.kind == "label_changed"
+           && event.transition.label.action == "added"
+           && event.transition.label.name == "ready-to-code")
+         ||
+         (event.transition.kind == "comment_added"
+           && has(event.transition.comment.command)
+           && event.transition.comment.command == "/fs-code")
+       )

@@ -1,0 +1,119 @@
+# Polls Jira (project RHCLOUD) for issues labeled repo:RedHatInsights/notifications-backend
+# and dispatches triage/code agent runs, mirroring the GitHub-native triggers
+# in .fullsend/harness/{triage,code}.yaml.
+#
+# fullsend's Jira integration is pre-alpha (see
+# https://github.com/fullsend-ai/fullsend/blob/main/docs/guides/user/jira-integration.md):
+# dispatched runs currently fail right after pickup because the built-in
+# agent scripts expect a GitHub issue number, not a Jira key
+# (fullsend-ai/fullsend#2264). Scoped narrowly on purpose while that's true:
+# gated behind FULLSEND_JIRA_POLL_ENABLED (unset -- manual workflow_dispatch
+# only) until the upstream fix lands and this has been exercised manually.
+name: fullsend Jira poll
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  actions: write
+  contents: write
+  id-token: write
+  issues: write
+  packages: read
+  pull-requests: write
+
+jobs:
+  poll:
+    # UIE: permit manual validation before enabling scheduled polling.
+    if: github.event_name == 'workflow_dispatch' || vars.FULLSEND_JIRA_POLL_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: fullsend-jira-poll
+      cancel-in-progress: false
+    outputs:
+      matrix: ${{ steps.build-matrix.outputs.matrix }}
+      fullsend_version: ${{ steps.fullsend-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Resolve fullsend version
+        # Reads the tag straight off the `harness` job's `uses:` line below
+        # so there is exactly one place Renovate's github-actions manager
+        # needs to bump -- the CLI download and `fullsend_version` input
+        # can't drift from it.
+        id: fullsend-version
+        run: |
+          set -euo pipefail
+          line=$(grep -E '^\s*uses: fullsend-ai/fullsend/.github/workflows/reusable-dispatch.yml@' .github/workflows/fullsend-poll-jira.yml)
+          version=$(sed -E 's/.*#\s*(\S+)\s*$/\1/' <<< "${line}")
+          if [[ -z "${version}" || "${version}" == "${line}" ]]; then
+            echo "::error::could not resolve fullsend version from the reusable-dispatch.yml@ line" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Install fullsend
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FULLSEND_VERSION: ${{ steps.fullsend-version.outputs.version }}
+        run: |
+          gh release download "${FULLSEND_VERSION}" --repo fullsend-ai/fullsend \
+            -p 'fullsend_*_linux_amd64.tar.gz' -O - | tar xz
+          sudo mv fullsend /usr/local/bin/
+
+      - name: Poll Jira
+        env:
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+          TARGET_REPO: ${{ github.repository }}
+        run: |
+          fullsend poll \
+            --input-driver jira-poll \
+            --jira-url "${JIRA_BASE_URL}" \
+            --jira-project RHCLOUD \
+            --jql 'project = RHCLOUD AND labels = "repo:RedHatInsights/notifications-backend" AND statusCategory != Done ORDER BY updated DESC' \
+            --target-repo "${TARGET_REPO}" \
+            --output dispatches.json \
+            --fullsend-dir .fullsend
+
+      - name: Build dispatch matrix
+        id: build-matrix
+        run: |
+          set -euo pipefail
+          if ! jq -e 'length > 0' dispatches.json > /dev/null 2>&1; then
+            echo "No dispatches."
+            echo 'matrix={"include":[]}' >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          MATRIX=$(jq -c '{include: .}' dispatches.json)
+          DELIM="MATRIX_$(openssl rand -hex 8)"
+          {
+            echo "matrix<<${DELIM}"
+            printf '%s' "${MATRIX}"
+            echo
+            echo "${DELIM}"
+          } >> "${GITHUB_OUTPUT}"
+
+  harness:
+    name: Harness
+    needs: poll
+    # Renovate (github-actions manager) bumps this SHA + tag comment; the
+    # poll job's "Resolve fullsend version" step reads the tag back from
+    # this exact line, so nothing else needs to be bumped in lockstep.
+    uses: fullsend-ai/fullsend/.github/workflows/reusable-dispatch.yml@f3b9d9869483093802aeb000f1d931880c9a48b5  # v0.51.0
+    with:
+      matrix: ${{ needs.poll.outputs.matrix }}
+      mint_url: ${{ vars.FULLSEND_MINT_URL }}
+      gcp_region: ${{ vars.FULLSEND_GCP_REGION }}
+      jira_base_url: ${{ vars.JIRA_BASE_URL }}
+      fullsend_version: ${{ needs.poll.outputs.fullsend_version }}
+    secrets:
+      FULLSEND_GCP_WIF_PROVIDER: ${{ secrets.FULLSEND_GCP_WIF_PROVIDER }}
+      FULLSEND_GCP_PROJECT_ID: ${{ secrets.FULLSEND_GCP_PROJECT_ID }}
+      OTEL_EXPORTER_OTLP_TRACES_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_TRACES_HEADERS }}
+      OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
+      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+      JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
