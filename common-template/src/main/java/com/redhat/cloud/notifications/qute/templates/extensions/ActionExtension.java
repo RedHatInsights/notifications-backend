@@ -11,8 +11,6 @@ import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import io.quarkus.qute.TemplateExtension;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class ActionExtension {
@@ -25,26 +23,6 @@ public class ActionExtension {
     @TemplateExtension(matchName = TemplateExtension.ANY)
     public static Object getFromContext(Context context, String key) {
         return context.getAdditionalProperties().get(key);
-    }
-
-    @TemplateExtension
-    public static String integrationSettingsUrl(Context context, String baseUrl) {
-        Object category = context.getAdditionalProperties().get("endpoint_category");
-        Object name = context.getAdditionalProperties().get("endpoint_name");
-        String encodedCategory = URLEncoder.encode(category == null ? "" : String.valueOf(category), StandardCharsets.UTF_8);
-        String encodedName = URLEncoder.encode(name == null ? "" : String.valueOf(name), StandardCharsets.UTF_8);
-        return baseUrl + "/settings/integrations?category=" + encodedCategory + "&name=" + encodedName;
-    }
-
-    @TemplateExtension
-    public static String integrationLink(Context context, String style, String href) {
-        Object name = context.getAdditionalProperties().get("endpoint_name");
-        String label = name == null ? "(unnamed)" : escapeHtml(String.valueOf(name));
-        return "<a style=\"" + style + "\" href=\"" + href + "\" target=\"_blank\"><b>" + label + "</b></a>";
-    }
-
-    private static String escapeHtml(String value) {
-        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
     @TemplateExtension(matchName = TemplateExtension.ANY)
