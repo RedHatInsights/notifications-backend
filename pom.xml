@@ -61,7 +61,7 @@
         <surefire-plugin.version>3.5.6</surefire-plugin.version>
         <checkstyle-plugin.version>3.6.0</checkstyle-plugin.version>
         <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
-        <jacoco-plugin.version>0.8.15</jacoco-plugin.version>
+        <jacoco-plugin.version>0.8.16</jacoco-plugin.version>
         <checkstyle.version>14.3.0</checkstyle.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <version.cloud-commons>0.1.1</version.cloud-commons>
@@ -76,7 +76,7 @@
 
         <quarkus-logging-cloudwatch.version>6.16.0</quarkus-logging-cloudwatch.version>
         <quarkus-logging-sentry.version>2.3.6</quarkus-logging-sentry.version>
-        <quarkus-mcp-server.version>2.0.3</quarkus-mcp-server.version>
+        <quarkus-mcp-server.version>2.0.4</quarkus-mcp-server.version>
         <quarkus-unleash.version>1.15.0</quarkus-unleash.version>
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
