@@ -68,6 +68,24 @@ public boolean isFeatureEnabled(String orgId) {
 - Set `quarkus.unleash.active=false` and `quarkus.unleash.url=http://localhost:4242` in every module's properties to disable Unleash locally.
 - Use `quarkus.http.port` with unique ports per module to avoid conflicts during local development (backend=8085, engine=8087, recipients-resolver=9008, connectors=9001+).
 
+## Clowder Config Source Gotchas
+
+- `clowder-quarkus-config-source` can throw `IllegalStateException` from `getValue()` when a V2 dependency endpoint has a `uri` but a missing or incomplete field (e.g., no `authenticated` flag).
+- Quarkus/SmallRye property expression defaults (`${property:default}`) only apply when the value is absent/null — they do **not** apply when the config source throws an exception.
+- When reading optional Clowder V2 properties, use programmatic lookup with try/catch (as done in `BackendConfig.readClowderKesselAuthenticated`) rather than property expressions.
+- Reference PR #5042 as an example of the pattern:
+
+```java
+static Optional<Boolean> readClowderKesselAuthenticated(final Config config) {
+    try {
+        return config.getOptionalValue(CLOWDER_KESSEL_AUTHENTICATED, Boolean.class);
+    } catch (final IllegalStateException e) {
+        Log.warnf("Ignoring the Clowder V2 dependency endpoint flag for Kessel: %s", e.getMessage());
+        return Optional.empty();
+    }
+}
+```
+
 ## Config Interceptors
 
 - Use `ConfigSourceInterceptor` (registered in `META-INF/services/io.smallrye.config.ConfigSourceInterceptor`) to transform resolved config values at load time. See `KesselConfigInterceptor` which strips HTTP schemes from gRPC URLs.
