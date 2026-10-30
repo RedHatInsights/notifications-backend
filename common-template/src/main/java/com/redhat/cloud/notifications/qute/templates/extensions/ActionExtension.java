@@ -39,8 +39,12 @@ public class ActionExtension {
     @TemplateExtension
     public static String integrationLink(Context context, String style, String href) {
         Object name = context.getAdditionalProperties().get("endpoint_name");
-        return "<a style=\"" + style + "\" href=\"" + href + "\" target=\"_blank\"><b>"
-            + (name == null ? "" : name) + "</b></a>";
+        String label = name == null ? "(unnamed)" : escapeHtml(String.valueOf(name));
+        return "<a style=\"" + style + "\" href=\"" + href + "\" target=\"_blank\"><b>" + label + "</b></a>";
+    }
+
+    private static String escapeHtml(String value) {
+        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
     @TemplateExtension(matchName = TemplateExtension.ANY)
