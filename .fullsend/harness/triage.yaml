@@ -20,7 +20,8 @@ trigger: >
          ||
          (event.transition.kind == "comment_added"
            && has(event.transition.comment.command)
-           && event.transition.comment.command == "/fs-triage")
+           && event.transition.comment.command == "/fs-triage"
+           && event.actor.kind == "human")
        )
 overlays:
     - when: 'has(event.source) && event.source.system == "jira"'

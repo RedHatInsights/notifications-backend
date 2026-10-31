@@ -16,19 +16,15 @@ on:
     - cron: "*/5 * * * *"
   workflow_dispatch: {}
 
-permissions:
-  actions: write
-  contents: write
-  id-token: write
-  issues: write
-  packages: read
-  pull-requests: write
+permissions: {}
 
 jobs:
   poll:
     # UIE: permit manual validation before enabling scheduled polling.
     if: github.event_name == 'workflow_dispatch' || vars.FULLSEND_JIRA_POLL_ENABLED == 'true'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     concurrency:
       group: fullsend-jira-poll
       cancel-in-progress: false
@@ -100,6 +96,13 @@ jobs:
   harness:
     name: Harness
     needs: poll
+    permissions:
+      actions: write
+      contents: write
+      id-token: write
+      issues: write
+      packages: read
+      pull-requests: write
     # Renovate (github-actions manager) bumps this SHA + tag comment; the
     # poll job's "Resolve fullsend version" step reads the tag back from
     # this exact line, so nothing else needs to be bumped in lockstep.
