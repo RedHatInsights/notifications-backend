@@ -96,6 +96,8 @@ jobs:
   harness:
     name: Harness
     needs: poll
+    # reusable-dispatch.yml's jobs need these; GitHub requires the caller
+    # to grant all of them, even for jobs that are skipped.
     permissions:
       actions: write
       contents: write
