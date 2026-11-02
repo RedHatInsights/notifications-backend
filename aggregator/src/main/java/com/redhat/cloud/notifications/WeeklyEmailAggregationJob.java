@@ -8,6 +8,7 @@ import jakarta.inject.Inject;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
@@ -36,8 +37,14 @@ public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
     }
 
     @Override
-    protected List<AggregationCommand> getPendingAggregations(LocalDateTime executionTime) {
-        return digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(executionTime);
+    protected List<String> claimDueOrgs(LocalDateTime executionTime) {
+        digestTriggerOrgConfigRepository.resetStaleClaims(executionTime, aggregatorConfig.getWeeklyStaleClaimThresholdHours());
+        return digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(executionTime);
+    }
+
+    @Override
+    protected List<AggregationCommand> getPendingAggregations(LocalDateTime executionTime, List<String> claimedOrgIds) {
+        return digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(executionTime, claimedOrgIds);
     }
 
     @Override
@@ -48,6 +55,15 @@ public class WeeklyEmailAggregationJob extends AbstractEmailAggregationJob {
     @Override
     protected void updateFailedOrgConfigs(List<String> orgIds, LocalDateTime executionTime) {
         digestTriggerOrgConfigRepository.updateNextRunForFailedWeekly(orgIds, executionTime);
+    }
+
+    @Override
+    protected void finalizeRun(List<String> allUpdatedOrgIds, List<String> claimedOrgIds, LocalDateTime executionTime) {
+        // Advance orgs claimed this run that had no events (not in allUpdatedOrgIds)
+        List<String> noEventsOrgIds = claimedOrgIds.stream()
+            .filter(id -> !allUpdatedOrgIds.contains(id))
+            .collect(Collectors.toList());
+        digestTriggerOrgConfigRepository.advanceNextRunForOrgsWithNoEvents(executionTime, noEventsOrgIds);
     }
 
     @Override

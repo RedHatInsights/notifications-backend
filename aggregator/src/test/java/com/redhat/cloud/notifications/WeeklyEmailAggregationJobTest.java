@@ -250,6 +250,22 @@ class WeeklyEmailAggregationJobTest {
     }
 
     @Test
+    void shouldAdvanceNextRunForOrgsWithNoEvents() {
+        // Org is due this slot but has no qualifying events
+        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), executionTime);
+
+        weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(executionTime, new CollectorRegistry());
+
+        assertEquals(0, getRecordsFromKafka().size(), "No digest when no events");
+
+        // nextRun must still advance so the org is not permanently stuck
+        DigestTriggerOrgConfig config = helpers.findDigestTriggerOrgConfig(ORG_ID_1, WEEKLY);
+        assertNotNull(config);
+        assertTrue(config.getNextRun().isAfter(executionTime),
+            "nextRun should be advanced even when no events, to prevent org from being stuck");
+    }
+
+    @Test
     void shouldProcessCorrectNumberOfPairs() {
         createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), executionTime);
 
@@ -257,7 +273,8 @@ class WeeklyEmailAggregationJobTest {
         addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "advisor", "rec1", "host2", now.minusDays(2));
         addWeeklyEventEmailAggregation(ORG_ID_1, "openshift", "cluster", "cluster1", "node1", now.minusDays(1));
 
-        List<AggregationCommand> commands = weeklyEmailAggregationJob.processAggregateEmailsWithOrgPref(executionTime, new CollectorRegistry());
+        List<String> claimed = weeklyEmailAggregationJob.claimDueOrgs(executionTime);
+        List<AggregationCommand> commands = weeklyEmailAggregationJob.processAggregateEmailsWithOrgPref(executionTime, claimed, new CollectorRegistry());
 
         assertEquals(3, commands.size());
         Gauge pairsProcessed = weeklyEmailAggregationJob.getPairsProcessed();
@@ -314,6 +331,22 @@ class WeeklyEmailAggregationJobTest {
         Action action = actions.get(0);
         assertNotNull(action.getContext());
         assertTrue(action.getContext().getAdditionalProperties().isEmpty());
+    }
+
+    @Test
+    void shouldNotDoubleProcessWhenJobRestarts() {
+        // First run: org is claimed and processed
+        createDigestTriggerConfig(ORG_ID_1, now.minusWeeks(1), executionTime);
+        addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
+
+        weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(executionTime, new CollectorRegistry());
+        assertEquals(1, getRecordsFromKafka().size());
+        connector.sink(WeeklyEmailAggregationJob.EGRESS_CHANNEL).clear();
+
+        // Second run (simulating pod restart at same executionTime):
+        // The org is now PENDING with nextRun in the future, so claimDueWeeklyOrgs won't claim it again
+        weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(executionTime, new CollectorRegistry());
+        assertEquals(0, getRecordsFromKafka().size(), "Org should not be processed twice in the same slot");
     }
 
     // Helper methods

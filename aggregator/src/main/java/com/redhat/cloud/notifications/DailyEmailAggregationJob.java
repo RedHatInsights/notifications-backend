@@ -36,7 +36,7 @@ public class DailyEmailAggregationJob extends AbstractEmailAggregationJob {
     }
 
     @Override
-    protected List<AggregationCommand> getPendingAggregations(LocalDateTime executionTime) {
+    protected List<AggregationCommand> getPendingAggregations(LocalDateTime executionTime, List<String> claimedOrgIds) {
         return emailAggregationRepository.getApplicationsWithPendingAggregationAccordingOrgPref(executionTime);
     }
 

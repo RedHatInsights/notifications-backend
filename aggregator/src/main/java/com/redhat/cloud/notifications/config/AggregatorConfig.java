@@ -36,6 +36,8 @@ public class AggregatorConfig {
     private static final int DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS = 150;
     private static final String NOTIFICATIONS_DEFAULT_DAILY_DIGEST_TIME = "notifications.default.daily.digest.time";
     private static final String PROMETHEUS_PUSHGATEWAY_URL = "prometheus.pushgateway.url";
+    // Must exceed max_maintenance_window + max_run_duration to avoid resetting a live claim.
+    private static final String WEEKLY_STALE_CLAIM_THRESHOLD_HOURS = "notifications.weekly.stale-claim-threshold-hours";
 
     /*
      * Unleash configuration
@@ -56,6 +58,9 @@ public class AggregatorConfig {
 
     @ConfigProperty(name = PROMETHEUS_PUSHGATEWAY_URL, defaultValue = "http://localhost:8080")
     String prometheusPushGatewayUrl;
+
+    @ConfigProperty(name = WEEKLY_STALE_CLAIM_THRESHOLD_HOURS, defaultValue = "6")
+    int weeklyStaleClaimThresholdHours;
 
     @Inject
     Unleash unleash;
@@ -95,6 +100,10 @@ public class AggregatorConfig {
 
     public String getPrometheusPushGatewayUrl() {
         return prometheusPushGatewayUrl;
+    }
+
+    public int getWeeklyStaleClaimThresholdHours() {
+        return weeklyStaleClaimThresholdHours;
     }
 
     /**
@@ -175,6 +184,7 @@ public class AggregatorConfig {
         config.put(METRICS_SCRAPE_MODE_ENABLED, metricsScrapeModeEnabled);
         config.put(METRICS_SCRAPE_KEEP_ALIVE_SECONDS, metricsScrapeKeepAliveSeconds);
         config.put(PROMETHEUS_PUSHGATEWAY_URL, prometheusPushGatewayUrl);
+        config.put(WEEKLY_STALE_CLAIM_THRESHOLD_HOURS, weeklyStaleClaimThresholdHours);
         config.put(NOTIFICATIONS_DEFAULT_DAILY_DIGEST_TIME, defaultDailyDigestTime);
         config.put(NOTIFICATIONS_DEFAULT_DAILY_DIGEST_CRON, digestCronUtils.getDefaultDailyDigestCron());
         config.put(NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON, digestCronUtils.getDefaultWeeklyDigestCron());

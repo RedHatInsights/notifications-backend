@@ -75,8 +75,9 @@ public abstract class AbstractEmailAggregationJob {
 
         try {
             createMissingDefaultConfigs(executionTime);
+            List<String> claimedOrgIds = claimDueOrgs(executionTime);
 
-            List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(executionTime, registry);
+            List<AggregationCommand> aggregationCommands = processAggregateEmailsWithOrgPref(executionTime, claimedOrgIds, registry);
             Log.infof("found %s %s commands", aggregationCommands.size(), getJobType().toLowerCase());
             Log.debugf("%s aggregation commands: %s", getJobType(), aggregationCommands);
 
@@ -114,14 +115,20 @@ public abstract class AbstractEmailAggregationJob {
                 Log.infof("Updated %d successful orgs for %s digest", successfulOrgIds.size(), getJobType().toLowerCase());
             }
 
-            // Update failed orgs to retry tomorrow at the same hour
-            // By setting next_run to tomorrow, they won't be picked up again today (query uses exact match)
-            // This prevents retry spam every 15 minutes and gives time for issues to be resolved
+            // Update failed orgs to retry tomorrow at the same hour.
+            // status is reset to PENDING and next_run advances to tomorrow, so claimDueWeeklyOrgs
+            // won't pick them up again until the next slot -- prevents retry spam every 15 minutes.
             if (!failedOrgIds.isEmpty()) {
                 updateFailedOrgConfigs(failedOrgIds, executionTime);
                 Log.warnf("Scheduled retry for %d failed orgs for %s digest - will retry tomorrow at the same hour",
                     failedOrgIds.size(), getJobType().toLowerCase());
             }
+
+            // Advance nextRun for due orgs that produced no commands (e.g. quiet week).
+            // Subclasses override this; the default is a no-op (daily doesn't need it).
+            List<String> allUpdatedOrgIds = new ArrayList<>(successfulOrgIds);
+            allUpdatedOrgIds.addAll(failedOrgIds);
+            finalizeRun(allUpdatedOrgIds, claimedOrgIds, executionTime);
 
             Gauge lastSuccess = Gauge
                     .build()
@@ -161,9 +168,18 @@ public abstract class AbstractEmailAggregationJob {
     protected abstract void createMissingDefaultConfigs(LocalDateTime executionTime);
 
     /**
-     * Template method: Get pending aggregation commands from the repository.
+     * Template method: Claim orgs due for processing this slot and return their IDs.
+     * Weekly overrides this to do an atomic PENDING -> PROCESSING claim; daily returns an empty list.
      */
-    protected abstract List<AggregationCommand> getPendingAggregations(LocalDateTime executionTime);
+    protected List<String> claimDueOrgs(LocalDateTime executionTime) {
+        return List.of();
+    }
+
+    /**
+     * Template method: Get pending aggregation commands from the repository.
+     * claimedOrgIds is what {@link #claimDueOrgs} returned; implementations that don't claim may ignore it.
+     */
+    protected abstract List<AggregationCommand> getPendingAggregations(LocalDateTime executionTime, List<String> claimedOrgIds);
 
     /**
      * Template method: Update organization configurations after processing.
@@ -175,6 +191,14 @@ public abstract class AbstractEmailAggregationJob {
      * Failed orgs should be scheduled to retry at a later time (e.g., next day at same hour).
      */
     protected abstract void updateFailedOrgConfigs(List<String> orgIds, LocalDateTime executionTime);
+
+    /**
+     * Template method: called after all org configs are updated.
+     * claimedOrgIds is what this pod claimed; updatedOrgIds is the subset that had events.
+     * Override to advance nextRun for claimed orgs that produced no commands (quiet week).
+     */
+    protected void finalizeRun(List<String> updatedOrgIds, List<String> claimedOrgIds, LocalDateTime executionTime) {
+    }
 
     /**
      * Template method: Return the metric name for pairs processed.
@@ -191,8 +215,8 @@ public abstract class AbstractEmailAggregationJob {
      */
     protected abstract String getDurationMetricName();
 
-    List<AggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, CollectorRegistry registry) {
-        List<AggregationCommand> pendingAggregationCommands = getPendingAggregations(endTime);
+    List<AggregationCommand> processAggregateEmailsWithOrgPref(LocalDateTime endTime, List<String> claimedOrgIds, CollectorRegistry registry) {
+        List<AggregationCommand> pendingAggregationCommands = getPendingAggregations(endTime, claimedOrgIds);
 
         pairsProcessed = Gauge
                 .build()
