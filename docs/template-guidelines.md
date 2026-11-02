@@ -124,7 +124,7 @@ When implementing or reviewing `@TemplateExtension` methods that retrieve contex
 
 - **Do NOT defensively null-guard mandatory fields**: Do not wrap lookups with fallback defaults like `Objects.toString(val, "")`, ternary empty-string assignments, or placeholder labels like `"(unnamed)"` for fields that are part of the event contract.
 - **A null value is an upstream bug**: If `context.getAdditionalProperties().get(key)` returns `null` for a mandatory key, that is a defect in the event producer or notifier, not a situation the template layer should accommodate.
-- **Review guidance**: Neither human reviewers nor automated review agents should flag null-safety warnings or request defensive null guards when `@TemplateExtension` methods access documented mandatory context properties.
+- **Review standard**: Accessing documented mandatory context properties without defensive null guards is intentional by design; defensive null checks should not be introduced for contract fields.
 
 ### Well-Known Mandatory Context Properties
 
