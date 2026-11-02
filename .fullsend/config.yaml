@@ -13,14 +13,15 @@ roles:
 agents:
     - name: triage
       model: google-vertex/gemini-3.8-flash
+      source: harness/triage.yaml
     - name: code
       model: google-vertex/gemini-3.8-flash
-      source: code-signed.yaml
+      source: harness/code.yaml
     - name: review
       model: google-vertex/gemini-3.8-flash
     - name: fix
       model: google-vertex/gemini-3.8-flash
-      source: fix-signed.yaml
+      source: harness/fix.yaml
 allowed_remote_resources:
     - https://raw.githubusercontent.com/fullsend-ai/fullsend/
     - https://raw.githubusercontent.com/fullsend-ai/agents/
