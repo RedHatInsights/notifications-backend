@@ -1,20 +1,18 @@
 package com.redhat.cloud.notifications.models;
 
 import com.redhat.cloud.notifications.db.converters.SubscriptionTypeConverter;
-import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
 @Entity
 @Table(name = "subscription_change_log")
-public class SubscriptionChangeLog {
+public class SubscriptionChangeLog extends CreationTimestamped {
 
     @Id
     @GeneratedValue
@@ -30,9 +28,6 @@ public class SubscriptionChangeLog {
     private SubscriptionType subscriptionType;
 
     private boolean subscribed;
-
-    @Column(insertable = false, updatable = false)
-    private OffsetDateTime changedAt;
 
     public UUID getId() {
         return id;
@@ -80,10 +75,6 @@ public class SubscriptionChangeLog {
 
     public void setSubscribed(boolean subscribed) {
         this.subscribed = subscribed;
-    }
-
-    public OffsetDateTime getChangedAt() {
-        return changedAt;
     }
 
     @Override

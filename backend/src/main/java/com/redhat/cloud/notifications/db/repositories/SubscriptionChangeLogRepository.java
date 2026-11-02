@@ -6,8 +6,6 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
-import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -31,21 +29,5 @@ public class SubscriptionChangeLogRepository {
             .setParameter("subscriptionType", subscriptionType.name())
             .setParameter("subscribed", subscribed)
             .executeUpdate();
-    }
-
-    public List<Object[]> countUnsubscribesByEventType(OffsetDateTime since) {
-        String sql = """
-            SELECT scl.event_type_id, et.display_name, COUNT(*)
-            FROM subscription_change_log scl
-            JOIN event_type et ON et.id = scl.event_type_id
-            WHERE scl.subscribed = false
-              AND scl.changed_at >= :since
-            GROUP BY scl.event_type_id, et.display_name
-            ORDER BY COUNT(*) DESC
-            """;
-
-        return entityManager.createNativeQuery(sql)
-            .setParameter("since", since)
-            .getResultList();
     }
 }
