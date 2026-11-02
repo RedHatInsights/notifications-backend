@@ -67,8 +67,11 @@ class DigestTriggerOrgConfigRepositoryTest {
         Event event2 = resourceHelpers.addEventEmailAggregationWithSubscriptionType(
             ORG_ID, BUNDLE_NAME, APP_NAME, now.minusDays(2), PAYLOAD2.toString(), true, SubscriptionType.WEEKLY);
 
+        // Claim due orgs before querying
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+
         // Query for pending aggregations
-        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now);
+        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now, claimed);
 
         assertEquals(1, commands.size());
         AggregationCommand command = commands.get(0);
@@ -97,8 +100,11 @@ class DigestTriggerOrgConfigRepositoryTest {
         Event event1 = resourceHelpers.addEventEmailAggregationWithSubscriptionType(
             ORG_ID, BUNDLE_NAME, APP_NAME, now.minusDays(2), PAYLOAD1.toString(), true, SubscriptionType.WEEKLY);
 
+        // Claim due orgs before querying
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+
         // Query for pending aggregations
-        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now);
+        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now, claimed);
 
         // Should be empty because all events are before last run
         assertEquals(0, commands.size());
@@ -122,8 +128,11 @@ class DigestTriggerOrgConfigRepositoryTest {
         Event event1 = resourceHelpers.addEventEmailAggregationWithSubscriptionType(
             ORG_ID, BUNDLE_NAME, APP_NAME, now.minusDays(3), PAYLOAD1.toString(), true, SubscriptionType.WEEKLY);
 
-        // Query for pending aggregations
-        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now);
+        // claimDueWeeklyOrgs uses nextRun <= :now; this org has nextRun = now + 1h, so it won't be claimed
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+
+        // Query for pending aggregations (claimed is empty, so should short-circuit to empty list)
+        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now, claimed);
 
         // Should be empty because next run hasn't been reached yet
         assertEquals(0, commands.size());
@@ -177,6 +186,7 @@ class DigestTriggerOrgConfigRepositoryTest {
         // next_run should be calculated from current execution time
         assertNotNull(updatedConfig.getNextRun());
         assertTrue(updatedConfig.getNextRun().isAfter(now));
+        assertEquals("PENDING", updatedConfig.getStatus());
     }
 
     @Test
@@ -203,8 +213,11 @@ class DigestTriggerOrgConfigRepositoryTest {
         Event event2 = resourceHelpers.addEventEmailAggregationWithSubscriptionType(
             ORG_ID_2, BUNDLE_NAME, APP_NAME, now.minusDays(2), PAYLOAD2.toString(), true, SubscriptionType.WEEKLY);
 
+        // Claim due orgs before querying
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+
         // Query for pending aggregations
-        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now);
+        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now, claimed);
 
         assertEquals(2, commands.size());
         List<String> orgIds = commands.stream()
@@ -237,8 +250,11 @@ class DigestTriggerOrgConfigRepositoryTest {
         Event recentEvent = resourceHelpers.addEventEmailAggregationWithSubscriptionType(
             ORG_ID, BUNDLE_NAME, APP_NAME, now.minusDays(3), PAYLOAD2.toString(), true, SubscriptionType.WEEKLY);
 
+        // Claim due orgs before querying
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+
         // Query for pending aggregations
-        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now);
+        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now, claimed);
 
         // Should only find recent event
         assertEquals(1, commands.size());
@@ -270,8 +286,11 @@ class DigestTriggerOrgConfigRepositoryTest {
         Event yesterdayEvent = resourceHelpers.addEventEmailAggregationWithSubscriptionType(
             ORG_ID, BUNDLE_NAME, APP_NAME, now.minusHours(25), PAYLOAD2.toString(), true, SubscriptionType.WEEKLY);
 
+        // Claim due orgs before querying
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+
         // Query for pending aggregations
-        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now);
+        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now, claimed);
 
         assertEquals(1, commands.size());
         AggregationCommand command = commands.get(0);
@@ -302,8 +321,11 @@ class DigestTriggerOrgConfigRepositoryTest {
         Event recentEvent = resourceHelpers.addEventEmailAggregationWithSubscriptionType(
             ORG_ID, BUNDLE_NAME, APP_NAME, now.minusHours(20), PAYLOAD1.toString(), true, SubscriptionType.WEEKLY);
 
+        // Claim due orgs before querying
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+
         // Query for pending aggregations
-        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now);
+        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now, claimed);
 
         assertEquals(1, commands.size());
         AggregationCommand command = commands.get(0);
@@ -357,6 +379,82 @@ class DigestTriggerOrgConfigRepositoryTest {
         assertNotNull(updatedConfig.getNextRun());
         assertTrue(updatedConfig.getNextRun().isAfter(currentExecutionTime),
             "next_run should be after current execution time (Wednesday)");
+        assertEquals("PENDING", updatedConfig.getStatus());
+    }
+
+    @Test
+    void testUpdateLastAndNextRunForWeeklyWithNullLastRun() {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+
+        DigestTriggerOrgConfigId configId = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config = new DigestTriggerOrgConfig(configId, DEFAULT_WEEKLY_CRON);
+        config.setLastRun(null);
+        config.setNextRun(now);
+        resourceHelpers.addDigestTriggerOrgConfig(config);
+
+        digestTriggerOrgConfigRepository.updateLastAndNextRunForWeekly(List.of(ORG_ID), now);
+
+        DigestTriggerOrgConfig updated = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID, SubscriptionType.WEEKLY);
+        assertNotNull(updated.getLastRun(), "lastRun should be set when it was null");
+        assertEquals(now.withNano(0), updated.getLastRun().withNano(0),
+            "For first run, lastRun should equal currentExecutionTime");
+        assertTrue(updated.getNextRun().isAfter(now), "nextRun should be advanced");
+        assertEquals("PENDING", updated.getStatus());
+    }
+
+    @Test
+    void testAdvanceNextRunForOrgsWithNoEvents() {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+
+        DigestTriggerOrgConfigId configId1 = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config1 = new DigestTriggerOrgConfig(configId1, DEFAULT_WEEKLY_CRON);
+        config1.setLastRun(now.minusWeeks(1));
+        config1.setNextRun(now);
+        resourceHelpers.addDigestTriggerOrgConfig(config1);
+
+        DigestTriggerOrgConfigId configId2 = new DigestTriggerOrgConfigId(ORG_ID_2, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config2 = new DigestTriggerOrgConfig(configId2, DEFAULT_WEEKLY_CRON);
+        config2.setLastRun(now.minusWeeks(1));
+        config2.setNextRun(now);
+        resourceHelpers.addDigestTriggerOrgConfig(config2);
+
+        // Simulate: ORG_ID_2 was already processed (had events), ORG_ID had no events
+        // Pass only ORG_ID as the no-events list -- the new signature takes explicit org IDs
+        digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+
+        digestTriggerOrgConfigRepository.advanceNextRunForOrgsWithNoEvents(now, List.of(ORG_ID));
+
+        DigestTriggerOrgConfig updated1 = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID, SubscriptionType.WEEKLY);
+        assertTrue(updated1.getNextRun().isAfter(now), "nextRun should be advanced for org with no events");
+        assertNotNull(updated1.getLastRun());
+        assertEquals("PENDING", updated1.getStatus(), "advanced org should be reset to PENDING");
+
+        DigestTriggerOrgConfig updated2 = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID_2, SubscriptionType.WEEKLY);
+        assertEquals(now.withNano(0), updated2.getNextRun().withNano(0),
+            "nextRun should not be changed for already-updated org");
+    }
+
+    @Test
+    void testAdvanceNextRunForOrgsWithNoEventsNullLastRun() {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+
+        DigestTriggerOrgConfigId configId = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config = new DigestTriggerOrgConfig(configId, DEFAULT_WEEKLY_CRON);
+        config.setLastRun(null);
+        config.setNextRun(now);
+        resourceHelpers.addDigestTriggerOrgConfig(config);
+
+        // Claim the org (nextRun = now, status PENDING -> PROCESSING)
+        digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+
+        // ORG_ID had no events -- pass it explicitly as the no-events list
+        digestTriggerOrgConfigRepository.advanceNextRunForOrgsWithNoEvents(now, List.of(ORG_ID));
+
+        DigestTriggerOrgConfig updated = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID, SubscriptionType.WEEKLY);
+        assertEquals(now.withNano(0), updated.getLastRun().withNano(0),
+            "lastRun should be set to now for first run with no events");
+        assertTrue(updated.getNextRun().isAfter(now), "nextRun should be advanced");
+        assertEquals("PENDING", updated.getStatus(), "advanced org should be reset to PENDING");
     }
 
     @Test
@@ -393,11 +491,13 @@ class DigestTriggerOrgConfigRepositoryTest {
 
         // Verify last_run was NOT updated (should remain the same)
         assertEquals(now.minusWeeks(1).withNano(0), updatedConfig.getLastRun().withNano(0));
+        assertEquals("PENDING", updatedConfig.getStatus());
 
         // Verify second org was also updated
         DigestTriggerOrgConfig updatedConfig2 = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID_2, SubscriptionType.WEEKLY);
         assertNotNull(updatedConfig2);
         assertEquals(expectedNextRun.withNano(0), updatedConfig2.getNextRun().withNano(0));
+        assertEquals("PENDING", updatedConfig2.getStatus());
     }
 
     @Test
@@ -415,31 +515,24 @@ class DigestTriggerOrgConfigRepositoryTest {
         Event event = resourceHelpers.addEventEmailAggregationWithSubscriptionType(
             ORG_ID, BUNDLE_NAME, APP_NAME, now.minusDays(3), PAYLOAD1.toString(), true, SubscriptionType.WEEKLY);
 
+        // Claim due orgs before querying
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+
         // Query for pending aggregations
-        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now);
+        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now, claimed);
 
         assertEquals(1, commands.size());
         AggregationCommand command = commands.get(0);
 
-        // For first run (lastRun is null):
-        // - scheduledTime = calculateNextRun(cron, null) - this will give us a scheduled time
-        // - start = scheduledTime - 7 days (one week of events)
-        // - end = scheduledTime
-
+        // For first run (lastRun is null): start = now - 7 days, end = now
         LocalDateTime commandStart = command.getStart();
         LocalDateTime commandEnd = command.getEnd();
 
         assertNotNull(commandStart);
         assertNotNull(commandEnd);
 
-        // Start should be 7 days before end
         long daysBetween = java.time.Duration.between(commandStart, commandEnd).toDays();
-        assertEquals(7, daysBetween,
-            "For first run, start should be 7 days before end (scheduledTime - 7 days)");
-
-        // End should be a reasonable scheduled time (could be in future if today is not Monday at 00:30)
-        // The key is that start = end - 7 days
-        assertNotNull(commandEnd, "End time should not be null");
+        assertEquals(7, daysBetween, "For first run, start should be 7 days before end");
 
         resourceHelpers.deleteEvent(event);
     }
@@ -469,8 +562,11 @@ class DigestTriggerOrgConfigRepositoryTest {
         Event event = resourceHelpers.addEventEmailAggregationWithSubscriptionType(
             ORG_ID, BUNDLE_NAME, APP_NAME, now.minusDays(3), PAYLOAD1.toString(), true, SubscriptionType.WEEKLY);
 
+        // Claim due orgs before querying
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(executionTime);
+
         // Query for pending aggregations (executing today)
-        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(executionTime);
+        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(executionTime, claimed);
 
         assertEquals(1, commands.size());
         AggregationCommand command = commands.get(0);
@@ -496,5 +592,95 @@ class DigestTriggerOrgConfigRepositoryTest {
             String.format("End time (%s) should be after last_run (%s)", commandEnd, lastRun));
 
         resourceHelpers.deleteEvent(event);
+    }
+
+    @Test
+    void testRetryDoesNotDropEventsInGapBetweenLastRunAndOneWeekAgo() {
+        // Regression test for COALESCE fix: previously the query used
+        //   AND (ev.created > lastRun OR lastRun IS NULL) AND ev.created > oneWeekAgo
+        // When lastRun < oneWeekAgo (retry runs more than 7 days after last success),
+        // oneWeekAgo became the stricter bound and silently dropped events in the gap.
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime lastRun = now.minusDays(8);   // 8 days ago — last successful run
+        // oneWeekAgo = now - 7 days, which is AFTER lastRun; that created the gap
+
+        DigestTriggerOrgConfigId configId = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config = new DigestTriggerOrgConfig(configId, DEFAULT_WEEKLY_CRON);
+        config.setLastRun(lastRun);
+        config.setNextRun(now);
+        resourceHelpers.addDigestTriggerOrgConfig(config);
+
+        // Event lives in the gap: after lastRun but before oneWeekAgo (7.5 days ago).
+        // With the old AND filter it would be invisible to the query; COALESCE fixes that.
+        Event gapEvent = resourceHelpers.addEventEmailAggregationWithSubscriptionType(
+            ORG_ID, BUNDLE_NAME, APP_NAME, now.minusDays(7).minusHours(12), PAYLOAD1.toString(), true, SubscriptionType.WEEKLY);
+
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(now, claimed);
+
+        assertEquals(1, commands.size(),
+            "Events in the gap between lastRun and oneWeekAgo must not be dropped when retrying after a delay");
+        assertEquals(ORG_ID, commands.get(0).getOrgId());
+
+        resourceHelpers.deleteEvent(gapEvent);
+    }
+
+    @Test
+    void testClaimDueWeeklyOrgs() {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+
+        // One org due now, one not yet due
+        DigestTriggerOrgConfigId configId1 = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config1 = new DigestTriggerOrgConfig(configId1, DEFAULT_WEEKLY_CRON);
+        config1.setLastRun(now.minusWeeks(1));
+        config1.setNextRun(now);
+        resourceHelpers.addDigestTriggerOrgConfig(config1);
+
+        DigestTriggerOrgConfigId configId2 = new DigestTriggerOrgConfigId(ORG_ID_2, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config2 = new DigestTriggerOrgConfig(configId2, DEFAULT_WEEKLY_CRON);
+        config2.setLastRun(now.minusWeeks(1));
+        config2.setNextRun(now.plusHours(1));
+        resourceHelpers.addDigestTriggerOrgConfig(config2);
+
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+        assertEquals(1, claimed.size());
+        assertTrue(claimed.contains(ORG_ID), "Claimed list should contain the due org ID");
+
+        DigestTriggerOrgConfig claimedConfig = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID, SubscriptionType.WEEKLY);
+        assertEquals("PROCESSING", claimedConfig.getStatus(), "Due org should be claimed as PROCESSING");
+
+        DigestTriggerOrgConfig notClaimedConfig = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID_2, SubscriptionType.WEEKLY);
+        assertEquals("PENDING", notClaimedConfig.getStatus(), "Not-yet-due org should remain PENDING");
+    }
+
+    @Test
+    void testResetStaleClaims() {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        int staleThresholdHours = 6;
+
+        // Stale PROCESSING org: nextRun older than the threshold
+        DigestTriggerOrgConfigId configId1 = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config1 = new DigestTriggerOrgConfig(configId1, DEFAULT_WEEKLY_CRON);
+        config1.setLastRun(now.minusWeeks(2));
+        config1.setNextRun(now.minusHours(staleThresholdHours + 1));
+        config1.setStatus("PROCESSING");
+        resourceHelpers.addDigestTriggerOrgConfig(config1);
+
+        // Fresh PROCESSING org: nextRun within the threshold (pod still alive)
+        DigestTriggerOrgConfigId configId2 = new DigestTriggerOrgConfigId(ORG_ID_2, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config2 = new DigestTriggerOrgConfig(configId2, DEFAULT_WEEKLY_CRON);
+        config2.setLastRun(now.minusWeeks(1));
+        config2.setNextRun(now.minusHours(1));
+        config2.setStatus("PROCESSING");
+        resourceHelpers.addDigestTriggerOrgConfig(config2);
+
+        int reset = digestTriggerOrgConfigRepository.resetStaleClaims(now, staleThresholdHours);
+        assertEquals(1, reset, "Only the stale claim should be reset");
+
+        DigestTriggerOrgConfig staleCfg = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID, SubscriptionType.WEEKLY);
+        assertEquals("PENDING", staleCfg.getStatus(), "Stale claim should be reset to PENDING");
+
+        DigestTriggerOrgConfig freshCfg = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID_2, SubscriptionType.WEEKLY);
+        assertEquals("PROCESSING", freshCfg.getStatus(), "Fresh claim should remain PROCESSING");
     }
 }

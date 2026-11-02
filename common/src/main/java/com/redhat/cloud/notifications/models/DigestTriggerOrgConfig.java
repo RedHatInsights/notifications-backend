@@ -25,6 +25,10 @@ public class DigestTriggerOrgConfig {
     @NotNull
     private LocalDateTime nextRun;
 
+    @NotNull
+    @Size(max = 20)
+    private String status = "PENDING";
+
     public DigestTriggerOrgConfig() {
     }
 
@@ -63,6 +67,14 @@ public class DigestTriggerOrgConfig {
 
     public void setNextRun(LocalDateTime nextRun) {
         this.nextRun = nextRun;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     @Override

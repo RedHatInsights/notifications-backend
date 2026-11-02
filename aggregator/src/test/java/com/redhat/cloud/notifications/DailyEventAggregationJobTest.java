@@ -320,7 +320,7 @@ class DailyEventAggregationJobTest {
         helpers.addAggregationOrgConfig(onTimeOrgIdToProceed);
         helpers.addAggregationOrgConfig(toSoonOrgIdToProceed);
 
-        dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(now, new CollectorRegistry());
+        dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(now, List.of(), new CollectorRegistry());
         final Gauge pairsProcessed = dailyEmailAggregationJob.getPairsProcessed();
 
         assertEquals(1.0, pairsProcessed.get());
@@ -348,7 +348,7 @@ class DailyEventAggregationJobTest {
         helpers.addAggregationOrgConfig(onTimeOrgIdToProceed);
         helpers.addAggregationOrgConfig(toSoonOrgIdToProceed);
 
-        dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(now, new CollectorRegistry());
+        dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(now, List.of(), new CollectorRegistry());
         final Gauge pairsProcessed = dailyEmailAggregationJob.getPairsProcessed();
 
         assertEquals(1.0, pairsProcessed.get());
@@ -363,7 +363,7 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("someOrgId", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), new CollectorRegistry());
+        dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), List.of(), new CollectorRegistry());
         final Gauge pairsProcessed = dailyEmailAggregationJob.getPairsProcessed();
 
         assertEquals(4.0, pairsProcessed.get());
@@ -379,7 +379,7 @@ class DailyEventAggregationJobTest {
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
         helpers.addAggregationOrgConfig(anotherOrgIdToProceed);
 
-        dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), new CollectorRegistry());
+        dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), List.of(), new CollectorRegistry());
 
         final Gauge pairsProcessed = dailyEmailAggregationJob.getPairsProcessed();
 
@@ -395,7 +395,7 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("someOrgId", "unknown-bundle", "unknown-application", "somePolicyId", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), List.of(), new CollectorRegistry());
 
         assertEquals(4, emailAggregations.size());
     }
@@ -407,7 +407,7 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("someOrgId", "rhel", "policies", "somePolicyId", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), List.of(), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
 
@@ -428,7 +428,7 @@ class DailyEventAggregationJobTest {
             AggregationTimeHelper.computeReferenceTime().toLocalTime(),
             null));
 
-        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), List.of(), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
 
@@ -447,7 +447,7 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("shouldBeIgnoredOrgId", "some-rhel", "some-policies", "policyId1", "someHostId");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), List.of(), new CollectorRegistry());
 
         assertEquals(1, emailAggregations.size());
     }
@@ -459,14 +459,14 @@ class DailyEventAggregationJobTest {
         addEventEmailAggregation("shouldBeIgnoredOrgId", "some-rhel", "some-policies", "somePolicyId", "hostId2");
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
 
-        List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), new CollectorRegistry());
+        List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), List.of(), new CollectorRegistry());
         assertEquals(1, emailAggregations.size());
     }
 
     @Test
     void shouldProcessZeroAggregations() {
         helpers.addAggregationOrgConfig(someOrgIdToProceed);
-        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), new CollectorRegistry());
+        final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(AggregationTimeHelper.computeReferenceTime(), List.of(), new CollectorRegistry());
 
         assertEquals(0, emailAggregations.size());
     }
@@ -511,7 +511,7 @@ class DailyEventAggregationJobTest {
 
         // Process aggregations
         final List<AggregationCommand> emailAggregations = dailyEmailAggregationJob.processAggregateEmailsWithOrgPref(
-            AggregationTimeHelper.computeReferenceTime(), new CollectorRegistry());
+            AggregationTimeHelper.computeReferenceTime(), List.of(), new CollectorRegistry());
 
         // Verify that 0 aggregation commands are returned since no subscribers exist
         assertEquals(0, emailAggregations.size(), "Aggregations should be skipped when no subscribers exist");

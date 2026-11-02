@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.db.repositories;
 import com.redhat.cloud.notifications.models.AggregationCommand;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfig;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
+import com.redhat.cloud.notifications.models.SubscriptionType;
 import com.redhat.cloud.notifications.utils.DigestCronUtils;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -30,97 +31,128 @@ public class DigestTriggerOrgConfigRepository {
     DigestCronUtils digestCronUtils;
 
     /**
-     * Get applications with pending weekly aggregation where the next run time has been reached.
-     * Results will be limited to events from the last week.
-     *
-     * IMPORTANT: The aggregation command time window is calculated to maintain correctness during retries.
-     *
-     * Example retry scenario (cron: "Every Monday at 08:30"):
-     * - Last successful run: Previous Monday 08:30
-     * - Monday FAILS, Tuesday FAILS, Wednesday SUCCEEDS
-     * - On Wednesday: lastRun = Previous Monday (unchanged during retries)
-     * - scheduledTime = calculateNextRun(cron, Previous Monday) = THIS Monday 08:30
-     * - Aggregation command: start = Previous Monday (lastRun), end = THIS Monday (scheduledTime, not Wednesday!)
-     * - Event window: Previous Monday → THIS Monday ✓
-     *
-     * For first run (lastRun is null):
-     * - start = scheduledTime - 7 days
-     * - end = scheduledTime
-     * - Event window: one week of events
+     * Resets PROCESSING rows whose next_run is older than the threshold back to PENDING.
+     * Recovers orgs whose pod was killed (OOM, SIGKILL) before it could complete.
+     * The threshold must exceed max_maintenance_window + max_run_duration (default 6h).
      */
-    public List<AggregationCommand> getApplicationsWithPendingWeeklyAggregation(LocalDateTime now) {
+    @Transactional
+    public int resetStaleClaims(LocalDateTime now, int thresholdHours) {
+        int reset = entityManager.createQuery(
+            "UPDATE DigestTriggerOrgConfig SET status = 'PENDING' " +
+            "WHERE status = 'PROCESSING' AND nextRun < :threshold AND id.subscriptionType = :type")
+            .setParameter("threshold", now.minusHours(thresholdHours))
+            .setParameter("type", WEEKLY)
+            .executeUpdate();
+        if (reset > 0) {
+            Log.warnf("Reset %d stale PROCESSING weekly claims (pod crash recovery)", reset);
+        }
+        return reset;
+    }
+
+    /**
+     * Atomically claims all PENDING weekly orgs whose next_run has been reached.
+     * Uses UPDATE ... RETURNING so only rows actually changed by THIS statement are returned --
+     * a concurrent pod claiming the same rows gets an empty intersection, preventing double-processing.
+     */
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public List<String> claimDueWeeklyOrgs(LocalDateTime now) {
+        List<String> claimed = entityManager.createNativeQuery(
+            "UPDATE digest_trigger_org_config SET status = 'PROCESSING' " +
+            "WHERE status = 'PENDING' AND next_run <= :now AND subscription_type = 'WEEKLY' " +
+            "RETURNING org_id")
+            .setParameter("now", now)
+            .getResultList();
+        Log.infof("Claimed %d weekly orgs for processing", claimed.size());
+        return claimed;
+    }
+
+    /**
+     * Returns aggregation commands for the weekly orgs claimed by this pod this invocation.
+     * Scoping to claimedOrgIds prevents a pod from re-processing rows owned by a still-running
+     * concurrent pod -- even though both would see status = 'PROCESSING'.
+     */
+    public List<AggregationCommand> getApplicationsWithPendingWeeklyAggregation(LocalDateTime now, List<String> claimedOrgIds) {
+        if (claimedOrgIds.isEmpty()) {
+            return List.of();
+        }
+        final SubscriptionType subscriptionType = WEEKLY;
         List<Object[]> records;
-        final LocalDateTime startTime = LocalDateTime.now(UTC);
+        final LocalDateTime statStartTime = LocalDateTime.now(UTC);
 
         String query = "SELECT DISTINCT ev.orgId, ev.bundleId, ev.applicationId, dtc.lastRun, bu.name, ap.name, dtc.cronExpression FROM Event ev " +
             "join Application ap on ev.applicationId = ap.id join Bundle bu on ev.bundleId = bu.id " +
             "join DigestTriggerOrgConfig dtc on ev.orgId = dtc.id.orgId WHERE " +
             // Filter on WEEKLY subscription type
             "dtc.id.subscriptionType = :subscriptionType " +
-            // Check that at least one user of the org subscribed for weekly digest with this event type
-            "AND EXISTS (SELECT 1 FROM EventTypeEmailSubscription es where ev.orgId = es.id.orgId and es.id.subscriptionType = 'WEEKLY' and es.eventType = ev.eventType and es.subscribed is true) " +
+            // Filter on claimed org id for this org
+            "AND dtc.id.orgId IN :claimedOrgIds " +
+            // Check if at least one user of the org subscribed to weekly digest
+            "AND EXISTS (SELECT 1 FROM EventTypeEmailSubscription es where ev.orgId = es.id.orgId and es.id.subscriptionType = :subscriptionType and es.eventType = ev.eventType and es.subscribed is true) " +
             // Check for linked email integration linked to this event type (to honor legacy mechanism)
             "AND EXISTS (SELECT 1 FROM Endpoint ep, EndpointEventType eet where (ev.orgId = ep.orgId or ep.orgId is null) and ep.compositeType.type = 'EMAIL_SUBSCRIPTION' and eet.eventType = ev.eventType and eet.endpoint = ep) " +
-            // Filter on new events since the latest run of this org aggregation, and not older than nextRun - one week
-            "AND (ev.created > dtc.lastRun OR dtc.lastRun is null) AND ev.created > (dtc.nextRun - 7 day) AND ev.created <= :now " +
-            // Filter on orgs where next run time matches exactly (rounded to 15-minute intervals)
-            "AND dtc.nextRun = :now";
+            // Use lastRun as the lower bound when available; fall back to oneWeekAgo only for first runs (null lastRun).
+            // Combining both with AND would create a gap on retries: if lastRun is Oct 26 and the retry runs Nov 3,
+            // oneWeekAgo becomes Oct 27 and silently drops events created between Oct 26 and Oct 27.
+            "AND ev.created > COALESCE(dtc.lastRun, :oneWeekAgo) AND ev.created <= :now";
 
         Query hqlQuery = entityManager.createQuery(query)
-            .setParameter("subscriptionType", WEEKLY)
+            .setParameter("subscriptionType", subscriptionType)
+            .setParameter("claimedOrgIds", claimedOrgIds)
+            .setParameter("oneWeekAgo", now.minusDays(subscriptionType.getDuration().toDays()))
             .setParameter("now", now);
 
         records = hqlQuery.getResultList();
 
-        Duration duration = Duration.between(startTime, LocalDateTime.now(UTC));
-        Log.infof("Fetching weekly aggregations with pending aggregations with at least one subscriber took %d s for %d aggregations", duration.toSeconds(), records.size());
+        Duration duration = Duration.between(statStartTime, LocalDateTime.now(UTC));
+        Log.infof("Fetching weekly aggregations with at least one subscriber took %d s for %d aggregations", duration.toSeconds(), records.size());
 
         return records.stream()
             .map(emailAggregationRecord -> {
                 LocalDateTime lastRun = (LocalDateTime) emailAggregationRecord[3];
                 String cronExpression = (String) emailAggregationRecord[6];
 
-                // CRITICAL: Calculate the scheduled time (not execution time) for the event window end
-                // This ensures correct time windows even during retries
-                // Example: If lastRun = Previous Monday, this calculates THIS Monday (the scheduled time)
-                // For first run (lastRun is null), use 'now' as the base to calculate the scheduled time
-                LocalDateTime baseTime = lastRun != null ? lastRun : now;
-                LocalDateTime scheduledTime = digestCronUtils.calculateNextRun(cronExpression, baseTime);
-
-                // Start time calculation:
-                // - If lastRun exists: use it (events from last run to scheduled time)
-                // - If lastRun is null (first run): use scheduledTime - 7 days (one week of events)
-                // This matches the query filter: ev.created > lastRun OR ev.created > (nextRun - 7 day)
-                LocalDateTime start = lastRun != null ? lastRun : scheduledTime.minusDays(7);
+                LocalDateTime start;
+                LocalDateTime end;
+                if (lastRun == null) {
+                    // First run: cover the past 7 days up to this slot.
+                    // Using 'now' directly avoids the cron-utils behaviour where
+                    // calculateNextRun(cron, now) returns the *next* occurrence when
+                    // 'now' exactly matches the cron schedule (e.g. Monday 00:30 -> next Monday).
+                    start = now.minusDays(7);
+                    end = now;
+                } else {
+                    // calculateNextRun(cron, lastRun) gives the slot that is now due --
+                    // the correct upper bound even when the job runs late or retries.
+                    end = digestCronUtils.calculateNextRun(cronExpression, lastRun);
+                    start = lastRun;
+                }
 
                 return new AggregationCommand(
                     new EventAggregationCriterion(
                         (String) emailAggregationRecord[0],     // Org id
-                        (UUID) emailAggregationRecord[1],       // bundle id
-                        (UUID) emailAggregationRecord[2],       // application id
-                        (String) emailAggregationRecord[4],     // bundle name
-                        (String) emailAggregationRecord[5]),    // application name
-                    start,              // lastRun (if exists) or scheduledTime - 7 days
-                    scheduledTime,      // Scheduled time (not execution time!)
-                    WEEKLY
+                        (UUID) emailAggregationRecord[1],       // Bundle id
+                        (UUID) emailAggregationRecord[2],       // Application id
+                        (String) emailAggregationRecord[4],     // Bundle name
+                        (String) emailAggregationRecord[5]),    // Application name
+                    start,
+                    end,
+                    subscriptionType
                 );
             })
             .collect(toList());
     }
 
     /**
-     * Creates digest_trigger_org_config entries with a last run date of one week ago,
-     * for orgs with at least one subscriber to weekly digest.
-     *
-     * @param defaultCronExpression the default cron expression for weekly aggregation
+     * Creates digest_trigger_org_config entries for orgs with at least one weekly subscriber
+     * that have no existing config yet.
      */
     @Transactional
     public void createMissingDefaultWeeklyConfig(String defaultCronExpression) {
-        // Calculate next run based on cron expression
         LocalDateTime initialNextRun = digestCronUtils.computeNextRun(defaultCronExpression);
 
-        String query = "INSERT INTO digest_trigger_org_config (org_id, subscription_type, cron_expression, next_run) " +
-            "SELECT DISTINCT(es.org_id), 'WEEKLY', CAST(:cronExpression as varchar), CAST(:nextRun as timestamp without time zone) " +
+        String query = "INSERT INTO digest_trigger_org_config (org_id, subscription_type, cron_expression, next_run, status) " +
+            "SELECT DISTINCT(es.org_id), 'WEEKLY', CAST(:cronExpression as varchar), CAST(:nextRun as timestamp without time zone), 'PENDING' " +
             "FROM email_subscriptions es where es.subscription_type='WEEKLY' and es.subscribed = true AND " +
             "NOT EXISTS (SELECT 1 FROM digest_trigger_org_config dtc WHERE es.org_id = dtc.org_id AND dtc.subscription_type = 'WEEKLY')";
 
@@ -133,31 +165,9 @@ public class DigestTriggerOrgConfigRepository {
     }
 
     /**
-     * Updates last_run and next_run for the given org IDs with WEEKLY subscription type.
-     *
-     * CRITICAL: This method handles both normal executions and retry scenarios correctly.
-     *
-     * Example retry scenario (cron: "Every Monday at 08:30"):
-     * - Previous successful run: Previous Monday 08:30
-     * - Monday 08:30: FAILS → last_run stays Previous Monday, next_run updated to Tuesday 08:30
-     * - Tuesday 08:30: FAILS → last_run still Previous Monday, next_run updated to Wednesday 08:30
-     * - Wednesday 08:30: SUCCEEDS → this method is called
-     *
-     * At this point:
-     * - config.getLastRun() = Previous Monday 08:30 (unchanged during retries)
-     * - currentExecutionTime = Wednesday 08:30
-     *
-     * What we calculate:
-     * - lastRun = calculateNextRun(cron, Previous Monday) = THIS Monday 08:30 (the scheduled time we missed!)
-     * - nextRun = calculateNextRun(cron, Wednesday) = NEXT Monday 08:30
-     *
-     * Result:
-     * - Event window on next Monday: THIS Monday 08:30 → NEXT Monday 08:30 ✓
-     * - Events from Previous Monday → THIS Monday were already processed on Wednesday ✓
-     * - No gaps, no duplication ✓
-     *
-     * @param orgIdsToUpdate list of org IDs to update
-     * @param currentExecutionTime the current execution time
+     * Updates last_run, next_run, and resets status to PENDING for successfully processed orgs.
+     * For retries: calculateNextRun(cron, previousLastRun) gives the missed scheduled slot,
+     * keeping the event window anchored to the original schedule rather than the retry date.
      */
     @Transactional
     public void updateLastAndNextRunForWeekly(List<String> orgIdsToUpdate, LocalDateTime currentExecutionTime) {
@@ -165,7 +175,6 @@ public class DigestTriggerOrgConfigRepository {
             return;
         }
 
-        // Retrieve cron expressions for the orgs that need updating
         String selectQuery = "SELECT dtc FROM DigestTriggerOrgConfig dtc WHERE dtc.id.orgId IN :orgIds AND dtc.id.subscriptionType = :subscriptionType";
         List<DigestTriggerOrgConfig> configs = entityManager.createQuery(selectQuery, DigestTriggerOrgConfig.class)
             .setParameter("orgIds", orgIdsToUpdate)
@@ -176,19 +185,21 @@ public class DigestTriggerOrgConfigRepository {
         int skipped = 0;
         for (DigestTriggerOrgConfig config : configs) {
             try {
-                // Calculate next_run from current execution time (normal case or retry)
                 LocalDateTime nextRun = digestCronUtils.calculateNextRun(config.getCronExpression(), currentExecutionTime);
 
-                // CRITICAL: Calculate last_run from the PREVIOUS last_run value
-                // This gives us the original scheduled time, even after retries
-                // Example: If last_run was "Previous Monday", this calculates "THIS Monday"
-                LocalDateTime lastRun = digestCronUtils.calculateNextRun(config.getCronExpression(), config.getLastRun());
+                // For retries: calculateNextRun(cron, previousLastRun) gives the missed scheduled slot,
+                // keeping the event window anchored to the original schedule rather than the retry date.
+                // For first run (lastRun null): use currentExecutionTime directly to avoid NPE.
+                LocalDateTime newLastRun = config.getLastRun() == null
+                    ? currentExecutionTime
+                    : digestCronUtils.calculateNextRun(config.getCronExpression(), config.getLastRun());
 
-                config.setLastRun(lastRun);
+                config.setLastRun(newLastRun);
                 config.setNextRun(nextRun);
+                config.setStatus("PENDING");
                 updated++;
             } catch (IllegalArgumentException e) {
-                Log.errorf(e, "Failed to calculate next run for org %s with cron expression: %s. This org will not receive weekly digests until the cron expression is fixed.",
+                Log.errorf(e, "Failed to calculate next run for org %s with cron expression: %s. Skipping.",
                     config.getId().orgId, config.getCronExpression());
                 skipped++;
             }
@@ -202,26 +213,45 @@ public class DigestTriggerOrgConfigRepository {
     }
 
     /**
-     * Updates next_run for failed weekly aggregations to retry tomorrow at the same hour.
-     * This prevents failed aggregations from retrying every 15 minutes.
-     *
-     * IMPORTANT: This method does NOT update last_run - it stays unchanged.
-     *
-     * Example failure scenario (scheduled for Monday 08:30):
-     * - Before failure: last_run = Previous Monday 08:30, next_run = Monday 08:30
-     * - Monday 08:30: Processing FAILS → this method is called
-     * - After this update: last_run = Previous Monday 08:30 (unchanged!), next_run = Tuesday 08:30
-     *
-     * Why this works:
-     * 1. Query uses "dtc.nextRun = :now" (exact match), so org won't be picked up again today
-     * 2. last_run stays at "Previous Monday", preserving the event window for when it succeeds
-     * 3. When it succeeds (e.g., on Wednesday), updateLastAndNextRunForWeekly() calculates:
-     *    - lastRun = calculateNextRun(cron, Previous Monday) = THIS Monday (the scheduled time)
-     *    - nextRun = calculateNextRun(cron, Wednesday) = NEXT Monday
-     * 4. Event window is correct: events from THIS Monday to NEXT Monday
-     *
-     * @param orgIdsToUpdate list of org IDs that failed processing
-     * @param currentExecutionTime the current execution time
+     * Advances last_run and next_run for claimed weekly orgs that produced no events this slot,
+     * and resets their status to PENDING. The caller computes noEventsOrgIds as claimedOrgIds
+     * minus updatedOrgIds, so this never touches rows owned by other pods.
+     */
+    @Transactional
+    public void advanceNextRunForOrgsWithNoEvents(LocalDateTime now, List<String> noEventsOrgIds) {
+        if (noEventsOrgIds.isEmpty()) {
+            return;
+        }
+
+        String selectQuery = "SELECT dtc FROM DigestTriggerOrgConfig dtc " +
+            "WHERE dtc.id.subscriptionType = :subscriptionType AND dtc.id.orgId IN :noEventsOrgIds";
+
+        int advanced = 0;
+        for (DigestTriggerOrgConfig config : entityManager.createQuery(selectQuery, DigestTriggerOrgConfig.class)
+                .setParameter("subscriptionType", WEEKLY)
+                .setParameter("noEventsOrgIds", noEventsOrgIds)
+                .getResultList()) {
+            try {
+                LocalDateTime newLastRun = config.getLastRun() == null
+                    ? now
+                    : digestCronUtils.calculateNextRun(config.getCronExpression(), config.getLastRun());
+                config.setLastRun(newLastRun);
+                config.setNextRun(digestCronUtils.calculateNextRun(config.getCronExpression(), now));
+                config.setStatus("PENDING");
+                advanced++;
+            } catch (IllegalArgumentException e) {
+                Log.errorf(e, "Skipping nextRun advance for org %s - invalid cron: %s",
+                    config.getId().orgId, config.getCronExpression());
+            }
+        }
+        if (advanced > 0) {
+            Log.infof("Advanced nextRun for %d weekly orgs with no events in this slot", advanced);
+        }
+    }
+
+    /**
+     * Schedules failed orgs to retry tomorrow at the same hour and resets status to PENDING.
+     * last_run is preserved so the event window is correct when the retry eventually succeeds.
      */
     @Transactional
     public void updateNextRunForFailedWeekly(List<String> orgIdsToUpdate, LocalDateTime currentExecutionTime) {
@@ -229,12 +259,10 @@ public class DigestTriggerOrgConfigRepository {
             return;
         }
 
-        // Set next_run to tomorrow at the same hour
-        // This gives 24 hours for the issue to be resolved before retry
         LocalDateTime nextRunForFailedOrgs = currentExecutionTime.plusDays(1);
 
         String updateQuery = "UPDATE DigestTriggerOrgConfig dtc " +
-            "SET dtc.nextRun = :nextRun " +
+            "SET dtc.nextRun = :nextRun, dtc.status = 'PENDING' " +
             "WHERE dtc.id.orgId IN :orgIds AND dtc.id.subscriptionType = :subscriptionType";
 
         int updated = entityManager.createQuery(updateQuery)
