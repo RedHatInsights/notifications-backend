@@ -1,17 +1,18 @@
 # Enables GitHub signed commits (see docs/code.md "Signed commits").
 #
-# Also adds the Jira dispatch trigger -- upstream code.yaml has none, and
-# the Jira poller only dispatches agents whose harness defines one.
-# fullsend's Jira integration is pre-alpha: dispatches currently fail right
-# after pickup since agent scripts expect a GitHub issue number, not a Jira
-# key (fullsend-ai/fullsend#2264). Wired up ahead of that fix.
-base: https://raw.githubusercontent.com/fullsend-ai/agents/f9908adce062d7e0a37635aac4b6c889835476cc/harness/code.yaml#sha256=760dbb4632fad21c667653d7ddb518647dff545e10abffa4a24acf0520ca61fa
+# Overrides the trigger upstream now ships by default (as of this pin) to
+# add repo-label scoping: upstream's own trigger already matches Jira
+# ready-to-code/`/fs-code` events, but with no `repo:` label check, so
+# without this override every repo polling the same Jira project would
+# dispatch on the same issue.
+base: https://raw.githubusercontent.com/fullsend-ai/agents/4a6645268c6c8063c15ce5cb1b88a4f3930c74da/harness/code.yaml#sha256=0cf4e64085a181606a0f33af5250cf56d8f12d4c6b91ae7bdf9f72a28e2137eb
 env:
   runner:
     GITHUB_SIGNED_COMMITS: "true"
 trigger: >
     has(event.source) && event.source.system == "jira"
     && event.entity.kind == "work_item"
+    && !has(event.entity.linked_change_proposal)
     && "repo:RedHatInsights/notifications-backend" in event.state.labels
     && event.state.labels.filter(label, label.startsWith("repo:")).size() == 1
     && event.actor.kind == "human"

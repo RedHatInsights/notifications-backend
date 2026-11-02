@@ -108,7 +108,7 @@ jobs:
     # Renovate (github-actions manager) bumps this SHA + tag comment; the
     # poll job's "Resolve fullsend version" step reads the tag back from
     # this exact line, so nothing else needs to be bumped in lockstep.
-    uses: fullsend-ai/fullsend/.github/workflows/reusable-dispatch.yml@f3b9d9869483093802aeb000f1d931880c9a48b5  # v0.51.0
+    uses: fullsend-ai/fullsend/.github/workflows/reusable-dispatch.yml@25811c9a815e2c27d397d41e45c59819b1302f54  # v0.53.0
     with:
       matrix: ${{ needs.poll.outputs.matrix }}
       mint_url: ${{ vars.FULLSEND_MINT_URL }}

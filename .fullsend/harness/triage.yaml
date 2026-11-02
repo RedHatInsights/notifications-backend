@@ -1,13 +1,12 @@
 # Narrows the (already forge-neutral) upstream trigger to Jira issues
 # carrying exactly this repo's `repo:` label, so a mislabeled issue can't
 # get dispatched by more than one repo's poller. Has no effect on GitHub
-# dispatch, which doesn't read this field (fullsend-ai/fullsend#2264:
-# Jira-sourced dispatches currently fail right after pickup regardless).
+# dispatch, which doesn't read this field.
 #
 # The overlay disables TRIAGE_AUTO_CODE for Jira-sourced runs only, so a
 # Jira issue needs an explicit "ready-to-code" label/`/fs-code` comment
 # before code runs, instead of auto-escalating as it does on GitHub.
-base: https://raw.githubusercontent.com/fullsend-ai/agents/f9908adce062d7e0a37635aac4b6c889835476cc/harness/triage.yaml#sha256=32f09d8824e84f0578dd499ff4601c2079e24e9a9d6b57ec72f4b26eb4a59831
+base: https://raw.githubusercontent.com/fullsend-ai/agents/4a6645268c6c8063c15ce5cb1b88a4f3930c74da/harness/triage.yaml#sha256=f935d591305e127967c4378ab9474f50da9cbd59e5dc299eebba83241faf1718
 trigger: >
     has(event.source) && event.source.system == "jira"
     && event.entity.kind == "work_item"
