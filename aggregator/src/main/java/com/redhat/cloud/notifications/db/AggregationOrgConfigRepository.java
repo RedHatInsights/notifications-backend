@@ -23,7 +23,7 @@ public class AggregationOrgConfigRepository {
     /**
      * Creates an aggregation_org_config with a last run date of yesterday at defaultRunningTime time,
      * for orgs with at least one subscriber to daily digest
-     * @param defaultRunningTime the default aggegation time.
+     * @param defaultRunningTime the default aggregation time.
      */
     @Transactional
     public void createMissingDefaultConfigurationBasedOnEvent(LocalTime defaultRunningTime) {
