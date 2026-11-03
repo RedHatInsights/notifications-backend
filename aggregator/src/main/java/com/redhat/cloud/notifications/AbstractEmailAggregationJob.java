@@ -12,7 +12,6 @@ import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonObject;
-import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -53,7 +52,6 @@ public abstract class AbstractEmailAggregationJob {
      * @param executionTime the pre-computed execution time (rounded to 15-minute intervals)
      * @param registry the shared metrics registry for both daily and weekly jobs
      */
-    @ActivateRequestContext
     public void searchBuildAndSendAggregationCommands(LocalDateTime executionTime, CollectorRegistry registry) {
         // Cluster coordination check - fail-safe if Unleash unreachable
         if (!shouldRunOnThisCluster()) {
@@ -89,7 +87,6 @@ public abstract class AbstractEmailAggregationJob {
 
             // Process commands grouped by org ID - each org processed independently
             aggregationCommands.stream()
-                .filter(cmd -> cmd.getOrgId() != null && cmd.getBundleId() != null)
                 .collect(Collectors.groupingBy(AggregationCommand::getOrgId))
                 .forEach((orgId, orgCommands) -> {
                     try {
