@@ -43,6 +43,7 @@ public class AggregatorConfig {
      * Unleash configuration
      */
     private String activeClusterToggle;
+    private String suspendWeeklyAggregation;
 
     @ConfigProperty(name = CLUSTER_ID)
     Optional<String> clusterId;
@@ -74,6 +75,7 @@ public class AggregatorConfig {
     @PostConstruct
     void registerToggles() {
         activeClusterToggle = toggleRegistry.register("notifications-aggregator-active-cluster", true);
+        suspendWeeklyAggregation = toggleRegistry.register("notifications-aggregator-suspend-weekly-aggregation", true);
         Log.infof("Registered Unleash toggle: %s", activeClusterToggle);
     }
 
@@ -176,6 +178,10 @@ public class AggregatorConfig {
             Log.warn("Failed to retrieve active cluster from Unleash", e);
             return Optional.empty();
         }
+    }
+
+    public boolean isWeeklyAggregationSuspended() {
+        return unleash.isEnabled(suspendWeeklyAggregation, false);
     }
 
     void logConfigAtStartup(@Observes Startup event) {

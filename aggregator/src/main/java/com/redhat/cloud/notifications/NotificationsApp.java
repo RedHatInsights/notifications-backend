@@ -9,6 +9,7 @@ import io.quarkus.logging.Log;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
+import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 
 import java.io.BufferedReader;
@@ -31,6 +32,7 @@ public class NotificationsApp implements QuarkusApplication {
     AggregatorConfig aggregatorConfig;
 
     @Override
+    @ActivateRequestContext
     public int run(String... args) {
         // Startup - SEC-MON-REQ-1 compliance (EOI-5 process_status)
         Log.infof("[action: STARTUP][resource_type: email_aggregator][principal: system][outcome: success] Email aggregator starting");
@@ -53,11 +55,13 @@ public class NotificationsApp implements QuarkusApplication {
                     accumulator.add(e);
                 }
 
-                try {
-                    weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(referenceTime, registry);
-                } catch (Exception e) {
-                    Log.error("Weekly email aggregation job failed", e);
-                    accumulator.add(e);
+                if (!aggregatorConfig.isWeeklyAggregationSuspended()) {
+                    try {
+                        weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(referenceTime, registry);
+                    } catch (Exception e) {
+                        Log.error("Weekly email aggregation job failed", e);
+                        accumulator.add(e);
+                    }
                 }
             });
         } finally {
