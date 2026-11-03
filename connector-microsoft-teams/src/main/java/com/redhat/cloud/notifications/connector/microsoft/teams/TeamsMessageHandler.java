@@ -42,6 +42,7 @@ public class TeamsMessageHandler extends CamelMessageHandler {
 
     @Override
     public HandledMessageDetails handle(final IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
+
         TeamsNotification notification = incomingCloudEvent.getData().mapTo(TeamsNotification.class);
 
         Set<ConstraintViolation<TeamsNotification>> violations = validator.validate(notification);

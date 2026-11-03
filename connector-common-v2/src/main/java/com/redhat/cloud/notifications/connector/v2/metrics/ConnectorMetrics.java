@@ -60,7 +60,7 @@ public class ConnectorMetrics {
             .tag(TAG_EVENT_TYPE, sanitizeTagValue(tags.eventType()));
 
         if (additionalTags != null) {
-            additionalTags.forEach((key, value) -> builder.tag(key, sanitizeTagValue(value)));
+            additionalTags.forEach((key, value) -> builder.tag(sanitizeTagValue(key), sanitizeTagValue(value)));
         }
 
         builder.register(meterRegistry).increment();
@@ -100,7 +100,7 @@ public class ConnectorMetrics {
             .tag(TAG_EVENT_TYPE, sanitizeTagValue(tags.eventType()));
 
         if (additionalTags != null) {
-            additionalTags.forEach((key, value) -> timerBuilder.tag(key, sanitizeTagValue(value)));
+            additionalTags.forEach((key, value) -> timerBuilder.tag(sanitizeTagValue(key), sanitizeTagValue(value)));
         }
 
         integrationTimer.stop(timerBuilder.register(meterRegistry));

@@ -172,6 +172,24 @@ public class MicrometerAssertionHelper {
         });
     }
 
+    public void saveTimerCountWithTagsBeforeTest(String timerName, String... tags) {
+        String key = timerName + Arrays.asList(tags).toString();
+        Timer timer = registry.find(timerName).tags(tags).timer();
+        timerCountsBeforeTest.put(key, timer != null ? timer.count() : 0L);
+    }
+
+    public void awaitAndAssertTimerCountIncrementWithTags(String timerName, long expectedIncrement, String... tags) {
+        String key = timerName + Arrays.asList(tags).toString();
+        await().atMost(Duration.ofSeconds(30L)).until(() -> {
+            Timer timer = registry.find(timerName).tags(tags).timer();
+            if (timer == null) {
+                return expectedIncrement == 0;
+            }
+            long actualIncrement = timer.count() - timerCountsBeforeTest.getOrDefault(key, 0L);
+            return expectedIncrement == actualIncrement;
+        });
+    }
+
     public void awaitAndAssertTimerIncrement(String timerName, long expectedIncrement) {
         await().atMost(Duration.ofSeconds(30L)).until(() -> {
             Timer timer = findTimerByNameOnly(timerName);

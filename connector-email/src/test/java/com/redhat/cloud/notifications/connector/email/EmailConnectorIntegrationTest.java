@@ -36,6 +36,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
+import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.INTEGRATION_TIME_TIMER_NAME;
 import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.SENT_COUNTER_NAME;
 import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.TAG_APPLICATION;
 import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.TAG_BUNDLE;
@@ -373,6 +374,13 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
             TAG_APPLICATION, "patch",
             TAG_EVENT_TYPE, "new-advisory"
         );
+        micrometerAssertionHelper.saveTimerCountWithTagsBeforeTest(
+            INTEGRATION_TIME_TIMER_NAME,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "rhel",
+            TAG_APPLICATION, "patch",
+            TAG_EVENT_TYPE, "new-advisory"
+        );
 
         JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, null);
         String cloudEventId = sendCloudEventMessage(payload);
@@ -380,7 +388,6 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         JsonObject data = waitForOutgoingMessage(cloudEventId);
         assertTrue(data.getBoolean("successful"));
 
-        // Verify counter metric (recorded automatically by MessageConsumer)
         micrometerAssertionHelper.awaitAndAssertCounterIncrementWithTags(
             SENT_COUNTER_NAME, 1.0,
             TAG_CONNECTOR, "email_subscription",
@@ -388,9 +395,13 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
             TAG_APPLICATION, "patch",
             TAG_EVENT_TYPE, "new-advisory"
         );
-
-        // Note: Integration time metric is also recorded but not verified in tests
-        // as MicrometerAssertionHelper doesn't support multi-tag timer assertions yet
+        micrometerAssertionHelper.awaitAndAssertTimerCountIncrementWithTags(
+            INTEGRATION_TIME_TIMER_NAME, 1L,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "rhel",
+            TAG_APPLICATION, "patch",
+            TAG_EVENT_TYPE, "new-advisory"
+        );
     }
 
     @Test
@@ -406,6 +417,13 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
             TAG_APPLICATION, "unknown",
             TAG_EVENT_TYPE, "unknown"
         );
+        micrometerAssertionHelper.saveTimerCountWithTagsBeforeTest(
+            INTEGRATION_TIME_TIMER_NAME,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "unknown",
+            TAG_APPLICATION, "unknown",
+            TAG_EVENT_TYPE, "unknown"
+        );
 
         JsonObject payload = buildEmailPayload(buildRhelDailyDigestEmailContext(), true, null);
         String cloudEventId = sendCloudEventMessage(payload);
@@ -413,10 +431,8 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         JsonObject data = waitForOutgoingMessage(cloudEventId);
         assertTrue(data.getBoolean("successful"));
 
-        // Verify counter metric (recorded automatically by MessageConsumer)
-        // Note: Daily digest emails currently don't populate standard bundle/application/event_type fields
-        // in the CloudEvent data structure, so they default to "unknown". This should be fixed upstream
-        // by standardizing the CloudEvent structure for aggregation emails to include these fields.
+        // Daily digest emails don't carry bundle/application/event_type in the CloudEvent data,
+        // so those tags default to "unknown".
         micrometerAssertionHelper.awaitAndAssertCounterIncrementWithTags(
             SENT_COUNTER_NAME, 1.0,
             TAG_CONNECTOR, "email_subscription",
@@ -424,9 +440,13 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
             TAG_APPLICATION, "unknown",
             TAG_EVENT_TYPE, "unknown"
         );
-
-        // Note: Integration time metric is also recorded but not verified in tests
-        // as MicrometerAssertionHelper doesn't support multi-tag timer assertions yet
+        micrometerAssertionHelper.awaitAndAssertTimerCountIncrementWithTags(
+            INTEGRATION_TIME_TIMER_NAME, 1L,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "unknown",
+            TAG_APPLICATION, "unknown",
+            TAG_EVENT_TYPE, "unknown"
+        );
     }
 
     private Map<String, Object> buildInstantEmailContext() {

@@ -111,7 +111,7 @@ public class MessageConsumer {
             success = true;
 
             // Record connector metrics (notification sent and integration time) after confirming send succeeded
-            // Timer.Sample will be stopped and recorded during recordIntegrationTime()
+            // Timer.Sample integrationTimer will be stopped and recorded during recordIntegrationTime()
             try {
                 NotificationTags notificationTags = messageHandler.extractNotificationTags(cloudEventMetadata.getData());
                 connectorMetrics.recordNotificationSent(notificationTags);
@@ -119,7 +119,7 @@ public class MessageConsumer {
             } catch (Exception metricsException) {
                 // Prevent any exception from escaping to outer catch
                 // If this throws, we already sent success response and must not send failure
-                Log.warnf(metricsException, "Failed to record connector metrics, but notification was sent successfully");
+                Log.warn("Failed to record connector metrics, but notification was sent successfully", metricsException);
             }
         } catch (Exception e) {
             Log.infof(e, "Error processing message: %s", e.getMessage());
