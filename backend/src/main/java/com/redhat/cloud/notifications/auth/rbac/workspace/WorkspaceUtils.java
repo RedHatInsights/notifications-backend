@@ -39,8 +39,12 @@ public class WorkspaceUtils {
      * returns a deterministic UUID generated from the org_id. This is useful
      * for local development and testing without requiring RBAC service access.
      *
+     * RBAC's default workspace endpoint can return null or fail for legacy orgs
+     * (particularly on stage). In such cases, this method returns null to let
+     * callers decide how to handle missing workspace data.
+     *
      * @param orgId the organization to get the default workspace from.
-     * @return the identifier of the workspace.
+     * @return the identifier of the workspace, or null if RBAC returns no workspace.
      */
     @CacheResult(cacheName = "kessel-rbac-workspace-id")
     @Retry(maxRetries = 3, delay = 100, retryOn = OAuth2Exception.class)
@@ -69,6 +73,14 @@ public class WorkspaceUtils {
             workspace = FetchWorkspace.fetchDefaultWorkspace(backendConfig.getRbacUrl(), orgId, authRequest);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Failed to fetch a default workspace from RBAC", e);
+        }
+
+        // RBAC's default workspace endpoint can return null or fail for legacy orgs
+        // (particularly on stage). Null handling is intentional defensive coding to
+        // allow callers to decide how to handle missing workspace data.
+        if (workspace == null || workspace.getId() == null) {
+            Log.warnf("[org_id: %s] RBAC returned null or empty workspace", orgId);
+            return null;
         }
 
         Log.debugf("[org_id: %s][workspace_id: %s] Fetched default workspace from RBAC", orgId, workspace.getId());

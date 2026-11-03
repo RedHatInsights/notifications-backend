@@ -84,6 +84,13 @@ Do not interact with Kafka directly. Use the `MessageHandler.handle()` override 
 - Prefer OIDC-based clients for new integrations. PSK clients are being phased out.
 - RBAC API paths require trailing slashes (e.g., `/api/rbac/v1/access/`).
 
+### RBAC Edge Cases
+
+- **Legacy Organizations without Workspaces**: RBAC's default workspace endpoint can return null or fail for legacy organizations that predate workspace support (a known production edge case observed particularly on stage).
+  - `WorkspaceUtils.getDefaultWorkspaceId()` returns `null` when RBAC returns no workspace or an empty workspace ID, allowing callers to decide how to handle missing workspace data.
+  - `WorkspaceBootstrapResource` handles missing workspace data defensively: when `getDefaultWorkspaceId()` returns `null`, it logs a warning and records an error entry in the bootstrap summary, skipping the org rather than failing the entire bootstrap process.
+  - Null-checks on RBAC workspace IDs are intentional defensive guards against this known production behavior and must not be flagged or removed as dead code.
+
 ## Template-Based Connectors
 
 Slack, Microsoft Teams, and Google Chat use `TemplateService` for message rendering:
