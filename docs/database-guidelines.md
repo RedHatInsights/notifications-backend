@@ -19,6 +19,22 @@
 - Use `IF NOT EXISTS` / `IF EXISTS` for index and table creation/deletion to prevent failures on re-runs in dev.
 - Include `COMMENT ON` for non-obvious indexes or stored procedures (see V1.118.0 for example).
 
+## Data Initialization Placement
+
+When introducing features that require initial or seed data, clearly distinguish between deterministic initialization in Flyway SQL migrations and runtime-dependent initialization in Java application code:
+
+1. **Deterministic data initialization belongs in Flyway SQL migrations**:
+   - System/seed data with known values (e.g., system workspace with a fixed UUID, default configurations, initial enum-like rows) should be created in migration scripts. If the data can be computed at schema-migration time without external service calls, it belongs in SQL.
+   - Example: Migration `V1.143.0` creates the system workspace row directly via `INSERT INTO workspace` with a deterministic name-derived UUID (`UUID.nameUUIDFromBytes("notifications-system-workspace"...)`).
+
+2. **Runtime-dependent data initialization belongs in Java code**:
+   - Operations that require external service calls (e.g., fetching workspace UUIDs from RBAC, resolving org-specific data) must reside in Java endpoints, startup routines, or background jobs since external service calls cannot run during schema migration.
+   - Example: Org workspace assignment queries RBAC dynamically and creates org-specific workspace records through Java repository calls during the bootstrap process (`POST /internal/workspace/bootstrap`).
+
+3. **Co-located bulk updates (Corollary)**:
+   - When a migration creates a seed entity (e.g., system workspace), any bulk updates that depend only on that entity and existing table data (e.g., assigning existing system endpoints to the system workspace) should happen in the same migration script, not in a separate Java bootstrap step.
+   - Example: In migration `V1.143.0`, right after creating the system workspace, an `UPDATE endpoints SET workspace_id = ... WHERE org_id IS NULL` assigns all existing system endpoints to the system workspace in the same migration.
+
 ## Schema Conventions
 
 ### Tables and Columns

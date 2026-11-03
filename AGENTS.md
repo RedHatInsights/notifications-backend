@@ -61,7 +61,7 @@ Public resources use inner static subclasses for versioning. The parent class ho
 ### Multi-Module Dependency Rules
 
 - Shared libraries (`common`, `common-template`, `common-unleash`, `connector-common-v2`, `connector-common-authentication-v2`, `connector-common-http-v2`) produce JARs and must not depend on deployable modules.
-- The `database` module contains only Flyway SQL migration files -- no Java code.
+- The `database` module contains only Flyway SQL migration files -- no Java code. Deterministic seed data belongs in Flyway SQL migrations, while runtime-dependent initialization belongs in Java code (see `docs/database-guidelines.md`).
 - Only `backend` runs Flyway migrations in production (`quarkus.flyway.migrate-at-start=true`). The `engine` enables Flyway only for dev/test profiles.
 - Connector modules follow a layered inheritance: `connector-common-v2` -> `connector-common-http-v2` -> specific connector. Authentication-requiring connectors also depend on `connector-common-authentication-v2`.
 
@@ -110,7 +110,7 @@ For domain-specific conventions, refer to these guideline documents:
 
 1. [Code Organization](docs/code-organization-guidelines.md) -- Module architecture, packages, Flyway, import order
 2. [API Contracts](docs/api-contracts-guidelines.md) -- REST conventions, versioning, DTOs, pagination, OpenAPI
-3. [Database](docs/database-guidelines.md) -- Schema, Flyway, entity conventions, repository patterns
+3. [Database](docs/database-guidelines.md) -- Schema, Flyway, data initialization placement, entity conventions, repository patterns
 4. [Data Validation](docs/data-validation-guidelines.md) -- Bean Validation, DTOs, MapStruct, JSON serialization
 5. [Security](docs/security-guidelines.md) -- ConsoleAuthMechanism, @Authorization, RBAC/Kessel
 6. [Testing](docs/testing-guidelines.md) -- @QuarkusTest, DbIsolatedTest, WireMock, connector tests
@@ -133,7 +133,7 @@ For domain-specific conventions, refer to these guideline documents:
 
 ## Key Gotchas
 
-- The `database` module has no Java code -- it exists solely to hold Flyway migration SQL files that are picked up by other modules at build time via classpath.
+- The `database` module has no Java code -- it exists solely to hold Flyway migration SQL files that are picked up by other modules at build time via classpath. Deterministic seed data and related bulk updates belong in Flyway SQL migrations, while runtime-dependent data initialization (e.g., external service calls) belongs in Java code. See `docs/database-guidelines.md` for details.
 - Connectors are independent deployable services, not libraries. Each has its own `application.properties`, Dockerfile, and Tekton pipeline.
 - The Clowder Config Source translates OpenShift Clowder environment configuration into Quarkus properties. Locally, fallback defaults in `application.properties` use `${clowder.endpoints...url:http://localhost:...}` syntax.
 - Clowder Config Source can throw exceptions (not return null) for incomplete V2 endpoint entries. Property expression defaults (`${...:fallback}`) do not apply to exceptions — use programmatic lookup with try/catch instead. See `docs/configuration-guidelines.md` for details.
