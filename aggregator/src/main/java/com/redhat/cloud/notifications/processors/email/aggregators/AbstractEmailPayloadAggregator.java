@@ -16,8 +16,10 @@ public abstract class AbstractEmailPayloadAggregator {
 
     static final String SEVERITY_KEY = "_severity";
     static final String EVENT_TYPE_KEY = "_eventType";
+    static final String EVENT_TYPE_ID_KEY = "_eventTypeId";
     static final String SUBSCRIBED_BY_DEFAULT_KEY = "_subscribedByDefault";
     static final String RECIPIENTS_OVERRIDE_KEY = "_recipientsOverride";
+    static final String RECIPIENTS_AUTHORIZATION_CRITERION_KEY = "_recipientsAuthorizationCriterion";
 
     private String orgId;
 
@@ -45,10 +47,11 @@ public abstract class AbstractEmailPayloadAggregator {
 
     /**
      * Tags a folded item with everything engine's trim step needs to decide per-recipient inclusion
-     * without re-scanning raw events: severity, the originating eventType name (subscriptions are keyed
-     * by eventType, not app), whether that eventType is subscribed-to by default (its subscriber set
-     * can't be fully enumerated locally), and any raw per-event {@code recipients} override, forwarded
-     * verbatim (not parsed/resolved here).
+     * without re-scanning raw events: severity, the originating eventType id/name (subscriptions and
+     * endpoint lookups are keyed by eventType, not app), whether that eventType is subscribed-to by
+     * default (its subscriber set can't be fully enumerated locally), any raw per-event
+     * {@code recipients} override, and any per-event Kessel authorization criterion -- the last two
+     * forwarded verbatim, not parsed/resolved here.
      */
     void tagMetadata(JsonObject item, EmailAggregation aggregation) {
         // Event.severity is a nullable DB column (see DrawerProcessor's equivalent null check); omit
@@ -59,9 +62,13 @@ public abstract class AbstractEmailPayloadAggregator {
             Log.warnf("Event has no severity set, skipping severity tag for orgId=%s", getOrgId());
         }
         item.put(EVENT_TYPE_KEY, aggregation.getEventTypeName());
+        item.put(EVENT_TYPE_ID_KEY, aggregation.getEventTypeId().toString());
         item.put(SUBSCRIBED_BY_DEFAULT_KEY, aggregation.isSubscribedByDefault());
         if (aggregation.getRecipientsOverride() != null) {
             item.put(RECIPIENTS_OVERRIDE_KEY, aggregation.getRecipientsOverride());
+        }
+        if (aggregation.getRecipientsAuthorizationCriterion() != null) {
+            item.put(RECIPIENTS_AUTHORIZATION_CRITERION_KEY, JsonObject.mapFrom(aggregation.getRecipientsAuthorizationCriterion()));
         }
     }
 

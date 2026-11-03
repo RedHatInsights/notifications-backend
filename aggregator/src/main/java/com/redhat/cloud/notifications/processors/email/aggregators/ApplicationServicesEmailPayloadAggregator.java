@@ -5,6 +5,13 @@ import io.quarkus.logging.Log;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * Unlike the legacy per-recipient engine aggregator this was ported from, this class does not track a
+ * {@code global_releases_number} running total -- this instance folds every recipient's events into one
+ * superset, so any such count would already be wrong for every recipient whose trimmed view differs from
+ * the full digest. Engine recomputes it per recipient after trimming instead (see
+ * {@code EmailAggregationProcessor.recomputeApplicationServicesGlobalReleasesNumber()}).
+ */
 public class ApplicationServicesEmailPayloadAggregator extends AbstractEmailPayloadAggregator {
 
     private static final String EVENT_TYPE = "event_type";
@@ -18,12 +25,10 @@ public class ApplicationServicesEmailPayloadAggregator extends AbstractEmailPayl
     private static final String DISPLAY_NAME_KEY = "display_name";
     private static final String DESCRIPTION_KEY = "description";
     private static final String PAYLOADS_KEY = "payloads";
-    private static final String GLOBAL_RELEASES_NUMBER_KEY = "global_releases_number";
 
     public ApplicationServicesEmailPayloadAggregator() {
         JsonObject applicationServices = new JsonObject();
         applicationServices.put(PRODUCTS_KEY, new JsonObject());
-        applicationServices.put(GLOBAL_RELEASES_NUMBER_KEY, 0);
         context.put(APPLICATION_SERVICES_KEY, applicationServices);
     }
 
@@ -65,7 +70,6 @@ public class ApplicationServicesEmailPayloadAggregator extends AbstractEmailPayl
                 return;
             }
 
-            int releasesCount = applicationServices.getInteger(GLOBAL_RELEASES_NUMBER_KEY, 0);
             JsonArray targetPayloads = products.getJsonObject(eventType).getJsonArray(PAYLOADS_KEY);
             for (int i = 0; i < events.size(); i++) {
                 JsonObject event = events.getJsonObject(i);
@@ -76,10 +80,8 @@ public class ApplicationServicesEmailPayloadAggregator extends AbstractEmailPayl
                 if (payload != null) {
                     tagMetadata(payload, notification);
                     targetPayloads.add(payload);
-                    releasesCount++;
                 }
             }
-            applicationServices.put(GLOBAL_RELEASES_NUMBER_KEY, releasesCount);
         } catch (Exception e) {
             Log.warnf(e, "Failed to process Application Services aggregation for orgId=%s", getOrgId());
         }

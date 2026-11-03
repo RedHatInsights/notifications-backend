@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
+import com.redhat.cloud.notifications.EventPayloadTestHelper;
 import com.redhat.cloud.notifications.Severity;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -74,6 +76,8 @@ class ErrataEmailPayloadAggregatorTest {
         EmailAggregation aggregation = createErrataAggregation(EVENT_TYPE_SECURITY, Severity.IMPORTANT);
         aggregation.setSubscribedByDefault(true);
         aggregation.setRecipientsOverride(new JsonArray().add(new JsonObject().put("only_admins", true)));
+        RecipientsAuthorizationCriterion authorizationCriterion = EventPayloadTestHelper.buildRecipientsAuthorizationCriterion();
+        aggregation.setRecipientsAuthorizationCriterion(authorizationCriterion);
 
         aggregator.aggregate(aggregation);
 
@@ -83,8 +87,10 @@ class ErrataEmailPayloadAggregatorTest {
             .getJsonObject(0);
 
         assertEquals(EVENT_TYPE_SECURITY, item.getString("_eventType"));
+        assertEquals(aggregation.getEventTypeId().toString(), item.getString("_eventTypeId"));
         assertTrue(item.getBoolean("_subscribedByDefault"));
         assertEquals(1, item.getJsonArray("_recipientsOverride").size());
+        assertEquals(authorizationCriterion.getId(), item.getJsonObject("_recipientsAuthorizationCriterion").getString("id"));
     }
 
     @Test

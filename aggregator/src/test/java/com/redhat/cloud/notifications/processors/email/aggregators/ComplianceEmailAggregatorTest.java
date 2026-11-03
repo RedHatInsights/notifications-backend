@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
+import com.redhat.cloud.notifications.EventPayloadTestHelper;
 import com.redhat.cloud.notifications.Severity;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -67,6 +69,8 @@ class ComplianceEmailAggregatorTest {
         EmailAggregation aggregation = createEmailAggregation("report-upload-failed", "policy1", "host1", Severity.CRITICAL);
         aggregation.setSubscribedByDefault(true);
         aggregation.setRecipientsOverride(new JsonArray().add(new JsonObject().put("only_admins", true)));
+        RecipientsAuthorizationCriterion authorizationCriterion = EventPayloadTestHelper.buildRecipientsAuthorizationCriterion();
+        aggregation.setRecipientsAuthorizationCriterion(authorizationCriterion);
 
         aggregator.aggregate(aggregation);
 
@@ -76,8 +80,22 @@ class ComplianceEmailAggregatorTest {
             .getJsonObject(0);
 
         Assertions.assertEquals("report-upload-failed", item.getString("_eventType"));
+        Assertions.assertEquals(aggregation.getEventTypeId().toString(), item.getString("_eventTypeId"));
         Assertions.assertTrue(item.getBoolean("_subscribedByDefault"));
         Assertions.assertEquals(1, item.getJsonArray("_recipientsOverride").size());
+        Assertions.assertEquals(authorizationCriterion.getId(), item.getJsonObject("_recipientsAuthorizationCriterion").getString("id"));
+    }
+
+    @Test
+    void shouldNotTagRecipientsAuthorizationCriterionWhenAbsent() {
+        aggregator.aggregate(createEmailAggregation("report-upload-failed", "policy1", "host1", Severity.CRITICAL));
+
+        JsonObject item = JsonObject.mapFrom(aggregator.getContext())
+            .getJsonObject("compliance")
+            .getJsonArray("report-upload-failed")
+            .getJsonObject(0);
+
+        Assertions.assertFalse(item.containsKey("_recipientsAuthorizationCriterion"));
     }
 
     @Test

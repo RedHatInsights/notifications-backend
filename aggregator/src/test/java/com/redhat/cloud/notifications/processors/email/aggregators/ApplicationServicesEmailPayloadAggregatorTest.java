@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
+import com.redhat.cloud.notifications.EventPayloadTestHelper;
 import com.redhat.cloud.notifications.Severity;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -51,12 +54,16 @@ class ApplicationServicesEmailPayloadAggregatorTest {
     }
 
     @Test
-    void shouldCalculateGlobalReleasesNumber() {
+    void shouldNotTrackGlobalReleasesNumber() {
+        // Unlike the legacy per-recipient engine aggregator, this class folds every recipient's events
+        // into one superset, so it deliberately leaves global_releases_number unset -- engine recomputes
+        // it per recipient after trimming instead (see
+        // EmailAggregationProcessor.recomputeApplicationServicesGlobalReleasesNumber()).
         aggregator.aggregate(createReleaseAggregation("keycloak-releases", "Red Hat build of Keycloak", 2, Severity.LOW));
         aggregator.aggregate(createReleaseAggregation("eap-releases", "Red Hat JBoss Enterprise Application Platform", 3, Severity.LOW));
 
         JsonObject appServices = JsonObject.mapFrom(aggregator.getContext()).getJsonObject("application-services");
-        assertEquals(5, appServices.getInteger("global_releases_number"));
+        assertFalse(appServices.containsKey("global_releases_number"));
     }
 
     @Test
@@ -66,7 +73,6 @@ class ApplicationServicesEmailPayloadAggregatorTest {
 
         JsonObject appServices = JsonObject.mapFrom(aggregator.getContext()).getJsonObject("application-services");
         assertTrue(appServices.getJsonObject("products").isEmpty());
-        assertEquals(0, appServices.getInteger("global_releases_number"));
     }
 
     @Test
@@ -87,6 +93,8 @@ class ApplicationServicesEmailPayloadAggregatorTest {
         EmailAggregation aggregation = createReleaseAggregation("keycloak-releases", "Red Hat build of Keycloak", 1, Severity.IMPORTANT);
         aggregation.setSubscribedByDefault(true);
         aggregation.setRecipientsOverride(new JsonArray().add(new JsonObject().put("only_admins", true)));
+        RecipientsAuthorizationCriterion authorizationCriterion = EventPayloadTestHelper.buildRecipientsAuthorizationCriterion();
+        aggregation.setRecipientsAuthorizationCriterion(authorizationCriterion);
 
         aggregator.aggregate(aggregation);
 
@@ -98,8 +106,10 @@ class ApplicationServicesEmailPayloadAggregatorTest {
             .getJsonObject(0);
 
         assertEquals("keycloak-releases", item.getString("_eventType"));
+        assertEquals(aggregation.getEventTypeId().toString(), item.getString("_eventTypeId"));
         assertTrue(item.getBoolean("_subscribedByDefault"));
         assertEquals(1, item.getJsonArray("_recipientsOverride").size());
+        assertEquals(authorizationCriterion.getId(), item.getJsonObject("_recipientsAuthorizationCriterion").getString("id"));
     }
 
     private static EmailAggregation createReleaseAggregation(String eventType, String displayName, int releaseCount, Severity severity) {

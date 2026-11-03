@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.email;
 
 import com.redhat.cloud.notifications.db.EventAggregationQueryRepository;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
@@ -67,8 +68,10 @@ public class EmailDataAggregator {
             for (Event event : events) {
                 // Event.eventWrapper is @Transient -- not persisted, so a freshly loaded Event has it
                 // null. extract() hydrates it as a side effect (same reliance engine's own
-                // EmailAggregator.resolveRecipients() has on this call) before toJsonObject() needs it.
-                recipientsAuthorizationCriterionExtractor.extract(event);
+                // EmailAggregator.resolveRecipients() has on this call) before toJsonObject() needs it,
+                // and its return value is the per-event Kessel authorization criterion engine's trim
+                // step needs forwarded (see EmailAggregation.recipientsAuthorizationCriterion).
+                RecipientsAuthorizationCriterion authorizationCriterion = recipientsAuthorizationCriterionExtractor.extract(event);
 
                 EmailAggregation data = new EmailAggregation(
                     event.getOrgId(),
@@ -80,6 +83,7 @@ public class EmailDataAggregator {
                 data.setEventTypeName(event.getEventType().getName());
                 data.setSubscribedByDefault(event.getEventType().isSubscribedByDefault());
                 data.setRecipientsOverride(extractRecipientsOverride(event));
+                data.setRecipientsAuthorizationCriterion(authorizationCriterion);
                 aggregator.aggregate(data);
             }
             totalAggregatedElements += events.size();

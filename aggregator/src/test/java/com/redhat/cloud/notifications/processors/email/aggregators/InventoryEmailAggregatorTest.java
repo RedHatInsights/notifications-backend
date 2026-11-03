@@ -1,6 +1,8 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
+import com.redhat.cloud.notifications.EventPayloadTestHelper;
 import com.redhat.cloud.notifications.Severity;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.EmailAggregation;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -64,6 +66,8 @@ class InventoryEmailAggregatorTest {
         EmailAggregation aggregation = createSystemEvent(InventoryEmailAggregator.EVENT_TYPE_NEW_SYSTEM_REGISTERED, UUID.randomUUID(), "new-system", Severity.LOW);
         aggregation.setSubscribedByDefault(true);
         aggregation.setRecipientsOverride(new JsonArray().add(new JsonObject().put("only_admins", true)));
+        RecipientsAuthorizationCriterion authorizationCriterion = EventPayloadTestHelper.buildRecipientsAuthorizationCriterion();
+        aggregation.setRecipientsAuthorizationCriterion(authorizationCriterion);
 
         aggregator.aggregate(aggregation);
 
@@ -73,8 +77,10 @@ class InventoryEmailAggregatorTest {
             .getJsonObject(0);
 
         Assertions.assertEquals(InventoryEmailAggregator.EVENT_TYPE_NEW_SYSTEM_REGISTERED, item.getString("_eventType"));
+        Assertions.assertEquals(aggregation.getEventTypeId().toString(), item.getString("_eventTypeId"));
         Assertions.assertTrue(item.getBoolean("_subscribedByDefault"));
         Assertions.assertEquals(1, item.getJsonArray("_recipientsOverride").size());
+        Assertions.assertEquals(authorizationCriterion.getId(), item.getJsonObject("_recipientsAuthorizationCriterion").getString("id"));
     }
 
     private static EmailAggregation createValidationError(String displayName, String errorMessage, Severity severity) {

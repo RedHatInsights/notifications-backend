@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.models;
 
 import com.redhat.cloud.notifications.Severity;
+import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.UUID;
@@ -39,6 +40,14 @@ public class EmailAggregation {
      * see {@link #eventTypeName}.
      */
     private JsonArray recipientsOverride;
+
+    /**
+     * The raw per-event Kessel authorization criterion (resource type/relation/id), when present, or
+     * {@code null} otherwise. Genuinely varies per event (it names a specific resource), unlike the
+     * other tags above which are constant per eventType -- forwarded verbatim, not resolved here, same
+     * approach as {@link #recipientsOverride}. Additive, see {@link #eventTypeName}.
+     */
+    private RecipientsAuthorizationCriterion recipientsAuthorizationCriterion;
 
     public EmailAggregation() {
     }
@@ -122,5 +131,13 @@ public class EmailAggregation {
 
     public void setRecipientsOverride(JsonArray recipientsOverride) {
         this.recipientsOverride = recipientsOverride;
+    }
+
+    public RecipientsAuthorizationCriterion getRecipientsAuthorizationCriterion() {
+        return recipientsAuthorizationCriterion;
+    }
+
+    public void setRecipientsAuthorizationCriterion(RecipientsAuthorizationCriterion recipientsAuthorizationCriterion) {
+        this.recipientsAuthorizationCriterion = recipientsAuthorizationCriterion;
     }
 }
