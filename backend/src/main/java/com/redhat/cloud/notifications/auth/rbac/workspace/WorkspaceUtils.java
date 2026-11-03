@@ -30,6 +30,9 @@ public class WorkspaceUtils {
     @Inject
     BackendConfig backendConfig;
 
+    @Inject
+    WorkspaceUtils self;
+
     /**
      * Returns the identifier of the default workspace for the given
      * organization. The result is cached because the identifier is not going
@@ -41,13 +44,12 @@ public class WorkspaceUtils {
      *
      * RBAC's default workspace endpoint can return null or fail for legacy orgs
      * (particularly on stage). In such cases, this method returns null to let
-     * callers decide how to handle missing workspace data.
+     * callers decide how to handle missing workspace data. Null results are not
+     * cached so that subsequent lookups can succeed if a workspace is provisioned.
      *
      * @param orgId the organization to get the default workspace from.
      * @return the identifier of the workspace, or null if RBAC returns no workspace.
      */
-    @CacheResult(cacheName = "kessel-rbac-workspace-id")
-    @Retry(maxRetries = 3, delay = 100, retryOn = OAuth2Exception.class)
     public UUID getDefaultWorkspaceId(final String orgId) {
 
         if (!workspaceLookupEnabled) {
@@ -58,6 +60,26 @@ public class WorkspaceUtils {
             Log.debugf("[WORKSPACE LOOKUP DISABLED][org_id: %s][workspace_id: %s] Using deterministic workspace ID", orgId, workspaceId);
             return workspaceId;
         }
+
+        try {
+            WorkspaceUtils target = self != null ? self : this;
+            return target.fetchDefaultWorkspaceId(orgId);
+        } catch (WorkspaceNotFoundException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Fetches and caches the default workspace ID from RBAC.
+     * Throws {@link WorkspaceNotFoundException} when RBAC returns null or empty workspace data,
+     * which prevents caching of missing workspaces.
+     *
+     * @param orgId the organization to get the default workspace from.
+     * @return the identifier of the workspace.
+     */
+    @CacheResult(cacheName = "kessel-rbac-workspace-id")
+    @Retry(maxRetries = 3, delay = 100, retryOn = OAuth2Exception.class)
+    public UUID fetchDefaultWorkspaceId(final String orgId) {
 
         OAuth2ClientCredentials credentials;
         try {
@@ -70,20 +92,28 @@ public class WorkspaceUtils {
 
         Workspace workspace;
         try {
-            workspace = FetchWorkspace.fetchDefaultWorkspace(backendConfig.getRbacUrl(), orgId, authRequest);
+            workspace = fetchWorkspace(backendConfig.getRbacUrl(), orgId, authRequest);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Failed to fetch a default workspace from RBAC", e);
         }
 
         // RBAC's default workspace endpoint can return null or fail for legacy orgs
         // (particularly on stage). Null handling is intentional defensive coding to
-        // allow callers to decide how to handle missing workspace data.
+        // allow callers to decide how to handle missing workspace data. Throwing an
+        // exception prevents caching null results in the Quarkus cache.
         if (workspace == null || workspace.getId() == null) {
             Log.warnf("[org_id: %s] RBAC returned null or empty workspace", orgId);
-            return null;
+            throw new WorkspaceNotFoundException();
         }
 
         Log.debugf("[org_id: %s][workspace_id: %s] Fetched default workspace from RBAC", orgId, workspace.getId());
         return UUID.fromString(workspace.getId());
+    }
+
+    Workspace fetchWorkspace(final String rbacUrl, final String orgId, final OAuth2AuthRequest authRequest) throws IOException, InterruptedException {
+        return FetchWorkspace.fetchDefaultWorkspace(rbacUrl, orgId, authRequest);
+    }
+
+    static class WorkspaceNotFoundException extends RuntimeException {
     }
 }
