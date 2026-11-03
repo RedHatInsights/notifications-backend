@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.connector.v2.MessageHandler;
 import com.redhat.cloud.notifications.connector.v2.http.HttpNotificationValidator;
 import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpMessageDetails;
 import com.redhat.cloud.notifications.connector.v2.http.models.NotificationToConnectorHttp;
+import com.redhat.cloud.notifications.connector.v2.metrics.NotificationTags;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.quarkus.logging.Log;
 import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
@@ -34,6 +35,12 @@ public class WebhookMessageHandler extends MessageHandler {
 
     @Inject
     HttpNotificationValidator httpNotificationValidator;
+
+    @Override
+    public NotificationTags extractNotificationTags(JsonObject cloudEventData) {
+        JsonObject payload = cloudEventData.getJsonObject("payload");
+        return payload != null ? NotificationTags.fromJsonObject(payload) : NotificationTags.UNKNOWN;
+    }
 
     @Override
     public HandledMessageDetails handle(final IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {

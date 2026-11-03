@@ -11,6 +11,7 @@ import com.redhat.cloud.notifications.connector.email.payload.PayloadDetails;
 import com.redhat.cloud.notifications.connector.email.processors.bop.BOPManager;
 import com.redhat.cloud.notifications.connector.email.processors.recipientsresolver.ExternalRecipientsResolver;
 import com.redhat.cloud.notifications.connector.v2.MessageHandler;
+import com.redhat.cloud.notifications.connector.v2.metrics.NotificationTags;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
@@ -79,6 +80,12 @@ public class EmailMessageHandler extends MessageHandler {
             .register(meterRegistry);
         recipientsResolverResponseTimer = Timer.builder(RECIPIENTS_RESOLVER_RESPONSE_TIME_METRIC)
             .register(meterRegistry);
+    }
+
+    @Override
+    public NotificationTags extractNotificationTags(JsonObject cloudEventData) {
+        JsonObject eventData = cloudEventData.getJsonObject("event_data");
+        return eventData != null ? NotificationTags.fromJsonObject(eventData) : NotificationTags.UNKNOWN;
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.connector.google.chat;
 
 import com.redhat.cloud.notifications.connector.google.chat.config.GoogleChatConnectorConfig;
-import com.redhat.cloud.notifications.connector.v2.MessageHandler;
+import com.redhat.cloud.notifications.connector.v2.CamelMessageHandler;
 import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpMessageDetails;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
-public class GoogleChatMessageHandler extends MessageHandler {
+public class GoogleChatMessageHandler extends CamelMessageHandler {
 
     public static final String JSON_UTF8 = "application/json; charset=utf-8";
     public static final String BUNDLE = "bundle";

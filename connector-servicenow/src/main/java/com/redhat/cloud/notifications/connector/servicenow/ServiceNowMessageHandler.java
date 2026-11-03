@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.connector.servicenow;
 
 import com.redhat.cloud.notifications.connector.authentication.v2.AuthenticationLoader;
 import com.redhat.cloud.notifications.connector.authentication.v2.AuthenticationResult;
-import com.redhat.cloud.notifications.connector.v2.MessageHandler;
+import com.redhat.cloud.notifications.connector.v2.CamelMessageHandler;
 import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpMessageDetails;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.quarkus.logging.Log;
@@ -29,7 +29,7 @@ import static com.redhat.cloud.notifications.connector.servicenow.ServiceNowNoti
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApplicationScoped
-public class ServiceNowMessageHandler extends MessageHandler {
+public class ServiceNowMessageHandler extends CamelMessageHandler {
 
     public static final String JSON_UTF8 = "application/json; charset=utf-8";
     static final String NOTIF_METADATA = "notif-metadata";

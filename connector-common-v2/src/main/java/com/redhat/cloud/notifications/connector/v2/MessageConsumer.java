@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.v2;
 
 import com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics;
+import com.redhat.cloud.notifications.connector.v2.metrics.NotificationTags;
 import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.micrometer.core.instrument.Counter;
@@ -95,7 +96,7 @@ public class MessageConsumer {
 
         final IncomingCloudEventMetadata<JsonObject> cloudEventMetadata = cloudEventOpt.get();
 
-        Timer.Sample sample = Timer.start(meterRegistry);
+        Timer.Sample handleMessageTimer = Timer.start(meterRegistry);
         Timer.Sample integrationTimer = connectorMetrics.startIntegrationTimer();
         boolean success = false;
         try {
@@ -112,12 +113,12 @@ public class MessageConsumer {
             // Record connector metrics (notification sent and integration time) after confirming send succeeded
             // Timer.Sample will be stopped and recorded during recordIntegrationTime()
             try {
-                connectorMetrics.recordNotificationSent(cloudEventMetadata.getData());
-                connectorMetrics.recordIntegrationTime(integrationTimer, cloudEventMetadata.getData());
+                NotificationTags notificationTags = messageHandler.extractNotificationTags(cloudEventMetadata.getData());
+                connectorMetrics.recordNotificationSent(notificationTags);
+                connectorMetrics.recordIntegrationTime(integrationTimer, notificationTags);
             } catch (Exception metricsException) {
                 // Prevent any exception from escaping to outer catch
                 // If this throws, we already sent success response and must not send failure
-                // Timer.Sample is not stopped here - it will be garbage collected without recording
                 Log.warnf(metricsException, "Failed to record connector metrics, but notification was sent successfully");
             }
         } catch (Exception e) {
@@ -126,10 +127,8 @@ public class MessageConsumer {
 
             // Send failure response back to engine
             outgoingMessageSender.sendFailure(cloudEventMetadata, processedExceptionDetails, startTime);
-
-            // Timer.Sample is not stopped here - it will be garbage collected without recording
         } finally {
-            sample.stop(handlerDurationTimer);
+            handleMessageTimer.stop(handlerDurationTimer);
             if (success) {
                 succeededCounter.increment();
             } else {

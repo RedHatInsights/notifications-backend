@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.connector.v2;
 
+import com.redhat.cloud.notifications.connector.v2.metrics.NotificationTags;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.logging.Log;
@@ -18,5 +19,11 @@ public class MessageHandler {
     public HandledMessageDetails handle(IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
         Log.info("Test implementation of MessageHandler for unit testing");
         return new HandledMessageDetails("Ok");
+    }
+
+    // All production connectors override this. The default is a last-resort fallback
+    // for tests or future connectors that haven't added an override yet.
+    public NotificationTags extractNotificationTags(JsonObject cloudEventData) {
+        return NotificationTags.UNKNOWN;
     }
 }

@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.connector.slack;
 
 import com.redhat.cloud.notifications.connector.slack.config.SlackConnectorConfig;
-import com.redhat.cloud.notifications.connector.v2.MessageHandler;
+import com.redhat.cloud.notifications.connector.v2.CamelMessageHandler;
 import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpMessageDetails;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class SlackMessageHandler extends MessageHandler {
+public class SlackMessageHandler extends CamelMessageHandler {
 
     public static final String JSON_UTF8 = "application/json; charset=utf-8";
     public static final String BUNDLE = "bundle";

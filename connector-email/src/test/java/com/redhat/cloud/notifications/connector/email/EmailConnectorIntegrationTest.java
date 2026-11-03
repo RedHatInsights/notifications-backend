@@ -381,7 +381,7 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         assertTrue(data.getBoolean("successful"));
 
         // Verify counter metric (recorded automatically by MessageConsumer)
-        micrometerAssertionHelper.assertCounterIncrementWithTags(
+        micrometerAssertionHelper.awaitAndAssertCounterIncrementWithTags(
             SENT_COUNTER_NAME, 1.0,
             TAG_CONNECTOR, "email_subscription",
             TAG_BUNDLE, "rhel",
@@ -417,7 +417,7 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         // Note: Daily digest emails currently don't populate standard bundle/application/event_type fields
         // in the CloudEvent data structure, so they default to "unknown". This should be fixed upstream
         // by standardizing the CloudEvent structure for aggregation emails to include these fields.
-        micrometerAssertionHelper.assertCounterIncrementWithTags(
+        micrometerAssertionHelper.awaitAndAssertCounterIncrementWithTags(
             SENT_COUNTER_NAME, 1.0,
             TAG_CONNECTOR, "email_subscription",
             TAG_BUNDLE, "unknown",

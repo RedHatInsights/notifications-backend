@@ -4,7 +4,6 @@ import com.redhat.cloud.notifications.connector.v2.ConnectorConfig;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -41,26 +40,24 @@ public class ConnectorMetrics {
     /**
      * Records that a notification was successfully sent through a connector.
      *
-     * @param notificationData the event data containing bundle, application, and event_type
+     * @param tags the notification tags containing bundle, application, and event_type
      */
-    public void recordNotificationSent(JsonObject notificationData) {
-        recordNotificationSent(notificationData, null);
+    public void recordNotificationSent(NotificationTags tags) {
+        recordNotificationSent(tags, null);
     }
 
     /**
      * Records that a notification was successfully sent through a connector with additional custom tags.
      *
-     * @param notificationData the event data containing bundle, application, and event_type
+     * @param tags the notification tags containing bundle, application, and event_type
      * @param additionalTags additional tags to include in the metric (e.g., subscription_type)
      */
-    public void recordNotificationSent(JsonObject notificationData, Map<String, String> additionalTags) {
-        NotificationTags tags = extractTags(notificationData);
-
+    public void recordNotificationSent(NotificationTags tags, Map<String, String> additionalTags) {
         Counter.Builder builder = Counter.builder(SENT_COUNTER_NAME)
             .tag(TAG_CONNECTOR, connectorConfig.getConnectorName())
-            .tag(TAG_BUNDLE, sanitizeTagValue(tags.bundle))
-            .tag(TAG_APPLICATION, sanitizeTagValue(tags.application))
-            .tag(TAG_EVENT_TYPE, sanitizeTagValue(tags.eventType));
+            .tag(TAG_BUNDLE, sanitizeTagValue(tags.bundle()))
+            .tag(TAG_APPLICATION, sanitizeTagValue(tags.application()))
+            .tag(TAG_EVENT_TYPE, sanitizeTagValue(tags.eventType()));
 
         if (additionalTags != null) {
             additionalTags.forEach((key, value) -> builder.tag(key, sanitizeTagValue(value)));
@@ -81,76 +78,32 @@ public class ConnectorMetrics {
     /**
      * Records the integration time for a connector.
      *
-     * @param sample the Timer.Sample started before the integration began
-     * @param notificationData the event data containing bundle, application, and event_type
+     * @param integrationTimer the Timer.Sample started before the integration began
+     * @param tags the notification tags containing bundle, application, and event_type
      */
-    public void recordIntegrationTime(Timer.Sample sample, JsonObject notificationData) {
-        recordIntegrationTime(sample, notificationData, null);
+    public void recordIntegrationTime(Timer.Sample integrationTimer, NotificationTags tags) {
+        recordIntegrationTime(integrationTimer, tags, null);
     }
 
     /**
      * Records the integration time for a connector with additional custom tags.
      *
-     * @param sample the Timer.Sample started before the integration began
-     * @param notificationData the event data containing bundle, application, and event_type
+     * @param integrationTimer the Timer.Sample started before the integration began
+     * @param tags the notification tags containing bundle, application, and event_type
      * @param additionalTags additional tags to include in the metric
      */
-    public void recordIntegrationTime(Timer.Sample sample, JsonObject notificationData, Map<String, String> additionalTags) {
-        NotificationTags tags = extractTags(notificationData);
-
+    public void recordIntegrationTime(Timer.Sample integrationTimer, NotificationTags tags, Map<String, String> additionalTags) {
         Timer.Builder timerBuilder = Timer.builder(INTEGRATION_TIME_TIMER_NAME)
             .tag(TAG_CONNECTOR, connectorConfig.getConnectorName())
-            .tag(TAG_BUNDLE, sanitizeTagValue(tags.bundle))
-            .tag(TAG_APPLICATION, sanitizeTagValue(tags.application))
-            .tag(TAG_EVENT_TYPE, sanitizeTagValue(tags.eventType));
+            .tag(TAG_BUNDLE, sanitizeTagValue(tags.bundle()))
+            .tag(TAG_APPLICATION, sanitizeTagValue(tags.application()))
+            .tag(TAG_EVENT_TYPE, sanitizeTagValue(tags.eventType()));
 
         if (additionalTags != null) {
             additionalTags.forEach((key, value) -> timerBuilder.tag(key, sanitizeTagValue(value)));
         }
 
-        Timer timer = timerBuilder.register(meterRegistry);
-        sample.stop(timer);
-    }
-
-    /**
-     * Extracts bundle, application, and event_type from notification data.
-     * Checks both top level and nested eventData/event_data fields.
-     * Returns "unknown" for any missing field to ensure metrics are always recorded.
-     */
-    private NotificationTags extractTags(JsonObject notificationData) {
-        String bundle = extractField(notificationData, "bundle");
-        String application = extractField(notificationData, "application");
-        String eventType = extractField(notificationData, "event_type");
-
-        return new NotificationTags(bundle, application, eventType);
-    }
-
-    private String extractField(JsonObject notificationData, String fieldName) {
-        // Try top level first
-        String value = notificationData.getString(fieldName);
-        if (value != null && !value.isEmpty()) {
-            return value;
-        }
-
-        // Try nested eventData field
-        JsonObject eventData = notificationData.getJsonObject("eventData");
-        if (eventData != null) {
-            value = eventData.getString(fieldName);
-            if (value != null && !value.isEmpty()) {
-                return value;
-            }
-        }
-
-        // Try nested event_data field (alternative snake_case naming)
-        eventData = notificationData.getJsonObject("event_data");
-        if (eventData != null) {
-            value = eventData.getString(fieldName);
-            if (value != null && !value.isEmpty()) {
-                return value;
-            }
-        }
-
-        return "unknown";
+        integrationTimer.stop(timerBuilder.register(meterRegistry));
     }
 
     /**
@@ -169,9 +122,6 @@ public class ConnectorMetrics {
         if (value.length() > MAX_TAG_VALUE_LENGTH) {
             return value.substring(0, MAX_TAG_VALUE_LENGTH);
         }
-
         return value;
     }
-
-    private record NotificationTags(String bundle, String application, String eventType) { }
 }

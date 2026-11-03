@@ -117,6 +117,28 @@ public class MicrometerAssertionHelper {
         }
     }
 
+    public void awaitAndAssertCounterIncrementWithTags(String counterName, double expectedIncrement, String... tags) {
+        await().atMost(Duration.ofSeconds(30L)).until(() -> {
+            Collection<Counter> counters = registry.find(counterName).tags(tags).counters();
+            if (counters.isEmpty()) {
+                return expectedIncrement == 0D;
+            }
+            for (Counter counter : counters) {
+                Meter.Id id = counter.getId();
+                List<String> tagList = new ArrayList<>();
+                for (Tag tag : id.getTags()) {
+                    tagList.add(tag.getKey());
+                    tagList.add(tag.getValue());
+                }
+                double actualIncrement = counter.count() - counterValuesBeforeTest.getOrDefault(counterName + tagList, 0D);
+                if (expectedIncrement != actualIncrement) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }
+
     public void awaitAndAssertCounterIncrement(String counterName, double expectedIncrement) {
         await().atMost(Duration.ofSeconds(30L)).until(() -> {
             double actualIncrement = registry.counter(counterName).count() - counterValuesBeforeTest.getOrDefault(counterName, 0D);
