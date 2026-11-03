@@ -19,6 +19,19 @@ agents:
       source: harness/code.yaml
     - name: review
       model: google-vertex/gemini-3.8-flash
+      # Runs review only when the ready-for-review label is added, or on
+      # /fs-review from a human.
+      trigger: >-
+          (event.entity.kind == "change_proposal"
+            && event.transition.kind == "label_changed"
+            && event.transition.label.name == "ready-for-review"
+            && event.transition.label.action == "added")
+          || (event.transition.kind == "comment_added"
+            && has(event.transition.comment.command)
+            && event.transition.comment.command == "/fs-review"
+            && event.actor.kind == "human"
+            && (event.entity.kind == "change_proposal"
+                || has(event.entity.linked_change_proposal)))
     - name: fix
       model: google-vertex/gemini-3.8-flash
       source: harness/fix.yaml
