@@ -110,10 +110,12 @@ Connectors receive CloudEvent payloads with different JSON structures. When addi
 
 | Connector Type | Wrapper Key | Model Class | Notes |
 |---|---|---|---|
-| Camel-based (Google Chat, Teams, ServiceNow, Slack, Splunk) | `eventData` | `CamelNotification` (no `@JsonProperty`) | Default Java field name |
+| Camel-based (Google Chat, Slack, Teams) | `eventData` | `CamelNotification` (no `@JsonProperty`) | Default Java field name |
 | Email | `event_data` | `EmailNotification` with `@JsonProperty("event_data")` | Snake_case in JSON |
 | Drawer | `event_data` | `DrawerNotificationToConnector` with `@JsonProperty("event_data")` | Nested: `event_data.data` contains tags |
 | Webhook, PagerDuty | `payload` | `NotificationToConnectorHttp` / `PagerDutyNotification` (`@JsonProperty("payload")`) | Direct `JsonObject` access; different wrapper key entirely |
+| ServiceNow | `notif-metadata` | `ServiceNowNotification` | Processed by `EventingProcessor`; metadata in `notif-metadata`, event data at root |
+| Splunk | `notif-metadata`, `events` | `SplunkNotification` | Processed by `EventingProcessor`; `events` array and `notif-metadata` |
 
 Always check the `@JsonProperty` annotations on the model class to determine the correct JSON key. Do not assume all connectors follow the same pattern.
 
