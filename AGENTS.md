@@ -104,6 +104,19 @@ This generates workspace UUIDs using `UUID.nameUUIDFromBytes("workspace-for-" + 
 - `assignWorkspaceToEndpoints(UUID, String)` - Bulk endpoint assignment (updates ALL endpoints for org)
 - `assignSystemWorkspace(UUID)` - Assigns system workspace to system endpoints
 
+### Connector Payload Structures
+
+Connectors receive CloudEvent payloads with different JSON structures. When adding cross-connector functionality that accesses event data, verify the correct key for each connector type:
+
+| Connector Type | Wrapper Key | Model Class | Notes |
+|---|---|---|---|
+| Camel-based (Google Chat, Teams, ServiceNow, Slack, Splunk) | `eventData` | `CamelNotification` (no `@JsonProperty`) | Default Java field name |
+| Email | `event_data` | `EmailNotification` with `@JsonProperty("event_data")` | Snake_case in JSON |
+| Drawer | `event_data` | `DrawerNotificationToConnector` with `@JsonProperty("event_data")` | Nested: `event_data.data` contains tags |
+| Webhook, PagerDuty | `payload` | `NotificationToConnectorHttp` / `PagerDutyNotification` (`@JsonProperty("payload")`) | Direct `JsonObject` access; different wrapper key entirely |
+
+Always check the `@JsonProperty` annotations on the model class to determine the correct JSON key. Do not assume all connectors follow the same pattern.
+
 ## Detailed Guidelines
 
 For domain-specific conventions, refer to these guideline documents:
@@ -117,7 +130,7 @@ For domain-specific conventions, refer to these guideline documents:
 7. [Async and Messaging](docs/async-and-messaging-guidelines.md) -- Kafka, connector frameworks, CloudEvents
 8. [Configuration](docs/configuration-guidelines.md) -- Config classes, property naming, Unleash, secrets
 9. [Error Handling](docs/error-handling-guidelines.md) -- JAX-RS mappers, connector retry, DelayedThrower
-10. [Integration](docs/integration-guidelines.md) -- v2 connector components, REST clients, Sources auth
+10. [Integration](docs/integration-guidelines.md) -- v2 connector components, REST clients, Sources auth, payload structures
 11. [Logging and Observability](docs/logging-and-observability-guidelines.md) -- Logging, Micrometer metrics, health checks
 12. [Performance](docs/performance-guidelines.md) -- @Blocking, backpressure, caches, deduplication
 13. [Dependency Management](docs/dependency-management-guidelines.md) -- Maven BOMs, inter-module deps, Renovate
