@@ -1,0 +1,49 @@
+# Custom agent with no base:. It is dispatched only by the matrix that
+# .github/workflows/fullsend-release-watch.yml builds, never by an event.
+# `trigger: "false"` is there because fullsend requires a trigger on every
+# harness.
+#
+# Generic by design: no repo-specific content, so this file and the agent
+# definition can be copied to another repo unchanged, except `slug:`.
+agent: agents/fullsend-release-watch.md
+# Pinned by digest. Each upgrade PR re-pins it to the image of
+# fullsend-ai/agents harness/triage.yaml at the matching agents release.
+image: ghcr.io/fullsend-ai/fullsend-sandbox@sha256:0cf64e79147c6c75f56ae7593f96d416e8c8f1b8bbe2aaa58a056ffb78dcf41b
+policy: policies/fullsend-release-watch.yaml
+providers:
+    - vertex-ai
+# The sandbox does not inherit runner variables or the dispatch payload, so
+# both are delivered as files. The Vertex entries are the WIF route, with no
+# key: the exchange config and the run's short-lived GitHub OIDC token, both
+# written by `fullsend run`. They match the fleet harnesses in
+# fullsend-ai/agents.
+host_files:
+    - src: ${GITHUB_WORKSPACE}/.fullsend/dispatch/event-payload.json
+      dest: /tmp/fullsend-release-watch-event-payload.json
+    - src: env/gcp-vertex.env
+      dest: /sandbox/workspace/.env.d/gcp-vertex.env
+      expand: true
+    - src: ${GOOGLE_APPLICATION_CREDENTIALS}
+      dest: /tmp/.gcp-credentials.json
+      optional: true
+    - src: ${GCP_OIDC_TOKEN_FILE}
+      dest: /sandbox/workspace/.gcp-oidc-token
+      optional: true
+# review, not triage: the post-script edits the PR description, which needs
+# pull_requests: write. The triage role's token has no pull_requests access.
+role: review
+# Mint privilege per run-stage (ADR 0073). The sandbox only reads files and
+# writes one JSON file, so it gets read. The post-script edits the PR, so it
+# gets write. Without this field every stage gets write.
+privilege_levels:
+    runtime: read
+    post_script: write
+    default: read
+slug: notifications-backend-fullsend-release-watch
+trigger: "false"
+timeout_minutes: 10
+validation_loop:
+    script: scripts/validate-output-schema.sh
+    schema: schemas/fullsend-release-watch-result.schema.json
+    max_iterations: 2
+post_script: scripts/post-fullsend-release-watch.sh

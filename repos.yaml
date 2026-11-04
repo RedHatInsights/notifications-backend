@@ -77,6 +77,9 @@ github:
               env:
                 runner:
                   GITHUB_SIGNED_COMMITS: "true"
+          - name: fullsend-release-watch
+            model: google-vertex/gemini-3.8-flash
+            source: harness/fullsend-release-watch.yaml
         allowed_remote_resources:
           - https://raw.githubusercontent.com/fullsend-ai/fullsend/
           - https://raw.githubusercontent.com/fullsend-ai/agents/

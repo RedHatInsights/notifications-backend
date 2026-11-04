@@ -1,0 +1,33 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Fullsend Release Watch Result",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["status", "summary"],
+    "properties": {
+        "status": {
+            "type": "string",
+            "enum": ["ok", "findings", "error"]
+        },
+        "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 280
+        },
+        "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+        }
+    },
+    "allOf": [
+        {
+            "if": {
+                "properties": { "status": { "enum": ["findings", "error"] } }
+            },
+            "then": {
+                "required": ["body"]
+            }
+        }
+    ]
+}
