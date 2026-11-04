@@ -1,0 +1,79 @@
+---
+# Custom agent (no base: lineage to a default fullsend-ai/agents harness --
+# see https://github.com/fullsend-ai/fullsend/blob/main/docs/guides/user/default-vs-custom.md).
+# Started from the `fullsend agent new` (v0.54.0) scaffold for a pi agent on
+# Vertex, then adapted.
+#
+# Dispatched only by the .github/workflows/fullsend-release-watch.yml custom
+# poller, which passes a pre-built matrix to reusable-dispatch.yml. The work
+# item is the poller's tracking issue for one upgrade: from the fullsend
+# version this repo pins to the latest release. The pre-script collects the
+# release notes of every release in that range on the runner, and host_files
+# copies them into the sandbox; the agent itself needs no GitHub access.
+#
+# There is no `trigger:` on purpose: an empty trigger never matches, so no
+# GitHub or Jira event dispatches this agent by itself.
+#
+# Generic by design: this harness and the agent definition it points to
+# carry no repo-specific assumptions. Repo-specific background (why triggers
+# are scoped a certain way, known gaps, a list of files pinning a fullsend
+# version) is read optionally from AGENTS.md if present.
+agent: agents/fullsend-release-watch.md
+description: Assess whether upgrading this repo from its pinned fullsend version to the latest release affects its fullsend configuration.
+role: triage
+# Install-time App discovery only.
+slug: notifications-backend-fullsend-release-watch
+# Same digest as fullsend-ai/agents v0.54.0 harness/triage.yaml, so the
+# agent's own pin check compares like with like. Not covered by any
+# Renovate manager in this repo -- tracked in AGENTS.md.
+image: ghcr.io/fullsend-ai/fullsend-sandbox@sha256:8e17e6120e17debdcabff5eb331a7cb7757b09ec3d586010c9d7956fd1fc5633
+policy: policies/base.yaml
+providers:
+  - vertex-ai
+host_files:
+  # Written by the pre-script. `optional: true` because fullsend checks that
+  # host_files exist before the pre-script runs; a pre-script failure fails
+  # the run anyway, and the agent reports an error if the file is missing.
+  - src: /tmp/workspace/fullsend-release-watch/release-notes.md
+    dest: /sandbox/workspace/release-watch/release-notes.md
+    optional: true
+  - src: ${GOOGLE_APPLICATION_CREDENTIALS}
+    dest: /tmp/.gcp-credentials.json
+    optional: true
+  - src: ${GCP_OIDC_TOKEN_FILE}
+    dest: /sandbox/workspace/.gcp-oidc-token
+    optional: true
+model: google-vertex/gemini-3.8-flash
+effort: high
+pre_script: scripts/pre-fullsend-release-watch.sh
+post_script: scripts/post-fullsend-release-watch.sh
+validation_loop:
+  script: scripts/validate-output-schema.sh
+  schema: schemas/fullsend-release-watch-result.schema.json
+  max_iterations: 2
+  preflight_check: python3 -c "import jsonschema"
+env:
+  runner:
+    # Written by reusable-dispatch.yml; read by the pre-script.
+    FULLSEND_EVENT_PAYLOAD: ${FULLSEND_DIR}/dispatch/event-payload.json
+    # reusable-dispatch.yml's checkout of this repo at the ref that started
+    # the run (the default branch on the schedule), which the agent analyzes;
+    # the pre-script lists the pins the upgrade moves from it.
+    RELEASE_WATCH_REPO_DIR: ${FULLSEND_DIR}/../target-repo
+    FULLSEND_FORGE: github
+    GH_TOKEN: ${GH_TOKEN}
+    ISSUE_URL: ${FULLSEND_WORK_ITEM_URL}
+  sandbox:
+    ANTHROPIC_VERTEX_PROJECT_ID: ${ANTHROPIC_VERTEX_PROJECT_ID}
+    CLAUDE_CODE_USE_VERTEX: "1"
+    CLOUD_ML_REGION: ${CLOUD_ML_REGION}
+    FULLSEND_FORGE: github
+    GOOGLE_APPLICATION_CREDENTIALS: /tmp/.gcp-credentials.json
+    # pi's built-in google-vertex (Gemini) provider needs GOOGLE_CLOUD_PROJECT;
+    # fullsend sets it only for Claude on Vertex, so without this line the
+    # agent stops with "No API key found for google-vertex". Same value as
+    # ANTHROPIC_VERTEX_PROJECT_ID (both come from FULLSEND_GCP_PROJECT_ID), as
+    # in fullsend's own pi behaviour test. pi derives GOOGLE_CLOUD_LOCATION
+    # from CLOUD_ML_REGION.
+    GOOGLE_CLOUD_PROJECT: ${ANTHROPIC_VERTEX_PROJECT_ID}
+timeout_minutes: 10

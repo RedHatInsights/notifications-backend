@@ -104,6 +104,36 @@ This generates workspace UUIDs using `UUID.nameUUIDFromBytes("workspace-for-" + 
 - `assignWorkspaceToEndpoints(UUID, String)` - Bulk endpoint assignment (updates ALL endpoints for org)
 - `assignSystemWorkspace(UUID)` - Assigns system workspace to system endpoints
 
+## fullsend Agent Configuration
+
+This repo's `triage` and `code` harnesses (`.fullsend/harness/{triage,code}.yaml`) override their `trigger:` to match only Jira issues carrying this repo's `repo:` label. A harness `trigger:` is read only by the Jira poller's dispatch path: GitHub events are routed by the built-in rules in fullsend's `reusable-dispatch.yml`, which never read it. So on GitHub, triage and code still run as usual -- an issue opened or edited by a user with at least triage access, a `ready-for-triage` or `ready-to-code` label, or a `/fs-triage`/`/fs-code` comment from an authorized user dispatches them. (`review` is different: its `trigger:` is set on its `agents:` entry, which does replace the built-in GitHub routing for that agent.)
+
+fullsend is installed from the `repos.yaml` manifest at the repository root with `fullsend repos install` (its header gives the procedure). `.fullsend/config.yaml`, `.github/workflows/fullsend.yaml` and `.github/workflows/prioritize.yml` are rendered by that install: change the manifest, never those files, and do not run `fullsend github setup` on this repository.
+
+fullsend's Jira integration is pre-alpha here, scoped narrowly on purpose. Known blocker: which Jira users may start an agent has not been reviewed yet.
+
+The Jira poller (`.github/workflows/fullsend-poll-jira.yml`) is gated behind `FULLSEND_JIRA_POLL_ENABLED` (manual `workflow_dispatch` only) until that blocker is resolved.
+
+Any fullsend release note about Jira poll-actor authorization, project roles, or dispatch role mapping is high priority to review against that blocker.
+
+The `fullsend-release-watch` agent (`.github/workflows/fullsend-release-watch.yml`) analyzes the upgrade from the fullsend version this repo runs (the oldest `fullsend-ai/fullsend` workflow pin in `.github/workflows/`) to the latest fullsend-ai/fullsend release, using the release notes of every release in between. It opens one issue per target release, labelled `fullsend-release-watch`, and posts its analysis there. No impact closes the issue; findings leave it open and add `ready-for-triage`, so triage picks it up and may split it into sub-issues. Triage hands a sub-issue to the code agent only for the categories it auto-promotes (`bug`, `documentation`, `performance`); routine upgrade work is usually `other`, so comment `/fs-code` to start the code agent. Anything that changes `.github/workflows/`, including the version bump itself, needs a maintainer, because fullsend agents cannot write workflow files; the version bump also means bumping `github.fullsend_ref` in `repos.yaml` and running `fullsend repos install`. When a newer release comes out first, the open issue is closed as superseded by the new one, whose range includes it. Like any issue, editing a tracking issue's description dispatches triage on it, so discuss findings in comments instead; the first line of the description also holds the release tag the workflow reads.
+
+### fullsend version pins
+
+Files in this repo that pin a fullsend-ai/fullsend or fullsend-ai/agents reference. Update this table by hand whenever a pin is added, moved, or removed -- it is not rediscovered automatically.
+
+| File | What it pins | Tracks | Already kept current by |
+|---|---|---|---|
+| `repos.yaml` | `github.fullsend_ref: vX.Y.Z` | fullsend-ai/fullsend | Nobody -- bumped by hand, then `fullsend repos install` |
+| `.github/workflows/fullsend.yaml` | `uses: fullsend-ai/fullsend/.github/workflows/reusable-dispatch.yml@<sha> # vX.Y.Z` | fullsend-ai/fullsend | `fullsend repos install`, from `github.fullsend_ref` (Renovate also opens a PR, not automerged) |
+| `.github/workflows/fullsend-poll-jira.yml` | same `uses:` pin | fullsend-ai/fullsend | Renovate opens a PR, not automerged |
+| `.github/workflows/fullsend-release-watch.yml` | same `uses:` pin | fullsend-ai/fullsend | Renovate opens a PR, not automerged |
+| `.github/workflows/prioritize.yml` | `uses: fullsend-ai/fullsend/.github/workflows/reusable-prioritize.yml@<sha> # vX.Y.Z` | fullsend-ai/fullsend | `fullsend repos install`, from `github.fullsend_ref` (Renovate also opens a PR, not automerged) |
+| `.fullsend/harness/triage.yaml` | `base: .../fullsend-ai/agents/<sha>/harness/triage.yaml#sha256=...` | fullsend-ai/agents | Nobody -- known upstream gap, see fullsend-ai/fullsend#5802 and #8143 |
+| `.fullsend/harness/code.yaml` | same `base:` pin | fullsend-ai/agents | Nobody -- same gap |
+| `.fullsend/harness/fix.yaml` | same `base:` pin | fullsend-ai/agents | Nobody -- same gap |
+| `.fullsend/harness/fullsend-release-watch.yaml` | `image: ghcr.io/fullsend-ai/fullsend-sandbox@sha256:...` | the sandbox image fullsend-ai/agents pins in `harness/triage.yaml` | Nobody -- no Renovate manager in this repo tracks digest updates for harness `image:` fields |
+
 ## Detailed Guidelines
 
 For domain-specific conventions, refer to these guideline documents:
