@@ -15,17 +15,6 @@
     // Any day, instead of MintMaker's Saturday batch.
     "schedule": ["at any time"]
   },
-  "customManagers": [
-    {
-      // Repository rule, not written by the plugin:
-      // Tracks the fullsend version pinned in the repos.yaml manifest.
-      "customType": "regex",
-      "managerFilePatterns": ["/^repos\\.yaml$/"],
-      "matchStrings": ["fullsend_ref:\\s*(?<currentValue>v\\d+\\.\\d+\\.\\d+)"],
-      "depNameTemplate": "fullsend-ai/fullsend",
-      "datasourceTemplate": "github-releases"
-    }
-  ],
   "packageRules": [
     {
       // Needed even when SHA-pinned: without it, a v4-style tag gets only digest PRs, which
@@ -49,27 +38,6 @@
       ],
       "automerge": true,
       "groupName": "GitHub Actions"
-    },
-
-    {
-      // Repository rule, not written by the plugin:
-      // `fullsend repos install` owns the shim workflows and pins them to `fullsend_ref` in
-      // repos.yaml, so Renovate must not bump them directly.
-      "matchManagers": ["github-actions"],
-      "matchFileNames": [
-        ".github/workflows/fullsend.yaml",
-        ".github/workflows/prioritize.yml"
-      ],
-      "matchDepNames": ["fullsend-ai/fullsend"],
-      "enabled": false
-    },
-    {
-      // Repository rule, not written by the plugin:
-      // A fullsend upgrade bumps repos.yaml and the Jira poll workflow together. It never
-      // automerges: after merging, someone runs `fullsend repos install` (see repos.yaml).
-      "matchDepNames": ["fullsend-ai/fullsend"],
-      "automerge": false,
-      "groupName": "fullsend"
     },
 
     {
