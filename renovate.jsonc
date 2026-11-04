@@ -34,7 +34,6 @@
         "actions/setup-java",
         "actions/setup-node",
         "actions/upload-artifact",
-        "fullsend-ai/fullsend",
         "github/codeql-action"
       ],
       "automerge": true,

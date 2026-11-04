@@ -1,0 +1,67 @@
+# fullsend manifest: the source of truth for this repository's fullsend installation.
+# https://fullsend.sh/docs/guides/getting-started/repo-management
+#
+# `fullsend repos install` renders `.fullsend/config.yaml` from the `config` block below
+# and converges the shim workflows (.github/workflows/fullsend.yaml, prioritize.yml) and
+# the FULLSEND_* repository variables and secrets. Do not edit those files directly, and
+# do not run `fullsend github setup` on this repository again.
+#
+# To change a setting or upgrade fullsend:
+#   1. Edit this file in a PR and merge it.
+#   2. From an up-to-date master checkout, with a gh token that has admin on the repo:
+#        fullsend repos status
+#        fullsend repos install --dry-run
+#        fullsend repos install
+#   3. Review and merge the scaffold PR that install opens.
+version: 1
+github:
+  fullsend_ref: v0.53.0
+  repos:
+    - name: RedHatInsights/notifications-backend
+      inference:
+        auth: vertex-wif
+      config:
+        version: "1"
+        runtime: pi
+        roles:
+          - triage
+          - coder
+          - review
+          - fix
+        agents:
+          - name: triage
+            model: google-vertex/gemini-3.8-flash
+            source: harness/triage.yaml
+          - name: code
+            model: google-vertex/gemini-3.8-flash
+            source: harness/code.yaml
+          - name: review
+            model: google-vertex/gemini-3.8-flash
+            # Runs review only when the ready-for-review label is added, or on
+            # /fs-review from a human.
+            trigger: |-
+              (event.entity.kind == "change_proposal"
+                && event.transition.kind == "label_changed"
+                && event.transition.label.name == "ready-for-review"
+                && event.transition.label.action == "added")
+              || (event.transition.kind == "comment_added"
+                && has(event.transition.comment.command)
+                && event.transition.comment.command == "/fs-review"
+                && event.actor.kind == "human"
+                && (event.entity.kind == "change_proposal"
+                    || has(event.entity.linked_change_proposal)))
+          - name: fix
+            model: google-vertex/gemini-3.8-flash
+            source: harness/fix.yaml
+        allowed_remote_resources:
+          - https://raw.githubusercontent.com/fullsend-ai/fullsend/
+          - https://raw.githubusercontent.com/fullsend-ai/agents/
+        create_issues:
+          allow_targets:
+            repos:
+              - fullsend-ai/fullsend
+        inference:
+          project: firefly-868139
+          # Makes FULLSEND_GCP_REGION managed; matches the current variable value.
+          region: global
+          wif_provider: projects/275116376890/locations/global/workloadIdentityPools/uie-github-fullsend-inference/providers/gh-repo-276599389
