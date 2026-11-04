@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.connector.authentication.v2.Authentication
 import com.redhat.cloud.notifications.connector.pagerduty.config.PagerDutyConnectorConfig;
 import com.redhat.cloud.notifications.connector.v2.MessageHandler;
 import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpMessageDetails;
+import com.redhat.cloud.notifications.connector.v2.metrics.NotificationTags;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.smallrye.reactive.messaging.ce.IncomingCloudEventMetadata;
 import io.vertx.core.json.JsonObject;
@@ -35,6 +36,12 @@ public class PagerDutyMessageHandler extends MessageHandler {
 
     @Inject
     Validator validator;
+
+    @Override
+    public NotificationTags extractNotificationTags(JsonObject cloudEventData) {
+        JsonObject payload = cloudEventData.getJsonObject("payload");
+        return payload != null ? NotificationTags.fromJsonObject(payload) : NotificationTags.UNKNOWN;
+    }
 
     @Override
     public HandledMessageDetails handle(final IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {

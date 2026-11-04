@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.connector.v2;
 
+import com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics;
+import com.redhat.cloud.notifications.connector.v2.metrics.NotificationTags;
 import com.redhat.cloud.notifications.connector.v2.models.HandledExceptionDetails;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.micrometer.core.instrument.Counter;
@@ -44,6 +46,9 @@ public class MessageConsumer {
 
     @Inject
     MeterRegistry meterRegistry;
+
+    @Inject
+    ConnectorMetrics connectorMetrics;
 
     private Counter succeededCounter;
     private Counter failedCounter;
@@ -91,7 +96,8 @@ public class MessageConsumer {
 
         final IncomingCloudEventMetadata<JsonObject> cloudEventMetadata = cloudEventOpt.get();
 
-        Timer.Sample sample = Timer.start(meterRegistry);
+        Timer.Sample handleMessageTimer = Timer.start(meterRegistry);
+        Timer.Sample integrationTimer = connectorMetrics.startIntegrationTimer();
         boolean success = false;
         try {
             Log.debugf("Processing %s", message.getPayload());
@@ -101,7 +107,20 @@ public class MessageConsumer {
 
             // Send success response back to engine
             outgoingMessageSender.sendSuccess(cloudEventMetadata, additionalConnectorDetails, startTime);
+
             success = true;
+
+            // Record connector metrics (notification sent and integration time) after confirming send succeeded
+            // Timer.Sample integrationTimer will be stopped and recorded during recordIntegrationTime()
+            try {
+                NotificationTags notificationTags = messageHandler.extractNotificationTags(cloudEventMetadata.getData());
+                connectorMetrics.recordNotificationSent(notificationTags);
+                connectorMetrics.recordIntegrationTime(integrationTimer, notificationTags);
+            } catch (Exception metricsException) {
+                // Prevent any exception from escaping to outer catch
+                // If this throws, we already sent success response and must not send failure
+                Log.warn("Failed to record connector metrics, but notification was sent successfully", metricsException);
+            }
         } catch (Exception e) {
             Log.infof(e, "Error processing message: %s", e.getMessage());
             HandledExceptionDetails processedExceptionDetails = exceptionProcessor.processException(e, cloudEventMetadata);
@@ -109,7 +128,7 @@ public class MessageConsumer {
             // Send failure response back to engine
             outgoingMessageSender.sendFailure(cloudEventMetadata, processedExceptionDetails, startTime);
         } finally {
-            sample.stop(handlerDurationTimer);
+            handleMessageTimer.stop(handlerDurationTimer);
             if (success) {
                 succeededCounter.increment();
             } else {

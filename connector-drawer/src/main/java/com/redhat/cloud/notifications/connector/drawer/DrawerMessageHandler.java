@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.connector.drawer.models.DrawerUser;
 import com.redhat.cloud.notifications.connector.drawer.models.HandledDrawerMessageDetails;
 import com.redhat.cloud.notifications.connector.drawer.recipients.recipientsresolver.ExternalRecipientsResolver;
 import com.redhat.cloud.notifications.connector.v2.MessageHandler;
+import com.redhat.cloud.notifications.connector.v2.metrics.NotificationTags;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
@@ -47,6 +48,16 @@ public class DrawerMessageHandler extends MessageHandler {
 
     @Inject
     DrawerConnectorConfig drawerConnectorConfig;
+
+    @Override
+    public NotificationTags extractNotificationTags(JsonObject cloudEventData) {
+        JsonObject eventData = cloudEventData.getJsonObject("eventData");
+        if (eventData == null) {
+            return NotificationTags.UNKNOWN;
+        }
+        JsonObject data = eventData.getJsonObject("data");
+        return data != null ? NotificationTags.fromJsonObject(data) : NotificationTags.UNKNOWN;
+    }
 
     @Override
     public HandledMessageDetails handle(final IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {

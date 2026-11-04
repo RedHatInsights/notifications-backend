@@ -36,6 +36,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.put;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.redhat.cloud.notifications.connector.email.CloudEventHistoryBuilder.TOTAL_RECIPIENTS_KEY;
+import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.INTEGRATION_TIME_TIMER_NAME;
+import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.SENT_COUNTER_NAME;
+import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.TAG_APPLICATION;
+import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.TAG_BUNDLE;
+import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.TAG_CONNECTOR;
+import static com.redhat.cloud.notifications.connector.v2.metrics.ConnectorMetrics.TAG_EVENT_TYPE;
 import static email.TestAdvisorTemplate.JSON_ADVISOR_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestInventoryTemplate.JSON_INVENTORY_DEFAULT_AGGREGATION_CONTEXT;
 import static email.TestPatchTemplate.JSON_PATCH_DEFAULT_AGGREGATION_CONTEXT;
@@ -353,6 +359,94 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
         } else {
             assertEquals(usersAndRecipientsTotalNumber, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
         }
+    }
+
+    @Test
+    void testEmailSentMetricForInstantNotification() throws Exception {
+        Set<User> users = TestUtils.createUsers("user-1");
+        String strUsers = objectMapper.writeValueAsString(users);
+        setupMocks(200, strUsers, 200, 0);
+
+        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(
+            SENT_COUNTER_NAME,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "rhel",
+            TAG_APPLICATION, "patch",
+            TAG_EVENT_TYPE, "new-advisory"
+        );
+        micrometerAssertionHelper.saveTimerCountWithTagsBeforeTest(
+            INTEGRATION_TIME_TIMER_NAME,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "rhel",
+            TAG_APPLICATION, "patch",
+            TAG_EVENT_TYPE, "new-advisory"
+        );
+
+        JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, null);
+        String cloudEventId = sendCloudEventMessage(payload);
+
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertTrue(data.getBoolean("successful"));
+
+        micrometerAssertionHelper.awaitAndAssertCounterIncrementWithTags(
+            SENT_COUNTER_NAME, 1.0,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "rhel",
+            TAG_APPLICATION, "patch",
+            TAG_EVENT_TYPE, "new-advisory"
+        );
+        micrometerAssertionHelper.awaitAndAssertTimerCountIncrementWithTags(
+            INTEGRATION_TIME_TIMER_NAME, 1L,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "rhel",
+            TAG_APPLICATION, "patch",
+            TAG_EVENT_TYPE, "new-advisory"
+        );
+    }
+
+    @Test
+    void testEmailSentMetricForDailyDigest() throws Exception {
+        Set<User> users = TestUtils.createUsers("user-1");
+        String strUsers = objectMapper.writeValueAsString(users);
+        setupMocks(200, strUsers, 200, 0);
+
+        micrometerAssertionHelper.saveCounterValueWithTagsBeforeTest(
+            SENT_COUNTER_NAME,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "unknown",
+            TAG_APPLICATION, "unknown",
+            TAG_EVENT_TYPE, "unknown"
+        );
+        micrometerAssertionHelper.saveTimerCountWithTagsBeforeTest(
+            INTEGRATION_TIME_TIMER_NAME,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "unknown",
+            TAG_APPLICATION, "unknown",
+            TAG_EVENT_TYPE, "unknown"
+        );
+
+        JsonObject payload = buildEmailPayload(buildRhelDailyDigestEmailContext(), true, null);
+        String cloudEventId = sendCloudEventMessage(payload);
+
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertTrue(data.getBoolean("successful"));
+
+        // Daily digest emails don't carry bundle/application/event_type in the CloudEvent data,
+        // so those tags default to "unknown".
+        micrometerAssertionHelper.awaitAndAssertCounterIncrementWithTags(
+            SENT_COUNTER_NAME, 1.0,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "unknown",
+            TAG_APPLICATION, "unknown",
+            TAG_EVENT_TYPE, "unknown"
+        );
+        micrometerAssertionHelper.awaitAndAssertTimerCountIncrementWithTags(
+            INTEGRATION_TIME_TIMER_NAME, 1L,
+            TAG_CONNECTOR, "email_subscription",
+            TAG_BUNDLE, "unknown",
+            TAG_APPLICATION, "unknown",
+            TAG_EVENT_TYPE, "unknown"
+        );
     }
 
     private Map<String, Object> buildInstantEmailContext() {

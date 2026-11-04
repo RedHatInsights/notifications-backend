@@ -2,7 +2,7 @@ package com.redhat.cloud.notifications.connector.splunk;
 
 import com.redhat.cloud.notifications.connector.authentication.v2.AuthenticationLoader;
 import com.redhat.cloud.notifications.connector.authentication.v2.AuthenticationResult;
-import com.redhat.cloud.notifications.connector.v2.MessageHandler;
+import com.redhat.cloud.notifications.connector.v2.CamelMessageHandler;
 import com.redhat.cloud.notifications.connector.v2.http.models.HandledHttpMessageDetails;
 import com.redhat.cloud.notifications.connector.v2.models.HandledMessageDetails;
 import io.quarkus.logging.Log;
@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class SplunkMessageHandler extends MessageHandler {
+public class SplunkMessageHandler extends CamelMessageHandler {
 
     static final String NOTIF_METADATA = "notif-metadata";
     static final String URL_KEY = "url";
