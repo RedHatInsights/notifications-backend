@@ -17,7 +17,7 @@ class DrawerMessageHandlerExtractTagsTest {
             .put("application", "advisor")
             .put("event_type", "new-recommendation");
         JsonObject cloudEventData = new JsonObject()
-            .put("eventData", new JsonObject()
+            .put("event_data", new JsonObject()
                 .put("data", inner)
                 .put("environment", new JsonObject()));
 
@@ -40,7 +40,7 @@ class DrawerMessageHandlerExtractTagsTest {
     @Test
     void returnsUnknownWhenDataKeyAbsent() {
         JsonObject cloudEventData = new JsonObject()
-            .put("eventData", new JsonObject().put("environment", new JsonObject()));
+            .put("event_data", new JsonObject().put("environment", new JsonObject()));
 
         NotificationTags tags = handler.extractNotificationTags(cloudEventData);
 
