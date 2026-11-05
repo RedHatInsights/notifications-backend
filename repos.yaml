@@ -15,7 +15,7 @@
 #   3. Review and merge the scaffold PR that install opens.
 version: 1
 github:
-  fullsend_ref: v0.53.0
+  fullsend_ref: v0.54.0
   repos:
     - name: RedHatInsights/notifications-backend
       inference:
