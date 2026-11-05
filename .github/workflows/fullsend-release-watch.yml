@@ -1,0 +1,108 @@
+# Custom poller that watches fullsend-ai/fullsend for new releases and
+# dispatches the fullsend-release-watch agent
+# (.fullsend/harness/fullsend-release-watch.yaml) to assess whether upgrading
+# this repo from the fullsend version it pins (the oldest fullsend workflow
+# pin in .github/workflows/) to the latest release affects its fullsend
+# configuration. The agent reads the release notes of every release in that
+# range. Follows fullsend's documented custom-poller pattern:
+# https://github.com/fullsend-ai/fullsend/blob/main/docs/guides/user/custom-poller-example.md
+#
+# Each target release gets one tracking issue (label fullsend-release-watch).
+# The issue is the agent's work item, and the post-script posts the verdict
+# on it as a sticky comment, closing the issue when the upgrade has no
+# impact. The issues are also the only state:
+# .github/scripts/fullsend-release-watch-poll.sh explains how an upgrade is
+# picked, skipped, retried or superseded.
+#
+# Scoped narrowly while new: gated behind FULLSEND_RELEASE_WATCH_ENABLED
+# (unset -- manual workflow_dispatch only) until exercised manually at least
+# once, mirroring how fullsend-poll-jira.yml was rolled out.
+#
+# One concurrency group covers the whole pipeline (poll -> harness), so a
+# second trigger waits until the first run's agents have posted their
+# results instead of dispatching the same release twice.
+name: fullsend release watch
+
+on:
+  schedule:
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Re-analyze the upgrade to the latest release even if it was already analyzed"
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: fullsend-release-watch
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    if: github.event_name == 'workflow_dispatch' || vars.FULLSEND_RELEASE_WATCH_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      matrix: ${{ steps.build-matrix.outputs.matrix }}
+      has_work: ${{ steps.build-matrix.outputs.has_work }}
+    steps:
+      # The poller script, from the ref that started the run.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts/fullsend-release-watch-poll.sh
+          sparse-checkout-cone-mode: false
+
+      # The pins, always from the default branch: they must be the versions
+      # the repository actually runs. (The agent analyzes the checkout of the
+      # ref that started the run, which is the default branch on the
+      # schedule and on a dispatch from the default branch.)
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          path: default-branch
+          persist-credentials: false
+          sparse-checkout: .github/workflows/
+          sparse-checkout-cone-mode: false
+
+      - name: Find the upgrade to analyze and open its tracking issue
+        id: build-matrix
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          FORCE: ${{ github.event.inputs.force }}
+          WORKFLOWS_DIR: default-branch/.github/workflows
+        run: bash .github/scripts/fullsend-release-watch-poll.sh
+
+  harness:
+    name: Harness
+    needs: poll
+    if: needs.poll.outputs.has_work == 'true'
+    # reusable-dispatch.yml's jobs need these; GitHub requires the caller
+    # to grant all of them, even for jobs that are skipped.
+    permissions:
+      actions: write
+      contents: write
+      id-token: write
+      issues: write
+      packages: read
+      pull-requests: write
+    # Renovate (github-actions manager) opens a PR, not automerged, to bump
+    # this SHA + tag comment; `fullsend repos install` does not manage this
+    # file. The fullsend CLI version follows it: reusable-dispatch.yml
+    # installs the CLI from the same commit (job.workflow_sha), so no version
+    # input is passed.
+    uses: fullsend-ai/fullsend/.github/workflows/reusable-dispatch.yml@90b7310ff8751a3c70e5d68214770dc168a1cbe7  # v0.54.0
+    with:
+      matrix: ${{ needs.poll.outputs.matrix }}
+      mint_url: ${{ vars.FULLSEND_MINT_URL }}
+      gcp_region: ${{ vars.FULLSEND_GCP_REGION }}
+    secrets:
+      FULLSEND_GCP_WIF_PROVIDER: ${{ secrets.FULLSEND_GCP_WIF_PROVIDER }}
+      FULLSEND_GCP_PROJECT_ID: ${{ secrets.FULLSEND_GCP_PROJECT_ID }}
+      OTEL_EXPORTER_OTLP_TRACES_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_TRACES_HEADERS }}
+      OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}

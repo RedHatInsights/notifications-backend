@@ -30,6 +30,9 @@ agents:
     - name: fix
       source: harness/fix.yaml
       model: google-vertex/gemini-3.8-flash
+    - name: fullsend-release-watch
+      source: harness/fullsend-release-watch.yaml
+      model: google-vertex/gemini-3.8-flash
 allowed_remote_resources:
     - https://raw.githubusercontent.com/fullsend-ai/fullsend/
     - https://raw.githubusercontent.com/fullsend-ai/agents/

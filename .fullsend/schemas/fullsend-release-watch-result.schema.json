@@ -1,0 +1,55 @@
+{
+  "$id": "https://fullsend.sh/schemas/fullsend-release-watch-result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Structured output from the fullsend-release-watch agent, consumed by scripts/post-fullsend-release-watch.sh.",
+  "if": {
+    "properties": {
+      "status": {
+        "enum": [
+          "findings",
+          "error"
+        ]
+      }
+    },
+    "required": [
+      "status"
+    ]
+  },
+  "properties": {
+    "comment": {
+      "maxLength": 16384,
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "findings",
+        "error"
+      ],
+      "type": "string"
+    },
+    "summary": {
+      "maxLength": 200,
+      "minLength": 1,
+      "pattern": "^[^\\r\\n]*$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status",
+    "summary"
+  ],
+  "then": {
+    "properties": {
+      "comment": {
+        "minLength": 1
+      }
+    },
+    "required": [
+      "comment"
+    ]
+  },
+  "title": "fullsend-release-watch Agent Result",
+  "type": "object"
+}
