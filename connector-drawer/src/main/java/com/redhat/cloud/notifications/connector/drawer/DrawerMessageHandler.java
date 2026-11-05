@@ -51,7 +51,7 @@ public class DrawerMessageHandler extends MessageHandler {
 
     @Override
     public NotificationTags extractNotificationTags(JsonObject cloudEventData) {
-        JsonObject eventData = cloudEventData.getJsonObject("eventData");
+        JsonObject eventData = cloudEventData.getJsonObject("event_data");
         if (eventData == null) {
             return NotificationTags.UNKNOWN;
         }
