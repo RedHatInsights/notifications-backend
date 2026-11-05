@@ -1,5 +1,5 @@
 # Enables GitHub signed commits (see docs/code.md "Signed commits").
-base: https://raw.githubusercontent.com/fullsend-ai/agents/4a6645268c6c8063c15ce5cb1b88a4f3930c74da/harness/fix.yaml#sha256=cb6aeac7927a8921bfbbcfec2d34f0c1014074b51d58b5efcd2bde2ae0a29134
+base: https://raw.githubusercontent.com/fullsend-ai/agents/87a43fcb849546b267a619434ca19dedde8df476/harness/fix.yaml#sha256=aa53c3e79b349b746014e7cfa213ab582e7464cf4226a1f08df96490d27385dc
 env:
   runner:
     GITHUB_SIGNED_COMMITS: "true"
