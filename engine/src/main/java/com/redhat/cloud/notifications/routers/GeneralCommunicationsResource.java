@@ -17,6 +17,8 @@ import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,9 +47,30 @@ public class GeneralCommunicationsResource {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public SendGeneralCommunicationResponse sendGeneralCommunication() {
-        // Find all the integration names and group them by organization ID.
-        final CompositeEndpointType compositeEndpointType = new CompositeEndpointType(EndpointType.PAGERDUTY);
-        final Map<String, List<String>> endpointNamesPerOrg = this.endpointRepository.findIntegrationNamesByTypeGroupedByOrganizationId(compositeEndpointType);
+        // Find all the integration names of the targeted types and group them
+        // by organization ID, merging across types so that an organization
+        // with both a webhook and a Splunk integration only receives a single
+        // communication listing both.
+        final List<CompositeEndpointType> targetedEndpointTypes = List.of(
+            new CompositeEndpointType(EndpointType.WEBHOOK),
+            new CompositeEndpointType(EndpointType.CAMEL, "splunk")
+        );
+
+        final Map<String, List<String>> endpointNamesPerOrg = new HashMap<>();
+        for (final CompositeEndpointType targetedEndpointType : targetedEndpointTypes) {
+            final Map<String, List<String>> endpointNamesForType = this.endpointRepository.findIntegrationNamesByTypeGroupedByOrganizationId(targetedEndpointType);
+
+            for (final Map.Entry<String, List<String>> entry : endpointNamesForType.entrySet()) {
+                // System endpoints have no organization associated with them,
+                // so they are disregarded since there is no organization to
+                // notify.
+                if (entry.getKey() == null) {
+                    continue;
+                }
+
+                endpointNamesPerOrg.computeIfAbsent(entry.getKey(), _ -> new ArrayList<>()).addAll(entry.getValue());
+            }
+        }
 
         // Send a "no content" response when there is nothing to do. It is not
         // an error per se, so that is
@@ -57,7 +80,7 @@ public class GeneralCommunicationsResource {
 
         // Encode an event per organization, and send it to Kafka.
         for (final Map.Entry<String, List<String>> entry : endpointNamesPerOrg.entrySet()) {
-            final String encodedAction = Parser.encode(GeneralCommunicationsHelper.createGeneralCommunicationAction(entry.getKey(), compositeEndpointType, entry.getValue()));
+            final String encodedAction = Parser.encode(GeneralCommunicationsHelper.createGeneralCommunicationAction(entry.getKey(), entry.getValue()));
 
             final Message<String> message = KafkaMessageWithIdBuilder.build(encodedAction);
             this.eventEmitter.send(message);
