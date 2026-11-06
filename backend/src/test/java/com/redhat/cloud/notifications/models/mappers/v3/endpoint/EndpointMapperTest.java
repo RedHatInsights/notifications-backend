@@ -1,19 +1,27 @@
 package com.redhat.cloud.notifications.models.mappers.v3.endpoint;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.models.dto.v3.endpoint.EndpointMapper;
 import com.redhat.cloud.notifications.models.dto.v3.endpoint.properties.SystemSubscriptionPropertiesDTO;
 import io.quarkus.test.junit.QuarkusTest;
+import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @QuarkusTest
 public class EndpointMapperTest {
 
     final EndpointMapper endpointMapper;
 
-    public EndpointMapperTest(EndpointMapper endpointMapper) {
+    final ObjectMapper mapper;
+
+    public EndpointMapperTest(EndpointMapper endpointMapper, ObjectMapper objectMapper) {
         this.endpointMapper = endpointMapper;
+        this.mapper = objectMapper;
     }
 
     @Test
@@ -21,9 +29,9 @@ public class EndpointMapperTest {
         final SystemSubscriptionPropertiesDTO dto = new SystemSubscriptionPropertiesDTO();
         dto.setOnlyAdmins(false);
 
-        final SystemSubscriptionProperties entity = this.endpointMapper.systemToEntity(dto);
+        final SystemSubscriptionProperties entity = endpointMapper.systemToEntity(dto);
 
-        Assertions.assertFalse(entity.isIgnorePreferences(),
+        assertFalse(entity.isIgnorePreferences(),
             "ignorePreferences must always be false on the entity when mapped from V3 DTO");
     }
 
@@ -33,9 +41,12 @@ public class EndpointMapperTest {
         entity.setIgnorePreferences(true);
         entity.setOnlyAdmins(false);
 
-        final SystemSubscriptionPropertiesDTO dto = this.endpointMapper.systemToDTO(entity);
+        final SystemSubscriptionPropertiesDTO dto = endpointMapper.systemToDTO(entity);
 
-        Assertions.assertNotNull(dto);
+        assertNotNull(dto);
         Assertions.assertFalse(dto.isOnlyAdmins());
+
+        final JsonObject jo = mapper.convertValue(dto, JsonObject.class);
+        assertFalse(jo.containsKey("ignore_preferences"));
     }
 }
