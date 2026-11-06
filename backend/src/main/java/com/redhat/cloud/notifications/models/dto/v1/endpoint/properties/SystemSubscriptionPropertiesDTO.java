@@ -1,5 +1,7 @@
 package com.redhat.cloud.notifications.models.dto.v1.endpoint.properties;
 
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import java.util.Set;
 import java.util.UUID;
 
@@ -8,6 +10,7 @@ public final class SystemSubscriptionPropertiesDTO extends EndpointPropertiesDTO
 
     private Set<UUID> groupIds;
 
+    @Schema(deprecated = true)
     private boolean ignorePreferences;
 
     private boolean onlyAdmins;
