@@ -110,6 +110,38 @@ Extensions are in `com.redhat.cloud.notifications.qute.templates.extensions` and
 
 To add a new extension, create a class in the `extensions` package with static methods annotated `@TemplateExtension`. Use `matchName = TemplateExtension.ANY` for dynamic property access patterns.
 
+## Context Property Contracts
+
+### Error-Handling Philosophy
+
+The notification pipeline operates on an architectural invariant: context properties required by templates or `@TemplateExtension` helper methods are mandatory contract fields. They are guaranteed to be populated by the upstream event processing pipeline before template rendering begins.
+
+- **Fail-fast on missing mandatory fields**: If a required context property is absent, it signifies an upstream pipeline failure or contract bug, not an expected variation in input data.
+- **No silent degradation**: Template rendering must fail loudly (or bubble up errors) rather than silently suppressing the issue with empty strings, dummy fallbacks, or broken links. Producing degraded or misleading notification output (such as empty notification titles, missing target IDs, or invalid URLs) hides bugs from operators and frustrates users.
+
+### Absence of Null Guards in `@TemplateExtension` Methods
+
+When implementing or reviewing `@TemplateExtension` methods that retrieve context properties via `context.getAdditionalProperties().get(key)`:
+
+- **Do NOT defensively null-guard mandatory fields**: Do not wrap lookups with fallback defaults like `Objects.toString(val, "")`, ternary empty-string assignments, or placeholder labels like `"(unnamed)"` for fields that are part of the event contract.
+- **A null value is an upstream bug**: If `context.getAdditionalProperties().get(key)` returns `null` for a mandatory key, that is a defect in the event producer or notifier, not a situation the template layer should accommodate.
+- **Review standard**: Accessing documented mandatory context properties without defensive null guards is intentional by design; defensive null checks should not be introduced for contract fields.
+
+### Well-Known Mandatory Context Properties
+
+The following table lists well-known mandatory context properties populated upstream for specific bundles and event types:
+
+| Bundle | Application | Event Type | Property Key | Description / Usage |
+|---|---|---|---|---|
+| `console` | `integrations` | `integration-disabled` | `endpoint_category` | Category of the endpoint (used to construct `/settings/integrations?category=...&name=...`) |
+| `console` | `integrations` | `integration-disabled` | `endpoint_name` | Name of the disabled integration endpoint |
+| `openshift` | `cost-management` | `cost-model-create`, `cost-model-update` | `cost_model_id` | Identifier of the cost model (used in `/openshift/cost-management/cost-models/{cost_model_id}`) |
+| `openshift` | `cost-management` | `cost-model-create`, `cost-model-update` | `cost_model_name` | Name of the cost model |
+| `openshift` | `cost-management` | `cm-operator-stale`, `missing-cost-model` | `source_id` | Source identifier for the cluster (used in `/settings/sources/detail/{source_id}`) |
+| `openshift` | `cost-management` | `cm-operator-stale`, `missing-cost-model` | `source_name` | Name of the OpenShift source |
+| `console` | `sources` | `availability-status` | `source_id` | Identifier of the source integration (used in `/settings/sources/detail/{source_id}`) |
+| `console` | `sources` | `availability-status` | `resource_display_name` | Display name of the source integration |
+
 ## TemplateService Rendering API
 
 `TemplateService` is an `@ApplicationScoped` CDI bean initialized at `@Startup`.
