@@ -85,6 +85,20 @@ class WorkspaceUtilsTest {
     }
 
     @Test
+    void testDefaultWorkspaceIdWhenRbacReturnsWorkspaceWithEmptyId() throws IOException, InterruptedException {
+        Workspace workspace = mock(Workspace.class);
+        when(workspace.getId()).thenReturn("");
+
+        Mockito.doReturn(workspace)
+            .when(workspaceUtils)
+            .fetchWorkspace(eq(RBAC_URL), eq(ORG_ID), any(OAuth2AuthRequest.class));
+
+        UUID actualWorkspaceId = workspaceUtils.getDefaultWorkspaceId(ORG_ID);
+
+        assertNull(actualWorkspaceId);
+    }
+
+    @Test
     void testDefaultWorkspaceIdWhenRbacReturnsValidWorkspace() throws IOException, InterruptedException {
         UUID expectedWorkspaceId = UUID.randomUUID();
         Workspace workspace = mock(Workspace.class);

@@ -101,7 +101,7 @@ public class WorkspaceUtils {
         // (particularly on stage). Null handling is intentional defensive coding to
         // allow callers to decide how to handle missing workspace data. Throwing an
         // exception prevents caching null results in the Quarkus cache.
-        if (workspace == null || workspace.getId() == null) {
+        if (workspace == null || workspace.getId() == null || workspace.getId().isEmpty()) {
             Log.warnf("[org_id: %s] RBAC returned null or empty workspace", orgId);
             throw new WorkspaceNotFoundException();
         }
