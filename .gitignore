@@ -37,6 +37,9 @@ pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
 release.properties
+mvnw
+mvnw.cmd
+.mvn/wrapper/maven-wrapper.jar
 
 # Antlr
 *.tokens
