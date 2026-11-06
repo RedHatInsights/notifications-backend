@@ -37,6 +37,27 @@ create_issues:
     allow_targets:
         repos:
             - fullsend-ai/fullsend
+authorization:
+    - provider: jira
+      write:
+        accounts:
+            - 712020:ed6ce46b-fa8b-49b4-ae58-a8fd3c8e6cd6
+            - 712020:87fcba77-b1b7-4773-8dd1-012200bdf159
+            - 712020:2751035f-1d9b-4c4e-b483-d19be9e8bcf3
+            - 712020:e19a50e4-793e-4ad3-93cb-fadce182565d
+            - 63ff86540e0ddcdce18cbb0b
+            - 712020:27cacfdc-7efd-4d94-b4b3-6d09f458a85d
+            - 712020:2aa04e7b-cb51-4a52-8679-9af1486d254f
+            - 712020:dda538ee-293a-4af0-9037-74d13199a0c4
+            - 712020:8f2280f7-6aac-4a95-8775-b312d1d05242
+            - 712020:824a949d-e68b-4962-b196-ff2a35eb866b
+            - 712020:046579cb-92c9-48b1-a003-4c18a06e1561
+      triage:
+        accounts:
+            - 557058:81b8f00b-1e5d-4ed2-9d8b-40a9ffb9ce3a
+            - 712020:a3c48331-a8b2-4aae-b8f2-828fb221723e
+            - 70121:01d9785e-f5f4-4695-a977-eddcc95a2223
+      labels: allowlist
 inference:
     project: firefly-868139
     region: global
