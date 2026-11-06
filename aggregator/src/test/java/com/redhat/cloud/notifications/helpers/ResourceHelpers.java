@@ -2,6 +2,8 @@ package com.redhat.cloud.notifications.helpers;
 
 import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
+import com.redhat.cloud.notifications.models.DigestTriggerOrgConfig;
+import com.redhat.cloud.notifications.models.DigestTriggerOrgConfigId;
 import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
@@ -48,6 +50,23 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
     }
 
     @Transactional
+    public void addDigestTriggerOrgConfig(DigestTriggerOrgConfig digestTriggerOrgConfig) {
+        entityManager.persist(digestTriggerOrgConfig);
+    }
+
+    public DigestTriggerOrgConfig findDigestTriggerOrgConfig(String orgId, SubscriptionType subscriptionType) {
+        entityManager.clear();
+        DigestTriggerOrgConfigId id = new DigestTriggerOrgConfigId(orgId, subscriptionType);
+        return entityManager.find(DigestTriggerOrgConfig.class, id);
+    }
+
+    @Transactional
+    public void purgeDigestTriggerOrgConfig() {
+        entityManager.createQuery("DELETE FROM DigestTriggerOrgConfig").executeUpdate();
+        entityManager.clear();
+    }
+
+    @Transactional
     public void purgeEndpoints() {
         entityManager.createQuery("DELETE FROM Endpoint").executeUpdate();
         entityManager.clear();
@@ -90,6 +109,24 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
         Application application = findOrCreateApplication(bundleName, applicationName);
         EventType eventType = findOrCreateEventType(application.getId(), "event_type_test");
         findOrCreateEventTypeEmailSubscription(orgId, "obiwan", eventType, SubscriptionType.DAILY);
+
+        getOrCreateEmailEndpointAndLinkItToEventType(orgId, eventType, useSystemEndpoint);
+
+        Event event = new Event();
+        event.setOrgId(orgId);
+        eventType.setApplication(application);
+        event.setEventType(eventType);
+        event.setCreated(created);
+        event.setPayload(eventPayload);
+
+        return createEvent(event);
+    }
+
+    public Event addEventEmailAggregationWithSubscriptionType(String orgId, String bundleName, String applicationName, LocalDateTime created, String eventPayload, boolean useSystemEndpoint, SubscriptionType subscriptionType) {
+        findOrCreateBundle(bundleName);
+        Application application = findOrCreateApplication(bundleName, applicationName);
+        EventType eventType = findOrCreateEventType(application.getId(), "event_type_test");
+        findOrCreateEventTypeEmailSubscription(orgId, "obiwan", eventType, subscriptionType);
 
         getOrCreateEmailEndpointAndLinkItToEventType(orgId, eventType, useSystemEndpoint);
 
