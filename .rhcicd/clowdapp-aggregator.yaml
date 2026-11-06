@@ -70,6 +70,8 @@ objects:
           value: ${METRICS_SCRAPE_MODE_ENABLED}
         - name: NOTIFICATIONS_AGGREGATOR_METRICS_SCRAPE_KEEP_ALIVE_SECONDS
           value: ${METRICS_SCRAPE_KEEP_ALIVE_SECONDS}
+        - name: MP_MESSAGING_OUTGOING_EGRESS_MAX_REQUEST_SIZE
+          value: ${MP_MESSAGING_OUTGOING_EGRESS_MAX_REQUEST_SIZE}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -108,6 +110,9 @@ parameters:
 - name: METRICS_SCRAPE_KEEP_ALIVE_SECONDS
   description: How long the job stays alive after completion in "scrape" mode, to allow Prometheus to scrape /metrics
   value: "150"
+- name: MP_MESSAGING_OUTGOING_EGRESS_MAX_REQUEST_SIZE
+  description: Maximum size of a request (which can include several messages) in bytes (default is the Kafka client's own default, 1048576). Uncompressed messages that exceed this value will trigger a RecordTooLargeException, even if their size after compression is lower than the value. Pre-folded digest payloads bigger than this are offloaded to the payload_details table instead.
+  value: "1048576"
 - name: NOTIFICATIONS_LOG_LEVEL
   description: Log level for com.redhat.cloud.notifications
   value: INFO

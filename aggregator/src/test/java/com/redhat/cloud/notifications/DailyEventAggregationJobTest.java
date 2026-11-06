@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redhat.cloud.notifications.config.AggregatorConfig;
 import com.redhat.cloud.notifications.helpers.ResourceHelpers;
 import com.redhat.cloud.notifications.helpers.TestHelpers;
 import com.redhat.cloud.notifications.ingress.Action;
@@ -11,6 +12,9 @@ import com.redhat.cloud.notifications.models.AggregationOrgConfig;
 import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import com.redhat.cloud.notifications.models.EventType;
+import com.redhat.cloud.notifications.processors.email.AggregatedDataOffloader;
+import com.redhat.cloud.notifications.processors.email.EmailDataAggregator;
+import com.redhat.cloud.notifications.processors.payload.PayloadDetails;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -31,13 +35,17 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static java.time.ZoneOffset.UTC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -50,6 +58,15 @@ class DailyEventAggregationJobTest {
 
     @InjectSpy
     DailyEmailAggregationJob dailyEmailAggregationJob;
+
+    @InjectSpy
+    AggregatorConfig aggregatorConfig;
+
+    @InjectSpy
+    EmailDataAggregator emailDataAggregator;
+
+    @InjectSpy
+    AggregatedDataOffloader aggregatedDataOffloader;
 
     @Inject
     @Any
@@ -546,6 +563,113 @@ class DailyEventAggregationJobTest {
         }
     }
 
+
+    @Test
+    void shouldEnrichPayloadWithPreFoldedDataWhenFoldEnabledForSupportedApp() {
+        when(aggregatorConfig.isAggregatorEventPreprocessingEnabled(eq("someOrgId"))).thenReturn(true);
+
+        addEventEmailAggregation("someOrgId", "rhel", "compliance", "somePolicyId", "someHostId");
+        dailyEmailAggregationJob.setDefaultDailyDigestTime(baseReferenceTime.toLocalTime());
+
+        dailyEmailAggregationJob.processDailyEmail();
+
+        Action action = getActionRecordsFromKafka().stream()
+            .filter(a -> "someOrgId".equals(a.getOrgId()))
+            .findFirst()
+            .orElseThrow();
+
+        AggregationCommand command = objectMapper.convertValue(
+            action.getEvents().get(0).getPayload().getAdditionalProperties(), AggregationCommand.class);
+        assertNotNull(command.getAggregatedData(), "flagged org's supported app should carry pre-folded data");
+    }
+
+    @Test
+    void shouldNotEnrichPayloadWhenFoldEnabledForAppWithoutAFoldOnlyAggregatorYet() {
+        when(aggregatorConfig.isAggregatorEventPreprocessingEnabled(eq("someOrgId"))).thenReturn(true);
+
+        addEventEmailAggregation("someOrgId", "rhel", "advisor", "somePolicyId", "someHostId");
+        dailyEmailAggregationJob.setDefaultDailyDigestTime(baseReferenceTime.toLocalTime());
+
+        dailyEmailAggregationJob.processDailyEmail();
+
+        Action action = getActionRecordsFromKafka().stream()
+            .filter(a -> "someOrgId".equals(a.getOrgId()))
+            .findFirst()
+            .orElseThrow();
+
+        AggregationCommand command = objectMapper.convertValue(
+            action.getEvents().get(0).getPayload().getAdditionalProperties(), AggregationCommand.class);
+        assertNull(command.getAggregatedData(), "engine should fold advisor itself until ticket 1b ports it");
+    }
+
+    @Test
+    void shouldOffloadPreFoldedDataWhenTooLargeToSendInline() {
+        when(aggregatorConfig.isAggregatorEventPreprocessingEnabled(eq("someOrgId"))).thenReturn(true);
+        Map<String, Object> hugeAggregatedData = Map.of("payload", "x".repeat(11 * 1024 * 1024));
+        Mockito.doReturn(hugeAggregatedData).when(emailDataAggregator).getAggregatedData(any(), any(), any());
+
+        addEventEmailAggregation("someOrgId", "rhel", "compliance", "somePolicyId", "someHostId");
+        dailyEmailAggregationJob.setDefaultDailyDigestTime(baseReferenceTime.toLocalTime());
+
+        dailyEmailAggregationJob.processDailyEmail();
+
+        Action action = getActionRecordsFromKafka().stream()
+            .filter(a -> "someOrgId".equals(a.getOrgId()))
+            .findFirst()
+            .orElseThrow();
+
+        AggregationCommand command = objectMapper.convertValue(
+            action.getEvents().get(0).getPayload().getAdditionalProperties(), AggregationCommand.class);
+        assertNull(command.getAggregatedData(), "oversized pre-folded payload must not be sent inline");
+        assertNotNull(command.getAggregatedDataPayloadDetailsId(),
+            "oversized pre-folded payload must carry an offload reference instead");
+
+        UUID payloadDetailsId = command.getAggregatedDataPayloadDetailsId();
+        PayloadDetails saved = helpers.findPayloadDetailsById(payloadDetailsId);
+        assertNotNull(saved, "the offloaded payload must actually be saved in payload_details");
+        assertTrue(saved.getContents().contains("compliance"), "the saved payload must be keyed by application name");
+    }
+
+    @Test
+    void shouldFallBackToNoPreFoldedDataWhenOffloadFails() {
+        when(aggregatorConfig.isAggregatorEventPreprocessingEnabled(eq("someOrgId"))).thenReturn(true);
+        Map<String, Object> hugeAggregatedData = Map.of("payload", "x".repeat(11 * 1024 * 1024));
+        Mockito.doReturn(hugeAggregatedData).when(emailDataAggregator).getAggregatedData(any(), any(), any());
+        Mockito.doThrow(new RuntimeException("offload failed")).when(aggregatedDataOffloader).offload(any(), any(), any(), any());
+
+        addEventEmailAggregation("someOrgId", "rhel", "compliance", "somePolicyId", "someHostId");
+        dailyEmailAggregationJob.setDefaultDailyDigestTime(baseReferenceTime.toLocalTime());
+
+        // Must not throw: an offload failure must not abort the whole cron run.
+        dailyEmailAggregationJob.processDailyEmail();
+
+        Action action = getActionRecordsFromKafka().stream()
+            .filter(a -> "someOrgId".equals(a.getOrgId()))
+            .findFirst()
+            .orElseThrow();
+
+        AggregationCommand command = objectMapper.convertValue(
+            action.getEvents().get(0).getPayload().getAdditionalProperties(), AggregationCommand.class);
+        assertNull(command.getAggregatedData(), "an offload failure must fall back to no pre-folded data, not a crash");
+        assertNull(command.getAggregatedDataPayloadDetailsId(), "an offload failure must not leave a dangling reference");
+    }
+
+    @Test
+    void shouldNotEnrichPayloadWhenFoldDisabled() {
+        addEventEmailAggregation("someOrgId", "rhel", "compliance", "somePolicyId", "someHostId");
+        dailyEmailAggregationJob.setDefaultDailyDigestTime(baseReferenceTime.toLocalTime());
+
+        dailyEmailAggregationJob.processDailyEmail();
+
+        Action action = getActionRecordsFromKafka().stream()
+            .filter(a -> "someOrgId".equals(a.getOrgId()))
+            .findFirst()
+            .orElseThrow();
+
+        AggregationCommand command = objectMapper.convertValue(
+            action.getEvents().get(0).getPayload().getAdditionalProperties(), AggregationCommand.class);
+        assertNull(command.getAggregatedData(), "unflagged org must keep today's behavior unchanged");
+    }
 
     private com.redhat.cloud.notifications.models.Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, String policyId, String inventoryId) {
         return addEventEmailAggregation(orgId, bundleName, applicationName, policyId, inventoryId, LocalDateTime.now(UTC).minusHours(5));

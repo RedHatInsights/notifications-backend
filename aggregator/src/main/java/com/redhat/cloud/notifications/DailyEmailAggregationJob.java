@@ -10,6 +10,8 @@ import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.processors.email.AggregatedDataOffloader;
+import com.redhat.cloud.notifications.processors.email.EmailDataAggregator;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.HTTPServer;
@@ -29,6 +31,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,6 +56,12 @@ public class DailyEmailAggregationJob {
 
     @Inject
     AggregationOrgConfigRepository aggregationOrgConfigRepository;
+
+    @Inject
+    EmailDataAggregator emailDataAggregator;
+
+    @Inject
+    AggregatedDataOffloader aggregatedDataOffloader;
 
     @ConfigProperty(name = "prometheus.pushgateway.url", defaultValue = "http://localhost:8080")
     String prometheusPushGatewayUrl;
@@ -102,7 +111,7 @@ public class DailyEmailAggregationJob {
                 .forEach(val -> val.stream()
                     .collect(Collectors.groupingBy(AggregationCommand::getBundleId))
                     .values()
-                    .forEach(this::sendIt));
+                    .forEach(this::process));
 
             List<String> orgIdsToUpdate = aggregationCommands.stream().map(aggregationCommand -> aggregationCommand.getOrgId()).collect(Collectors.toList());
             Log.debugf("Found following org IDs to update: %s", orgIdsToUpdate);
@@ -213,9 +222,102 @@ public class DailyEmailAggregationJob {
         return pendingAggregationCommands;
     }
 
-    private void sendIt(List<AggregationCommand> aggregationCommands) {
+    private void process(List<AggregationCommand> aggregationCommands) {
+        String orgId = aggregationCommands.get(0).getOrgId();
+        Map<String, Map<String, Object>> aggregatedDataByApplication = preAggregate(orgId, aggregationCommands);
+        sendIt(orgId, aggregationCommands, aggregatedDataByApplication);
+    }
+
+    private Map<String, Map<String, Object>> preAggregate(String orgId, List<AggregationCommand> aggregationCommands) {
+        Map<String, Map<String, Object>> aggregatedDataByApplication = new LinkedHashMap<>();
+        if (!aggregatorConfig.isAggregatorEventPreprocessingEnabled(orgId)) {
+            return aggregatedDataByApplication;
+        }
+
+        for (AggregationCommand aggregationCommand : aggregationCommands) {
+            // A folding failure for one app must not block the whole digest: engine already
+            // falls back to folding that app's raw events itself when aggregatedData is absent.
+            try {
+                Map<String, Object> aggregatedData = emailDataAggregator.getAggregatedData(
+                    aggregationCommand.getAggregationKey(), aggregationCommand.getStart(), aggregationCommand.getEnd());
+                if (aggregatedData != null) {
+                    aggregatedDataByApplication.put(aggregationCommand.getAggregationKey().getApplication(), aggregatedData);
+                }
+            } catch (Exception ex) {
+                Log.errorf(ex, "[org_id: %s] Failed to pre-fold data for %s, engine will fold the raw events itself",
+                    orgId, aggregationCommand.getAggregationKey());
+            }
+        }
+
+        return aggregatedDataByApplication;
+    }
+
+    private void sendIt(String orgId, List<AggregationCommand> aggregationCommands, Map<String, Map<String, Object>> aggregatedDataByApplication) {
+        UUID actionId = UUID.randomUUID();
+        LocalDateTime timestamp = LocalDateTime.now(UTC);
+
+        String encodedAction = Parser.encode(buildAction(aggregationCommands, aggregatedDataByApplication, null, actionId, timestamp));
+
+        if (!aggregatedDataByApplication.isEmpty() && aggregatedDataOffloader.exceedsMaxRequestSize(encodedAction)) {
+            encodedAction = offloadOversizedPayload(orgId, aggregationCommands, aggregatedDataByApplication, actionId, timestamp);
+        }
+
+        Log.infof("Encoded payload ready, length=%d chars", encodedAction.length());
+        Message<String> message = Message.of(encodedAction);
+        emitterIngress.send(message);
+    }
+
+    /**
+     * Offloads an oversized pre-folded digest payload to {@code payload_details} and re-encodes the
+     * Action with a reference in place of the inline data. An offload failure must not abort the whole
+     * cron run: it falls back to sending no pre-folded data at all for this org/bundle, same as if
+     * folding itself had failed in {@link #preAggregate}.
+     */
+    private String offloadOversizedPayload(String orgId, List<AggregationCommand> aggregationCommands,
+                                            Map<String, Map<String, Object>> aggregatedDataByApplication, UUID actionId, LocalDateTime timestamp) {
+        try {
+            AggregationCommand anyFoldedCommand = aggregationCommands.stream()
+                .filter(cmd -> aggregatedDataByApplication.containsKey(cmd.getAggregationKey().getApplication()))
+                .findFirst()
+                .orElseThrow();
+            UUID payloadDetailsId = aggregatedDataOffloader.offload(aggregatedDataByApplication,
+                anyFoldedCommand.getAggregationKey(), anyFoldedCommand.getStart(), anyFoldedCommand.getEnd());
+            Log.infof("[org_id: %s] Pre-folded digest payload for bundle was too large to send inline, offloaded to payload_details as %s",
+                orgId, payloadDetailsId);
+            return Parser.encode(buildAction(aggregationCommands, aggregatedDataByApplication, payloadDetailsId, actionId, timestamp));
+        } catch (Exception ex) {
+            Log.errorf(ex, "[org_id: %s] Failed to offload oversized pre-folded digest payload, engine will fold the raw events itself",
+                orgId);
+            aggregatedDataByApplication.clear();
+            return Parser.encode(buildAction(aggregationCommands, aggregatedDataByApplication, null, actionId, timestamp));
+        }
+    }
+
+    /**
+     * Builds the Kafka {@link Action} for one org+bundle group. Unconditionally sets both
+     * {@link AggregationCommand#setAggregatedData}/{@link AggregationCommand#setAggregatedDataPayloadDetailsId}
+     * on every command (clearing whichever doesn't apply) rather than only touching apps present in
+     * {@code aggregatedDataByApplication} -- this keeps the method a pure function of its arguments
+     * regardless of what a previous call against the same (mutable) {@code aggregationCommands} set,
+     * which matters for the offload/clear-all-and-retry fallback path in {@link #offloadOversizedPayload}.
+     */
+    private Action buildAction(List<AggregationCommand> aggregationCommands, Map<String, Map<String, Object>> aggregatedDataByApplication,
+                                UUID offloadedPayloadDetailsId, UUID actionId, LocalDateTime timestamp) {
         List<Event> eventList = new ArrayList<>();
-        aggregationCommands.stream().forEach(aggregationCommand -> {
+        for (AggregationCommand aggregationCommand : aggregationCommands) {
+            String applicationName = aggregationCommand.getAggregationKey().getApplication();
+            Map<String, Object> aggregatedData = aggregatedDataByApplication.get(applicationName);
+            if (aggregatedData == null) {
+                aggregationCommand.setAggregatedData(null);
+                aggregationCommand.setAggregatedDataPayloadDetailsId(null);
+            } else if (offloadedPayloadDetailsId != null) {
+                aggregationCommand.setAggregatedData(null);
+                aggregationCommand.setAggregatedDataPayloadDetailsId(offloadedPayloadDetailsId);
+            } else {
+                aggregationCommand.setAggregatedData(aggregatedData);
+                aggregationCommand.setAggregatedDataPayloadDetailsId(null);
+            }
+
             Payload.PayloadBuilder payloadBuilder = new Payload.PayloadBuilder();
             Map<String, Object> payload = JsonObject.mapFrom(aggregationCommand).getMap();
             payload.forEach(payloadBuilder::withAdditionalProperty);
@@ -224,25 +326,20 @@ public class DailyEmailAggregationJob {
                 .withMetadata(new Metadata.MetadataBuilder().build())
                 .withPayload(payloadBuilder.build())
                 .build());
-        });
+        }
 
-        Action action = new Action.ActionBuilder()
-            .withId(UUID.randomUUID())
+        return new Action.ActionBuilder()
+            .withId(actionId)
             .withBundle(BUNDLE_NAME)
             .withApplication(APP_NAME)
             .withEventType(EVENT_TYPE_NAME)
             .withOrgId(aggregationCommands.get(0).getOrgId())
-            .withTimestamp(LocalDateTime.now(UTC))
+            .withTimestamp(timestamp)
             .withEvents(eventList)
             .withContext(new Context.ContextBuilder()
                 .withAdditionalProperty("single_daily_digest_enabled", true)
                 .build())
             .build();
-
-        String encodedAction = Parser.encode(action);
-        Log.infof("Encoded Payload: %s", encodedAction);
-        Message<String> message = Message.of(encodedAction);
-        emitterIngress.send(message);
     }
 
     Gauge getPairsProcessed() {
