@@ -55,6 +55,10 @@ ENV PATH=${JAVA_HOME}/bin:/opt/apache-maven-${MAVEN_VERSION}/bin:${PATH}
 
 COPY . /home/jboss
 WORKDIR /home/jboss
+# mvnw is not committed to git; generate it from maven-wrapper.properties.
+# Save and restore maven-wrapper.properties because wrapper:wrapper regenerates
+# it using the bundled plugin version, silently dropping distributionSha256Sum
+# and wrapperSha256Sum.
 # '-Dquarkus.native.container-build=false' option disables containerized native image building, because the build is already running inside the Mandrel builder container
 RUN cp .mvn/wrapper/maven-wrapper.properties /tmp/ && mvn wrapper:wrapper && cp /tmp/maven-wrapper.properties .mvn/wrapper/maven-wrapper.properties && ./mvnw -s .mvn/settings.xml clean package \
     -Dquarkus.package.type=native \
