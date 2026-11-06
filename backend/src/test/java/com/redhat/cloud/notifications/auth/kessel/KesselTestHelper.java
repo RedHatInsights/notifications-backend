@@ -49,6 +49,24 @@ public class KesselTestHelper {
             .build();
     }
 
+    /**
+     * Builds a check request for an explicit workspace identifier, bypassing
+     * the {@link WorkspaceUtils#getDefaultWorkspaceId(String)} lookup. Useful
+     * for asserting that a caller-supplied workspace ID -- rather than the
+     * org's default workspace -- was used for the Kessel permission check.
+     */
+    public CheckRequest buildCheckRequestForWorkspace(String subjectUsername, KesselPermission permission, UUID workspaceId) {
+        return CheckRequest.newBuilder()
+            .setObject(ResourceReference.newBuilder()
+                .setReporter(KesselInventoryResourceType.WORKSPACE.getReporter())
+                .setResourceType(KesselInventoryResourceType.WORKSPACE.getResourceType())
+                .setResourceId(workspaceId.toString())
+                .build())
+            .setRelation(permission.getKesselPermissionName())
+            .setSubject(buildSubjectReference(subjectUsername))
+            .build();
+    }
+
     public CheckResponse buildCheckResponse(Allowed allowedResponse) {
         return CheckResponse.newBuilder()
             .setAllowed(allowedResponse)

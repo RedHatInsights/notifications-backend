@@ -22,6 +22,7 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -37,6 +38,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameters;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -52,6 +54,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_3_0;
+import static com.redhat.cloud.notifications.Constants.X_RH_WORKSPACE_ID_HEADER;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_WRITE_NOTIFICATIONS;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_EDIT;
@@ -77,11 +80,21 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @Path("/eventTypes")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "List all event types", description = "Lists all event types. You can filter the returned list by bundle, application name, or unmuted types.", operationId = "NotificationResourceV3_GetEventTypes")
-    @Parameter(
-            name = "limit",
-            in = ParameterIn.QUERY,
-            description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
-            schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
+    @Parameters(
+        {
+            @Parameter(
+                name = "limit",
+                in = ParameterIn.QUERY,
+                description = "Number of items per page, if not specified " + DEFAULT_RESULTS_PER_PAGE + " is used.",
+                schema = @Schema(type = SchemaType.INTEGER, defaultValue = DEFAULT_RESULTS_PER_PAGE + "")
+            ),
+            @Parameter(
+                name = X_RH_WORKSPACE_ID_HEADER,
+                in = ParameterIn.HEADER,
+                description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+                schema = @Schema(type = SchemaType.STRING)
+            )
+        }
     )
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "notification")
     public Page<EventTypeDTO> getEventTypesV3(
@@ -89,7 +102,8 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
             @Parameter(description = "Set of application IDs to filter by") @QueryParam("applicationIds") Set<UUID> applicationIds,
             @Parameter(description = "UUID of the bundle to filter by") @QueryParam("bundleId") UUID bundleId,
             @Parameter(description = "Filter by event type name (case-insensitive, partial match)") @QueryParam("eventTypeName") String eventTypeName,
-            @Parameter(description = "Whether to exclude muted event types") @QueryParam("excludeMutedTypes") boolean excludeMutedTypes
+            @Parameter(description = "Whether to exclude muted event types") @QueryParam("excludeMutedTypes") boolean excludeMutedTypes,
+            @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId
     ) {
         Page<EventType> entityPage = super.getEventTypes(securityContext, uriInfo, query, applicationIds, bundleId, eventTypeName, excludeMutedTypes);
         List<EventTypeDTO> eventTypeDTO = entityPage.getData().stream().map(notificationMapper::eventTypeToDTO).toList();
@@ -100,8 +114,14 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @Path("/bundles/{bundleName}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve a bundle by name", description = "Retrieves the details of a bundle by searching by its name.", operationId = "NotificationResourceV3_GetBundleByName")
+    @Parameter(
+        name = X_RH_WORKSPACE_ID_HEADER,
+        in = ParameterIn.HEADER,
+        description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+        schema = @Schema(type = SchemaType.STRING)
+    )
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "notification")
-    public BundleDTO getBundleDTOByName(@Context final SecurityContext securityContext, @PathParam("bundleName") String bundleName) {
+    public BundleDTO getBundleDTOByName(@Context final SecurityContext securityContext, @PathParam("bundleName") String bundleName, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         return notificationMapper.bundleToDTO(super.getBundleByName(bundleName));
     }
 
@@ -109,11 +129,18 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @Path("/bundles/{bundleName}/applications/{applicationName}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve an application by bundle and application names", description = "Retrieves an application by bundle and application names. Use this endpoint to  find an application by searching for the bundle that the application is part of. This is useful if you do not know the UUID of the bundle or application.", operationId = "NotificationResourceV3_GetApplicationByNameAndBundleName")
+    @Parameter(
+        name = X_RH_WORKSPACE_ID_HEADER,
+        in = ParameterIn.HEADER,
+        description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+        schema = @Schema(type = SchemaType.STRING)
+    )
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "notification")
     public ApplicationDTO getApplicationByNameAndBundleName(
             @Context SecurityContext securityContext,
             @PathParam("bundleName") String bundleName,
-            @PathParam("applicationName") String applicationName
+            @PathParam("applicationName") String applicationName,
+            @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId
     ) {
         return notificationMapper.applicationToDTO(super.getApplicationByNameAndBundleName(bundleName, applicationName));
     }
@@ -122,12 +149,19 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
     @Path("/bundles/{bundleName}/applications/{applicationName}/eventTypes/{eventTypeName}")
     @Produces(APPLICATION_JSON)
     @Operation(summary = "Retrieve an event type by bundle, application and event type names", description = "Retrieves the details of an event type by specifying the bundle name, the application name, and the event type name.", operationId = "NotificationResourceV3_GetEventTypeByNameAndBundleAndApplicationName")
+    @Parameter(
+        name = X_RH_WORKSPACE_ID_HEADER,
+        in = ParameterIn.HEADER,
+        description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+        schema = @Schema(type = SchemaType.STRING)
+    )
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "notification")
     public EventTypeDTO getEventTypesByNameAndBundleAndApplicationName(
             @Context SecurityContext securityContext,
             @PathParam("bundleName") String bundleName,
             @PathParam("applicationName") String applicationName,
-            @PathParam("eventTypeName") String eventTypeName
+            @PathParam("eventTypeName") String eventTypeName,
+            @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId
     ) {
         return notificationMapper.eventTypeToDTO(super.getEventTypesByNameAndBundleAndApplicationName(bundleName, applicationName, eventTypeName));
     }
@@ -192,8 +226,14 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
                 description = "No event type found with the passed id.")
     })
     @Tag(name = OApiFilter.PRIVATE)
+    @Parameter(
+        name = X_RH_WORKSPACE_ID_HEADER,
+        in = ParameterIn.HEADER,
+        description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+        schema = @Schema(type = SchemaType.STRING)
+    )
     @Authorization(legacyRBACRole = RBAC_READ_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_VIEW, resourceType = "notification")
-    public Page<EndpointDTO> getLinkedEndpoints(@Context final SecurityContext sec, @RestPath("eventTypeId") final UUID eventTypeId, @BeanParam @Valid final Query query, @Context final UriInfo uriInfo) {
+    public Page<EndpointDTO> getLinkedEndpoints(@Context final SecurityContext sec, @RestPath("eventTypeId") final UUID eventTypeId, @BeanParam @Valid final Query query, @Context final UriInfo uriInfo, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) final String workspaceId) {
         String orgId = getOrgId(sec);
 
         final List<Endpoint> endpoints = endpointEventTypeRepository.findEndpointsByEventTypeId(orgId, eventTypeId, query);
@@ -220,10 +260,17 @@ public class NotificationResourceV3 extends NotificationResourceCommon {
                 description = "The event type was not found.")
     })
     @Transactional
+    @Parameter(
+        name = X_RH_WORKSPACE_ID_HEADER,
+        in = ParameterIn.HEADER,
+        description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+        schema = @Schema(type = SchemaType.STRING)
+    )
     @Authorization(legacyRBACRole = RBAC_WRITE_NOTIFICATIONS, workspacePermissions = NOTIFICATIONS_EDIT, resourceType = "behavior_group")
     public Response updateEventTypeEndpoints(@Context SecurityContext securityContext,
                                              @Parameter(description = "UUID of the eventType to associate with the endpoint(s)") @PathParam("eventTypeId") UUID eventTypeId,
-                                             @RequestBody(description = "Set of endpoint ids to associate", required = true) Set<UUID> endpointsIds) {
+                                             @RequestBody(description = "Set of endpoint ids to associate", required = true) Set<UUID> endpointsIds,
+                                             @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         return super.updateEventTypeEndpoints(securityContext, eventTypeId, endpointsIds);
     }
 }
