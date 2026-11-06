@@ -24,12 +24,11 @@ RUN microdnf install -y \
   libstdc++-static \
   && microdnf clean all
 
-# Install additional dependencies to unzip Mandrel artefact and run Maven
+# Install additional dependencies to unzip Mandrel and Maven artefacts
 RUN microdnf install -y \
   tar \
   gzip \
   findutils \
-  maven \
   && microdnf clean all
 
 # Download and install Mandrel
@@ -40,10 +39,19 @@ RUN curl -L -o /tmp/mandrel.tar.gz \
   && tar -xzf /tmp/mandrel.tar.gz -C /usr/local \
   && rm /tmp/mandrel.tar.gz
 
+# Download and install Maven 3.9.6 (microdnf only provides 3.6.x which fails the enforcer)
+ARG MAVEN_VERSION=3.9.6
+ARG MAVEN_SHA256=6eedd2cae3626d6ad3a5c9ee324bd265853d64297f07f033430755bd0e0c3a4b
+RUN curl -L -o /tmp/maven.tar.gz \
+  https://maven-central.storage-download.googleapis.com/maven2/org/apache/maven/apache-maven/${MAVEN_VERSION}/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+  && echo "${MAVEN_SHA256} /tmp/maven.tar.gz" | sha256sum -c - \
+  && tar -xzf /tmp/maven.tar.gz -C /opt \
+  && rm /tmp/maven.tar.gz
+
 # Set environment variables
 ENV JAVA_HOME=/usr/local/mandrel-java${JAVA_VERSION}-${MANDREL_VERSION}
 ENV GRAALVM_HOME=${JAVA_HOME}
-ENV PATH=${JAVA_HOME}/bin:${PATH}
+ENV PATH=${JAVA_HOME}/bin:/opt/apache-maven-${MAVEN_VERSION}/bin:${PATH}
 
 COPY . /home/jboss
 WORKDIR /home/jboss
