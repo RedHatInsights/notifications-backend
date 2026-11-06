@@ -81,9 +81,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
             "   \"org_id\":\"%s\"," +
             "   \"events\":[" +
             "      {" +
-            "         \"metadata\":{" +
-            "            \"communication-description\":\"General communication about customers' Splunk and webhook integrations needing an allowlist review\"" +
-            "         }," +
+            "         \"metadata\":{}," +
             "         \"payload\":{" +
             "            \"integration_names\":[%s]" +
             "         }" +

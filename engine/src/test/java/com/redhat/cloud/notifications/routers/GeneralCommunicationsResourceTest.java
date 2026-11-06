@@ -5,7 +5,6 @@ import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.events.GeneralCommunicationsHelper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Event;
-import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
@@ -121,15 +120,11 @@ public class GeneralCommunicationsResourceTest {
         final Recipient recipient = recipients.getFirst();
         Assertions.assertTrue(recipient.getIgnoreUserPreferences());
 
-        // Check the events, their metadata and their payload.
+        // Check the events, and their payload.
         final List<Event> events = kafkaAction.getEvents();
         Assertions.assertEquals(1, events.size(), "unexpected number of \"general communications\" action events");
 
         final Event event = events.getFirst();
-
-        final Metadata metadata = event.getMetadata();
-        Assertions.assertEquals(1, metadata.getAdditionalProperties().size(), "unexpected number of metadata additional properties");
-        Assertions.assertEquals(GeneralCommunicationsHelper.GENERAL_COMMUNICATION_METADATA_VALUE, metadata.getAdditionalProperties().get(GeneralCommunicationsHelper.GENERAL_COMMUNICATION_METADATA_KEY), "unexpected event metadata value");
 
         final Payload payload = event.getPayload();
         final Map<String, Object> payloadAdditionalProperties = payload.getAdditionalProperties();

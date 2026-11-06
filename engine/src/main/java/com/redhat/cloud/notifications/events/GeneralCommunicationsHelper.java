@@ -11,8 +11,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class GeneralCommunicationsHelper {
-    public static final String GENERAL_COMMUNICATION_METADATA_KEY = "communication-description";
-    public static final String GENERAL_COMMUNICATION_METADATA_VALUE = "General communication about customers' Splunk and webhook integrations needing an allowlist review";
     public static final String GENERAL_COMMUNICATION_PAYLOAD_INTEGRATION_NAMES = "integration_names";
     public static final String GENERAL_COMMUNICATIONS_BUNDLE = "console";
     public static final String GENERAL_COMMUNICATIONS_APPLICATION = "integrations";
@@ -38,10 +36,9 @@ public class GeneralCommunicationsHelper {
         // Create a particular event.
         final Event generalCommunicationEvent = new Event();
 
-        // Specify what the general communication is about in the metadata.
-        final Metadata metadata = new Metadata();
-        metadata.setAdditionalProperty(GENERAL_COMMUNICATION_METADATA_KEY, GENERAL_COMMUNICATION_METADATA_VALUE);
-        generalCommunicationEvent.setMetadata(metadata);
+        // The metadata is not used, but it must not be null because the
+        // event transformer requires a non-null value.
+        generalCommunicationEvent.setMetadata(new Metadata());
 
         // Include the payload.
         final Payload payload = new Payload();
