@@ -7,7 +7,6 @@ export type CreateApplication = {
     displayName: string;
     bundleId: string;
     name: string;
-    ownerRole?: string;
 }
 
 const actionCreator =  (params: CreateApplication) => {
@@ -16,8 +15,7 @@ const actionCreator =  (params: CreateApplication) => {
             body: {
                 bundle_id: params.bundleId,
                 display_name: params.displayName,
-                name: params.name,
-                owner_role: params.ownerRole
+                name: params.name
             }
         });
     }
@@ -26,8 +24,7 @@ const actionCreator =  (params: CreateApplication) => {
         appId: params.id,
         body: {
             display_name: params.displayName,
-            name: params.name,
-            owner_role: params.ownerRole
+            name: params.name
         }
     });
 };
