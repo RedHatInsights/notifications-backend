@@ -144,6 +144,8 @@ jobs:
           git add yarn.lock
           git commit -S -m "Regenerate yarn.lock to match Mintmaker's dependency bump"
           git push origin "HEAD:${BRANCH_REF}"
+      - name: Generate Maven Wrapper
+        run: mvn wrapper:wrapper
       - name: Build admin-console
         if: steps.admin-console-changed.outputs.any_changed == 'true'
         run: ./mvnw clean verify -Padmin-console -pl :checkstyle,:notifications-admin-console --no-transfer-progress
