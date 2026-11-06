@@ -8,7 +8,7 @@
 #
 # Usage:
 #   export ORG_ID="18939404"
-#   export SESSION_COOKIE="y-_NIVtRe-LmaOPDh3YCJ-PKicCkGb87VHLByhjoHWs"
+#   export SESSION_COOKIE="**************" # Use https://internal.console.redhat.com/api/turnpike/session/ or https://internal.console.stage.redhat.com/api/turnpike/session/ to get session cookie value.
 #   export STAGE_GATEWAY_HOST="internal.cloud.stage.example.com"
 #   export PROD_GATEWAY_HOST="internal.cloud.example.com"
 #   export PROXY_URL="http://proxy.example.com:3128"
