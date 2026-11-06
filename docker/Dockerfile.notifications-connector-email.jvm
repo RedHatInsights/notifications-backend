@@ -7,7 +7,11 @@ FROM registry.access.redhat.com/ubi9/openjdk-25:latest@sha256:f56abbc079feb946dd
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
-RUN ./mvnw -s .mvn/settings.xml clean package -Dmaven.test.skip -Dcheckstyle.skip -pl :notifications-connector-email -am --no-transfer-progress
+# mvnw is not committed to git; generate it from maven-wrapper.properties.
+# Save and restore maven-wrapper.properties because wrapper:wrapper regenerates
+# it using the bundled plugin version, silently dropping distributionSha256Sum
+# and wrapperSha256Sum.
+RUN cp .mvn/wrapper/maven-wrapper.properties /tmp/ && mvn wrapper:wrapper && cp /tmp/maven-wrapper.properties .mvn/wrapper/maven-wrapper.properties && ./mvnw -s .mvn/settings.xml clean package -Dmaven.test.skip -Dcheckstyle.skip -pl :notifications-connector-email -am --no-transfer-progress
 
 # Build the container
 FROM registry.access.redhat.com/ubi9/openjdk-25-runtime:latest@sha256:2ddacad5332f4e481353668f210623f7e7420f1561515f5686e5abd33cd6d38f
