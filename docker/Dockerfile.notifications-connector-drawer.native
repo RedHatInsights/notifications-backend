@@ -24,11 +24,12 @@ RUN microdnf install -y \
   libstdc++-static \
   && microdnf clean all
 
-# Install additional dependencies to unzip Mandrel artefact
+# Install additional dependencies to unzip Mandrel artefact and run Maven
 RUN microdnf install -y \
   tar \
   gzip \
   findutils \
+  maven \
   && microdnf clean all
 
 # Download and install Mandrel
