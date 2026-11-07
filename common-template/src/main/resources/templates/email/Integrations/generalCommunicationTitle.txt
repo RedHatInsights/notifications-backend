@@ -1,1 +1,1 @@
-Your PagerDuty integrations will soon filter notifications by severity level
+Please review your IP allowlist for Red Hat Hybrid Cloud Console and Red Hat Lightspeed notifications and integrations
