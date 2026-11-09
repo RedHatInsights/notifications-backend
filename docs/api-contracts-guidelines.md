@@ -3,7 +3,9 @@
 ## Path Structure and Versioning
 
 - Public API paths follow the pattern `/api/{domain}/v{major}.0/{resource}` where domain is `notifications` or `integrations`. Use constants from `com.redhat.cloud.notifications.Constants` (e.g., `API_INTEGRATIONS_V_1_0`, `API_NOTIFICATIONS_V_2_0`).
-- Internal API paths use `/internal` prefix (`API_INTERNAL` constant). Internal resources are annotated with `@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)` at the class level.
+- Internal API paths follow the pattern `/internal/notifications/v1/{component}/{resource}`, where `{component}` is the module name without the `notifications-` prefix (`backend`, `engine`, `recipients-resolver`). Use `API_INTERNAL_NOTIFICATIONS_BACKEND` / `API_INTERNAL_NOTIFICATIONS_ENGINE` from `Constants`.
+- The legacy `/internal/{resource}` paths (`API_INTERNAL` constant) are deprecated but still served. Each internal resource has a nested `V1` subclass with the new `@Path`, so both paths are served by the same implementation. Add new internal endpoints to the resource class and they are available on both paths. The legacy paths will be removed once all clients have migrated (RHCLOUD-52372).
+- Internal resources are annotated with `@RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)` at the class level.
 - The `IncomingRequestInterceptor` rewrites `/api/{domain}/v{N}/...` to `/api/{domain}/v{N}.0/...`, so clients can use either `v1` or `v1.0`.
 
 ## Resource Class Versioning Pattern

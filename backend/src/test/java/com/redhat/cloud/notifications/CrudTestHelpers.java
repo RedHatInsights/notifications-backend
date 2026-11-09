@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -69,18 +68,18 @@ public abstract class CrudTestHelpers {
         return bundle;
     }
 
-    public static Optional<String> createBundle(Header identity, String name, String displayName, int expectedStatusCode) {
+    public static Optional<String> createBundle(String basePath, Header identity, String name, String displayName, int expectedStatusCode) {
         Bundle bundle = buildBundle(name, displayName);
-        return createBundle(identity, bundle, expectedStatusCode);
+        return createBundle(basePath, identity, bundle, expectedStatusCode);
     }
 
-    public static Optional<String> createBundle(Header identity, Bundle bundle, int expectedStatusCode) {
+    public static Optional<String> createBundle(String basePath, Header identity, Bundle bundle, int expectedStatusCode) {
         String responseBody = given()
                 .header(identity)
                 .contentType(JSON)
                 .body(Json.encode(bundle))
                 .when()
-                .post("/internal/bundles")
+                .post(basePath + "/bundles")
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON_UTF8) : any(String.class))
@@ -94,7 +93,7 @@ public abstract class CrudTestHelpers {
             assertEquals(bundle.getName(), jsonBundle.getString("name"));
             assertEquals(bundle.getDisplayName(), jsonBundle.getString("display_name"));
 
-            getBundle(identity, jsonBundle.getString("id"), bundle.getName(), bundle.getDisplayName(), OK);
+            getBundle(basePath, identity, jsonBundle.getString("id"), bundle.getName(), bundle.getDisplayName(), OK);
 
             return Optional.of(jsonBundle.getString("id"));
         } else {
@@ -102,11 +101,11 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void getBundle(Header identity, String bundleId, String expectedName, String expectedDisplayName, int expectedStatusCode) {
+    public static void getBundle(String basePath, Header identity, String bundleId, String expectedName, String expectedDisplayName, int expectedStatusCode) {
         String responseBody = given()
                 .header(identity)
                 .pathParam("bundleId", bundleId)
-                .get("/internal/bundles/{bundleId}")
+                .get(basePath + "/bundles/{bundleId}")
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(contentTypeForStatusCode(expectedStatusCode, JSON))
@@ -121,36 +120,36 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void updateBundle(Header identity, String bundleId, String name, String displayName, int expectedStatusCode) {
+    public static void updateBundle(String basePath, Header identity, String bundleId, String name, String displayName, int expectedStatusCode) {
         Bundle bundle = buildBundle(name, displayName);
-        updateBundle(identity, bundleId, bundle, expectedStatusCode);
+        updateBundle(basePath, identity, bundleId, bundle, expectedStatusCode);
     }
 
-    public static void updateBundle(Header identity, String bundleId, Bundle bundle, int expectedStatusCode) {
+    public static void updateBundle(String basePath, Header identity, String bundleId, Bundle bundle, int expectedStatusCode) {
         given()
                 .contentType(JSON)
                 .header(identity)
                 .pathParam("bundleId", bundleId)
                 .body(Json.encode(bundle))
-                .put("/internal/bundles/{bundleId}")
+                .put(basePath + "/bundles/{bundleId}")
                 .then()
                 .statusCode(expectedStatusCode);
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
-            getBundle(identity, bundleId, bundle.getName(), bundle.getDisplayName(), OK);
+            getBundle(basePath, identity, bundleId, bundle.getName(), bundle.getDisplayName(), OK);
         }
     }
 
-    public static void deleteBundle(Header identity, String bundleId, boolean expectedResult) {
-        deleteBundle(identity, bundleId, expectedResult, OK);
+    public static void deleteBundle(String basePath, Header identity, String bundleId, boolean expectedResult) {
+        deleteBundle(basePath, identity, bundleId, expectedResult, OK);
     }
 
-    public static void deleteBundle(Header identity, String bundleId, Boolean expectedResult, int expectedStatus) {
+    public static void deleteBundle(String basePath, Header identity, String bundleId, Boolean expectedResult, int expectedStatus) {
         ValidatableResponse response = given()
                 .header(identity)
                 .pathParam("bundleId", bundleId)
                 .when()
-                .delete("/internal/bundles/{bundleId}")
+                .delete(basePath + "/bundles/{bundleId}")
                 .then()
                 .statusCode(expectedStatus);
 
@@ -174,12 +173,12 @@ public abstract class CrudTestHelpers {
         return app;
     }
 
-    public static Optional<String> createApp(Header identity, String bundleId, String name, String displayName, @Nullable String ownerRole, int expectedStatusCode) {
+    public static Optional<String> createApp(String basePath, Header identity, String bundleId, String name, String displayName, @Nullable String ownerRole, int expectedStatusCode) {
         Application app = buildApp(bundleId, name, displayName);
-        return createApp(identity, app, ownerRole, expectedStatusCode);
+        return createApp(basePath, identity, app, ownerRole, expectedStatusCode);
     }
 
-    public static Optional<String> createApp(Header identity, @Nullable Application app, @Nullable String ownerRole, int expectedStatusCode) {
+    public static Optional<String> createApp(String basePath, Header identity, @Nullable Application app, @Nullable String ownerRole, int expectedStatusCode) {
         AddApplicationRequest request = null;
 
         if (app != null) {
@@ -195,7 +194,7 @@ public abstract class CrudTestHelpers {
                 .header(identity)
                 .body(Json.encode(request))
                 .when()
-                .post("/internal/applications")
+                .post(basePath + "/applications")
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON_UTF8) : any(String.class))
@@ -210,7 +209,7 @@ public abstract class CrudTestHelpers {
             assertEquals(app.getName(), jsonApp.getString("name"));
             assertEquals(app.getDisplayName(), jsonApp.getString("display_name"));
 
-            getApp(identity, jsonApp.getString("id"), app.getName(), app.getDisplayName(), OK);
+            getApp(basePath, identity, jsonApp.getString("id"), app.getName(), app.getDisplayName(), OK);
 
             return Optional.of(jsonApp.getString("id"));
         } else {
@@ -218,12 +217,12 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void getApps(Header identity, String bundleId, int expectedStatusCode, int expectedAppsCount) {
+    public static void getApps(String basePath, Header identity, String bundleId, int expectedStatusCode, int expectedAppsCount) {
         String responseBody = given()
                 .header(identity)
                 .pathParam("bundleId", bundleId)
                 .when()
-                .get("/internal/bundles/{bundleId}/applications")
+                .get(basePath + "/bundles/{bundleId}/applications")
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(contentTypeForStatusCode(expectedStatusCode, JSON))
@@ -240,11 +239,11 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void getApp(Header identity, String appId, String expectedName, String expectedDisplayName, int expectedStatusCode) {
+    public static void getApp(String basePath, Header identity, String appId, String expectedName, String expectedDisplayName, int expectedStatusCode) {
         String responseBody = given()
                 .header(identity)
                 .pathParam("appId", appId)
-                .get("/internal/applications/{appId}")
+                .get(basePath + "/applications/{appId}")
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(contentTypeForStatusCode(expectedStatusCode, JSON))
@@ -259,36 +258,36 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void updateApp(Header identity, String bundleId, String appId, String name, String displayName, int expectedStatusCode) {
+    public static void updateApp(String basePath, Header identity, String bundleId, String appId, String name, String displayName, int expectedStatusCode) {
         Application app = buildApp(bundleId, name, displayName);
-        updateApp(identity, appId, app, expectedStatusCode);
+        updateApp(basePath, identity, appId, app, expectedStatusCode);
     }
 
-    public static void updateApp(Header identity, String appId, Application app, int expectedStatusCode) {
+    public static void updateApp(String basePath, Header identity, String appId, Application app, int expectedStatusCode) {
         given()
                 .contentType(JSON)
                 .header(identity)
                 .pathParam("appId", appId)
                 .body(Json.encode(app))
-                .put("/internal/applications/{appId}")
+                .put(basePath + "/applications/{appId}")
                 .then()
                 .statusCode(expectedStatusCode);
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
-            getApp(identity, appId, app.getName(), app.getDisplayName(), OK);
+            getApp(basePath, identity, appId, app.getName(), app.getDisplayName(), OK);
         }
     }
 
-    public static void deleteApp(Header identity, String appId, boolean expectedResult) {
-        deleteApp(identity, appId, expectedResult, OK);
+    public static void deleteApp(String basePath, Header identity, String appId, boolean expectedResult) {
+        deleteApp(basePath, identity, appId, expectedResult, OK);
     }
 
-    public static void deleteApp(Header identity, String appId, Boolean expectedResult, int expectedStatus) {
+    public static void deleteApp(String basePath, Header identity, String appId, Boolean expectedResult, int expectedStatus) {
         ValidatableResponse response = given()
                 .header(identity)
                 .pathParam("appId", appId)
                 .when()
-                .delete("/internal/applications/{appId}")
+                .delete(basePath + "/applications/{appId}")
                 .then()
                 .statusCode(expectedStatus);
 
@@ -321,22 +320,22 @@ public abstract class CrudTestHelpers {
         return eventType;
     }
 
-    public static Optional<String> createEventType(Header identity, String appId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked, int expectedStatusCode) {
-        return createEventType(identity, appId, name, displayName, description, subscribedByDefault, subscriptionLocked, false, expectedStatusCode);
+    public static Optional<String> createEventType(String basePath, Header identity, String appId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked, int expectedStatusCode) {
+        return createEventType(basePath, identity, appId, name, displayName, description, subscribedByDefault, subscriptionLocked, false, expectedStatusCode);
     }
 
-    public static Optional<String> createEventType(Header identity, String appId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked, boolean restrictToRecipientsIntegration, int expectedStatusCode) {
+    public static Optional<String> createEventType(String basePath, Header identity, String appId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked, boolean restrictToRecipientsIntegration, int expectedStatusCode) {
         EventType eventType = buildEventType(appId, name, displayName, description, subscribedByDefault, subscriptionLocked);
-        return createEventType(identity, eventType, expectedStatusCode);
+        return createEventType(basePath, identity, eventType, expectedStatusCode);
     }
 
-    public static Optional<String> createEventType(Header identity, EventType eventType, int expectedStatusCode) {
+    public static Optional<String> createEventType(String basePath, Header identity, EventType eventType, int expectedStatusCode) {
         String responseBody = given()
                 .header(identity)
                 .contentType(JSON)
                 .body(Json.encode(eventType))
                 .when()
-                .post("/internal/eventTypes")
+                .post(basePath + "/eventTypes")
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(familyOf(expectedStatusCode) == SUCCESSFUL ? is(JSON_UTF8) : any(String.class))
@@ -361,12 +360,12 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void getEventTypes(Header identity, String appId, int expectedStatusCode, int expectedEventTypesCount) {
+    public static void getEventTypes(String basePath, Header identity, String appId, int expectedStatusCode, int expectedEventTypesCount) {
         String responseBody = given()
                 .header(identity)
                 .pathParam("appId", appId)
                 .when()
-                .get("/internal/applications/{appId}/eventTypes")
+                .get(basePath + "/applications/{appId}/eventTypes")
                 .then()
                 .statusCode(expectedStatusCode)
                 .contentType(contentTypeForStatusCode(expectedStatusCode, JSON))
@@ -383,7 +382,7 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void updateEventType(Header identity, String appId, String eventTypeId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked, boolean restrictToRecipientsIntegration, int expectedStatusCode) {
+    public static void updateEventType(String basePath, Header identity, String appId, String eventTypeId, String name, String displayName, String description, boolean subscribedByDefault, boolean subscriptionLocked, boolean restrictToRecipientsIntegration, int expectedStatusCode) {
         EventType eventType = buildEventType(appId, name, displayName, description, subscribedByDefault, subscriptionLocked, restrictToRecipientsIntegration);
 
         given()
@@ -391,7 +390,7 @@ public abstract class CrudTestHelpers {
                 .header(identity)
                 .pathParam("eventTypeId", eventTypeId)
                 .body(Json.encode(eventType))
-                .put("/internal/eventTypes/{eventTypeId}")
+                .put(basePath + "/eventTypes/{eventTypeId}")
                 .then()
                 .statusCode(expectedStatusCode);
 
@@ -400,7 +399,7 @@ public abstract class CrudTestHelpers {
                     .header(identity)
                     .pathParam("appId", eventType.getApplicationId())
                     .when()
-                    .get("/internal/applications/{appId}/eventTypes")
+                    .get(basePath + "/applications/{appId}/eventTypes")
                     .then()
                     .statusCode(expectedStatusCode)
                     .contentType(JSON)
@@ -427,27 +426,27 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void updateEventTypeVisibility(Header identity, String eventTypeId, boolean isVisible, int expectedStatusCode) {
+    public static void updateEventTypeVisibility(String basePath, Header identity, String eventTypeId, boolean isVisible, int expectedStatusCode) {
         given()
             .header(identity)
             .contentType(JSON)
             .pathParam("eventTypeId", eventTypeId)
             .body(String.valueOf(isVisible))
-            .put("/internal/eventTypes/{eventTypeId}/updateVisibility")
+            .put(basePath + "/eventTypes/{eventTypeId}/updateVisibility")
             .then()
             .statusCode(expectedStatusCode);
     }
 
-    public static void deleteEventType(Header identity, String eventTypeId, boolean expectedResult) {
-        deleteEventType(identity, eventTypeId, expectedResult, OK);
+    public static void deleteEventType(String basePath, Header identity, String eventTypeId, boolean expectedResult) {
+        deleteEventType(basePath, identity, eventTypeId, expectedResult, OK);
     }
 
-    public static void deleteEventType(Header identity, String eventTypeId, Boolean expectedResult, int expectedStatus) {
+    public static void deleteEventType(String basePath, Header identity, String eventTypeId, Boolean expectedResult, int expectedStatus) {
         ValidatableResponse response = given()
                 .header(identity)
                 .pathParam("eventTypeId", eventTypeId)
                 .when()
-                .delete("/internal/eventTypes/{eventTypeId}")
+                .delete(basePath + "/eventTypes/{eventTypeId}")
                 .then()
                 .statusCode(expectedStatus);
 
@@ -468,12 +467,12 @@ public abstract class CrudTestHelpers {
         return bg;
     }
 
-    public static Optional<String> createDefaultBehaviorGroup(Header identity, String displayName, String bundleId, int expected) {
+    public static Optional<String> createDefaultBehaviorGroup(String basePath, Header identity, String displayName, String bundleId, int expected) {
         BehaviorGroup behaviorGroup = buildDefaultBehaviorGroup(displayName, bundleId);
 
         ValidatableResponse response = given()
                 .header(identity)
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .contentType(JSON)
                 .body(Json.encode(behaviorGroup))
                 .post("/behaviorGroups/default")
@@ -492,12 +491,12 @@ public abstract class CrudTestHelpers {
         return Optional.empty();
     }
 
-    public static void updateDefaultBehaviorGroup(Header identity, String behaviorGroupId, String displayName, String bundleId, boolean expectedResult, int expectedStatus) {
+    public static void updateDefaultBehaviorGroup(String basePath, Header identity, String behaviorGroupId, String displayName, String bundleId, boolean expectedResult, int expectedStatus) {
         BehaviorGroup behaviorGroup = buildDefaultBehaviorGroup(displayName, bundleId);
 
         ValidatableResponse respoonse = given()
                 .header(identity)
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .contentType(JSON)
                 .body(Json.encode(behaviorGroup))
                 .pathParam("id", behaviorGroupId)
@@ -511,10 +510,10 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void deleteDefaultBehaviorGroup(Header identity, String behaviorGroupId, boolean expectedResult, int expectedStatus) {
+    public static void deleteDefaultBehaviorGroup(String basePath, Header identity, String behaviorGroupId, boolean expectedResult, int expectedStatus) {
         ValidatableResponse response = given()
                 .header(identity)
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .pathParam("id", behaviorGroupId)
                 .delete("/behaviorGroups/default/{id}")
                 .then()
@@ -526,10 +525,10 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static List<BehaviorGroup> getDefaultBehaviorGroups(Header identity) {
+    public static List<BehaviorGroup> getDefaultBehaviorGroups(String basePath, Header identity) {
         List<?> behaviorGroups = given()
                 .header(identity)
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .get("/behaviorGroups/default")
                 .then()
                 .statusCode(200)
@@ -567,11 +566,11 @@ public abstract class CrudTestHelpers {
         }).collect(Collectors.toList());
     }
 
-    public static Optional<List<InternalApplicationUserPermission>> getAccessList(Header identity, int expected) {
+    public static Optional<List<InternalApplicationUserPermission>> getAccessList(String basePath, Header identity, int expected) {
         String responseBody = given()
                 .header(identity)
                 .when()
-                .get("internal/access")
+                .get(basePath + "/access")
                 .then()
                 .statusCode(expected)
                 .extract().asString();
@@ -592,7 +591,7 @@ public abstract class CrudTestHelpers {
         return Optional.empty();
     }
 
-    public static Optional<String> createInternalRoleAccess(Header identity, String role, String appId, int expected) {
+    public static Optional<String> createInternalRoleAccess(String basePath, Header identity, String role, String appId, int expected) {
 
         AddAccessRequest request = new AddAccessRequest();
         request.applicationId = UUID.fromString(appId);
@@ -603,7 +602,7 @@ public abstract class CrudTestHelpers {
                 .when()
                 .contentType(JSON)
                 .body(request)
-                .post("internal/access")
+                .post(basePath + "/access")
                 .then()
                 .statusCode(expected)
                 .extract().asString();
@@ -621,18 +620,18 @@ public abstract class CrudTestHelpers {
         return Optional.empty();
     }
 
-    public static void  deleteInternalRoleAccess(Header identity, String internalRoleAccessId, int expected) {
+    public static void  deleteInternalRoleAccess(String basePath, Header identity, String internalRoleAccessId, int expected) {
         given()
                 .header(identity)
                 .pathParam("internalRoleAccessId", internalRoleAccessId)
-                .delete("internal/access/{internalRoleAccessId}")
+                .delete(basePath + "/access/{internalRoleAccessId}")
                 .then()
                 .statusCode(expected);
     }
 
-    public static Optional<JsonObject> createTemplate(Header header, Template template, int expectedStatusCode) {
+    public static Optional<JsonObject> createTemplate(String basePath, Header header, Template template, int expectedStatusCode) {
         String responseBody = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .contentType(JSON)
                 .body(Json.encode(template))
@@ -651,7 +650,7 @@ public abstract class CrudTestHelpers {
             assertEquals(template.getData(), jsonTemplate.getString("data"));
 
             // Let's check that the template has been correctly persisted.
-            getTemplate(header, jsonTemplate.getString("id"), template, 200);
+            getTemplate(basePath, header, jsonTemplate.getString("id"), template, 200);
 
             return Optional.of(jsonTemplate);
         } else {
@@ -659,9 +658,9 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void getTemplate(Header header, String templateId, Template expectedTemplate, int expectedStatusCode) {
+    public static void getTemplate(String basePath, Header header, String templateId, Template expectedTemplate, int expectedStatusCode) {
         String responseBody = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .pathParam("templateId", templateId)
                 .get("/templates/{templateId}")
@@ -679,9 +678,9 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static JsonArray getAllTemplates(Header header) {
+    public static JsonArray getAllTemplates(String basePath, Header header) {
         String responseBody = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .when().get("/templates")
                 .then()
@@ -692,9 +691,9 @@ public abstract class CrudTestHelpers {
         return new JsonArray(responseBody);
     }
 
-    public static void updateTemplate(Header header, String templateId, Template updatedTemplate) {
+    public static void updateTemplate(String basePath, Header header, String templateId, Template updatedTemplate) {
         given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .contentType(JSON)
                 .pathParam("templateId", templateId)
@@ -704,12 +703,12 @@ public abstract class CrudTestHelpers {
                 .statusCode(200);
 
         // Let's check that the template fields have been correctly updated.
-        getTemplate(header, templateId, updatedTemplate, 200);
+        getTemplate(basePath, header, templateId, updatedTemplate, 200);
     }
 
-    public static void deleteTemplate(Header header, String templateId, int expectedStatusCode) {
+    public static void deleteTemplate(String basePath, Header header, String templateId, int expectedStatusCode) {
         given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .pathParam("templateId", templateId)
                 .when().delete("/templates/{templateId}")
@@ -719,13 +718,13 @@ public abstract class CrudTestHelpers {
 
         if (familyOf(expectedStatusCode) == SUCCESSFUL) {
             // Let's check that the template no longer exists.
-            getTemplate(header, templateId, /* Not used */ null, 404);
+            getTemplate(basePath, header, templateId, /* Not used */ null, 404);
         }
     }
 
-    public static Optional<JsonObject> createInstantEmailTemplate(Header header, InstantEmailTemplate emailTemplate, int expectedStatusCode) {
+    public static Optional<JsonObject> createInstantEmailTemplate(String basePath, Header header, InstantEmailTemplate emailTemplate, int expectedStatusCode) {
         String responseBody = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .contentType(JSON)
                 .body(Json.encode(emailTemplate))
@@ -757,7 +756,7 @@ public abstract class CrudTestHelpers {
             assertEquals(emailTemplate.getBodyTemplateId().toString(), jsonEmailTemplate.getString("body_template_id"));
 
             // Let's check that the email template has been correctly persisted.
-            getInstantEmailTemplate(header, jsonEmailTemplate.getString("id"), emailTemplate, 200);
+            getInstantEmailTemplate(basePath, header, jsonEmailTemplate.getString("id"), emailTemplate, 200);
 
             return Optional.of(jsonEmailTemplate);
         } else {
@@ -765,9 +764,9 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void getInstantEmailTemplate(Header header, String templateId, InstantEmailTemplate expectedEmailTemplate, int expectedStatusCode) {
+    public static void getInstantEmailTemplate(String basePath, Header header, String templateId, InstantEmailTemplate expectedEmailTemplate, int expectedStatusCode) {
         String responseBody = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .pathParam("templateId", templateId)
                 .get("/templates/email/instant/{templateId}")
@@ -800,9 +799,9 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void deleteInstantEmailTemplate(Header header, String templateId) {
+    public static void deleteInstantEmailTemplate(String basePath, Header header, String templateId) {
         given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .pathParam("templateId", templateId)
                 .when().delete("/templates/email/instant/{templateId}")
@@ -811,16 +810,16 @@ public abstract class CrudTestHelpers {
                 .contentType(TEXT);
 
         // Let's check that the template no longer exists.
-        getInstantEmailTemplate(header, templateId, /* Not used */ null, 404);
+        getInstantEmailTemplate(basePath, header, templateId, /* Not used */ null, 404);
     }
 
-    public static JsonArray getAllInstantEmailTemplates(Header header) {
-        return getAllInstantEmailTemplates(header, null);
+    public static JsonArray getAllInstantEmailTemplates(String basePath, Header header) {
+        return getAllInstantEmailTemplates(basePath, header, null);
     }
 
-    public static JsonArray getAllInstantEmailTemplates(Header header, String appId) {
+    public static JsonArray getAllInstantEmailTemplates(String basePath, Header header, String appId) {
         RequestSpecification requestSpecification = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header);
 
         if (appId != null) {
@@ -847,9 +846,9 @@ public abstract class CrudTestHelpers {
         return jsonEmailTemplates;
     }
 
-    public static JsonObject getInstantEmailTemplatesByEventType(Header header, String eventTypeId, boolean isExpectedToBeFound) {
+    public static JsonObject getInstantEmailTemplatesByEventType(String basePath, Header header, String eventTypeId, boolean isExpectedToBeFound) {
         String responseBody = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .pathParam("eventTypeId", eventTypeId)
                 .when().get("/templates/email/instant/eventType/{eventTypeId}")
@@ -870,9 +869,9 @@ public abstract class CrudTestHelpers {
         return null;
     }
 
-    public static void updateInstantEmailTemplate(Header header, String templateId, InstantEmailTemplate updatedEmailTemplate) {
+    public static void updateInstantEmailTemplate(String basePath, Header header, String templateId, InstantEmailTemplate updatedEmailTemplate) {
         given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .contentType(JSON)
                 .pathParam("templateId", templateId)
@@ -882,12 +881,12 @@ public abstract class CrudTestHelpers {
                 .statusCode(200);
 
         // Let's check that the instant email template fields have been correctly updated.
-        getInstantEmailTemplate(header, templateId, updatedEmailTemplate, 200);
+        getInstantEmailTemplate(basePath, header, templateId, updatedEmailTemplate, 200);
     }
 
-    public static Optional<JsonObject> createAggregationEmailTemplate(Header header, AggregationEmailTemplate emailTemplate, int expectedStatusCode) {
+    public static Optional<JsonObject> createAggregationEmailTemplate(String basePath, Header header, AggregationEmailTemplate emailTemplate, int expectedStatusCode) {
         String responseBody = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .contentType(JSON)
                 .body(Json.encode(emailTemplate))
@@ -919,7 +918,7 @@ public abstract class CrudTestHelpers {
             assertEquals(emailTemplate.getBodyTemplateId().toString(), jsonEmailTemplate.getString("body_template_id"));
 
             // Let's check that the email template has been correctly persisted.
-            getAggregationEmailTemplate(header, jsonEmailTemplate.getString("id"), emailTemplate, 200);
+            getAggregationEmailTemplate(basePath, header, jsonEmailTemplate.getString("id"), emailTemplate, 200);
 
             return Optional.of(jsonEmailTemplate);
         } else {
@@ -927,9 +926,9 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void getAggregationEmailTemplate(Header header, String templateId, AggregationEmailTemplate expectedEmailTemplate, int expectedStatusCode) {
+    public static void getAggregationEmailTemplate(String basePath, Header header, String templateId, AggregationEmailTemplate expectedEmailTemplate, int expectedStatusCode) {
         String responseBody = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .pathParam("templateId", templateId)
                 .get("/templates/email/aggregation/{templateId}")
@@ -962,9 +961,9 @@ public abstract class CrudTestHelpers {
         }
     }
 
-    public static void deleteAggregationEmailTemplate(Header header, String templateId) {
+    public static void deleteAggregationEmailTemplate(String basePath, Header header, String templateId) {
         given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .pathParam("templateId", templateId)
                 .when().delete("/templates/email/aggregation/{templateId}")
@@ -973,12 +972,12 @@ public abstract class CrudTestHelpers {
                 .contentType(TEXT);
 
         // Let's check that the template no longer exists.
-        getAggregationEmailTemplate(header, templateId, /* Not used */ null, 404);
+        getAggregationEmailTemplate(basePath, header, templateId, /* Not used */ null, 404);
     }
 
-    public static JsonArray getAllAggregationEmailTemplates(Header header) {
+    public static JsonArray getAllAggregationEmailTemplates(String basePath, Header header) {
         String responseBody = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .when().get("/templates/email/aggregation")
                 .then()
@@ -996,9 +995,9 @@ public abstract class CrudTestHelpers {
         return jsonEmailTemplates;
     }
 
-    public static JsonArray getAggregationEmailTemplatesByApp(Header header, String appId) {
+    public static JsonArray getAggregationEmailTemplatesByApp(String basePath, Header header, String appId) {
         String responseBody = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .pathParam("appId", appId)
                 .when().get("/templates/email/aggregation/application/{appId}")
@@ -1018,9 +1017,9 @@ public abstract class CrudTestHelpers {
         return jsonEmailTemplates;
     }
 
-    public static void updateAggregationEmailTemplate(Header header, String templateId, AggregationEmailTemplate updatedEmailTemplate) {
+    public static void updateAggregationEmailTemplate(String basePath, Header header, String templateId, AggregationEmailTemplate updatedEmailTemplate) {
         given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(header)
                 .contentType(JSON)
                 .pathParam("templateId", templateId)
@@ -1030,7 +1029,7 @@ public abstract class CrudTestHelpers {
                 .statusCode(200);
 
         // Let's check that the aggregation email template fields have been correctly updated.
-        getAggregationEmailTemplate(header, templateId, updatedEmailTemplate, 200);
+        getAggregationEmailTemplate(basePath, header, templateId, updatedEmailTemplate, 200);
     }
 
     public static Template buildTemplate(String name, String data) {
@@ -1062,18 +1061,18 @@ public abstract class CrudTestHelpers {
         return emailTemplate;
     }
 
-    public static String createAggregationTemplate(String bundle, String application, ApplicationRepository applicationRepository, String adminRole) {
+    public static String createAggregationTemplate(String basePath, String bundle, String application, ApplicationRepository applicationRepository, String adminRole) {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
         Template subjectTemplate = CrudTestHelpers.buildTemplate("subject-aggregation-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
-        JsonObject subjectJsonTemplate = createTemplate(adminIdentity, subjectTemplate, 200).get();
+        JsonObject subjectJsonTemplate = createTemplate(basePath, adminIdentity, subjectTemplate, 200).get();
         Template bodyTemplate = CrudTestHelpers.buildTemplate("body-aggregation-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
-        JsonObject bodyJsonTemplate = createTemplate(adminIdentity, bodyTemplate, 200).get();
+        JsonObject bodyJsonTemplate = createTemplate(basePath, adminIdentity, bodyTemplate, 200).get();
 
         Application app = applicationRepository.getApplication(bundle, application);
 
         AggregationEmailTemplate emailTemplate = CrudTestHelpers.buildAggregationEmailTemplate(app.getId().toString(), subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
-        JsonObject jsonEmailTemplate = createAggregationEmailTemplate(adminIdentity, emailTemplate, 200).get();
+        JsonObject jsonEmailTemplate = createAggregationEmailTemplate(basePath, adminIdentity, emailTemplate, 200).get();
         return jsonEmailTemplate.getString("id");
     }
 }

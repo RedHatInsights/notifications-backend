@@ -88,6 +88,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -99,6 +100,11 @@ import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 @Path(API_INTERNAL)
 public class InternalResource {
+
+    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND)
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
+    public static class V1 extends InternalResource {
+    }
 
     private static final Pattern GIT_COMMIT_ID_PATTERN = Pattern.compile("git.commit.id.abbrev=([0-9a-f]{7})");
 

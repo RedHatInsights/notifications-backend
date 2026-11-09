@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers.internal.errata;
 
-import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -24,7 +23,8 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -34,6 +34,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.PatchUserPreferencesMigrationResource.PATCH_NEW_ADVISORY_EVENT_TYPE;
@@ -72,8 +74,9 @@ public class PatchUserPreferencesMigrationResourceTest extends DbIsolatedTest {
      * the corresponding subscriptions in our database.
      * @throws URISyntaxException if the JSON file's URL is not properly built.
      */
-    @Test
-    void testJsonMigration() throws URISyntaxException {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testJsonMigration(String basePath) throws URISyntaxException {
         // Load the file input for the request.
         final URL jsonResourceUrl = getClass().getResource("/patch/subscriptions/patch_subscriptions.json");
         if (jsonResourceUrl == null) {
@@ -103,7 +106,7 @@ public class PatchUserPreferencesMigrationResourceTest extends DbIsolatedTest {
 
         // Send the request.
         given()
-            .basePath(Constants.API_INTERNAL)
+            .basePath(basePath)
             .header(TestHelpers.createTurnpikeIdentityHeader("user", adminRole))
             .when()
             .contentType(MediaType.MULTIPART_FORM_DATA)
@@ -114,7 +117,7 @@ public class PatchUserPreferencesMigrationResourceTest extends DbIsolatedTest {
 
         // call it twice to check no dupplicates
         given()
-            .basePath(Constants.API_INTERNAL)
+            .basePath(basePath)
             .header(TestHelpers.createTurnpikeIdentityHeader("user", adminRole))
             .when()
             .contentType(MediaType.MULTIPART_FORM_DATA)

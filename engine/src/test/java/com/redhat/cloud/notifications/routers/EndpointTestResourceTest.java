@@ -24,11 +24,14 @@ import org.awaitility.Awaitility;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 import java.util.Map;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.EGRESS_CHANNEL;
 import static io.restassured.RestAssured.given;
 
@@ -52,8 +55,9 @@ public class EndpointTestResourceTest {
      * Tests that when a "Test Endpoint" request is received, a "test
      * endpoint integration" event is posted to the egress channel.
      */
-    @Test
-    void testEndpoint() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE})
+    void testEndpoint(String basePath) {
         final String orgId = "test-endpoint-engine-test";
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(EndpointType.CAMEL, "slack", true, 0);
 
@@ -66,7 +70,7 @@ public class EndpointTestResourceTest {
             .when()
             .contentType(ContentType.JSON)
             .body(Json.encode(internalEndpointTestRequest))
-            .post("/internal/endpoints/test")
+            .post(basePath + "/endpoints/test")
             .then()
             .statusCode(204);
 
@@ -131,8 +135,9 @@ public class EndpointTestResourceTest {
      * received, a "test endpoint integration" event is posted to the egress
      * channel.
      */
-    @Test
-    void testEndpointCustomMessage() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE})
+    void testEndpointCustomMessage(String basePath) {
         final String orgId = "test-endpoint-engine-test";
         final String customMessage = "Hello, World!";
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(EndpointType.CAMEL, "slack", true, 0);
@@ -147,7 +152,7 @@ public class EndpointTestResourceTest {
             .when()
             .contentType(ContentType.JSON)
             .body(Json.encode(internalEndpointTestRequest))
-            .post("/internal/endpoints/test")
+            .post(basePath + "/endpoints/test")
             .then()
             .statusCode(204);
 

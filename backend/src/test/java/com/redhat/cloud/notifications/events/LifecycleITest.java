@@ -263,7 +263,7 @@ public class LifecycleITest extends DbIsolatedTest {
         retry(() -> checkEndpointHistory(identityHeader, emailEndpoint, 0, true, 200));
 
         // Lets subscribe the user to the email preferences
-        CrudTestHelpers.createAggregationTemplate(BUNDLE_NAME, APP_NAME, applicationRepository, adminRole);
+        CrudTestHelpers.createAggregationTemplate(API_INTERNAL, BUNDLE_NAME, APP_NAME, applicationRepository, adminRole);
         resourceHelpers.createDrawerTemplate("Drawer template lifecycle test", BUNDLE_NAME, APP_NAME, EVENT_TYPE_NAME);
         subscribeUserPreferences(identityHeader, BUNDLE_NAME, APP_NAME);
 
