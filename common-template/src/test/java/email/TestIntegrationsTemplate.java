@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import static com.redhat.cloud.notifications.qute.templates.mapping.Console.INTEGRATIONS_GENERAL_COMMUNICATION;
 import static com.redhat.cloud.notifications.qute.templates.mapping.Console.INTEGRATIONS_INTEGRATION_DISABLED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -78,14 +79,9 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
             "   \"event_type\":\"general-communication\"," +
             "   \"timestamp\":\"2025-07-11T09:01:36.220643799\"," +
             "   \"org_id\":\"%s\"," +
-            "   \"context\":{" +
-            "      \"integration_category\":\"Reporting\"" +
-            "   }," +
             "   \"events\":[" +
             "      {" +
-            "         \"metadata\":{" +
-            "            \"communication-description\":\"General communication about customers' PagerDuty integrations switching to dynamic severity\"" +
-            "         }," +
+            "         \"metadata\":{}," +
             "         \"payload\":{" +
             "            \"integration_names\":[%s]" +
             "         }" +
@@ -115,15 +111,17 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
                 integrationNames.stream().map(integrationName -> "\"" +  integrationName + "\"").collect(Collectors.joining(",")))
         );
         final String rendered = generateEmailBody(INTEGRATIONS_GENERAL_COMMUNICATION, action, useBetaTemplate);
-        assertTrue(rendered.contains("We are contacting you because you have the following PagerDuty integrations set up for your organization in the"));
+        assertTrue(rendered.contains("ensure your allowlist is up to date"));
         assertTrue(rendered.contains("Integration one"));
         assertTrue(rendered.contains("Another integration"));
         assertTrue(rendered.contains("Third integration"));
-        assertTrue(rendered.contains("begin mapping and filtering alert severity based on the notification type"));
-        assertTrue(rendered.contains("https://access.redhat.com/security/updates/classification"));
-        assertTrue(rendered.contains("https://docs.redhat.com/en/documentation/red_hat_hybrid_cloud_console/1-latest/html-single/configuring_notifications_on_the_red_hat_hybrid_cloud_console/index#con-notif-severity_notif-config-intro"));
+        assertTrue(rendered.contains("before December 6th, 2026"));
+        assertTrue(rendered.contains("https://access.redhat.com/articles/6985526"));
+        assertTrue(rendered.contains("no further action is required"));
         assertTrue(rendered.contains("Red Hat Hybrid Cloud Console"));
-        assertTrue(rendered.contains("/settings/integrations?category=Reporting"));
+        assertTrue(rendered.contains("/settings/integrations"));
+        assertTrue(rendered.contains("Go to your integrations"));
+        assertFalse(rendered.contains("category="));
     }
 
     private Action buildIntegrationDisabledAction(final String errorType, final String errorDetails, final int errorCount, final int errorStatusCode) {

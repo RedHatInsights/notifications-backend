@@ -3,11 +3,8 @@ package com.redhat.cloud.notifications.routers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.events.GeneralCommunicationsHelper;
-import com.redhat.cloud.notifications.events.IntegrationDisabledNotifier;
 import com.redhat.cloud.notifications.ingress.Action;
-import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
-import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
 import com.redhat.cloud.notifications.ingress.Recipient;
@@ -55,13 +52,14 @@ public class GeneralCommunicationsResourceTest {
      */
     @Test
     void testSendGeneralCommunication() {
-        // Create some integrations for an organization.
+        // Create some webhook and Splunk integrations for an organization.
         final String orgId = DEFAULT_ORG_ID + "test-send-gen-com";
         final List<Endpoint> createdEndpoints = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(orgId, EndpointType.PAGERDUTY, null, true, 0);
-
-            createdEndpoints.add(createdEndpoint);
+        for (int i = 0; i < 3; i++) {
+            createdEndpoints.add(this.resourceHelpers.createEndpoint(orgId, EndpointType.WEBHOOK, null, true, 0));
+        }
+        for (int i = 0; i < 2; i++) {
+            createdEndpoints.add(this.resourceHelpers.createEndpoint(orgId, EndpointType.CAMEL, "splunk", true, 0));
         }
 
         this.inMemoryConnector.sink(EGRESS_CHANNEL).clear();
@@ -122,19 +120,11 @@ public class GeneralCommunicationsResourceTest {
         final Recipient recipient = recipients.getFirst();
         Assertions.assertTrue(recipient.getIgnoreUserPreferences());
 
-        final Context context = kafkaAction.getContext();
-        final Map<String, Object> contextProperties = context.getAdditionalProperties();
-        Assertions.assertEquals(IntegrationDisabledNotifier.getFrontendCategory(createdEndpoints.getFirst()), contextProperties.get(GeneralCommunicationsHelper.GENERAL_COMMUNICATION_CONTEXT_INTEGRATION_CATEGORY), "unexpected integration category received in the action's context");
-
-        // Check the events, their metadata and their payload.
+        // Check the events, and their payload.
         final List<Event> events = kafkaAction.getEvents();
         Assertions.assertEquals(1, events.size(), "unexpected number of \"general communications\" action events");
 
         final Event event = events.getFirst();
-
-        final Metadata metadata = event.getMetadata();
-        Assertions.assertEquals(1, metadata.getAdditionalProperties().size(), "unexpected number of metadata additional properties");
-        Assertions.assertEquals(GeneralCommunicationsHelper.GENERAL_COMMUNICATION_METADATA_VALUE, metadata.getAdditionalProperties().get(GeneralCommunicationsHelper.GENERAL_COMMUNICATION_METADATA_KEY), "unexpected event metadata value");
 
         final Payload payload = event.getPayload();
         final Map<String, Object> payloadAdditionalProperties = payload.getAdditionalProperties();
@@ -146,6 +136,7 @@ public class GeneralCommunicationsResourceTest {
             .toList();
         final List<String> actionIntegrationNames = (List<String>) payloadAdditionalProperties.get(GeneralCommunicationsHelper.GENERAL_COMMUNICATION_PAYLOAD_INTEGRATION_NAMES);
 
+        Assertions.assertEquals(expectedIntegrationNames.size(), actionIntegrationNames.size(), "expected the payload to contain the integration names of both the webhook and the Splunk endpoints");
         for (final String actionIntegrationName : actionIntegrationNames) {
             Assertions.assertTrue(expectedIntegrationNames.contains(actionIntegrationName), String.format("the event's payload contains an integration name \"%s\" that was not found in the ones created in the database", actionIntegrationName));
         }
