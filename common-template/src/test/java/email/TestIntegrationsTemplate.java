@@ -111,15 +111,16 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
                 integrationNames.stream().map(integrationName -> "\"" +  integrationName + "\"").collect(Collectors.joining(",")))
         );
         final String rendered = generateEmailBody(INTEGRATIONS_GENERAL_COMMUNICATION, action, useBetaTemplate);
-        assertTrue(rendered.contains("moving to a new cluster with a new set of IP addresses"));
+        assertTrue(rendered.contains("ensure your allowlist is up to date"));
         assertTrue(rendered.contains("Integration one"));
         assertTrue(rendered.contains("Another integration"));
         assertTrue(rendered.contains("Third integration"));
-        assertTrue(rendered.contains("ahead of this change"));
+        assertTrue(rendered.contains("before December 6th, 2026"));
         assertTrue(rendered.contains("https://access.redhat.com/articles/6985526"));
         assertTrue(rendered.contains("no further action is required"));
         assertTrue(rendered.contains("Red Hat Hybrid Cloud Console"));
-        assertFalse(rendered.contains("/settings/integrations"));
+        assertTrue(rendered.contains("/settings/integrations"));
+        assertTrue(rendered.contains("Go to your integrations"));
         assertFalse(rendered.contains("category="));
     }
 
