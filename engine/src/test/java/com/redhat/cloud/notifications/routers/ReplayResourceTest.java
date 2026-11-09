@@ -26,10 +26,10 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -38,6 +38,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
 import static com.redhat.cloud.notifications.TestHelpers.createPoliciesAction;
 import static com.redhat.cloud.notifications.TestHelpers.serializeAction;
 import static com.redhat.cloud.notifications.models.Endpoint.GOOGLE_CHAT_ENDPOINT_SUBTYPE;
@@ -198,13 +199,14 @@ public class ReplayResourceTest {
         }
     }
 
-    @Test
-    void testReplayOrgId123() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE})
+    void testReplayOrgId123(String basePath) {
         EventsReplayRequest replayRequest = getEventsReplayRequest();
         replayRequest.orgId = "123";
 
         given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .contentType(JSON)
                 .body(Json.encode(replayRequest))
                 .when()

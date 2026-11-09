@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers.internal.applicationservices;
 
-import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
@@ -19,7 +18,8 @@ import jakarta.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -29,6 +29,8 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.db.repositories.ApplicationServicesMigrationRepository.APPLICATION_SERVICES_BUNDLE_NAME;
 import static io.restassured.RestAssured.given;
 
@@ -48,8 +50,9 @@ public class ApplicationServicesUserPreferencesMigrationResourceTest extends DbI
     @Inject
     SubscriptionRepository subscriptionRepository;
 
-    @Test
-    void testUnsupportedEventTypesAreSkipped() throws URISyntaxException {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testUnsupportedEventTypesAreSkipped(String basePath) throws URISyntaxException {
         final EventType notAnAppServicesEventType = new EventType();
         notAnAppServicesEventType.setName("not-an-app-services-event-type");
 
@@ -63,7 +66,7 @@ public class ApplicationServicesUserPreferencesMigrationResourceTest extends DbI
         final File file = Paths.get(jsonResourceUrl.toURI()).toFile();
 
         given()
-            .basePath(Constants.API_INTERNAL)
+            .basePath(basePath)
             .header(TestHelpers.createTurnpikeIdentityHeader("user", adminRole))
             .when()
             .contentType(MediaType.MULTIPART_FORM_DATA)
@@ -73,8 +76,9 @@ public class ApplicationServicesUserPreferencesMigrationResourceTest extends DbI
             .statusCode(HttpStatus.SC_NO_CONTENT);
     }
 
-    @Test
-    void testJsonMigration() throws URISyntaxException {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testJsonMigration(String basePath) throws URISyntaxException {
         final URL jsonResourceUrl = getClass().getResource("/application-services/subscriptions/application_services_subscriptions.json");
         if (jsonResourceUrl == null) {
             Assertions.fail("The path of the JSON test file is incorrect");
@@ -90,7 +94,7 @@ public class ApplicationServicesUserPreferencesMigrationResourceTest extends DbI
         final EventType eventTypeRedhatQuarkus = resourceHelpers.createEventType(application.getId(), "redhat-quarkus");
 
         given()
-            .basePath(Constants.API_INTERNAL)
+            .basePath(basePath)
             .header(TestHelpers.createTurnpikeIdentityHeader("user", adminRole))
             .when()
             .contentType(MediaType.MULTIPART_FORM_DATA)

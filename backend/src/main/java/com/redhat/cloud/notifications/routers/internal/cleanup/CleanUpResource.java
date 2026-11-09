@@ -15,10 +15,16 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 @Path(API_INTERNAL + "/cleanup")
 public class CleanUpResource {
+
+    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND + "/cleanup")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
+    public static class V1 extends CleanUpResource {
+    }
 
     @Inject
     DrawerNotificationRepository drawerNotificationRepository;

@@ -10,11 +10,14 @@ import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.Header;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createBundle;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createEventType;
@@ -33,30 +36,31 @@ class ValidationResourceTest extends DbIsolatedTest {
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
-    @Test
-    void testGetBaetList() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testGetBaetList(String basePath) {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
         final String bundleName = "bundle-name-baet1";
         final String applicationName = "application-name-baet1";
-        String bundleId = createBundle(adminIdentity, bundleName, RandomStringUtils.secure().nextAlphanumeric(10), OK.getStatusCode()).get();
-        String applicationId = createApp(adminIdentity, bundleId, applicationName, RandomStringUtils.secure().nextAlphanumeric(10), null, OK.getStatusCode()).get();
+        String bundleId = createBundle(basePath, adminIdentity, bundleName, RandomStringUtils.secure().nextAlphanumeric(10), OK.getStatusCode()).get();
+        String applicationId = createApp(basePath, adminIdentity, bundleId, applicationName, RandomStringUtils.secure().nextAlphanumeric(10), null, OK.getStatusCode()).get();
         EventType eventType = new EventType();
         eventType.setDescription(RandomStringUtils.secure().nextAlphanumeric(10));
         eventType.setName("event1");
         eventType.setDisplayName("Event 1");
         eventType.setApplicationId(UUID.fromString(applicationId));
-        createEventType(adminIdentity, eventType, OK.getStatusCode());
+        createEventType(basePath, adminIdentity, eventType, OK.getStatusCode());
 
         eventType.setName("event2");
         eventType.setDisplayName("Event 2");
-        createEventType(adminIdentity, eventType, OK.getStatusCode());
+        createEventType(basePath, adminIdentity, eventType, OK.getStatusCode());
 
         Map<String, Map<String, List<String>>> baetMap = given()
             .header(adminIdentity)
             .contentType(JSON)
             .when()
-            .get("/internal/validation/baet_list")
+            .get(basePath + "/validation/baet_list")
             .then()
             .statusCode(OK.getStatusCode()).extract().as(new TypeRef<>() { });
 

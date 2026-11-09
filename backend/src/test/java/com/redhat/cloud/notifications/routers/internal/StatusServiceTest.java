@@ -12,9 +12,11 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.restassured.http.Header;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.TestConstants.API_INTEGRATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestConstants.API_NOTIFICATIONS_V_1_0;
 import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
@@ -36,8 +38,9 @@ public class StatusServiceTest extends DbIsolatedTest {
     @CacheName("maintenance")
     Cache maintenance;
 
-    @Test
-    public void testValidCurrentStatus() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    public void testValidCurrentStatus(String basePath) {
         String identityHeaderValue = TestHelpers.encodeRHIdentityInfo("tenant", "empty", "username");
         Header identityHeader = TestHelpers.createRHIdentityHeader(identityHeaderValue);
         MockServerConfig.addMockRbacAccess(identityHeaderValue, MockServerConfig.RbacAccess.FULL_ACCESS);
@@ -50,7 +53,7 @@ public class StatusServiceTest extends DbIsolatedTest {
          * We won't test /health because it's always DOWN and returns 503 during tests.
          */
         getMetrics();
-        getBundles();
+        getBundles(basePath);
         getEndpoints(identityHeader, 200);
         getEventTypes(identityHeader, 200);
 
@@ -62,7 +65,7 @@ public class StatusServiceTest extends DbIsolatedTest {
 
         // The maintenance is on but /internal and /metrics should still be available.
         getMetrics();
-        getBundles();
+        getBundles(basePath);
 
         // On the other hand, /api/integrations and /api/notifications should return 503.
         getEndpoints(identityHeader, 503);
@@ -85,9 +88,9 @@ public class StatusServiceTest extends DbIsolatedTest {
                 .statusCode(200);
     }
 
-    private void getBundles() {
+    private void getBundles(String basePath) {
         given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(createTurnpikeIdentityHeader("admin", adminRole))
                 .when()
                 .get("/bundles")

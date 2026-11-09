@@ -27,12 +27,17 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
 @Path(API_INTERNAL + "/validation")
 public class ValidationResource {
+
+    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND + "/validation")
+    public static class V1 extends ValidationResource {
+    }
 
     private static final String EVENT_TYPE_NOT_FOUND_MSG = "No event type found for [bundle=%s, application=%s, eventType=%s]";
     private static final String CERTIFICATE_NOT_AUTHORIZED_MSG = "This certificate is not authorized for [bundle=%s, application=%s]";

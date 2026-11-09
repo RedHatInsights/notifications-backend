@@ -30,6 +30,11 @@ import java.util.stream.Collectors;
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 public class ApplicationServicesUserPreferencesMigrationResource {
 
+    @Path(Constants.API_INTERNAL_NOTIFICATIONS_BACKEND + "/application-services")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
+    public static class V1 extends ApplicationServicesUserPreferencesMigrationResource {
+    }
+
     @Inject
     ApplicationServicesMigrationRepository applicationServicesMigrationRepository;
 

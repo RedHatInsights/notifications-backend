@@ -16,12 +16,18 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 
 @Path(API_INTERNAL + "/heap_dump")
 @RolesAllowed(RBAC_INTERNAL_ADMIN)
 public class HeapDumpResource {
+
+    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND + "/heap_dump")
+    @RolesAllowed(RBAC_INTERNAL_ADMIN)
+    public static class V1 extends HeapDumpResource {
+    }
 
     @ConfigProperty(name = "quarkus.log.cloudwatch.log-stream-name", defaultValue = "localhost")
     String hostname;

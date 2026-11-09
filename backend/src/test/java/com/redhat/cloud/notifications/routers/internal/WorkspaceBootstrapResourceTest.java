@@ -13,9 +13,11 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static io.restassured.RestAssured.given;
@@ -38,8 +40,9 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
     @Inject
     WorkspaceRepository workspaceRepository;
 
-    @Test
-    void testBootstrapCreatesOrgWorkspaces() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testBootstrapCreatesOrgWorkspaces(String basePath) {
         // Setup - Create endpoints for multiple orgs
         String orgId1 = "test-org-bootstrap-1";
         String orgId2 = "test-org-bootstrap-2";
@@ -50,7 +53,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Call bootstrap endpoint
         BootstrapSummary summary = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")
@@ -70,8 +73,9 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         assertTrue(summary.orgEndpointsAssigned >= 3, "Should assign at least 3 org endpoints");
     }
 
-    @Test
-    void testBootstrapIdempotency() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testBootstrapIdempotency(String basePath) {
         // Setup - Create both system and org endpoints
         createEndpoint(null, "system-endpoint-idempotent");
         String orgId = "test-org-idempotent";
@@ -80,7 +84,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Call bootstrap twice
         BootstrapSummary summary1 = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")
@@ -91,7 +95,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
 
         BootstrapSummary summary2 = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")
@@ -117,8 +121,9 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
             "Second bootstrap should not assign additional org endpoints");
     }
 
-    @Test
-    void testBootstrapAssignsSystemEndpointsToSystemWorkspace() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testBootstrapAssignsSystemEndpointsToSystemWorkspace(String basePath) {
         // Setup - Create system endpoints (org_id = NULL) and regular org endpoints
         createEndpoint(null, "system-endpoint-1");
         createEndpoint(null, "system-endpoint-2");
@@ -127,7 +132,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Call bootstrap
         BootstrapSummary summary = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")
@@ -152,12 +157,13 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         assertEndpointHasWorkspace("system-endpoint-2", summary.systemWorkspaceId);
     }
 
-    @Test
-    void testBootstrapWithNoEndpoints() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testBootstrapWithNoEndpoints(String basePath) {
         // Execute - Call bootstrap with empty endpoints table
         BootstrapSummary summary = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")
@@ -174,8 +180,9 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         assertEquals(0, summary.orgEndpointsAssigned);
     }
 
-    @Test
-    void testBootstrapPartiallyAssignedEndpoints() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testBootstrapPartiallyAssignedEndpoints(String basePath) {
         // Setup - Create some endpoints and run bootstrap
         String orgId = "test-org-partial";
         createEndpoint(orgId, "endpoint-1");
@@ -183,7 +190,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
 
         BootstrapSummary summary1 = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")
@@ -200,7 +207,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Run bootstrap again
         BootstrapSummary summary2 = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")
@@ -215,8 +222,9 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
             "Should update ALL 4 endpoints to guarantee workspace consistency");
     }
 
-    @Test
-    void testBootstrapWithMultipleOrgsAndEndpoints() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testBootstrapWithMultipleOrgsAndEndpoints(String basePath) {
         // Setup - Create endpoints for 5 orgs with varying counts
         createEndpoint("org-scale-1", "org1-endpoint-1");
         createEndpoint("org-scale-1", "org1-endpoint-2");
@@ -237,7 +245,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Call bootstrap
         BootstrapSummary summary = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")
@@ -257,8 +265,9 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
             "Should assign all 11 endpoints");
     }
 
-    @Test
-    void testBootstrapEnsuresSameWorkspaceForSameOrg() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testBootstrapEnsuresSameWorkspaceForSameOrg(String basePath) {
         // Setup - Create multiple endpoints for same org
         String orgId = "org-same-workspace";
         createEndpoint(orgId, "endpoint-1");
@@ -268,7 +277,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Call bootstrap
         given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")
@@ -286,8 +295,9 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
             "Endpoints in same org should have same workspace");
     }
 
-    @Test
-    void testBootstrapWithMixedEndpointTypes() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testBootstrapWithMixedEndpointTypes(String basePath) {
         // Setup - Create endpoints of different types
         String orgId = "org-mixed-types";
         createEndpoint(orgId, "webhook-endpoint");
@@ -297,7 +307,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Call bootstrap
         BootstrapSummary summary = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")
@@ -315,8 +325,9 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         assertNotNull(getEndpointWorkspaceId("camel-slack-endpoint"));
     }
 
-    @Test
-    void testResetClearsAllWorkspacesAndUnassignsEndpoints() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testResetClearsAllWorkspacesAndUnassignsEndpoints(String basePath) {
         // Setup - Create endpoints and bootstrap
         createEndpoint("org-reset-1", "endpoint-1");
         createEndpoint("org-reset-2", "endpoint-2");
@@ -325,7 +336,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Bootstrap to assign workspaces
         given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")
@@ -345,7 +356,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Reset (returns 204 No Content)
         given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/reset")
@@ -375,7 +386,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Run bootstrap again to restore system workspace
         given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")
@@ -388,8 +399,9 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
             "System workspace ID should be recreated with same well-known UUID");
     }
 
-    @Test
-    void testResetThenBootstrapReassignsSameWorkspaceIds() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testResetThenBootstrapReassignsSameWorkspaceIds(String basePath) {
         // Setup - Create endpoints for multiple orgs and system endpoint
         createEndpoint("org-cycle-1", "endpoint-cycle-1");
         createEndpoint("org-cycle-2", "endpoint-cycle-2");
@@ -398,7 +410,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Bootstrap
         given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")
@@ -418,7 +430,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Reset
         given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/reset")
@@ -444,7 +456,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
         // Execute - Bootstrap again (should recreate system workspace)
         BootstrapSummary summary = given()
                         .header(createTurnpikeIdentityHeader("admin", adminRole))
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .contentType(JSON)
             .when()
             .post("/workspace/bootstrap")

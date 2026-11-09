@@ -12,10 +12,13 @@ import io.restassured.http.Header;
 import io.vertx.core.json.JsonObject;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import java.util.List;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createBundle;
 import static io.restassured.RestAssured.given;
@@ -34,19 +37,20 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
     @ConfigProperty(name = "internal.admin-role")
     String adminRole;
 
-    @Test
-    void testCrudX509Certificate() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testCrudX509Certificate(String basePath) {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         Header intenralUserIdentity = TestHelpers.createTurnpikeIdentityHeader("internal_user", "not_use");
 
         final String bundleName = "bundle-name-x509-certificate";
         final String applicationName = "application-name-x509-certificate";
-        String bundleId = createBundle(adminIdentity, bundleName, "Certificate Bundle", OK.getStatusCode()).get();
-        createApp(adminIdentity, bundleId, applicationName, "Certificate Application", null, OK.getStatusCode());
+        String bundleId = createBundle(basePath, adminIdentity, bundleName, "Certificate Bundle", OK.getStatusCode()).get();
+        createApp(basePath, adminIdentity, bundleId, applicationName, "Certificate Application", null, OK.getStatusCode());
 
-        checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data", FORBIDDEN);
+        checkGatewayCertificate(basePath, intenralUserIdentity, bundleName, applicationName, "certificate data", FORBIDDEN);
 
-        List<X509Certificate> certificates = getCertificates(adminIdentity);
+        List<X509Certificate> certificates = getCertificates(basePath, adminIdentity);
         assertEquals(0, certificates.size());
 
         X509Certificate x509Certificate = new X509Certificate();
@@ -59,7 +63,7 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
             .contentType(JSON)
             .body(Json.encode(x509Certificate))
             .when()
-            .post("/internal/x509Certificates")
+            .post(basePath + "/x509Certificates")
             .then()
             .statusCode(OK.getStatusCode())
             .extract().asString());
@@ -67,14 +71,14 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
         String certificateId = createdCertificateId.getString("id");
         assertNotNull(certificateId);
 
-        certificates = getCertificates(adminIdentity);
+        certificates = getCertificates(basePath, adminIdentity);
         assertEquals(1, certificates.size());
         assertEquals(x509Certificate.getSubjectDn(), certificates.get(0).getSubjectDn());
         assertEquals(x509Certificate.getSourceEnvironment(), certificates.get(0).getSourceEnvironment());
         assertEquals(x509Certificate.getApplication(), certificates.get(0).getApplication());
         assertEquals(x509Certificate.getBundle(), certificates.get(0).getBundle());
 
-        x509Certificate = checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data", OK);
+        x509Certificate = checkGatewayCertificate(basePath, intenralUserIdentity, bundleName, applicationName, "certificate data", OK);
         assertEquals("stage", x509Certificate.getSourceEnvironment());
 
         X509Certificate certificateUpdated = new X509Certificate();
@@ -87,12 +91,12 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
             .pathParam("certificateId", certificateId)
             .body(Json.encode(certificateUpdated))
             .when()
-            .put("/internal/x509Certificates/{certificateId}")
+            .put(basePath + "/x509Certificates/{certificateId}")
             .then()
             .statusCode(OK.getStatusCode());
 
-        checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data", FORBIDDEN);
-        x509Certificate = checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data updated", OK);
+        checkGatewayCertificate(basePath, intenralUserIdentity, bundleName, applicationName, "certificate data", FORBIDDEN);
+        x509Certificate = checkGatewayCertificate(basePath, intenralUserIdentity, bundleName, applicationName, "certificate data updated", OK);
         assertEquals("prod", x509Certificate.getSourceEnvironment());
         assertEquals("certificate data updated", x509Certificate.getSubjectDn());
 
@@ -102,27 +106,28 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
             .pathParam("certificateId", certificateId)
             .body(Json.encode(certificateUpdated))
             .when()
-            .delete("/internal/x509Certificates/{certificateId}")
+            .delete(basePath + "/x509Certificates/{certificateId}")
             .then()
             .statusCode(OK.getStatusCode());
 
-        checkGatewayCertificate(intenralUserIdentity, bundleName, applicationName, "certificate data updated", FORBIDDEN);
+        checkGatewayCertificate(basePath, intenralUserIdentity, bundleName, applicationName, "certificate data updated", FORBIDDEN);
 
         given()
             .header(adminIdentity)
             .contentType(JSON)
             .pathParam("certificateId", x509Certificate.getId())
             .when()
-            .delete("/internal/x509Certificates/{certificateId}")
+            .delete(basePath + "/x509Certificates/{certificateId}")
             .then()
             .statusCode(OK.getStatusCode());
 
-        certificates = getCertificates(adminIdentity);
+        certificates = getCertificates(basePath, adminIdentity);
         assertEquals(0, certificates.size());
     }
 
-    @Test
-    void testX509CertificateAPIRestrictions() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testX509CertificateAPIRestrictions(String basePath) {
         Header intenralUserIdentity = TestHelpers.createTurnpikeIdentityHeader("internal_user", "not_use");
 
         given()
@@ -130,7 +135,7 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
             .contentType(JSON)
             .body(Json.encode(new X509Certificate()))
             .when()
-            .post("/internal/x509Certificates")
+            .post(basePath + "/x509Certificates")
             .then()
             .statusCode(FORBIDDEN.getStatusCode());
 
@@ -140,7 +145,7 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
             .pathParam("certificateId", UUID.randomUUID().toString())
             .body(Json.encode(new X509Certificate()))
             .when()
-            .put("/internal/x509Certificates/{certificateId}")
+            .put(basePath + "/x509Certificates/{certificateId}")
             .then()
             .statusCode(FORBIDDEN.getStatusCode());
 
@@ -150,13 +155,13 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
             .pathParam("certificateId", UUID.randomUUID().toString())
             .body(Json.encode(new X509Certificate()))
             .when()
-            .delete("/internal/x509Certificates/{certificateId}")
+            .delete(basePath + "/x509Certificates/{certificateId}")
             .then()
             .statusCode(FORBIDDEN.getStatusCode());
 
     }
 
-    private static X509Certificate checkGatewayCertificate(Header adminIdentity, String bundleName, String applicationName, String certificateData, Response.Status status) {
+    private static X509Certificate checkGatewayCertificate(String basePath, Header adminIdentity, String bundleName, String applicationName, String certificateData, Response.Status status) {
         String responseBody = given()
             .header(adminIdentity)
             .contentType(JSON)
@@ -164,7 +169,7 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
             .param("application", applicationName)
             .param("certificateSubjectDn", certificateData)
             .when()
-            .get("/internal/validation/certificate")
+            .get(basePath + "/validation/certificate")
             .then()
             .statusCode(status.getStatusCode()).extract().asString();
 
@@ -177,12 +182,12 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
         return null;
     }
 
-    private static List<X509Certificate> getCertificates(Header adminIdentity) {
+    private static List<X509Certificate> getCertificates(String basePath, Header adminIdentity) {
         return given()
             .header(adminIdentity)
             .contentType(JSON)
             .when()
-            .get("/internal/validation/certificates")
+            .get(basePath + "/validation/certificates")
             .then()
             .statusCode(OK.getStatusCode()).extract().as(new TypeRef<>() { });
     }

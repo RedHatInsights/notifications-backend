@@ -59,16 +59,35 @@ public class RecipientResolverResourceTest {
         Assertions.assertEquals(500, userList.size());
     }
 
+    /**
+     * The endpoint is served under the legacy path and under the path following the
+     * "/internal/{service}/{version}" convention (RHCLOUD-52372).
+     */
+    @Test
+    public void testNewInternalPath() throws JsonProcessingException {
+        String newPath = "/internal/notifications/v1/recipients-resolver";
+
+        getRecipients(newPath, null, 400);
+        RecipientsQuery recipientQuery = new RecipientsQuery();
+        recipientQuery.orgId = "123456";
+        recipientQuery.recipientSettings = new HashSet<>();
+        getRecipients(newPath, recipientQuery, 200);
+    }
+
     private static List<User> getRecipientsPage(RecipientsQuery resolverQuery) throws JsonProcessingException {
         return getRecipients(resolverQuery, 200).as(new TypeRef<>() { });
     }
 
     private static Response getRecipients(RecipientsQuery resolverQuery, int expectedStatusCode) throws JsonProcessingException {
+        return getRecipients("/internal/recipients-resolver", resolverQuery, expectedStatusCode);
+    }
+
+    private static Response getRecipients(String path, RecipientsQuery resolverQuery, int expectedStatusCode) throws JsonProcessingException {
         return given()
             .when()
             .contentType(JSON)
             .body(OBJECT_MAPPER.writeValueAsString(resolverQuery))
-            .put("/internal/recipients-resolver")
+            .put(path)
             .then()
             .statusCode(expectedStatusCode).extract().response();
     }

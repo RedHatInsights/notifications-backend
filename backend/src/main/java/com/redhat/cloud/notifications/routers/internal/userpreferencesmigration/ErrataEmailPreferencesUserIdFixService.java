@@ -15,6 +15,11 @@ import java.util.Set;
 @ApplicationScoped
 @Path(Constants.API_INTERNAL + "/team-nado")
 public class ErrataEmailPreferencesUserIdFixService {
+
+    @Path(Constants.API_INTERNAL_NOTIFICATIONS_BACKEND + "/team-nado")
+    public static class V1 extends ErrataEmailPreferencesUserIdFixService {
+    }
+
     @Inject
     SubscriptionRepository subscriptionRepository;
 

@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_USER;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -51,6 +52,11 @@ import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 @Path(API_INTERNAL + "/templates")
 @RolesAllowed(RBAC_INTERNAL_ADMIN)
 public class TemplateResource {
+
+    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND + "/templates")
+    @RolesAllowed(RBAC_INTERNAL_ADMIN)
+    public static class V1 extends TemplateResource {
+    }
 
     @Inject
     TemplateService templateService;

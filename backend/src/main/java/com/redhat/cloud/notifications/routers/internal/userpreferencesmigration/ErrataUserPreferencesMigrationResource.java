@@ -38,6 +38,12 @@ import java.util.stream.Collectors;
 @Path(Constants.API_INTERNAL + "/team-nado")
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 public class ErrataUserPreferencesMigrationResource {
+
+    @Path(Constants.API_INTERNAL_NOTIFICATIONS_BACKEND + "/team-nado")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
+    public static class V1 extends ErrataUserPreferencesMigrationResource {
+    }
+
     public static final String EVENT_TYPE_NAME_BUGFIX = "new-subscription-bugfix-errata";
     public static final String EVENT_TYPE_NAME_ENHANCEMENT = "new-subscription-enhancement-errata";
     public static final String EVENT_TYPE_NAME_SECURITY = "new-subscription-security-errata";

@@ -14,11 +14,14 @@ import jakarta.transaction.Transactional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.CrudTestHelpers.*;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 import static io.restassured.RestAssured.given;
@@ -36,39 +39,40 @@ public class InternalGwResourceTest extends DbIsolatedTest {
     @Inject
     EntityManager em;
 
-    @Test
-    void testSubscriptionsList() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testSubscriptionsList(String basePath) {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
         final String bundleName = "bundle-name-baet1";
         final String applicationName = "application-name-baet1";
-        String bundleId = createBundle(adminIdentity, bundleName, RandomStringUtils.secure().nextAlphanumeric(10), HttpStatus.SC_OK).get();
-        String applicationId = createApp(adminIdentity, bundleId, applicationName, RandomStringUtils.secure().nextAlphanumeric(10), null, HttpStatus.SC_OK).get();
+        String bundleId = createBundle(basePath, adminIdentity, bundleName, RandomStringUtils.secure().nextAlphanumeric(10), HttpStatus.SC_OK).get();
+        String applicationId = createApp(basePath, adminIdentity, bundleId, applicationName, RandomStringUtils.secure().nextAlphanumeric(10), null, HttpStatus.SC_OK).get();
         EventType eventType = new EventType();
         eventType.setDescription(RandomStringUtils.secure().nextAlphanumeric(10));
         eventType.setName("event1");
         eventType.setDisplayName("Event 1");
         eventType.setApplicationId(UUID.fromString(applicationId));
-        String eventId1 = createEventType(adminIdentity, eventType, HttpStatus.SC_OK).get();
+        String eventId1 = createEventType(basePath, adminIdentity, eventType, HttpStatus.SC_OK).get();
 
         eventType.setName("event2");
         eventType.setDisplayName("Event 2");
-        String eventId2 = createEventType(adminIdentity, eventType, HttpStatus.SC_OK).get();
+        String eventId2 = createEventType(basePath, adminIdentity, eventType, HttpStatus.SC_OK).get();
 
         // no subscriber yet
-        Map<String, List<String>> mapOrgsByEventTypes = getSubscribedOrgs(adminIdentity, bundleName, applicationName, List.of("event1", "event2"));
+        Map<String, List<String>> mapOrgsByEventTypes = getSubscribedOrgs(basePath, adminIdentity, bundleName, applicationName, List.of("event1", "event2"));
         assertTrue(mapOrgsByEventTypes.isEmpty());
 
         // add one subscriber to event type 2
         createUserSubscription(UUID.fromString(eventId2), "123456");
-        mapOrgsByEventTypes = getSubscribedOrgs(adminIdentity, bundleName, applicationName, List.of("event1", "event2"));
+        mapOrgsByEventTypes = getSubscribedOrgs(basePath, adminIdentity, bundleName, applicationName, List.of("event1", "event2"));
         assertEquals(1, mapOrgsByEventTypes.size());
         assertTrue(mapOrgsByEventTypes.containsKey("event2"));
         assertTrue(mapOrgsByEventTypes.get("event2").contains("123456"));
 
         // add one subscriber to event type 1
         createUserSubscription(UUID.fromString(eventId1), "654321");
-        mapOrgsByEventTypes = getSubscribedOrgs(adminIdentity, bundleName, applicationName, List.of("event1", "event2"));
+        mapOrgsByEventTypes = getSubscribedOrgs(basePath, adminIdentity, bundleName, applicationName, List.of("event1", "event2"));
         assertEquals(2, mapOrgsByEventTypes.size());
         assertTrue(mapOrgsByEventTypes.containsKey("event1"));
         assertTrue(mapOrgsByEventTypes.get("event1").contains("654321"));
@@ -77,7 +81,7 @@ public class InternalGwResourceTest extends DbIsolatedTest {
 
         // add one subscriber to event type 2
         createUserSubscription(UUID.fromString(eventId2), "654321");
-        mapOrgsByEventTypes = getSubscribedOrgs(adminIdentity, bundleName, applicationName, List.of("event1", "event2"));
+        mapOrgsByEventTypes = getSubscribedOrgs(basePath, adminIdentity, bundleName, applicationName, List.of("event1", "event2"));
         assertEquals(2, mapOrgsByEventTypes.size());
         assertTrue(mapOrgsByEventTypes.containsKey("event1"));
         assertTrue(mapOrgsByEventTypes.get("event1").contains("654321"));
@@ -87,17 +91,17 @@ public class InternalGwResourceTest extends DbIsolatedTest {
 
         // filter on event type 1 only
         createUserSubscription(UUID.fromString(eventId1), "654321");
-        mapOrgsByEventTypes = getSubscribedOrgs(adminIdentity, bundleName, applicationName, List.of("event1"));
+        mapOrgsByEventTypes = getSubscribedOrgs(basePath, adminIdentity, bundleName, applicationName, List.of("event1"));
         assertEquals(1, mapOrgsByEventTypes.size());
         assertTrue(mapOrgsByEventTypes.containsKey("event1"));
         assertTrue(mapOrgsByEventTypes.get("event1").contains("654321"));
 
         // test with unknown even type
-        mapOrgsByEventTypes = getSubscribedOrgs(adminIdentity, bundleName, applicationName, List.of("not-exist"));
+        mapOrgsByEventTypes = getSubscribedOrgs(basePath, adminIdentity, bundleName, applicationName, List.of("not-exist"));
         assertEquals(0, mapOrgsByEventTypes.size());
     }
 
-    private static Map<String, List<String>> getSubscribedOrgs(final Header adminIdentity, final String bundleName, final String applicationName, final List<String> event1) {
+    private static Map<String, List<String>> getSubscribedOrgs(final String basePath, final Header adminIdentity, final String bundleName, final String applicationName, final List<String> event1) {
         return given()
             .contentType(JSON)
             .header(adminIdentity)
@@ -105,7 +109,7 @@ public class InternalGwResourceTest extends DbIsolatedTest {
             .pathParam("application", applicationName)
             .param("eventTypeNames", event1)
             .when()
-            .get("/internal/gw/subscriptions/{bundle}/{application}")
+            .get(basePath + "/gw/subscriptions/{bundle}/{application}")
             .then()
             .statusCode(HttpStatus.SC_OK).extract().as(new TypeRef<>() {
             });

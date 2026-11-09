@@ -11,10 +11,19 @@ import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path(API_INTERNAL + "/gw")
 public class InternalGwResource {
+
+    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND + "/gw")
+    public static class V1 extends InternalGwResource {
+
+        public V1(SubscriptionRepository subscriptionRepository) {
+            super(subscriptionRepository);
+        }
+    }
 
     final SubscriptionRepository subscriptionRepository;
 
