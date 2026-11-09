@@ -68,6 +68,13 @@ See [Template Guidelines](template-guidelines.md) for the full test patterns (`E
 - Create identity headers via `TestHelpers.createRHIdentityHeader()` and `TestHelpers.encodeRHIdentityInfo()`.
 - For Kessel authorization tests, use `KesselTestHelper` (`@ApplicationScoped`) which builds `CheckRequest`/`CheckResponse` objects for mocked Kessel clients.
 
+## Running a Test Multiple Times with Different Inputs
+
+- Make the repetition visible in the test itself. Use JUnit's `@ParameterizedTest` with `@ValueSource`/`@MethodSource` and a method parameter that the test body uses (e.g., `void testReplay(String basePath)` with `.basePath(basePath)`).
+- Do not hide the variation behind global overrides such as custom `@TestTemplate` annotations, static mutable state, or a RestAssured filter that rewrites requests. A test that reads as if it runs once while it actually runs twice is hard to understand and can silently stay on one input.
+- If shared test helpers build the request (e.g., `CrudTestHelpers`), pass the parameter to them explicitly instead of reading it from hidden state.
+- Tests that run more than once in the same JVM and database must be re-runnable: use random IDs and clear shared state (e.g., in-memory sinks) in `@BeforeEach`.
+
 ## Test Profiles
 
 - Use `@TestProfile(ProdTestProfile.class)` to activate the `prod` Quarkus config profile during a test. Only use when testing prod-specific configuration behavior.

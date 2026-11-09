@@ -26,12 +26,17 @@ import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 import static java.time.ZoneOffset.UTC;
 
 @Path(API_INTERNAL + "/daily-digest")
 public class DailyDigestResource {
+
+    @Path(API_INTERNAL_NOTIFICATIONS_ENGINE + "/daily-digest")
+    public static class V1 extends DailyDigestResource {
+    }
 
     public static final String AGGREGATION_OUT_CHANNEL = "egress";
     public static final String BUNDLE_NAME = "console";

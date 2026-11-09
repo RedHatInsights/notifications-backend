@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers.internal.errata;
 
-import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.config.BackendConfig;
@@ -20,7 +19,8 @@ import jakarta.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -30,6 +30,8 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_BUGFIX;
 import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_ENHANCEMENT;
 import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_SECURITY;
@@ -58,8 +60,9 @@ public class ErrataUserPreferencesMigrationResourceTest extends DbIsolatedTest {
      * fails.
      * @throws URISyntaxException if the JSON file's URL is not properly built.
      */
-    @Test
-    void testUnsupportedEventType() throws URISyntaxException {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testUnsupportedEventType(String basePath) throws URISyntaxException {
         // Reduce the batch size so that the loop runs more than once, and
         // therefore we can test that it works for large files.
         Mockito.when(this.backendConfig.getErrataMigrationBatchSize()).thenReturn(2);
@@ -80,7 +83,7 @@ public class ErrataUserPreferencesMigrationResourceTest extends DbIsolatedTest {
 
         // Call the endpoint under test.
         final String response = given()
-            .basePath(Constants.API_INTERNAL)
+            .basePath(basePath)
             .header(TestHelpers.createTurnpikeIdentityHeader("user", this.adminRole))
             .when()
             .contentType(MediaType.MULTIPART_FORM_DATA)
@@ -100,8 +103,9 @@ public class ErrataUserPreferencesMigrationResourceTest extends DbIsolatedTest {
      * the corresponding subscriptions in our database.
      * @throws URISyntaxException if the JSON file's URL is not properly built.
      */
-    @Test
-    void testJsonMigration() throws URISyntaxException {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testJsonMigration(String basePath) throws URISyntaxException {
         // Load the file input for the request.
         final URL jsonResourceUrl = this.getClass().getResource("/errata/subscriptions/errata_subscriptions.json");
         if (jsonResourceUrl == null) {
@@ -119,7 +123,7 @@ public class ErrataUserPreferencesMigrationResourceTest extends DbIsolatedTest {
 
         // Send the request.
         given()
-            .basePath(Constants.API_INTERNAL)
+            .basePath(basePath)
             .header(TestHelpers.createTurnpikeIdentityHeader("user", this.adminRole))
             .when()
             .contentType(MediaType.MULTIPART_FORM_DATA)

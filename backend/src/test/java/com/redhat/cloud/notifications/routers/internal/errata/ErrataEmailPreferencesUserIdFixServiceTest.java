@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers.internal.errata;
 
-import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
@@ -17,11 +16,14 @@ import jakarta.inject.Inject;
 import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import java.util.List;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
 import static io.restassured.RestAssured.given;
@@ -45,8 +47,9 @@ public class ErrataEmailPreferencesUserIdFixServiceTest extends DbIsolatedTest {
      * Tests that the email subscriptions' user IDs get lowercased, or deleted
      * if there already exist an email subscription with that key.
      */
-    @Test
-    void testUserPreferencesUserIdFix() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testUserPreferencesUserIdFix(String basePath) {
         // Simulate that the default template is enabled so that we can create
         // instant subscriptions without facing any "missing template" errors.
         Mockito.when(this.backendConfig.isDefaultTemplateEnabled()).thenReturn(true);
@@ -77,7 +80,7 @@ public class ErrataEmailPreferencesUserIdFixServiceTest extends DbIsolatedTest {
 
         // Send the request.
         given()
-            .basePath(Constants.API_INTERNAL)
+            .basePath(basePath)
             .header(TestHelpers.createTurnpikeIdentityHeader(DEFAULT_USER, this.adminRole))
             .when()
             .post("/team-nado/migrate/rename-lowercase")

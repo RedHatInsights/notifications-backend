@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createBundle;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createEventType;
@@ -150,10 +151,10 @@ public class UserConfigResourceTemplateModuleTest extends DbIsolatedTest {
     }
 
     private String createTestBundleAppEventType(Header adminIdentity, TestRecordNameAndDisplayName bundleDetails, List<TestRecordNameAndDisplayName> applicationsDetails) {
-        final String bundleId = createBundle(adminIdentity, bundleDetails.name, bundleDetails.displayName, 200).get();
+        final String bundleId = createBundle(API_INTERNAL, adminIdentity, bundleDetails.name, bundleDetails.displayName, 200).get();
         applicationsDetails.forEach(appDetail -> {
-            final String appId = createApp(adminIdentity, bundleId, appDetail.name, appDetail.displayName, null, 200).get();
-            createEventType(adminIdentity, appId, "event-type-name", "Event type", "Event type description", false, false, 200).get();
+            final String appId = createApp(API_INTERNAL, adminIdentity, bundleId, appDetail.name, appDetail.displayName, null, 200).get();
+            createEventType(API_INTERNAL, adminIdentity, appId, "event-type-name", "Event type", "Event type description", false, false, 200).get();
         });
         return bundleId;
     }
@@ -210,7 +211,7 @@ public class UserConfigResourceTemplateModuleTest extends DbIsolatedTest {
         assertEquals(RESULT, mappedString);
 
         // delete created bundles, apps and event types
-        bundleIdsToRemove.forEach(bundleIdToRemove -> deleteBundle(adminIdentity, bundleIdToRemove, true));
+        bundleIdsToRemove.forEach(bundleIdToRemove -> deleteBundle(API_INTERNAL, adminIdentity, bundleIdToRemove, true));
 
         updateEventTypeVisibility("new-recommendation", true);
     }

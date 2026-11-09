@@ -21,9 +21,15 @@ import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
 
 @Path(API_INTERNAL + "/general-communications")
 public class GeneralCommunicationsResource {
+
+    @Path(API_INTERNAL_NOTIFICATIONS_ENGINE + "/general-communications")
+    public static class V1 extends GeneralCommunicationsResource {
+    }
+
     /**
      * Defines the message that will be sent back to the back end when no
      * general communication was sent.

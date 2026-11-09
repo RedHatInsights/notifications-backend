@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.Constants.X_RH_IDENTITY_HEADER;
 
 /**
@@ -78,8 +79,14 @@ public class ConsoleAuthMechanism implements HttpAuthenticationMechanism {
                 }
             }
 
+            // These internal endpoints are called from inside the cluster by callers that do not have an identity header
+            // (e.g. notifications-gw for "/gw"), so they are allowed without one. They are available under the legacy
+            // "/internal" base path and under the "/internal/notifications/v1/backend" base path (RHCLOUD-52372).
+            // The new base path must never be allowed as a whole: only these specific endpoints are unauthenticated.
             if (path.startsWith("/openapi.json") || path.startsWith(API_INTERNAL + "/validation") || path.startsWith(API_INTERNAL + "/gw")
-                || path.startsWith(API_INTERNAL + "/version") || path.startsWith("/health") || path.startsWith("/metrics")) {
+                || path.startsWith(API_INTERNAL + "/version") || path.startsWith("/health") || path.startsWith("/metrics")
+                || path.startsWith(API_INTERNAL_NOTIFICATIONS_BACKEND + "/validation") || path.startsWith(API_INTERNAL_NOTIFICATIONS_BACKEND + "/gw")
+                || path.startsWith(API_INTERNAL_NOTIFICATIONS_BACKEND + "/version")) {
                 good = true;
             }
 

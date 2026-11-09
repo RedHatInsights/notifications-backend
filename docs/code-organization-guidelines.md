@@ -86,9 +86,10 @@ Each deployable module has one primary config class named `{Module}Config` (e.g.
 Define API base paths in `com.redhat.cloud.notifications.Constants`:
 - `API_INTEGRATIONS_V_1_0` / `API_INTEGRATIONS_V_2_0`
 - `API_NOTIFICATIONS_V_1_0` / `API_NOTIFICATIONS_V_2_0`
-- `API_INTERNAL`
+- `API_INTERNAL` (legacy, deprecated)
+- `API_INTERNAL_NOTIFICATIONS_BACKEND` / `API_INTERNAL_NOTIFICATIONS_ENGINE`
 
-REST resources in `routers.handlers` use the public API paths. Resources in `routers.internal` use `API_INTERNAL`.
+REST resources in `routers.handlers` use the public API paths. Resources in `routers.internal` use `API_INTERNAL` and, through a nested `V1` subclass, `API_INTERNAL_NOTIFICATIONS_BACKEND`.
 
 ## Template File Organization
 

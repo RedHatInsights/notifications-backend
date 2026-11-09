@@ -39,7 +39,8 @@ import org.apache.http.HttpStatus;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
@@ -55,6 +56,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static com.redhat.cloud.notifications.CrudTestHelpers.buildApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.buildBundle;
 import static com.redhat.cloud.notifications.CrudTestHelpers.buildEventType;
@@ -137,246 +139,268 @@ public class InternalResourceTest extends DbIsolatedTest {
     @Inject
     EndpointEventTypeRepository endpointEventTypeRepository;
 
-    @Test
-    void testCreateNullBundle() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testCreateNullBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        createBundle(identity, null, BAD_REQUEST);
+        createBundle(basePath, identity, null, BAD_REQUEST);
     }
 
-    @Test
-    void testCreateNullApp() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testCreateNullApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        createApp(identity, null, null, BAD_REQUEST);
+        createApp(basePath, identity, null, null, BAD_REQUEST);
     }
 
-    @Test
-    void testCreateNullEventType() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testCreateNullEventType(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        createEventType(identity, null, BAD_REQUEST);
+        createEventType(basePath, identity, null, BAD_REQUEST);
     }
 
-    @Test
-    void testCreateInvalidBundle() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testCreateInvalidBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        createBundle(identity, buildBundle(null, "I am valid"), BAD_REQUEST);
-        createBundle(identity, buildBundle("i-am-valid", null), BAD_REQUEST);
-        createBundle(identity, buildBundle("I violate the @Pattern constraint", "I am valid"), BAD_REQUEST);
+        createBundle(basePath, identity, buildBundle(null, "I am valid"), BAD_REQUEST);
+        createBundle(basePath, identity, buildBundle("i-am-valid", null), BAD_REQUEST);
+        createBundle(basePath, identity, buildBundle("I violate the @Pattern constraint", "I am valid"), BAD_REQUEST);
     }
 
-    @Test
-    void testCreateInvalidApp() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testCreateInvalidApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
-        createApp(identity, buildApp(null, "i-am-valid", "I am valid"), null, BAD_REQUEST);
-        createApp(identity, buildApp(bundleId, null, "I am valid"), null, BAD_REQUEST);
-        createApp(identity, buildApp(bundleId, "i-am-valid", null), null, BAD_REQUEST);
-        createApp(identity, buildApp(bundleId, "I violate the @Pattern constraint", "I am valid"), null, BAD_REQUEST);
+        String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
+        createApp(basePath, identity, buildApp(null, "i-am-valid", "I am valid"), null, BAD_REQUEST);
+        createApp(basePath, identity, buildApp(bundleId, null, "I am valid"), null, BAD_REQUEST);
+        createApp(basePath, identity, buildApp(bundleId, "i-am-valid", null), null, BAD_REQUEST);
+        createApp(basePath, identity, buildApp(bundleId, "I violate the @Pattern constraint", "I am valid"), null, BAD_REQUEST);
     }
 
-    @Test
-    void testCreateInvalidEventType() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testCreateInvalidEventType(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
-        String appId = createApp(identity, bundleId, "app-name", "App", null, OK).get();
-        createEventType(identity, buildEventType(null, "i-am-valid", "I am valid", NOT_USED, false, false), BAD_REQUEST);
-        createEventType(identity, buildEventType(appId, null, "I am valid", NOT_USED, false, false), BAD_REQUEST);
-        createEventType(identity, buildEventType(appId, "i-am-valid", null, NOT_USED, false, false), BAD_REQUEST);
-        createEventType(identity, buildEventType(appId, "I violate the @Pattern constraint", "I am valid", NOT_USED, false, false), BAD_REQUEST);
+        String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
+        String appId = createApp(basePath, identity, bundleId, "app-name", "App", null, OK).get();
+        createEventType(basePath, identity, buildEventType(null, "i-am-valid", "I am valid", NOT_USED, false, false), BAD_REQUEST);
+        createEventType(basePath, identity, buildEventType(appId, null, "I am valid", NOT_USED, false, false), BAD_REQUEST);
+        createEventType(basePath, identity, buildEventType(appId, "i-am-valid", null, NOT_USED, false, false), BAD_REQUEST);
+        createEventType(basePath, identity, buildEventType(appId, "I violate the @Pattern constraint", "I am valid", NOT_USED, false, false), BAD_REQUEST);
         // When EventType#subscriptionLocked is true, EventType#subscribedByDefault has to be true as well.
-        createEventType(identity, buildEventType(appId, "i-am-valid", "I am valid", NOT_USED, false, true), BAD_REQUEST);
+        createEventType(basePath, identity, buildEventType(appId, "i-am-valid", "I am valid", NOT_USED, false, true), BAD_REQUEST);
     }
 
-    @Test
-    void testBundleNameUniqueSqlConstraint() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testBundleNameUniqueSqlConstraint(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // Double bundle creation with the same name.
         String nonUniqueBundleName = "bundle-1-name";
-        createBundle(identity, nonUniqueBundleName, NOT_USED, OK);
-        createBundle(identity, nonUniqueBundleName, NOT_USED, INTERNAL_SERVER_ERROR);
+        createBundle(basePath, identity, nonUniqueBundleName, NOT_USED, OK);
+        createBundle(basePath, identity, nonUniqueBundleName, NOT_USED, INTERNAL_SERVER_ERROR);
         // We create a bundle with an available name and then rename it to an unavailable name.
-        String bundleId = createBundle(identity, "bundle-2-name", NOT_USED, OK).get();
-        updateBundle(identity, bundleId, nonUniqueBundleName, NOT_USED, INTERNAL_SERVER_ERROR);
+        String bundleId = createBundle(basePath, identity, "bundle-2-name", NOT_USED, OK).get();
+        updateBundle(basePath, identity, bundleId, nonUniqueBundleName, NOT_USED, INTERNAL_SERVER_ERROR);
     }
 
-    @Test
-    void testAppNameUniqueSqlConstraint() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testAppNameUniqueSqlConstraint(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
+        String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
         // Double app creation with the same name.
         String nonUniqueAppName = "app-1-name";
-        createApp(identity, bundleId, nonUniqueAppName, NOT_USED, null, OK);
-        createApp(identity, bundleId, nonUniqueAppName, NOT_USED, null, INTERNAL_SERVER_ERROR);
+        createApp(basePath, identity, bundleId, nonUniqueAppName, NOT_USED, null, OK);
+        createApp(basePath, identity, bundleId, nonUniqueAppName, NOT_USED, null, INTERNAL_SERVER_ERROR);
         // We create an app with an available name and then rename it to an unavailable name.
-        String appId = createApp(identity, bundleId, "app-2-name", NOT_USED, null, OK).get();
-        updateApp(identity, bundleId, appId, nonUniqueAppName, NOT_USED, INTERNAL_SERVER_ERROR);
+        String appId = createApp(basePath, identity, bundleId, "app-2-name", NOT_USED, null, OK).get();
+        updateApp(basePath, identity, bundleId, appId, nonUniqueAppName, NOT_USED, INTERNAL_SERVER_ERROR);
     }
 
-    @Test
-    void testEventTypeNameUniqueSqlConstraint() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testEventTypeNameUniqueSqlConstraint(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
-        String appId = createApp(identity, bundleId, "app-name", "App", null, OK).get();
+        String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
+        String appId = createApp(basePath, identity, bundleId, "app-name", "App", null, OK).get();
         // Double event type creation with the same name.
         String nonUniqueEventTypeName = "event-type-name";
-        createEventType(identity, appId, nonUniqueEventTypeName, NOT_USED, NOT_USED, false, false, OK);
-        createEventType(identity, appId, nonUniqueEventTypeName, NOT_USED, NOT_USED, false, false, INTERNAL_SERVER_ERROR);
+        createEventType(basePath, identity, appId, nonUniqueEventTypeName, NOT_USED, NOT_USED, false, false, OK);
+        createEventType(basePath, identity, appId, nonUniqueEventTypeName, NOT_USED, NOT_USED, false, false, INTERNAL_SERVER_ERROR);
     }
 
-    @Test
-    void testGetUnknownBundle() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testGetUnknownBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownBundleId = UUID.randomUUID().toString();
-        getBundle(identity, unknownBundleId, NOT_USED, NOT_USED, NOT_FOUND);
+        getBundle(basePath, identity, unknownBundleId, NOT_USED, NOT_USED, NOT_FOUND);
     }
 
-    @Test
-    void testGetUnknownApp() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testGetUnknownApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownAppId = UUID.randomUUID().toString();
-        getApp(identity, unknownAppId, NOT_USED, NOT_USED, NOT_FOUND);
+        getApp(basePath, identity, unknownAppId, NOT_USED, NOT_USED, NOT_FOUND);
     }
 
-    @Test
-    void testUpdateNullBundle() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testUpdateNullBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
-        updateBundle(identity, bundleId, null, BAD_REQUEST);
+        String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
+        updateBundle(basePath, identity, bundleId, null, BAD_REQUEST);
     }
 
-    @Test
-    void testUpdateNullApp() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testUpdateNullApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
-        String appId = createApp(identity, bundleId, "app-name", "App", null, OK).get();
-        updateApp(identity, appId, null, BAD_REQUEST);
+        String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
+        String appId = createApp(basePath, identity, bundleId, "app-name", "App", null, OK).get();
+        updateApp(basePath, identity, appId, null, BAD_REQUEST);
     }
 
-    @Test
-    void testUpdateUnknownBundle() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testUpdateUnknownBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownBundleId = UUID.randomUUID().toString();
-        updateBundle(identity, unknownBundleId, NOT_USED, NOT_USED, NOT_FOUND);
+        updateBundle(basePath, identity, unknownBundleId, NOT_USED, NOT_USED, NOT_FOUND);
     }
 
-    @Test
-    void testUpdateUnknownApp() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testUpdateUnknownApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
+        String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
         String unknownAppId = UUID.randomUUID().toString();
-        updateApp(identity, bundleId, unknownAppId, NOT_USED, NOT_USED, NOT_FOUND);
+        updateApp(basePath, identity, bundleId, unknownAppId, NOT_USED, NOT_USED, NOT_FOUND);
     }
 
-    @Test
-    void testAddAppToUnknownBundle() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testAddAppToUnknownBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownBundleId = UUID.randomUUID().toString();
-        createApp(identity, unknownBundleId, NOT_USED, NOT_USED, null, NOT_FOUND);
+        createApp(basePath, identity, unknownBundleId, NOT_USED, NOT_USED, null, NOT_FOUND);
     }
 
-    @Test
-    void testAddEventTypeToUnknownApp() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testAddEventTypeToUnknownApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownAppId = UUID.randomUUID().toString();
-        createEventType(identity, unknownAppId, NOT_USED, NOT_USED, NOT_USED, false, false, NOT_FOUND);
+        createEventType(basePath, identity, unknownAppId, NOT_USED, NOT_USED, NOT_USED, false, false, NOT_FOUND);
     }
 
-    @Test
-    void testGetAppsFromUnknownBundle() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testGetAppsFromUnknownBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownBundleId = UUID.randomUUID().toString();
-        getApps(identity, unknownBundleId, NOT_FOUND, 0);
+        getApps(basePath, identity, unknownBundleId, NOT_FOUND, 0);
     }
 
-    @Test
-    void testGetEventTypesFromUnknownApp() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testGetEventTypesFromUnknownApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownAppId = UUID.randomUUID().toString();
-        getEventTypes(identity, unknownAppId, NOT_FOUND, 0);
+        getEventTypes(basePath, identity, unknownAppId, NOT_FOUND, 0);
     }
 
-    @Test
-    void testCreateAndGetAndUpdateAndDeleteBundle() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testCreateAndGetAndUpdateAndDeleteBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // First, we create two bundles with different names. Only the second one will be used after that.
-        createBundle(identity, "bundle-1-name", "Bundle 1", OK).get();
-        String bundleId = createBundle(identity, "bundle-2-name", "Bundle 2", OK).get();
+        createBundle(basePath, identity, "bundle-1-name", "Bundle 1", OK).get();
+        String bundleId = createBundle(basePath, identity, "bundle-2-name", "Bundle 2", OK).get();
 
         // Then the bundle update API is tested.
-        updateBundle(identity, bundleId, "bundle-2-new-name", "Bundle 2 new display name", OK);
+        updateBundle(basePath, identity, bundleId, "bundle-2-new-name", "Bundle 2 new display name", OK);
 
         // Same for the bundle delete API.
-        deleteBundle(identity, bundleId, true);
+        deleteBundle(basePath, identity, bundleId, true);
 
         // Now that we deleted the bundle, all the following APIs calls should "fail".
-        deleteBundle(identity, bundleId, false);
-        getBundle(identity, bundleId, NOT_USED, NOT_USED, NOT_FOUND);
-        updateBundle(identity, bundleId, NOT_USED, NOT_USED, NOT_FOUND);
+        deleteBundle(basePath, identity, bundleId, false);
+        getBundle(basePath, identity, bundleId, NOT_USED, NOT_USED, NOT_FOUND);
+        updateBundle(basePath, identity, bundleId, NOT_USED, NOT_USED, NOT_FOUND);
     }
 
-    @Test
-    void testCreateAndGetAndUpdateAndDeleteApp() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testCreateAndGetAndUpdateAndDeleteApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // We need to persist a bundle for this test.
-        String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
+        String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
 
         // First, we create two apps with different names. Only the second one will be used after that.
-        createApp(identity, bundleId, "app-1-name", "App 1", null, OK);
-        String appId = createApp(identity, bundleId, "app-2-name", "App 2", null, OK).get();
+        createApp(basePath, identity, bundleId, "app-1-name", "App 1", null, OK);
+        String appId = createApp(basePath, identity, bundleId, "app-2-name", "App 2", null, OK).get();
 
         // The bundle should contain two apps.
-        getApps(identity, bundleId, OK, 2);
+        getApps(basePath, identity, bundleId, OK, 2);
 
         // Let's test the app update API.
-        updateApp(identity, bundleId, appId, "app-2-new-name", "App 2 new display name", OK);
+        updateApp(basePath, identity, bundleId, appId, "app-2-new-name", "App 2 new display name", OK);
 
         // Same for the app delete API.
-        deleteApp(identity, appId, true);
+        deleteApp(basePath, identity, appId, true);
 
         // Now that we deleted the app, all the following APIs calls should "fail".
-        deleteApp(identity, appId, false);
-        getApp(identity, appId, NOT_USED, NOT_USED, NOT_FOUND);
-        updateApp(identity, bundleId, appId, NOT_USED, NOT_USED, NOT_FOUND);
+        deleteApp(basePath, identity, appId, false);
+        getApp(basePath, identity, appId, NOT_USED, NOT_USED, NOT_FOUND);
+        updateApp(basePath, identity, bundleId, appId, NOT_USED, NOT_USED, NOT_FOUND);
 
         // The bundle should also contain one app now.
-        getApps(identity, bundleId, OK, 1);
+        getApps(basePath, identity, bundleId, OK, 1);
     }
 
-    @Test
-    void testCreateAndGetAndUpdateAndDeleteEventType() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testCreateAndGetAndUpdateAndDeleteEventType(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // We need to persist a bundle and an app for this test.
-        String bundleId = createBundle(identity, "bundle-name", "Bundle", OK).get();
-        String appId = createApp(identity, bundleId, "app-name", "App", null, OK).get();
+        String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
+        String appId = createApp(basePath, identity, bundleId, "app-name", "App", null, OK).get();
 
         // First, we create two event types with different names. Only the second one will be used after that.
-        createEventType(identity, appId, "event-type-1-name", "Event type 1", "Description 1", false, false, OK);
-        String eventTypeId = createEventType(identity, appId, "event-type-2-name", "Event type 2", "Description 2", false, false, OK).get();
+        createEventType(basePath, identity, appId, "event-type-1-name", "Event type 1", "Description 1", false, false, OK);
+        String eventTypeId = createEventType(basePath, identity, appId, "event-type-2-name", "Event type 2", "Description 2", false, false, OK).get();
 
         checkEventTypeRestrictToRecipientsIntegrations(eventTypeId, false);
 
         // The app should contain two event types.
-        getEventTypes(identity, appId, OK, 2);
+        getEventTypes(basePath, identity, appId, OK, 2);
 
         // Let's test the event type update API.
-        updateEventType(identity, appId, eventTypeId, "event-type-2-new-name", "Event type 2 new display name", "Event type 2 new description", true, true, true, OK);
+        updateEventType(basePath, identity, appId, eventTypeId, "event-type-2-new-name", "Event type 2 new display name", "Event type 2 new description", true, true, true, OK);
         verify(subscriptionRepository, times(1)).resubscribeAllUsersIfNeeded(any(UUID.class));
         checkEventTypeRestrictToRecipientsIntegrations(eventTypeId, true);
 
         checkEventTypeVisibility(eventTypeId, true);
-        updateEventTypeVisibility(identity, eventTypeId, false, OK);
+        updateEventTypeVisibility(basePath, identity, eventTypeId, false, OK);
         checkEventTypeVisibility(eventTypeId, false);
-        updateEventTypeVisibility(identity, eventTypeId, true, OK);
+        updateEventTypeVisibility(basePath, identity, eventTypeId, true, OK);
         checkEventTypeVisibility(eventTypeId, true);
-        updateEventTypeVisibility(identity, "unknown", true, NOT_FOUND);
+        updateEventTypeVisibility(basePath, identity, "unknown", true, NOT_FOUND);
 
         // Let's test the event type delete API.
-        deleteEventType(identity, eventTypeId, true);
+        deleteEventType(basePath, identity, eventTypeId, true);
 
         // Deleting the event type again should not work.
-        deleteEventType(identity, eventTypeId, false);
+        deleteEventType(basePath, identity, eventTypeId, false);
 
         // The app should also contain one event type now.
-        getEventTypes(identity, appId, OK, 1);
+        getEventTypes(basePath, identity, appId, OK, 1);
     }
 
     void checkEventTypeVisibility(String eventTypeId, boolean isVisible) {
@@ -391,74 +415,76 @@ public class InternalResourceTest extends DbIsolatedTest {
         assertEquals(isResticted, eventType.isRestrictToRecipientsIntegrations());
     }
 
-    @Test
-    void testDefaultBehaviorGroupCRUD() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testDefaultBehaviorGroupCRUD(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // We need to persist a bundle.
-        String bundleId = createBundle(identity, "dbg-bundle-name", "Bundle", OK).get();
+        String bundleId = createBundle(basePath, identity, "dbg-bundle-name", "Bundle", OK).get();
 
         // Creates 2 behavior groups
-        String dbgId1 = createDefaultBehaviorGroup(identity, "DefaultBehaviorGroup1", bundleId, OK).get();
-        String dbgId2 = createDefaultBehaviorGroup(identity, "DefaultBehaviorGroup2", bundleId, OK).get();
+        String dbgId1 = createDefaultBehaviorGroup(basePath, identity, "DefaultBehaviorGroup1", bundleId, OK).get();
+        String dbgId2 = createDefaultBehaviorGroup(basePath, identity, "DefaultBehaviorGroup2", bundleId, OK).get();
 
         assertEquals(
                 Set.of(
                         Pair.of(dbgId1, "DefaultBehaviorGroup1"),
                         Pair.of(dbgId2, "DefaultBehaviorGroup2")
                 ),
-                getDefaultBehaviorGroups(identity).stream().map(bg -> Pair.of(bg.getId().toString(), bg.getDisplayName())).collect(Collectors.toSet())
+                getDefaultBehaviorGroups(basePath, identity).stream().map(bg -> Pair.of(bg.getId().toString(), bg.getDisplayName())).collect(Collectors.toSet())
         );
 
         // Update displayName of behavior group 1
-        updateDefaultBehaviorGroup(identity, dbgId1, "Group1", bundleId, true, OK);
+        updateDefaultBehaviorGroup(basePath, identity, dbgId1, "Group1", bundleId, true, OK);
         assertEquals(
                 Set.of(
                         Pair.of(dbgId1, "Group1"),
                         Pair.of(dbgId2, "DefaultBehaviorGroup2")
                 ),
-                getDefaultBehaviorGroups(identity).stream().map(bg -> Pair.of(bg.getId().toString(), bg.getDisplayName())).collect(Collectors.toSet())
+                getDefaultBehaviorGroups(basePath, identity).stream().map(bg -> Pair.of(bg.getId().toString(), bg.getDisplayName())).collect(Collectors.toSet())
         );
 
         // Delete behaviors
-        deleteDefaultBehaviorGroup(identity, dbgId1, true, OK);
+        deleteDefaultBehaviorGroup(basePath, identity, dbgId1, true, OK);
         assertEquals(
                 Set.of(dbgId2),
-                getDefaultBehaviorGroups(identity).stream().map(BehaviorGroup::getId).map(UUID::toString).collect(Collectors.toSet())
+                getDefaultBehaviorGroups(basePath, identity).stream().map(BehaviorGroup::getId).map(UUID::toString).collect(Collectors.toSet())
         );
-        deleteDefaultBehaviorGroup(identity, dbgId2, true, OK);
+        deleteDefaultBehaviorGroup(basePath, identity, dbgId2, true, OK);
         assertEquals(
                 Set.of(),
-                getDefaultBehaviorGroups(identity).stream().map(BehaviorGroup::getId).map(UUID::toString).collect(Collectors.toSet())
+                getDefaultBehaviorGroups(basePath, identity).stream().map(BehaviorGroup::getId).map(UUID::toString).collect(Collectors.toSet())
         );
 
         // The default behavior group no longer exists, deleting it again will cause a 404 status.
-        deleteDefaultBehaviorGroup(identity, dbgId1, false, NOT_FOUND);
+        deleteDefaultBehaviorGroup(basePath, identity, dbgId1, false, NOT_FOUND);
 
         // Updating an unknown default behavior group will cause a 404 status.
-        updateDefaultBehaviorGroup(identity, UUID.randomUUID().toString(), "Behavior group", bundleId, false, NOT_FOUND);
+        updateDefaultBehaviorGroup(basePath, identity, UUID.randomUUID().toString(), "Behavior group", bundleId, false, NOT_FOUND);
     }
 
-    @Test
-    void testDefaultBehaviorGroupCRUDWithDepencies() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testDefaultBehaviorGroupCRUDWithDepencies(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // We need to persist a bundle.
-        String bundleId = createBundle(identity, "dbg-bundle-name", "Bundle", OK).get();
-        String appId = createApp(identity, bundleId, "app-name", "App", null, OK).get();
+        String bundleId = createBundle(basePath, identity, "dbg-bundle-name", "Bundle", OK).get();
+        String appId = createApp(basePath, identity, bundleId, "app-name", "App", null, OK).get();
         EventType eventType1 = new EventType();
         eventType1.setName(RandomStringUtils.randomAlphabetic(10).toLowerCase());
         eventType1.setDisplayName(RandomStringUtils.randomAlphabetic(10));
         eventType1.setDescription(RandomStringUtils.randomAlphabetic(10));
         eventType1.setApplicationId(UUID.fromString(appId));
-        UUID uuidEventType1 = UUID.fromString(createEventType(identity, eventType1, OK).get());
+        UUID uuidEventType1 = UUID.fromString(createEventType(basePath, identity, eventType1, OK).get());
 
         // Creates 1 behavior groups
-        UUID dbgId1 = UUID.fromString(createDefaultBehaviorGroup(identity, "DefaultBehaviorGroup1", bundleId, OK).get());
+        UUID dbgId1 = UUID.fromString(createDefaultBehaviorGroup(basePath, identity, "DefaultBehaviorGroup1", bundleId, OK).get());
 
         RequestDefaultBehaviorGroupPropertyList defaultBehaviorGroupProperties = new RequestDefaultBehaviorGroupPropertyList();
         defaultBehaviorGroupProperties.setOnlyAdmins(true);
 
         given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(identity)
             .contentType(JSON)
             .pathParam("behaviorGroupId", dbgId1)
@@ -468,7 +494,7 @@ public class InternalResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(200);
 
-        List<BehaviorGroup> listBg = getDefaultBehaviorGroups(identity);
+        List<BehaviorGroup> listBg = getDefaultBehaviorGroups(basePath, identity);
         Optional<BehaviorGroup> createdBg1 = listBg.stream().filter(bg -> bg.getId().equals(dbgId1)).findFirst();
         assertTrue(createdBg1.isPresent());
         assertEquals(1, createdBg1.get().getActions().size());
@@ -480,7 +506,7 @@ public class InternalResourceTest extends DbIsolatedTest {
 
         // link it to something
         given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(identity)
             .pathParam("behaviorGroupId", dbgId1)
             .pathParam("eventTypeId", uuidEventType1)
@@ -493,7 +519,7 @@ public class InternalResourceTest extends DbIsolatedTest {
 
         // unlink it
         given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(identity)
             .pathParam("behaviorGroupId", dbgId1)
             .pathParam("eventTypeId", uuidEventType1)
@@ -506,43 +532,44 @@ public class InternalResourceTest extends DbIsolatedTest {
 
     }
 
-    @Test
-    void testBulkUpdateDefaultBehaviorEventTypes() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testBulkUpdateDefaultBehaviorEventTypes(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
         // Setup: bundle, app, three event types, default behavior group.
-        String bundleId = createBundle(identity, "bulk-bundle", "Bundle", OK).get();
-        String appId = createApp(identity, bundleId, "bulk-app", "App", null, OK).get();
+        String bundleId = createBundle(basePath, identity, "bulk-bundle", "Bundle", OK).get();
+        String appId = createApp(basePath, identity, bundleId, "bulk-app", "App", null, OK).get();
 
         EventType eventType1 = new EventType();
         eventType1.setName(RandomStringUtils.randomAlphabetic(10).toLowerCase());
         eventType1.setDisplayName(RandomStringUtils.randomAlphabetic(10));
         eventType1.setDescription(RandomStringUtils.randomAlphabetic(10));
         eventType1.setApplicationId(UUID.fromString(appId));
-        UUID et1Id = UUID.fromString(createEventType(identity, eventType1, OK).get());
+        UUID et1Id = UUID.fromString(createEventType(basePath, identity, eventType1, OK).get());
 
         EventType eventType2 = new EventType();
         eventType2.setName(RandomStringUtils.randomAlphabetic(10).toLowerCase());
         eventType2.setDisplayName(RandomStringUtils.randomAlphabetic(10));
         eventType2.setDescription(RandomStringUtils.randomAlphabetic(10));
         eventType2.setApplicationId(UUID.fromString(appId));
-        UUID et2Id = UUID.fromString(createEventType(identity, eventType2, OK).get());
+        UUID et2Id = UUID.fromString(createEventType(basePath, identity, eventType2, OK).get());
 
         EventType eventType3 = new EventType();
         eventType3.setName(RandomStringUtils.randomAlphabetic(10).toLowerCase());
         eventType3.setDisplayName(RandomStringUtils.randomAlphabetic(10));
         eventType3.setDescription(RandomStringUtils.randomAlphabetic(10));
         eventType3.setApplicationId(UUID.fromString(appId));
-        UUID et3Id = UUID.fromString(createEventType(identity, eventType3, OK).get());
+        UUID et3Id = UUID.fromString(createEventType(basePath, identity, eventType3, OK).get());
 
-        UUID dbgId = UUID.fromString(createDefaultBehaviorGroup(identity, "BulkTestBG", bundleId, OK).get());
+        UUID dbgId = UUID.fromString(createDefaultBehaviorGroup(basePath, identity, "BulkTestBG", bundleId, OK).get());
 
         // AC1: Bulk link two event types.
         BulkEventTypeBehaviorRequest linkRequest = new BulkEventTypeBehaviorRequest();
         linkRequest.eventTypeIdsToLink = Set.of(et1Id, et2Id);
 
         given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(identity)
             .contentType(JSON)
             .pathParam("behaviorGroupId", dbgId)
@@ -552,7 +579,7 @@ public class InternalResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(200);
 
-        List<BehaviorGroup> bgs = getDefaultBehaviorGroups(identity);
+        List<BehaviorGroup> bgs = getDefaultBehaviorGroups(basePath, identity);
         BehaviorGroup bg = bgs.stream().filter(b -> b.getId().equals(dbgId)).findFirst().get();
         assertEquals(2, bg.getBehaviors().size());
 
@@ -562,7 +589,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         linkUnlinkRequest.eventTypeIdsToUnlink = Set.of(et1Id);
 
         given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(identity)
             .contentType(JSON)
             .pathParam("behaviorGroupId", dbgId)
@@ -572,7 +599,7 @@ public class InternalResourceTest extends DbIsolatedTest {
             .then()
             .statusCode(200);
 
-        bgs = getDefaultBehaviorGroups(identity);
+        bgs = getDefaultBehaviorGroups(basePath, identity);
         bg = bgs.stream().filter(b -> b.getId().equals(dbgId)).findFirst().get();
         assertEquals(2, bg.getBehaviors().size());
         Set<UUID> linkedIds = bg.getBehaviors().stream()
@@ -588,7 +615,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         overlapRequest.eventTypeIdsToUnlink = Set.of(et1Id);
 
         given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(identity)
             .contentType(JSON)
             .pathParam("behaviorGroupId", dbgId)
@@ -599,20 +626,20 @@ public class InternalResourceTest extends DbIsolatedTest {
             .statusCode(BAD_REQUEST);
 
         // AC4: Cross-bundle validation — event type from a different bundle returns 400.
-        String otherBundleId = createBundle(identity, "other-bundle", "Other", OK).get();
-        String otherAppId = createApp(identity, otherBundleId, "other-app", "Other App", null, OK).get();
+        String otherBundleId = createBundle(basePath, identity, "other-bundle", "Other", OK).get();
+        String otherAppId = createApp(basePath, identity, otherBundleId, "other-app", "Other App", null, OK).get();
         EventType crossBundleEt = new EventType();
         crossBundleEt.setName(RandomStringUtils.randomAlphabetic(10).toLowerCase());
         crossBundleEt.setDisplayName(RandomStringUtils.randomAlphabetic(10));
         crossBundleEt.setDescription(RandomStringUtils.randomAlphabetic(10));
         crossBundleEt.setApplicationId(UUID.fromString(otherAppId));
-        UUID crossBundleEtId = UUID.fromString(createEventType(identity, crossBundleEt, OK).get());
+        UUID crossBundleEtId = UUID.fromString(createEventType(basePath, identity, crossBundleEt, OK).get());
 
         BulkEventTypeBehaviorRequest crossBundleRequest = new BulkEventTypeBehaviorRequest();
         crossBundleRequest.eventTypeIdsToLink = Set.of(crossBundleEtId);
 
         given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(identity)
             .contentType(JSON)
             .pathParam("behaviorGroupId", dbgId)
@@ -627,7 +654,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         nonexistentRequest.eventTypeIdsToLink = Set.of(UUID.randomUUID());
 
         given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(identity)
             .contentType(JSON)
             .pathParam("behaviorGroupId", dbgId)
@@ -638,10 +665,11 @@ public class InternalResourceTest extends DbIsolatedTest {
             .statusCode(BAD_REQUEST);
     }
 
-    @Test
-    void testVersion() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testVersion(String basePath) {
         String responseBody = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .when()
                 .get("/version")
                 .then()
@@ -651,8 +679,9 @@ public class InternalResourceTest extends DbIsolatedTest {
         assertTrue(responseBody.matches("^[0-9a-f]{7}$"));
     }
 
-    @Test
-    void appUserAccessTest() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void appUserAccessTest(String basePath) {
         String appRole = "app-admin";
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("admin", adminRole);
         Header appIdentity = TestHelpers.createTurnpikeIdentityHeader("user", appRole);
@@ -664,99 +693,104 @@ public class InternalResourceTest extends DbIsolatedTest {
         String event1Name = "admin-event-1";
         String event2Name = "admin-event-1";
 
-        String bundleId = createBundle(adminIdentity, bundleName, NOT_USED, OK).get();
-        String defaultBGId = createDefaultBehaviorGroup(adminIdentity, NOT_USED, bundleId, OK).get();
-        String app1Id = createApp(adminIdentity, bundleId, app1Name, NOT_USED, null, OK).get();
-        String app2Id = createApp(adminIdentity, bundleId, app2Name, NOT_USED, null, OK).get();
+        String bundleId = createBundle(basePath, adminIdentity, bundleName, NOT_USED, OK).get();
+        String defaultBGId = createDefaultBehaviorGroup(basePath, adminIdentity, NOT_USED, bundleId, OK).get();
+        String app1Id = createApp(basePath, adminIdentity, bundleId, app1Name, NOT_USED, null, OK).get();
+        String app2Id = createApp(basePath, adminIdentity, bundleId, app2Name, NOT_USED, null, OK).get();
 
-        createEventType(adminIdentity, app1Id, event1Name, NOT_USED, NOT_USED, false, false, OK);
-        String eventType2Id = createEventType(adminIdentity, app2Id, event2Name, NOT_USED, NOT_USED, false, false, OK).get();
+        createEventType(basePath, adminIdentity, app1Id, event1Name, NOT_USED, NOT_USED, false, false, OK);
+        String eventType2Id = createEventType(basePath, adminIdentity, app2Id, event2Name, NOT_USED, NOT_USED, false, false, OK).get();
 
         // Gives access to `appIdentity` to `app1`
-        createInternalRoleAccess(adminIdentity, appRole, app1Id, OK);
+        createInternalRoleAccess(basePath, adminIdentity, appRole, app1Id, OK);
 
         // free for all internal users
-        getBundle(appIdentity, bundleId, bundleName, NOT_USED, OK);
-        getApp(appIdentity, app1Id, app1Name, NOT_USED, OK);
-        getEventTypes(appIdentity, app1Id, OK, 1);
-        getDefaultBehaviorGroups(appIdentity);
+        getBundle(basePath, appIdentity, bundleId, bundleName, NOT_USED, OK);
+        getApp(basePath, appIdentity, app1Id, app1Name, NOT_USED, OK);
+        getEventTypes(basePath, appIdentity, app1Id, OK, 1);
+        getDefaultBehaviorGroups(basePath, appIdentity);
 
         // Only allowed to admins
-        createBundle(appIdentity, "app-user-bundle", NOT_USED, FORBIDDEN);
-        updateBundle(appIdentity, bundleId, "new-name", NOT_USED, FORBIDDEN);
-        deleteBundle(appIdentity, bundleId, null, FORBIDDEN);
+        createBundle(basePath, appIdentity, "app-user-bundle", NOT_USED, FORBIDDEN);
+        updateBundle(basePath, appIdentity, bundleId, "new-name", NOT_USED, FORBIDDEN);
+        deleteBundle(basePath, appIdentity, bundleId, null, FORBIDDEN);
 
-        createApp(appIdentity, bundleId, "app-user-app", NOT_USED, null, FORBIDDEN);
-        deleteApp(appIdentity, app1Id, null, FORBIDDEN);
+        createApp(basePath, appIdentity, bundleId, "app-user-app", NOT_USED, null, FORBIDDEN);
+        deleteApp(basePath, appIdentity, app1Id, null, FORBIDDEN);
 
-        createDefaultBehaviorGroup(appIdentity, NOT_USED, bundleId, FORBIDDEN);
-        updateDefaultBehaviorGroup(appIdentity, defaultBGId, NOT_USED, bundleId, false, FORBIDDEN);
-        deleteDefaultBehaviorGroup(appIdentity, defaultBGId, false, FORBIDDEN);
+        createDefaultBehaviorGroup(basePath, appIdentity, NOT_USED, bundleId, FORBIDDEN);
+        updateDefaultBehaviorGroup(basePath, appIdentity, defaultBGId, NOT_USED, bundleId, false, FORBIDDEN);
+        deleteDefaultBehaviorGroup(basePath, appIdentity, defaultBGId, false, FORBIDDEN);
 
         // Allowed depending the permissions
-        updateApp(appIdentity, bundleId, app1Id, "new-name", NOT_USED, OK);
-        updateApp(appIdentity, bundleId, app2Id, "new-name", NOT_USED, FORBIDDEN);
-        updateApp(otherAppIdentity, bundleId, app2Id, "new-name", NOT_USED, FORBIDDEN);
-        updateApp(otherAppIdentity, bundleId, app2Id, "new-name", NOT_USED, FORBIDDEN);
+        updateApp(basePath, appIdentity, bundleId, app1Id, "new-name", NOT_USED, OK);
+        updateApp(basePath, appIdentity, bundleId, app2Id, "new-name", NOT_USED, FORBIDDEN);
+        updateApp(basePath, otherAppIdentity, bundleId, app2Id, "new-name", NOT_USED, FORBIDDEN);
+        updateApp(basePath, otherAppIdentity, bundleId, app2Id, "new-name", NOT_USED, FORBIDDEN);
 
-        String newEventTypeId = createEventType(appIdentity, app1Id, "new-name-1", NOT_USED, NOT_USED, false, false, OK).get();
-        createEventType(appIdentity, app2Id, "new-name-2", NOT_USED, NOT_USED, false, false, FORBIDDEN);
-        createEventType(otherAppIdentity, app1Id, "new-name-3", NOT_USED, NOT_USED, false, false, FORBIDDEN);
-        createEventType(otherAppIdentity, app2Id, "new-name-4", NOT_USED, NOT_USED, false, false, FORBIDDEN);
+        String newEventTypeId = createEventType(basePath, appIdentity, app1Id, "new-name-1", NOT_USED, NOT_USED, false, false, OK).get();
+        createEventType(basePath, appIdentity, app2Id, "new-name-2", NOT_USED, NOT_USED, false, false, FORBIDDEN);
+        createEventType(basePath, otherAppIdentity, app1Id, "new-name-3", NOT_USED, NOT_USED, false, false, FORBIDDEN);
+        createEventType(basePath, otherAppIdentity, app2Id, "new-name-4", NOT_USED, NOT_USED, false, false, FORBIDDEN);
 
-        updateEventType(otherAppIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, false, false, FORBIDDEN);
+        updateEventType(basePath, otherAppIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, false, false, FORBIDDEN);
         verify(subscriptionRepository, times(0)).resubscribeAllUsersIfNeeded(any(UUID.class));
-        updateEventType(appIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, false, false, OK);
+        updateEventType(basePath, appIdentity, app1Id, newEventTypeId, NOT_USED, NOT_USED, NOT_USED, false, false, false, OK);
         verify(subscriptionRepository, times(1)).resubscribeAllUsersIfNeeded(any(UUID.class));
 
-        updateEventTypeVisibility(otherAppIdentity, newEventTypeId, true, FORBIDDEN);
-        updateEventTypeVisibility(adminIdentity, newEventTypeId, true, OK);
+        updateEventTypeVisibility(basePath, otherAppIdentity, newEventTypeId, true, FORBIDDEN);
+        updateEventTypeVisibility(basePath, adminIdentity, newEventTypeId, true, OK);
 
-        deleteEventType(otherAppIdentity, newEventTypeId, null, FORBIDDEN);
-        deleteEventType(otherAppIdentity, eventType2Id, null, FORBIDDEN);
-        deleteEventType(appIdentity, newEventTypeId, true, OK);
-        deleteEventType(appIdentity, eventType2Id, null, FORBIDDEN);
+        deleteEventType(basePath, otherAppIdentity, newEventTypeId, null, FORBIDDEN);
+        deleteEventType(basePath, otherAppIdentity, eventType2Id, null, FORBIDDEN);
+        deleteEventType(basePath, appIdentity, newEventTypeId, true, OK);
+        deleteEventType(basePath, appIdentity, eventType2Id, null, FORBIDDEN);
     }
 
-    @Test
-    public void testDailyDigestTimePreference() {
-        // try to get time preference from an unknown org ID (1234)
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    public void testDailyDigestTimePreference(String basePath) {
+        // The test runs once per internal base path and the stored preference is not cleaned up, so each run needs its own org ID.
+        String orgId = UUID.randomUUID().toString();
+
+        // try to get time preference from an unknown org ID
         given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(createTurnpikeIdentityHeader("admin", adminRole))
             .when()
-            .get("/daily-digest/time-preference/1234")
+            .get("/daily-digest/time-preference/" + orgId)
             .then()
             .statusCode(404);
 
-        // Set time preference to org ID 1234
+        // Set time preference to the org ID
         LocalTime localTime = LocalTime.now(ZoneOffset.UTC).withNano(0);
         given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(createTurnpikeIdentityHeader("admin", adminRole))
             .when()
             .contentType(JSON)
             .body(localTime)
-            .put("/daily-digest/time-preference/1234")
+            .put("/daily-digest/time-preference/" + orgId)
             .then()
             .statusCode(200);
 
-        // Get time preference from org ID 1234
+        // Get time preference from the org ID
         LocalTime storedLocalTime = given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(createTurnpikeIdentityHeader("admin", adminRole))
             .when()
-            .get("/daily-digest/time-preference/1234")
+            .get("/daily-digest/time-preference/" + orgId)
             .then()
             .statusCode(200)
             .contentType(JSON).extract().as(LocalTime.class);
         assertEquals(localTime, storedLocalTime);
     }
 
-    @Test
-    public void testDailyDigestTimePreferenceInsufficentPrivileges() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    public void testDailyDigestTimePreferenceInsufficentPrivileges(String basePath) {
         given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(createTurnpikeIdentityHeader("admin", "none"))
             .when()
             .contentType(JSON)
@@ -770,8 +804,9 @@ public class InternalResourceTest extends DbIsolatedTest {
      * Tests that the daily digest cannot be triggered in an environment that
      * isn't "local" or "stage".
      */
-    @Test
-    public void testTriggerDailyDigestNonStage() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    public void testTriggerDailyDigestNonStage(String basePath) {
         // Simulate that we are in the prod environment.
         Mockito.when(this.environment.isLocal()).thenReturn(false);
         Mockito.when(this.environment.isStage()).thenReturn(false);
@@ -787,7 +822,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         );
 
         final String response = given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(createTurnpikeIdentityHeader("admin", adminRole))
             .when()
             .contentType(JSON)
@@ -805,8 +840,9 @@ public class InternalResourceTest extends DbIsolatedTest {
      * Tests that a bad request is returned when a daily digest is triggered
      * with a blank application and bundle names.
      */
-    @Test
-    public void testTriggerDailyDigest() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    public void testTriggerDailyDigest(String basePath) {
         final Bundle bundle = this.resourceHelpers.createBundle();
         final Application application = this.resourceHelpers.createApplication(bundle.getId());
 
@@ -827,7 +863,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         Mockito.when(this.environment.isStage()).thenReturn(true);
 
         given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(createTurnpikeIdentityHeader("admin", adminRole))
             .when()
             .contentType(JSON)
@@ -853,8 +889,9 @@ public class InternalResourceTest extends DbIsolatedTest {
      * Tests that a bad request is returned when a daily digest is triggered
      * with an invalid application name.
      */
-    @Test
-    public void testTriggerDailyDigestInvalidApplication() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    public void testTriggerDailyDigestInvalidApplication(String basePath) {
         final String bundleName = "test-trigger-daily-digest-invalid-application";
         Bundle bundle = this.resourceHelpers.createBundle(bundleName, bundleName + "-display-name");
 
@@ -872,7 +909,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         Mockito.when(this.environment.isStage()).thenReturn(true);
 
         final String response = given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(createTurnpikeIdentityHeader("admin", adminRole))
             .when()
             .contentType(JSON)
@@ -893,8 +930,9 @@ public class InternalResourceTest extends DbIsolatedTest {
      * Tests that a bad request is returned when a daily digest is triggered
      * with an invalid bundle name.
      */
-    @Test
-    public void testTriggerDailyDigestInvalidBundle() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    public void testTriggerDailyDigestInvalidBundle(String basePath) {
         final String applicationName = "test-trigger-daily-digest-invalid-bundle";
 
         final Bundle bundle = this.resourceHelpers.createBundle();
@@ -914,7 +952,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         Mockito.when(this.environment.isStage()).thenReturn(true);
 
         final String response = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(createTurnpikeIdentityHeader("admin", adminRole))
                 .when()
                 .contentType(JSON)
@@ -935,8 +973,9 @@ public class InternalResourceTest extends DbIsolatedTest {
      * Tests that a bad request is returned when a daily digest is triggered
      * with an invalid payload.
      */
-    @Test
-    public void testTriggerDailyDigestInvalidPayload() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    public void testTriggerDailyDigestInvalidPayload(String basePath) {
         /*
          * Create a simple class to store test cases and
          */
@@ -1009,7 +1048,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         for (final TestCase testCase : testCaseList) {
 
             final String response = given()
-                .basePath(API_INTERNAL)
+                .basePath(basePath)
                 .header(createTurnpikeIdentityHeader("admin", adminRole))
                 .when()
                 .contentType(JSON)
@@ -1045,10 +1084,11 @@ public class InternalResourceTest extends DbIsolatedTest {
      * required header or body are not present, or contain an unexpected value,
      * a bad request response is returned.
      */
-    @Test
-    void testSendGeneralCommunicationInvalidPrerequisites() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testSendGeneralCommunicationInvalidPrerequisites(String basePath) {
         final String responseMissingEverything = given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(createTurnpikeIdentityHeader("admin", adminRole))
             .when()
             .contentType(JSON)
@@ -1077,7 +1117,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         final SendGeneralCommunicationRequest request = new SendGeneralCommunicationRequest(true);
 
         final String responseIncorrectHeader = given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(createTurnpikeIdentityHeader("admin", adminRole))
             .header("x-rh-send-general-communication", "unexpected-value")
             .when()
@@ -1096,7 +1136,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         final SendGeneralCommunicationRequest invalidBody = new SendGeneralCommunicationRequest(false);
 
         final String invalidBodyResponse = given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(createTurnpikeIdentityHeader("admin", adminRole))
             .header("x-rh-send-general-communication", "send-communication")
             .when()
@@ -1118,8 +1158,9 @@ public class InternalResourceTest extends DbIsolatedTest {
      * also verifies that the incoming response body that the back end receives
      * is simply forwareded to the client.
      */
-    @Test
-    void testInternalSendGeneralCommunication() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testInternalSendGeneralCommunication(String basePath) {
         final SendGeneralCommunicationRequest request = new SendGeneralCommunicationRequest(true);
 
         // Mock an incoming response from the engine.
@@ -1127,7 +1168,7 @@ public class InternalResourceTest extends DbIsolatedTest {
         Mockito.when(this.generalCommunicationsService.sendGeneralCommunication()).thenReturn(response);
 
         final SendGeneralCommunicationResponse receivedResponse = given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .header(createTurnpikeIdentityHeader("admin", adminRole))
             .header("x-rh-send-general-communication", "send-communication")
             .when()
@@ -1147,8 +1188,9 @@ public class InternalResourceTest extends DbIsolatedTest {
         Assertions.assertEquals(response, receivedResponse, "the received response from the back end is not the same as the one received from the engine");
     }
 
-    @Test
-    void testDeleteOrphanEmailIntegrations() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testDeleteOrphanEmailIntegrations(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String orgId = "orphan-email-test-org";
         String accountId = "orphan-email-test-account";
@@ -1176,7 +1218,7 @@ public class InternalResourceTest extends DbIsolatedTest {
 
         String response = given()
             .header(identity)
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .when()
             .delete("/orphanEmailIntegrations")
             .then()

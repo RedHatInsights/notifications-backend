@@ -1,6 +1,5 @@
 package com.redhat.cloud.notifications.routers.internal.cleanup;
 
-import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.Severity;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
@@ -17,10 +16,13 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import java.util.List;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,8 +40,9 @@ class CleanUpResourceTest extends DbIsolatedTest {
     @Inject
     EntityManager entityManager;
 
-    @Test
-    void testDrawerIntegrationDelete() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testDrawerIntegrationDelete(String basePath) {
 
         for (int i = 0; i < 15; i++) {
             resourceHelpers.createEndpoint("123456", "123456", EndpointType.DRAWER);
@@ -52,7 +55,7 @@ class CleanUpResourceTest extends DbIsolatedTest {
         assertEquals(15, endpoints.size());
 
         given()
-                .basePath(Constants.API_INTERNAL)
+                .basePath(basePath)
                 .header(TestHelpers.createTurnpikeIdentityHeader("user", this.adminRole))
                 .when()
                 .contentType(JSON)
@@ -67,7 +70,7 @@ class CleanUpResourceTest extends DbIsolatedTest {
         assertEquals(5, endpoints.size());
 
         given()
-            .basePath(Constants.API_INTERNAL)
+            .basePath(basePath)
             .header(TestHelpers.createTurnpikeIdentityHeader("user", this.adminRole))
             .when()
             .contentType(JSON)
@@ -82,11 +85,12 @@ class CleanUpResourceTest extends DbIsolatedTest {
         assertEquals(0, endpoints.size());
     }
 
-    @Test
-    void testInventoryEventsDelete() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testInventoryEventsDelete(String basePath) {
 
         given()
-            .basePath(Constants.API_INTERNAL)
+            .basePath(basePath)
             .header(TestHelpers.createTurnpikeIdentityHeader("user", this.adminRole))
             .when()
             .contentType(JSON)
@@ -96,11 +100,12 @@ class CleanUpResourceTest extends DbIsolatedTest {
             .statusCode(200);
     }
 
-    @Test
-    void testEmailAggregationDelete() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testEmailAggregationDelete(String basePath) {
 
         given()
-            .basePath(Constants.API_INTERNAL)
+            .basePath(basePath)
             .header(TestHelpers.createTurnpikeIdentityHeader("user", this.adminRole))
             .when()
             .contentType(JSON)
@@ -110,8 +115,9 @@ class CleanUpResourceTest extends DbIsolatedTest {
             .statusCode(200);
     }
 
-    @Test
-    void testSeverityOrderBackfill() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    void testSeverityOrderBackfill(String basePath) {
         // Create test fixtures
         Bundle bundle = resourceHelpers.createBundle("backfill-bundle", "Backfill Bundle");
         Application app = resourceHelpers.createApplication(bundle.getId(), "backfill-app", "Backfill App");
@@ -132,7 +138,7 @@ class CleanUpResourceTest extends DbIsolatedTest {
 
         // Backfill only 2 rows
         int updated = given()
-            .basePath(Constants.API_INTERNAL)
+            .basePath(basePath)
             .header(TestHelpers.createTurnpikeIdentityHeader("user", this.adminRole))
             .when()
             .contentType(JSON)
@@ -147,7 +153,7 @@ class CleanUpResourceTest extends DbIsolatedTest {
 
         // Backfill the remaining row
         updated = given()
-            .basePath(Constants.API_INTERNAL)
+            .basePath(basePath)
             .header(TestHelpers.createTurnpikeIdentityHeader("user", this.adminRole))
             .when()
             .contentType(JSON)

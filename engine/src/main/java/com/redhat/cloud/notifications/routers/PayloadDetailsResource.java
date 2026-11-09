@@ -17,9 +17,15 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
 
 @Path(API_INTERNAL + "/payloads")
 public class PayloadDetailsResource {
+
+    @Path(API_INTERNAL_NOTIFICATIONS_ENGINE + "/payloads")
+    public static class V1 extends PayloadDetailsResource {
+    }
+
     @Inject
     PayloadDetailsMapper payloadDetailsMapper;
 

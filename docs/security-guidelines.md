@@ -38,7 +38,7 @@ The following paths bypass `x-rh-identity` validation in `ConsoleAuthMechanism.a
 
 - `*/openapi.json` on any API path
 - `/openapi.json`, `/health`, `/metrics`
-- `/internal/validation`, `/internal/gw`, `/internal/version`
+- `/internal/validation`, `/internal/gw`, `/internal/version` and their equivalents under `/internal/notifications/v1/backend`
 
 Do not add new unauthenticated paths without updating the allowlist in `ConsoleAuthMechanism.authenticate()`.
 
@@ -77,7 +77,7 @@ Use the `WorkspacePermission` enum values in `@Authorization` annotations:
 
 ### Internal API Authorization
 
-Internal endpoints (`/internal/*`) use `@RolesAllowed` with `RBAC_INTERNAL_ADMIN` or `RBAC_INTERNAL_USER`.
+Internal endpoints (`/internal/*`, including `/internal/notifications/v1/{component}/*`) use `@RolesAllowed` with `RBAC_INTERNAL_ADMIN` or `RBAC_INTERNAL_USER`.
 Prefer class-level `@RolesAllowed(RBAC_INTERNAL_ADMIN)` with method-level overrides for read-only methods.
 
 For fine-grained internal access, use `SecurityContextUtil.hasPermissionForRole()` or

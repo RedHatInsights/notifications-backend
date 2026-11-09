@@ -48,6 +48,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createBundle;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createEventType;
@@ -219,10 +220,10 @@ public class UserConfigResourceTest extends DbIsolatedTest {
     }
 
     private String createTestBundleAppEventType(Header adminIdentity, TestRecordNameAndDisplayName bundleDetails, List<TestRecordNameAndDisplayName> applicationsDetails) {
-        final String bundleId = createBundle(adminIdentity, bundleDetails.name, bundleDetails.displayName, 200).get();
+        final String bundleId = createBundle(API_INTERNAL, adminIdentity, bundleDetails.name, bundleDetails.displayName, 200).get();
         applicationsDetails.forEach(appDetail -> {
-            final String appId = createApp(adminIdentity, bundleId, appDetail.name, appDetail.displayName, null, 200).get();
-            createEventType(adminIdentity, appId, "event-type-name", "Event type", "Event type description", false, false, 200).get();
+            final String appId = createApp(API_INTERNAL, adminIdentity, bundleId, appDetail.name, appDetail.displayName, null, 200).get();
+            createEventType(API_INTERNAL, adminIdentity, appId, "event-type-name", "Event type", "Event type description", false, false, 200).get();
         });
         return bundleId;
     }
@@ -277,7 +278,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         assertEquals(RESULT, mappedString);
 
         // delete created bundles, apps and event types
-        bundleIdsToRemove.forEach(bundleIdToRemove -> deleteBundle(adminIdentity, bundleIdToRemove, true));
+        bundleIdsToRemove.forEach(bundleIdToRemove -> deleteBundle(API_INTERNAL, adminIdentity, bundleIdToRemove, true));
     }
 
 
@@ -305,7 +306,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         String eventType = "new-recommendation";
 
         String instantTemplateId = createInstantTemplate(bundle, application, eventType);
-        String aggregationTemplateId = CrudTestHelpers.createAggregationTemplate(bundle, application, applicationRepository, adminRole);
+        String aggregationTemplateId = CrudTestHelpers.createAggregationTemplate(API_INTERNAL, bundle, application, applicationRepository, adminRole);
         resourceHelpers.createDrawerTemplate("Drawer template settings by event type", bundle, application, eventType);
 
         // Test legacy mode, without any severity available
@@ -881,26 +882,26 @@ public class UserConfigResourceTest extends DbIsolatedTest {
         // We also need templates that will be linked with the instant email template tested below.
         Template subjectTemplate = CrudTestHelpers.buildTemplate("subject-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
 
-        JsonObject subjectJsonTemplate = createTemplate(adminIdentity, subjectTemplate, 200).get();
+        JsonObject subjectJsonTemplate = createTemplate(API_INTERNAL, adminIdentity, subjectTemplate, 200).get();
         Template bodyTemplate = CrudTestHelpers.buildTemplate("body-template-name-" + RandomStringUtils.randomAlphabetic(20), "template-data");
-        JsonObject bodyJsonTemplate = createTemplate(adminIdentity, bodyTemplate, 200).get();
+        JsonObject bodyJsonTemplate = createTemplate(API_INTERNAL, adminIdentity, bodyTemplate, 200).get();
 
         Application app = applicationRepository.getApplication(bundle, application);
         EventType eventType = eventTypeRepository.find(app.getId(), eventTypeName).get();
 
         InstantEmailTemplate emailTemplate = CrudTestHelpers.buildInstantEmailTemplate(eventType.getId().toString(), subjectJsonTemplate.getString("id"), bodyJsonTemplate.getString("id"));
-        JsonObject jsonEmailTemplate = createInstantEmailTemplate(adminIdentity, emailTemplate, 200).get();
+        JsonObject jsonEmailTemplate = createInstantEmailTemplate(API_INTERNAL, adminIdentity, emailTemplate, 200).get();
         return jsonEmailTemplate.getString("id");
     }
 
     private void deleteInstantTemplate(String templateId) {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        deleteInstantEmailTemplate(adminIdentity, templateId);
+        deleteInstantEmailTemplate(API_INTERNAL, adminIdentity, templateId);
     }
 
     private void deleteAggregationTemplate(String templateId) {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
-        deleteAggregationEmailTemplate(adminIdentity, templateId);
+        deleteAggregationEmailTemplate(API_INTERNAL, adminIdentity, templateId);
     }
 
     @Test
@@ -956,7 +957,7 @@ public class UserConfigResourceTest extends DbIsolatedTest {
 
         // Setup templates
         createInstantTemplate(bundle, application, eventType);
-        CrudTestHelpers.createAggregationTemplate(bundle, application, applicationRepository, adminRole);
+        CrudTestHelpers.createAggregationTemplate(API_INTERNAL, bundle, application, applicationRepository, adminRole);
         resourceHelpers.createDrawerTemplate("Drawer template org specific", bundle, application, eventType);
 
         // Test org-with-drawer-enabled sees DRAWER

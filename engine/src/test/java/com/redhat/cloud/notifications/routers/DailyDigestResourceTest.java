@@ -20,7 +20,9 @@ import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -29,6 +31,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 
@@ -49,12 +52,19 @@ public class DailyDigestResourceTest {
     @Inject
     ActionParser actionParser;
 
+    @BeforeEach
+    void beforeEach() {
+        // The tests run once per internal base path, so messages from a previous run must not be left in the sink.
+        this.inMemoryConnector.sink(DailyDigestResource.AGGREGATION_OUT_CHANNEL).clear();
+    }
+
     /**
      * Tests that the daily digest cannot be triggered in an environment that
      * isn't "local" or "stage".
      */
-    @Test
-    public void testTriggerDailyDigestNonStage() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE})
+    public void testTriggerDailyDigestNonStage(String basePath) {
         // Simulate that we are in the prod environment.
         Mockito.when(this.environment.isLocal()).thenReturn(false);
         Mockito.when(this.environment.isStage()).thenReturn(false);
@@ -71,7 +81,7 @@ public class DailyDigestResourceTest {
 
         // Call the endpoint under test.
         final String response = given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .when()
             .contentType(JSON)
             .body(Json.encode(triggerDailyDigestRequest))
@@ -90,8 +100,9 @@ public class DailyDigestResourceTest {
      * @throws IOException if the incoming message from Kafka cannot be
      * deserialized.
      */
-    @Test
-    void testTriggerDailyDigest() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE})
+    void testTriggerDailyDigest(String basePath) throws IOException {
         final String applicationName = "application-name";
         final String bundleName = "bundle-name";
         final String orgId = "org-id";
@@ -113,7 +124,7 @@ public class DailyDigestResourceTest {
 
         // Call the endpoint under test.
         given()
-            .basePath(API_INTERNAL)
+            .basePath(basePath)
             .when()
             .contentType(ContentType.JSON)
             .body(Json.encode(triggerDailyDigestRequest))

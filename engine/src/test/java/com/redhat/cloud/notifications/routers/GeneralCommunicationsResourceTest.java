@@ -24,12 +24,16 @@ import org.awaitility.Awaitility;
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.EGRESS_CHANNEL;
 import static io.restassured.RestAssured.given;
@@ -53,10 +57,12 @@ public class GeneralCommunicationsResourceTest {
      * Tests that a "general communication" action is sent to the ingress
      * channel for the engine to process it.
      */
-    @Test
-    void testSendGeneralCommunication() {
+    @ParameterizedTest
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE})
+    void testSendGeneralCommunication(String basePath) {
         // Create some integrations for an organization.
-        final String orgId = DEFAULT_ORG_ID + "test-send-gen-com";
+        // The test runs once per internal base path and the created integrations are not removed, so each run needs its own org ID.
+        final String orgId = DEFAULT_ORG_ID + "test-gen-com-" + UUID.randomUUID().toString().substring(0, 8);
         final List<Endpoint> createdEndpoints = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(orgId, EndpointType.PAGERDUTY, null, true, 0);
@@ -69,7 +75,7 @@ public class GeneralCommunicationsResourceTest {
         // Call the endpoint under test.
         given()
             .when()
-            .post("/internal/general-communications/send")
+            .post(basePath + "/general-communications/send")
             .then()
             .statusCode(HttpStatus.SC_OK);
 
