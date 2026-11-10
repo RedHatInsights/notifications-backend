@@ -471,9 +471,8 @@ class EmailAggregationProcessorTest {
 
         EventAggregationCriterion aggregationKey = new EventAggregationCriterion(orgId, app.getBundleId(), app.getId(), "rhel", "advisor");
         AggregationCommand command = new AggregationCommand(aggregationKey, LocalDateTime.now(UTC).minusDays(1), LocalDateTime.now(UTC).plusDays(1), DAILY);
-        command.setAggregatedDataPayloadDetailsId(payloadDetails.getId());
 
-        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(List.of(command)));
+        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(List.of(command), payloadDetails.getId()));
 
         ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
         verify(connectorSender, timeout(5000L)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
@@ -501,13 +500,11 @@ class EmailAggregationProcessorTest {
 
         EventAggregationCriterion advisorKey = new EventAggregationCriterion(orgId, advisorApp.getBundleId(), advisorApp.getId(), "rhel", "advisor");
         AggregationCommand advisorCommand = new AggregationCommand(advisorKey, LocalDateTime.now(UTC).minusDays(1), LocalDateTime.now(UTC).plusDays(1), DAILY);
-        advisorCommand.setAggregatedDataPayloadDetailsId(payloadDetails.getId());
 
         EventAggregationCriterion complianceKey = new EventAggregationCriterion(orgId, complianceApp.getBundleId(), complianceApp.getId(), "rhel", "compliance");
         AggregationCommand complianceCommand = new AggregationCommand(complianceKey, LocalDateTime.now(UTC).minusDays(1), LocalDateTime.now(UTC).plusDays(1), DAILY);
-        complianceCommand.setAggregatedDataPayloadDetailsId(payloadDetails.getId());
 
-        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(List.of(advisorCommand, complianceCommand)));
+        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(List.of(advisorCommand, complianceCommand), payloadDetails.getId()));
 
         ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
         verify(connectorSender, timeout(5000L).times(2)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
@@ -522,6 +519,37 @@ class EmailAggregationProcessorTest {
 
         // Both commands reference the same offloaded row: it must be fetched once, not once per app.
         verify(payloadDetailsRepository, org.mockito.Mockito.times(1)).findById(payloadDetails.getId());
+    }
+
+    @Test
+    void shouldFallBackToLegacyFoldForAppMissingFromOffloadedPayloadDetails() {
+        String orgId = RandomStringUtils.secure().nextAlphanumeric(6);
+        Application advisorApp = resourceHelpers.findOrCreateApplication("rhel", "advisor");
+        EventType advisorEventType = resourceHelpers.findOrCreateEventType(advisorApp.getId(), "new-recommendation");
+        resourceHelpers.createEventTypeEmailSubscription(orgId, "advisorSubscriber", advisorEventType, DAILY);
+        Application complianceApp = resourceHelpers.findOrCreateApplication("rhel", "compliance");
+
+        // The offloaded row only holds advisor: compliance failed to fold on the aggregator side.
+        Event anchorEvent = resourceHelpers.createEvent(advisorEventType);
+        PayloadDetails payloadDetails = new PayloadDetails(anchorEvent,
+            new JsonObject().put("advisor", new JsonObject(buildFoldedData(advisorEventType))));
+        payloadDetailsRepository.save(payloadDetails);
+
+        EventAggregationCriterion advisorKey = new EventAggregationCriterion(orgId, advisorApp.getBundleId(), advisorApp.getId(), "rhel", "advisor");
+        AggregationCommand advisorCommand = new AggregationCommand(advisorKey, LocalDateTime.now(UTC).minusDays(1), LocalDateTime.now(UTC).plusDays(1), DAILY);
+        EventAggregationCriterion complianceKey = new EventAggregationCriterion(orgId, complianceApp.getBundleId(), complianceApp.getId(), "rhel", "compliance");
+        AggregationCommand complianceCommand = new AggregationCommand(complianceKey, LocalDateTime.now(UTC).minusDays(1), LocalDateTime.now(UTC).plusDays(1), DAILY);
+
+        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(List.of(advisorCommand, complianceCommand), payloadDetails.getId()));
+
+        ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
+        verify(connectorSender, timeout(5000L)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
+        assertTrue(argumentCaptor.getValue().mapTo(EmailNotification.class).subscribers().contains("advisorSubscriber"));
+
+        verify(emailAggregationRepository, timeout(5000L)).getEmailAggregationBasedOnEvent(
+            eq(complianceKey), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+        verify(emailAggregationRepository, org.mockito.Mockito.never()).getEmailAggregationBasedOnEvent(
+            eq(advisorKey), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
     }
 
     @Test
@@ -660,6 +688,10 @@ class EmailAggregationProcessorTest {
     }
 
     private String buildAggregatorAction(List<AggregationCommand> aggregationCommands) {
+        return buildAggregatorAction(aggregationCommands, null);
+    }
+
+    private String buildAggregatorAction(List<AggregationCommand> aggregationCommands, UUID offloadedPayloadDetailsId) {
 
         String orgId = aggregationCommands.get(0).getOrgId();
 
@@ -684,6 +716,11 @@ class EmailAggregationProcessorTest {
             .withOrgId(orgId)
             .withTimestamp(LocalDateTime.now(UTC))
             .withEvents(events);
+        if (offloadedPayloadDetailsId != null) {
+            actionBuilder.withContext(new Context.ContextBuilder()
+                .withAdditionalProperty(AggregationCommand.AGGREGATED_DATA_PAYLOAD_DETAILS_ID_CONTEXT_KEY, offloadedPayloadDetailsId.toString())
+                .build());
+        }
 
         return Parser.encode(actionBuilder.build());
     }

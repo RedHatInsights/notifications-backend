@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.notifications.config.AggregatorConfig;
 import com.redhat.cloud.notifications.db.EventAggregationQueryRepository;
 import com.redhat.cloud.notifications.ingress.RecipientsAuthorizationCriterion;
 import com.redhat.cloud.notifications.models.EmailAggregation;
@@ -14,7 +15,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -42,8 +42,8 @@ public class EmailDataAggregator {
     @Inject
     RecipientsAuthorizationCriterionExtractor recipientsAuthorizationCriterionExtractor;
 
-    @ConfigProperty(name = "notifications.aggregation.max-page-size", defaultValue = "100")
-    int maxPageSize;
+    @Inject
+    AggregatorConfig aggregatorConfig;
 
     /**
      * Folds every event for the given app into one shared context.
@@ -58,6 +58,7 @@ public class EmailDataAggregator {
             return null;
         }
 
+        int maxPageSize = aggregatorConfig.getAggregationMaxPageSize();
         int offset = 0;
         int totalAggregatedElements = 0;
         List<Event> events;

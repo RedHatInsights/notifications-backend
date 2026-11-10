@@ -119,6 +119,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
     public void processAggregation(Event event, List<Endpoint> endpoints) {
 
         List<AggregationCommand> aggregationCommands = new ArrayList<>();
+        UUID offloadedPayloadDetailsId = null;
         Timer.Sample consumedTimer = Timer.start(registry);
         String bundle = "unknown";
 
@@ -126,6 +127,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
             try {
                 Action action = actionParser.fromJsonString(event.getPayload());
                 Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+                offloadedPayloadDetailsId = extractOffloadedPayloadDetailsId(action);
 
                 for (com.redhat.cloud.notifications.ingress.Event actionEvent : action.getEvents()) {
                     try {
@@ -166,7 +168,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
 
             processedAggregationCommandCount.increment(aggregationCommands.size());
             try {
-                processBundleAggregation(aggregationCommands, event, endpoints);
+                processBundleAggregation(aggregationCommands, offloadedPayloadDetailsId, event, endpoints);
             } catch (Exception e) {
                 Log.warn("Error while processing aggregation", e);
                 failedAggregationCommandCount.increment();
@@ -180,7 +182,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         }
     }
 
-    private void processBundleAggregation(List<AggregationCommand> aggregationCommands, Event aggregatorEvent, List<Endpoint> endpoints) {
+    private void processBundleAggregation(List<AggregationCommand> aggregationCommands, UUID offloadedPayloadDetailsId, Event aggregatorEvent, List<Endpoint> endpoints) {
         final String bundleName = aggregationCommands.get(0).getAggregationKey().getBundle();
         final SubscriptionType subscriptionType = aggregationCommands.get(0).getSubscriptionType();
         // Patch event display name for event log rendering
@@ -192,7 +194,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
             bundle.getDisplayName());
         eventRepository.updateEventDisplayName(aggregatorEvent.getId(), eventTypeDisplayName);
 
-        Map<User, List<ApplicationAggregatedData>> userData = aggregateByApplication(aggregationCommands);
+        Map<User, List<ApplicationAggregatedData>> userData = aggregateByApplication(aggregationCommands, offloadedPayloadDetailsId);
 
         Map<List<ApplicationAggregatedData>, Set<User>> usersWithSameData = groupUsersByAggregatedData(userData);
 
@@ -204,11 +206,11 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
      * Each application's aggregation command is processed independently; errors in one
      * application do not prevent others from being aggregated.
      */
-    private Map<User, List<ApplicationAggregatedData>> aggregateByApplication(List<AggregationCommand> aggregationCommands) {
+    private Map<User, List<ApplicationAggregatedData>> aggregateByApplication(List<AggregationCommand> aggregationCommands, UUID offloadedPayloadDetailsId) {
         Map<User, List<ApplicationAggregatedData>> userData = new HashMap<>();
         // Scoped to this one bundle's processing, never a class field: an offloaded payload_details row
-        // holds the whole bundle's combined data, so multiple commands below commonly share the same
-        // aggregatedDataPayloadDetailsId and would otherwise each re-fetch and re-parse the same row.
+        // holds the whole bundle's combined data, shared by every command below, which would otherwise
+        // each re-fetch and re-parse the same row.
         Map<UUID, JsonObject> offloadedPayloadCache = new HashMap<>();
 
         for (AggregationCommand aggregationCommand : aggregationCommands) {
@@ -223,7 +225,7 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
                         aggregationCommand.getAggregationKey().getBundle(),
                         aggregationCommand.getAggregationKey().getApplication())));
 
-                Map<User, Map<String, Object>> aggregatedByUser = getAggregatedByUser(aggregationCommand, app.getId(), offloadedPayloadCache);
+                Map<User, Map<String, Object>> aggregatedByUser = getAggregatedByUser(aggregationCommand, app.getId(), offloadedPayloadDetailsId, offloadedPayloadCache);
 
                 aggregatedByUser.forEach((user, data) ->
                     userData.computeIfAbsent(user, unused -> new ArrayList<>())
@@ -242,10 +244,10 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
      * e.g. the org isn't flagged into the fold-only path yet, or no fold-only aggregator exists yet for
      * this app.
      */
-    private Map<User, Map<String, Object>> getAggregatedByUser(AggregationCommand aggregationCommand, UUID appId, Map<UUID, JsonObject> offloadedPayloadCache) {
+    private Map<User, Map<String, Object>> getAggregatedByUser(AggregationCommand aggregationCommand, UUID appId, UUID offloadedPayloadDetailsId, Map<UUID, JsonObject> offloadedPayloadCache) {
         Map<String, Object> aggregatedData = aggregationCommand.getAggregatedData();
-        if (aggregatedData == null && aggregationCommand.getAggregatedDataPayloadDetailsId() != null) {
-            aggregatedData = fetchOffloadedAggregatedData(aggregationCommand, offloadedPayloadCache);
+        if (aggregatedData == null && offloadedPayloadDetailsId != null) {
+            aggregatedData = fetchOffloadedAggregatedData(offloadedPayloadDetailsId, aggregationCommand, offloadedPayloadCache);
         }
 
         if (aggregatedData != null) {
@@ -295,13 +297,12 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
      * run folded for this org+bundle), keyed by application name -- see aggregator's
      * AggregatedDataOffloader.offload()/DailyEmailAggregationJob.buildAction(). offloadedPayloadCache
      * (scoped to one aggregateByApplication() call) means the row is fetched and parsed once even when
-     * several apps in the bundle share the same aggregatedDataPayloadDetailsId; computeIfAbsent() leaves
+     * several apps in the bundle share the Action's single offloaded reference; computeIfAbsent() leaves
      * the cache untouched on failure, so a missing row still only fails the app(s) that need it, each
      * caught individually by aggregateByApplication()'s per-command try/catch, same as before this cache
      * existed.
      */
-    private Map<String, Object> fetchOffloadedAggregatedData(AggregationCommand aggregationCommand, Map<UUID, JsonObject> offloadedPayloadCache) {
-        UUID payloadDetailsId = aggregationCommand.getAggregatedDataPayloadDetailsId();
+    private Map<String, Object> fetchOffloadedAggregatedData(UUID payloadDetailsId, AggregationCommand aggregationCommand, Map<UUID, JsonObject> offloadedPayloadCache) {
         JsonObject allApplications = offloadedPayloadCache.computeIfAbsent(payloadDetailsId, id ->
             new JsonObject(payloadDetailsRepository.findById(id)
                 .orElseThrow(() -> new IllegalStateException("No payload_details row found for offloaded aggregated data reference: " + id))
@@ -310,10 +311,21 @@ public class EmailAggregationProcessor extends SystemEndpointTypeProcessor {
         String applicationName = aggregationCommand.getAggregationKey().getApplication();
         JsonObject applicationData = allApplications.getJsonObject(applicationName);
         if (applicationData == null) {
-            throw new IllegalStateException("Offloaded aggregated data reference " + payloadDetailsId
-                + " has no entry for application " + applicationName);
+            // Aggregator offloads only the apps it managed to fold; any other app in the bundle has no
+            // entry and must be folded from its raw events by the legacy path instead.
+            Log.debugf("Offloaded aggregated data %s has no entry for application %s, falling back to engine-side fold",
+                payloadDetailsId, applicationName);
+            return null;
         }
         return applicationData.getMap();
+    }
+
+    private static UUID extractOffloadedPayloadDetailsId(Action action) {
+        if (action.getContext() == null) {
+            return null;
+        }
+        Object value = action.getContext().getAdditionalProperties().get(AggregationCommand.AGGREGATED_DATA_PAYLOAD_DETAILS_ID_CONTEXT_KEY);
+        return value == null ? null : UUID.fromString(value.toString());
     }
 
     /*

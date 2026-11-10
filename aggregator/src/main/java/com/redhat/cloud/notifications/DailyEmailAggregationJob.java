@@ -294,9 +294,10 @@ public class DailyEmailAggregationJob {
     }
 
     /**
-     * Builds the Kafka {@link Action} for one org+bundle group. Unconditionally sets both
-     * {@link AggregationCommand#setAggregatedData}/{@link AggregationCommand#setAggregatedDataPayloadDetailsId}
-     * on every command (clearing whichever doesn't apply) rather than only touching apps present in
+     * Builds the Kafka {@link Action} for one org+bundle group. Inline pre-folded data is set per
+     * command; an offloaded reference is shared by the whole bundle, so it goes once into the Action's
+     * context instead. Unconditionally sets {@link AggregationCommand#setAggregatedData} on every command
+     * (clearing it when it doesn't apply) rather than only touching apps present in
      * {@code aggregatedDataByApplication} -- this keeps the method a pure function of its arguments
      * regardless of what a previous call against the same (mutable) {@code aggregationCommands} set,
      * which matters for the offload/clear-all-and-retry fallback path in {@link #offloadOversizedPayload}.
@@ -307,16 +308,7 @@ public class DailyEmailAggregationJob {
         for (AggregationCommand aggregationCommand : aggregationCommands) {
             String applicationName = aggregationCommand.getAggregationKey().getApplication();
             Map<String, Object> aggregatedData = aggregatedDataByApplication.get(applicationName);
-            if (aggregatedData == null) {
-                aggregationCommand.setAggregatedData(null);
-                aggregationCommand.setAggregatedDataPayloadDetailsId(null);
-            } else if (offloadedPayloadDetailsId != null) {
-                aggregationCommand.setAggregatedData(null);
-                aggregationCommand.setAggregatedDataPayloadDetailsId(offloadedPayloadDetailsId);
-            } else {
-                aggregationCommand.setAggregatedData(aggregatedData);
-                aggregationCommand.setAggregatedDataPayloadDetailsId(null);
-            }
+            aggregationCommand.setAggregatedData(offloadedPayloadDetailsId != null ? null : aggregatedData);
 
             Payload.PayloadBuilder payloadBuilder = new Payload.PayloadBuilder();
             Map<String, Object> payload = JsonObject.mapFrom(aggregationCommand).getMap();
@@ -328,6 +320,12 @@ public class DailyEmailAggregationJob {
                 .build());
         }
 
+        Context.ContextBuilder contextBuilder = new Context.ContextBuilder();
+        contextBuilder.withAdditionalProperty("single_daily_digest_enabled", true);
+        if (offloadedPayloadDetailsId != null) {
+            contextBuilder.withAdditionalProperty(AggregationCommand.AGGREGATED_DATA_PAYLOAD_DETAILS_ID_CONTEXT_KEY, offloadedPayloadDetailsId.toString());
+        }
+
         return new Action.ActionBuilder()
             .withId(actionId)
             .withBundle(BUNDLE_NAME)
@@ -336,9 +334,7 @@ public class DailyEmailAggregationJob {
             .withOrgId(aggregationCommands.get(0).getOrgId())
             .withTimestamp(timestamp)
             .withEvents(eventList)
-            .withContext(new Context.ContextBuilder()
-                .withAdditionalProperty("single_daily_digest_enabled", true)
-                .build())
+            .withContext(contextBuilder.build())
             .build();
     }
 

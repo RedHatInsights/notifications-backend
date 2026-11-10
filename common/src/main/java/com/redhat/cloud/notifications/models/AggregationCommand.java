@@ -10,6 +10,13 @@ import java.util.UUID;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AggregationCommand {
 
+    /**
+     * Key, in the trigger Action's context, of the {@code payload_details} row ID holding the whole
+     * bundle's combined pre-folded digest content, used instead of inline {@link #aggregatedData}
+     * when that content is too large to send inline.
+     */
+    public static final String AGGREGATED_DATA_PAYLOAD_DETAILS_ID_CONTEXT_KEY = "aggregated_data_payload_details_id";
+
     @NotNull
     private EventAggregationCriterion aggregationKey;
 
@@ -26,17 +33,11 @@ public class AggregationCommand {
      * The aggregator's pre-folded digest content for this app, when the org is flagged into the
      * fold-only path and a fold-only aggregator exists for this app. {@code null} otherwise, in which
      * case engine falls back to folding the raw events itself. Additive field, set via setter only --
-     * no constructor change, so existing callers are unaffected. Mutually exclusive with
-     * {@link #aggregatedDataPayloadDetailsId}.
+     * no constructor change, so existing callers are unaffected. When the bundle's combined content is
+     * too large to send inline, this stays {@code null} and the Action's context carries a reference
+     * instead, under {@link #AGGREGATED_DATA_PAYLOAD_DETAILS_ID_CONTEXT_KEY}.
      */
     private Map<String, Object> aggregatedData;
-
-    /**
-     * Reference to a {@code payload_details} row holding this bundle's combined pre-folded digest
-     * content, used instead of {@link #aggregatedData} when that content is too large to send inline.
-     * Additive, see {@link #aggregatedData}.
-     */
-    private UUID aggregatedDataPayloadDetailsId;
 
     public AggregationCommand(EventAggregationCriterion aggregationKey, LocalDateTime start, LocalDateTime end, SubscriptionType subscriptionType) {
         this.aggregationKey = aggregationKey;
@@ -71,14 +72,6 @@ public class AggregationCommand {
 
     public void setAggregatedData(Map<String, Object> aggregatedData) {
         this.aggregatedData = aggregatedData;
-    }
-
-    public UUID getAggregatedDataPayloadDetailsId() {
-        return aggregatedDataPayloadDetailsId;
-    }
-
-    public void setAggregatedDataPayloadDetailsId(UUID aggregatedDataPayloadDetailsId) {
-        this.aggregatedDataPayloadDetailsId = aggregatedDataPayloadDetailsId;
     }
 
     public String getOrgId() {

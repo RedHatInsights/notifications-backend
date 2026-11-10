@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.email;
 
+import com.redhat.cloud.notifications.config.AggregatorConfig;
 import com.redhat.cloud.notifications.db.EventAggregationQueryRepository;
 import com.redhat.cloud.notifications.db.PayloadDetailsRepository;
 import com.redhat.cloud.notifications.models.Event;
@@ -8,7 +9,6 @@ import com.redhat.cloud.notifications.processors.payload.PayloadDetails;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -30,8 +30,8 @@ public class AggregatedDataOffloader {
     @Inject
     PayloadDetailsRepository payloadDetailsRepository;
 
-    @ConfigProperty(name = "mp.messaging.outgoing.egress.max.request.size", defaultValue = "1048576")
-    int maxRequestSize;
+    @Inject
+    AggregatorConfig aggregatorConfig;
 
     /**
      * Zero-margin check against the real final encoded message, matching the existing precedent in
@@ -39,7 +39,7 @@ public class AggregatedDataOffloader {
      * the need for an arbitrary safety-margin percentage.
      */
     public boolean exceedsMaxRequestSize(String encodedAction) {
-        return encodedAction.getBytes(StandardCharsets.UTF_8).length >= maxRequestSize;
+        return encodedAction.getBytes(StandardCharsets.UTF_8).length >= aggregatorConfig.getKafkaEgressMaximumRequestSize();
     }
 
     /**

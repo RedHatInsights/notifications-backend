@@ -621,10 +621,10 @@ class DailyEventAggregationJobTest {
         AggregationCommand command = objectMapper.convertValue(
             action.getEvents().get(0).getPayload().getAdditionalProperties(), AggregationCommand.class);
         assertNull(command.getAggregatedData(), "oversized pre-folded payload must not be sent inline");
-        assertNotNull(command.getAggregatedDataPayloadDetailsId(),
-            "oversized pre-folded payload must carry an offload reference instead");
+        Object offloadedId = action.getContext().getAdditionalProperties().get(AggregationCommand.AGGREGATED_DATA_PAYLOAD_DETAILS_ID_CONTEXT_KEY);
+        assertNotNull(offloadedId, "oversized pre-folded payload must carry an offload reference in the Action context instead");
 
-        UUID payloadDetailsId = command.getAggregatedDataPayloadDetailsId();
+        UUID payloadDetailsId = UUID.fromString(offloadedId.toString());
         PayloadDetails saved = helpers.findPayloadDetailsById(payloadDetailsId);
         assertNotNull(saved, "the offloaded payload must actually be saved in payload_details");
         assertTrue(saved.getContents().contains("compliance"), "the saved payload must be keyed by application name");
@@ -651,7 +651,8 @@ class DailyEventAggregationJobTest {
         AggregationCommand command = objectMapper.convertValue(
             action.getEvents().get(0).getPayload().getAdditionalProperties(), AggregationCommand.class);
         assertNull(command.getAggregatedData(), "an offload failure must fall back to no pre-folded data, not a crash");
-        assertNull(command.getAggregatedDataPayloadDetailsId(), "an offload failure must not leave a dangling reference");
+        assertNull(action.getContext().getAdditionalProperties().get(AggregationCommand.AGGREGATED_DATA_PAYLOAD_DETAILS_ID_CONTEXT_KEY),
+            "an offload failure must not leave a dangling reference");
     }
 
     @Test

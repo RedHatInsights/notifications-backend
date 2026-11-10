@@ -30,6 +30,8 @@ public class AggregatorConfig {
     private static final String METRICS_SCRAPE_MODE_ENABLED = "notifications.aggregator.metrics.scrape-mode-enabled";
     private static final String METRICS_SCRAPE_KEEP_ALIVE_SECONDS = "notifications.aggregator.metrics.scrape-keep-alive-seconds";
     private static final int DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS = 150;
+    private static final String AGGREGATION_MAX_PAGE_SIZE = "notifications.aggregation.max-page-size";
+    private static final String KAFKA_EGRESS_MAXIMUM_REQUEST_SIZE = "mp.messaging.outgoing.egress.max.request.size";
 
     /*
      * Unleash configuration
@@ -45,6 +47,12 @@ public class AggregatorConfig {
 
     @ConfigProperty(name = METRICS_SCRAPE_KEEP_ALIVE_SECONDS, defaultValue = DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS + "")
     int metricsScrapeKeepAliveSeconds;
+
+    @ConfigProperty(name = AGGREGATION_MAX_PAGE_SIZE, defaultValue = "100")
+    int aggregationMaxPageSize;
+
+    @ConfigProperty(name = KAFKA_EGRESS_MAXIMUM_REQUEST_SIZE, defaultValue = "1048576")
+    int kafkaEgressMaximumRequestSize;
 
     @Inject
     Unleash unleash;
@@ -73,6 +81,14 @@ public class AggregatorConfig {
 
     public Optional<String> getClusterId() {
         return clusterId.map(String::trim).filter(value -> !value.isEmpty());
+    }
+
+    public int getAggregationMaxPageSize() {
+        return aggregationMaxPageSize;
+    }
+
+    public int getKafkaEgressMaximumRequestSize() {
+        return kafkaEgressMaximumRequestSize;
     }
 
     public boolean isScrapeExportMode() {
@@ -165,6 +181,8 @@ public class AggregatorConfig {
         config.put(CLUSTER_ID, getClusterId().orElse("not-configured"));
         config.put(METRICS_SCRAPE_MODE_ENABLED, metricsScrapeModeEnabled);
         config.put(METRICS_SCRAPE_KEEP_ALIVE_SECONDS, metricsScrapeKeepAliveSeconds);
+        config.put(AGGREGATION_MAX_PAGE_SIZE, aggregationMaxPageSize);
+        config.put(KAFKA_EGRESS_MAXIMUM_REQUEST_SIZE, kafkaEgressMaximumRequestSize);
         if (activeClusterToggle != null) {
             config.put(activeClusterToggle, getActiveCluster().orElse("unable-to-determine"));
         }
