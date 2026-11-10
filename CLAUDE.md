@@ -2,6 +2,14 @@
 
 ## Claude Code Instructions
 
+### Bootstrapping
+
+`mvnw` is not committed to git. After a fresh clone, generate it once with:
+
+```sh
+mvn wrapper:wrapper
+```
+
 ### Pre-Commit Verification
 
 Before finishing any code change, run checkstyle on modified modules. The fastest check (no compile, no tests):

@@ -17,6 +17,9 @@ createdb -U postgres notifications
 # Start Redis
 redis-server --daemonize yes
 
+# Generate mvnw (not committed since switching to distributionType=script).
+runuser -u default -- mvn wrapper:wrapper
+
 #
 # On the master branch there is no need to give the pull request details.
 #
