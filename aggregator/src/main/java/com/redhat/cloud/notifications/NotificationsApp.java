@@ -65,8 +65,10 @@ public class NotificationsApp implements QuarkusApplication {
                 }
             });
         } finally {
-            // Expose or push metrics once after both jobs complete (even on failure)
-            if (!LaunchMode.current().isDevOrTest()) {
+            // Expose or push metrics once after both jobs complete (even on failure).
+            // Skip export entirely when all jobs were skipped (standby pod): the registry is
+            // empty and pushing it would cause a no-op push or mislead scrape consumers.
+            if (!LaunchMode.current().isDevOrTest() && registry.metricFamilySamples().hasMoreElements()) {
                 if (aggregatorConfig.isScrapeExportMode()) {
                     exposeMetricsForScraping(registry);
                 } else {
