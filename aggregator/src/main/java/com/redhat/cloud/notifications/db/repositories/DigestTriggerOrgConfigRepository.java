@@ -122,9 +122,29 @@ public class DigestTriggerOrgConfigRepository {
                     start = now.minusDays(7);
                     end = now;
                 } else {
-                    // calculateNextRun(cron, lastRun) gives the slot that is now due --
-                    // the correct upper bound even when the job runs late or retries.
-                    end = digestCronUtils.calculateNextRun(cronExpression, lastRun);
+                    // end = most recent scheduled slot at or before the execution time.
+                    //
+                    // Why not calculateNextRun(cron, lastRun)?
+                    // That expression resolves to the first occurrence of the cron AFTER lastRun.
+                    // For a normal on-schedule run both give the same result, but after a schedule
+                    // change they diverge:
+                    //   lastRun = Mon Nov 9 (old Monday schedule)
+                    //   admin changes to Wednesday 09:00 on Sun Nov 15
+                    //   nextRun is correctly set to Wed Nov 18
+                    //   calculateNextRun(Wed cron, Nov 9) = Nov 11  ← already in the past!
+                    //   calculateCurrentSlot(Wed cron, Nov 18)     = Nov 18  ← correct
+                    // Using calculateNextRun would make every subsequent digest cover a stale window.
+                    //
+                    // The first digest after a schedule change may cover more than 7 days:
+                    //   start = Nov 9 (last successful run on old schedule)
+                    //   end   = Nov 18 (first slot on new schedule)
+                    //   → 9-day window, includes everything since the last digest with no gap.
+                    // Subsequent digests return to the normal 7-day cadence.
+                    //
+                    // For retries (same cron, job ran late): both formulas give the same end because
+                    //   calculateNextRun(Mon cron, lastMon) = thisMon = calculateCurrentSlot(Mon cron, Tue)
+                    // so retry behaviour is unchanged.
+                    end = digestCronUtils.calculateCurrentSlot(cronExpression, now);
                     start = lastRun;
                 }
 
@@ -166,8 +186,16 @@ public class DigestTriggerOrgConfigRepository {
 
     /**
      * Updates last_run, next_run, and resets status to PENDING for successfully processed orgs.
-     * For retries: calculateNextRun(cron, previousLastRun) gives the missed scheduled slot,
-     * keeping the event window anchored to the original schedule rather than the retry date.
+     * <p>
+     * last_run is set to the most recent scheduled slot at or before the execution time
+     * (calculateCurrentSlot), so it always matches the window end used by
+     * getApplicationsWithPendingWeeklyAggregation. This keeps the next digest's start boundary
+     * consistent regardless of retries or schedule changes.
+     * <p>
+     * After a schedule change the first last_run on the new schedule may be ahead of the old
+     * last_run by more than 7 days (e.g. Nov 9 → Nov 18 after a Mon→Wed change that lands on
+     * Nov 18). That is intentional: it matches the extended first window described in
+     * getApplicationsWithPendingWeeklyAggregation. Subsequent digests return to 7-day windows.
      */
     @Transactional
     public void updateLastAndNextRunForWeekly(List<String> orgIdsToUpdate, LocalDateTime currentExecutionTime) {
@@ -187,12 +215,12 @@ public class DigestTriggerOrgConfigRepository {
             try {
                 LocalDateTime nextRun = digestCronUtils.calculateNextRun(config.getCronExpression(), currentExecutionTime);
 
-                // For retries: calculateNextRun(cron, previousLastRun) gives the missed scheduled slot,
-                // keeping the event window anchored to the original schedule rather than the retry date.
-                // For first run (lastRun null): use currentExecutionTime directly to avoid NPE.
+                // Set last_run to the most recent scheduled slot at or before the execution time.
+                // This must mirror the window end computed in getApplicationsWithPendingWeeklyAggregation
+                // so that the next digest's start boundary is exactly where this one ended.
                 LocalDateTime newLastRun = config.getLastRun() == null
                     ? currentExecutionTime
-                    : digestCronUtils.calculateNextRun(config.getCronExpression(), config.getLastRun());
+                    : digestCronUtils.calculateCurrentSlot(config.getCronExpression(), currentExecutionTime);
 
                 config.setLastRun(newLastRun);
                 config.setNextRun(nextRun);
@@ -232,9 +260,11 @@ public class DigestTriggerOrgConfigRepository {
                 .setParameter("noEventsOrgIds", noEventsOrgIds)
                 .getResultList()) {
             try {
+                // Same logic as updateLastAndNextRunForWeekly: last_run = current slot so that
+                // the next digest starts exactly where this one ended, even after a schedule change.
                 LocalDateTime newLastRun = config.getLastRun() == null
                     ? now
-                    : digestCronUtils.calculateNextRun(config.getCronExpression(), config.getLastRun());
+                    : digestCronUtils.calculateCurrentSlot(config.getCronExpression(), now);
                 config.setLastRun(newLastRun);
                 config.setNextRun(digestCronUtils.calculateNextRun(config.getCronExpression(), now));
                 config.setStatus("PENDING");

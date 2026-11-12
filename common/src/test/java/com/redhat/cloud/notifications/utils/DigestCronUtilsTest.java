@@ -6,6 +6,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import java.time.DayOfWeek;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -79,5 +80,31 @@ class DigestCronUtilsTest {
         assertEquals(DayOfWeek.MONDAY, digestCronUtils.parseDayFromCron("0 8 * * 1"));
         assertEquals(DayOfWeek.FRIDAY, digestCronUtils.parseDayFromCron("0 8 * * 5"));
         assertEquals(DayOfWeek.SATURDAY, digestCronUtils.parseDayFromCron("0 8 * * 6"));
+    }
+
+    @Test
+    void testCalculateCurrentSlotExactlyOnSchedule() {
+        // Nov 18 2024 is a Monday. Running exactly at Monday 00:30 should return that same slot.
+        LocalDateTime at = LocalDateTime.of(2024, 11, 18, 0, 30);
+        LocalDateTime slot = digestCronUtils.calculateCurrentSlot("30 0 * * 1", at);
+        assertEquals(at, slot);
+    }
+
+    @Test
+    void testCalculateCurrentSlotRunningLate() {
+        // Monday 00:30 cron, job runs on Wednesday at 10:00 (late/retry).
+        // Should return the last Monday slot, not the next one.
+        LocalDateTime at = LocalDateTime.of(2024, 11, 20, 10, 0); // Wednesday Nov 20 2024
+        LocalDateTime slot = digestCronUtils.calculateCurrentSlot("30 0 * * 1", at);
+        assertEquals(LocalDateTime.of(2024, 11, 18, 0, 30), slot); // Monday Nov 18
+    }
+
+    @Test
+    void testCalculateCurrentSlotAfterScheduleChange() {
+        // Admin changed from Monday 00:30 to Wednesday 09:00. First run is Wed Nov 20 09:00.
+        // Should return Nov 20 09:00 (the current Wednesday slot), not Nov 13 09:00.
+        LocalDateTime at = LocalDateTime.of(2024, 11, 20, 9, 0); // Wednesday Nov 20 2024
+        LocalDateTime slot = digestCronUtils.calculateCurrentSlot("0 9 * * 3", at);
+        assertEquals(at, slot);
     }
 }

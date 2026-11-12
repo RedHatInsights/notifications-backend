@@ -105,6 +105,40 @@ public class DigestCronUtils {
             .orElseThrow(() -> new IllegalArgumentException("No next execution found for cron expression: " + cronExpression));
     }
 
+    /**
+     * Returns the most recent cron slot at or before {@code at}.
+     * <p>
+     * Use this — not {@code calculateNextRun(cron, lastRun)} — to compute the window end and the
+     * new {@code last_run} after a successful digest run.  When the cron expression is changed (e.g.
+     * Monday → Wednesday), {@code calculateNextRun(newCron, oldLastRun)} resolves to a slot that is
+     * already in the past, causing every subsequent digest to be one week behind.
+     * {@code calculateCurrentSlot} always anchors to {@code at}, so the window stays correct
+     * regardless of schedule changes.
+     *
+     * @param cronExpression the cron expression (UNIX format)
+     * @param at             the reference time (typically the job's execution time)
+     * @return the last cron slot at or before {@code at}
+     * @throws IllegalArgumentException if the expression is invalid or no previous execution exists
+     */
+    public LocalDateTime calculateCurrentSlot(String cronExpression, LocalDateTime at) {
+        if (cronExpression == null || cronExpression.isBlank()) {
+            throw new IllegalArgumentException("Cron expression cannot be null or blank");
+        }
+
+        Cron cron = CRON_PARSER.parse(cronExpression).validate();
+        ExecutionTime executionTime = ExecutionTime.forCron(cron);
+
+        // Add one second so that lastExecution includes the slot that falls exactly on `at`.
+        // cron-utils lastExecution is strictly-before; without the nudge, an on-schedule run
+        // (at == slot) would return the previous slot.
+        ZonedDateTime atZoned = at.plusSeconds(1).atZone(ZoneOffset.UTC);
+        Optional<ZonedDateTime> lastExecution = executionTime.lastExecution(atZoned);
+
+        return lastExecution
+            .map(zonedDateTime -> zonedDateTime.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime())
+            .orElseThrow(() -> new IllegalArgumentException("No previous execution found for cron expression: " + cronExpression));
+    }
+
     private String[] validateCronParts(String cronExpression) {
         String[] parts = cronExpression.split(" ");
         if (parts.length < 5) {

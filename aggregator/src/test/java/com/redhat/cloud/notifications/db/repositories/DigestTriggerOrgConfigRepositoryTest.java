@@ -571,20 +571,16 @@ class DigestTriggerOrgConfigRepositoryTest {
         assertEquals(1, commands.size());
         AggregationCommand command = commands.get(0);
 
-        // CRITICAL ASSERTION: The aggregation command's end time should be calculated from the cron expression,
-        // NOT the execution time
-        // This ensures the event window boundary is the scheduled time, even during retries
+        // The window end is the most recent cron slot at or before the execution time.
+        // For a retry on Wednesday with a Monday 00:30 cron, that slot is the last Monday —
+        // which is strictly before Wednesday.  The assertion below holds for any retry run.
 
         LocalDateTime commandEnd = command.getEnd();
         assertNotNull(commandEnd);
 
-        // The key assertion: end time must be BEFORE execution time
-        // This proves it's using the scheduled time (calculated from lastRun via cron),
-        // not the execution time
         assertTrue(commandEnd.isBefore(executionTime),
-            String.format("CRITICAL: End time (%s) must be BEFORE execution time (%s). " +
-                "This proves the aggregation uses scheduled time from cron, not execution time. " +
-                "If end time equals execution time, event windows would be incorrect during retries.",
+            String.format("End time (%s) must be BEFORE execution time (%s) during a retry run. " +
+                "It should be the last scheduled slot (Monday 00:30), not the retry time (Wednesday).",
                 commandEnd, executionTime));
 
         // End time should also be after lastRun (it's the next scheduled time from lastRun)
@@ -651,6 +647,45 @@ class DigestTriggerOrgConfigRepositoryTest {
 
         DigestTriggerOrgConfig notClaimedConfig = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID_2, SubscriptionType.WEEKLY);
         assertEquals("PENDING", notClaimedConfig.getStatus(), "Not-yet-due org should remain PENDING");
+    }
+
+    @Test
+    void testScheduleChangeDoesNotCauseOneWeekLag() {
+        // Regression test for gwenneg's review comment:
+        // When an admin changes the cron expression (e.g. Monday 00:30 -> Wednesday 09:00),
+        // calculateNextRun(newCron, oldLastRun) resolves to a past slot (the first Wednesday
+        // after the old lastRun), making the window end one week behind for every subsequent
+        // digest.  calculateCurrentSlot(newCron, now) anchors to the execution time instead.
+        //
+        // Nov 11 2024 = Monday, Nov 20 2024 = Wednesday.
+        LocalDateTime lastRunOnOldMonSchedule = LocalDateTime.of(2024, 11, 11, 0, 30);
+        String newCron = "0 9 * * 3"; // Wednesday 09:00
+        LocalDateTime firstRunOnNewSchedule = LocalDateTime.of(2024, 11, 20, 9, 0);
+
+        DigestTriggerOrgConfigId configId = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config = new DigestTriggerOrgConfig(configId, newCron);
+        config.setLastRun(lastRunOnOldMonSchedule);
+        config.setNextRun(firstRunOnNewSchedule);
+        resourceHelpers.addDigestTriggerOrgConfig(config);
+
+        Event event = resourceHelpers.addEventEmailAggregationWithSubscriptionType(
+            ORG_ID, BUNDLE_NAME, APP_NAME, LocalDateTime.of(2024, 11, 15, 12, 0),
+            PAYLOAD1.toString(), true, SubscriptionType.WEEKLY);
+
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(firstRunOnNewSchedule);
+        List<AggregationCommand> commands = digestTriggerOrgConfigRepository.getApplicationsWithPendingWeeklyAggregation(firstRunOnNewSchedule, claimed);
+
+        assertEquals(1, commands.size());
+        AggregationCommand command = commands.get(0);
+
+        // The window end must be this Wednesday (Nov 20), not the past Wednesday (Nov 13).
+        // With the old calculateNextRun(newCron, lastRunOnMon) the end would be Nov 13 — one week late.
+        assertEquals(firstRunOnNewSchedule.withNano(0), command.getEnd().withNano(0),
+            "After a schedule change the window end must be the current scheduled slot (Nov 20), not a past slot derived from the old last_run");
+        assertEquals(lastRunOnOldMonSchedule.withNano(0), command.getStart().withNano(0),
+            "Start should still be the previous last_run");
+
+        resourceHelpers.deleteEvent(event);
     }
 
     @Test
