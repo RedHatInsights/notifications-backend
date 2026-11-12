@@ -689,11 +689,30 @@ class DigestTriggerOrgConfigRepositoryTest {
     }
 
     @Test
+    void testClaimDueWeeklyOrgsSetsClaimedAt() {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+
+        DigestTriggerOrgConfigId configId = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config = new DigestTriggerOrgConfig(configId, DEFAULT_WEEKLY_CRON);
+        config.setLastRun(now.minusWeeks(1));
+        config.setNextRun(now);
+        resourceHelpers.addDigestTriggerOrgConfig(config);
+
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+        assertEquals(1, claimed.size());
+
+        DigestTriggerOrgConfig claimedCfg = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID, SubscriptionType.WEEKLY);
+        assertEquals("PROCESSING", claimedCfg.getStatus());
+        assertNotNull(claimedCfg.getClaimedAt(), "claimedAt must be set when a row is claimed");
+        assertEquals(now.withNano(0), claimedCfg.getClaimedAt().withNano(0));
+    }
+
+    @Test
     void testResetStaleClaims() {
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         int staleThresholdHours = 6;
 
-        // Stale PROCESSING org: nextRun older than the threshold
+        // Stale PROCESSING org: nextRun older than the threshold (pre-migration row, no claimedAt)
         DigestTriggerOrgConfigId configId1 = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
         DigestTriggerOrgConfig config1 = new DigestTriggerOrgConfig(configId1, DEFAULT_WEEKLY_CRON);
         config1.setLastRun(now.minusWeeks(2));
@@ -701,7 +720,7 @@ class DigestTriggerOrgConfigRepositoryTest {
         config1.setStatus("PROCESSING");
         resourceHelpers.addDigestTriggerOrgConfig(config1);
 
-        // Fresh PROCESSING org: nextRun within the threshold (pod still alive)
+        // Fresh PROCESSING org: nextRun within the threshold (pod still alive, no claimedAt)
         DigestTriggerOrgConfigId configId2 = new DigestTriggerOrgConfigId(ORG_ID_2, SubscriptionType.WEEKLY);
         DigestTriggerOrgConfig config2 = new DigestTriggerOrgConfig(configId2, DEFAULT_WEEKLY_CRON);
         config2.setLastRun(now.minusWeeks(1));
@@ -714,8 +733,49 @@ class DigestTriggerOrgConfigRepositoryTest {
 
         DigestTriggerOrgConfig staleCfg = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID, SubscriptionType.WEEKLY);
         assertEquals("PENDING", staleCfg.getStatus(), "Stale claim should be reset to PENDING");
+        assertNull(staleCfg.getClaimedAt(), "claimedAt should be cleared on reset");
 
         DigestTriggerOrgConfig freshCfg = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID_2, SubscriptionType.WEEKLY);
         assertEquals("PROCESSING", freshCfg.getStatus(), "Fresh claim should remain PROCESSING");
+    }
+
+    @Test
+    void testResetStaleClaimsUsesClaimTimeNotScheduleTime() {
+        // Regression test for gwenneg's review comment:
+        // When next_run is 7+ hours old but the row was just claimed (e.g. job paused for hours
+        // then restarted), resetStaleClaims must NOT reset the row: it was claimed recently.
+        // The old code checked next_run < threshold, which would immediately reset a row claimed
+        // after a long pause. The new code checks claimed_at < threshold instead.
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        int staleThresholdHours = 6;
+
+        // next_run is 7 hours old — stale by the old heuristic — but claimed only 5 minutes ago.
+        DigestTriggerOrgConfigId configId1 = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config1 = new DigestTriggerOrgConfig(configId1, DEFAULT_WEEKLY_CRON);
+        config1.setLastRun(now.minusWeeks(1));
+        config1.setNextRun(now.minusHours(7));
+        config1.setStatus("PROCESSING");
+        config1.setClaimedAt(now.minusMinutes(5));
+        resourceHelpers.addDigestTriggerOrgConfig(config1);
+
+        // next_run is 7 hours old AND claimed_at is 7 hours old — genuinely stale.
+        DigestTriggerOrgConfigId configId2 = new DigestTriggerOrgConfigId(ORG_ID_2, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config2 = new DigestTriggerOrgConfig(configId2, DEFAULT_WEEKLY_CRON);
+        config2.setLastRun(now.minusWeeks(2));
+        config2.setNextRun(now.minusHours(7));
+        config2.setStatus("PROCESSING");
+        config2.setClaimedAt(now.minusHours(7));
+        resourceHelpers.addDigestTriggerOrgConfig(config2);
+
+        int reset = digestTriggerOrgConfigRepository.resetStaleClaims(now, staleThresholdHours);
+        assertEquals(1, reset, "Only the genuinely stale claim (old claimedAt) should be reset");
+
+        DigestTriggerOrgConfig freshlyClaimed = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID, SubscriptionType.WEEKLY);
+        assertEquals("PROCESSING", freshlyClaimed.getStatus(),
+            "Row claimed 5 minutes ago must not be reset even though next_run is 7 hours old");
+
+        DigestTriggerOrgConfig genuinelyStale = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID_2, SubscriptionType.WEEKLY);
+        assertEquals("PENDING", genuinelyStale.getStatus(), "Genuinely stale claim should be reset");
+        assertNull(genuinelyStale.getClaimedAt(), "claimedAt should be cleared on reset");
     }
 }

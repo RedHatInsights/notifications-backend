@@ -29,6 +29,8 @@ public class DigestTriggerOrgConfig {
     @Size(max = 20)
     private String status = "PENDING";
 
+    private LocalDateTime claimedAt;
+
     public DigestTriggerOrgConfig() {
     }
 
@@ -75,6 +77,14 @@ public class DigestTriggerOrgConfig {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public LocalDateTime getClaimedAt() {
+        return claimedAt;
+    }
+
+    public void setClaimedAt(LocalDateTime claimedAt) {
+        this.claimedAt = claimedAt;
     }
 
     @Override

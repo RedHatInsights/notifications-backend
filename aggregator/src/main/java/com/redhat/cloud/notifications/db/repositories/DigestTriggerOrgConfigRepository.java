@@ -31,16 +31,26 @@ public class DigestTriggerOrgConfigRepository {
     DigestCronUtils digestCronUtils;
 
     /**
-     * Resets PROCESSING rows whose next_run is older than the threshold back to PENDING.
+     * Resets PROCESSING rows whose claim is older than the threshold back to PENDING.
      * Recovers orgs whose pod was killed (OOM, SIGKILL) before it could complete.
      * The threshold must exceed max_maintenance_window + max_run_duration (default 6h).
+     * <p>
+     * The staleness check uses claimed_at (set by claimDueWeeklyOrgs) rather than next_run.
+     * This prevents a concurrent pod from immediately resetting rows that were just claimed
+     * after a long pause: when the job is delayed 6+ hours, next_run is old but the claim
+     * is fresh, so the row should not be treated as stale.
+     * <p>
+     * Rows with claimed_at = NULL (created before this column was added) fall back to the
+     * previous next_run-based heuristic for backward compatibility.
      */
     @Transactional
     public int resetStaleClaims(LocalDateTime now, int thresholdHours) {
+        LocalDateTime threshold = now.minusHours(thresholdHours);
         int reset = entityManager.createQuery(
-            "UPDATE DigestTriggerOrgConfig SET status = 'PENDING' " +
-            "WHERE status = 'PROCESSING' AND nextRun < :threshold AND id.subscriptionType = :type")
-            .setParameter("threshold", now.minusHours(thresholdHours))
+            "UPDATE DigestTriggerOrgConfig SET status = 'PENDING', claimedAt = null " +
+            "WHERE status = 'PROCESSING' AND id.subscriptionType = :type " +
+            "AND (claimedAt < :threshold OR (claimedAt IS NULL AND nextRun < :threshold))")
+            .setParameter("threshold", threshold)
             .setParameter("type", WEEKLY)
             .executeUpdate();
         if (reset > 0) {
@@ -53,12 +63,14 @@ public class DigestTriggerOrgConfigRepository {
      * Atomically claims all PENDING weekly orgs whose next_run has been reached.
      * Uses UPDATE ... RETURNING so only rows actually changed by THIS statement are returned --
      * a concurrent pod claiming the same rows gets an empty intersection, preventing double-processing.
+     * Sets claimed_at to the current time so resetStaleClaims can distinguish a freshly-claimed
+     * row from one that has genuinely been stuck in PROCESSING for too long.
      */
     @Transactional
     @SuppressWarnings("unchecked")
     public List<String> claimDueWeeklyOrgs(LocalDateTime now) {
         List<String> claimed = entityManager.createNativeQuery(
-            "UPDATE digest_trigger_org_config SET status = 'PROCESSING' " +
+            "UPDATE digest_trigger_org_config SET status = 'PROCESSING', claimed_at = :now " +
             "WHERE status = 'PENDING' AND next_run <= :now AND subscription_type = 'WEEKLY' " +
             "RETURNING org_id")
             .setParameter("now", now)
@@ -225,6 +237,7 @@ public class DigestTriggerOrgConfigRepository {
                 config.setLastRun(newLastRun);
                 config.setNextRun(nextRun);
                 config.setStatus("PENDING");
+                config.setClaimedAt(null);
                 updated++;
             } catch (IllegalArgumentException e) {
                 Log.errorf(e, "Failed to calculate next run for org %s with cron expression: %s. Skipping.",
@@ -268,6 +281,7 @@ public class DigestTriggerOrgConfigRepository {
                 config.setLastRun(newLastRun);
                 config.setNextRun(digestCronUtils.calculateNextRun(config.getCronExpression(), now));
                 config.setStatus("PENDING");
+                config.setClaimedAt(null);
                 advanced++;
             } catch (IllegalArgumentException e) {
                 Log.errorf(e, "Skipping nextRun advance for org %s - invalid cron: %s",
@@ -292,7 +306,7 @@ public class DigestTriggerOrgConfigRepository {
         LocalDateTime nextRunForFailedOrgs = currentExecutionTime.plusDays(1);
 
         String updateQuery = "UPDATE DigestTriggerOrgConfig dtc " +
-            "SET dtc.nextRun = :nextRun, dtc.status = 'PENDING' " +
+            "SET dtc.nextRun = :nextRun, dtc.status = 'PENDING', dtc.claimedAt = null " +
             "WHERE dtc.id.orgId IN :orgIds AND dtc.id.subscriptionType = :subscriptionType";
 
         int updated = entityManager.createQuery(updateQuery)
