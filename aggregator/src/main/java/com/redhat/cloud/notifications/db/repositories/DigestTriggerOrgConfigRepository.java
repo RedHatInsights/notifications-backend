@@ -9,11 +9,11 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +23,10 @@ import static java.util.stream.Collectors.toList;
 
 @ApplicationScoped
 public class DigestTriggerOrgConfigRepository {
+
+    // PostgreSQL JDBC limit is 65,535 bind parameters per statement. Batch IN-lists well below
+    // that ceiling so large deployments don't hit the limit as the number of subscribed orgs grows.
+    private static final int IN_CLAUSE_MAX = 32000;
 
     @Inject
     EntityManager entityManager;
@@ -89,7 +93,6 @@ public class DigestTriggerOrgConfigRepository {
             return List.of();
         }
         final SubscriptionType subscriptionType = WEEKLY;
-        List<Object[]> records;
         final LocalDateTime statStartTime = LocalDateTime.now(UTC);
 
         String query = "SELECT DISTINCT ev.orgId, ev.bundleId, ev.applicationId, dtc.lastRun, bu.name, ap.name, dtc.cronExpression FROM Event ev " +
@@ -108,13 +111,16 @@ public class DigestTriggerOrgConfigRepository {
             // oneWeekAgo becomes Oct 27 and silently drops events created between Oct 26 and Oct 27.
             "AND ev.created > COALESCE(dtc.lastRun, :oneWeekAgo) AND ev.created <= :now";
 
-        Query hqlQuery = entityManager.createQuery(query)
-            .setParameter("subscriptionType", subscriptionType)
-            .setParameter("claimedOrgIds", claimedOrgIds)
-            .setParameter("oneWeekAgo", now.minusDays(subscriptionType.getDuration().toDays()))
-            .setParameter("now", now);
-
-        records = hqlQuery.getResultList();
+        LocalDateTime oneWeekAgo = now.minusDays(subscriptionType.getDuration().toDays());
+        List<Object[]> records = new ArrayList<>();
+        for (List<String> batch : partition(claimedOrgIds, IN_CLAUSE_MAX)) {
+            records.addAll(entityManager.createQuery(query)
+                .setParameter("subscriptionType", subscriptionType)
+                .setParameter("claimedOrgIds", batch)
+                .setParameter("oneWeekAgo", oneWeekAgo)
+                .setParameter("now", now)
+                .getResultList());
+        }
 
         Duration duration = Duration.between(statStartTime, LocalDateTime.now(UTC));
         Log.infof("Fetching weekly aggregations with at least one subscriber took %d s for %d aggregations", duration.toSeconds(), records.size());
@@ -216,10 +222,13 @@ public class DigestTriggerOrgConfigRepository {
         }
 
         String selectQuery = "SELECT dtc FROM DigestTriggerOrgConfig dtc WHERE dtc.id.orgId IN :orgIds AND dtc.id.subscriptionType = :subscriptionType";
-        List<DigestTriggerOrgConfig> configs = entityManager.createQuery(selectQuery, DigestTriggerOrgConfig.class)
-            .setParameter("orgIds", orgIdsToUpdate)
-            .setParameter("subscriptionType", WEEKLY)
-            .getResultList();
+        List<DigestTriggerOrgConfig> configs = new ArrayList<>();
+        for (List<String> batch : partition(orgIdsToUpdate, IN_CLAUSE_MAX)) {
+            configs.addAll(entityManager.createQuery(selectQuery, DigestTriggerOrgConfig.class)
+                .setParameter("orgIds", batch)
+                .setParameter("subscriptionType", WEEKLY)
+                .getResultList());
+        }
 
         int updated = 0;
         int skipped = 0;
@@ -267,11 +276,16 @@ public class DigestTriggerOrgConfigRepository {
         String selectQuery = "SELECT dtc FROM DigestTriggerOrgConfig dtc " +
             "WHERE dtc.id.subscriptionType = :subscriptionType AND dtc.id.orgId IN :noEventsOrgIds";
 
-        int advanced = 0;
-        for (DigestTriggerOrgConfig config : entityManager.createQuery(selectQuery, DigestTriggerOrgConfig.class)
+        List<DigestTriggerOrgConfig> configs = new ArrayList<>();
+        for (List<String> batch : partition(noEventsOrgIds, IN_CLAUSE_MAX)) {
+            configs.addAll(entityManager.createQuery(selectQuery, DigestTriggerOrgConfig.class)
                 .setParameter("subscriptionType", WEEKLY)
-                .setParameter("noEventsOrgIds", noEventsOrgIds)
-                .getResultList()) {
+                .setParameter("noEventsOrgIds", batch)
+                .getResultList());
+        }
+
+        int advanced = 0;
+        for (DigestTriggerOrgConfig config : configs) {
             try {
                 // Same logic as updateLastAndNextRunForWeekly: last_run = current slot so that
                 // the next digest starts exactly where this one ended, even after a schedule change.
@@ -309,13 +323,25 @@ public class DigestTriggerOrgConfigRepository {
             "SET dtc.nextRun = :nextRun, dtc.status = 'PENDING', dtc.claimedAt = null " +
             "WHERE dtc.id.orgId IN :orgIds AND dtc.id.subscriptionType = :subscriptionType";
 
-        int updated = entityManager.createQuery(updateQuery)
-            .setParameter("nextRun", nextRunForFailedOrgs)
-            .setParameter("orgIds", orgIdsToUpdate)
-            .setParameter("subscriptionType", WEEKLY)
-            .executeUpdate();
+        int updated = 0;
+        for (List<String> batch : partition(orgIdsToUpdate, IN_CLAUSE_MAX)) {
+            updated += entityManager.createQuery(updateQuery)
+                .setParameter("nextRun", nextRunForFailedOrgs)
+                .setParameter("orgIds", batch)
+                .setParameter("subscriptionType", WEEKLY)
+                .executeUpdate();
+        }
 
         Log.infof("Next run scheduled for tomorrow at %s for %d failed weekly aggregations", nextRunForFailedOrgs, updated);
     }
 
+    private static <T> List<List<T>> partition(List<T> list, int batchSize) {
+        List<List<T>> batches = new ArrayList<>();
+        for (int i = 0; i < list.size(); i += batchSize) {
+            batches.add(list.subList(i, Math.min(i + batchSize, list.size())));
+        }
+        return batches;
+    }
+
 }
+
