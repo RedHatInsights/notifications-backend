@@ -1,0 +1,24 @@
+name: Automerge gate
+
+# A cheap required status check: always green for humans, and only fails for
+# red-hat-konflux[bot] when the AUTOMERGE_KILL_SWITCH repo variable is "true". Required
+# status checks gate GitHub's native auto-merge unconditionally -- auto-merge never uses a
+# ruleset bypass -- so this closes the race a reactive "disable auto-merge after the fact"
+# workflow can't: the bot's PR simply never satisfies merge requirements while the switch is
+# on. This check's ruleset grants the Maintain role bypass rights, so a human can still use
+# "Merge without waiting for requirements to be met" on a PR they've reviewed themselves.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+jobs:
+  gate:
+    name: Automerge gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check kill switch
+        if: github.event.pull_request.user.login == 'red-hat-konflux[bot]' && vars.AUTOMERGE_KILL_SWITCH == 'true'
+        run: |
+          echo "::error::Automerge kill switch is on (AUTOMERGE_KILL_SWITCH=true). Review and merge manually if safe."
+          exit 1
