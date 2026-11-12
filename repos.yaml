@@ -15,7 +15,7 @@
 #   3. Review and merge the scaffold PR that install opens.
 version: 1
 github:
-  fullsend_ref: v0.54.0
+  fullsend_ref: v0.55.0
   repos:
     - name: RedHatInsights/notifications-backend
       inference:
@@ -56,10 +56,13 @@ github:
         allowed_remote_resources:
           - https://raw.githubusercontent.com/fullsend-ai/fullsend/
           - https://raw.githubusercontent.com/fullsend-ai/agents/
-        create_issues:
-          allow_targets:
-            repos:
-              - fullsend-ai/fullsend
+        tracker:
+          jira:
+            base_url: https://redhat.atlassian.net
+            project: RHCLOUD
+            poll:
+              enabled: true
+              query: 'labels = "repo:RedHatInsights/notifications-backend" AND statusCategory != Done ORDER BY updated DESC'
         # Avoids needing Administer Projects on RHCLOUD just to check who
         # may trigger agents (ADR 0153). List is Console - Integrations
         # team membership, adjusted per 2026-11-05 team decision.
