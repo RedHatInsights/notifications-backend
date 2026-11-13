@@ -9,7 +9,7 @@ import org.jboss.resteasy.reactive.RestPath;
 
 import java.util.UUID;
 
-@Path("/app/export/v1")
+@Path("/internal/export/v1")
 public interface ExportService {
 
     /**
