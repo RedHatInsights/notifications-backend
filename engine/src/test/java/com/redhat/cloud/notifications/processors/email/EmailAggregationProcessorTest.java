@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
 import com.redhat.cloud.notifications.db.repositories.EmailAggregationRepository;
 import com.redhat.cloud.notifications.db.repositories.EndpointRepository;
+import com.redhat.cloud.notifications.db.repositories.PayloadDetailsRepository;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Metadata;
@@ -19,9 +20,11 @@ import com.redhat.cloud.notifications.models.Endpoint;
 import com.redhat.cloud.notifications.models.EndpointType;
 import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
+import com.redhat.cloud.notifications.models.EventType;
 import com.redhat.cloud.notifications.models.SystemSubscriptionProperties;
 import com.redhat.cloud.notifications.processors.ConnectorSender;
 import com.redhat.cloud.notifications.processors.email.connector.dto.EmailNotification;
+import com.redhat.cloud.notifications.processors.payload.PayloadDetails;
 import com.redhat.cloud.notifications.recipients.RecipientSettings;
 import com.redhat.cloud.notifications.recipients.User;
 import com.redhat.cloud.notifications.recipients.recipientsresolver.ExternalRecipientsResolver;
@@ -30,6 +33,7 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.smallrye.reactive.messaging.memory.InMemoryConnector;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.enterprise.inject.Any;
 import jakarta.inject.Inject;
@@ -99,6 +103,9 @@ class EmailAggregationProcessorTest {
 
     @InjectMock
     EndpointRepository endpointRepository;
+
+    @InjectSpy
+    PayloadDetailsRepository payloadDetailsRepository;
 
     static User user1 = new User();
     static User user2 = new User();
@@ -427,6 +434,177 @@ class EmailAggregationProcessorTest {
         }
     }
 
+    @Test
+    void shouldSendAggregatedEmailFromPreFoldedAggregatedData() {
+        String orgId = RandomStringUtils.secure().nextAlphanumeric(6);
+        Application app = resourceHelpers.findOrCreateApplication("rhel", "advisor");
+        EventType eventType = resourceHelpers.findOrCreateEventType(app.getId(), "new-recommendation");
+        resourceHelpers.createEventTypeEmailSubscription(orgId, "foldedSubscriber", eventType, DAILY);
+
+        EventAggregationCriterion aggregationKey = new EventAggregationCriterion(orgId, app.getBundleId(), app.getId(), "rhel", "advisor");
+        AggregationCommand command = new AggregationCommand(aggregationKey, LocalDateTime.now(UTC).minusDays(1), LocalDateTime.now(UTC).plusDays(1), DAILY);
+        command.setAggregatedData(buildFoldedData(eventType));
+
+        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(List.of(command)));
+
+        ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
+        verify(connectorSender, timeout(5000L)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
+        EmailNotification notification = argumentCaptor.getValue().mapTo(EmailNotification.class);
+        assertTrue(notification.subscribers().contains("foldedSubscriber"));
+
+        // The legacy DB-paging fold must not run for a command that already carries pre-folded data.
+        verify(emailAggregationRepository, org.mockito.Mockito.never()).getEmailAggregationBasedOnEvent(
+            eq(aggregationKey), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+    }
+
+    @Test
+    void shouldSendAggregatedEmailFromOffloadedPayloadDetailsReference() {
+        String orgId = RandomStringUtils.secure().nextAlphanumeric(6);
+        Application app = resourceHelpers.findOrCreateApplication("rhel", "advisor");
+        EventType eventType = resourceHelpers.findOrCreateEventType(app.getId(), "new-recommendation");
+        resourceHelpers.createEventTypeEmailSubscription(orgId, "offloadedSubscriber", eventType, DAILY);
+
+        Event anchorEvent = resourceHelpers.createEvent(eventType);
+        JsonObject allApplications = new JsonObject().put("advisor", new JsonObject(buildFoldedData(eventType)));
+        PayloadDetails payloadDetails = new PayloadDetails(anchorEvent, allApplications);
+        payloadDetailsRepository.save(payloadDetails);
+
+        EventAggregationCriterion aggregationKey = new EventAggregationCriterion(orgId, app.getBundleId(), app.getId(), "rhel", "advisor");
+        AggregationCommand command = new AggregationCommand(aggregationKey, LocalDateTime.now(UTC).minusDays(1), LocalDateTime.now(UTC).plusDays(1), DAILY);
+
+        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(List.of(command), payloadDetails.getId()));
+
+        ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
+        verify(connectorSender, timeout(5000L)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
+        EmailNotification notification = argumentCaptor.getValue().mapTo(EmailNotification.class);
+        assertTrue(notification.subscribers().contains("offloadedSubscriber"));
+    }
+
+    @Test
+    void shouldFetchOffloadedPayloadDetailsOnceWhenMultipleAppsShareSameReference() {
+        String orgId = RandomStringUtils.secure().nextAlphanumeric(6);
+        Application advisorApp = resourceHelpers.findOrCreateApplication("rhel", "advisor");
+        EventType advisorEventType = resourceHelpers.findOrCreateEventType(advisorApp.getId(), "new-recommendation");
+        resourceHelpers.createEventTypeEmailSubscription(orgId, "advisorSubscriber", advisorEventType, DAILY);
+
+        Application complianceApp = resourceHelpers.findOrCreateApplication("rhel", "compliance");
+        EventType complianceEventType = resourceHelpers.findOrCreateEventType(complianceApp.getId(), "report-upload-failed");
+        resourceHelpers.createEventTypeEmailSubscription(orgId, "complianceSubscriber", complianceEventType, DAILY);
+
+        Event anchorEvent = resourceHelpers.createEvent(advisorEventType);
+        JsonObject allApplications = new JsonObject()
+            .put("advisor", new JsonObject(buildFoldedData(advisorEventType)))
+            .put("compliance", new JsonObject(buildFoldedData(complianceEventType)));
+        PayloadDetails payloadDetails = new PayloadDetails(anchorEvent, allApplications);
+        payloadDetailsRepository.save(payloadDetails);
+
+        EventAggregationCriterion advisorKey = new EventAggregationCriterion(orgId, advisorApp.getBundleId(), advisorApp.getId(), "rhel", "advisor");
+        AggregationCommand advisorCommand = new AggregationCommand(advisorKey, LocalDateTime.now(UTC).minusDays(1), LocalDateTime.now(UTC).plusDays(1), DAILY);
+
+        EventAggregationCriterion complianceKey = new EventAggregationCriterion(orgId, complianceApp.getBundleId(), complianceApp.getId(), "rhel", "compliance");
+        AggregationCommand complianceCommand = new AggregationCommand(complianceKey, LocalDateTime.now(UTC).minusDays(1), LocalDateTime.now(UTC).plusDays(1), DAILY);
+
+        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(List.of(advisorCommand, complianceCommand), payloadDetails.getId()));
+
+        ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
+        verify(connectorSender, timeout(5000L).times(2)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
+        boolean advisorSeen = false;
+        boolean complianceSeen = false;
+        for (JsonObject sent : argumentCaptor.getAllValues()) {
+            EmailNotification notification = sent.mapTo(EmailNotification.class);
+            advisorSeen = advisorSeen || notification.subscribers().contains("advisorSubscriber");
+            complianceSeen = complianceSeen || notification.subscribers().contains("complianceSubscriber");
+        }
+        assertTrue(advisorSeen && complianceSeen, "both apps' pre-folded content must still reach their respective subscribers");
+
+        // Both commands reference the same offloaded row: it must be fetched once, not once per app.
+        verify(payloadDetailsRepository, org.mockito.Mockito.times(1)).findById(payloadDetails.getId());
+    }
+
+    @Test
+    void shouldFallBackToLegacyFoldForAppMissingFromOffloadedPayloadDetails() {
+        String orgId = RandomStringUtils.secure().nextAlphanumeric(6);
+        Application advisorApp = resourceHelpers.findOrCreateApplication("rhel", "advisor");
+        EventType advisorEventType = resourceHelpers.findOrCreateEventType(advisorApp.getId(), "new-recommendation");
+        resourceHelpers.createEventTypeEmailSubscription(orgId, "advisorSubscriber", advisorEventType, DAILY);
+        Application complianceApp = resourceHelpers.findOrCreateApplication("rhel", "compliance");
+
+        // The offloaded row only holds advisor: compliance failed to fold on the aggregator side.
+        Event anchorEvent = resourceHelpers.createEvent(advisorEventType);
+        PayloadDetails payloadDetails = new PayloadDetails(anchorEvent,
+            new JsonObject().put("advisor", new JsonObject(buildFoldedData(advisorEventType))));
+        payloadDetailsRepository.save(payloadDetails);
+
+        EventAggregationCriterion advisorKey = new EventAggregationCriterion(orgId, advisorApp.getBundleId(), advisorApp.getId(), "rhel", "advisor");
+        AggregationCommand advisorCommand = new AggregationCommand(advisorKey, LocalDateTime.now(UTC).minusDays(1), LocalDateTime.now(UTC).plusDays(1), DAILY);
+        EventAggregationCriterion complianceKey = new EventAggregationCriterion(orgId, complianceApp.getBundleId(), complianceApp.getId(), "rhel", "compliance");
+        AggregationCommand complianceCommand = new AggregationCommand(complianceKey, LocalDateTime.now(UTC).minusDays(1), LocalDateTime.now(UTC).plusDays(1), DAILY);
+
+        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(List.of(advisorCommand, complianceCommand), payloadDetails.getId()));
+
+        ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
+        verify(connectorSender, timeout(5000L)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
+        assertTrue(argumentCaptor.getValue().mapTo(EmailNotification.class).subscribers().contains("advisorSubscriber"));
+
+        verify(emailAggregationRepository, timeout(5000L)).getEmailAggregationBasedOnEvent(
+            eq(complianceKey), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+        verify(emailAggregationRepository, org.mockito.Mockito.never()).getEmailAggregationBasedOnEvent(
+            eq(advisorKey), any(LocalDateTime.class), any(LocalDateTime.class), anyInt(), anyInt());
+    }
+
+    @Test
+    void shouldRecomputeApplicationServicesGlobalReleasesNumberAfterTrimming() {
+        String orgId = RandomStringUtils.secure().nextAlphanumeric(6);
+        Application app = resourceHelpers.findOrCreateApplication("rhel", "application-services");
+        EventType eventType = resourceHelpers.findOrCreateEventType(app.getId(), "keycloak-releases");
+        resourceHelpers.createEventTypeEmailSubscription(orgId, "releaseSubscriber", eventType, DAILY);
+
+        EventAggregationCriterion aggregationKey = new EventAggregationCriterion(orgId, app.getBundleId(), app.getId(), "rhel", "application-services");
+        AggregationCommand command = new AggregationCommand(aggregationKey, LocalDateTime.now(UTC).minusDays(1), LocalDateTime.now(UTC).plusDays(1), DAILY);
+        // 3 payloads folded, but only one is tagged for this eventType -- global_releases_number must
+        // reflect what survives trimming (1), not what the aggregator folded (3), proving the number is
+        // genuinely recomputed from the trimmed products map rather than merely forwarded unchanged.
+        command.setAggregatedData(buildApplicationServicesFoldedData(eventType, 1));
+
+        inMemoryConnector.source(INGRESS_CHANNEL).send(buildAggregatorAction(List.of(command)));
+
+        ArgumentCaptor<JsonObject> argumentCaptor = ArgumentCaptor.forClass(JsonObject.class);
+        verify(connectorSender, timeout(5000L)).send(any(Event.class), any(Endpoint.class), argumentCaptor.capture());
+        EmailNotification notification = argumentCaptor.getValue().mapTo(EmailNotification.class);
+        assertTrue(notification.subscribers().contains("releaseSubscriber"));
+
+        List<?> appDataList = (List<?>) notification.eventData().get("application_aggregated_data_list");
+        Map<?, ?> appEntry = (Map<?, ?>) appDataList.get(0);
+        Map<?, ?> aggregatedData = (Map<?, ?>) appEntry.get("aggregated_data");
+        Map<?, ?> applicationServices = (Map<?, ?>) aggregatedData.get("application-services");
+        assertEquals(1, applicationServices.get("global_releases_number"));
+    }
+
+    private static Map<String, Object> buildApplicationServicesFoldedData(EventType eventType, int releaseCount) {
+        JsonArray payloads = new JsonArray();
+        for (int i = 0; i < releaseCount; i++) {
+            payloads.add(new JsonObject()
+                .put("_eventType", eventType.getName())
+                .put("_eventTypeId", eventType.getId().toString())
+                .put("_subscribedByDefault", false)
+                .put("version", "1." + i));
+        }
+        JsonObject products = new JsonObject().put(eventType.getName(), new JsonObject()
+            .put("description", "Test Product")
+            .put("payloads", payloads));
+        JsonObject applicationServices = new JsonObject().put("products", products);
+        return new JsonObject().put("application-services", applicationServices).getMap();
+    }
+
+    private static Map<String, Object> buildFoldedData(EventType eventType) {
+        JsonObject item = new JsonObject()
+            .put("_eventType", eventType.getName())
+            .put("_eventTypeId", eventType.getId().toString())
+            .put("_subscribedByDefault", false)
+            .put("rule_id", "rule-1");
+        return new JsonObject().put("items", new JsonArray().add(item)).getMap();
+    }
+
     private static EmailAggregation createAdvisorEmailAggregation(String orgId, String extraRecipient) {
         EmailAggregation aggregation = new EmailAggregation();
         aggregation.setBundleName("rhel");
@@ -510,6 +688,10 @@ class EmailAggregationProcessorTest {
     }
 
     private String buildAggregatorAction(List<AggregationCommand> aggregationCommands) {
+        return buildAggregatorAction(aggregationCommands, null);
+    }
+
+    private String buildAggregatorAction(List<AggregationCommand> aggregationCommands, UUID offloadedPayloadDetailsId) {
 
         String orgId = aggregationCommands.get(0).getOrgId();
 
@@ -534,6 +716,11 @@ class EmailAggregationProcessorTest {
             .withOrgId(orgId)
             .withTimestamp(LocalDateTime.now(UTC))
             .withEvents(events);
+        if (offloadedPayloadDetailsId != null) {
+            actionBuilder.withContext(new Context.ContextBuilder()
+                .withAdditionalProperty(AggregationCommand.AGGREGATED_DATA_PAYLOAD_DETAILS_ID_CONTEXT_KEY, offloadedPayloadDetailsId.toString())
+                .build());
+        }
 
         return Parser.encode(actionBuilder.build());
     }

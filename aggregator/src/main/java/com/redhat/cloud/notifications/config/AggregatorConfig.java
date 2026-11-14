@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.config;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
+import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
 import io.getunleash.variant.Payload;
 import io.getunleash.variant.Variant;
@@ -29,11 +30,14 @@ public class AggregatorConfig {
     private static final String METRICS_SCRAPE_MODE_ENABLED = "notifications.aggregator.metrics.scrape-mode-enabled";
     private static final String METRICS_SCRAPE_KEEP_ALIVE_SECONDS = "notifications.aggregator.metrics.scrape-keep-alive-seconds";
     private static final int DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS = 150;
+    private static final String AGGREGATION_MAX_PAGE_SIZE = "notifications.aggregation.max-page-size";
+    private static final String KAFKA_EGRESS_MAXIMUM_REQUEST_SIZE = "mp.messaging.outgoing.egress.max.request.size";
 
     /*
      * Unleash configuration
      */
     private String activeClusterToggle;
+    private String toggleAggregatorEventPreprocessing;
 
     @ConfigProperty(name = CLUSTER_ID)
     Optional<String> clusterId;
@@ -43,6 +47,12 @@ public class AggregatorConfig {
 
     @ConfigProperty(name = METRICS_SCRAPE_KEEP_ALIVE_SECONDS, defaultValue = DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS + "")
     int metricsScrapeKeepAliveSeconds;
+
+    @ConfigProperty(name = AGGREGATION_MAX_PAGE_SIZE, defaultValue = "100")
+    int aggregationMaxPageSize;
+
+    @ConfigProperty(name = KAFKA_EGRESS_MAXIMUM_REQUEST_SIZE, defaultValue = "1048576")
+    int kafkaEgressMaximumRequestSize;
 
     @Inject
     Unleash unleash;
@@ -54,10 +64,31 @@ public class AggregatorConfig {
     void registerToggles() {
         activeClusterToggle = toggleRegistry.register("notifications-aggregator-active-cluster", true);
         Log.infof("Registered Unleash toggle: %s", activeClusterToggle);
+        toggleAggregatorEventPreprocessing = toggleRegistry.register("notifications-aggregator-event-preprocessing", true);
+        Log.infof("Registered Unleash toggle: %s", toggleAggregatorEventPreprocessing);
+    }
+
+    /**
+     * Per-org kill-switch deciding whether an org's digest trigger event is enriched with
+     * pre-folded data (this module queries and folds the raw events itself) or published as today's
+     * bare pointer (engine folds the raw events itself). Checked once per org at the start of that
+     * org's processing within a single cron run. This is a fold-only handoff: aggregator only
+     * pre-folds the raw events, while recipient resolution and dispatch remain engine's job.
+     */
+    public boolean isAggregatorEventPreprocessingEnabled(String orgId) {
+        return unleash.isEnabled(toggleAggregatorEventPreprocessing, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
     }
 
     public Optional<String> getClusterId() {
         return clusterId.map(String::trim).filter(value -> !value.isEmpty());
+    }
+
+    public int getAggregationMaxPageSize() {
+        return aggregationMaxPageSize;
+    }
+
+    public int getKafkaEgressMaximumRequestSize() {
+        return kafkaEgressMaximumRequestSize;
     }
 
     public boolean isScrapeExportMode() {
@@ -150,8 +181,13 @@ public class AggregatorConfig {
         config.put(CLUSTER_ID, getClusterId().orElse("not-configured"));
         config.put(METRICS_SCRAPE_MODE_ENABLED, metricsScrapeModeEnabled);
         config.put(METRICS_SCRAPE_KEEP_ALIVE_SECONDS, metricsScrapeKeepAliveSeconds);
+        config.put(AGGREGATION_MAX_PAGE_SIZE, aggregationMaxPageSize);
+        config.put(KAFKA_EGRESS_MAXIMUM_REQUEST_SIZE, kafkaEgressMaximumRequestSize);
         if (activeClusterToggle != null) {
             config.put(activeClusterToggle, getActiveCluster().orElse("unable-to-determine"));
+        }
+        if (toggleAggregatorEventPreprocessing != null) {
+            config.put(toggleAggregatorEventPreprocessing, isAggregatorEventPreprocessingEnabled(""));
         }
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> Log.infof("%s=%s", key, value));
