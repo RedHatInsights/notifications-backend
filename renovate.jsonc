@@ -3,7 +3,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   // GitHub merges each PR as soon as its required checks pass, once the Konflux app is
-  // exempt from the approval rule.
+  // exempt from the approval rule. Pausable via the AUTOMERGE_KILL_SWITCH repo variable,
+  // see .github/workflows/automerge-gate.yml.
   "platformAutomerge": true,
   "extends": [
     // Keep even when every action is pinned: it pins the next one added.
