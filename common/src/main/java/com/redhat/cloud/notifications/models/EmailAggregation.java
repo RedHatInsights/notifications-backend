@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.models;
 
 import com.redhat.cloud.notifications.Severity;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.util.UUID;
 
@@ -18,6 +19,26 @@ public class EmailAggregation {
     private Severity severity;
 
     private UUID eventTypeId;
+
+    /**
+     * The event type's name, needed because {@code SubscriptionRepository.getSubscribersByEventType} is
+     * keyed by name, not ID. Additive field, set via setter only -- no constructor change, so existing
+     * callers (engine's per-recipient {@code EmailAggregator}) are unaffected.
+     */
+    private String eventTypeName;
+
+    /**
+     * Whether this event's type is subscribed-to by default. Read straight off
+     * {@code EventType.isSubscribedByDefault()}. Additive, see {@link #eventTypeName}.
+     */
+    private boolean subscribedByDefault;
+
+    /**
+     * The raw {@code recipients} override array copied verbatim from the originating event's payload,
+     * when present, or {@code null} otherwise. Not parsed or resolved here -- just forwarded. Additive,
+     * see {@link #eventTypeName}.
+     */
+    private JsonArray recipientsOverride;
 
     public EmailAggregation() {
     }
@@ -77,5 +98,29 @@ public class EmailAggregation {
 
     public void setSeverity(Severity severity) {
         this.severity = severity;
+    }
+
+    public String getEventTypeName() {
+        return eventTypeName;
+    }
+
+    public void setEventTypeName(String eventTypeName) {
+        this.eventTypeName = eventTypeName;
+    }
+
+    public boolean isSubscribedByDefault() {
+        return subscribedByDefault;
+    }
+
+    public void setSubscribedByDefault(boolean subscribedByDefault) {
+        this.subscribedByDefault = subscribedByDefault;
+    }
+
+    public JsonArray getRecipientsOverride() {
+        return recipientsOverride;
+    }
+
+    public void setRecipientsOverride(JsonArray recipientsOverride) {
+        this.recipientsOverride = recipientsOverride;
     }
 }

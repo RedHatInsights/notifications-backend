@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.config;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
+import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.Unleash;
 import io.getunleash.variant.Payload;
 import io.getunleash.variant.Variant;
@@ -34,6 +35,7 @@ public class AggregatorConfig {
      * Unleash configuration
      */
     private String activeClusterToggle;
+    private String toggleAggregatorEventPreprocessing;
 
     @ConfigProperty(name = CLUSTER_ID)
     Optional<String> clusterId;
@@ -54,6 +56,19 @@ public class AggregatorConfig {
     void registerToggles() {
         activeClusterToggle = toggleRegistry.register("notifications-aggregator-active-cluster", true);
         Log.infof("Registered Unleash toggle: %s", activeClusterToggle);
+        toggleAggregatorEventPreprocessing = toggleRegistry.register("notifications-aggregator-event-preprocessing", true);
+        Log.infof("Registered Unleash toggle: %s", toggleAggregatorEventPreprocessing);
+    }
+
+    /**
+     * Per-org kill-switch deciding whether an org's digest trigger event is enriched with
+     * pre-folded data (this module queries and folds the raw events itself) or published as today's
+     * bare pointer (engine folds the raw events itself). Checked once per org at the start of that
+     * org's processing within a single cron run. This is a fold-only handoff: aggregator only
+     * pre-folds the raw events, while recipient resolution and dispatch remain engine's job.
+     */
+    public boolean isAggregatorEventPreprocessingEnabled(String orgId) {
+        return unleash.isEnabled(toggleAggregatorEventPreprocessing, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
     }
 
     public Optional<String> getClusterId() {
@@ -152,6 +167,9 @@ public class AggregatorConfig {
         config.put(METRICS_SCRAPE_KEEP_ALIVE_SECONDS, metricsScrapeKeepAliveSeconds);
         if (activeClusterToggle != null) {
             config.put(activeClusterToggle, getActiveCluster().orElse("unable-to-determine"));
+        }
+        if (toggleAggregatorEventPreprocessing != null) {
+            config.put(toggleAggregatorEventPreprocessing, isAggregatorEventPreprocessingEnabled(""));
         }
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> Log.infof("%s=%s", key, value));
