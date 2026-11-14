@@ -87,6 +87,13 @@ This one-time operation:
 2. For each org with endpoints: fetches workspace UUID from RBAC, creates workspace record, assigns to org's endpoints
 3. Is idempotent - safe to run multiple times
 
+**Legacy Organizations and RBAC Edge Cases**:
+
+RBAC workspace lookup has known edge cases where it returns null for legacy organizations that predate workspace support (observed particularly on stage).
+- `WorkspaceUtils.getDefaultWorkspaceId()` returns `null` when RBAC returns no workspace or an empty workspace ID, allowing callers to decide how to handle missing workspace data.
+- During bootstrap, `WorkspaceBootstrapResource` handles this by logging a warning and skipping the organization (recording the failure in the summary errors map) rather than treating it as a fatal error.
+- Defensive null-checks on workspace IDs returned from RBAC are intentional and guard against known production edge cases; they must not be flagged or removed as dead code.
+
 **Testing Without RBAC** (local development/testing):
 
 When `rbac.workspace-lookup.enabled=false` (default for tests), `WorkspaceUtils.getDefaultWorkspaceId()` returns deterministic UUIDs without calling the RBAC service:

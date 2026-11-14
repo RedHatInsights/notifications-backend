@@ -6,6 +6,7 @@ import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.routers.SecurityContextUtil;
 import com.redhat.cloud.notifications.security.SecurityLog;
+import io.quarkus.logging.Log;
 import jakarta.annotation.Priority;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
@@ -103,6 +104,11 @@ public class AuthorizationInterceptor {
         // Check the workspace permissions.
         if (workspacePermissions.length > 0) {
             UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(SecurityContextUtil.getOrgId(securityContext));
+            if (workspaceId == null) {
+                Log.warnf("[org_id: %s] Cannot check Kessel permissions: default workspace not found in RBAC", SecurityContextUtil.getOrgId(securityContext));
+                SecurityLog.logAuthzFailure(annotation.resourceType(), "kessel-workspace-null", securityContext);
+                throw new ForbiddenException();
+            }
             for (final WorkspacePermission workspacePermission : workspacePermissions) {
                 this.kesselInventoryAuthorization.hasPermissionOnWorkspace(securityContext, workspacePermission, workspaceId);
             }
