@@ -1,7 +1,6 @@
 package com.redhat.cloud.notifications.routers.handlers.event;
 
 import com.redhat.cloud.notifications.Severity;
-import com.redhat.cloud.notifications.auth.ConsoleIdentityProvider;
 import com.redhat.cloud.notifications.auth.annotation.Authorization;
 import com.redhat.cloud.notifications.db.Query;
 import com.redhat.cloud.notifications.routers.models.EventLogEntry;
@@ -72,7 +71,7 @@ public class EventResourceV3 extends EventResourceCommon {
         @APIResponse(responseCode = "400", content = @Content(mediaType = TEXT_PLAIN),
                 description = "Invalid query parameter value (unknown endpoint type, invalid status filter, or malformed date).")
     })
-    @Authorization(legacyRBACRole = ConsoleIdentityProvider.RBAC_READ_NOTIFICATIONS_EVENTS, workspacePermissions = EVENTS_VIEW, resourceType = "event")
+    @Authorization(legacyRBACRole = "read:events", workspacePermissions = EVENTS_VIEW, resourceType = "event")
     public Page<EventLogEntry> getEvents(@Context SecurityContext securityContext, @Context UriInfo uriInfo,
                                          @Parameter(description = "Set of bundle IDs to filter by") @RestQuery Set<UUID> bundleIds,
                                          @Parameter(description = "Set of application IDs to filter by") @RestQuery Set<UUID> appIds,
