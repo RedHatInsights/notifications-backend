@@ -341,16 +341,19 @@ The aggregator runs across multi-cluster environments (e.g., active and standby 
 1. `AggregatorConfig.getActiveCluster()` retrieves the currently active cluster ID from the `notifications-aggregator-active-cluster` Unleash variant payload.
 2. `AbstractEmailAggregationJob.shouldRunOnThisCluster()` evaluates:
    ```java
-   protected boolean shouldRunOnThisCluster() {
-       Optional<String> activeCluster = aggregatorConfig.getActiveCluster();
+   private boolean shouldRunOnThisCluster() {
        Optional<String> myCluster = aggregatorConfig.getClusterId();
-       if (activeCluster.isEmpty() || myCluster.isEmpty()) {
-           return true; // Run if cluster coordination is not configured
+       if (myCluster.isEmpty()) {
+           return true; // Backward compatibility: run if cluster coordination is not configured
        }
-       return activeCluster.get().equalsIgnoreCase(myCluster.get());
+       Optional<String> activeCluster = aggregatorConfig.getActiveCluster();
+       if (activeCluster.isEmpty()) {
+           return false; // Fail-safe: do not run if Unleash is unreachable and cluster ID is set
+       }
+       return myCluster.get().equals(activeCluster.get());
    }
    ```
-3. If the pod is running on a standby cluster, the job logs an informational message and skips execution cleanly:
+3. If the pod is running on a standby cluster, the job logs an informational message and skips execution cleanly using the format template `"%s aggregator run skipped on %s cluster due to Unleash flag"` (substituting the job type and configured cluster ID; `"secondary"` below is illustrative):
    ```text
    Weekly aggregator run skipped on secondary cluster due to Unleash flag
    ```
