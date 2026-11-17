@@ -12,6 +12,7 @@ import com.redhat.cloud.notifications.models.Application;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfig;
 import com.redhat.cloud.notifications.models.DigestTriggerOrgConfigId;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
+import com.redhat.cloud.notifications.utils.DigestCronUtils;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +59,9 @@ class WeeklyEmailAggregationJobTest {
 
     @Inject
     ObjectMapper objectMapper;
+
+    @Inject
+    DigestCronUtils digestCronUtils;
 
     LocalDateTime now;
     LocalDateTime executionTime;
@@ -349,11 +354,191 @@ class WeeklyEmailAggregationJobTest {
         assertEquals(0, getRecordsFromKafka().size(), "Org should not be processed twice in the same slot");
     }
 
+    @Test
+    void shouldAdvanceNextRunForOrgWithPastNextRunAndNoEvents() {
+        // Weekly org with next_run in the past (e.g. 1 week ago) and no events
+        LocalDateTime pastSlot = executionTime.minusWeeks(1);
+        createDigestTriggerConfig(ORG_ID_1, pastSlot.minusWeeks(1), pastSlot);
+
+        weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(executionTime, new CollectorRegistry());
+
+        assertEquals(0, getRecordsFromKafka().size(), "No digest should be sent when no events exist");
+
+        // nextRun must still advance past executionTime to the next scheduled slot
+        DigestTriggerOrgConfig config = helpers.findDigestTriggerOrgConfig(ORG_ID_1, WEEKLY);
+        assertNotNull(config);
+        assertEquals("PENDING", config.getStatus());
+        assertNull(config.getClaimedAt());
+        assertNotNull(config.getNextRun());
+        assertTrue(config.getNextRun().isAfter(executionTime),
+            "nextRun should be advanced past current execution time even when originally in the past with no events");
+        assertNotNull(config.getLastRun());
+        assertTrue(config.getLastRun().isAfter(pastSlot),
+            "lastRun should be advanced to the current slot");
+    }
+
+    @Test
+    void shouldHandleNullLastRunWithoutNpeAndEmitValidWindow() {
+        // A newly created config with null last_run
+        createDigestTriggerConfig(ORG_ID_1, null, executionTime);
+
+        addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
+
+        weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(executionTime, new CollectorRegistry());
+
+        List<AggregationCommand> commands = getRecordsFromKafka();
+        assertEquals(1, commands.size(), "Should produce one aggregation command for newly created config");
+
+        AggregationCommand command = commands.get(0);
+        assertNotNull(command.getStart());
+        assertNotNull(command.getEnd());
+        long daysBetween = Duration.between(command.getStart(), command.getEnd()).toDays();
+        assertEquals(7, daysBetween, "Event window for null last_run should cover the full 7-day period");
+
+        DigestTriggerOrgConfig config = helpers.findDigestTriggerOrgConfig(ORG_ID_1, WEEKLY);
+        assertNotNull(config);
+        assertEquals("PENDING", config.getStatus());
+        assertNotNull(config.getLastRun(), "lastRun should be populated after first run");
+        assertNotNull(config.getNextRun(), "nextRun should be calculated without NPE");
+        assertTrue(config.getNextRun().isAfter(executionTime),
+            "nextRun should be advanced into the future");
+    }
+
+    @Test
+    void shouldRecoverMissedSlotsWhenNextRunIsInThePast() {
+        // An org with next_run 2+ slots in the past
+        LocalDateTime twoWeeksAgo = executionTime.minusWeeks(2);
+        createDigestTriggerConfig(ORG_ID_1, twoWeeksAgo.minusWeeks(1), twoWeeksAgo);
+
+        addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
+
+        weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(executionTime, new CollectorRegistry());
+
+        List<AggregationCommand> commands = getRecordsFromKafka();
+        assertEquals(1, commands.size(),
+            "Org with next_run in the past should be claimed via <= semantics");
+
+        DigestTriggerOrgConfig config = helpers.findDigestTriggerOrgConfig(ORG_ID_1, WEEKLY);
+        assertNotNull(config);
+        assertEquals("PENDING", config.getStatus());
+        assertNotNull(config.getNextRun());
+        assertTrue(config.getNextRun().isAfter(executionTime),
+            "nextRun should be advanced past current execution time even when originally multiple slots behind");
+        assertNotNull(config.getLastRun());
+        assertTrue(config.getLastRun().isAfter(twoWeeksAgo),
+            "lastRun should be advanced to the current slot");
+    }
+
+    @Test
+    void shouldRecoverMissedSlotWithNoEventsAndAdvanceNextRunPastExecutionTime() {
+        LocalDateTime twoWeeksAgo = executionTime.minusWeeks(2);
+        createDigestTriggerConfig(ORG_ID_1, twoWeeksAgo.minusWeeks(1), twoWeeksAgo);
+
+        weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(executionTime, new CollectorRegistry());
+
+        assertEquals(0, getRecordsFromKafka().size(), "No digest when no events");
+
+        DigestTriggerOrgConfig config = helpers.findDigestTriggerOrgConfig(ORG_ID_1, WEEKLY);
+        assertNotNull(config);
+        assertEquals("PENDING", config.getStatus());
+        assertNotNull(config.getNextRun());
+        assertTrue(config.getNextRun().isAfter(executionTime),
+            "nextRun should be advanced past execution time even when multiple slots behind with no events");
+    }
+
+    @Test
+    void shouldUseSlotTimeNotOldLastRunForEventWindowAfterScheduleChange() {
+        String newCron = digestCronUtils.buildCronExpression(WEEKLY, executionTime.toLocalTime(), executionTime.getDayOfWeek());
+        // Org previously ran on an old schedule 9 days ago
+        LocalDateTime oldLastRun = executionTime.minusDays(9);
+        createDigestTriggerConfig(ORG_ID_1, newCron, oldLastRun, executionTime);
+
+        // Event occurred after oldLastRun (5 days ago)
+        addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", executionTime.minusDays(5));
+
+        weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(executionTime, new CollectorRegistry());
+
+        List<AggregationCommand> commands = getRecordsFromKafka();
+        assertEquals(1, commands.size());
+
+        AggregationCommand command = commands.get(0);
+        // Start is old lastRun (no gap in coverage)
+        assertEquals(oldLastRun.withNano(0), command.getStart().withNano(0),
+            "Start time should be the old lastRun so no events are dropped");
+        // End is the actual slot time (executionTime), NOT derived from oldLastRun via calculateNextRun
+        assertEquals(executionTime.withNano(0), command.getEnd().withNano(0),
+            "End time after schedule change should be based on the actual slot time, not derived from old last_run");
+
+        DigestTriggerOrgConfig config = helpers.findDigestTriggerOrgConfig(ORG_ID_1, WEEKLY);
+        assertNotNull(config);
+        assertEquals("PENDING", config.getStatus());
+        assertEquals(executionTime.withNano(0), config.getLastRun().withNano(0),
+            "lastRun should be updated to the current slot time");
+        assertTrue(config.getNextRun().isAfter(executionTime),
+            "nextRun should be advanced to the next scheduled slot");
+    }
+
+    @Test
+    void shouldNotClaimOrProcessOrgAlreadyClaimedByAnotherPod() {
+        // Simulate another pod having claimed the org (status is PROCESSING with fresh claimed_at)
+        DigestTriggerOrgConfigId configId = new DigestTriggerOrgConfigId(ORG_ID_1, WEEKLY);
+        DigestTriggerOrgConfig config = new DigestTriggerOrgConfig(configId, DEFAULT_WEEKLY_CRON);
+        config.setLastRun(now.minusWeeks(1));
+        config.setNextRun(executionTime);
+        config.setStatus("PROCESSING");
+        config.setClaimedAt(executionTime.minusMinutes(2));
+        helpers.addDigestTriggerOrgConfig(config);
+
+        addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
+
+        weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(executionTime, new CollectorRegistry());
+
+        assertEquals(0, getRecordsFromKafka().size(),
+            "Org already in PROCESSING by another pod must not be claimed or processed");
+
+        DigestTriggerOrgConfig remainingConfig = helpers.findDigestTriggerOrgConfig(ORG_ID_1, WEEKLY);
+        assertNotNull(remainingConfig);
+        assertEquals("PROCESSING", remainingConfig.getStatus(),
+            "Org status should remain PROCESSING under the other pod's ownership");
+    }
+
+    @Test
+    void shouldRecoverAndProcessStaleProcessingClaim() {
+        // Simulate a pod crash: status is PROCESSING but claimed_at is older than the 6-hour threshold
+        LocalDateTime staleTime = executionTime.minusHours(7);
+        DigestTriggerOrgConfigId configId = new DigestTriggerOrgConfigId(ORG_ID_1, WEEKLY);
+        DigestTriggerOrgConfig config = new DigestTriggerOrgConfig(configId, DEFAULT_WEEKLY_CRON);
+        config.setLastRun(now.minusWeeks(1));
+        config.setNextRun(staleTime);
+        config.setStatus("PROCESSING");
+        config.setClaimedAt(staleTime);
+        helpers.addDigestTriggerOrgConfig(config);
+
+        addWeeklyEventEmailAggregation(ORG_ID_1, "rhel", "policies", "policy1", "host1", now.minusDays(3));
+
+        weeklyEmailAggregationJob.searchBuildAndSendAggregationCommands(executionTime, new CollectorRegistry());
+
+        List<AggregationCommand> commands = getRecordsFromKafka();
+        assertEquals(1, commands.size(),
+            "Stale PROCESSING claim should be reset to PENDING, claimed, and processed");
+
+        DigestTriggerOrgConfig updatedConfig = helpers.findDigestTriggerOrgConfig(ORG_ID_1, WEEKLY);
+        assertNotNull(updatedConfig);
+        assertEquals("PENDING", updatedConfig.getStatus(),
+            "Status should be reset to PENDING after successful processing");
+        assertTrue(updatedConfig.getNextRun().isAfter(executionTime),
+            "nextRun should be advanced into the future");
+    }
+
     // Helper methods
 
     private void createDigestTriggerConfig(String orgId, LocalDateTime lastRun, LocalDateTime nextRun) {
+        createDigestTriggerConfig(orgId, DEFAULT_WEEKLY_CRON, lastRun, nextRun);
+    }
+
+    private void createDigestTriggerConfig(String orgId, String cronExpression, LocalDateTime lastRun, LocalDateTime nextRun) {
         DigestTriggerOrgConfigId configId = new DigestTriggerOrgConfigId(orgId, WEEKLY);
-        DigestTriggerOrgConfig config = new DigestTriggerOrgConfig(configId, DEFAULT_WEEKLY_CRON);
+        DigestTriggerOrgConfig config = new DigestTriggerOrgConfig(configId, cronExpression);
         config.setLastRun(lastRun);
         config.setNextRun(nextRun);
         helpers.addDigestTriggerOrgConfig(config);
