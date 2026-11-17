@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.config;
 
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
+import com.redhat.cloud.notifications.utils.DigestCronUtils;
 import io.getunleash.Unleash;
 import io.getunleash.UnleashContext;
 import io.quarkus.logging.Log;
@@ -16,6 +17,9 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+
+import static com.redhat.cloud.notifications.utils.DigestCronUtils.NOTIFICATIONS_DEFAULT_DAILY_DIGEST_CRON;
+import static com.redhat.cloud.notifications.utils.DigestCronUtils.NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON;
 
 @ApplicationScoped
 public class BackendConfig {
@@ -127,6 +131,9 @@ public class BackendConfig {
     @Inject
     Unleash unleash;
 
+    @Inject
+    DigestCronUtils digestCronUtils;
+
     @PostConstruct
     void postConstruct() {
         clowderKesselAuthenticated = readClowderKesselAuthenticated(ConfigProvider.getConfig());
@@ -166,6 +173,8 @@ public class BackendConfig {
         config.put(sourcesHccClusterToggle, isSourcesHccClusterEnabled(null));
         config.put(showHiddenEventTypesToggle, isShowHiddenEventTypes(null));
         config.put(useDrawerfilteredQuery, isUseDrawerfilteredQuery(null));
+        config.put(NOTIFICATIONS_DEFAULT_DAILY_DIGEST_CRON, digestCronUtils.getDefaultDailyDigestCron());
+        config.put(NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON, digestCronUtils.getDefaultWeeklyDigestCron());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {

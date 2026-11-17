@@ -3,6 +3,7 @@ package com.redhat.cloud.notifications.config;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
+import com.redhat.cloud.notifications.utils.DigestCronUtils;
 import io.getunleash.Unleash;
 import io.getunleash.variant.Payload;
 import io.getunleash.variant.Variant;
@@ -15,9 +16,13 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.io.File;
+import java.time.LocalTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+
+import static com.redhat.cloud.notifications.utils.DigestCronUtils.NOTIFICATIONS_DEFAULT_DAILY_DIGEST_CRON;
+import static com.redhat.cloud.notifications.utils.DigestCronUtils.NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON;
 
 @ApplicationScoped
 public class AggregatorConfig {
@@ -29,11 +34,16 @@ public class AggregatorConfig {
     private static final String METRICS_SCRAPE_MODE_ENABLED = "notifications.aggregator.metrics.scrape-mode-enabled";
     private static final String METRICS_SCRAPE_KEEP_ALIVE_SECONDS = "notifications.aggregator.metrics.scrape-keep-alive-seconds";
     private static final int DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS = 150;
+    private static final String NOTIFICATIONS_DEFAULT_DAILY_DIGEST_TIME = "notifications.default.daily.digest.time";
+    private static final String PROMETHEUS_PUSHGATEWAY_URL = "prometheus.pushgateway.url";
+    // Must exceed max_maintenance_window + max_run_duration to avoid resetting a live claim.
+    private static final String WEEKLY_STALE_CLAIM_THRESHOLD_HOURS = "notifications.weekly.stale-claim-threshold-hours";
 
     /*
      * Unleash configuration
      */
     private String activeClusterToggle;
+    private String suspendWeeklyAggregation;
 
     @ConfigProperty(name = CLUSTER_ID)
     Optional<String> clusterId;
@@ -44,15 +54,28 @@ public class AggregatorConfig {
     @ConfigProperty(name = METRICS_SCRAPE_KEEP_ALIVE_SECONDS, defaultValue = DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS + "")
     int metricsScrapeKeepAliveSeconds;
 
+    @ConfigProperty(name = NOTIFICATIONS_DEFAULT_DAILY_DIGEST_TIME, defaultValue = "00:00")
+    LocalTime defaultDailyDigestTime;
+
+    @ConfigProperty(name = PROMETHEUS_PUSHGATEWAY_URL, defaultValue = "http://localhost:8080")
+    String prometheusPushGatewayUrl;
+
+    @ConfigProperty(name = WEEKLY_STALE_CLAIM_THRESHOLD_HOURS, defaultValue = "6")
+    int weeklyStaleClaimThresholdHours;
+
     @Inject
     Unleash unleash;
 
     @Inject
     ToggleRegistry toggleRegistry;
 
+    @Inject
+    DigestCronUtils digestCronUtils;
+
     @PostConstruct
     void registerToggles() {
         activeClusterToggle = toggleRegistry.register("notifications-aggregator-active-cluster", true);
+        suspendWeeklyAggregation = toggleRegistry.register("notifications-aggregator-suspend-weekly-aggregation", true);
         Log.infof("Registered Unleash toggle: %s", activeClusterToggle);
     }
 
@@ -71,6 +94,18 @@ public class AggregatorConfig {
             return DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS;
         }
         return metricsScrapeKeepAliveSeconds;
+    }
+
+    public LocalTime getDefaultDailyDigestTime() {
+        return defaultDailyDigestTime;
+    }
+
+    public String getPrometheusPushGatewayUrl() {
+        return prometheusPushGatewayUrl;
+    }
+
+    public int getWeeklyStaleClaimThresholdHours() {
+        return weeklyStaleClaimThresholdHours;
     }
 
     /**
@@ -145,11 +180,20 @@ public class AggregatorConfig {
         }
     }
 
+    public boolean isWeeklyAggregationSuspended() {
+        return unleash.isEnabled(suspendWeeklyAggregation, false);
+    }
+
     void logConfigAtStartup(@Observes Startup event) {
         Map<String, Object> config = new TreeMap<>();
         config.put(CLUSTER_ID, getClusterId().orElse("not-configured"));
         config.put(METRICS_SCRAPE_MODE_ENABLED, metricsScrapeModeEnabled);
         config.put(METRICS_SCRAPE_KEEP_ALIVE_SECONDS, metricsScrapeKeepAliveSeconds);
+        config.put(PROMETHEUS_PUSHGATEWAY_URL, prometheusPushGatewayUrl);
+        config.put(WEEKLY_STALE_CLAIM_THRESHOLD_HOURS, weeklyStaleClaimThresholdHours);
+        config.put(NOTIFICATIONS_DEFAULT_DAILY_DIGEST_TIME, defaultDailyDigestTime);
+        config.put(NOTIFICATIONS_DEFAULT_DAILY_DIGEST_CRON, digestCronUtils.getDefaultDailyDigestCron());
+        config.put(NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON, digestCronUtils.getDefaultWeeklyDigestCron());
         if (activeClusterToggle != null) {
             config.put(activeClusterToggle, getActiveCluster().orElse("unable-to-determine"));
         }
