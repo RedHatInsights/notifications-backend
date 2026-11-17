@@ -5,7 +5,7 @@
 # ready-to-code/`/fs-code` events, but with no `repo:` label check, so
 # without this override every repo polling the same Jira project would
 # dispatch on the same issue.
-base: https://raw.githubusercontent.com/fullsend-ai/agents/87a43fcb849546b267a619434ca19dedde8df476/harness/code.yaml#sha256=8973a15fe53798c632d86c6d2e595a476bfb7cd2f9392961b63533e30d4f1e15
+base: https://raw.githubusercontent.com/fullsend-ai/agents/62f25ace461b9c11a712bf5762f6e881892e4b74/harness/code.yaml#sha256=2cf45a3a4409bee748cf0f0d5f1fb6cd7287677145f5f44d0b9e9b1fd19e93db
 env:
   runner:
     GITHUB_SIGNED_COMMITS: "true"

@@ -6,7 +6,7 @@
 # The overlay disables TRIAGE_AUTO_CODE for Jira-sourced runs only, so a
 # Jira issue needs an explicit "ready-to-code" label/`/fs-code` comment
 # before code runs, instead of auto-escalating as it does on GitHub.
-base: https://raw.githubusercontent.com/fullsend-ai/agents/87a43fcb849546b267a619434ca19dedde8df476/harness/triage.yaml#sha256=ae07e51bb1f634bbb842a498f9ca4cd588982c7811d1ae4c07a06232e50a231b
+base: https://raw.githubusercontent.com/fullsend-ai/agents/62f25ace461b9c11a712bf5762f6e881892e4b74/harness/triage.yaml#sha256=bf4cd9cca1bb15d7849fbe236bc7c6f83db67c9005f8ec53ec929902c592416f
 trigger: >
     has(event.source) && event.source.system == "jira"
     && event.entity.kind == "work_item"
