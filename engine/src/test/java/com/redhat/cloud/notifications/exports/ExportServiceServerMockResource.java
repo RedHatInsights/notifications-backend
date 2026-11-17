@@ -39,7 +39,7 @@ public class ExportServiceServerMockResource implements QuarkusTestResourceLifec
 
         // Mock Export Service upload JSON endpoint - Success case (higher priority)
         wireMockServer.stubFor(
-            post(urlPathMatching("/app/export/v1/[^/]+/[^/]+/[^/]+/upload"))
+            post(urlPathMatching("/internal/export/v1/[^/]+/[^/]+/[^/]+/upload"))
                 .withHeader("Authorization", containing("Bearer " + OidcServerMockResource.TEST_ACCESS_TOKEN))
                 .atPriority(1)
                 .willReturn(aResponse()
@@ -54,7 +54,7 @@ public class ExportServiceServerMockResource implements QuarkusTestResourceLifec
 
         // Mock Export Service upload endpoint - Unauthorized case (lower priority)
         wireMockServer.stubFor(
-            post(urlPathMatching("/app/export/v1/[^/]+/[^/]+/[^/]+/upload"))
+            post(urlPathMatching("/internal/export/v1/[^/]+/[^/]+/[^/]+/upload"))
                 .atPriority(2)
                 .willReturn(aResponse()
                     .withStatus(401)
@@ -67,7 +67,7 @@ public class ExportServiceServerMockResource implements QuarkusTestResourceLifec
 
         // Mock Export Service error notification endpoint - Success case (higher priority)
         wireMockServer.stubFor(
-            post(urlPathMatching("/app/export/v1/[^/]+/[^/]+/[^/]+/error"))
+            post(urlPathMatching("/internal/export/v1/[^/]+/[^/]+/[^/]+/error"))
                 .withHeader("Authorization", containing("Bearer " + OidcServerMockResource.TEST_ACCESS_TOKEN))
                 .atPriority(1)
                 .willReturn(aResponse()
@@ -82,7 +82,7 @@ public class ExportServiceServerMockResource implements QuarkusTestResourceLifec
 
         // Mock Export Service error notification endpoint - Unauthorized case (lower priority)
         wireMockServer.stubFor(
-            post(urlPathMatching("/app/export/v1/[^/]+/[^/]+/[^/]+/error"))
+            post(urlPathMatching("/internal/export/v1/[^/]+/[^/]+/[^/]+/error"))
                 .atPriority(2)
                 .willReturn(aResponse()
                     .withStatus(401)
