@@ -24,8 +24,11 @@ public interface IntegrationsMessages {
     @Message("The latest error was: {errorDetails} {statusCode}.")
     String integrationDisabledLatestErrorHttp5xx(Object errorDetails, Object statusCode);
 
-    @Message("Please review the integration configuration from <a style=\"{style}\" href=\"{href}\" target=\"_blank\">Settings > Integrations</a> to troubleshoot and re-enable the integration.")
-    String integrationDisabledReviewPrompt(String style, String href);
+    @Message("Please review the integration configuration from {settingsLink} to troubleshoot and re-enable the integration.")
+    String integrationDisabledReviewPrompt(String settingsLink);
+
+    @Message("Settings > Integrations")
+    String integrationsSettingsLinkLabel();
 
     @Message("Integrations")
     String integrationsButtonLabel();

@@ -23,4 +23,9 @@ public class IntegrationsExtension extends BaseExtension {
         String label = name == null ? "(unnamed)" : escapeHtml(String.valueOf(name));
         return "<a style=\"" + style + "\" href=\"" + href + "\" target=\"_blank\"><b>" + label + "</b></a>";
     }
+
+    @TemplateExtension
+    public static String settingsLink(Context context, String style, String href, String label) {
+        return "<a style=\"" + style + "\" href=\"" + href + "\" target=\"_blank\">" + label + "</a>";
+    }
 }

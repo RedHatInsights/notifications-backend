@@ -8,12 +8,14 @@
 {#content-body}
     {#let href=action.context.integrationSettingsUrl(environment.url)}
     {#let integrationLink=action.context.integrationLink(body-section-underline-link-style, href)}
+    {#let settingsLinkLabel=integrations:integrationsSettingsLinkLabel}
+    {#let settingsLink=action.context.settingsLink(body-section-underline-link-style, href, settingsLinkLabel)}
     {#if action.context.error_type == "HTTP_4XX"}
         <p style="{body-section-p-style}">
             {integrations:integrationDisabledHttp4xx(integrationLink, action.context.status_code)}
         </p>
         <p style="{body-section-p-style}">
-            {integrations:integrationDisabledReviewPrompt(body-section-underline-link-style, href)}
+            {integrations:integrationDisabledReviewPrompt(settingsLink)}
         </p>
     {#else}
         <p style="{body-section-p-style}">
@@ -27,9 +29,11 @@
             {/if}
         </p>
         <p style="{body-section-p-style}">
-            {integrations:integrationDisabledReviewPrompt(body-section-underline-link-style, href)}
+            {integrations:integrationDisabledReviewPrompt(settingsLink)}
         </p>
     {/if}
+    {/let}
+    {/let}
     {/let}
     {/let}
 {/content-body}

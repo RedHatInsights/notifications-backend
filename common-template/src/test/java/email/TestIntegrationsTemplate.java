@@ -184,7 +184,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
         Action action = Parser.decode(actionAsString);
         String rendered = generateEmailBody(INTEGRATIONS_GENERAL_COMMUNICATION, action, Locale.FRENCH);
         // Template has no {msg:...} calls, so locale is ignored and English is rendered as-is
-        assertTrue(rendered.contains("Your PagerDuty integrations will soon filter notifications by severity level"));
+        assertTrue(rendered.contains("We are reaching out to ensure your allowlist is up to date"));
         assertTrue(rendered.contains("Dear Red Hat customer"));
         assertTrue(rendered.contains("My integration"));
     }
