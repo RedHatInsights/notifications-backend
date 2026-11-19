@@ -25,7 +25,7 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 public class WorkspaceBootstrapResource {
 
-    @Path(Constants.API_INTERNAL_NOTIFICATIONS_BACKEND + "/workspace")
+    @Path(Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/workspace")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public static class V1 extends WorkspaceBootstrapResource {
     }

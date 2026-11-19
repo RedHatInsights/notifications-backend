@@ -10,7 +10,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -30,14 +30,14 @@ public class InternalNotificationsPathsTest {
     void testRoleProtectedEndpointOnBothPaths() {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
-        for (String basePath : new String[] {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND}) {
+        for (String basePath : new String[] {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1}) {
             given().header(adminIdentity).when().get(basePath + "/severities").then().statusCode(HttpStatus.SC_OK);
         }
     }
 
     @Test
     void testRoleProtectedEndpointRequiresIdentityOnBothPaths() {
-        for (String basePath : new String[] {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND}) {
+        for (String basePath : new String[] {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1}) {
             given().when().get(basePath + "/severities").then().statusCode(HttpStatus.SC_UNAUTHORIZED);
             given().when().get(basePath + "/templates").then().statusCode(HttpStatus.SC_UNAUTHORIZED);
         }
@@ -49,7 +49,7 @@ public class InternalNotificationsPathsTest {
 
         // The authorization result must not depend on the base path.
         int legacyStatus = given().header(userIdentity).when().get(API_INTERNAL + "/templates").then().extract().statusCode();
-        int currentStatus = given().header(userIdentity).when().get(API_INTERNAL_NOTIFICATIONS_BACKEND + "/templates").then().extract().statusCode();
+        int currentStatus = given().header(userIdentity).when().get(API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/templates").then().extract().statusCode();
         assertEquals(legacyStatus, currentStatus);
     }
 
@@ -58,7 +58,7 @@ public class InternalNotificationsPathsTest {
      */
     @Test
     void testUnauthenticatedEndpointsOnBothPaths() {
-        for (String basePath : new String[] {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND}) {
+        for (String basePath : new String[] {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1}) {
             for (String endpoint : new String[] {"/version", "/gw/subscriptions/bundle/app", "/validation/baet"}) {
                 int status = given().when().get(basePath + endpoint).then().extract().statusCode();
                 assertNotEquals(HttpStatus.SC_UNAUTHORIZED, status, basePath + endpoint + " must not require an identity header");
@@ -74,8 +74,8 @@ public class InternalNotificationsPathsTest {
         // Missing component segment: not a real endpoint, must not be allowlisted.
         given().when().get("/internal/notifications/v1/gw/subscriptions/bundle/app").then().statusCode(HttpStatus.SC_UNAUTHORIZED);
         // Other engine/backend paths of the new base path require an identity.
-        given().when().get(API_INTERNAL_NOTIFICATIONS_BACKEND + "/access/me").then().statusCode(HttpStatus.SC_UNAUTHORIZED);
-        given().when().get(API_INTERNAL_NOTIFICATIONS_BACKEND + "/cleanup/anything").then().statusCode(HttpStatus.SC_UNAUTHORIZED);
+        given().when().get(API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/access/me").then().statusCode(HttpStatus.SC_UNAUTHORIZED);
+        given().when().get(API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/cleanup/anything").then().statusCode(HttpStatus.SC_UNAUTHORIZED);
     }
 
     @Test
@@ -83,7 +83,7 @@ public class InternalNotificationsPathsTest {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
         String legacy = given().header(adminIdentity).when().get(API_INTERNAL + "/severities").then().extract().asString();
-        String current = given().header(adminIdentity).when().get(API_INTERNAL_NOTIFICATIONS_BACKEND + "/severities").then().extract().asString();
+        String current = given().header(adminIdentity).when().get(API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/severities").then().extract().asString();
         assertEquals(legacy, current);
     }
 }

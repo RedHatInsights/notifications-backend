@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createBundle;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createEventType;
@@ -37,7 +37,7 @@ class ValidationResourceTest extends DbIsolatedTest {
     String adminRole;
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testGetBaetList(String basePath) {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 

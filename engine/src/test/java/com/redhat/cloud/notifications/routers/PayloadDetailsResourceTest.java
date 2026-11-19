@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE_V1;
 import static io.restassured.RestAssured.given;
 
 @QuarkusTest
@@ -38,7 +38,7 @@ public class PayloadDetailsResourceTest {
      * @throws Exception if any unexpected error occurs.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE_V1})
     void testFetchEventPayload(String basePath) throws Exception {
         // Return mocked contents from the repository.
         final PayloadDetails payloadDetails = new PayloadDetails();
@@ -64,7 +64,7 @@ public class PayloadDetailsResourceTest {
      * exist in the database.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE_V1})
     void testFetchEventPayloadNotFound(String basePath) {
         Mockito.when(this.payloadDetailsRepository.findById(Mockito.any())).thenReturn(Optional.empty());
 

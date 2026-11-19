@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE_V1;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 
@@ -63,7 +63,7 @@ public class DailyDigestResourceTest {
      * isn't "local" or "stage".
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE_V1})
     public void testTriggerDailyDigestNonStage(String basePath) {
         // Simulate that we are in the prod environment.
         Mockito.when(this.environment.isLocal()).thenReturn(false);
@@ -101,7 +101,7 @@ public class DailyDigestResourceTest {
      * deserialized.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE_V1})
     void testTriggerDailyDigest(String basePath) throws IOException {
         final String applicationName = "application-name";
         final String bundleName = "bundle-name";

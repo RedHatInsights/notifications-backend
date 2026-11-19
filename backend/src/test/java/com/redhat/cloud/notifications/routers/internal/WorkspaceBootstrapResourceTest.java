@@ -17,7 +17,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static com.redhat.cloud.notifications.TestHelpers.createTurnpikeIdentityHeader;
 import static com.redhat.cloud.notifications.models.EndpointType.WEBHOOK;
 import static io.restassured.RestAssured.given;
@@ -41,7 +41,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
     WorkspaceRepository workspaceRepository;
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testBootstrapCreatesOrgWorkspaces(String basePath) {
         // Setup - Create endpoints for multiple orgs
         String orgId1 = "test-org-bootstrap-1";
@@ -74,7 +74,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testBootstrapIdempotency(String basePath) {
         // Setup - Create both system and org endpoints
         createEndpoint(null, "system-endpoint-idempotent");
@@ -122,7 +122,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testBootstrapAssignsSystemEndpointsToSystemWorkspace(String basePath) {
         // Setup - Create system endpoints (org_id = NULL) and regular org endpoints
         createEndpoint(null, "system-endpoint-1");
@@ -158,7 +158,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testBootstrapWithNoEndpoints(String basePath) {
         // Execute - Call bootstrap with empty endpoints table
         BootstrapSummary summary = given()
@@ -181,7 +181,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testBootstrapPartiallyAssignedEndpoints(String basePath) {
         // Setup - Create some endpoints and run bootstrap
         String orgId = "test-org-partial";
@@ -223,7 +223,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testBootstrapWithMultipleOrgsAndEndpoints(String basePath) {
         // Setup - Create endpoints for 5 orgs with varying counts
         createEndpoint("org-scale-1", "org1-endpoint-1");
@@ -266,7 +266,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testBootstrapEnsuresSameWorkspaceForSameOrg(String basePath) {
         // Setup - Create multiple endpoints for same org
         String orgId = "org-same-workspace";
@@ -296,7 +296,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testBootstrapWithMixedEndpointTypes(String basePath) {
         // Setup - Create endpoints of different types
         String orgId = "org-mixed-types";
@@ -326,7 +326,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testResetClearsAllWorkspacesAndUnassignsEndpoints(String basePath) {
         // Setup - Create endpoints and bootstrap
         createEndpoint("org-reset-1", "endpoint-1");
@@ -400,7 +400,7 @@ public class WorkspaceBootstrapResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testResetThenBootstrapReassignsSameWorkspaceIds(String basePath) {
         // Setup - Create endpoints for multiple orgs and system endpoint
         createEndpoint("org-cycle-1", "endpoint-cycle-1");

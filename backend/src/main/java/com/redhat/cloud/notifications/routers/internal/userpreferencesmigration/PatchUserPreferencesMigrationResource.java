@@ -43,7 +43,7 @@ import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 public class PatchUserPreferencesMigrationResource {
 
-    @Path(Constants.API_INTERNAL_NOTIFICATIONS_BACKEND + "/patch")
+    @Path(Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/patch")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public static class V1 extends PatchUserPreferencesMigrationResource {
     }

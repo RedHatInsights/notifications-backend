@@ -28,7 +28,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createAggregationEmailTemplate;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createBundle;
@@ -68,7 +68,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
     EntityManager entityManager;
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testAllTemplateEndpoints(String basePath) {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
@@ -101,7 +101,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testAllInstantEmailTemplateEndpoints(String basePath) {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
@@ -177,7 +177,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testAllAggregationEmailTemplateEndpoints(String basePath) {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
@@ -234,7 +234,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testTemplateIncludeCheckBeforeDelete(String basePath) {
         int numberOfGlobalTemplates = getNumberOfDefaultTemplates();
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
@@ -268,7 +268,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testUnauthorizedHttpStatus(String basePath) {
         UUID notUsed = UUID.randomUUID();
 
@@ -375,7 +375,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testInvalidEmailTemplateRendering(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         RenderEmailTemplateRequest request = new RenderEmailTemplateRequest();
@@ -398,7 +398,7 @@ public class TemplateResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testValidEmailTemplateRendering(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 

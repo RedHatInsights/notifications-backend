@@ -8,14 +8,14 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.Path;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN;
 
 @Path(API_INTERNAL + "/kessel/oauth2-client-credentials")
 @RolesAllowed(RBAC_INTERNAL_ADMIN)
 public class KesselResource {
 
-    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND + "/kessel/oauth2-client-credentials")
+    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/kessel/oauth2-client-credentials")
     @RolesAllowed(RBAC_INTERNAL_ADMIN)
     public static class V1 extends KesselResource {
     }

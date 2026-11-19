@@ -56,7 +56,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static com.redhat.cloud.notifications.CrudTestHelpers.buildApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.buildBundle;
 import static com.redhat.cloud.notifications.CrudTestHelpers.buildEventType;
@@ -140,28 +140,28 @@ public class InternalResourceTest extends DbIsolatedTest {
     EndpointEventTypeRepository endpointEventTypeRepository;
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testCreateNullBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         createBundle(basePath, identity, null, BAD_REQUEST);
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testCreateNullApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         createApp(basePath, identity, null, null, BAD_REQUEST);
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testCreateNullEventType(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         createEventType(basePath, identity, null, BAD_REQUEST);
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testCreateInvalidBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         createBundle(basePath, identity, buildBundle(null, "I am valid"), BAD_REQUEST);
@@ -170,7 +170,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testCreateInvalidApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
@@ -181,7 +181,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testCreateInvalidEventType(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
@@ -195,7 +195,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testBundleNameUniqueSqlConstraint(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // Double bundle creation with the same name.
@@ -208,7 +208,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testAppNameUniqueSqlConstraint(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
@@ -222,7 +222,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testEventTypeNameUniqueSqlConstraint(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
@@ -234,7 +234,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testGetUnknownBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownBundleId = UUID.randomUUID().toString();
@@ -242,7 +242,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testGetUnknownApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownAppId = UUID.randomUUID().toString();
@@ -250,7 +250,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testUpdateNullBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
@@ -258,7 +258,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testUpdateNullApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
@@ -267,7 +267,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testUpdateUnknownBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownBundleId = UUID.randomUUID().toString();
@@ -275,7 +275,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testUpdateUnknownApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String bundleId = createBundle(basePath, identity, "bundle-name", "Bundle", OK).get();
@@ -284,7 +284,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testAddAppToUnknownBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownBundleId = UUID.randomUUID().toString();
@@ -292,7 +292,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testAddEventTypeToUnknownApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownAppId = UUID.randomUUID().toString();
@@ -300,7 +300,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testGetAppsFromUnknownBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownBundleId = UUID.randomUUID().toString();
@@ -308,7 +308,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testGetEventTypesFromUnknownApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String unknownAppId = UUID.randomUUID().toString();
@@ -316,7 +316,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testCreateAndGetAndUpdateAndDeleteBundle(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // First, we create two bundles with different names. Only the second one will be used after that.
@@ -336,7 +336,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testCreateAndGetAndUpdateAndDeleteApp(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // We need to persist a bundle for this test.
@@ -365,7 +365,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testCreateAndGetAndUpdateAndDeleteEventType(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // We need to persist a bundle and an app for this test.
@@ -416,7 +416,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testDefaultBehaviorGroupCRUD(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // We need to persist a bundle.
@@ -464,7 +464,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testDefaultBehaviorGroupCRUDWithDepencies(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         // We need to persist a bundle.
@@ -533,7 +533,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testBulkUpdateDefaultBehaviorEventTypes(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
 
@@ -666,7 +666,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testVersion(String basePath) {
         String responseBody = given()
                 .basePath(basePath)
@@ -680,7 +680,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void appUserAccessTest(String basePath) {
         String appRole = "app-admin";
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("admin", adminRole);
@@ -748,7 +748,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     public void testDailyDigestTimePreference(String basePath) {
         // The test runs once per internal base path and the stored preference is not cleaned up, so each run needs its own org ID.
         String orgId = UUID.randomUUID().toString();
@@ -787,7 +787,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     public void testDailyDigestTimePreferenceInsufficentPrivileges(String basePath) {
         given()
             .basePath(basePath)
@@ -805,7 +805,7 @@ public class InternalResourceTest extends DbIsolatedTest {
      * isn't "local" or "stage".
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     public void testTriggerDailyDigestNonStage(String basePath) {
         // Simulate that we are in the prod environment.
         Mockito.when(this.environment.isLocal()).thenReturn(false);
@@ -841,7 +841,7 @@ public class InternalResourceTest extends DbIsolatedTest {
      * with a blank application and bundle names.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     public void testTriggerDailyDigest(String basePath) {
         final Bundle bundle = this.resourceHelpers.createBundle();
         final Application application = this.resourceHelpers.createApplication(bundle.getId());
@@ -890,7 +890,7 @@ public class InternalResourceTest extends DbIsolatedTest {
      * with an invalid application name.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     public void testTriggerDailyDigestInvalidApplication(String basePath) {
         final String bundleName = "test-trigger-daily-digest-invalid-application";
         Bundle bundle = this.resourceHelpers.createBundle(bundleName, bundleName + "-display-name");
@@ -931,7 +931,7 @@ public class InternalResourceTest extends DbIsolatedTest {
      * with an invalid bundle name.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     public void testTriggerDailyDigestInvalidBundle(String basePath) {
         final String applicationName = "test-trigger-daily-digest-invalid-bundle";
 
@@ -974,7 +974,7 @@ public class InternalResourceTest extends DbIsolatedTest {
      * with an invalid payload.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     public void testTriggerDailyDigestInvalidPayload(String basePath) {
         /*
          * Create a simple class to store test cases and
@@ -1085,7 +1085,7 @@ public class InternalResourceTest extends DbIsolatedTest {
      * a bad request response is returned.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testSendGeneralCommunicationInvalidPrerequisites(String basePath) {
         final String responseMissingEverything = given()
             .basePath(basePath)
@@ -1159,7 +1159,7 @@ public class InternalResourceTest extends DbIsolatedTest {
      * is simply forwareded to the client.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testInternalSendGeneralCommunication(String basePath) {
         final SendGeneralCommunicationRequest request = new SendGeneralCommunicationRequest(true);
 
@@ -1189,7 +1189,7 @@ public class InternalResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testDeleteOrphanEmailIntegrations(String basePath) {
         Header identity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         String orgId = "orphan-email-test-org";

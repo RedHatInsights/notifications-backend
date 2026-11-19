@@ -23,7 +23,7 @@ import org.mockito.Mockito;
 import java.util.List;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_USER;
 import static io.restassured.RestAssured.given;
@@ -48,7 +48,7 @@ public class ErrataEmailPreferencesUserIdFixServiceTest extends DbIsolatedTest {
      * if there already exist an email subscription with that key.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testUserPreferencesUserIdFix(String basePath) {
         // Simulate that the default template is enabled so that we can create
         // instant subscriptions without facing any "missing template" errors.

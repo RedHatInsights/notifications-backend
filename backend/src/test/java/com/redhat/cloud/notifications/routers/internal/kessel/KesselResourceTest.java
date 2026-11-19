@@ -11,7 +11,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static io.restassured.RestAssured.given;
 import static jakarta.ws.rs.core.Response.Status.FORBIDDEN;
 import static jakarta.ws.rs.core.Response.Status.NO_CONTENT;
@@ -28,7 +28,7 @@ public class KesselResourceTest extends DbIsolatedTest {
     OAuth2ClientCredentialsCache oauth2ClientCredentialsCache;
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testClearCacheEndpointWithAdminRole(String basePath) {
 
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("admin", adminRole);
@@ -43,7 +43,7 @@ public class KesselResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testClearCacheEndpointUnauthorized(String basePath) {
 
         Header userIdentity = TestHelpers.createTurnpikeIdentityHeader("user", "regular-user");

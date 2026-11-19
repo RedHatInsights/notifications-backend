@@ -17,7 +17,7 @@ import org.jboss.resteasy.reactive.RestPath;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
@@ -26,7 +26,7 @@ import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 @RolesAllowed(RBAC_INTERNAL_ADMIN)
 public class X509CertificateResource {
 
-    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND + "/x509Certificates")
+    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/x509Certificates")
     @RolesAllowed(RBAC_INTERNAL_ADMIN)
     public static class V1 extends X509CertificateResource {
     }

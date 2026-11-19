@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static com.redhat.cloud.notifications.db.repositories.ApplicationServicesMigrationRepository.APPLICATION_SERVICES_BUNDLE_NAME;
 import static io.restassured.RestAssured.given;
 
@@ -51,7 +51,7 @@ public class ApplicationServicesUserPreferencesMigrationResourceTest extends DbI
     SubscriptionRepository subscriptionRepository;
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testUnsupportedEventTypesAreSkipped(String basePath) throws URISyntaxException {
         final EventType notAnAppServicesEventType = new EventType();
         notAnAppServicesEventType.setName("not-an-app-services-event-type");
@@ -77,7 +77,7 @@ public class ApplicationServicesUserPreferencesMigrationResourceTest extends DbI
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testJsonMigration(String basePath) throws URISyntaxException {
         final URL jsonResourceUrl = getClass().getResource("/application-services/subscriptions/application_services_subscriptions.json");
         if (jsonResourceUrl == null) {

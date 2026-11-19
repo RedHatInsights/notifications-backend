@@ -25,13 +25,13 @@ import java.util.concurrent.TimeUnit;
 
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE_V1;
 import static com.redhat.cloud.notifications.events.ReplayEventConsumer.INGRESS_REPLAY_CHANNEL;
 
 @Path(API_INTERNAL + "/kafka-admin")
 public class KafkaAdminResource {
 
-    @Path(API_INTERNAL_NOTIFICATIONS_ENGINE + "/kafka-admin")
+    @Path(API_INTERNAL_NOTIFICATIONS_ENGINE_V1 + "/kafka-admin")
     public static class V1 extends KafkaAdminResource {
     }
 

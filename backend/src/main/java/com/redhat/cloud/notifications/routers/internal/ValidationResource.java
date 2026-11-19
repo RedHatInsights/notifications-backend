@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
@@ -35,7 +35,7 @@ import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 @Path(API_INTERNAL + "/validation")
 public class ValidationResource {
 
-    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND + "/validation")
+    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/validation")
     public static class V1 extends ValidationResource {
     }
 

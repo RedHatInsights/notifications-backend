@@ -88,7 +88,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN;
 import static com.redhat.cloud.notifications.models.EndpointType.DRAWER;
 import static com.redhat.cloud.notifications.models.EndpointType.EMAIL_SUBSCRIPTION;
@@ -101,7 +101,7 @@ import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
 @Path(API_INTERNAL)
 public class InternalResource {
 
-    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND)
+    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND_V1)
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public static class V1 extends InternalResource {
     }

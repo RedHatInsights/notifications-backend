@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_BUGFIX;
 import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_ENHANCEMENT;
 import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.ErrataUserPreferencesMigrationResource.EVENT_TYPE_NAME_SECURITY;
@@ -61,7 +61,7 @@ public class ErrataUserPreferencesMigrationResourceTest extends DbIsolatedTest {
      * @throws URISyntaxException if the JSON file's URL is not properly built.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testUnsupportedEventType(String basePath) throws URISyntaxException {
         // Reduce the batch size so that the loop runs more than once, and
         // therefore we can test that it works for large files.
@@ -104,7 +104,7 @@ public class ErrataUserPreferencesMigrationResourceTest extends DbIsolatedTest {
      * @throws URISyntaxException if the JSON file's URL is not properly built.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testJsonMigration(String basePath) throws URISyntaxException {
         // Load the file input for the request.
         final URL jsonResourceUrl = this.getClass().getResource("/errata/subscriptions/errata_subscriptions.json");

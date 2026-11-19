@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE_V1;
 import static com.redhat.cloud.notifications.models.NotificationStatus.FAILED_EXTERNAL;
 import static com.redhat.cloud.notifications.models.NotificationStatus.SUCCESS;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -39,7 +39,7 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @Path(API_INTERNAL + "/replay")
 public class ReplayResource {
 
-    @Path(API_INTERNAL_NOTIFICATIONS_ENGINE + "/replay")
+    @Path(API_INTERNAL_NOTIFICATIONS_ENGINE_V1 + "/replay")
     public static class V1 extends ReplayResource {
     }
 

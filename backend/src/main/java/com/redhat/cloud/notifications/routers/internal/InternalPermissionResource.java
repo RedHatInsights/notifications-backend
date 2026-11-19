@@ -27,13 +27,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 @Path(API_INTERNAL + "/access")
 public class InternalPermissionResource {
 
-    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND + "/access")
+    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/access")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public static class V1 extends InternalPermissionResource {
     }

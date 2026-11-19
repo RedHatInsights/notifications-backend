@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 public class ErrataUserPreferencesMigrationResource {
 
-    @Path(Constants.API_INTERNAL_NOTIFICATIONS_BACKEND + "/team-nado")
+    @Path(Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/team-nado")
     @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
     public static class V1 extends ErrataUserPreferencesMigrationResource {
     }

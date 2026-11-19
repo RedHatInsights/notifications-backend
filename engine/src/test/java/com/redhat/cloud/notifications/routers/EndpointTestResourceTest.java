@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE_V1;
 import static com.redhat.cloud.notifications.events.ConnectorReceiver.EGRESS_CHANNEL;
 import static io.restassured.RestAssured.given;
 
@@ -56,7 +56,7 @@ public class EndpointTestResourceTest {
      * endpoint integration" event is posted to the egress channel.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE_V1})
     void testEndpoint(String basePath) {
         final String orgId = "test-endpoint-engine-test";
         final Endpoint createdEndpoint = this.resourceHelpers.createEndpoint(EndpointType.CAMEL, "slack", true, 0);
@@ -136,7 +136,7 @@ public class EndpointTestResourceTest {
      * channel.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_ENGINE_V1})
     void testEndpointCustomMessage(String basePath) {
         final String orgId = "test-endpoint-engine-test";
         final String customMessage = "Hello, World!";

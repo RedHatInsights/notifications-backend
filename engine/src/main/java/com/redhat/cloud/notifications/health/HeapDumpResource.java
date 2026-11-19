@@ -15,13 +15,13 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE_V1;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 
 @Path(API_INTERNAL + "/heap_dump")
 public class HeapDumpResource {
 
-    @Path(API_INTERNAL_NOTIFICATIONS_ENGINE + "/heap_dump")
+    @Path(API_INTERNAL_NOTIFICATIONS_ENGINE_V1 + "/heap_dump")
     public static class V1 extends HeapDumpResource {
     }
 

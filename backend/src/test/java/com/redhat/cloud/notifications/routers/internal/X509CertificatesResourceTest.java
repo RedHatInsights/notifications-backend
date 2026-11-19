@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createApp;
 import static com.redhat.cloud.notifications.CrudTestHelpers.createBundle;
 import static io.restassured.RestAssured.given;
@@ -38,7 +38,7 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
     String adminRole;
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testCrudX509Certificate(String basePath) {
         Header adminIdentity = TestHelpers.createTurnpikeIdentityHeader("user", adminRole);
         Header intenralUserIdentity = TestHelpers.createTurnpikeIdentityHeader("internal_user", "not_use");
@@ -126,7 +126,7 @@ public class X509CertificatesResourceTest extends DbIsolatedTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testX509CertificateAPIRestrictions(String basePath) {
         Header intenralUserIdentity = TestHelpers.createTurnpikeIdentityHeader("internal_user", "not_use");
 

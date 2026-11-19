@@ -23,12 +23,12 @@ import java.util.List;
 import java.util.Map;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE_V1;
 
 @Path(API_INTERNAL + "/general-communications")
 public class GeneralCommunicationsResource {
 
-    @Path(API_INTERNAL_NOTIFICATIONS_ENGINE + "/general-communications")
+    @Path(API_INTERNAL_NOTIFICATIONS_ENGINE_V1 + "/general-communications")
     public static class V1 extends GeneralCommunicationsResource {
     }
 

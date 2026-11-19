@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static com.redhat.cloud.notifications.auth.ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 
@@ -24,7 +24,7 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM;
 @RolesAllowed(RBAC_INTERNAL_ADMIN)
 public class HeapDumpResource {
 
-    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND + "/heap_dump")
+    @Path(API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/heap_dump")
     @RolesAllowed(RBAC_INTERNAL_ADMIN)
     public static class V1 extends HeapDumpResource {
     }

@@ -35,7 +35,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1;
 import static com.redhat.cloud.notifications.models.SubscriptionType.DAILY;
 import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 import static com.redhat.cloud.notifications.routers.internal.userpreferencesmigration.PatchUserPreferencesMigrationResource.PATCH_NEW_ADVISORY_EVENT_TYPE;
@@ -75,7 +75,7 @@ public class PatchUserPreferencesMigrationResourceTest extends DbIsolatedTest {
      * @throws URISyntaxException if the JSON file's URL is not properly built.
      */
     @ParameterizedTest
-    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND})
+    @ValueSource(strings = {API_INTERNAL, API_INTERNAL_NOTIFICATIONS_BACKEND_V1})
     void testJsonMigration(String basePath) throws URISyntaxException {
         // Load the file input for the request.
         final URL jsonResourceUrl = getClass().getResource("/patch/subscriptions/patch_subscriptions.json");

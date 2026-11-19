@@ -16,7 +16,7 @@ import java.util.Set;
 @Path(Constants.API_INTERNAL + "/team-nado")
 public class ErrataEmailPreferencesUserIdFixService {
 
-    @Path(Constants.API_INTERNAL_NOTIFICATIONS_BACKEND + "/team-nado")
+    @Path(Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/team-nado")
     public static class V1 extends ErrataEmailPreferencesUserIdFixService {
     }
 

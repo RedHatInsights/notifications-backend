@@ -17,13 +17,13 @@ import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Message;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
-import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE;
+import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE_V1;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path(API_INTERNAL + "/endpoints")
 public class EndpointTestResource {
 
-    @Path(API_INTERNAL_NOTIFICATIONS_ENGINE + "/endpoints")
+    @Path(API_INTERNAL_NOTIFICATIONS_ENGINE_V1 + "/endpoints")
     public static class V1 extends EndpointTestResource {
     }
 
