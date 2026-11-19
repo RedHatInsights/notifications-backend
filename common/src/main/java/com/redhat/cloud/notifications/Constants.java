@@ -24,8 +24,8 @@ public interface Constants {
      * {@code notifications-} prefix.
      */
     String API_INTERNAL_NOTIFICATIONS_V_1 = "/internal/notifications/v1";
-    String API_INTERNAL_NOTIFICATIONS_BACKEND = API_INTERNAL_NOTIFICATIONS_V_1 + "/backend";
-    String API_INTERNAL_NOTIFICATIONS_ENGINE = API_INTERNAL_NOTIFICATIONS_V_1 + "/engine";
+    String API_INTERNAL_NOTIFICATIONS_BACKEND_V1 = API_INTERNAL_NOTIFICATIONS_V_1 + "/backend";
+    String API_INTERNAL_NOTIFICATIONS_ENGINE_V1 = API_INTERNAL_NOTIFICATIONS_V_1 + "/engine";
     String X_RH_EXPORT_SERVICE_PSK = "x-rh-exports-psk";
     String X_RH_IDENTITY_HEADER = "x-rh-identity";
     String X_RH_SOURCES_ORG_ID = "x-rh-sources-org-id";
