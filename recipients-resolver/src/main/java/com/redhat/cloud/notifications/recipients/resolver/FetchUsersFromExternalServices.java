@@ -19,6 +19,7 @@ import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacServiceToServ
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacServiceToServiceOidc;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacServiceToServicePsk;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacUser;
+import com.redhat.cloud.notifications.recipients.resolver.valkey.ValkeyUserCacheService;
 import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeException;
 import dev.failsafe.RetryPolicy;
@@ -43,6 +44,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -90,6 +92,9 @@ public class FetchUsersFromExternalServices {
 
     @Inject
     ObjectMapper objectMapper;
+
+    @Inject
+    ValkeyUserCacheService valkeyUserCacheService;
 
     private RetryPolicy<Object> retryPolicy;
 
@@ -193,7 +198,13 @@ public class FetchUsersFromExternalServices {
     }
 
     private List<User> fetchUsersWithItUserService(String orgId, boolean adminsOnly) {
-        List<User> users;
+        // Check Valkey L2 cache before calling IT service
+        Optional<List<User>> cached = valkeyUserCacheService.getCachedUsers(orgId, adminsOnly);
+        if (cached.isPresent()) {
+            this.incrementSuccessesCounterWithTag(COUNTER_TAG_USER_PROVIDER_IT);
+            return cached.get();
+        }
+
         List<ITUserResponse> usersPaging;
         List<ITUserResponse> usersTotal = new ArrayList<>();
 
@@ -221,7 +232,11 @@ public class FetchUsersFromExternalServices {
             this.incrementSuccessesCounterWithTag(COUNTER_TAG_USER_PROVIDER_IT);
         } while (usersPaging.size() == recipientsResolverConfig.getMaxResultsPerPage());
 
-        users = transformItUserToUser(usersTotal);
+        List<User> users = transformItUserToUser(usersTotal);
+
+        // Store in Valkey L2 cache for cross-pod sharing
+        valkeyUserCacheService.cacheUsers(orgId, adminsOnly, users);
+
         return users;
     }
 

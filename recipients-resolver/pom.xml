@@ -6,6 +6,10 @@
 
     <artifactId>notifications-recipients-resolver</artifactId>
 
+    <properties>
+        <testcontainers-valkey.version>1.0.0</testcontainers-valkey.version>
+    </properties>
+
     <parent>
         <groupId>com.redhat.cloud.notifications</groupId>
         <artifactId>notifications-parent</artifactId>
@@ -55,6 +59,10 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-redis-client</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -136,6 +144,12 @@
             <groupId>org.wiremock</groupId>
             <artifactId>wiremock-standalone</artifactId>
             <version>${wiremock.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ss-bhatt</groupId>
+            <artifactId>testcontainers-valkey</artifactId>
+            <version>${testcontainers-valkey.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
