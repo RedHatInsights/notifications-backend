@@ -79,7 +79,7 @@ public class ValkeyUserCacheService {
         }
         try {
             String key = formatKey(orgId, adminsOnly);
-            Response response = valkey.getAndAwait(List.of(key));
+            Response response = valkey.getAndAwait(key);
             if (response == null) {
                 return Optional.empty();
             }
@@ -105,7 +105,7 @@ public class ValkeyUserCacheService {
             String json = objectMapper.writeValueAsString(users);
             long ttlSeconds = config.getValkeyUserCacheTtl().toSeconds();
             valkey.setAndAwait(List.of(key, json, "EX", String.valueOf(ttlSeconds)));
-            Log.debugf("Cached %d users in Valkey for key %s (TTL %ds)", users.size(), key, ttlSeconds);
+            Log.debugf("Cached %d users in Valkey for key %s (TTL %ds)", (Object) users.size(), key, ttlSeconds);
         } catch (JsonProcessingException e) {
             Log.warnf("Failed to serialize users for Valkey cache: %s", e.getMessage());
         } catch (Exception e) {
