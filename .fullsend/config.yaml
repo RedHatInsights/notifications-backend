@@ -18,12 +18,9 @@ roles:
 agents:
     - name: triage
       model: google-vertex/gemini-3.8-flash
-      trigger: >
-        has(event.source) && event.source.system == "jira"
-        && event.entity.kind == "work_item"
-        && "repo:RedHatInsights/notifications-backend" in event.state.labels
-        && event.state.labels.filter(label, label.startsWith("repo:")).size() == 1
-        && (
+      trigger: |
+        has(event.source) && event.source.system == "jira" && event.entity.kind == "work_item" && "repo:RedHatInsights/notifications-backend" in event.state.labels && event.state.labels.filter(label, label.startsWith("repo:")).size() == 1 && (
+
              (event.transition.kind == "label_changed"
                && event.transition.label.action == "added"
                && event.transition.label.name == "ready-for-triage")
@@ -35,7 +32,7 @@ agents:
            )
       harness:
         overlays:
-            - when: has(event.source) && event.source.system == "jira"
+            - when: 'has(event.source) && event.source.system == "jira"'
               env:
                 runner:
                     TRIAGE_AUTO_CODE: "off"
