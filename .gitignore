@@ -51,3 +51,6 @@ __pycache__
 # togi
 /.claude/settings.local.json
 /.togi/
+
+# fullsend lint/run cache
+/.fullsend/.fullsend-cache/
