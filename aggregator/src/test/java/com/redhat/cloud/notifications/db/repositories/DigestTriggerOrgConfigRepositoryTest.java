@@ -778,4 +778,82 @@ class DigestTriggerOrgConfigRepositoryTest {
         assertEquals("PENDING", genuinelyStale.getStatus(), "Genuinely stale claim should be reset");
         assertNull(genuinelyStale.getClaimedAt(), "claimedAt should be cleared on reset");
     }
+
+    @Test
+    void testClaimDueWeeklyOrgsConcurrentClaimSafety() {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+
+        DigestTriggerOrgConfigId configId = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config = new DigestTriggerOrgConfig(configId, DEFAULT_WEEKLY_CRON);
+        config.setLastRun(now.minusWeeks(1));
+        config.setNextRun(now);
+        resourceHelpers.addDigestTriggerOrgConfig(config);
+
+        // First claim succeeds and transitions status from PENDING to PROCESSING
+        List<String> firstClaim = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+        assertEquals(1, firstClaim.size());
+        assertTrue(firstClaim.contains(ORG_ID));
+
+        // Second overlapping claim with same execution time must return empty
+        List<String> secondClaim = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+        assertTrue(secondClaim.isEmpty(),
+            "Subsequent claim call must not re-claim an in-flight PROCESSING org");
+    }
+
+    @Test
+    void testMissedSlotRecoveryClaimAndAdvancePastCurrentTime() {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime twoWeeksAgo = now.minusWeeks(2);
+
+        DigestTriggerOrgConfigId configId = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config = new DigestTriggerOrgConfig(configId, DEFAULT_WEEKLY_CRON);
+        config.setLastRun(twoWeeksAgo.minusWeeks(1));
+        config.setNextRun(twoWeeksAgo); // 2 slots in the past
+        resourceHelpers.addDigestTriggerOrgConfig(config);
+
+        // Verify claimDueWeeklyOrgs picks it up (<= semantics)
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(now);
+        assertEquals(1, claimed.size(), "Org with next_run in the past should be claimed via <= semantics");
+        assertTrue(claimed.contains(ORG_ID));
+
+        // Update last and next run
+        digestTriggerOrgConfigRepository.updateLastAndNextRunForWeekly(claimed, now);
+
+        DigestTriggerOrgConfig updated = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID, SubscriptionType.WEEKLY);
+        assertNotNull(updated);
+        assertEquals("PENDING", updated.getStatus());
+        assertTrue(updated.getNextRun().isAfter(now),
+            "nextRun should be advanced into the future (past now), not stuck in the past");
+    }
+
+    @Test
+    void testScheduleChangeUpdatesLastRunToCurrentSlotAndNextRunToNextSlot() {
+        // Nov 11 2024 = Monday, Nov 20 2024 = Wednesday.
+        LocalDateTime lastRunOnOldMonSchedule = LocalDateTime.of(2024, 11, 11, 0, 30);
+        String newCron = "0 9 * * 3"; // Wednesday 09:00
+        LocalDateTime firstRunOnNewSchedule = LocalDateTime.of(2024, 11, 20, 9, 0);
+
+        DigestTriggerOrgConfigId configId = new DigestTriggerOrgConfigId(ORG_ID, SubscriptionType.WEEKLY);
+        DigestTriggerOrgConfig config = new DigestTriggerOrgConfig(configId, newCron);
+        config.setLastRun(lastRunOnOldMonSchedule);
+        config.setNextRun(firstRunOnNewSchedule);
+        resourceHelpers.addDigestTriggerOrgConfig(config);
+
+        List<String> claimed = digestTriggerOrgConfigRepository.claimDueWeeklyOrgs(firstRunOnNewSchedule);
+        assertEquals(1, claimed.size());
+
+        // Update configs after execution
+        digestTriggerOrgConfigRepository.updateLastAndNextRunForWeekly(claimed, firstRunOnNewSchedule);
+
+        DigestTriggerOrgConfig updated = resourceHelpers.findDigestTriggerOrgConfig(ORG_ID, SubscriptionType.WEEKLY);
+        assertNotNull(updated);
+        assertEquals("PENDING", updated.getStatus());
+        // last_run must be the current slot on the new schedule (Nov 20 09:00), not a past slot (Nov 13)
+        assertEquals(firstRunOnNewSchedule, updated.getLastRun(),
+            "last_run must be updated to the current slot on the new schedule, not derived from old last_run");
+        // next_run must be the next slot on the new schedule (Nov 27 09:00)
+        LocalDateTime expectedNextSlot = LocalDateTime.of(2024, 11, 27, 9, 0);
+        assertEquals(expectedNextSlot, updated.getNextRun(),
+            "next_run must be advanced to the next occurrence of the new schedule");
+    }
 }
