@@ -6,6 +6,7 @@ Only model/usage and CI metadata are exported; artifacts never supply code,
 credentials, an endpoint, or prompt/response content.
 """
 import argparse
+import base64
 import hashlib
 import json
 import math
@@ -52,8 +53,163 @@ def otlp_attributes(values):
     return result
 
 
+def extract_team_value(value):
+    if value is None:
+        return None
+    if isinstance(value, dict):
+        raw = value.get("title") or value.get("name") or value.get("team")
+        if raw is None:
+            return None
+        team = str(raw).strip()
+    else:
+        team = str(value).strip()
+    if not team or team.lower() in ("unassigned", "none", "null"):
+        return None
+    return team
+
+
+def hydrate_jira_team_from_api(issue_key, env, team_field=None):
+    if not issue_key or not env:
+        return None
+    if not re.fullmatch(r"[A-Za-z0-9_]+-\d+", str(issue_key)):
+        return None
+    team_field = team_field or env.get("FULLSEND_JIRA_TEAM_FIELD") or "customfield_10001"
+    if not re.fullmatch(r"[\w.-]+", str(team_field)):
+        return None
+    base_url = env.get("JIRA_BASE_URL") or env.get("FULLSEND_JIRA_URL") or "https://redhat.atlassian.net"
+    user_email = env.get("JIRA_USER_EMAIL") or env.get("FULLSEND_JIRA_EMAIL")
+    token = env.get("JIRA_TOKEN") or env.get("FULLSEND_JIRA_API_TOKEN")
+    if not (base_url and user_email and token):
+        return None
+    endpoint = f"{base_url.rstrip('/')}/rest/api/3/issue/{issue_key}?fields={urllib.parse.quote(str(team_field))}"
+    auth = base64.b64encode(f"{user_email}:{token}".encode("utf-8")).decode("ascii")
+    headers = {"Authorization": f"Basic {auth}", "Accept": "application/json"}
+    req = urllib.request.Request(endpoint, headers=headers, method="GET")
+
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *args, **kwargs):
+            return None
+
+    try:
+        with urllib.request.build_opener(NoRedirect).open(req, timeout=15) as resp:
+            data = json.loads(resp.read() or b"{}")
+            fields = data.get("fields", {}) if isinstance(data, dict) else {}
+            return extract_team_value(fields.get(team_field))
+    except urllib.error.HTTPError as error:
+        print(
+            f"Jira Team hydration failed for {issue_key} (HTTP {error.code}); "
+            "using repository team fallback.",
+            file=sys.stderr,
+        )
+        return None
+    except Exception as error:
+        # Do not expose URLs, credentials, or upstream error bodies in workflow logs.
+        print(
+            f"Jira Team hydration failed for {issue_key} ({type(error).__name__}); "
+            "using repository team fallback.",
+            file=sys.stderr,
+        )
+        return None
+
+
+def resolve_jira_runtime_team(event=None, env=None, context=None, team_field=None, issue_key=None, span_team=None):
+    if env is None:
+        env = os.environ
+    team_field = team_field or env.get("FULLSEND_JIRA_TEAM_FIELD") or "customfield_10001"
+
+    # Precedence: native Jira ticket Team > normalized event payload team > JIRA_ISSUE_TEAM > JIRA_TEAM > FULLSEND_TEAM / repo fallback > omitted.
+
+    # 1. Native Jira ticket Team
+    if span_team is not None:
+        team = extract_team_value(span_team)
+        if team is not None:
+            return team
+
+    if isinstance(event, dict):
+        issue = (
+            event.get("issue")
+            or (event.get("data", {}).get("issue") if isinstance(event.get("data"), dict) else None)
+            or (event.get("entity") if isinstance(event.get("entity"), dict) and ("fields" in event["entity"] or team_field in event["entity"]) else None)
+            or (event.get("raw") if isinstance(event.get("raw"), dict) and ("fields" in event["raw"] or team_field in event["raw"]) else None)
+            or (event if "fields" in event or team_field in event else None)
+        )
+        if isinstance(issue, dict):
+            fields = issue.get("fields") if isinstance(issue.get("fields"), dict) else issue
+            team = extract_team_value(fields.get(team_field))
+            if team is not None:
+                return team
+
+        eff_issue_key = (
+            issue_key
+            or event.get("issue_key")
+            or (event.get("entity", {}).get("key") if isinstance(event.get("entity"), dict) else None)
+            or (event.get("issue", {}).get("key") if isinstance(event.get("issue"), dict) else None)
+            or env.get("JIRA_ISSUE_KEY")
+            or env.get("ISSUE_KEY")
+            or env.get("FULLSEND_TICKET")
+        )
+        if eff_issue_key:
+            hydrated = hydrate_jira_team_from_api(eff_issue_key, env, team_field=team_field)
+            if hydrated is not None:
+                return hydrated
+    else:
+        eff_issue_key = (
+            issue_key
+            or env.get("JIRA_ISSUE_KEY")
+            or env.get("ISSUE_KEY")
+            or env.get("FULLSEND_TICKET")
+        )
+        if eff_issue_key:
+            hydrated = hydrate_jira_team_from_api(eff_issue_key, env, team_field=team_field)
+            if hydrated is not None:
+                return hydrated
+
+    # 2. Normalized event payload team
+    if isinstance(event, dict):
+        event_team = (
+            event.get("team")
+            or (event.get("entity", {}).get("team") if isinstance(event.get("entity"), dict) else None)
+            or (event.get("state", {}).get("team") if isinstance(event.get("state"), dict) else None)
+            or (event.get("data", {}).get("team") if isinstance(event.get("data"), dict) else None)
+        )
+        team = extract_team_value(event_team)
+        if team is not None:
+            return team
+
+    # 3. JIRA_ISSUE_TEAM
+    team = extract_team_value(env.get("JIRA_ISSUE_TEAM"))
+    if team is not None:
+        return team
+
+    # 4. JIRA_TEAM
+    team = extract_team_value(env.get("JIRA_TEAM"))
+    if team is not None:
+        return team
+
+    # 5. FULLSEND_TEAM / the FRFLY-864 setup fallback
+    team = extract_team_value(env.get("FULLSEND_TEAM"))
+    if team is not None:
+        return team
+
+    if context and context.get("team"):
+        team = extract_team_value(context["team"])
+        if team is not None:
+            return team
+
+    otel_attrs = env.get("OTEL_RESOURCE_ATTRIBUTES") or ""
+    for item in otel_attrs.split(","):
+        if "=" in item:
+            k, v = item.split("=", 1)
+            if k.strip() == "team":
+                team = extract_team_value(urllib.parse.unquote(v.strip()))
+                if team is not None:
+                    return team
+
+    return None
+
+
 def add_filterable_context(values):
-    for key in ("project_key", "cost_center", "github.repository", "github.run_id"):
+    for key in ("project_key", "cost_center", "team", "github.repository", "github.run_id"):
         if values.get(key):
             name = key.replace(".", "_")
             for level in ("trace", "observation"):
@@ -61,6 +217,7 @@ def add_filterable_context(values):
     tags = [f"{label}:{values[key]}" for key, label in (
         ("gen_ai.agent.name", "stage"),
         ("project_key", "project_key"), ("cost_center", "cost_center"),
+        ("team", "team"),
         ("github.repository", "repo"),
     ) if values.get(key)]
     if tags:
@@ -96,6 +253,13 @@ def read_spans(path):
 def build_payload(path, context):
     spans = read_spans(path)
     agents = [span for span in spans if attributes(span.get("attributes")).get("gen_ai.operation.name") == "invoke_agent"]
+    # Fullsend emits a root "run" span and a child "agent" span, both tagged invoke_agent.
+    # Only the innermost belongs to a generation; counting both also suppresses the metrics
+    # fallback below, costing cost precision (FRFLY-755). Keyed on (traceId, spanId) so a
+    # child in one trace cannot suppress an agent in another.
+    parents = {(span.get("traceId"), span.get("parentSpanId")) for span in agents if span.get("parentSpanId")}
+    model_bearing = [span for span in agents if attributes(span.get("attributes")).get("gen_ai.request.model")]
+    agents = [span for span in agents if (span.get("traceId"), span.get("spanId")) not in parents]
     metrics = {}
     metrics_path = path.with_name("metrics.json")
     if metrics_path.is_file() and metrics_path.stat().st_size < 1024 * 1024:
@@ -103,7 +267,9 @@ def build_payload(path, context):
         if not isinstance(metrics, dict):
             metrics = {}
     # Use metrics only for a single agent; don't multiply whole-run totals across agents.
-    if len(agents) != 1:
+    # A genuine multi-agent run can collapse to one nested target, so also refuse when more
+    # than one agent span carries its own model (FRFLY-755).
+    if len(agents) != 1 or len(model_bearing) > 1:
         metrics = {}
     output = []
     for agent in agents:
@@ -136,9 +302,11 @@ def build_payload(path, context):
                 value = usage.get(fallback)
             if value is not None:
                 values[attr] = number(value, integer=True)
-        cost = source.get("fullsend.cost_usd")
+        # fullsend.cost_usd on the span is rounded to 2dp; metrics.json beside the telemetry
+        # carries full precision for the same run, so prefer it (FRFLY-755).
+        cost = metrics.get("total_cost_usd")
         if cost is None:
-            cost = metrics.get("total_cost_usd")
+            cost = source.get("fullsend.cost_usd")
         if cost is not None:
             values["gen_ai.usage.cost"] = number(cost)
             values["langfuse.observation.cost_details"] = json.dumps({"total": number(cost)})
@@ -157,6 +325,25 @@ def build_payload(path, context):
             trace_name += f"#{context['github.run_id']}"
         values["langfuse.trace.name"] = trace_name
         span_id = hashlib.sha256(f"fullsend-langfuse-generation-v1:{trace_id}:{parent_id}".encode()).hexdigest()[:16]
+
+        # Resolve authoritative team attribute for the agent span
+        event = None
+        for candidate in ("event.json", "normalized-event.json", "input.json"):
+            ef = path.with_name(candidate)
+            if ef.is_file():
+                try:
+                    event = json.loads(ef.read_text(encoding="utf-8"))
+                    break
+                except Exception:
+                    pass
+        span_team = source.get("team")
+        issue_key = source.get("jira.issue_key") or source.get("jira.key") or source.get("work_item.key") or source.get("issue_key")
+        runtime_team = resolve_jira_runtime_team(event=event, env=os.environ, context=context, issue_key=issue_key, span_team=span_team)
+        if runtime_team is not None:
+            values["team"] = runtime_team
+        else:
+            values.pop("team", None)
+
         add_filterable_context(values)
         output.append({"traceId": trace_id, "spanId": span_id, "parentSpanId": parent_id,
                        "name": f"{stage.capitalize()} Generation: {model}", "kind": 1,
@@ -219,7 +406,7 @@ def main(argv=None):
     if args.artifacts is not None and args.verify_trace_id is not None:
         parser.error("artifacts and --verify-trace-id cannot be combined")
     context = {}
-    for item in os.environ.get("OTEL_RESOURCE_ATTRIBUTES", "").split(","):
+    for item in (os.environ.get("OTEL_RESOURCE_ATTRIBUTES") or "").split(","):
         if "=" in item:
             key, value = item.split("=", 1)
             context[key.strip()] = urllib.parse.unquote(value.strip())
@@ -228,6 +415,11 @@ def main(argv=None):
                           ("SOURCE_ACTOR", "user.id")):
         if os.environ.get(env_key):
             context[attr] = os.environ[env_key]
+    runtime_team = resolve_jira_runtime_team(env=os.environ, context=context)
+    if runtime_team is not None:
+        context["team"] = runtime_team
+    else:
+        context.pop("team", None)
     if context.get("github.run_id"):
         context["session.id"] = context["langfuse.session.id"] = context["github.run_id"]
     if context.get("user.id"):
