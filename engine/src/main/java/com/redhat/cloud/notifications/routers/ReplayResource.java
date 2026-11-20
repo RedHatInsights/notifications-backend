@@ -54,7 +54,7 @@ public class ReplayResource {
 
     ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
-    public List<Event> getEvents(String orgId, LocalDateTime startDate, LocalDateTime endDate, EndpointType endpointType, String endpointSubType, int firstResult, int maxResults) {
+    public List<Event> getEvents(String orgId, LocalDateTime startDate, LocalDateTime endDate, EndpointType endpointType, String endpointSubType) {
 
         String hql = "FROM Event e JOIN FETCH e.eventType et JOIN FETCH et.application app JOIN FETCH app.bundle bundle " +
                 "WHERE e.created > :start AND e.created <= :end " +
@@ -74,8 +74,7 @@ public class ReplayResource {
                 .setParameter("endpointSubType", endpointSubType)
                 .setParameter("failed", FAILED_EXTERNAL)
                 .setParameter("success", SUCCESS)
-                .setFirstResult(firstResult)
-                .setMaxResults(maxResults);
+                .setMaxResults(MAX_RESULTS);
 
         if (orgId != null) {
             typedQuery.setParameter("orgId", orgId);
@@ -97,20 +96,16 @@ public class ReplayResource {
             eventsReplayRequest.endDate,
             eventsReplayRequest.endpointType,
             eventsReplayRequest.endpointSubType);
-        int firstResult = 0;
         List<Event> events;
         long processedEvents = 0;
         do {
-            Log.infof("Processing events from index %d", firstResult);
+            Log.infof("Processing events from index %d", processedEvents);
             events = getEvents(
                 eventsReplayRequest.orgId,
                 eventsReplayRequest.startDate,
                 eventsReplayRequest.endDate,
                 eventsReplayRequest.endpointType,
-                eventsReplayRequest.endpointSubType,
-                firstResult,
-                MAX_RESULTS);
-            firstResult += MAX_RESULTS;
+                eventsReplayRequest.endpointSubType);
             for (Event event : events) {
                 try {
                     EventWrapper<?, ?> eventWrapper = parsePayload(event.getPayload());
