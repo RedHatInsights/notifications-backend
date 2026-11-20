@@ -15,7 +15,7 @@
 #   3. Review and merge the scaffold PR that install opens.
 version: 1
 github:
-  fullsend_ref: v0.55.0
+  fullsend_ref: v0.57.0
   repos:
     - name: RedHatInsights/notifications-backend
       inference:
@@ -31,10 +31,44 @@ github:
         agents:
           - name: triage
             model: google-vertex/gemini-3.8-flash
-            source: harness/triage.yaml
+            # Narrows the upstream trigger to Jira issues carrying exactly this
+            # repo's `repo:` label, so a mislabeled issue can't be dispatched
+            # by more than one repo's poller.
+            trigger: >
+              has(event.source) && event.source.system == "jira"
+              && event.entity.kind == "work_item"
+              && "repo:RedHatInsights/notifications-backend" in event.state.labels
+              && event.state.labels.filter(label, label.startsWith("repo:")).size() == 1
+              && (
+                   (event.transition.kind == "label_changed"
+                     && event.transition.label.action == "added"
+                     && event.transition.label.name == "ready-for-triage")
+                   ||
+                   (event.transition.kind == "comment_added"
+                     && has(event.transition.comment.command)
+                     && event.transition.comment.command == "/fs-triage"
+                     && event.actor.kind == "human")
+                 )
+            # Jira-sourced runs don't auto-escalate to code: a Jira issue needs
+            # an explicit "ready-to-code" label or `/fs-code` comment first.
+            harness:
+              overlays:
+                - when: 'has(event.source) && event.source.system == "jira"'
+                  env:
+                    runner:
+                      TRIAGE_AUTO_CODE: "off"
+                      TRIAGE_AUTO_CODE_CATEGORIES: ""
+                    sandbox:
+                      TRIAGE_AUTO_CODE: "off"
+                      TRIAGE_AUTO_CODE_CATEGORIES: ""
           - name: code
             model: google-vertex/gemini-3.8-flash
             source: harness/code.yaml
+            # Enables GitHub signed commits.
+            harness:
+              env:
+                runner:
+                  GITHUB_SIGNED_COMMITS: "true"
           - name: review
             model: google-vertex/gemini-3.8-flash
             # Runs review only when the ready-for-review label is added, or on
@@ -52,7 +86,11 @@ github:
                     || has(event.entity.linked_change_proposal)))
           - name: fix
             model: google-vertex/gemini-3.8-flash
-            source: harness/fix.yaml
+            # Enables GitHub signed commits.
+            harness:
+              env:
+                runner:
+                  GITHUB_SIGNED_COMMITS: "true"
         allowed_remote_resources:
           - https://raw.githubusercontent.com/fullsend-ai/fullsend/
           - https://raw.githubusercontent.com/fullsend-ai/agents/
