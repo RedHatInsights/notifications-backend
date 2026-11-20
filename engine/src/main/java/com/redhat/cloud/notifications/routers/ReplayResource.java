@@ -29,10 +29,12 @@ import jakarta.ws.rs.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL_NOTIFICATIONS_ENGINE_V1;
 import static com.redhat.cloud.notifications.models.NotificationStatus.FAILED_EXTERNAL;
+import static com.redhat.cloud.notifications.models.NotificationStatus.PROCESSING;
 import static com.redhat.cloud.notifications.models.NotificationStatus.SUCCESS;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -43,7 +45,7 @@ public class ReplayResource {
     public static class V1 extends ReplayResource {
     }
 
-    private static final int MAX_RESULTS = 100;
+    static final int MAX_RESULTS = 100;
 
     @Inject
     EntityManager entityManager;
@@ -59,18 +61,25 @@ public class ReplayResource {
 
     ConsoleCloudEventParser cloudEventParser = new ConsoleCloudEventParser();
 
-    public List<Event> getEvents(String orgId, LocalDateTime startDate, LocalDateTime endDate, EndpointType endpointType, String endpointSubType, int firstResult, int maxResults) {
+    public List<Event> getEvents(String orgId, LocalDateTime startDate, LocalDateTime endDate, EndpointType endpointType, String endpointSubType, UUID lastEventId) {
 
+        // An event is not replayed while one of its notifications is still being processed, otherwise it could be sent twice.
         String hql = "FROM Event e JOIN FETCH e.eventType et JOIN FETCH et.application app JOIN FETCH app.bundle bundle " +
                 "WHERE e.created > :start AND e.created <= :end " +
                 "AND EXISTS (SELECT 1 FROM NotificationHistory " +
                 "WHERE e = event AND compositeEndpointType.type = :endpointType AND (compositeEndpointType.subType is null or compositeEndpointType.subType = :endpointSubType) AND status = :failed) " +
                 "AND NOT EXISTS (SELECT 1 FROM NotificationHistory " +
-                "WHERE e = event AND compositeEndpointType.type = :endpointType AND (compositeEndpointType.subType is null or compositeEndpointType.subType = :endpointSubType) AND status = :success)";
+                "WHERE e = event AND compositeEndpointType.type = :endpointType AND (compositeEndpointType.subType is null or compositeEndpointType.subType = :endpointSubType) AND status IN (:processing, :success))";
 
         if (orgId != null) {
             hql += " AND orgId = :orgId";
         }
+
+        // The replay changes which events match the query, so each page starts after the last event of the previous one instead of using an offset.
+        if (lastEventId != null) {
+            hql += " AND e.id > :lastEventId";
+        }
+        hql += " ORDER BY e.id";
 
         TypedQuery<Event> typedQuery = entityManager.createQuery(hql, Event.class)
                 .setParameter("start", startDate)
@@ -78,12 +87,15 @@ public class ReplayResource {
                 .setParameter("endpointType", endpointType)
                 .setParameter("endpointSubType", endpointSubType)
                 .setParameter("failed", FAILED_EXTERNAL)
+                .setParameter("processing", PROCESSING)
                 .setParameter("success", SUCCESS)
-                .setFirstResult(firstResult)
-                .setMaxResults(maxResults);
+                .setMaxResults(MAX_RESULTS);
 
         if (orgId != null) {
             typedQuery.setParameter("orgId", orgId);
+        }
+        if (lastEventId != null) {
+            typedQuery.setParameter("lastEventId", lastEventId);
         }
 
         return typedQuery.getResultList();
@@ -102,21 +114,20 @@ public class ReplayResource {
             eventsReplayRequest.endDate,
             eventsReplayRequest.endpointType,
             eventsReplayRequest.endpointSubType);
-        int firstResult = 0;
         List<Event> events;
+        UUID lastEventId = null;
         long processedEvents = 0;
         do {
-            Log.infof("Processing events from index %d", firstResult);
+            Log.infof("Processing events from index %d", processedEvents);
             events = getEvents(
                 eventsReplayRequest.orgId,
                 eventsReplayRequest.startDate,
                 eventsReplayRequest.endDate,
                 eventsReplayRequest.endpointType,
                 eventsReplayRequest.endpointSubType,
-                firstResult,
-                MAX_RESULTS);
-            firstResult += MAX_RESULTS;
+                lastEventId);
             for (Event event : events) {
+                lastEventId = event.getId();
                 try {
                     EventWrapper<?, ?> eventWrapper = parsePayload(event.getPayload());
 
