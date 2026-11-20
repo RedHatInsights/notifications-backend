@@ -15,6 +15,7 @@ import com.redhat.cloud.notifications.models.EventTypeBehavior;
 import com.redhat.cloud.notifications.models.InstantEmailTemplate;
 import com.redhat.cloud.notifications.models.IntegrationTemplate;
 import com.redhat.cloud.notifications.models.NotificationHistory;
+import com.redhat.cloud.notifications.models.SubscriptionChangeLog;
 import com.redhat.cloud.notifications.models.WebhookProperties;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -36,6 +37,7 @@ public class DbCleaner {
             Endpoint.class,
             EventTypeBehavior.class,
             BehaviorGroup.class,
+            SubscriptionChangeLog.class,
             EventType.class,
             Application.class,
             Bundle.class,
