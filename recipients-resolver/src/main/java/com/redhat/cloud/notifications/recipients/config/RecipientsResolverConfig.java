@@ -41,6 +41,8 @@ public class RecipientsResolverConfig {
     private static final String KESSEL_CLIENT_SECRET = "notifications.kessel.authn.client-secret";
     private static final String KESSEL_CLIENT_ISSUER = "notifications.kessel.authn.issuer";
     private static final String KESSEL_DOMAIN = "notifications.kessel.domain";
+    private static final String IN_MEMORY_DB_ENABLED = "in-memory-db.enabled";
+    private static final String VALKEY_USER_CACHE_TTL = "valkey-user-cache.ttl";
 
     /*
      * Unleash configuration
@@ -128,6 +130,12 @@ public class RecipientsResolverConfig {
     @ConfigProperty(name = KESSEL_DOMAIN, defaultValue = "redhat")
     String kesselDomain;
 
+    @ConfigProperty(name = IN_MEMORY_DB_ENABLED, defaultValue = "false")
+    boolean inMemoryDbEnabled;
+
+    @ConfigProperty(name = VALKEY_USER_CACHE_TTL, defaultValue = "PT10M")
+    Duration valkeyUserCacheTtl;
+
     @PostConstruct
     void postConstruct() {
         clowderKesselAuthenticated = readClowderKesselAuthenticated(ConfigProvider.getConfig());
@@ -156,6 +164,8 @@ public class RecipientsResolverConfig {
         config.put(KESSEL_AUTHENTICATED, kesselAuthenticated.map(String::valueOf).orElse("<not set>"));
         config.put(KESSEL_INSECURE_CLIENT_ENABLED, isKesselInsecureClientEnabled());
         config.put(KESSEL_DOMAIN, getKesselDomain());
+        config.put(IN_MEMORY_DB_ENABLED, isInMemoryDbEnabled());
+        config.put(VALKEY_USER_CACHE_TTL, getValkeyUserCacheTtl());
 
         Log.info("=== Startup configuration ===");
         config.forEach((key, value) -> {
@@ -267,5 +277,13 @@ public class RecipientsResolverConfig {
 
     public String getKesselDomain() {
         return kesselDomain;
+    }
+
+    public boolean isInMemoryDbEnabled() {
+        return inMemoryDbEnabled;
+    }
+
+    public Duration getValkeyUserCacheTtl() {
+        return valkeyUserCacheTtl;
     }
 }

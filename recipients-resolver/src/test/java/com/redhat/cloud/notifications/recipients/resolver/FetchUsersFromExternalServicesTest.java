@@ -18,6 +18,7 @@ import com.redhat.cloud.notifications.recipients.resolver.rbac.Page;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacGroup;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacServiceToServicePsk;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacUser;
+import com.redhat.cloud.notifications.recipients.resolver.valkey.ValkeyUserCacheService;
 import dev.failsafe.FailsafeException;
 import io.micrometer.core.instrument.Tags;
 import io.quarkus.cache.CacheInvalidateAll;
@@ -38,6 +39,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_REQUESTS;
@@ -86,6 +88,9 @@ public class FetchUsersFromExternalServicesTest {
     @InjectMock
     RecipientsResolverConfig recipientsResolverConfig;
 
+    @InjectMock
+    ValkeyUserCacheService valkeyUserCacheService;
+
     @BeforeEach
     void beforeEach() {
         // This is the default config. It has to be set because we're mocking RecipientsResolverConfig.
@@ -96,6 +101,9 @@ public class FetchUsersFromExternalServicesTest {
         when(recipientsResolverConfig.getMbopApiToken()).thenReturn("na");
         when(recipientsResolverConfig.getMbopClientId()).thenReturn("na");
         when(recipientsResolverConfig.getMbopEnv()).thenReturn("na");
+
+        // Valkey cache disabled in unit tests — always miss
+        when(valkeyUserCacheService.getCachedUsers(anyString(), anyBoolean())).thenReturn(Optional.empty());
     }
 
     @Test
