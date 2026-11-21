@@ -22,6 +22,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.io.File;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 @Startup
@@ -169,9 +170,15 @@ public class TemplateService {
     }
 
     public String renderTemplateWithCustomDataMap(final TemplateDefinition config, final Map<String, Object> additionalContext) {
+        return renderTemplateWithCustomDataMap(config, additionalContext, null);
+    }
+
+    public String renderTemplateWithCustomDataMap(final TemplateDefinition config, final Map<String, Object> additionalContext, final Locale locale) {
         TemplateInstance templateInstance = compileTemplate(config).data(additionalContext);
-        String result = templateInstance.render();
-        return result.trim();
+        if (locale != null) {
+            templateInstance = templateInstance.setLocale(locale);
+        }
+        return templateInstance.render().trim();
     }
 
     public String renderTemplateWithCustomDataMap(final String templateContent, final Map<String, Object> additionalContext) {
