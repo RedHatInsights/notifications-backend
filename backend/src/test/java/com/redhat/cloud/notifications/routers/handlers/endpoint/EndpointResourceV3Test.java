@@ -5,6 +5,9 @@ import com.redhat.cloud.notifications.MockServerConfig;
 import com.redhat.cloud.notifications.TestConstants;
 import com.redhat.cloud.notifications.TestHelpers;
 import com.redhat.cloud.notifications.TestLifecycleManager;
+import com.redhat.cloud.notifications.auth.kessel.KesselCheckClient;
+import com.redhat.cloud.notifications.auth.kessel.KesselTestHelper;
+import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
 import com.redhat.cloud.notifications.config.BackendConfig;
 import com.redhat.cloud.notifications.db.DbIsolatedTest;
 import com.redhat.cloud.notifications.db.ResourceHelpers;
@@ -46,6 +49,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.project_kessel.api.inventory.v1beta2.CheckRequest;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,7 +58,9 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.X_RH_WORKSPACE_ID_HEADER;
 import static com.redhat.cloud.notifications.MockServerConfig.RbacAccess.FULL_ACCESS;
+import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.INTEGRATIONS_VIEW;
 import static com.redhat.cloud.notifications.routers.handlers.endpoint.EndpointResourceCommon.SPLUNK_HEC_TOKEN_REQUIRED;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
@@ -70,6 +76,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_FALSE;
+import static org.project_kessel.api.inventory.v1beta2.Allowed.ALLOWED_TRUE;
 
 /**
  * Covers the behavior that is specific to the v3 endpoints API: the RHCLOUD-34316 secrets handling (v3 never
@@ -83,6 +91,15 @@ public class EndpointResourceV3Test extends DbIsolatedTest {
 
     @InjectMock
     BackendConfig backendConfig;
+
+    @InjectMock
+    KesselCheckClient kesselCheckClient;
+
+    @InjectMock
+    WorkspaceUtils workspaceUtils;
+
+    @Inject
+    KesselTestHelper kesselTestHelper;
 
     @InjectMock
     @RestClient
@@ -165,6 +182,56 @@ public class EndpointResourceV3Test extends DbIsolatedTest {
                 .extract().body().asString();
 
         return new JsonObject(body);
+    }
+
+    /**
+     * Tests that the {@code x-rh-workspace-id} header, when present, is used
+     * for the Kessel permission check instead of the org's default
+     * workspace, and that a malformed value results in a 403 rather than a
+     * 400 -- consistent with the workspace ID being a permissions concern,
+     * not a request-validation one.
+     */
+    @Test
+    void testWorkspaceHeaderOverridesDefaultWorkspace() {
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
+
+        UUID defaultWorkspaceId = UUID.randomUUID();
+        when(workspaceUtils.getDefaultWorkspaceId(orgId)).thenReturn(defaultWorkspaceId);
+
+        when(kesselCheckClient.check(any(CheckRequest.class)))
+            .thenReturn(kesselTestHelper.buildCheckResponse(ALLOWED_FALSE));
+
+        // The default workspace is denied, but this other, explicit workspace is granted.
+        UUID explicitWorkspaceId = UUID.randomUUID();
+        when(kesselCheckClient
+            .check(kesselTestHelper.buildCheckRequestForWorkspace("v3-secrets-user", INTEGRATIONS_VIEW, explicitWorkspaceId)))
+            .thenReturn(kesselTestHelper.buildCheckResponse(ALLOWED_TRUE));
+
+        // Without the header, the denied default workspace is used.
+        given()
+            .header(identityHeader)
+            .when()
+            .get("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
+
+        // With the header, the explicitly granted workspace is used instead.
+        given()
+            .header(identityHeader)
+            .header(X_RH_WORKSPACE_ID_HEADER, explicitWorkspaceId.toString())
+            .when()
+            .get("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_OK);
+
+        // A malformed workspace ID is a 403, not a 400.
+        given()
+            .header(identityHeader)
+            .header(X_RH_WORKSPACE_ID_HEADER, "not-a-uuid")
+            .when()
+            .get("/endpoints")
+            .then()
+            .statusCode(HttpStatus.SC_FORBIDDEN);
     }
 
     @Test

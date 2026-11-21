@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.auth.annotation;
 
+import com.redhat.cloud.notifications.Constants;
 import com.redhat.cloud.notifications.auth.kessel.KesselInventoryAuthorization;
 import com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission;
 import com.redhat.cloud.notifications.auth.rbac.workspace.WorkspaceUtils;
@@ -11,9 +12,11 @@ import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.core.SecurityContext;
 
 import java.lang.reflect.Parameter;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -102,13 +105,44 @@ public class AuthorizationInterceptor {
 
         // Check the workspace permissions.
         if (workspacePermissions.length > 0) {
-            UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(SecurityContextUtil.getOrgId(securityContext));
+            final UUID workspaceId = resolveWorkspaceId(parameterIndexes, interceptedParameters, securityContext);
             for (final WorkspacePermission workspacePermission : workspacePermissions) {
                 this.kesselInventoryAuthorization.hasPermissionOnWorkspace(securityContext, workspacePermission, workspaceId);
             }
         }
 
         return ctx.proceed();
+    }
+
+    /**
+     * Resolves the workspace to perform the Kessel permission check against.
+     * When the caller supplied an {@code x-rh-workspace-id} header (via a
+     * method parameter annotated with {@code @HeaderParam}), that workspace
+     * is used directly -- the Kessel check right after this call is what
+     * actually validates it, since an unknown or unauthorized workspace ID
+     * simply comes back as "not allowed". Otherwise, falls back to the
+     * org's default workspace, same as before this header existed.
+     * @param parameterIndexes the resolved parameter indexes for the
+     *                         intercepted method.
+     * @param interceptedParameters the intercepted method's parameters.
+     * @param securityContext the security context of the request.
+     * @return the workspace identifier to check permissions against.
+     */
+    private UUID resolveWorkspaceId(final ParameterIndexes parameterIndexes, final Object[] interceptedParameters, final SecurityContext securityContext) {
+        final Optional<Integer> workspaceIdHeaderIndex = parameterIndexes.getWorkspaceIdHeaderIndex();
+        if (workspaceIdHeaderIndex.isPresent()) {
+            final String workspaceIdHeader = (String) interceptedParameters[workspaceIdHeaderIndex.get()];
+            if (workspaceIdHeader != null && !workspaceIdHeader.isBlank()) {
+                try {
+                    return UUID.fromString(workspaceIdHeader);
+                } catch (final IllegalArgumentException e) {
+                    SecurityLog.logAuthzFailure("workspace", "malformed " + Constants.X_RH_WORKSPACE_ID_HEADER + " header", securityContext);
+                    throw new ForbiddenException();
+                }
+            }
+        }
+
+        return workspaceUtils.getDefaultWorkspaceId(SecurityContextUtil.getOrgId(securityContext));
     }
 
     /**
@@ -126,6 +160,11 @@ public class AuthorizationInterceptor {
 
             if (parameter.getType().equals(SecurityContext.class)) {
                 parameterIndexes.setSecurityContextIndex(i);
+            }
+
+            final HeaderParam headerParam = parameter.getAnnotation(HeaderParam.class);
+            if (headerParam != null && Constants.X_RH_WORKSPACE_ID_HEADER.equals(headerParam.value())) {
+                parameterIndexes.setWorkspaceIdHeaderIndex(i);
             }
         }
         return parameterIndexes;

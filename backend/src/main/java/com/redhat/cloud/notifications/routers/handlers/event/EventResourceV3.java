@@ -10,6 +10,7 @@ import com.redhat.cloud.notifications.routers.models.Page;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
@@ -31,6 +32,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.Constants.API_NOTIFICATIONS_V_3_0;
+import static com.redhat.cloud.notifications.Constants.X_RH_WORKSPACE_ID_HEADER;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.EVENTS_VIEW;
 import static com.redhat.cloud.notifications.db.Query.DEFAULT_RESULTS_PER_PAGE;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -65,6 +67,12 @@ public class EventResourceV3 extends EventResourceCommon {
             in = ParameterIn.QUERY,
             description = "End of the date range filter. Accepts date-time (yyyy-MM-dd'T'HH:mm:ss).",
             schema = @Schema(type = SchemaType.STRING, format = "date-time")
+        ),
+        @Parameter(
+            name = X_RH_WORKSPACE_ID_HEADER,
+            in = ParameterIn.HEADER,
+            description = "Optional workspace ID used to scope data access. Falls back to the organization's default workspace when omitted.",
+            schema = @Schema(type = SchemaType.STRING)
         )
     })
     @APIResponses(value = {
@@ -85,7 +93,8 @@ public class EventResourceV3 extends EventResourceCommon {
                                          @BeanParam @Valid Query query,
                                          @Parameter(description = "Include action details in the response") @RestQuery boolean includeDetails,
                                          @Parameter(description = "Include the event payload in the response") @RestQuery boolean includePayload,
-                                         @Parameter(description = "Include actions in the response") @RestQuery boolean includeActions) {
+                                         @Parameter(description = "Include actions in the response") @RestQuery boolean includeActions,
+                                         @HeaderParam(X_RH_WORKSPACE_ID_HEADER) String workspaceId) {
         return doGetEvents(securityContext, uriInfo, bundleIds, appIds, eventTypeDisplayName, startDateTime, endDateTime,
             endpointTypes, invocationResults, status, severities, query, includeDetails, includePayload, includeActions);
     }

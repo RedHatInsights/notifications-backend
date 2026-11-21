@@ -304,4 +304,87 @@ public class AuthorizationInterceptorTest {
             .check(kesselTestHelper.buildCheckRequest(DEFAULT_USER, permission)))
             .thenReturn(kesselTestHelper.buildCheckResponse(allowed));
     }
+
+    /**
+     * Tests that when the caller supplies a valid {@code x-rh-workspace-id}
+     * header, that workspace is used for the Kessel permission check
+     * instead of the org's default workspace.
+     *
+     * @throws NoSuchMethodException when the method's specification is not
+     * properly defined, and therefore we cannot get it to perform the tests.
+     */
+    @Test
+    void testWorkspaceHeaderUsedInsteadOfDefault() throws NoSuchMethodException {
+        final InvocationContext invocationContext = Mockito.mock(InvocationContext.class);
+
+        final Method methodUnderTest = AuthorizationInterceptorHelper.class.getMethod("testMethodWithWorkspaceHeader", SecurityContext.class, String.class);
+        Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
+
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
+
+        final UUID headerWorkspaceId = UUID.randomUUID();
+        final SecurityContext securityContext = this.mockSecurityContext();
+        Mockito.when(invocationContext.getParameters()).thenReturn(new Object[]{securityContext, headerWorkspaceId.toString()});
+
+        when(kesselCheckClient.check(kesselTestHelper.buildCheckRequestForWorkspace(DEFAULT_USER, NOTIFICATIONS_VIEW, headerWorkspaceId)))
+            .thenReturn(kesselTestHelper.buildCheckResponse(ALLOWED_TRUE));
+
+        Assertions.assertDoesNotThrow(() -> this.authorizationInterceptor.aroundInvoke(invocationContext));
+
+        Mockito.verify(workspaceUtils, Mockito.never()).getDefaultWorkspaceId(anyString());
+    }
+
+    /**
+     * Tests that when the caller supplies a malformed {@code x-rh-workspace-id}
+     * header, the function under test throws a {@link ForbiddenException}
+     * without performing any Kessel check.
+     *
+     * @throws NoSuchMethodException when the method's specification is not
+     * properly defined, and therefore we cannot get it to perform the tests.
+     */
+    @Test
+    void testWorkspaceHeaderMalformedThrowsForbidden() throws NoSuchMethodException {
+        final InvocationContext invocationContext = Mockito.mock(InvocationContext.class);
+
+        final Method methodUnderTest = AuthorizationInterceptorHelper.class.getMethod("testMethodWithWorkspaceHeader", SecurityContext.class, String.class);
+        Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
+
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
+
+        final SecurityContext securityContext = this.mockSecurityContext();
+        Mockito.when(invocationContext.getParameters()).thenReturn(new Object[]{securityContext, "not-a-uuid"});
+
+        Assertions.assertThrows(
+            ForbiddenException.class,
+            () -> this.authorizationInterceptor.aroundInvoke(invocationContext)
+        );
+
+        Mockito.verifyNoInteractions(kesselCheckClient);
+    }
+
+    /**
+     * Tests that when the caller does not supply the {@code x-rh-workspace-id}
+     * header, the function under test falls back to the org's default
+     * workspace, same as before the header existed.
+     *
+     * @throws NoSuchMethodException when the method's specification is not
+     * properly defined, and therefore we cannot get it to perform the tests.
+     */
+    @Test
+    void testWorkspaceHeaderAbsentFallsBackToDefault() throws NoSuchMethodException {
+        final InvocationContext invocationContext = Mockito.mock(InvocationContext.class);
+
+        final Method methodUnderTest = AuthorizationInterceptorHelper.class.getMethod("testMethodWithWorkspaceHeader", SecurityContext.class, String.class);
+        Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
+
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
+
+        final SecurityContext securityContext = this.mockSecurityContext();
+        Mockito.when(invocationContext.getParameters()).thenReturn(new Object[]{securityContext, null});
+
+        when(workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(KesselTestHelper.RBAC_DEFAULT_WORKSPACE_ID);
+        mockKesselPermission(NOTIFICATIONS_VIEW, ALLOWED_TRUE);
+
+        Assertions.assertDoesNotThrow(() -> this.authorizationInterceptor.aroundInvoke(invocationContext));
+    }
 }
