@@ -311,6 +311,32 @@ public class EndpointMapperTest {
         Assertions.assertEquals("p8g3rduty-sup3r-s3cr3t-t0k3n", pagerDutyProperties.getSecretToken(), "the secret token was not properly deserialized");
     }
 
+    @Test
+    void testSystemSubscriptionIgnorePreferencesForcedFalseOnDTO() {
+        final SystemSubscriptionProperties entity = new SystemSubscriptionProperties();
+        entity.setIgnorePreferences(true);
+        entity.setOnlyAdmins(false);
+
+        final com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.SystemSubscriptionPropertiesDTO dto =
+            this.endpointMapper.systemToDTO(entity);
+
+        Assertions.assertFalse(dto.isIgnorePreferences(),
+            "ignorePreferences must always be false in the V1 DTO, even when the entity has it set to true");
+    }
+
+    @Test
+    void testSystemSubscriptionIgnorePreferencesForcedFalseOnEntity() {
+        final com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.SystemSubscriptionPropertiesDTO dto =
+            new com.redhat.cloud.notifications.models.dto.v1.endpoint.properties.SystemSubscriptionPropertiesDTO();
+        dto.setIgnorePreferences(true);
+        dto.setOnlyAdmins(false);
+
+        final SystemSubscriptionProperties entity = this.endpointMapper.systemToEntity(dto);
+
+        Assertions.assertFalse(entity.isIgnorePreferences(),
+            "ignorePreferences must always be false on the entity, even when the V1 DTO has it set to true");
+    }
+
     private void assertNoSchemaValidationErrors(final List<Error> validationMessages) {
         // Any errors are unexpected since the resulting JSON should be conforming to the defined schema.
         for (final Error validationMessage : validationMessages) {
