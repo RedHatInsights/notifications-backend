@@ -138,6 +138,7 @@ For domain-specific conventions, refer to these guideline documents:
 13. [Dependency Management](docs/dependency-management-guidelines.md) -- Maven BOMs, inter-module deps, Renovate
 14. [Deployment](docs/deployment-guidelines.md) -- Dockerfiles, Tekton/Konflux, Clowder, GitHub Actions
 15. [Templates](docs/template-guidelines.md) -- Qute template organization, registration, rendering, extensions, testing
+16. [Aggregator Scheduling](docs/aggregator-scheduling-guidelines.md) -- Scheduling state machine, concurrency, event windows, parameter limits
 
 ## CI/CD
 
