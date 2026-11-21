@@ -3,14 +3,14 @@
 ###
 
 # Build the project
-FROM registry.access.redhat.com/ubi9/openjdk-25:latest@sha256:a9378554634cab85ad88c61cd6af5e1d74b9ba2117e33064534b67b69d436026 AS build
+FROM registry.access.redhat.com/ubi9/openjdk-25:latest@sha256:164b98409ed54f6a5ebd31d628aed70b8b27613ba2ca5f5540675de0d016ad7c AS build
 USER root
 COPY . /home/jboss
 WORKDIR /home/jboss
 RUN ./mvnw -s .mvn/settings.xml clean package -Dmaven.test.skip -Dcheckstyle.skip -pl :notifications-connector-webhook -am --no-transfer-progress
 
 # Build the container
-FROM registry.access.redhat.com/ubi9/openjdk-25-runtime:latest@sha256:7f2eaba33484d04e5331135e8d3e621c5a4740b6b03bc99d25e4d4dc043f6b8c
+FROM registry.access.redhat.com/ubi9/openjdk-25-runtime:latest@sha256:408a999ab63b12697eb6d16d5c54b983733cb533309c5e861b0efa41d6d73693
 
 # Update the base image packages
 USER root
