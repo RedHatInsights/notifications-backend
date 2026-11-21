@@ -200,16 +200,13 @@ V1 returns raw internal entities in several endpoints. V3 returns cleaner, purpo
 
 | Endpoint                                                                  | Change Summary                                    |
 |---------------------------------------------------------------------------|---------------------------------------------------|
-| `GET /eventTypes`                                                         | New response schema with `fully_qualified_name`   |
+| `GET /eventTypes`                                                         | New response schema                               |
 | `GET /bundles/{bundleName}`                                               | New dedicated response schema                     |
 | `GET /bundles/{bundleName}/applications/{appName}`                        | New dedicated response schema                     |
-| `GET /bundles/{bundleName}/applications/{appName}/eventTypes/{etName}`    | New response schema with `fully_qualified_name`   |
+| `GET /bundles/{bundleName}/applications/{appName}/eventTypes/{etName}`    | New response schema                               |
 | `GET /eventTypes/{id}/endpoints`                                          | Uses V3 endpoint schema (no secrets)              |
 
-### New Fields in V3 Response Schemas
-
-**EventType** adds:
-- `fully_qualified_name` — the fully qualified name of the event type (e.g. `rhel.advisor.new-recommendation`)
+### Field Changes in V3 Response Schemas
 
 **Application** changes:
 - `id` is read-only
@@ -287,6 +284,18 @@ PUT /api/notifications/v3.0/user-config/subscriptions
 ```
 
 V3 performs a **partial update** (not a full replace): any bundle, application, event type, or channel omitted from the request is left untouched. An empty array is accepted (unlike V2 which required a non-empty body).
+
+### Notification Event Type Preferences (Private / Internal)
+
+The following private (non-public-API) endpoints are now available at the V3 path, mirroring their V1 equivalents. These are used internally by the Hybrid Cloud Console UI for the legacy notification preferences form:
+
+| Method | V1 Path                                                                                     | V3 Path                                                                                     |
+|--------|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| `POST` | `/api/notifications/v1.0/user-config/notification-event-type-preference`                    | `/api/notifications/v3.0/user-config/notification-event-type-preference`                    |
+| `GET`  | `/api/notifications/v1.0/user-config/notification-event-type-preference`                    | `/api/notifications/v3.0/user-config/notification-event-type-preference`                    |
+| `GET`  | `/api/notifications/v1.0/user-config/notification-event-type-preference/{bundle}/{app}`     | `/api/notifications/v3.0/user-config/notification-event-type-preference/{bundle}/{app}`     |
+
+These endpoints use the same request/response schemas as V1 (`SettingsValuesByEventType` for POST, `SettingsValueByEventTypeJsonForm` for GET). No behavioral changes — they delegate to the same shared implementation.
 
 ---
 
