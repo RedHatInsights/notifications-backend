@@ -20,6 +20,11 @@ import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 @Path("/internal/recipients-resolver")
 public class RecipientsResolverResource {
 
+    // The recipients-resolver module does not depend on "common", so the path convention constants are not available here.
+    @Path("/internal/notifications/v1/recipients-resolver")
+    public static class V1 extends RecipientsResolverResource {
+    }
+
     @Inject
     RecipientsResolver recipientsResolver;
 

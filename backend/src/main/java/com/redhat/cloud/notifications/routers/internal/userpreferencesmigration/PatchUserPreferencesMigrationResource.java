@@ -42,6 +42,12 @@ import static com.redhat.cloud.notifications.models.SubscriptionType.INSTANT;
 @Path(Constants.API_INTERNAL + "/patch")
 @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
 public class PatchUserPreferencesMigrationResource {
+
+    @Path(Constants.API_INTERNAL_NOTIFICATIONS_BACKEND_V1 + "/patch")
+    @RolesAllowed(ConsoleIdentityProvider.RBAC_INTERNAL_ADMIN)
+    public static class V1 extends PatchUserPreferencesMigrationResource {
+    }
+
     public static final String PATCH_NEW_ADVISORY_EVENT_TYPE = "new-advisory";
 
     @Inject
