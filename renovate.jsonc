@@ -16,6 +16,9 @@
     // Any day, instead of MintMaker's Saturday batch.
     "schedule": ["at any time"]
   },
+  // Renovate must not bump FullSend: an upgrade needs a `fullsend repos install` run plus manual
+  // edits in files the CLI doesn't manage, so a bump alone leaves it half-updated.
+  "ignoreDeps": ["fullsend-ai/fullsend"],
   "packageRules": [
     {
       // Needed even when SHA-pinned: without it, a v4-style tag gets only digest PRs, which
