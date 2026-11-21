@@ -6,6 +6,12 @@ Notifications Backend is a multi-module Quarkus (3.40.x) application that powers
 
 ## Build and Test Commands
 
+`mvnw` is not committed to git. After a fresh clone, generate it once with:
+
+```sh
+mvn wrapper:wrapper
+```
+
 ```sh
 # Full build with checkstyle and tests (all modules)
 ./mvnw clean verify --no-transfer-progress
