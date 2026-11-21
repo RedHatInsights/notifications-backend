@@ -17,19 +17,8 @@ roles:
     - fix
 agents:
     - name: triage
+      source: harness/triage.yaml
       model: google-vertex/gemini-3.8-flash
-      trigger: |
-        has(event.source) && event.source.system == "jira" && event.entity.kind == "work_item" && "repo:RedHatInsights/notifications-backend" in event.state.labels && event.state.labels.filter(label, label.startsWith("repo:")).size() == 1 && (
-
-             (event.transition.kind == "label_changed"
-               && event.transition.label.action == "added"
-               && event.transition.label.name == "ready-for-triage")
-             ||
-             (event.transition.kind == "comment_added"
-               && has(event.transition.comment.command)
-               && event.transition.comment.command == "/fs-triage"
-               && event.actor.kind == "human")
-           )
       harness:
         overlays:
             - when: 'has(event.source) && event.source.system == "jira"'

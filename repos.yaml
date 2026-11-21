@@ -31,24 +31,10 @@ github:
         agents:
           - name: triage
             model: google-vertex/gemini-3.8-flash
-            # Narrows the upstream trigger to Jira issues carrying exactly this
-            # repo's `repo:` label, so a mislabeled issue can't be dispatched
-            # by more than one repo's poller.
-            trigger: >
-              has(event.source) && event.source.system == "jira"
-              && event.entity.kind == "work_item"
-              && "repo:RedHatInsights/notifications-backend" in event.state.labels
-              && event.state.labels.filter(label, label.startsWith("repo:")).size() == 1
-              && (
-                   (event.transition.kind == "label_changed"
-                     && event.transition.label.action == "added"
-                     && event.transition.label.name == "ready-for-triage")
-                   ||
-                   (event.transition.kind == "comment_added"
-                     && has(event.transition.comment.command)
-                     && event.transition.comment.command == "/fs-triage"
-                     && event.actor.kind == "human")
-                 )
+            # Only the repo-label trigger lives in harness/triage.yaml: the Jira
+            # poller reads only the harness trigger, and an entry-level trigger
+            # would opt GitHub routing into CEL and suppress triage there.
+            source: harness/triage.yaml
             # Jira-sourced runs don't auto-escalate to code: a Jira issue needs
             # an explicit "ready-to-code" label or `/fs-code` comment first.
             harness:
