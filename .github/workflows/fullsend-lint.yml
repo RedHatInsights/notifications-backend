@@ -1,0 +1,40 @@
+# fullsend lint
+# Runs `fullsend lint` on pull requests that change .fullsend/ or repos.yaml, so
+# an invalid CEL trigger or broken base:/source: reference fails CI instead of
+# failing every agent run after merge, see
+# https://fullsend.sh/docs/guides/user/cel-triggers-reference#checking-a-trigger-before-you-merge
+#
+# Hand-written, not managed by fullsend. The action ref and `version` must match
+# github.fullsend_ref in repos.yaml, like the other fullsend workflows.
+#
+# Security: lint only reads repository files, so it runs on pull_request with
+# read-only permissions.
+name: fullsend lint
+
+on:
+  pull_request:
+    paths:
+      - ".fullsend/**"
+      - ".github/workflows/fullsend-lint.yml"
+      - "repos.yaml"
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install fullsend CLI
+        uses: fullsend-ai/fullsend@3381ce46ba810d0f4cefe64905b0e6bc3ce36b48 # v0.57.0
+        with:
+          agent: __install_only__
+          version: v0.57.0
+
+      - name: Lint fullsend config
+        env:
+          # Fetching agents from the agents repo needs an authenticated token.
+          GH_TOKEN: ${{ github.token }}
+        run: fullsend lint --fullsend-dir .fullsend
