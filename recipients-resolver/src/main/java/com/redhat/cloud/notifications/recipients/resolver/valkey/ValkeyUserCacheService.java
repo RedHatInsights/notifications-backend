@@ -60,8 +60,8 @@ public class ValkeyUserCacheService {
             }
             valkeyPassword.ifPresent(valkeyOptions::setPassword);
 
-            this.valkeyClient = Redis.createClient(vertx, valkeyOptions);
-            this.valkey = RedisAPI.api(this.valkeyClient);
+            valkeyClient = Redis.createClient(vertx, valkeyOptions);
+            valkey = RedisAPI.api(valkeyClient);
             Log.info("Valkey user cache service initialized");
         } else {
             Log.info("Valkey user cache service disabled (in-memory-db.enabled=false)");
@@ -104,6 +104,7 @@ public class ValkeyUserCacheService {
             String key = formatKey(orgId, adminsOnly);
             String json = objectMapper.writeValueAsString(users);
             long ttlSeconds = config.getValkeyUserCacheTtl().toSeconds();
+            // "EX" = SET with expiration in seconds (Redis/Valkey SET EX option)
             valkey.setAndAwait(List.of(key, json, "EX", String.valueOf(ttlSeconds)));
             Log.debugf("Cached %d users in Valkey for key %s (TTL %ds)", (Object) users.size(), key, ttlSeconds);
         } catch (JsonProcessingException e) {
