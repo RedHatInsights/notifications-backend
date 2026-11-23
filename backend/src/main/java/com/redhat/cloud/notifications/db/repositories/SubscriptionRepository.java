@@ -92,7 +92,11 @@ public class SubscriptionRepository {
             .setParameter("severities", jsonSeverities)
             .executeUpdate();
 
-        subscriptionChangeLogRepository.logChange(orgId, username, eventTypeId, subscriptionType, subscribed);
+        try {
+            subscriptionChangeLogRepository.logChange(orgId, username, eventTypeId, subscriptionType, subscribed);
+        } catch (Exception e) {
+            Log.warnf(e, "Failed to log subscription change for org=%s user=%s eventType=%s", orgId, username, eventTypeId);
+        }
     }
 
     private void checkIfSubscriptionTypeIsSupportedForCurrentEventType(UUID eventTypeId, SubscriptionType subscriptionType) {

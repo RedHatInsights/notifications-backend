@@ -8,13 +8,15 @@ import jakarta.transaction.Transactional;
 
 import java.util.UUID;
 
+import static jakarta.transaction.Transactional.TxType.REQUIRES_NEW;
+
 @ApplicationScoped
 public class SubscriptionChangeLogRepository {
 
     @Inject
     EntityManager entityManager;
 
-    @Transactional
+    @Transactional(REQUIRES_NEW)
     public void logChange(String orgId, String userId, UUID eventTypeId, SubscriptionType subscriptionType, boolean subscribed) {
         String sql = """
             INSERT INTO subscription_change_log (id, org_id, user_id, event_type_id, subscription_type, subscribed)
