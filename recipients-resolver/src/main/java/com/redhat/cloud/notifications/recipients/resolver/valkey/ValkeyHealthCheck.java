@@ -35,7 +35,7 @@ public class ValkeyHealthCheck implements HealthCheck {
         } catch (TimeoutException te) {
             builder.down().withData(hostName, "Unable to execute Valkey health check due to 10 second timeout");
         } catch (Exception e) {
-            builder.down().withData(hostName, String.format("Unable to execute Valkey health check: %s", e));
+            builder.down().withData(hostName, String.format("Unable to execute Valkey health check: %s", e.getMessage()));
         }
 
         return builder.build();
