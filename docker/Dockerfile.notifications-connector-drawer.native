@@ -24,7 +24,7 @@ RUN microdnf install -y \
   libstdc++-static \
   && microdnf clean all
 
-# Install additional dependencies to unzip Mandrel artefact
+# Install additional dependencies to unzip Mandrel and Maven artefacts
 RUN microdnf install -y \
   tar \
   gzip \
