@@ -23,7 +23,7 @@ public class EndpointRecipientSettings extends RecipientSettings {
 
     @Override
     public boolean isIgnoreUserPreferences() {
-        return endpoint.getProperties(SystemSubscriptionProperties.class).isIgnorePreferences();
+        return false;
     }
 
     @Override

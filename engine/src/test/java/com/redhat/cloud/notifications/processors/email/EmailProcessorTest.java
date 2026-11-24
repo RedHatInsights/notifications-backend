@@ -188,7 +188,7 @@ public class EmailProcessorTest {
 
                     final SystemSubscriptionProperties properties = endpoint.get().getProperties(SystemSubscriptionProperties.class);
 
-                    Assertions.assertEquals(properties.isIgnorePreferences(), recipientSettings.isIgnoreUserPreferences(), "the \"ignore user preferences\" flag in the recipient settings does not match the same flag in the endpoint's properties");
+                    Assertions.assertFalse(recipientSettings.isIgnoreUserPreferences(), "the \"ignore user preferences\" flag must always be false in endpoint recipient settings");
                     Assertions.assertEquals(properties.isOnlyAdmins(), recipientSettings.isAdminsOnly(), "the \"admins only\" flag in the recipient settings does not match the same flag in the endpoint's properties");
                 }
             } else {
