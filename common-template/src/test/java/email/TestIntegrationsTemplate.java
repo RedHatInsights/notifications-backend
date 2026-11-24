@@ -1,5 +1,6 @@
 package email;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Parser;
 import helpers.TestHelpers;
@@ -9,6 +10,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.redhat.cloud.notifications.qute.templates.mapping.Console.INTEGRATIONS_GENERAL_COMMUNICATION;
@@ -51,7 +53,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testIntegrationDisabledBodyWithClientError(boolean useBetaTemplate) {
-        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        Map<String, Object> action = buildIntegrationDisabledActionMap("HTTP_4XX", "", 1, 401);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, useBetaTemplate);
         assertTrue(rendered.contains("disabled because the remote endpoint responded with an HTTP status code 401"));
         assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
@@ -60,7 +62,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testIntegrationDisabledBodyWithServerError(boolean useBetaTemplate) {
-        Action action = buildIntegrationDisabledAction("HTTP_5XX", "the HTTP server responded with an HTTP status", 2048, -1);
+        Map<String, Object> action = buildIntegrationDisabledActionMap("HTTP_5XX", "the HTTP server responded with an HTTP status", 2048, -1);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, useBetaTemplate);
         assertTrue(rendered.contains("disabled because the connection couldn't be established with the remote endpoint, or it responded too many times with a server error (HTTP status code 5xx) after 2048 attempts"));
         assertTrue(rendered.contains(TestHelpers.HCC_LOGO_TARGET));
@@ -68,7 +70,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     void testIntegrationDisabledBodyWithClientErrorInFrench() {
-        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        Map<String, Object> action = buildIntegrationDisabledActionMap("HTTP_4XX", "", 1, 401);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, Locale.FRENCH);
         assertTrue(rendered.contains("Intégration désactivée"));
         assertTrue(rendered.contains("a été désactivée"));
@@ -80,7 +82,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     void testIntegrationDisabledBodyWithServerErrorInFrench() {
-        Action action = buildIntegrationDisabledAction("HTTP_5XX", "connexion refusée", 2048, 503);
+        Map<String, Object> action = buildIntegrationDisabledActionMap("HTTP_5XX", "connexion refusée", 2048, 503);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, Locale.FRENCH);
         assertTrue(rendered.contains("Intégration désactivée"));
         assertTrue(rendered.contains("a été désactivée"));
@@ -93,8 +95,8 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     void testIntegrationDisabledTitleInFrench() {
-        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
         eventTypeDisplayName = "Integration disabled";
+        Map<String, Object> action = buildIntegrationDisabledActionMap("HTTP_4XX", "", 1, 401);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, Locale.FRENCH);
         assertTrue(rendered.contains("Intégration désactivée"));
         assertTrue(rendered.contains("Integrations - Console"));
@@ -212,7 +214,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
             "   \"recipients\":[{\"only_admins\":true,\"ignore_user_preferences\":true,\"users\":[],\"emails\":[],\"groups\":[]}]" +
             "}";
         eventTypeDisplayName = "Integration disabled";
-        Action action = Parser.decode(actionAsString);
+        Map<String, Object> action = toMapAction(Parser.decode(actionAsString));
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, false);
         // Special characters in category and name must be URL-encoded in href attributes
         assertTrue(rendered.contains("category=Cat+%3Ctest%3E"), "endpoint_category should be URL-encoded");
@@ -223,7 +225,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     void testIntegrationDisabledBodyWithUnsupportedLocaleRendersEnglish() {
-        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        Map<String, Object> action = buildIntegrationDisabledActionMap("HTTP_4XX", "", 1, 401);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, Locale.GERMAN);
         // German not supported, must fall back to English
         assertTrue(rendered.contains("disabled because the remote endpoint responded with an HTTP status code 401"));
@@ -231,22 +233,31 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Test
+    void testIntegrationDisabledEscapesErrorDetails() {
+        Map<String, Object> action = buildIntegrationDisabledActionMap("HTTP_5XX", "<img src=x onerror=alert(1)> & more", 3, 503);
+        String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, false);
+        // error_details comes from an untrusted remote endpoint response; it must be HTML-escaped
+        assertTrue(rendered.contains("&lt;img src=x onerror=alert(1)&gt; &amp; more"), "error_details should be HTML-escaped");
+        assertFalse(rendered.contains("<img src=x onerror=alert(1)>"), "raw error_details HTML must not be rendered");
+    }
+
+    @Test
     void testLayoutButtonLabelInEnglish() {
-        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        Map<String, Object> action = buildIntegrationDisabledActionMap("HTTP_4XX", "", 1, 401);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, false);
         assertTrue(rendered.contains("Go to Integrations"));
     }
 
     @Test
     void testLayoutButtonLabelInFrench() {
-        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        Map<String, Object> action = buildIntegrationDisabledActionMap("HTTP_4XX", "", 1, 401);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, Locale.FRENCH);
         assertTrue(rendered.contains("Accéder à Integrations"));
     }
 
     @Test
     void testLayoutFooterInEnglish() {
-        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        Map<String, Object> action = buildIntegrationDisabledActionMap("HTTP_4XX", "", 1, 401);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, false);
         assertTrue(rendered.contains("This email was sent by Red Hat Hybrid Cloud Console"));
         assertTrue(rendered.contains("Manage email preferences"));
@@ -254,7 +265,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     void testLayoutFooterInFrench() {
-        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        Map<String, Object> action = buildIntegrationDisabledActionMap("HTTP_4XX", "", 1, 401);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, Locale.FRENCH);
         assertTrue(rendered.contains("Cet e-mail a été envoyé par Red Hat Hybrid Cloud Console"));
         assertTrue(rendered.contains("Gérer les préférences d'e-mail"));
@@ -262,7 +273,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     void testLayoutCriticalFooterInEnglish() {
-        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        Map<String, Object> action = buildIntegrationDisabledActionMap("HTTP_4XX", "", 1, 401);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, true, Locale.ENGLISH);
         assertTrue(rendered.contains("it is critical or requires action"));
         assertTrue(rendered.contains("regardless of your email preferences"));
@@ -270,10 +281,30 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
 
     @Test
     void testLayoutCriticalFooterInFrench() {
-        Action action = buildIntegrationDisabledAction("HTTP_4XX", "", 1, 401);
+        Map<String, Object> action = buildIntegrationDisabledActionMap("HTTP_4XX", "", 1, 401);
         String rendered = generateEmailBody(INTEGRATIONS_INTEGRATION_DISABLED, action, true, Locale.FRENCH);
         assertTrue(rendered.contains("il est critique ou nécessite une action"));
         assertTrue(rendered.contains("vos préférences en matière d"));
+    }
+
+    private Map<String, Object> buildIntegrationDisabledActionMap(final String errorType, final String errorDetails, final int errorCount, final int errorStatusCode) {
+        return toMapAction(buildIntegrationDisabledAction(errorType, errorDetails, errorCount, errorStatusCode));
+    }
+
+    /**
+     * Converts an {@link Action} into the Map-shaped action used in production. {@code EmailMessageHandler}
+     * passes the raw {@code eventData} map (not an {@code ingress.Action}), and the engine
+     * ({@code EmailProcessor.convertEventAsDataMap}) adds a camelCase {@code orgId} key on top of the
+     * snake_case wire format, which the shared layout references as {@code {action.orgId}}.
+     */
+    private Map<String, Object> toMapAction(final Action action) {
+        try {
+            Map<String, Object> mapAction = objectMapper.readValue(Parser.encode(action), new TypeReference<Map<String, Object>>() { });
+            mapAction.put("orgId", mapAction.get("org_id"));
+            return mapAction;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Action buildIntegrationDisabledAction(final String errorType, final String errorDetails, final int errorCount, final int errorStatusCode) {

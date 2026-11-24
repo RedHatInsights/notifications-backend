@@ -93,6 +93,26 @@ public abstract class EmailTemplatesRendererHelper {
         return generateEmail(templateDefinition, action, null, ignoreUserPreferences, locale);
     }
 
+    /*
+     * The following overloads render with a Map-shaped action, reproducing the production path where
+     * EmailMessageHandler passes the raw eventData map (not an ingress.Action) as the action.
+     */
+
+    protected String generateEmailBody(String eventTypeStr, Map<String, Object> mapAction, boolean useBetaTemplate) {
+        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_BODY, getBundle(), getApp(), eventTypeStr, useBetaTemplate);
+        return generateEmail(templateDefinition, mapAction, null, false);
+    }
+
+    protected String generateEmailBody(String eventTypeStr, Map<String, Object> mapAction, Locale locale) {
+        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_BODY, getBundle(), getApp(), eventTypeStr);
+        return generateEmail(templateDefinition, mapAction, null, false, locale);
+    }
+
+    protected String generateEmailBody(String eventTypeStr, Map<String, Object> mapAction, boolean ignoreUserPreferences, Locale locale) {
+        TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_BODY, getBundle(), getApp(), eventTypeStr);
+        return generateEmail(templateDefinition, mapAction, null, ignoreUserPreferences, locale);
+    }
+
     protected String generateEmailBody(String eventTypeStr, Action event, EmailPendo pendo, boolean ignoreUserPreferences, boolean useBetaTemplate) {
         TemplateDefinition templateDefinition = new TemplateDefinition(IntegrationType.EMAIL_BODY, getBundle(), getApp(), eventTypeStr, useBetaTemplate);
         return generateEmail(templateDefinition, event, pendo, ignoreUserPreferences);

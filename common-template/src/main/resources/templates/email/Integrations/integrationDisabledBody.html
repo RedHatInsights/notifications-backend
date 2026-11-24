@@ -23,9 +23,9 @@
         </p>
         <p style="{body-section-p-style}">
             {#if action.context.error_type == "HTTP_5XX"}
-                {integrations:integrationDisabledLatestErrorHttp5xx(action.context.error_details, action.context.status_code)}
+                {integrations:integrationDisabledLatestErrorHttp5xx(action.context.error_details.htmlEscape, action.context.status_code)}
             {#else}
-                {integrations:integrationDisabledLatestError(action.context.error_details)}
+                {integrations:integrationDisabledLatestError(action.context.error_details.htmlEscape)}
             {/if}
         </p>
         <p style="{body-section-p-style}">
