@@ -162,7 +162,7 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
     }
 
     @Test
-    void testGeneralCommunicationWithFrenchLocaleRendersEnglish() {
+    void testGeneralCommunicationWithFrenchLocaleRendersEnglishBodyWithLocalizedLayout() {
         final String actionAsString = "{" +
             "   \"version\":\"2.0.0\"," +
             "   \"bundle\":\"console\"," +
@@ -185,10 +185,17 @@ public class TestIntegrationsTemplate extends EmailTemplatesRendererHelper {
             "}";
         Action action = Parser.decode(actionAsString);
         String rendered = generateEmailBody(INTEGRATIONS_GENERAL_COMMUNICATION, action, Locale.FRENCH);
-        // Template has no {msg:...} calls, so locale is ignored and English is rendered as-is
+        // The general-communication body prose is not translated yet, so it stays English even under a French locale.
         assertTrue(rendered.contains("We are reaching out to ensure your allowlist is up to date"));
         assertTrue(rendered.contains("Dear Red Hat customer"));
         assertTrue(rendered.contains("My integration"));
+        // The shared layout (button and footer) IS localized, so under a French locale it must render fully in French.
+        // The button label combines the layout's goToLabel with the template's service name; both must be French to
+        // avoid the mixed-language "Accéder à your integrations" seen before.
+        assertTrue(rendered.contains("Accéder à vos intégrations"), "button must render fully in French");
+        assertFalse(rendered.contains("your integrations"), "the English button service name must not leak under a French locale");
+        assertTrue(rendered.contains("Cet e-mail a été envoyé par Red Hat Hybrid Cloud Console"), "footer must render in French");
+        assertTrue(rendered.contains("Gérer les préférences d'e-mail"), "footer link must render in French");
     }
 
     @Test

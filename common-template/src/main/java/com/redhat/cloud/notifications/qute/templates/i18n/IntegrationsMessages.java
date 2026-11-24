@@ -32,4 +32,7 @@ public interface IntegrationsMessages {
 
     @Message("Integrations")
     String integrationsButtonLabel();
+
+    @Message("your integrations")
+    String generalCommunicationButtonLabel();
 }
