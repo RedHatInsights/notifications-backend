@@ -28,13 +28,17 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import static com.redhat.cloud.notifications.Constants.API_INTERNAL;
@@ -48,8 +52,11 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static java.time.Month.SEPTEMBER;
 import static java.time.ZoneOffset.UTC;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -88,6 +95,10 @@ public class ReplayResourceTest {
     private Event event3;
     private Event event4;
     private Event event5;
+    private Event event6;
+    private EventType eventType;
+    private Endpoint emailEndpoint;
+    private String payload;
 
     @BeforeEach
     void beforeEach() {
@@ -95,9 +106,9 @@ public class ReplayResourceTest {
         Bundle bundle = resourceHelpers.createBundle("replay-bundle-" + new SecureRandom().nextInt());
         Application app = resourceHelpers.createApp(bundle.getId(), "replay-app-" + new SecureRandom().nextInt());
         app.setBundle(bundle);
-        EventType eventType = resourceHelpers.createEventType(app.getId(), "replay-event-type-" + new SecureRandom().nextInt());
+        eventType = resourceHelpers.createEventType(app.getId(), "replay-event-type-" + new SecureRandom().nextInt());
         eventType.setApplication(app);
-        Endpoint emailEndpoint = resourceHelpers.createEndpoint(EndpointType.EMAIL_SUBSCRIPTION, null, true, 0);
+        emailEndpoint = resourceHelpers.createEndpoint(EndpointType.EMAIL_SUBSCRIPTION, null, true, 0);
 
         Endpoint slackEndpoint = resourceHelpers.createEndpoint(EndpointType.CAMEL, SLACK_ENDPOINT_SUBTYPE, true, 0);
 
@@ -107,7 +118,7 @@ public class ReplayResourceTest {
 
         LocalDateTime aug24 = LocalDateTime.of(2024, SEPTEMBER, 2, 10, 0);
 
-        String payload = serializeAction(createPoliciesAction("123", bundle.getName(), app.getName(), "host"));
+        payload = serializeAction(createPoliciesAction("123", bundle.getName(), app.getName(), "host"));
 
         // OrgId: 123
 
@@ -142,6 +153,11 @@ public class ReplayResourceTest {
         createNotificationHistory(NotificationStatus.FAILED_EXTERNAL, gchatEndpoint, event4);
         createNotificationHistory(NotificationStatus.FAILED_EXTERNAL, teamsEndpoint, event4);
 
+        // A notification of this event is still being processed.
+        event6 = resourceHelpers.createEvent(eventType, ORG_ID_1, aug24, payload);
+        createNotificationHistory(NotificationStatus.FAILED_EXTERNAL, emailEndpoint, event6);
+        createNotificationHistory(NotificationStatus.PROCESSING, emailEndpoint, event6);
+
         // OrgId: 456
 
         when(endpointRepository.getTargetEndpointsWithoutUsingBgs(eq(ORG_ID_2), eq(eventType))).thenReturn(List.of(emailEndpoint, gchatEndpoint, slackEndpoint, teamsEndpoint));
@@ -174,6 +190,7 @@ public class ReplayResourceTest {
             verify(emailConnectorProcessor, times(1)).process(eq(event3), any());
             verify(emailConnectorProcessor, never()).process(eq(event4), any());
             verify(emailConnectorProcessor, times(1)).process(eq(event5), any());
+            verify(emailConnectorProcessor, never()).process(eq(event6), any());
             verify(googleChatProcessor, never()).process(any(), any());
             verify(slackProcessor, never()).process(any(), any());
             verify(teamsProcessor, never()).process(any(), any());
@@ -219,6 +236,44 @@ public class ReplayResourceTest {
         verify(emailConnectorProcessor, times(1)).process(eq(event3), any());
         verify(emailConnectorProcessor, never()).process(eq(event4), any());
         verify(emailConnectorProcessor, never()).process(eq(event5), any());
+    }
+
+    // Each failed event is replayed once, whether the replay of the previous page left it failed or not.
+    @ParameterizedTest
+    @EnumSource(names = {"FAILED_EXTERNAL", "SUCCESS"})
+    void testReplayPagination(NotificationStatus statusAfterReplay) {
+        String orgId = UUID.randomUUID().toString();
+        when(endpointRepository.getTargetEndpointsWithoutUsingBgs(eq(orgId), eq(eventType))).thenReturn(List.of(emailEndpoint));
+
+        Set<UUID> eventIds = new HashSet<>();
+        for (int i = 0; i <= ReplayResource.MAX_RESULTS; i++) {
+            Event event = resourceHelpers.createEvent(eventType, orgId, LocalDateTime.of(2024, SEPTEMBER, 2, 10, 0), payload);
+            createNotificationHistory(NotificationStatus.FAILED_EXTERNAL, emailEndpoint, event);
+            eventIds.add(event.getId());
+        }
+
+        Set<UUID> replayedEventIds = ConcurrentHashMap.newKeySet();
+        doAnswer(invocation -> {
+            Event event = invocation.getArgument(0);
+            // The replay does not catch an Error, so replaying an event twice fails the request instead of looping forever.
+            assertTrue(replayedEventIds.add(event.getId()));
+            createNotificationHistory(statusAfterReplay, emailEndpoint, event);
+            return null;
+        }).when(emailConnectorProcessor).process(any(), any());
+
+        EventsReplayRequest replayRequest = getEventsReplayRequest();
+        replayRequest.orgId = orgId;
+
+        given()
+                .basePath(API_INTERNAL)
+                .contentType(JSON)
+                .body(Json.encode(replayRequest))
+                .when()
+                .post("/replay")
+                .then()
+                .statusCode(204);
+
+        assertEquals(eventIds, replayedEventIds);
     }
 
     @Transactional
