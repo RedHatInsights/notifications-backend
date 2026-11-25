@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.processors.email.aggregators;
 
 import com.redhat.cloud.notifications.models.EmailAggregation;
+import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -244,5 +245,53 @@ public class LightwellWeeklyEmailPayloadAggregatorTest {
                 Assertions.assertEquals(2, pkg.size(), "Package should only have package_name and package_link");
             }
         }
+    }
+
+    /**
+     * Regression guard for the silent-skip bug: a payload shaped exactly like real BaseTransformer output exposes the
+     * event type display name only at source.event_type.display_name, with NO top-level event_type_display_name key.
+     * The aggregator must still aggregate it. This feeds the aggregator a realistic payload so the missing-key silent
+     * skip can't regress.
+     */
+    @Test
+    void realBaseTransformerPayloadIsAggregated() {
+        EmailAggregation aggregation = createEmailAggregation(
+            DEFAULT_ORG_ID, bundle, application, "java-remediated",
+            "org.glassfish.jaxb:codemodel", "https://console.redhat.com/lightwell/packages/org.glassfish.jaxb:codemodel",
+            "Java Remediated"
+        );
+
+        // Assert the test payload matches the real BaseTransformer shape, not the old hand-injected top-level key.
+        JsonObject payload = aggregation.getPayload();
+        Assertions.assertFalse(payload.containsKey("event_type_display_name"),
+            "Real payloads have no top-level event_type_display_name key");
+        Assertions.assertEquals("Java Remediated",
+            payload.getJsonObject("source").getJsonObject("event_type").getString("display_name"),
+            "Display name must live at source.event_type.display_name");
+
+        aggregator.aggregate(aggregation);
+
+        Assertions.assertFalse(aggregator.isEmpty(), "Realistic payload must be aggregated, not silently skipped");
+        Map<String, Object> context = aggregator.getContext();
+        Assertions.assertEquals(1, context.get("total_packages"));
+        Map<String, Object> packagesByEventType = (Map<String, Object>) context.get("packages_by_event_type");
+        Map<String, Object> javaRemediated = (Map<String, Object>) packagesByEventType.get("java-remediated");
+        Assertions.assertEquals("Java Remediated", javaRemediated.get("event_type_display_name"));
+    }
+
+    /**
+     * When the event type display name is genuinely absent from the payload, the aggregation is skipped (nothing to
+     * render). This documents the intended fallback behavior.
+     */
+    @Test
+    void aggregationWithoutDisplayNameIsSkipped() {
+        EmailAggregation aggregation = createEmailAggregation(
+            bundle, application, "java-remediated",
+            "org.glassfish.jaxb:codemodel", "https://console.redhat.com/lightwell/packages/org.glassfish.jaxb:codemodel"
+        );
+
+        aggregator.aggregate(aggregation);
+
+        Assertions.assertTrue(aggregator.isEmpty(), "Aggregation with no display name should be skipped");
     }
 }
