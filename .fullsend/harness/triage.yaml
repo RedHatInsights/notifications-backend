@@ -6,7 +6,7 @@
 # expression would suppress triage altogether).
 #
 # Everything else for triage lives in the agents entry in repos.yaml.
-base: https://raw.githubusercontent.com/fullsend-ai/agents/41f89529863ea6c26e804a348f56953423d294a3/harness/triage.yaml#sha256=8b4ac709e08e93d5747fbe949e0728d1b635ed92d49d83b94768c8a8bc68c337
+base: https://raw.githubusercontent.com/fullsend-ai/agents/ea29de9bb8b1729b04c0597b48a5c7aae62deb71/harness/triage.yaml#sha256=ce30d5eea5c13c7cf33a7feffa9342d33cb918d485d0587c1030e04766884a0d
 trigger: >
     has(event.source) && event.source.system == "jira"
     && event.entity.kind == "work_item"
