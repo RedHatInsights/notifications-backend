@@ -10,12 +10,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
-import static com.redhat.cloud.notifications.processors.email.aggregators.ErrataEmailPayloadAggregator.EVENT_TYPE_BUGFIX;
-import static com.redhat.cloud.notifications.processors.email.aggregators.ErrataEmailPayloadAggregator.EVENT_TYPE_ENHANCEMENT;
-import static com.redhat.cloud.notifications.processors.email.aggregators.ErrataEmailPayloadAggregator.EVENT_TYPE_SECURITY;
 
 public class ErrataTestHelpers {
 
@@ -76,15 +72,6 @@ public class ErrataTestHelpers {
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
         return emailActionMessage;
-    }
-
-    public static Map<String, Object> buildErrataAggregatedPayload() {
-        ErrataEmailPayloadAggregator aggregator = new ErrataEmailPayloadAggregator();
-        aggregateEventType(aggregator, EVENT_TYPE_BUGFIX, 3);
-        aggregateEventType(aggregator, EVENT_TYPE_ENHANCEMENT, 6);
-        aggregateEventType(aggregator, EVENT_TYPE_SECURITY, 8);
-
-        return aggregator.getContext();
     }
 
     static void aggregateEventType(final ErrataEmailPayloadAggregator aggregator, final String eventType, final int numberOfAggregations) {

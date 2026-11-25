@@ -160,18 +160,6 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
         return eventTypeEmailSubscription;
     }
 
-    public Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, io.vertx.core.json.JsonObject payload) {
-        return addEventEmailAggregation(orgId, bundleName, applicationName, payload, true);
-    }
-
-    public Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, io.vertx.core.json.JsonObject payload, boolean addUserSubscription) {
-        return addEventEmailAggregation(orgId, bundleName, applicationName, payload, addUserSubscription, null);
-    }
-
-    public Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, io.vertx.core.json.JsonObject payload, boolean addUserSubscription, com.redhat.cloud.notifications.Severity severity) {
-        return addEventEmailAggregation(orgId, bundleName, applicationName, payload, addUserSubscription, severity, com.redhat.cloud.notifications.TestHelpers.eventType);
-    }
-
     public Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, io.vertx.core.json.JsonObject payload, boolean addUserSubscription, com.redhat.cloud.notifications.Severity severity, String eventTypeName) {
         Application application = findOrCreateApplication(bundleName, applicationName);
         EventType eventType = findOrCreateEventType(application.getId(), eventTypeName);
