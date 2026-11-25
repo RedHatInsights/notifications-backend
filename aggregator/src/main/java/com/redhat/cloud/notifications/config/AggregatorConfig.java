@@ -3,8 +3,10 @@ package com.redhat.cloud.notifications.config;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.unleash.ToggleRegistry;
+import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import com.redhat.cloud.notifications.utils.DigestCronUtils;
 import io.getunleash.Unleash;
+import io.getunleash.UnleashContext;
 import io.getunleash.variant.Payload;
 import io.getunleash.variant.Variant;
 import io.quarkus.logging.Log;
@@ -20,6 +22,7 @@ import java.time.LocalTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.UUID;
 
 import static com.redhat.cloud.notifications.utils.DigestCronUtils.NOTIFICATIONS_DEFAULT_DAILY_DIGEST_CRON;
 import static com.redhat.cloud.notifications.utils.DigestCronUtils.NOTIFICATIONS_DEFAULT_WEEKLY_DIGEST_CRON;
@@ -35,6 +38,8 @@ public class AggregatorConfig {
     private static final String METRICS_SCRAPE_KEEP_ALIVE_SECONDS = "notifications.aggregator.metrics.scrape-keep-alive-seconds";
     private static final int DEFAULT_METRICS_SCRAPE_KEEP_ALIVE_SECONDS = 150;
     private static final String NOTIFICATIONS_DEFAULT_DAILY_DIGEST_TIME = "notifications.default.daily.digest.time";
+    private static final String NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE = "notifications.email.sender.hybrid.cloud.console";
+    private static final String RH_HCC_SENDER = "\"Red Hat Hybrid Cloud Console\" noreply@redhat.com";
     private static final String PROMETHEUS_PUSHGATEWAY_URL = "prometheus.pushgateway.url";
     // Must exceed max_maintenance_window + max_run_duration to avoid resetting a live claim.
     private static final String WEEKLY_STALE_CLAIM_THRESHOLD_HOURS = "notifications.weekly.stale-claim-threshold-hours";
@@ -42,8 +47,13 @@ public class AggregatorConfig {
     /*
      * Unleash configuration
      */
+    // The severity filter toggle belongs to the engine: its name carries the engine's application name
+    // (ToggleRegistry), so the aggregator has to use the literal name instead of registering its own.
+    private static final String ENGINE_BLACKLISTED_ENDPOINTS_TOGGLE = "notifications-engine.blacklisted-endpoints.enabled";
+    private static final String ENGINE_INCLUDE_SEVERITY_TO_FILTER_RECIPIENTS_TOGGLE = "notifications-engine.include-severity-to-filter-recipients.enabled";
     private String activeClusterToggle;
     private String suspendWeeklyAggregation;
+    private String newAggregationPipelineToggle;
 
     @ConfigProperty(name = CLUSTER_ID)
     Optional<String> clusterId;
@@ -56,6 +66,13 @@ public class AggregatorConfig {
 
     @ConfigProperty(name = NOTIFICATIONS_DEFAULT_DAILY_DIGEST_TIME, defaultValue = "00:00")
     LocalTime defaultDailyDigestTime;
+
+    /**
+     * The email sender address for the Red Hat Hybrid Cloud Console. The engine resolves this same address for the
+     * console/notifications aggregation trigger (see its EmailActorsResolver), so it is the only sender needed here.
+     */
+    @ConfigProperty(name = NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE, defaultValue = RH_HCC_SENDER)
+    String rhHccSender;
 
     @ConfigProperty(name = PROMETHEUS_PUSHGATEWAY_URL, defaultValue = "http://localhost:8080")
     String prometheusPushGatewayUrl;
@@ -76,6 +93,7 @@ public class AggregatorConfig {
     void registerToggles() {
         activeClusterToggle = toggleRegistry.register("notifications-aggregator-active-cluster", true);
         suspendWeeklyAggregation = toggleRegistry.register("notifications-aggregator-suspend-weekly-aggregation", true);
+        newAggregationPipelineToggle = toggleRegistry.register("notifications-aggregator-new-aggregation-pipeline", true);
         Log.infof("Registered Unleash toggle: %s", activeClusterToggle);
     }
 
@@ -182,6 +200,48 @@ public class AggregatorConfig {
 
     public boolean isWeeklyAggregationSuspended() {
         return unleash.isEnabled(suspendWeeklyAggregation, false);
+    }
+
+    /**
+     * Whether the aggregator should additionally build the aggregated email payloads for the given org (the new
+     * aggregation pipeline). Evaluated per org. It is false by default and whenever Unleash is inactive.
+     */
+    public boolean isNewAggregationPipelineEnabled(String orgId) {
+        return unleash.isEnabled(newAggregationPipelineToggle, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
+    }
+
+    public String getRhHccSender() {
+        return rhHccSender;
+    }
+
+    /**
+     * Same evaluation as the engine's {@code EngineConfig.isBlacklistedEndpoint}, on the engine's own toggle.
+     */
+    public boolean isBlacklistedEndpoint(final UUID endpointId) {
+        if (null != endpointId) {
+            UnleashContext unleashContext = UnleashContext.builder()
+                .addProperty("endpointId", endpointId.toString())
+                .build();
+            return unleash.isEnabled(ENGINE_BLACKLISTED_ENDPOINTS_TOGGLE, unleashContext, false);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Same evaluation as the engine's {@code EngineConfig.isIncludeSeverityToFilterRecipientsEnabled}, on the engine's
+     * own toggle, so both modules filter recipients by severity under exactly the same conditions.
+     */
+    public boolean isIncludeSeverityToFilterRecipientsEnabled(String orgId, UUID applicationId) {
+        final UnleashContext.Builder builder = UnleashContext.builder();
+        if (orgId != null) {
+            builder.addProperty("orgId", orgId);
+        }
+        if (applicationId != null) {
+            builder.addProperty("applicationId", applicationId.toString());
+        }
+
+        return unleash.isEnabled(ENGINE_INCLUDE_SEVERITY_TO_FILTER_RECIPIENTS_TOGGLE, builder.build(), false);
     }
 
     void logConfigAtStartup(@Observes Startup event) {

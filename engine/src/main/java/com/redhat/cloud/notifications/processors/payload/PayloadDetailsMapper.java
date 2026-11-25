@@ -1,5 +1,6 @@
 package com.redhat.cloud.notifications.processors.payload;
 
+import com.redhat.cloud.notifications.models.PayloadDetails;
 import com.redhat.cloud.notifications.processors.payload.dto.v1.ReadPayloadDetailsDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;

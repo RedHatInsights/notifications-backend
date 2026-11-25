@@ -14,6 +14,7 @@ objects:
     envName: ${ENV_NAME}
     dependencies:
     - notifications-backend
+    - notifications-recipients-resolver
     database:
       sharedDbAppName: notifications-backend
     featureFlags: true
@@ -48,6 +49,16 @@ objects:
         env:
         - name: ENV_NAME
           value: ${ENV_NAME}
+        - name: ENV_BASE_URL
+          value: ${ENV_BASE_URL}
+        - name: ENV_OCM_BASE_URL
+          value: ${ENV_OCM_BASE_URL}
+        - name: ENV_APPLICATION_SERVICES_BASE_URL
+          value: ${ENV_APPLICATION_SERVICES_BASE_URL}
+        - name: NOTIFICATIONS_AGGREGATION_MAX_PAGE_SIZE
+          value: ${NOTIFICATIONS_AGGREGATION_MAX_PAGE_SIZE}
+        - name: NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE
+          value: ${NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE}
         - name: HOST_NAME
           value: ${HOSTNAME}
         - name: QUARKUS_LOG_CATEGORY__COM_REDHAT_CLOUD_NOTIFICATIONS__LEVEL
@@ -85,9 +96,24 @@ parameters:
 - name: CPU_REQUEST
   description: CPU request
   value: 500m
+- name: ENV_BASE_URL
+  value: https://console.redhat.com
+  description: The environment's base URL
+- name: ENV_OCM_BASE_URL
+  value: https://cloud.redhat.com
+  description: The environment's base URL for OCM
+- name: ENV_APPLICATION_SERVICES_BASE_URL
+  value: https://access.redhat.com/downloads/content/application-services/
+  description: The environment's base URL for Application services
 - name: ENV_NAME
   description: ClowdEnvironment name (ephemeral, stage, prod)
   required: true
+- name: NOTIFICATIONS_AGGREGATION_MAX_PAGE_SIZE
+  description: Maximum number of aggregation records loaded from the DB at once
+  value: "100"
+- name: NOTIFICATIONS_EMAIL_SENDER_HYBRID_CLOUD_CONSOLE
+  description: The email sender address for the Red Hat Hybrid Cloud Console.
+  value: "\"Red Hat Hybrid Cloud Console\" noreply@redhat.com"
 - name: PROMETHEUS_PUSHGATEWAY
   description: Prometheus Pushgateway URL
   value: "http://localhost:8080"

@@ -1,7 +1,5 @@
-package com.redhat.cloud.notifications.processors.payload;
+package com.redhat.cloud.notifications.models;
 
-import com.redhat.cloud.notifications.models.CreationTimestamped;
-import com.redhat.cloud.notifications.models.Event;
 import io.vertx.core.json.JsonObject;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
