@@ -24,6 +24,8 @@ public class LightwellWeeklyEmailPayloadAggregator extends AbstractEmailPayloadA
     private static final String EVENT_TYPE_DISPLAY_NAME_KEY = "event_type_display_name";
     private static final String EVENTS_KEY = "events";
     private static final String PAYLOAD_KEY = "payload";
+    private static final String SOURCE_KEY = "source";
+    private static final String DISPLAY_NAME_KEY = "display_name";
 
     // Lightwell event payload keys
     private static final String PACKAGE_NAME = "package_name";
@@ -45,9 +47,11 @@ public class LightwellWeeklyEmailPayloadAggregator extends AbstractEmailPayloadA
     void processEmailAggregation(EmailAggregation aggregation) {
         JsonObject notificationPayload = aggregation.getPayload();
         String eventType = notificationPayload.getString(EVENT_TYPE_KEY);
-        String eventTypeDisplayName = notificationPayload.getString(EVENT_TYPE_DISPLAY_NAME_KEY);
+        String eventTypeDisplayName = extractEventTypeDisplayName(notificationPayload);
 
         if (eventType == null || eventTypeDisplayName == null) {
+            Log.warnf("Skipping aggregation with missing event type information [eventType=%s, eventTypeDisplayName=%s]",
+                eventType, eventTypeDisplayName);
             return;
         }
 
@@ -80,6 +84,25 @@ public class LightwellWeeklyEmailPayloadAggregator extends AbstractEmailPayloadA
                 eventTypePackages.addOrUpdatePackage(packageName, packageLink);
             }
         }
+    }
+
+    /**
+     * Extracts the event type display name from a stored aggregation payload.
+     *
+     * The payload is produced by {@code BaseTransformer.toJsonObject}, which only exposes the display name nested
+     * at {@code source.event_type.display_name} (see {@code BaseTransformer.getEventSource}). There is no top-level
+     * {@code event_type_display_name} key in a real payload, so this must read from the nested source structure.
+     */
+    private static String extractEventTypeDisplayName(JsonObject notificationPayload) {
+        JsonObject source = notificationPayload.getJsonObject(SOURCE_KEY);
+        if (source == null) {
+            return null;
+        }
+        JsonObject eventTypeSource = source.getJsonObject(EVENT_TYPE_KEY);
+        if (eventTypeSource == null) {
+            return null;
+        }
+        return eventTypeSource.getString(DISPLAY_NAME_KEY);
     }
 
     private void updateContext() {

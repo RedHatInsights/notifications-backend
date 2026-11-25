@@ -15,8 +15,7 @@ import static com.redhat.cloud.notifications.TestConstants.DEFAULT_ORG_ID;
 public class LightwellTestHelpers {
 
     /**
-     * Create EmailAggregation for e2e tests - does NOT add event_type_display_name to payload
-     * (it will be added by the database/BaseTransformer).
+     * Create EmailAggregation with no event type display name (simulates a payload where the display name is absent).
      */
     public static EmailAggregation createEmailAggregation(String bundle, String application, String eventType,
                                                           String packageName, String packageLink) {
@@ -25,8 +24,7 @@ public class LightwellTestHelpers {
     }
 
     /**
-     * Create EmailAggregation with explicit orgId for e2e tests - does NOT add event_type_display_name to payload
-     * (it will be added by the database/BaseTransformer).
+     * Create EmailAggregation with explicit orgId and no event type display name.
      */
     public static EmailAggregation createEmailAggregation(String orgId, String bundle, String application,
                                                           String eventType,
@@ -36,8 +34,9 @@ public class LightwellTestHelpers {
     }
 
     /**
-     * Create EmailAggregation with explicit event_type_display_name for unit tests that bypass the database.
-     * Pass null for eventTypeDisplayName to skip adding it (for e2e tests).
+     * Create EmailAggregation with an explicit event type display name. The payload is built through the real
+     * {@code BaseTransformer}, so the display name ends up nested at {@code source.event_type.display_name} exactly
+     * as it does in production. Pass {@code null} to omit it entirely.
      */
     public static EmailAggregation createEmailAggregation(String orgId, String bundle, String application,
                                                           String eventType,
@@ -68,12 +67,9 @@ public class LightwellTestHelpers {
         ));
         emailActionMessage.setOrgId(orgId);
 
-        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
-        // Add event_type_display_name only if explicitly provided (for unit tests)
-        // For e2e tests, it will be added when events are retrieved from the database
-        if (eventTypeDisplayName != null) {
-            aggregation.getPayload().put("event_type_display_name", eventTypeDisplayName);
-        }
+        // Route through the real BaseTransformer so the payload matches production output: the event type display
+        // name ends up nested at source.event_type.display_name, not as a top-level event_type_display_name key.
+        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage, eventTypeDisplayName));
 
         return aggregation;
     }
@@ -113,9 +109,9 @@ public class LightwellTestHelpers {
         ));
         emailActionMessage.setOrgId(DEFAULT_ORG_ID);
 
-        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage));
-        // Add event_type_display_name which would normally come from the Event model via BaseTransformer
-        aggregation.getPayload().put("event_type_display_name", "Java Remediated");
+        // Route through the real BaseTransformer so the display name is nested under source.event_type.display_name,
+        // exactly as it is in production (the Event model carries it via BaseTransformer.getEventSource).
+        aggregation.setPayload(TestHelpers.wrapActionToJsonObject(emailActionMessage, "Java Remediated"));
 
         return aggregation;
     }
