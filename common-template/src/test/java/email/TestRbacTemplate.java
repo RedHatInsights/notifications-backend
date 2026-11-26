@@ -151,6 +151,10 @@ public class TestRbacTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("Groupe créé"));
         assertTrue(result.contains("a créé le groupe"));
         assertTrue(result.contains("User Access - Console"));
+        assertTrue(result.contains("testUser1"));
+        assertTrue(result.contains("testRoleName"));
+        assertTrue(result.contains("/iam/user-access/users/detail/"));
+        assertTrue(result.contains("/iam/user-access/groups/detail/"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
