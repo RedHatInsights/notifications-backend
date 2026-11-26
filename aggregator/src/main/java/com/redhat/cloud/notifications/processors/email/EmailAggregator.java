@@ -181,12 +181,7 @@ public class EmailAggregator {
                 return;
             }
 
-            // BaseTransformer only emits the display name nested under source.event_type.display_name,
-            // but the Lightwell weekly aggregator expects it at the top level of the payload.
             JsonObject aggregationPayload = baseTransformer.toJsonObject(aggregation);
-            if (aggregation.getEventTypeDisplayName() != null) {
-                aggregationPayload.put("event_type_display_name", aggregation.getEventTypeDisplayName());
-            }
 
             EmailAggregation eventDataToAggregate = new EmailAggregation(
                 aggregation.getOrgId(),
