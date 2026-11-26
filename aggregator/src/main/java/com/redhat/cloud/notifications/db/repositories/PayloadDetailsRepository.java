@@ -6,6 +6,8 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
+import java.util.List;
+
 /**
  * The aggregator only writes the {@code payload_details} table, the engine's own repository reads it back.
  */
@@ -16,11 +18,11 @@ public class PayloadDetailsRepository {
     EntityManager entityManager;
 
     /**
-     * Saves the payload details in the database.
-     * @param payloadDetails the details to be saved in the database.
+     * Saves all the payload details in one transaction: either every row is saved or none is.
+     * @param payloadDetailsList the details to be saved in the database.
      */
     @Transactional
-    public void save(final PayloadDetails payloadDetails) {
-        this.entityManager.persist(payloadDetails);
+    public void saveAll(final List<PayloadDetails> payloadDetailsList) {
+        payloadDetailsList.forEach(this.entityManager::persist);
     }
 }

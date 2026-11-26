@@ -34,7 +34,8 @@ public class AggregatedPayloadBuilder {
     PayloadDetailsRepository payloadDetailsRepository;
 
     public List<Map<String, Object>> build(List<AggregationCommand> aggregationCommands) {
-        // Everything is built before anything is saved, so a failure while aggregating leaves no rows behind.
+        // Everything is built before anything is saved, and all rows are saved in one transaction, so a failure
+        // leaves no rows behind.
         AggregatedDigestBuilder.Digests digests = aggregatedDigestBuilder.build(aggregationCommands);
         if (digests.notifications().isEmpty()) {
             return List.of();
@@ -43,7 +44,7 @@ public class AggregatedPayloadBuilder {
         Event anchorEvent = findAnchorEvent(aggregationCommands);
         Endpoint endpoint = digests.endpoint();
 
-        List<Map<String, Object>> entries = new ArrayList<>();
+        List<PayloadDetails> payloadDetailsList = new ArrayList<>();
         for (EmailNotification notification : digests.notifications()) {
             JsonObject contents = JsonObject.mapFrom(notification);
             // The same two keys the engine's ConnectorSender adds to the payload: the email connector restores them from
@@ -51,10 +52,14 @@ public class AggregatedPayloadBuilder {
             contents.put("org_id", aggregationCommands.getFirst().getOrgId());
             contents.put("endpoint_id", endpoint.getId());
 
-            PayloadDetails payloadDetails = new PayloadDetails(anchorEvent, contents);
-            payloadDetailsRepository.save(payloadDetails);
-            entries.add(new AggregatedPayloadEntry(payloadDetails.getId(), endpoint.getId()).toMap());
+            payloadDetailsList.add(new PayloadDetails(anchorEvent, contents));
         }
+        payloadDetailsRepository.saveAll(payloadDetailsList);
+
+        // The ids are generated when the rows are persisted.
+        List<Map<String, Object>> entries = payloadDetailsList.stream()
+            .map(payloadDetails -> new AggregatedPayloadEntry(payloadDetails.getId(), endpoint.getId()).toMap())
+            .toList();
         Log.debugf("[org_id: %s] Saved %d aggregated payloads", aggregationCommands.getFirst().getOrgId(), entries.size());
         return entries;
     }

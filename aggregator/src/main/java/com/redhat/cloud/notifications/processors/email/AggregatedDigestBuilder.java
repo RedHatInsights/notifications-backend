@@ -127,7 +127,7 @@ public class AggregatedDigestBuilder {
             .collect(Collectors.toSet());
         List<Endpoint> endpoints = new ArrayList<>(endpointRepository.getTargetEmailEndpointsForAggregation(orgId, applicationIds));
         endpoints.removeIf(endpoint -> {
-            // Default endpoints (orgId is null) used as system integrations for the all orgs can't be blacklisted
+            // System endpoints had their orgId rewritten by the repository, so they are blacklist-checked too
             if (null != endpoint.getOrgId() && aggregatorConfig.isBlacklistedEndpoint(endpoint.getId())) {
                 Log.infof("Org: %s, skipping endpoint: %s because it was blacklisted", endpoint.getOrgId(), endpoint.getId());
                 return true;
