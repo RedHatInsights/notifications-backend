@@ -16,6 +16,12 @@ public class TestUtils {
         return user;
     }
 
+    public static User createUserWithLocale(String username, String localeCode) {
+        User user = createUser(username);
+        user.setLocaleCode(localeCode);
+        return user;
+    }
+
     public static Set<User> createUsers(String... usernames) {
         return Arrays.stream(usernames)
                 .map(TestUtils::createUser)

@@ -29,6 +29,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -95,11 +96,35 @@ public class EmailMessageHandler extends MessageHandler {
 
         // Phase 1: Extract and resolve payload
         final EmailNotification emailNotification = extractPayload(incomingCloudEvent.getData(), handledMessageDetails);
+        final String orgId = emailNotification.orgId();
 
-        // Phase 2: Render templates
+        // Direct emails provided in the recipient settings (no associated user, hence no locale).
+        final Set<String> directEmails = filterInternalOnlyEmails(extractDirectEmails(emailNotification), incomingCloudEvent.getId());
+
+        final int totalRecipients;
+        if (!emailNotification.isDailyDigest() && emailConnectorConfig.isLocalizedEmailsEnabled(orgId)) {
+            totalRecipients = handleLocalizedInstantEmail(emailNotification, directEmails, incomingCloudEvent);
+        } else {
+            totalRecipients = handleSingleLocaleEmail(emailNotification, directEmails, incomingCloudEvent);
+        }
+
+        handledMessageDetails.totalRecipients = totalRecipients;
+        handledMessageDetails.outcomeMessage = "Ok";
+        return handledMessageDetails;
+    }
+
+    /**
+     * Legacy, locale-agnostic handling: renders a single subject/body (default bundles) and sends it to every
+     * recipient at once. Used for daily/weekly digests and for instant notifications when the
+     * {@code localized-emails} toggle is disabled.
+     */
+    private int handleSingleLocaleEmail(final EmailNotification emailNotification, final Set<String> directEmails,
+                                        final IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
+        final String orgId = emailNotification.orgId();
+
+        // Phase 2: Render templates (no locale -> default bundles)
         String renderedSubject;
         String renderedBody;
-        final String orgId = emailNotification.orgId();
         if (emailNotification.isDailyDigest()) {
             EmailAggregation emailAggregation = objectMapper.convertValue(emailNotification.eventData(), EmailAggregation.class);
             // For backward compatibility: if subscriptionType is null (old messages in Kafka), default to "DAILY"
@@ -113,25 +138,14 @@ public class EmailMessageHandler extends MessageHandler {
         } else {
             // Instant notifications: subscriptionType is not applicable (remains null)
             // Analytics/metrics should treat null subscriptionType as instant notification
-            renderedBody = renderInstantEmail(emailNotification, IntegrationType.EMAIL_BODY);
-            renderedSubject = renderInstantEmail(emailNotification, IntegrationType.EMAIL_TITLE);
+            renderedBody = renderInstantEmail(emailNotification, IntegrationType.EMAIL_BODY, LocaleUtils.DEFAULT_LOCALE);
+            renderedSubject = renderInstantEmail(emailNotification, IntegrationType.EMAIL_TITLE, LocaleUtils.DEFAULT_LOCALE);
         }
 
         // Phase 3: Resolve recipients
-        Set<String> emails = extractDirectEmails(emailNotification);
-        Set<String> recipientsList = resolveRecipients(orgId, emailNotification);
-
-        if (emailConnectorConfig.isEmailsInternalOnlyEnabled()) {
-            Set<String> forbiddenEmail = emails.stream()
-                .filter(email -> !email.trim().toLowerCase().endsWith("@redhat.com"))
-                .collect(Collectors.toSet());
-            if (!forbiddenEmail.isEmpty()) {
-                Log.warnf(" %s emails are forbidden for message historyId: %s ", forbiddenEmail, incomingCloudEvent.getId());
-            }
-            emails.removeAll(forbiddenEmail);
-        }
-        recipientsList.addAll(emails);
-        int totalRecipients = recipientsList.size();
+        Set<String> recipientsList = resolveRecipientUsers(orgId, emailNotification).stream()
+            .map(User::getEmail).filter(email -> email != null && !email.isBlank()).collect(toSet());
+        recipientsList.addAll(directEmails);
 
         // Phase 4: Send to BOP
         if (recipientsList.isEmpty()) {
@@ -141,10 +155,50 @@ public class EmailMessageHandler extends MessageHandler {
             sendToBop(recipientsList, renderedSubject, renderedBody,
                 emailNotification.emailSender(), orgId, incomingCloudEvent.getId());
         }
+        return recipientsList.size();
+    }
 
-        handledMessageDetails.totalRecipients = totalRecipients;
-        handledMessageDetails.outcomeMessage = "Ok";
-        return handledMessageDetails;
+    /**
+     * Locale-aware handling for instant notifications: groups recipients by their locale and renders/sends the
+     * subject and body once per locale group. Direct emails (which carry no user/locale) are sent with the
+     * {@link LocaleUtils#DEFAULT_LOCALE default locale}.
+     */
+    private int handleLocalizedInstantEmail(final EmailNotification emailNotification, final Set<String> directEmails,
+                                            final IncomingCloudEventMetadata<JsonObject> incomingCloudEvent) {
+        final String orgId = emailNotification.orgId();
+
+        // Phase 3 first: resolve recipients and group their emails by locale (rendering depends on the locale).
+        Map<Locale, Set<String>> emailsByLocale = new HashMap<>();
+        if (!directEmails.isEmpty()) {
+            emailsByLocale.put(LocaleUtils.DEFAULT_LOCALE, new HashSet<>(directEmails));
+        }
+        for (User user : resolveRecipientUsers(orgId, emailNotification)) {
+            String email = user.getEmail();
+            if (email == null || email.isBlank()) {
+                continue;
+            }
+            Locale locale = LocaleUtils.toLocale(user.getLocaleCode());
+            emailsByLocale.computeIfAbsent(locale, l -> new HashSet<>()).add(email);
+        }
+
+        if (emailsByLocale.isEmpty()) {
+            Log.infof("Skipped Email notification because the recipients list was empty [orgId=%s, historyId=%s]",
+                orgId, incomingCloudEvent.getId());
+            return 0;
+        }
+
+        // Phase 2 + 4 per locale group: render with the group's locale, then send.
+        Set<String> distinctRecipients = new HashSet<>();
+        for (Map.Entry<Locale, Set<String>> entry : emailsByLocale.entrySet()) {
+            Locale locale = entry.getKey();
+            Set<String> recipients = entry.getValue();
+            String renderedBody = renderInstantEmail(emailNotification, IntegrationType.EMAIL_BODY, locale);
+            String renderedSubject = renderInstantEmail(emailNotification, IntegrationType.EMAIL_TITLE, locale);
+            sendToBop(recipients, renderedSubject, renderedBody,
+                emailNotification.emailSender(), orgId, incomingCloudEvent.getId());
+            distinctRecipients.addAll(recipients);
+        }
+        return distinctRecipients.size();
     }
 
     EmailNotification extractPayload(final JsonObject cloudEventData, final HandledEmailMessageDetails handledMessageDetails) {
@@ -187,7 +241,7 @@ public class EmailMessageHandler extends MessageHandler {
         }
     }
 
-    private String renderInstantEmail(EmailNotification emailNotification, IntegrationType integrationType) {
+    private String renderInstantEmail(EmailNotification emailNotification, IntegrationType integrationType, Locale locale) {
         Map<String, Object> additionalContext = new HashMap<>();
         additionalContext.put("environment", emailNotification.eventData().get("environment"));
         additionalContext.put("pendo_message", emailNotification.eventData().get("pendo_message"));
@@ -203,7 +257,7 @@ public class EmailMessageHandler extends MessageHandler {
 
         TemplateDefinition templateDefinition = new TemplateDefinition(
             integrationType, bundle, application, eventType, useBetaTemplate);
-        return templateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext);
+        return templateService.renderTemplateWithCustomDataMap(templateDefinition, additionalContext, locale);
     }
 
     private String renderEmailAggregationTitle(String bundleDisplayName, String subscriptionType) {
@@ -223,18 +277,30 @@ public class EmailMessageHandler extends MessageHandler {
             .collect(toSet());
     }
 
-    private Set<String> resolveRecipients(String orgId, EmailNotification emailNotification) {
+    private Set<User> resolveRecipientUsers(String orgId, EmailNotification emailNotification) {
         Timer.Sample recipientsResolverResponseTimeMetric = Timer.start(meterRegistry);
-        Set<String> recipientsList = externalRecipientsResolver.recipientUsers(
+        Set<User> recipients = externalRecipientsResolver.recipientUsers(
                 orgId,
                 new HashSet<>(emailNotification.recipientSettings()),
                 new HashSet<>(emailNotification.subscribers()),
                 new HashSet<>(emailNotification.unsubscribers()),
                 emailNotification.subscribedByDefault(),
-                emailNotification.recipientsAuthorizationCriterion())
-            .stream().map(User::getEmail).filter(email -> email != null && !email.isBlank()).collect(toSet());
+                emailNotification.recipientsAuthorizationCriterion());
         recipientsResolverResponseTimeMetric.stop(recipientsResolverResponseTimer);
-        return recipientsList;
+        return recipients;
+    }
+
+    private Set<String> filterInternalOnlyEmails(Set<String> emails, String historyId) {
+        if (emailConnectorConfig.isEmailsInternalOnlyEnabled()) {
+            Set<String> forbiddenEmail = emails.stream()
+                .filter(email -> !email.trim().toLowerCase().endsWith("@redhat.com"))
+                .collect(Collectors.toSet());
+            if (!forbiddenEmail.isEmpty()) {
+                Log.warnf(" %s emails are forbidden for message historyId: %s ", forbiddenEmail, historyId);
+            }
+            emails.removeAll(forbiddenEmail);
+        }
+        return emails;
     }
 
     private void sendToBop(Set<String> recipientsList, String subject, String body,

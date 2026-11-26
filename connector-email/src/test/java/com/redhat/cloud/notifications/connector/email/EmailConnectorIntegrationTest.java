@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -51,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -234,6 +236,49 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
             .sendToBop(listCaptor.capture(), anyString(), anyString(), anyString());
 
         checkRecipientsAndHistory(usersAndRecipientsTotalNumber, listCaptor.getAllValues(), data, false, "test@redhat.com");
+
+        assertMetricsIncrement(1, 0);
+        assertHandlerDurationTimerRecorded(1);
+    }
+
+    @Test
+    void testLocalizedInstantEmailGroupsRecipientsByLocale() throws Exception {
+        // Enable the localized-emails toggle for this notification's org.
+        doReturn(true).when(emailConnectorConfig).isLocalizedEmailsEnabled(anyString());
+
+        Set<User> users = new HashSet<>();
+        users.add(TestUtils.createUserWithLocale("fr-user-1", "fr_FR"));
+        users.add(TestUtils.createUserWithLocale("fr-user-2", "fr_FR"));
+        users.add(TestUtils.createUserWithLocale("en-user-1", "en_US"));
+        users.add(TestUtils.createUserWithLocale("no-locale-user", null));
+        String strUsers = objectMapper.writeValueAsString(users);
+        setupMocks(200, strUsers, 200, null);
+
+        JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, null);
+        String cloudEventId = sendCloudEventMessage(payload);
+
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertTrue(data.getBoolean("successful"));
+        assertEquals(4, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
+
+        // One BOP send per distinct locale group: fr_FR (2 users), en_US (1 user) and the default
+        // locale for the user without a locale (1 user) => 3 calls.
+        @SuppressWarnings("unchecked")
+        final ArgumentCaptor<List<String>> listCaptor = ArgumentCaptor.forClass((Class) List.class);
+        verify(bopManager, times(3))
+            .sendToBop(listCaptor.capture(), anyString(), anyString(), anyString());
+
+        // The two French users must be sent together in a single batch.
+        boolean frenchGroupSentTogether = listCaptor.getAllValues().stream()
+            .anyMatch(batch -> new HashSet<>(batch).equals(Set.of("fr-user-1-email", "fr-user-2-email")));
+        assertTrue(frenchGroupSentTogether, "French recipients should be grouped into a single BOP batch");
+
+        Set<String> allRecipients = listCaptor.getAllValues().stream()
+            .flatMap(List::stream)
+            .collect(Collectors.toSet());
+        assertEquals(
+            Set.of("fr-user-1-email", "fr-user-2-email", "en-user-1-email", "no-locale-user-email"),
+            allRecipients);
 
         assertMetricsIncrement(1, 0);
         assertHandlerDurationTimerRecorded(1);

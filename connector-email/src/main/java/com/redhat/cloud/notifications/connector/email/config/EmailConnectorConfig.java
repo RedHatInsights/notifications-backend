@@ -34,11 +34,13 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
 
     private String toggleKafkaIncomingHighVolumeTopic;
     private String toggleUseBetaTemplatesEnabled;
+    private String toggleLocalizedEmails;
 
     @PostConstruct
     void emailConnectorPostConstruct() {
         toggleKafkaIncomingHighVolumeTopic = toggleRegistry.register("kafka-incoming-high-volume-topic", true);
         toggleUseBetaTemplatesEnabled = toggleRegistry.register("use-beta-templates", true);
+        toggleLocalizedEmails = toggleRegistry.register("localized-emails", true);
     }
 
     @Override
@@ -55,6 +57,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
         config.put(NOTIFICATIONS_EMAILS_INTERNAL_ONLY_ENABLED, emailsInternalOnlyEnabled);
         config.put(toggleKafkaIncomingHighVolumeTopic, isIncomingKafkaHighVolumeTopicEnabled());
         config.put(toggleUseBetaTemplatesEnabled, isUseBetaTemplatesEnabled(null, null, null, null));
+        config.put(toggleLocalizedEmails, isLocalizedEmailsEnabled(null));
         /*
          * /!\ WARNING /!\
          * DO NOT log config values that come from OpenShift secrets.
@@ -111,6 +114,14 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
             unleashContextBuilder.addProperty("bundleApplicationEventType", bundleApplicationEventType);
         }
         return unleash.isEnabled(toggleUseBetaTemplatesEnabled, unleashContextBuilder.build(), false);
+    }
+
+    public boolean isLocalizedEmailsEnabled(final String orgId) {
+        UnleashContext.Builder unleashContextBuilder = UnleashContext.builder();
+        if (orgId != null) {
+            unleashContextBuilder.addProperty("orgId", orgId);
+        }
+        return unleash.isEnabled(toggleLocalizedEmails, unleashContextBuilder.build(), false);
     }
 
     /**
