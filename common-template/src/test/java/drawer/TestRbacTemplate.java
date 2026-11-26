@@ -1,16 +1,27 @@
 package drawer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.qute.templates.IntegrationType;
 import com.redhat.cloud.notifications.qute.templates.TemplateDefinition;
+import com.redhat.cloud.notifications.qute.templates.TemplateService;
+import email.pojo.Environment;
+import helpers.BaseTransformer;
 import helpers.RbacTestHelpers;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
+import io.vertx.core.json.JsonObject;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 class TestRbacTemplate {
@@ -33,6 +44,17 @@ class TestRbacTemplate {
 
     @Inject
     TestHelpers testHelpers;
+
+    @Inject
+    TemplateService templateService;
+
+    @Inject
+    BaseTransformer baseTransformer;
+
+    @Inject
+    Environment environment;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @ValueSource(strings = { RH_NEW_ROLE_AVAILABLE, RH_PLATFORM_DEFAULT_ROLE_UPDATED, RH_NON_PLATFORM_DEFAULT_ROLE_UPDATED, CUSTOM_ROLE_CREATED, CUSTOM_ROLE_UPDATED, CUSTOM_ROLE_DELETED, RH_NEW_ROLE_ADDED_TO_DEFAULT_ACCESS, RH_ROLE_REMOVED_FROM_DEFAULT_ACCESS, CUSTOM_DEFAULT_ACCESS_UPDATED, GROUP_CREATED, GROUP_UPDATED, GROUP_DELETED, PLATFORM_DEFAULT_GROUP_TURNED_INTO_CUSTOM, REQUEST_ACCESS, TAM_ACCESS_REQUEST })
     @ParameterizedTest
@@ -92,8 +114,31 @@ class TestRbacTemplate {
         }
     }
 
+    @Test
+    void testGroupCreatedDrawerInFrench() {
+        Action action = RbacTestHelpers.createRbacAction();
+        String result = renderTemplate(GROUP_CREATED, action, Locale.FRENCH);
+        assertTrue(result.contains("a créé le groupe"));
+        assertTrue(result.contains("testUser1"));
+        assertTrue(result.contains("testRoleName"));
+    }
+
     String renderTemplate(final String eventType, final Action action) {
         TemplateDefinition templateConfig = new TemplateDefinition(IntegrationType.DRAWER, "console", "rbac", eventType);
         return testHelpers.renderTemplate(templateConfig, action);
+    }
+
+    @SuppressWarnings("unchecked")
+    String renderTemplate(final String eventType, final Action action, final Locale locale) {
+        TemplateDefinition templateConfig = new TemplateDefinition(IntegrationType.DRAWER, "console", "rbac", eventType);
+        JsonObject data = baseTransformer.toJsonObject(action);
+        Map<String, Object> dataAsMap = new HashMap<>();
+        try {
+            dataAsMap.put("data", objectMapper.readValue(data.encode(), Map.class));
+            dataAsMap.put("environment", JsonObject.mapFrom(environment));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return templateService.renderTemplateWithCustomDataMap(templateConfig, dataAsMap, locale);
     }
 }
