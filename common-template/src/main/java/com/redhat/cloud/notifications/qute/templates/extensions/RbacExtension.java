@@ -68,6 +68,9 @@ public class RbacExtension extends BaseExtension {
             .replace("[", "\\[")
             .replace("]", "\\]")
             .replace("(", "\\(")
-            .replace(")", "\\)");
+            .replace(")", "\\)")
+            .replace("`", "\\`")
+            .replace("\n", " ")
+            .replace("\r", " ");
     }
 }

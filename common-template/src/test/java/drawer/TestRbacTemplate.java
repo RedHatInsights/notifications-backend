@@ -121,6 +121,8 @@ class TestRbacTemplate {
         assertTrue(result.contains("a créé le groupe"));
         assertTrue(result.contains("testUser1"));
         assertTrue(result.contains("testRoleName"));
+        assertTrue(result.contains("/iam/user-access/users/detail/"));
+        assertTrue(result.contains("/iam/user-access/groups/detail/"));
     }
 
     String renderTemplate(final String eventType, final Action action) {
