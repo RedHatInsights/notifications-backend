@@ -16,6 +16,7 @@ objects:
     - rbac
     optionalDependencies:
     - kessel-inventory
+    inMemoryDb: ${{IN_MEMORY_DB_ENABLED}}
     featureFlags: true
     deployments:
     - name: service
@@ -216,6 +217,10 @@ objects:
           value: ${KESSEL_TIMEOUT_MS}
         - name: NOTIFICATIONS_KESSEL_DOMAIN
           value: ${KESSEL_DOMAIN}
+        - name: IN_MEMORY_DB_ENABLED
+          value: ${IN_MEMORY_DB_ENABLED}
+        - name: VALKEY_USER_CACHE_TTL
+          value: ${VALKEY_USER_CACHE_TTL}
 parameters:
 - name: CLOUDWATCH_ENABLED
   description: Enable Cloudwatch (or not)
@@ -337,3 +342,9 @@ parameters:
   value: "https://redhat.com/realms/redhat-external"
 - name: KESSEL_DOMAIN
   value: "redhat"
+- name: IN_MEMORY_DB_ENABLED
+  description: If true, Clowder provisions an in-memory database (Valkey) for IT user caching
+  value: "false"
+- name: VALKEY_USER_CACHE_TTL
+  description: TTL for cached IT user data in Valkey. ISO-8601 duration format.
+  value: PT10M

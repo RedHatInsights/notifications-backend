@@ -18,6 +18,7 @@ import com.redhat.cloud.notifications.recipients.resolver.rbac.Page;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacGroup;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacServiceToServicePsk;
 import com.redhat.cloud.notifications.recipients.resolver.rbac.RbacUser;
+import com.redhat.cloud.notifications.recipients.resolver.valkey.ValkeyUserCacheService;
 import dev.failsafe.FailsafeException;
 import io.micrometer.core.instrument.Tags;
 import io.quarkus.cache.CacheInvalidateAll;
@@ -38,6 +39,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromExternalServices.COUNTER_REQUESTS;
@@ -86,6 +88,9 @@ public class FetchUsersFromExternalServicesTest {
     @InjectMock
     RecipientsResolverConfig recipientsResolverConfig;
 
+    @InjectMock
+    ValkeyUserCacheService valkeyUserCacheService;
+
     @BeforeEach
     void beforeEach() {
         // This is the default config. It has to be set because we're mocking RecipientsResolverConfig.
@@ -96,6 +101,9 @@ public class FetchUsersFromExternalServicesTest {
         when(recipientsResolverConfig.getMbopApiToken()).thenReturn("na");
         when(recipientsResolverConfig.getMbopClientId()).thenReturn("na");
         when(recipientsResolverConfig.getMbopEnv()).thenReturn("na");
+
+        // Valkey cache disabled in unit tests — always miss
+        when(valkeyUserCacheService.getCachedUsers(anyString(), anyBoolean())).thenReturn(Optional.empty());
     }
 
     @Test
@@ -227,6 +235,74 @@ public class FetchUsersFromExternalServicesTest {
 
         List<User> users = fetchUsersFromExternalServices.getGroupUsers(DEFAULT_ORG_ID, false, nonExistentGroup);
         assertEquals(0, users.size());
+    }
+
+    /**
+     * Tests that when the Valkey L2 cache returns a populated list of users,
+     * the IT User Service is never called, cacheUsers is not invoked, and
+     * the success counter is incremented exactly once.
+     */
+    @Test
+    void testValkeyCacheHitSkipsItService() {
+        List<User> cachedUsers = new ArrayList<>();
+        User user1 = new User();
+        user1.setUsername("cached-user-1");
+        user1.setEmail("cached1@test.com");
+        cachedUsers.add(user1);
+        User user2 = new User();
+        user2.setUsername("cached-user-2");
+        user2.setEmail("cached2@test.com");
+        cachedUsers.add(user2);
+
+        // Override the @BeforeEach stub so the cache returns users
+        when(valkeyUserCacheService.getCachedUsers(DEFAULT_ORG_ID, false)).thenReturn(Optional.of(cachedUsers));
+
+        micrometerAssertionHelper.saveCounterValueBeforeTestFilteredByTags(
+            COUNTER_REQUESTS,
+            Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT)
+        );
+
+        List<User> result = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
+
+        assertEquals(2, result.size());
+        assertEquals("cached-user-1", result.get(0).getUsername());
+        assertEquals("cached-user-2", result.get(1).getUsername());
+
+        // IT User Service must NOT be called on cache hit
+        Mockito.verify(itUserService, Mockito.never()).getUsers(any());
+
+        // cacheUsers must NOT be called — data already in cache
+        Mockito.verify(valkeyUserCacheService, Mockito.never()).cacheUsers(anyString(), anyBoolean(), any());
+
+        // Success counter incremented once for the cache-hit path
+        micrometerAssertionHelper.assertCounterIncrementFilteredByTags(
+            COUNTER_REQUESTS, 1,
+            Tags.of(COUNTER_TAG_REQUEST_RESULT, COUNTER_TAG_SUCCESSES, COUNTER_TAG_USER_PROVIDER, COUNTER_TAG_USER_PROVIDER_IT)
+        );
+    }
+
+    /**
+     * Tests that when the Valkey L2 cache returns empty (cache miss),
+     * the IT User Service is called and the fetched users are stored
+     * in the Valkey cache via {@code cacheUsers}.
+     */
+    @Test
+    void testValkeyCacheMissCallsItServiceAndCaches() {
+        // @BeforeEach already stubs getCachedUsers to return Optional.empty()
+        int elements = 5;
+        mockGetUsers(elements, false);
+        clearCached();
+
+        List<User> result = fetchUsersFromExternalServices.getUsers(DEFAULT_ORG_ID, false);
+
+        assertEquals(elements, result.size());
+
+        // Verify cacheUsers was called with the correct orgId, adminsOnly, and user list
+        Mockito.verify(valkeyUserCacheService).cacheUsers(
+            Mockito.eq(DEFAULT_ORG_ID),
+            Mockito.eq(false),
+            Mockito.argThat(users -> users.size() == elements)
+        );
     }
 
     @Test
