@@ -21,7 +21,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 class TestRbacTemplate {
@@ -118,11 +117,7 @@ class TestRbacTemplate {
     void testGroupCreatedDrawerInFrench() {
         Action action = RbacTestHelpers.createRbacAction();
         String result = renderTemplate(GROUP_CREATED, action, Locale.FRENCH);
-        assertTrue(result.contains("a créé le groupe"));
-        assertTrue(result.contains("testUser1"));
-        assertTrue(result.contains("testRoleName"));
-        assertTrue(result.contains("/iam/user-access/users/detail/"));
-        assertTrue(result.contains("/iam/user-access/groups/detail/"));
+        assertEquals("**[testUser1](https://localhost/iam/user-access/users/detail/testUser1?from=notifications&integration=drawer)** a créé le groupe **[testRoleName](https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286?from=notifications&integration=drawer)**.", result);
     }
 
     String renderTemplate(final String eventType, final Action action) {
