@@ -23,8 +23,9 @@ public class RbacExtension extends BaseExtension {
      * Builds an HTML {@code <a><b>username</b></a>} link to a user's detail page.
      */
     public static String userHtml(String username, String style, String baseUrl) {
-        String encodedPath = URLEncoder.encode(username, StandardCharsets.UTF_8);
-        String safeDisplay = escapeHtml(username);
+        String safeUsername = username == null ? "" : username;
+        String encodedPath = URLEncoder.encode(safeUsername, StandardCharsets.UTF_8);
+        String safeDisplay = escapeHtml(safeUsername);
         return "<a style=\"" + style + "\" href=\"" + baseUrl
             + "/iam/user-access/users/detail/" + encodedPath + "\"><b>" + safeDisplay + "</b></a>";
     }
@@ -33,8 +34,10 @@ public class RbacExtension extends BaseExtension {
      * Builds an HTML {@code <a><b>groupName</b></a>} link to a group's detail page.
      */
     public static String groupHtml(String name, String uuid, String style, String baseUrl) {
-        String encodedPath = URLEncoder.encode(uuid, StandardCharsets.UTF_8);
-        String safeDisplay = escapeHtml(name);
+        String safeName = name == null ? "" : name;
+        String safeUuid = uuid == null ? "" : uuid;
+        String encodedPath = URLEncoder.encode(safeUuid, StandardCharsets.UTF_8);
+        String safeDisplay = escapeHtml(safeName);
         return "<a style=\"" + style + "\" href=\"" + baseUrl
             + "/iam/user-access/groups/detail/" + encodedPath + "\"><b>" + safeDisplay + "</b></a>";
     }
@@ -43,8 +46,9 @@ public class RbacExtension extends BaseExtension {
      * Builds a Markdown bold link to a user's detail page for drawer notifications.
      */
     public static String userMd(String username, String baseUrl, String queryParams) {
-        String encodedPath = URLEncoder.encode(username, StandardCharsets.UTF_8);
-        String safeDisplay = escapeMd(username);
+        String safeUsername = username == null ? "" : username;
+        String encodedPath = URLEncoder.encode(safeUsername, StandardCharsets.UTF_8);
+        String safeDisplay = escapeMd(safeUsername);
         return "**[" + safeDisplay + "](" + baseUrl
             + "/iam/user-access/users/detail/" + encodedPath + "?" + queryParams + ")**";
     }
@@ -53,8 +57,10 @@ public class RbacExtension extends BaseExtension {
      * Builds a Markdown bold link to a group's detail page for drawer notifications.
      */
     public static String groupMd(String name, String uuid, String baseUrl, String queryParams) {
-        String encodedPath = URLEncoder.encode(uuid, StandardCharsets.UTF_8);
-        String safeDisplay = escapeMd(name);
+        String safeName = name == null ? "" : name;
+        String safeUuid = uuid == null ? "" : uuid;
+        String encodedPath = URLEncoder.encode(safeUuid, StandardCharsets.UTF_8);
+        String safeDisplay = escapeMd(safeName);
         return "**[" + safeDisplay + "](" + baseUrl
             + "/iam/user-access/groups/detail/" + encodedPath + "?" + queryParams + ")**";
     }

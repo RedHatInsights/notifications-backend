@@ -151,10 +151,10 @@ public class TestRbacTemplate extends EmailTemplatesRendererHelper {
         assertTrue(result.contains("Groupe créé"));
         assertTrue(result.contains("a créé le groupe"));
         assertTrue(result.contains("User Access - Console"));
-        assertTrue(result.contains("testUser1"));
-        assertTrue(result.contains("testRoleName"));
-        assertTrue(result.contains("/iam/user-access/users/detail/"));
-        assertTrue(result.contains("/iam/user-access/groups/detail/"));
+        // Verify full HTML anchor tag construction for user link
+        assertTrue(result.contains("href=\"https://localhost/iam/user-access/users/detail/testUser1\"><b>testUser1</b></a>"));
+        // Verify full HTML anchor tag construction for group link
+        assertTrue(result.contains("href=\"https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286\"><b>testRoleName</b></a>"));
         assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
     }
 
