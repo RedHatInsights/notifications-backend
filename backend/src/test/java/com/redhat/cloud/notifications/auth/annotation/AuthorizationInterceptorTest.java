@@ -299,6 +299,41 @@ public class AuthorizationInterceptorTest {
         );
     }
 
+    /**
+     * Tests that the function under test throws a {@link ForbiddenException}
+     * when the default workspace ID returned by {@link WorkspaceUtils} is null.
+     *
+     * @throws Exception when an unexpected error occurs.
+     * @throws NoSuchMethodException when the method's specification is not
+     * properly defined, and therefore we cannot get it to perform the tests.
+     */
+    @Test
+    void testWorkspacePermissionDeniedWhenWorkspaceIdNull() throws Exception, NoSuchMethodException {
+        // Mock the invocation context and make it return one of our defined
+        // methods in this class, for simplicity.
+        final InvocationContext invocationContext = Mockito.mock(InvocationContext.class);
+
+        final Method methodUnderTest = AuthorizationInterceptorHelper.class.getMethod("testMethodWithWorkspacePermissions", SecurityContext.class, String.class, UUID.class);
+        Mockito.when(invocationContext.getMethod()).thenReturn(methodUnderTest);
+
+        // Make sure that Kessel is enabled for this test.
+        when(backendConfig.isKesselEnabled(anyString())).thenReturn(true);
+
+        // Mock the returned parameters by the context, to be able to provide
+        // whichever security context we want to the interceptor.
+        final SecurityContext securityContext = this.mockSecurityContext();
+        Mockito.when(invocationContext.getParameters()).thenReturn(new Object[]{securityContext});
+
+        // Mock the workspace utils to return null (e.g. for legacy org without workspace).
+        when(workspaceUtils.getDefaultWorkspaceId(DEFAULT_ORG_ID)).thenReturn(null);
+
+        // Call the function under test which should throw a ForbiddenException.
+        Assertions.assertThrows(
+            ForbiddenException.class,
+            () -> this.authorizationInterceptor.aroundInvoke(invocationContext)
+        );
+    }
+
     private void mockKesselPermission(WorkspacePermission permission, Allowed allowed) {
         when(kesselCheckClient
             .check(kesselTestHelper.buildCheckRequest(DEFAULT_USER, permission)))

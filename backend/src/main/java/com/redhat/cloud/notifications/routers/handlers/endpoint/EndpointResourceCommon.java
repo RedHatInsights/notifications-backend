@@ -271,11 +271,15 @@ public class EndpointResourceCommon {
         boolean shouldRedactSecrets;
         if (this.backendConfig.isKesselEnabled(getOrgId(securityContext))) {
             final UUID workspaceId = this.workspaceUtils.getDefaultWorkspaceId(getOrgId(securityContext));
-            try {
-                this.kesselInventoryAuthorization.hasPermissionOnWorkspace(securityContext, INTEGRATIONS_EDIT, workspaceId);
-                shouldRedactSecrets = false;
-            } catch (final ForbiddenException | NotFoundException e) {
+            if (workspaceId == null) {
                 shouldRedactSecrets = true;
+            } else {
+                try {
+                    this.kesselInventoryAuthorization.hasPermissionOnWorkspace(securityContext, INTEGRATIONS_EDIT, workspaceId);
+                    shouldRedactSecrets = false;
+                } catch (final ForbiddenException | NotFoundException e) {
+                    shouldRedactSecrets = true;
+                }
             }
         } else {
             shouldRedactSecrets = !securityContext.isUserInRole(ConsoleIdentityProvider.RBAC_WRITE_INTEGRATIONS_ENDPOINTS);
