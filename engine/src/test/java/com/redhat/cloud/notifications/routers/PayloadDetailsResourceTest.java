@@ -3,7 +3,7 @@ package com.redhat.cloud.notifications.routers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.cloud.notifications.TestLifecycleManager;
 import com.redhat.cloud.notifications.db.repositories.PayloadDetailsRepository;
-import com.redhat.cloud.notifications.processors.payload.PayloadDetails;
+import com.redhat.cloud.notifications.models.PayloadDetails;
 import com.redhat.cloud.notifications.processors.payload.dto.v1.ReadPayloadDetailsDto;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;

@@ -1,13 +1,16 @@
 package com.redhat.cloud.notifications;
 
 import com.redhat.cloud.notifications.config.AggregatorConfig;
+import com.redhat.cloud.notifications.helpers.IsolatedSessionRunner;
 import com.redhat.cloud.notifications.ingress.Action;
 import com.redhat.cloud.notifications.ingress.Context;
 import com.redhat.cloud.notifications.ingress.Event;
 import com.redhat.cloud.notifications.ingress.Metadata;
 import com.redhat.cloud.notifications.ingress.Parser;
 import com.redhat.cloud.notifications.ingress.Payload;
+import com.redhat.cloud.notifications.models.AggregatedPayloadEntry;
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.processors.email.AggregatedPayloadBuilder;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.quarkus.logging.Log;
@@ -43,6 +46,15 @@ public abstract class AbstractEmailAggregationJob {
     @Inject
     @Channel(EGRESS_CHANNEL)
     Emitter<String> emitterIngress;
+
+    /*
+     * The new aggregation pipeline. With the flag off for the org the trigger is built exactly as before.
+     */
+    @Inject
+    AggregatedPayloadBuilder aggregatedPayloadBuilder;
+
+    @Inject
+    IsolatedSessionRunner isolatedSessionRunner;
 
     private Gauge pairsProcessed;
 
@@ -90,10 +102,11 @@ public abstract class AbstractEmailAggregationJob {
                 .collect(Collectors.groupingBy(AggregationCommand::getOrgId))
                 .forEach((orgId, orgCommands) -> {
                     try {
+                        final boolean newPipelineEnabled = isNewAggregationPipelineEnabled(orgId);
                         orgCommands.stream()
                             .collect(Collectors.groupingBy(AggregationCommand::getBundleId))
                             .values()
-                            .forEach(this::sendIt);
+                            .forEach(bundleCommands -> sendIt(bundleCommands, newPipelineEnabled));
                         successfulOrgIds.add(orgId);
                     } catch (Exception e) {
                         Log.errorf(e, "Failed to process %s aggregation for org %s", getJobType().toLowerCase(), orgId);
@@ -225,7 +238,7 @@ public abstract class AbstractEmailAggregationJob {
         return pendingAggregationCommands;
     }
 
-    private void sendIt(List<AggregationCommand> aggregationCommands) {
+    private void sendIt(List<AggregationCommand> aggregationCommands, boolean newPipelineEnabled) {
         if (aggregationCommands.isEmpty()) {
             Log.warn("sendIt called with empty aggregationCommands list");
             return;
@@ -248,10 +261,10 @@ public abstract class AbstractEmailAggregationJob {
             .withBundle(BUNDLE_NAME)
             .withApplication(APP_NAME)
             .withEventType(getEventTypeName())
-            .withOrgId(aggregationCommands.get(0).getOrgId())
+            .withOrgId(aggregationCommands.getFirst().getOrgId())
             .withTimestamp(LocalDateTime.now(UTC))
             .withEvents(eventList)
-            .withContext(Context.builder().build())
+            .withContext(buildContext(aggregationCommands, newPipelineEnabled))
             .build();
 
         String encodedAction = Parser.encode(action);
@@ -262,6 +275,41 @@ public abstract class AbstractEmailAggregationJob {
 
     Gauge getPairsProcessed() {
         return pairsProcessed;
+    }
+
+    /*
+     * A failure while evaluating the flag must never affect the legacy digest, so it is treated as "flag off".
+     */
+    private boolean isNewAggregationPipelineEnabled(String orgId) {
+        try {
+            return aggregatorConfig.isNewAggregationPipelineEnabled(orgId);
+        } catch (Exception e) {
+            Log.warnf(e, "Unable to evaluate the new aggregation pipeline flag for org %s, treating it as disabled", orgId);
+            return false;
+        }
+    }
+
+    /*
+     * The legacy context is empty. For an org with the new aggregation pipeline enabled, the aggregated payload entries
+     * are added as ONE additional property, only when there is at least one entry. A failure while building them leaves the context empty so the
+     * digest still goes out through the legacy path.
+     */
+    private Context buildContext(List<AggregationCommand> aggregationCommands, boolean newPipelineEnabled) {
+        if (newPipelineEnabled) {
+            try {
+                // Own session per org and bundle: the enrichment loads every event of its window, none of them may stay
+                // referenced by the run-wide session after this call.
+                List<Map<String, Object>> entries = isolatedSessionRunner.call(() -> aggregatedPayloadBuilder.build(aggregationCommands));
+                if (entries != null && !entries.isEmpty()) {
+                    return Context.builder().withAdditionalProperty(AggregatedPayloadEntry.CONTEXT_KEY, entries).build();
+                }
+            } catch (Exception e) {
+                AggregationCommand first = aggregationCommands.getFirst();
+                Log.errorf(e, "Failed to build the aggregated payloads for org %s and bundle %s, sending the plain %s trigger",
+                    first.getOrgId(), first.getAggregationKey().getBundle(), getJobType().toLowerCase());
+            }
+        }
+        return Context.builder().build();
     }
 
     /**

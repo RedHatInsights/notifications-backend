@@ -139,4 +139,77 @@ public class ResourceHelpers extends com.redhat.cloud.notifications.models.Resou
 
         return createEvent(event);
     }
+
+    /*
+     * The methods below are copied from the engine's ResourceHelpers, for the copied aggregation tests.
+     */
+    public com.redhat.cloud.notifications.models.EventTypeEmailSubscription createEventTypeEmailSubscription(String orgId, String userId, EventType eventType, SubscriptionType subscriptionType) {
+        return createEventTypeEmailSubscription(orgId, userId, eventType, subscriptionType, null);
+    }
+
+    @Transactional
+    public com.redhat.cloud.notifications.models.EventTypeEmailSubscription createEventTypeEmailSubscription(String orgId, String userId, EventType eventType, SubscriptionType subscriptionType, java.util.Map<com.redhat.cloud.notifications.Severity, Boolean> severities) {
+        com.redhat.cloud.notifications.models.EventTypeEmailSubscription eventTypeEmailSubscription = new com.redhat.cloud.notifications.models.EventTypeEmailSubscription();
+        eventTypeEmailSubscription.setId(
+            new com.redhat.cloud.notifications.models.EventTypeEmailSubscriptionId(orgId, userId, eventType.getId(), subscriptionType)
+        );
+        eventTypeEmailSubscription.setEventType(entityManager.find(EventType.class, eventType.getId()));
+        eventTypeEmailSubscription.setSubscribed(true);
+        eventTypeEmailSubscription.setSeverities(severities);
+        entityManager.persist(eventTypeEmailSubscription);
+        return eventTypeEmailSubscription;
+    }
+
+    public Event addEventEmailAggregation(String orgId, String bundleName, String applicationName, io.vertx.core.json.JsonObject payload, boolean addUserSubscription, com.redhat.cloud.notifications.Severity severity, String eventTypeName) {
+        Application application = findOrCreateApplication(bundleName, applicationName);
+        EventType eventType = findOrCreateEventType(application.getId(), eventTypeName);
+        if (addUserSubscription) {
+            findOrCreateEventTypeEmailSubscription(orgId, "obiwan", eventType, SubscriptionType.DAILY);
+        }
+
+        Event event = new Event();
+        event.setOrgId(orgId);
+        eventType.setApplication(application);
+        event.setEventType(eventType);
+        event.setPayload(payload.toString());
+        event.setCreated(LocalDateTime.now(java.time.ZoneOffset.UTC));
+        event.setSeverity(severity);
+
+        return createEvent(event);
+    }
+
+    @Transactional
+    public void clearEmailSubscriptions() {
+        entityManager.createQuery("DELETE FROM EventTypeEmailSubscription")
+            .executeUpdate();
+    }
+
+    @Transactional
+    public void clearEvents() {
+        entityManager.createQuery("DELETE FROM Event")
+            .executeUpdate();
+    }
+
+    /**
+     * Creates an enabled and READY email subscription endpoint with its properties, linked to the given event type.
+     * That is what the aggregation endpoint lookup requires. A null orgId creates a system endpoint.
+     */
+    @Transactional
+    public Endpoint createReadyEmailEndpoint(String orgId, EventType eventType, boolean onlyAdmins) {
+        Endpoint endpoint = new Endpoint();
+        endpoint.setType(EndpointType.EMAIL_SUBSCRIPTION);
+        endpoint.setOrgId(orgId);
+        endpoint.setName(RandomStringUtils.secure().nextAlphabetic(10));
+        endpoint.setDescription(RandomStringUtils.secure().nextAlphabetic(10));
+        endpoint.setEnabled(true);
+        endpoint.setStatus(com.redhat.cloud.notifications.models.EndpointStatus.READY);
+        endpoint.setEventTypes(new HashSet<>(Set.of(entityManager.find(EventType.class, eventType.getId()))));
+        entityManager.persist(endpoint);
+
+        com.redhat.cloud.notifications.models.SystemSubscriptionProperties properties = new com.redhat.cloud.notifications.models.SystemSubscriptionProperties();
+        properties.setOnlyAdmins(onlyAdmins);
+        properties.setEndpoint(endpoint);
+        entityManager.persist(properties);
+        return endpoint;
+    }
 }

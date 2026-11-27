@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.db.repositories;
 
 import com.redhat.cloud.notifications.models.AggregationCommand;
+import com.redhat.cloud.notifications.models.Event;
 import com.redhat.cloud.notifications.models.EventAggregationCriterion;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -75,5 +76,17 @@ public class EmailAggregationRepository {
         } else {
             return startDateTimeFromDb;
         }
+    }
+
+    public List<Event> getEmailAggregationBasedOnEvent(EventAggregationCriterion key, LocalDateTime start, LocalDateTime end, int firstResultIndex, int maxResults) {
+        String query = "FROM Event JOIN FETCH eventType WHERE orgId = :orgId AND applicationId = :applicationId AND created > :start AND created <= :end ORDER BY created";
+        return entityManager.createQuery(query, Event.class)
+            .setParameter("orgId", key.getOrgId())
+            .setParameter("applicationId", key.getApplicationId())
+            .setParameter("start", start)
+            .setParameter("end", end)
+            .setFirstResult(firstResultIndex)
+            .setMaxResults(maxResults)
+            .getResultList();
     }
 }

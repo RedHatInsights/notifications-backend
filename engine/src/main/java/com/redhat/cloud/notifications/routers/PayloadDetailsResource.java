@@ -1,7 +1,7 @@
 package com.redhat.cloud.notifications.routers;
 
 import com.redhat.cloud.notifications.db.repositories.PayloadDetailsRepository;
-import com.redhat.cloud.notifications.processors.payload.PayloadDetails;
+import com.redhat.cloud.notifications.models.PayloadDetails;
 import com.redhat.cloud.notifications.processors.payload.PayloadDetailsMapper;
 import com.redhat.cloud.notifications.processors.payload.dto.v1.ReadPayloadDetailsDto;
 import jakarta.inject.Inject;
