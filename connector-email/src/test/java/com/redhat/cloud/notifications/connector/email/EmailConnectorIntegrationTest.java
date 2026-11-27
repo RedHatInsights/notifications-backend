@@ -285,6 +285,60 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
     }
 
     @Test
+    void testLocalizedInstantEmailDeduplicatesDirectAndResolvedEmails() throws Exception {
+        // Enable the localized-emails toggle for this notification's org.
+        doReturn(true).when(emailConnectorConfig).isLocalizedEmailsEnabled(anyString());
+
+        // "fr-user-1" is resolved with a non-default locale and is ALSO provided as a direct email.
+        Set<User> users = new HashSet<>();
+        users.add(TestUtils.createUserWithLocale("fr-user-1", "fr_FR"));
+        users.add(TestUtils.createUserWithLocale("en-user-1", "en_US"));
+        String strUsers = objectMapper.writeValueAsString(users);
+        setupMocks(200, strUsers, 200, null);
+
+        // Direct emails: one overlaps the resolved French user, the other is unique.
+        Set<String> directEmails = Set.of("fr-user-1-email", "direct-only@redhat.com");
+        JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, directEmails);
+        String cloudEventId = sendCloudEventMessage(payload);
+
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertTrue(data.getBoolean("successful"));
+
+        // The overlapping email must be counted once: fr-user-1, en-user-1 and direct-only => 3 recipients.
+        assertEquals(3, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
+
+        // One BOP send per distinct locale group: fr_FR, en_US and the default locale (direct-only) => 3 calls.
+        @SuppressWarnings("unchecked")
+        final ArgumentCaptor<List<String>> listCaptor = ArgumentCaptor.forClass((Class) List.class);
+        verify(bopManager, times(3))
+            .sendToBop(listCaptor.capture(), anyString(), anyString(), anyString());
+
+        // The overlapping email must be sent exactly once despite appearing both as a resolved user and a direct email.
+        long overlapOccurrences = listCaptor.getAllValues().stream()
+            .flatMap(List::stream)
+            .filter("fr-user-1-email"::equals)
+            .count();
+        assertEquals(1, overlapOccurrences,
+            "An email present as both a resolved user and a direct email must be sent only once");
+
+        // The resolved user's locale wins over the default-locale direct-email group: the overlapping email
+        // is sent within the French batch, not alongside the direct-only recipient.
+        boolean overlapSentWithFrenchGroup = listCaptor.getAllValues().stream()
+            .anyMatch(batch -> new HashSet<>(batch).equals(Set.of("fr-user-1-email")));
+        assertTrue(overlapSentWithFrenchGroup, "The overlapping email should be grouped with its resolved locale");
+
+        Set<String> allRecipients = listCaptor.getAllValues().stream()
+            .flatMap(List::stream)
+            .collect(Collectors.toSet());
+        assertEquals(
+            Set.of("fr-user-1-email", "en-user-1-email", "direct-only@redhat.com"),
+            allRecipients);
+
+        assertMetricsIncrement(1, 0);
+        assertHandlerDurationTimerRecorded(1);
+    }
+
+    @Test
     void testFailureFetchingRecipientsInternalError() {
         setupMocks(500, "", null, null);
 

@@ -1,6 +1,7 @@
 package com.redhat.cloud.notifications.connector.email.config;
 
 import com.redhat.cloud.notifications.connector.v2.http.HttpConnectorConfig;
+import com.redhat.cloud.notifications.unleash.UnleashContextBuilder;
 import io.getunleash.UnleashContext;
 import io.quarkus.runtime.LaunchMode;
 import jakarta.annotation.PostConstruct;
@@ -117,11 +118,7 @@ public class EmailConnectorConfig extends HttpConnectorConfig {
     }
 
     public boolean isLocalizedEmailsEnabled(final String orgId) {
-        UnleashContext.Builder unleashContextBuilder = UnleashContext.builder();
-        if (orgId != null) {
-            unleashContextBuilder.addProperty("orgId", orgId);
-        }
-        return unleash.isEnabled(toggleLocalizedEmails, unleashContextBuilder.build(), false);
+        return unleash.isEnabled(toggleLocalizedEmails, UnleashContextBuilder.buildUnleashContextWithOrgId(orgId), false);
     }
 
     /**

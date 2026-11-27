@@ -168,17 +168,27 @@ public class EmailMessageHandler extends MessageHandler {
         final String orgId = emailNotification.orgId();
 
         // Phase 3 first: resolve recipients and group their emails by locale (rendering depends on the locale).
+        // An email is added to a single locale group only, so a recipient that appears both as a resolved
+        // user and as a direct email is not sent the notification twice.
         Map<Locale, Set<String>> emailsByLocale = new HashMap<>();
-        if (!directEmails.isEmpty()) {
-            emailsByLocale.put(LocaleUtils.DEFAULT_LOCALE, new HashSet<>(directEmails));
-        }
+        Set<String> seenEmails = new HashSet<>();
+
+        // Resolved users carry a known locale, so they take precedence over direct emails.
         for (User user : resolveRecipientUsers(orgId, emailNotification)) {
             String email = user.getEmail();
-            if (email == null || email.isBlank()) {
+            if (email == null || email.isBlank() || !seenEmails.add(email)) {
                 continue;
             }
             Locale locale = LocaleUtils.toLocale(user.getLocaleCode());
             emailsByLocale.computeIfAbsent(locale, l -> new HashSet<>()).add(email);
+        }
+
+        // Direct emails have no associated user (hence no locale) -> default locale, unless they are already
+        // covered by a resolved user.
+        for (String email : directEmails) {
+            if (seenEmails.add(email)) {
+                emailsByLocale.computeIfAbsent(LocaleUtils.DEFAULT_LOCALE, l -> new HashSet<>()).add(email);
+            }
         }
 
         if (emailsByLocale.isEmpty()) {
