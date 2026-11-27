@@ -1,0 +1,223 @@
+# Keeps this repo's fullsend installation current. When fullsend-ai/fullsend
+# publishes a release newer than github.fullsend_ref in repos.yaml, this
+# workflow opens ONE pull request with the fullsend_ref bump, the files
+# `fullsend repos install` regenerates (including drift correction) and the
+# agent harness re-pins.
+#
+# The PR description has two parts: what was updated (built from the diff) and
+# what needs a human decision (written by the fullsend-release-watch agent).
+#
+# Jobs: poll -> update (opens the PR, records the proposed tag) -> harness
+# (analysis agent, edits the PR description) -> finalize (replaces the
+# placeholder if the agent did not). agent_only runs use agent-matrix instead
+# of update.
+# Scripts: .github/scripts/fullsend-release-watch/.
+#
+# The update job gets a short-lived GitHub App token (RW_APP_CLIENT_ID,
+# RW_APP_PRIVATE_KEY), limited to this repo. The token can write secrets,
+# variables and workflows, so the key lives only in the
+# `fullsend-release-watch` environment, whose deployment branch policy allows
+# the default branch only. Do not also store it as a repository secret: any
+# branch workflow can read those. The harness job reads untrusted release
+# notes and never sees the token.
+#
+# `repos install` writes repository variables and secrets before the PR is
+# merged. So scheduled runs stay off until RELEASE_WATCH_ENABLED is set, and
+# manual runs default to dry_run, which writes nothing to GitHub.
+# The variables have no FULLSEND_ prefix: `fullsend repos status` reports
+# unknown FULLSEND_* variables as drift.
+name: fullsend release watch
+
+on:
+  schedule:
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run the update steps and `repos install --dry-run`; write nothing to GitHub"
+        type: boolean
+        default: true
+      force:
+        description: "Propose the upgrade even if it was already proposed or a bump PR is open"
+        type: boolean
+        default: false
+      agent_only:
+        description: "Run only the analysis agent and print its result in the log; no PR is opened or edited"
+        type: boolean
+        default: false
+      from_ref:
+        description: "Collect release notes from this release instead of the repos.yaml pin (for agent_only runs)"
+        type: string
+        default: ""
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  poll:
+    if: github.event_name == 'workflow_dispatch' || vars.RELEASE_WATCH_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      skip: ${{ steps.collect.outputs.skip }}
+      target_tag: ${{ steps.collect.outputs.target_tag }}
+      from_ref: ${{ steps.collect.outputs.from_ref }}
+      notes: ${{ steps.collect.outputs.notes }}
+      fullsend_version: ${{ steps.fullsend-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve fullsend version
+        id: fullsend-version
+        run: .github/scripts/fullsend-release-watch/resolve-fullsend-version.sh
+
+      - name: Check for a fullsend release newer than the pin
+        id: collect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          LAST_SEEN: ${{ vars.RELEASE_WATCH_LAST_TAG }}
+          FORCE: ${{ github.event.inputs.force }}
+          FROM_REF_OVERRIDE: ${{ github.event.inputs.from_ref }}
+          AGENT_ONLY: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.agent_only == 'true' }}
+        run: .github/scripts/fullsend-release-watch/collect-releases.sh
+
+  # agent_only: builds the analysis matrix without the App token, so it also
+  # works from a branch (the update job's environment allows master only).
+  agent-matrix:
+    name: Build the agent-only matrix
+    needs: poll
+    if: needs.poll.outputs.skip == 'false' && github.event_name == 'workflow_dispatch' && github.event.inputs.agent_only == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the matrix
+        id: matrix
+        env:
+          REPO: ${{ github.repository }}
+          TARGET_TAG: ${{ needs.poll.outputs.target_tag }}
+          FROM_REF: ${{ needs.poll.outputs.from_ref }}
+          NOTES: ${{ needs.poll.outputs.notes }}
+          AGENT_ONLY: "true"
+        run: .github/scripts/fullsend-release-watch/update.sh
+
+  update:
+    name: Open the upgrade PR
+    needs: poll
+    if: needs.poll.outputs.skip == 'false' && !(github.event_name == 'workflow_dispatch' && github.event.inputs.agent_only == 'true')
+    runs-on: ubuntu-24.04
+    # Downloads and verifies the CLI, then runs `repos install`.
+    timeout-minutes: 15
+    # Holds RW_APP_CLIENT_ID and RW_APP_PRIVATE_KEY; deployment branches:
+    # default branch only.
+    environment: fullsend-release-watch
+    permissions:
+      contents: read
+    outputs:
+      pr_number: ${{ steps.update.outputs.pr_number }}
+      matrix: ${{ steps.update.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Verifies the fullsend release signature (see install_cli in update.sh).
+      - uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
+
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app-token
+        with:
+          client-id: ${{ vars.RW_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RW_APP_PRIVATE_KEY }}
+          # This repo only, with the permissions `fullsend repos install` needs.
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
+          permission-secrets: write
+          # GitHub calls this permission actions_variables. The action has no
+          # input for it, but it turns any permission-* input into a
+          # permission name, so the runner only warns "Unexpected input(s)".
+          permission-actions-variables: write
+
+      - name: Build the upgrade pull request
+        id: update
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          TARGET_TAG: ${{ needs.poll.outputs.target_tag }}
+          FROM_REF: ${{ needs.poll.outputs.from_ref }}
+          NOTES: ${{ needs.poll.outputs.notes }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: .github/scripts/fullsend-release-watch/update.sh
+
+  harness:
+    name: Harness
+    needs: [poll, update, agent-matrix]
+    # always(): one of update and agent-matrix is always skipped.
+    if: always() && (needs.update.outputs.matrix != '' || needs.agent-matrix.outputs.matrix != '')
+    # GitHub requires the caller to grant every permission reusable-dispatch.yml
+    # declares, even for its skipped jobs.
+    permissions:
+      actions: write
+      contents: write
+      id-token: write
+      issues: write
+      packages: read
+      pull-requests: write
+    # update.sh rewrites this line on each upgrade (Renovate ignores
+    # fullsend). The poll job reads the tag from it.
+    uses: fullsend-ai/fullsend/.github/workflows/reusable-dispatch.yml@d11de3ea0dde5aa652110b6716c19e000c426df7  # v0.57.1
+    with:
+      matrix: ${{ needs.update.outputs.matrix || needs.agent-matrix.outputs.matrix }}
+      mint_url: ${{ vars.FULLSEND_MINT_URL }}
+      gcp_region: ${{ vars.FULLSEND_GCP_REGION }}
+      fullsend_version: ${{ needs.poll.outputs.fullsend_version }}
+    secrets:
+      FULLSEND_GCP_WIF_PROVIDER: ${{ secrets.FULLSEND_GCP_WIF_PROVIDER }}
+      FULLSEND_GCP_PROJECT_ID: ${{ secrets.FULLSEND_GCP_PROJECT_ID }}
+      OTEL_EXPORTER_OTLP_TRACES_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_TRACES_HEADERS }}
+      OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
+
+  # Replaces the "analysis is running" placeholder if it is still there: the
+  # harness failed or timed out, or its post-script could not edit the
+  # description and posted a comment instead.
+  finalize:
+    name: Mark analysis incomplete
+    needs: [update, harness]
+    if: always() && needs.update.result == 'success' && needs.update.outputs.pr_number != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Replace the placeholder
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ needs.update.outputs.pr_number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: .github/scripts/fullsend-release-watch/mark-analysis-failed.sh
