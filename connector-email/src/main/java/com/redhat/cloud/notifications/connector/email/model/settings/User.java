@@ -10,6 +10,7 @@ public class User {
     private String username;
     private String email;
     private boolean admin;
+    private String localeCode;
 
     public String getId() {
         return id;
@@ -41,6 +42,14 @@ public class User {
 
     public void setAdmin(boolean admin) {
         this.admin = admin;
+    }
+
+    public String getLocaleCode() {
+        return localeCode;
+    }
+
+    public void setLocaleCode(String localeCode) {
+        this.localeCode = localeCode;
     }
 
     @Override

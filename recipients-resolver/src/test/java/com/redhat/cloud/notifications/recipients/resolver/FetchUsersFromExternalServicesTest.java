@@ -53,6 +53,7 @@ import static com.redhat.cloud.notifications.recipients.resolver.FetchUsersFromE
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -157,6 +158,30 @@ public class FetchUsersFromExternalServicesTest {
         final List<User> users = testee.transformItUserToUser(itUserResponses);
 
         assertFalse(users.get(0).isAdmin());
+    }
+
+    @Test
+    void shouldMapLocaleCodeFromPersonalInformation() {
+        FetchUsersFromExternalServices testee = new FetchUsersFromExternalServices();
+
+        List<ITUserResponse> itUserResponses = createTestResponse("portal_download");
+        itUserResponses.get(0).personalInformation.localeCode = "fr_FR";
+
+        final List<User> users = testee.transformItUserToUser(itUserResponses);
+
+        assertEquals("fr_FR", users.get(0).getLocaleCode());
+    }
+
+    @Test
+    void shouldHaveNullLocaleCodeWhenPersonalInformationIsMissing() {
+        FetchUsersFromExternalServices testee = new FetchUsersFromExternalServices();
+
+        List<ITUserResponse> itUserResponses = createTestResponse("portal_download");
+        itUserResponses.get(0).personalInformation = null;
+
+        final List<User> users = testee.transformItUserToUser(itUserResponses);
+
+        assertNull(users.get(0).getLocaleCode());
     }
 
     private List<ITUserResponse> createTestResponse(String permissionCode) {

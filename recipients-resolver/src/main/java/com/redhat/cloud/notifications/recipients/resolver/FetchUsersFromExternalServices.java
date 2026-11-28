@@ -300,6 +300,10 @@ public class FetchUsersFromExternalServices {
             user.setId(itUserResponse.id);
             user.setUsername(itUserResponse.authentications.get(0).principal);
 
+            if (itUserResponse.personalInformation != null) {
+                user.setLocaleCode(itUserResponse.personalInformation.localeCode);
+            }
+
             if (itUserResponse.accountRelationships.get(0).emails == null) {
                 Log.infof("Skipping user account id: %s with username: %s because it doesn't have any email addresses", user.getId(), user.getUsername());
             } else {

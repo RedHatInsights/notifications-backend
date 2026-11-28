@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
@@ -51,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -234,6 +236,103 @@ class EmailConnectorIntegrationTest extends BaseConnectorIntegrationTest {
             .sendToBop(listCaptor.capture(), anyString(), anyString(), anyString());
 
         checkRecipientsAndHistory(usersAndRecipientsTotalNumber, listCaptor.getAllValues(), data, false, "test@redhat.com");
+
+        assertMetricsIncrement(1, 0);
+        assertHandlerDurationTimerRecorded(1);
+    }
+
+    @Test
+    void testLocalizedInstantEmailGroupsRecipientsByLocale() throws Exception {
+        // Enable the localized-emails toggle for this notification's org.
+        doReturn(true).when(emailConnectorConfig).isLocalizedEmailsEnabled(anyString());
+
+        Set<User> users = new HashSet<>();
+        users.add(TestUtils.createUserWithLocale("fr-user-1", "fr_FR"));
+        users.add(TestUtils.createUserWithLocale("fr-user-2", "fr_FR"));
+        users.add(TestUtils.createUserWithLocale("en-user-1", "en_US"));
+        users.add(TestUtils.createUserWithLocale("no-locale-user", null));
+        String strUsers = objectMapper.writeValueAsString(users);
+        setupMocks(200, strUsers, 200, null);
+
+        JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, null);
+        String cloudEventId = sendCloudEventMessage(payload);
+
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertTrue(data.getBoolean("successful"));
+        assertEquals(4, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
+
+        // One BOP send per distinct locale group: fr_FR (2 users), en_US (1 user) and the default
+        // locale for the user without a locale (1 user) => 3 calls.
+        @SuppressWarnings("unchecked")
+        final ArgumentCaptor<List<String>> listCaptor = ArgumentCaptor.forClass((Class) List.class);
+        verify(bopManager, times(3))
+            .sendToBop(listCaptor.capture(), anyString(), anyString(), anyString());
+
+        // The two French users must be sent together in a single batch.
+        boolean frenchGroupSentTogether = listCaptor.getAllValues().stream()
+            .anyMatch(batch -> new HashSet<>(batch).equals(Set.of("fr-user-1-email", "fr-user-2-email")));
+        assertTrue(frenchGroupSentTogether, "French recipients should be grouped into a single BOP batch");
+
+        Set<String> allRecipients = listCaptor.getAllValues().stream()
+            .flatMap(List::stream)
+            .collect(Collectors.toSet());
+        assertEquals(
+            Set.of("fr-user-1-email", "fr-user-2-email", "en-user-1-email", "no-locale-user-email"),
+            allRecipients);
+
+        assertMetricsIncrement(1, 0);
+        assertHandlerDurationTimerRecorded(1);
+    }
+
+    @Test
+    void testLocalizedInstantEmailDeduplicatesDirectAndResolvedEmails() throws Exception {
+        // Enable the localized-emails toggle for this notification's org.
+        doReturn(true).when(emailConnectorConfig).isLocalizedEmailsEnabled(anyString());
+
+        // "fr-user-1" is resolved with a non-default locale and is ALSO provided as a direct email.
+        Set<User> users = new HashSet<>();
+        users.add(TestUtils.createUserWithLocale("fr-user-1", "fr_FR"));
+        users.add(TestUtils.createUserWithLocale("en-user-1", "en_US"));
+        String strUsers = objectMapper.writeValueAsString(users);
+        setupMocks(200, strUsers, 200, null);
+
+        // Direct emails: one overlaps the resolved French user, the other is unique.
+        Set<String> directEmails = Set.of("fr-user-1-email", "direct-only@redhat.com");
+        JsonObject payload = buildEmailPayload(buildInstantEmailContext(), false, directEmails);
+        String cloudEventId = sendCloudEventMessage(payload);
+
+        JsonObject data = waitForOutgoingMessage(cloudEventId);
+        assertTrue(data.getBoolean("successful"));
+
+        // The overlapping email must be counted once: fr-user-1, en-user-1 and direct-only => 3 recipients.
+        assertEquals(3, data.getJsonObject("details").getInteger(TOTAL_RECIPIENTS_KEY));
+
+        // One BOP send per distinct locale group: fr_FR, en_US and the default locale (direct-only) => 3 calls.
+        @SuppressWarnings("unchecked")
+        final ArgumentCaptor<List<String>> listCaptor = ArgumentCaptor.forClass((Class) List.class);
+        verify(bopManager, times(3))
+            .sendToBop(listCaptor.capture(), anyString(), anyString(), anyString());
+
+        // The overlapping email must be sent exactly once despite appearing both as a resolved user and a direct email.
+        long overlapOccurrences = listCaptor.getAllValues().stream()
+            .flatMap(List::stream)
+            .filter("fr-user-1-email"::equals)
+            .count();
+        assertEquals(1, overlapOccurrences,
+            "An email present as both a resolved user and a direct email must be sent only once");
+
+        // The resolved user's locale wins over the default-locale direct-email group: the overlapping email
+        // is sent within the French batch, not alongside the direct-only recipient.
+        boolean overlapSentWithFrenchGroup = listCaptor.getAllValues().stream()
+            .anyMatch(batch -> new HashSet<>(batch).equals(Set.of("fr-user-1-email")));
+        assertTrue(overlapSentWithFrenchGroup, "The overlapping email should be grouped with its resolved locale");
+
+        Set<String> allRecipients = listCaptor.getAllValues().stream()
+            .flatMap(List::stream)
+            .collect(Collectors.toSet());
+        assertEquals(
+            Set.of("fr-user-1-email", "en-user-1-email", "direct-only@redhat.com"),
+            allRecipients);
 
         assertMetricsIncrement(1, 0);
         assertHandlerDurationTimerRecorded(1);
