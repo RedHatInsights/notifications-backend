@@ -1,9 +1,11 @@
 package com.redhat.cloud.notifications.auth.annotation;
 
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.core.SecurityContext;
 
 import java.util.UUID;
 
+import static com.redhat.cloud.notifications.Constants.X_RH_WORKSPACE_ID_HEADER;
 import static com.redhat.cloud.notifications.auth.kessel.permission.WorkspacePermission.NOTIFICATIONS_VIEW;
 
 /**
@@ -24,4 +26,10 @@ public class AuthorizationInterceptorHelper {
         workspacePermissions = NOTIFICATIONS_VIEW
     )
     public void testMethodWithWorkspacePermissions(final SecurityContext ignored, final String ignoredTwo, final UUID ignoredThree) { }
+
+    @Authorization(
+        legacyRBACRole = AuthorizationInterceptorTest.LEGACY_RBAC_ROLE,
+        workspacePermissions = NOTIFICATIONS_VIEW
+    )
+    public void testMethodWithWorkspaceHeader(final SecurityContext ignored, @HeaderParam(X_RH_WORKSPACE_ID_HEADER) final String workspaceIdHeader) { }
 }
