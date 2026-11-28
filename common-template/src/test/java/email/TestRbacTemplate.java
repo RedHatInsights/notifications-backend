@@ -4,9 +4,11 @@ import com.redhat.cloud.notifications.ingress.Action;
 import helpers.RbacTestHelpers;
 import helpers.TestHelpers;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import java.util.Locale;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -140,6 +142,27 @@ public class TestRbacTemplate extends EmailTemplatesRendererHelper {
             default:
                 break;
         }
+    }
+
+    @Test
+    void testGroupCreatedBodyInFrench() {
+        Action action = RbacTestHelpers.createRbacAction();
+        String result = generateEmailBody(GROUP_CREATED, action, Locale.FRENCH);
+        assertTrue(result.contains("Groupe créé"));
+        assertTrue(result.contains("a créé le groupe"));
+        assertTrue(result.contains("User Access - Console"));
+        // Verify full HTML anchor tag construction for user link
+        assertTrue(result.contains("href=\"https://localhost/iam/user-access/users/detail/testUser1\"><b>testUser1</b></a>"));
+        // Verify full HTML anchor tag construction for group link
+        assertTrue(result.contains("href=\"https://localhost/iam/user-access/groups/detail/616ace4f-6024-4197-868a-2d0a2ac61286\"><b>testRoleName</b></a>"));
+        assertTrue(result.contains(TestHelpers.HCC_LOGO_TARGET));
+    }
+
+    @Test
+    void testGroupCreatedTitleStaysEnglishInFrench() {
+        Action action = RbacTestHelpers.createRbacAction();
+        String result = generateEmailBody(GROUP_CREATED, action, Locale.FRENCH);
+        assertTrue(result.contains("User Access - Console"));
     }
 
     private void testBody(String eventType, String result, boolean useBetaTemplate) {
