@@ -47,6 +47,9 @@ public class SubscriptionRepository {
     @Inject
     ObjectMapper mapper;
 
+    @Inject
+    SubscriptionChangeLogRepository subscriptionChangeLogRepository;
+
     public void subscribe(String orgId, String username, UUID eventTypeId, SubscriptionType subscriptionType) {
         updateSubscription(orgId, username, eventTypeId, subscriptionType, true, null);
     }
@@ -88,6 +91,12 @@ public class SubscriptionRepository {
             .setParameter("subscribed", subscribed)
             .setParameter("severities", jsonSeverities)
             .executeUpdate();
+
+        try {
+            subscriptionChangeLogRepository.logChange(orgId, username, eventTypeId, subscriptionType, subscribed);
+        } catch (Exception e) {
+            Log.warnf(e, "Failed to log subscription change for org=%s user=%s eventType=%s", orgId, username, eventTypeId);
+        }
     }
 
     private void checkIfSubscriptionTypeIsSupportedForCurrentEventType(UUID eventTypeId, SubscriptionType subscriptionType) {
