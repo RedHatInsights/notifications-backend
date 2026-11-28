@@ -35,10 +35,12 @@
       "matchDepNames": [
         "actions/cache",
         "actions/checkout",
+        "actions/create-github-app-token",
         "actions/setup-java",
         "actions/setup-node",
         "actions/upload-artifact",
-        "github/codeql-action"
+        "github/codeql-action",
+        "sigstore/cosign-installer"
       ],
       "automerge": true,
       "groupName": "GitHub Actions"
